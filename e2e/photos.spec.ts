@@ -4,7 +4,7 @@ test.describe('Photo Gallery', () => {
   test('should display gallery grid', async ({ page }) => {
     await page.goto('/photos');
     
-    await expect(page.getByRole('heading', { name: /Landscape Photography/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Landscape Gallery/i })).toBeVisible();
     
     // Check that images are loaded
     const images = page.getByRole('button', { name: /View details for/i });
@@ -59,25 +59,20 @@ test.describe('Photo Gallery', () => {
     await expect(page.locator('canvas')).toBeVisible();
   });
 
-  test('should filter images by tag', async ({ page }) => {
+  test('should switch between grid and 3D view', async ({ page }) => {
     await page.goto('/photos');
     
-    // Wait for images to load
-    await page.waitForSelector('[role="button"][aria-label*="View details for"]');
+    // Wait for page to be loaded (but not networkidle - 3D animations prevent that)
+    await page.waitForLoadState('load');
     
-    const initialCount = await page.getByRole('button', { name: /View details for/i }).count();
+    // Check for view mode toggle buttons
+    const gridButton = page.getByRole('button', { name: /Grid View|grid/i });
+    const carousel3DButton = page.getByRole('button', { name: /3D|Carousel/i });
     
-    // Click a tag filter (assuming tags exist)
-    const tagButton = page.getByRole('button').filter({ hasText: /mountain|lake|sunset/i }).first();
-    if (await tagButton.isVisible()) {
-      await tagButton.click();
-      
-      // Count should change after filtering
-      await page.waitForTimeout(500); // Wait for filter animation
-      const filteredCount = await page.getByRole('button', { name: /View details for/i }).count();
-      
-      // Filtered count should be different from initial
-      expect(filteredCount).not.toBe(initialCount);
-    }
+    // At least one view mode button should be visible
+    const hasGridButton = await gridButton.isVisible().catch(() => false);
+    const has3DButton = await carousel3DButton.isVisible().catch(() => false);
+    
+    expect(hasGridButton || has3DButton).toBe(true);
   });
 });

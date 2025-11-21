@@ -3,12 +3,13 @@ import { test, expect } from '@playwright/test';
 test.describe('Projects Page', () => {
   test('should display all projects', async ({ page }) => {
     await page.goto('/projects');
+    await page.waitForLoadState('networkidle');
     
     await expect(page.getByRole('heading', { name: /Programming Projects/i })).toBeVisible();
     
-    // Should have project cards
-    const projectCards = page.locator('[data-testid="project-card"]').or(page.getByRole('article'));
-    await expect(projectCards.first()).toBeVisible();
+    // Should have project cards (links with aria-label)
+    const projectLinks = page.getByRole('link', { name: /View details for/i });
+    await expect(projectLinks.first()).toBeVisible();
   });
 
   test('should navigate to project detail page', async ({ page }) => {

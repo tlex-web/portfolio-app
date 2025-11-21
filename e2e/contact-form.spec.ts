@@ -3,10 +3,11 @@ import { test, expect } from '@playwright/test';
 test.describe('Contact Form', () => {
   test('should display contact form', async ({ page }) => {
     await page.goto('/contact');
+    await page.waitForLoadState('networkidle');
     
     await expect(page.getByRole('heading', { name: /Get in Touch/i })).toBeVisible();
     await expect(page.getByLabel(/Name/i)).toBeVisible();
-    await expect(page.getByLabel(/Email/i)).toBeVisible();
+    await expect(page.getByRole('textbox', { name: /Email/i })).toBeVisible();
     await expect(page.getByLabel(/Message/i)).toBeVisible();
     await expect(page.getByRole('button', { name: /Send Message/i })).toBeVisible();
   });
@@ -21,9 +22,10 @@ test.describe('Contact Form', () => {
 
   test('should show validation error for invalid email', async ({ page }) => {
     await page.goto('/contact');
+    await page.waitForLoadState('networkidle');
     
     await page.getByLabel(/Name/i).fill('John Doe');
-    await page.getByLabel(/Email/i).fill('not-an-email');
+    await page.getByRole('textbox', { name: /Email/i }).fill('not-an-email');
     await page.getByLabel(/Message/i).fill('This is a test message that is long enough.');
     
     await page.getByRole('button', { name: /Send Message/i }).click();
@@ -33,9 +35,10 @@ test.describe('Contact Form', () => {
 
   test('should show validation error for short message', async ({ page }) => {
     await page.goto('/contact');
+    await page.waitForLoadState('networkidle');
     
     await page.getByLabel(/Name/i).fill('John Doe');
-    await page.getByLabel(/Email/i).fill('john@example.com');
+    await page.getByRole('textbox', { name: /Email/i }).fill('john@example.com');
     await page.getByLabel(/Message/i).fill('Short');
     
     await page.getByRole('button', { name: /Send Message/i }).click();
@@ -45,9 +48,10 @@ test.describe('Contact Form', () => {
 
   test('should submit form successfully with valid data', async ({ page }) => {
     await page.goto('/contact');
+    await page.waitForLoadState('networkidle');
     
     await page.getByLabel(/Name/i).fill('John Doe');
-    await page.getByLabel(/Email/i).fill('john@example.com');
+    await page.getByRole('textbox', { name: /Email/i }).fill('john@example.com');
     await page.getByLabel(/Message/i).fill('This is a test message that is definitely long enough to pass validation.');
     
     await page.getByRole('button', { name: /Send Message/i }).click();
@@ -58,9 +62,10 @@ test.describe('Contact Form', () => {
 
   test('should reset form after successful submission', async ({ page }) => {
     await page.goto('/contact');
+    await page.waitForLoadState('networkidle');
     
-    await page.getByLabel(/Name/i).fill('Jane Smith');
-    await page.getByLabel(/Email/i).fill('jane@example.com');
+    await page.getByLabel(/Name/i).fill('John Doe');
+    await page.getByRole('textbox', { name: /Email/i }).fill('jane@example.com');
     await page.getByLabel(/Message/i).fill('Another test message that is long enough.');
     
     await page.getByRole('button', { name: /Send Message/i }).click();
@@ -70,7 +75,7 @@ test.describe('Contact Form', () => {
     
     // Form fields should be cleared
     await expect(page.getByLabel(/Name/i)).toHaveValue('');
-    await expect(page.getByLabel(/Email/i)).toHaveValue('');
+    await expect(page.getByRole('textbox', { name: /Email/i })).toHaveValue('');
     await expect(page.getByLabel(/Message/i)).toHaveValue('');
   });
 
