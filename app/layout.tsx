@@ -23,14 +23,6 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://vercel.com" />
         
-        {/* Preload Critical Images */}
-        <link
-          rel="preload"
-          as="image"
-          href="/images/optimized/IMG_0605-large.webp"
-          type="image/webp"
-        />
-        
         {/* Prefetch Common Routes */}
         <link rel="prefetch" href="/projects" />
         <link rel="prefetch" href="/photos" />

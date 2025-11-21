@@ -48,6 +48,10 @@ lerna-debug.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Original unoptimized images (keep locally, not in Git)
+# Optimized images in public/images/optimized/ are committed
+public/images/landscapes/
+
 # IDEs
 .vscode/
 .idea/

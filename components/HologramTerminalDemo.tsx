@@ -77,21 +77,21 @@ export default function HologramTerminalDemo({
   return (
     <div className="relative">
       {/* Terminal Header */}
-      <div className="flex items-center justify-between mb-4 pb-3 border-b border-cyan-500/30">
-        <div className="flex items-center gap-3">
-          <div className="flex gap-2">
+      <div className="flex items-center justify-between mb-3 sm:mb-4 pb-2 sm:pb-3 border-b border-cyan-500/30">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex gap-1.5 sm:gap-2">
             <div className="w-3 h-3 rounded-full bg-red-500 shadow-lg shadow-red-500/50"></div>
             <div className="w-3 h-3 rounded-full bg-yellow-500 shadow-lg shadow-yellow-500/50"></div>
             <div className="w-3 h-3 rounded-full bg-green-500 shadow-lg shadow-green-500/50"></div>
           </div>
-          <span className="text-cyan-400 text-sm font-bold tracking-wider">CLI_X TERMINAL</span>
+          <span className="text-cyan-400 text-xs sm:text-sm font-bold tracking-wider">CLI_X TERMINAL</span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Risk Badge */}
           {currentCommand.riskLevel && (
             <div
-              className={`px-3 py-1 rounded-full text-xs font-bold border ${
+              className={`hidden xs:block px-2 sm:px-3 py-1 rounded-full text-xs font-bold border ${
                 riskColors[currentCommand.riskLevel]
               } shadow-lg`}
             >
@@ -102,7 +102,7 @@ export default function HologramTerminalDemo({
           {/* Play/Pause */}
           <button
             onClick={() => setIsPlaying(!isPlaying)}
-            className="w-8 h-8 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 flex items-center justify-center transition-all"
+            className="w-9 h-9 sm:w-10 sm:h-10 min-w-[44px] min-h-[44px] rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 flex items-center justify-center transition-all"
             aria-label={isPlaying ? 'Pause' : 'Play'}
           >
             {isPlaying ? (
@@ -127,7 +127,7 @@ export default function HologramTerminalDemo({
       </div>
 
       {/* Terminal Body */}
-      <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+      <div className="space-y-3 sm:space-y-4 max-h-[350px] sm:max-h-[400px] overflow-y-auto pr-1 sm:pr-2">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}

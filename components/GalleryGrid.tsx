@@ -43,7 +43,6 @@ export default function GalleryGrid({ images, itemsPerPage = 12 }: GalleryGridPr
               fill
               className="object-cover group-hover:opacity-90 transition-opacity"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              quality={85}
               loading="lazy"
               placeholder="blur"
               blurDataURL={image.thumbnailSrc || image.thumbnail || image.src}

@@ -116,18 +116,18 @@ export default function GlassmorphismNav() {
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden animate-in fade-in duration-200"
             onClick={() => setMobileMenuOpen(false)}
           />
 
           {/* Menu Panel */}
-          <div className="fixed top-0 right-0 bottom-0 z-50 w-64 bg-white/10 dark:bg-gray-900/10 backdrop-blur-xl shadow-2xl md:hidden">
+          <div className="fixed top-0 right-0 bottom-0 z-50 w-64 sm:w-80 bg-white/10 dark:bg-gray-900/10 backdrop-blur-xl shadow-2xl md:hidden animate-in slide-in-from-right duration-300">
             <div className="flex flex-col h-full">
               {/* Close button */}
               <div className="flex justify-end p-4">
                 <button
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-2 rounded-lg text-white hover:bg-white/10 transition-all"
+                  className="p-3 min-w-[44px] min-h-[44px] rounded-lg text-white hover:bg-white/10 transition-all"
                   aria-label="Close menu"
                 >
                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -149,7 +149,7 @@ export default function GlassmorphismNav() {
                     <Link
                       key={item.name}
                       href={item.href}
-                      className={`px-4 py-3 rounded-lg text-lg font-medium transition-all ${
+                      className={`px-4 py-4 min-h-[44px] flex items-center rounded-lg text-lg font-medium transition-all ${
                         isActive
                           ? 'bg-white/20 text-white backdrop-blur-sm'
                           : 'text-white/90 hover:bg-white/10 hover:text-white'

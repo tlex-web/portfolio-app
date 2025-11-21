@@ -151,17 +151,17 @@ export default function Footer() {
               transition={{ delay: 0.6, duration: 0.5 }}
               className="flex gap-6 text-sm"
             >
-              <Link
-                href="/privacy"
+              <a
+                href="mailto:contact@example.com"
                 className="text-gray-400 hover:text-white transition-colors duration-200"
               >
-                Privacy Policy
-              </Link>
+                Contact
+              </a>
               <Link
-                href="/terms"
+                href="/roadmap"
                 className="text-gray-400 hover:text-white transition-colors duration-200"
               >
-                Terms of Service
+                Roadmap
               </Link>
             </motion.div>
           </div>

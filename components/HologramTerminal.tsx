@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useMemo, Suspense } from 'react';
+import { useRef, useMemo, Suspense, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Html, Environment } from '@react-three/drei';
 import * as THREE from 'three';
@@ -88,9 +88,11 @@ function LaptopModel({ prefersReducedMotion }: { prefersReducedMotion: boolean }
 interface HologramShellProps {
   children: React.ReactNode;
   prefersReducedMotion: boolean;
+  isMobile: boolean;
+  htmlWidth: string;
 }
 
-function HologramShell({ children, prefersReducedMotion }: HologramShellProps) {
+function HologramShell({ children, prefersReducedMotion, isMobile, htmlWidth }: HologramShellProps) {
   const groupRef = useRef<THREE.Group>(null);
   const glowRef = useRef<THREE.Mesh>(null);
   const scanlineRef = useRef<THREE.Mesh>(null);
@@ -120,10 +122,10 @@ function HologramShell({ children, prefersReducedMotion }: HologramShellProps) {
   });
 
   return (
-    <group ref={groupRef} scale={0.85}>
+    <group ref={groupRef} scale={isMobile ? 0.7 : 0.85}>
       {/* Hologram Frame */}
       <mesh position={[0, 0, -0.1]}>
-        <planeGeometry args={[8, 5]} />
+        <planeGeometry args={isMobile ? [7, 4.5] : [8, 5]} />
         <meshStandardMaterial
           color="#00ffff"
           transparent
@@ -136,7 +138,7 @@ function HologramShell({ children, prefersReducedMotion }: HologramShellProps) {
 
       {/* Glow Effect */}
       <mesh ref={glowRef} position={[0, 0, -0.15]}>
-        <planeGeometry args={[8.5, 5.5]} />
+        <planeGeometry args={isMobile ? [7.5, 5] : [8.5, 5.5]} />
         <meshBasicMaterial
           color="#00ffff"
           transparent
@@ -188,7 +190,8 @@ function HologramShell({ children, prefersReducedMotion }: HologramShellProps) {
         distanceFactor={6}
         position={[0, 0, 0.01]}
         style={{
-          width: '800px',
+          width: htmlWidth,
+          maxWidth: '95vw',
           pointerEvents: 'auto',
         }}
       >
@@ -263,10 +266,50 @@ interface HologramTerminalProps {
 
 export default function HologramTerminal({ children, className = '' }: HologramTerminalProps) {
   const prefersReducedMotion = useReducedMotion();
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1024);
+    };
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
+  const cameraPosition: [number, number, number] = isMobile ? [0, 0, 16] : [0, 0, 13];
+  const cameraFov = isMobile ? 60 : 50;
+  
+  // More granular width control for better mobile display
+  const getHtmlWidth = () => {
+    if (typeof window === 'undefined') return '800px';
+    const width = window.innerWidth;
+    if (width < 450) return '90vw';
+    if (width < 640) return '92vw';
+    if (width < 768) return '94vw';
+    if (width < 1024) return '600px';
+    return '800px';
+  };
+  const htmlWidth = getHtmlWidth();
+  
+  // Adjust height for very small screens
+  // More granular container height for better mobile to tablet display
+  const getContainerHeight = () => {
+    if (typeof window === 'undefined') return '650px';
+    const width = window.innerWidth;
+    if (width < 450) return '400px';
+    if (width < 640) return '450px';
+    if (width < 768) return '500px';
+    if (width < 900) return '550px';  // Better for tablets around 770-900px
+    if (width < 1024) return '600px';
+    return '650px';
+  };
 
   return (
-    <div className={`relative ${className}`} style={{ height: '650px' }}>
-      <Canvas camera={{ position: [0, 0, 13], fov: 50 }}>
+    <div className={`relative ${className} w-full overflow-hidden`} style={{ height: getContainerHeight() }}>
+      <Canvas camera={{ position: cameraPosition, fov: cameraFov }}>
         <Suspense fallback={null}>
           {/* Lighting */}
           <ambientLight intensity={0.4} />
@@ -292,14 +335,14 @@ export default function HologramTerminal({ children, className = '' }: HologramT
           <LaptopModel prefersReducedMotion={prefersReducedMotion} />
 
           {/* Hologram Shell with Content - positioned to emerge from laptop */}
-          <HologramShell prefersReducedMotion={prefersReducedMotion}>
+          <HologramShell prefersReducedMotion={prefersReducedMotion} isMobile={isMobile} htmlWidth={htmlWidth}>
             {children}
           </HologramShell>
         </Suspense>
       </Canvas>
 
       {/* Holographic Display Banner */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 backdrop-blur-sm px-6 py-3 rounded-full text-cyan-400 text-sm font-bold border-2 border-cyan-500/50 shadow-lg shadow-cyan-500/30">
+      <div className="absolute top-2 sm:top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 backdrop-blur-sm px-2 sm:px-3 md:px-6 py-1.5 sm:py-2 md:py-3 rounded-full text-cyan-400 text-[10px] sm:text-xs md:text-sm font-bold border-2 border-cyan-500/50 shadow-lg shadow-cyan-500/30">
         <span className="inline-flex items-center gap-3">
           <span className="relative flex h-3 w-3">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
@@ -311,7 +354,7 @@ export default function HologramTerminal({ children, className = '' }: HologramT
       </div>
 
       {/* Hologram Label */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-sm px-6 py-2 rounded-full text-cyan-400 text-sm font-bold border border-cyan-500/50 shadow-lg shadow-cyan-500/30">
+      <div className="hidden sm:flex absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-sm px-4 sm:px-6 py-1.5 sm:py-2 rounded-full text-cyan-400 text-xs sm:text-sm font-bold border border-cyan-500/50 shadow-lg shadow-cyan-500/30">
         <span className="inline-flex items-center gap-2">
           <span className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
           HOLOGRAPHIC DISPLAY ACTIVE
@@ -323,16 +366,47 @@ export default function HologramTerminal({ children, className = '' }: HologramT
         .hologram-content {
           background: rgba(0, 20, 40, 0.95);
           border: 2px solid rgba(0, 255, 255, 0.5);
-          border-radius: 16px;
+          border-radius: 12px;
           box-shadow: 
             0 0 20px rgba(0, 255, 255, 0.3),
             inset 0 0 20px rgba(0, 255, 255, 0.1);
-          padding: 24px;
+          padding: 12px;
+          font-size: 0.875rem;
           font-family: 'Courier New', monospace;
           color: #00ffff;
           backdrop-filter: blur(10px);
           position: relative;
-          overflow: hidden;
+          overflow-y: auto;
+          overflow-x: hidden;
+          max-height: 350px;
+        }
+
+        @media (max-width: 449px) {
+          .hologram-content {
+            padding: 8px;
+            font-size: 0.75rem;
+            border-radius: 8px;
+            max-height: 300px;
+            border-width: 1px;
+          }
+        }
+
+        @media (min-width: 640px) {
+          .hologram-content {
+            padding: 18px;
+            font-size: 0.9375rem;
+            border-radius: 14px;
+            max-height: 450px;
+          }
+        }
+
+        @media (min-width: 768px) {
+          .hologram-content {
+            padding: 24px;
+            font-size: 1rem;
+            border-radius: 16px;
+            max-height: 500px;
+          }
         }
 
         .hologram-content::before {

@@ -75,8 +75,9 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Optimize images for tests
-        run: npm run optimize-images
+      # Skip image optimization - using pre-optimized images from repo
+      # - name: Optimize images for tests
+      #   run: npm run optimize-images
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
@@ -109,8 +110,9 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Optimize images for build
-        run: npm run optimize-images
+      # Skip image optimization - using pre-optimized images from repo
+      # - name: Optimize images for build
+      #   run: npm run optimize-images
 
       - name: Build Next.js application
         run: npm run build
