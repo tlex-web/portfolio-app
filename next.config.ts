@@ -48,7 +48,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'", // Tailwind/styled-jsx require unsafe-inline
               "img-src 'self' data: blob: https:", // Allow images from CDNs and data URIs
               "font-src 'self' data:",
-              "connect-src 'self' https://vercel.live", // Vercel Analytics
+              "connect-src 'self' https://vercel.live https://raw.githack.com", // Vercel Analytics + Three.js assets
               "frame-src 'self'",
               "object-src 'none'",
               "base-uri 'self'",
