@@ -3,15 +3,27 @@
 import { useState, useEffect } from 'react';
 import { useParams, notFound } from 'next/navigation';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import HologramTerminal from '@/components/HologramTerminal';
-import HologramTerminalDemo from '@/components/HologramTerminalDemo';
 import FeatureShowcase from '@/components/FeatureShowcase';
 import TechStackDisplay from '@/components/TechStackDisplay';
 import ProjectHighlights from '@/components/ProjectHighlights';
 import { projects } from '@/data/projects';
-import ReactMarkdown from 'react-markdown';
+
+// Lazy load heavy components
+const HologramTerminal = dynamic(() => import('@/components/HologramTerminal'), {
+  loading: () => <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-64 rounded-xl" />,
+  ssr: false,
+});
+
+const HologramTerminalDemo = dynamic(() => import('@/components/HologramTerminalDemo'), {
+  ssr: false,
+});
+
+const ReactMarkdown = dynamic(() => import('react-markdown'), {
+  loading: () => <div className="animate-pulse bg-gray-100 dark:bg-gray-800 h-32 rounded" />,
+});
 
 export default function ProjectDetailPage() {
   const params = useParams();

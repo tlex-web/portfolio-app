@@ -2,13 +2,23 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import GalleryGrid from '@/components/GalleryGrid';
-import PhotoCarousel3D from '@/components/PhotoCarousel3D';
 import ImageDetailModal from '@/components/ImageDetailModal';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { landscapes } from '@/data/landscapes';
 import { LandscapeImage } from '@/data/types';
+
+// Lazy load 3D carousel to reduce initial bundle size
+const PhotoCarousel3D = dynamic(() => import('@/components/PhotoCarousel3D'), {
+  loading: () => (
+    <div className="bg-black rounded-2xl h-[600px] flex items-center justify-center">
+      <div className="text-white animate-pulse">Loading 3D viewer...</div>
+    </div>
+  ),
+  ssr: false, // Three.js doesn't work server-side
+});
 
 export default function PhotosPage() {
   const [viewMode, setViewMode] = useState<'grid' | '3d'>('grid');

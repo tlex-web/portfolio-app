@@ -15,7 +15,8 @@
     "test:coverage": "jest --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "playwright test --headed",
+    "optimize-images": "node scripts/optimize-images.mjs"
   },
   "keywords": [
     "portfolio",
@@ -71,6 +72,7 @@
     "jest-environment-jsdom": "^30.2.0",
     "postcss": "^8.5.6",
     "prettier": "^3.6.2",
+    "sharp": "^0.33.5",
     "tailwindcss": "^4.1.17",
     "typescript": "^5.9.3"
   }

@@ -4,6 +4,8 @@ export interface LandscapeImage {
   id: string; // Unique identifier
   src: string; // Path to image file
   thumbnail?: string; // Optional optimized thumbnail
+  fallbackSrc?: string; // JPEG fallback for WebP
+  thumbnailSrc?: string; // Thumbnail for blur placeholder
   alt: string; // Accessibility description
   title: string; // Display title
   location: string; // Where the photo was taken

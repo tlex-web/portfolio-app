@@ -3,7 +3,9 @@ import { LandscapeImage } from './types';
 export const landscapes: LandscapeImage[] = [
   {
     id: 'img-0605',
-    src: '/images/landscapes/IMG_0605-Enhanced (2022_02_01 09_47_03 UTC).jpg',
+    src: '/images/optimized/IMG_0605-Enhanced (2022_02_01 09_47_03 UTC)-large.webp',
+    fallbackSrc: '/images/optimized/IMG_0605-Enhanced (2022_02_01 09_47_03 UTC)-large.jpg',
+    thumbnailSrc: '/images/optimized/IMG_0605-Enhanced (2022_02_01 09_47_03 UTC)-thumb.webp',
     alt: 'Stunning view of the Matterhorn from Zermatt',
     title: 'Matterhorn from Zermatt',
     location: 'Zermatt, Switzerland',
@@ -46,7 +48,9 @@ export const landscapes: LandscapeImage[] = [
   },
   {
     id: 'img-0629',
-    src: '/images/landscapes/IMG_0629-Enhanced (2022_07_29 07_19_54 UTC).jpg',
+    src: '/images/optimized/IMG_0629-Enhanced (2022_07_29 07_19_54 UTC)-large.webp',
+    fallbackSrc: '/images/optimized/IMG_0629-Enhanced (2022_07_29 07_19_54 UTC)-large.jpg',
+    thumbnailSrc: '/images/optimized/IMG_0629-Enhanced (2022_07_29 07_19_54 UTC)-thumb.webp',
     alt: 'Waterfall in the Teufelsschlucht',
     title: 'Waterfall in the Teufelsschlucht',
     location: 'Zermatt, Switzerland',
@@ -90,7 +94,9 @@ export const landscapes: LandscapeImage[] = [
   },
   {
     id: 'img-0662',
-    src: '/images/landscapes/IMG_0662-Enhanced (2022_07_29 07_19_54 UTC).jpg',
+    src: '/images/optimized/IMG_0662-Enhanced (2022_07_29 07_19_54 UTC)-large.webp',
+    fallbackSrc: '/images/optimized/IMG_0662-Enhanced (2022_07_29 07_19_54 UTC)-large.jpg',
+    thumbnailSrc: '/images/optimized/IMG_0662-Enhanced (2022_07_29 07_19_54 UTC)-thumb.webp',
     alt: 'Matterhorn summit rising above the Matterhorn Glacier Trail with dramatic alpine scenery',
     title: 'Matterhorn from the Matterhorn Glacier Trail',
     location: 'Zermatt, Switzerland',
@@ -135,7 +141,9 @@ export const landscapes: LandscapeImage[] = [
   },
   {
     id: 'r004-011',
-    src: '/images/landscapes/R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC).jpg',
+    src: '/images/optimized/R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC)-large.webp',
+    fallbackSrc: '/images/optimized/R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC)-large.jpg',
+    thumbnailSrc: '/images/optimized/R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC)-thumb.webp',
     alt: 'Matterhorn with perfect mirror reflections in an alpine lake',
     title: 'Matterhorn Mirror Reflection',
     location: 'Zermatt, Switzerland',
