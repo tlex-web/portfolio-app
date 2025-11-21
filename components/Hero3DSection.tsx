@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import Image from 'next/image';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform, MotionValue } from 'framer-motion';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 import InteractiveHotspot from './InteractiveHotspot';
 import { ImageAnnotation } from '@/data/types';
@@ -21,6 +21,41 @@ interface Hero3DSectionProps {
     annotations: HeroAnnotation[];
     hotspots?: ImageAnnotation[];
   };
+}
+
+// Separate component for annotation to properly use hooks
+function AnnotationItem({
+  annotation,
+  scrollYProgress,
+  prefersReducedMotion,
+}: {
+  annotation: HeroAnnotation;
+  scrollYProgress: MotionValue<number>;
+  prefersReducedMotion: boolean;
+}) {
+  const opacity = useTransform(
+    scrollYProgress,
+    [annotation.startProgress, annotation.endProgress],
+    prefersReducedMotion ? [1, 1] : [0, 1]
+  );
+  const y = useTransform(
+    scrollYProgress,
+    [annotation.startProgress, annotation.endProgress],
+    prefersReducedMotion ? [0, 0] : [50, 0]
+  );
+
+  return (
+    <motion.div style={{ opacity, y }} className="text-center text-white mb-8">
+      <h1 className="text-5xl md:text-7xl font-bold mb-4 drop-shadow-2xl">
+        {annotation.text}
+      </h1>
+      {annotation.subtitle && (
+        <p className="text-xl md:text-2xl drop-shadow-lg max-w-3xl mx-auto">
+          {annotation.subtitle}
+        </p>
+      )}
+    </motion.div>
+  );
 }
 
 export default function Hero3DSection({ heroImage }: Hero3DSectionProps) {
@@ -122,35 +157,14 @@ export default function Hero3DSection({ heroImage }: Hero3DSectionProps) {
         {/* Text Annotations */}
         <div className="relative z-10 h-full flex items-center justify-center pointer-events-none">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            {heroImage.annotations.map((annotation, index) => {
-              const opacity = useTransform(
-                scrollYProgress,
-                [annotation.startProgress, annotation.endProgress],
-                prefersReducedMotion ? [1, 1] : [0, 1]
-              );
-              const y = useTransform(
-                scrollYProgress,
-                [annotation.startProgress, annotation.endProgress],
-                prefersReducedMotion ? [0, 0] : [50, 0]
-              );
-
-              return (
-                <motion.div
-                  key={index}
-                  style={{ opacity, y }}
-                  className="text-center text-white mb-8"
-                >
-                  <h1 className="text-5xl md:text-7xl font-bold mb-4 drop-shadow-2xl">
-                    {annotation.text}
-                  </h1>
-                  {annotation.subtitle && (
-                    <p className="text-xl md:text-2xl drop-shadow-lg max-w-3xl mx-auto">
-                      {annotation.subtitle}
-                    </p>
-                  )}
-                </motion.div>
-              );
-            })}
+            {heroImage.annotations.map((annotation, index) => (
+              <AnnotationItem
+                key={index}
+                annotation={annotation}
+                scrollYProgress={scrollYProgress}
+                prefersReducedMotion={prefersReducedMotion}
+              />
+            ))}
           </div>
         </div>
 

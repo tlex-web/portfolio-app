@@ -48,9 +48,12 @@ npm run build        # Production build
 
 ### Key Commands
 - **Type checking**: `npm run type-check` (tsc --noEmit) - run before committing
+- **Linting**: `npm run lint` (ESLint 8 with .eslintrc.json) - checks code quality
 - **Format code**: `npm run format` (Prettier)
 - **Run all tests**: `npm test && npm run test:e2e`
 - **Test coverage**: `npm run test:coverage`
+
+**Note on ESLint**: This project uses ESLint 8 with `.eslintrc.json` configuration. ESLint 9's flat config format caused compatibility issues with Next.js plugins, so we stay on ESLint 8 for now.
 
 ## Component Patterns
 
