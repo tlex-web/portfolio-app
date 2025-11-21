@@ -1,33 +1,19 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { useParams, notFound } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import FeatureShowcase from '@/components/FeatureShowcase';
 import TechStackDisplay from '@/components/TechStackDisplay';
 import ProjectHighlights from '@/components/ProjectHighlights';
+import ProjectDetailClient from '@/components/ProjectDetailClient';
 import { projects } from '@/data/projects';
 
-// Lazy load heavy components
-const HologramTerminal = dynamic(() => import('@/components/HologramTerminal'), {
-  loading: () => <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-64 rounded-xl" />,
-  ssr: false,
-});
+interface PageProps {
+  params: Promise<{ slug: string }>;
+}
 
-const HologramTerminalDemo = dynamic(() => import('@/components/HologramTerminalDemo'), {
-  ssr: false,
-});
-
-const ReactMarkdown = dynamic(() => import('react-markdown'), {
-  loading: () => <div className="animate-pulse bg-gray-100 dark:bg-gray-800 h-32 rounded" />,
-});
-
-export default function ProjectDetailPage() {
-  const params = useParams();
-  const slug = params?.slug as string;
+export default async function ProjectDetailPage({ params }: PageProps) {
+  const { slug } = await params;
   const project = projects.find((p) => p.slug === slug);
 
   if (!project) {
@@ -45,7 +31,7 @@ export default function ProjectDetailPage() {
     <>
       <Header />
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-        {/* Hero Section */}
+        {/* Hero Section - Server Component */}
         <div className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white py-20">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <Link
@@ -128,25 +114,11 @@ export default function ProjectDetailPage() {
 
         {/* Main Content */}
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-20">
-          {/* Holographic Terminal Demo (for CLI projects) */}
-          {project.demoCommands && project.demoCommands.length > 0 && (
-            <section>
-              <div className="text-center mb-12">
-                <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                  Experience CLI_X in 3D
-                </h2>
-                <p className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto mb-2">
-                  Watch the holographic terminal demonstrate CLI_X's intelligent command generation, 
-                  safety analysis, and natural language processing in real-time.
-                </p>
-              </div>
+          {/* Client-side interactive components */}
+          <ProjectDetailClient project={project} />
 
-              <HologramTerminal>
-                <HologramTerminalDemo commands={project.demoCommands} autoPlay loopDelay={3000} />
-              </HologramTerminal>
-            </section>
-          )}
-
+          {/* Static server-rendered sections */}
+          
           {/* Features */}
           {project.features && project.features.length > 0 && (
             <section>
@@ -166,21 +138,11 @@ export default function ProjectDetailPage() {
             <TechStackDisplay techStack={project.techStack} />
           </section>
 
-          {/* Detailed Description */}
-          <section className="max-w-none">
-            <h2 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white text-center">
-              About This Project
-            </h2>
-            <div className="prose prose-lg dark:prose-invert max-w-none bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg">
-              <ReactMarkdown>{project.longDescription}</ReactMarkdown>
-            </div>
-          </section>
-
           {/* Related Roadmap Items */}
           {project.roadmapItems && project.roadmapItems.length > 0 && (
             <section>
               <h2 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white text-center">
-                What's Next?
+                What&apos;s Next?
               </h2>
               <div className="bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 rounded-xl p-8 border-2 border-cyan-200 dark:border-cyan-800">
                 <p className="text-lg text-gray-700 dark:text-gray-300 mb-4 text-center">

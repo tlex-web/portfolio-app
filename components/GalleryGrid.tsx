@@ -7,15 +7,30 @@ import ImageDetailModal from './ImageDetailModal';
 
 interface GalleryGridProps {
   images: LandscapeImage[];
+  itemsPerPage?: number;
 }
 
-export default function GalleryGrid({ images }: GalleryGridProps) {
+export default function GalleryGrid({ images, itemsPerPage = 12 }: GalleryGridProps) {
   const [selectedImage, setSelectedImage] = useState<LandscapeImage | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Pagination logic
+  const totalPages = Math.ceil(images.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentImages = images.slice(startIndex, endIndex);
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    // Smooth scroll to top of gallery
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <>
+      {/* Gallery Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {images.map((image) => (
+        {currentImages.map((image) => (
           <button
             key={image.id}
             onClick={() => setSelectedImage(image)}
@@ -65,8 +80,64 @@ export default function GalleryGrid({ images }: GalleryGridProps) {
         ))}
       </div>
 
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="mt-12 flex flex-col items-center gap-4">
+          <div className="flex items-center gap-2">
+            {/* Previous Button */}
+            <button
+              onClick={() => goToPage(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium border border-gray-300 dark:border-gray-600"
+              aria-label="Previous page"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+
+            {/* Page Numbers */}
+            <div className="flex gap-2">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => goToPage(page)}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    page === currentPage
+                      ? 'bg-blue-600 text-white shadow-lg'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600'
+                  }`}
+                  aria-label={`Go to page ${page}`}
+                  aria-current={page === currentPage ? 'page' : undefined}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+
+            {/* Next Button */}
+            <button
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium border border-gray-300 dark:border-gray-600"
+              aria-label="Next page"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Page Info */}
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Showing {startIndex + 1}-{Math.min(endIndex, images.length)} of {images.length} images
+          </p>
+        </div>
+      )}
+
       <ImageDetailModal image={selectedImage} onClose={() => setSelectedImage(null)} />
     </>
   );
 }
+
 

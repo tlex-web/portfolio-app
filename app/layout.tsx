@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -16,7 +17,26 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/* Resource Hints for Performance */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://vercel.com" />
+        
+        {/* Preload Critical Images */}
+        <link
+          rel="preload"
+          as="image"
+          href="/images/optimized/IMG_0605-large.webp"
+          type="image/webp"
+        />
+        
+        {/* Prefetch Common Routes */}
+        <link rel="prefetch" href="/projects" />
+        <link rel="prefetch" href="/photos" />
+      </head>
       <body className="antialiased">
+        <ServiceWorkerRegistration />
         {children}
         <Analytics />
         <SpeedInsights />
@@ -24,4 +44,6 @@ export default function RootLayout({
     </html>
   );
 }
+
+
 
