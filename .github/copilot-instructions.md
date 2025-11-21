@@ -55,6 +55,8 @@ npm run build        # Production build
 
 **Note on ESLint**: This project uses ESLint 8 with `.eslintrc.json` configuration. ESLint 9's flat config format caused compatibility issues with Next.js plugins, so we stay on ESLint 8 for now.
 
+**Note on TypeScript**: Test files (*.test.ts, *.test.tsx) may show TypeScript errors about missing Jest types when running `tsc --noEmit` or in your editor. This is expected and does not affect the build - Next.js excludes test files during compilation. Tests run correctly with Jest.
+
 ## Component Patterns
 
 ### Client Component Structure
