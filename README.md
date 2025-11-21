@@ -432,6 +432,35 @@ This portfolio follows WCAG 2.1 Level AA guidelines:
 - ✅ Responsive text sizing
 - ✅ Skip-to-content links
 
+## 🚀 Deployment
+
+This project is optimized for deployment on Vercel (recommended) but can be deployed to any platform that supports Next.js.
+
+### Deploy to Vercel (Recommended)
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/tlex-web/portfolio-app)
+
+**Quick Deploy:**
+
+1. Push your code to GitHub
+2. Import your repo to [Vercel](https://vercel.com/new)
+3. Vercel auto-detects Next.js and deploys
+4. Your site is live in ~2 minutes!
+
+**Detailed instructions**: See [DEPLOYMENT.md](DEPLOYMENT.md) for complete deployment guide including:
+- Environment variables setup
+- Custom domain configuration
+- Performance optimization tips
+- Troubleshooting common issues
+
+### Other Platforms
+
+This Next.js app can also deploy to:
+- **Netlify**: Use the Netlify CLI or connect your GitHub repo
+- **Railway**: One-click deploy from GitHub
+- **Cloudflare Pages**: Deploy via Wrangler or dashboard
+- **Self-hosted**: Run `npm run build && npm start` on any Node.js 20+ server
+
 ## 🎨 Browser Support
 
 - Chrome/Edge 90+

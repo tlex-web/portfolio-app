@@ -30,12 +30,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/YOUR_USERNAME/portfolio-app.git"
+    "url": "https://github.com/tlex-web/portfolio-app.git"
   },
   "bugs": {
-    "url": "https://github.com/YOUR_USERNAME/portfolio-app/issues"
+    "url": "https://github.com/tlex-web/portfolio-app/issues"
   },
-  "homepage": "https://github.com/YOUR_USERNAME/portfolio-app#readme",
+  "homepage": "https://github.com/tlex-web/portfolio-app#readme",
   "dependencies": {
     "@react-spring/three": "^10.0.3",
     "@react-three/drei": "^10.7.7",

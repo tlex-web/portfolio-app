@@ -183,26 +183,53 @@ npm run test:e2e  # Separate command for e2e
 
 ### Pre-deployment Checklist
 1. Run `npm run build` locally to verify production build
-2. Check `npm run type-check` passes with no errors
-3. Verify all tests pass with `npm test`
-4. Ensure `next.config.ts` is properly configured
+2. Check `npm run type-check` passes (ignore test file errors - they're expected)
+3. Run `npm run lint` - 39 warnings acceptable, 0 errors required
+4. Verify all tests pass with `npm test`
+5. Ensure `next.config.ts` is properly configured
+6. Verify `package-lock.json` is committed to git
 
 ### Vercel Configuration
 - **Framework preset**: Next.js (auto-detected)
 - **Build command**: `npm run build` (default)
 - **Output directory**: `.next` (default)
 - **Install command**: `npm install` (default)
-- **Node version**: 18.x or higher
+- **Node version**: 20.x (required - Next.js 16 needs Node >=20.9.0)
 
 ### Environment Variables
 Set in Vercel dashboard (not in repo):
-- Email service API keys (when integrated)
+- Email service API keys (when integrated) - e.g., `RESEND_API_KEY`
 - Any third-party API tokens
+- **Do not commit**: `.env.local` files are git-ignored for security
+
+### Deployment Process
+1. **Push to GitHub**: Code in `main` branch triggers deployment
+2. **GitHub Actions CI**: Runs lint, type-check, tests (must pass)
+3. **Vercel Build**: Auto-triggered after CI passes
+4. **Deploy**: Live at `https://your-project.vercel.app`
 
 ### Performance Notes
 - Three.js/WebGL works on Vercel Edge with client-side rendering
 - Static images in `public/images/` are automatically optimized by Next.js Image component
 - Rate limiting uses in-memory storage (fine for single instance, upgrade to Vercel KV for multi-region)
+- Expected build time: 2-3 minutes
+- Expected bundle size: ~500KB initial load (gzipped)
+
+### Post-Deployment Verification
+1. Test all pages load correctly
+2. Verify 3D visualizations work (check WebGL compatibility)
+3. Test contact form submission
+4. Check images load and optimize properly
+5. Test on mobile devices
+6. Run Lighthouse audit (expect 90+ scores)
+
+### Troubleshooting
+- **Build fails**: Check Vercel logs, ensure Node 20.x
+- **Images 404**: Verify images are in `public/` and paths start with `/`
+- **3D not rendering**: Check browser WebGL support, console errors
+- **API errors**: Check Vercel Functions logs, verify Zod schemas match client
+
+**Detailed deployment guide**: See `DEPLOYMENT.md` for comprehensive instructions
 
 ## Common Gotchas
 
