@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { sendFeedbackEmail } from '@/lib/email';
 
 // Define and validate input schema
 const feedbackSchema = z.object({
@@ -45,23 +46,34 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = feedbackSchema.parse(body);
 
-    // Log the feedback (in production, you would send an email or save to database)
+    const timestamp = new Date().toISOString();
+
+    // Log the feedback for debugging
     console.log('Feedback received:', {
       name: data.name,
       email: data.email,
       message: data.message,
       interestedInCollaboration: data.interestedInCollaboration,
-      timestamp: new Date().toISOString(),
+      timestamp,
       ip,
     });
 
-    // TODO: In production, integrate with email service (SendGrid, Resend, etc.)
-    // Example:
-    // await sendEmail({
-    //   to: process.env.FEEDBACK_EMAIL!,
-    //   subject: `Feedback from ${data.name}`,
-    //   text: `Name: ${data.name}\nEmail: ${data.email}\n\nMessage:\n${data.message}\n\nInterested in collaboration: ${data.interestedInCollaboration ? 'Yes' : 'No'}`,
-    // });
+    // Send email notification
+    try {
+      await sendFeedbackEmail({
+        name: data.name,
+        email: data.email,
+        message: data.message,
+        interestedInCollaboration: data.interestedInCollaboration,
+        timestamp,
+        ip,
+      });
+    } catch (emailError) {
+      // Log email error but don't fail the request
+      // This allows form submissions to succeed even if email fails
+      console.error('Failed to send email notification:', emailError);
+      // In production, you might want to queue this for retry or alert monitoring
+    }
 
     // Success response
     return NextResponse.json({ success: true }, { status: 200 });

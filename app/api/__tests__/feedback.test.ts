@@ -4,6 +4,13 @@
 import { POST } from '../feedback/route';
 import { NextRequest } from 'next/server';
 
+// Mock the email service
+jest.mock('@/lib/email', () => ({
+  sendFeedbackEmail: jest.fn(),
+}));
+
+import { sendFeedbackEmail } from '@/lib/email';
+
 // Mock console methods
 const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
 const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
@@ -14,6 +21,8 @@ describe('Feedback API Route', () => {
   beforeEach(() => {
     consoleLogSpy.mockClear();
     consoleErrorSpy.mockClear();
+    (sendFeedbackEmail as jest.Mock).mockClear();
+    (sendFeedbackEmail as jest.Mock).mockResolvedValue(undefined);
     testCounter++;
   });
 
@@ -50,6 +59,16 @@ describe('Feedback API Route', () => {
           email: 'john@example.com',
           message: 'This is a test message that is long enough.',
           interestedInCollaboration: true,
+        })
+      );
+      expect(sendFeedbackEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'John Doe',
+          email: 'john@example.com',
+          message: 'This is a test message that is long enough.',
+          interestedInCollaboration: true,
+          timestamp: expect.any(String),
+          ip: expect.any(String),
         })
       );
     });
@@ -233,6 +252,55 @@ describe('Feedback API Route', () => {
           timestamp: expect.any(String),
           ip: '203.0.113.42',
         })
+      );
+    });
+  });
+
+  describe('Email Integration', () => {
+    it('sends email on successful submission', async () => {
+      const request = createMockRequest({
+        name: 'Jane Smith',
+        email: 'jane@example.com',
+        message: 'Hello, I would like to discuss a project.',
+        interestedInCollaboration: true,
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(sendFeedbackEmail).toHaveBeenCalledTimes(1);
+      expect(sendFeedbackEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Jane Smith',
+          email: 'jane@example.com',
+          message: 'Hello, I would like to discuss a project.',
+          interestedInCollaboration: true,
+        })
+      );
+    });
+
+    it('succeeds even if email sending fails', async () => {
+      (sendFeedbackEmail as jest.Mock).mockRejectedValueOnce(new Error('Email service error'));
+
+      const request = createMockRequest({
+        name: 'John Doe',
+        email: 'john@example.com',
+        message: 'This is a test message.',
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      // Request should still succeed
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      
+      // But error should be logged
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Failed to send email notification:',
+        expect.any(Error)
       );
     });
   });
