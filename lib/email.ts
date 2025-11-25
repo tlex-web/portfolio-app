@@ -1,7 +1,18 @@
 import { Resend } from 'resend';
 
-// Initialize Resend client
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialization of Resend client to avoid errors during build/test
+let resend: Resend | null = null;
+
+function getResendClient(): Resend {
+  if (!resend) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      throw new Error('RESEND_API_KEY environment variable is not set');
+    }
+    resend = new Resend(apiKey);
+  }
+  return resend;
+}
 
 export interface FeedbackEmailData {
   name: string;
@@ -26,15 +37,14 @@ export async function sendFeedbackEmail(data: FeedbackEmailData): Promise<void> 
     throw new Error('FEEDBACK_RECIPIENT_EMAIL environment variable is not set');
   }
 
-  if (!process.env.RESEND_API_KEY) {
-    throw new Error('RESEND_API_KEY environment variable is not set');
-  }
+  // Get the Resend client (will throw if API key is not set)
+  const client = getResendClient();
 
   const htmlContent = generateEmailHTML(data);
   const textContent = generateEmailText(data);
 
   try {
-    await resend.emails.send({
+    await client.emails.send({
       from: fromEmail,
       to: recipientEmail,
       subject: `Portfolio Feedback from ${data.name}`,

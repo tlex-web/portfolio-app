@@ -83,6 +83,10 @@ jobs:
 
       - name: Run Playwright tests
         run: npm run test:e2e
+        env:
+          RESEND_API_KEY: dummy_key_for_tests
+          FEEDBACK_RECIPIENT_EMAIL: test@example.com
+          FEEDBACK_FROM_EMAIL: noreply@example.com
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v5
@@ -115,6 +119,10 @@ jobs:
 
       - name: Build Next.js application
         run: npm run build
+        env:
+          RESEND_API_KEY: dummy_key_for_build
+          FEEDBACK_RECIPIENT_EMAIL: test@example.com
+          FEEDBACK_FROM_EMAIL: noreply@example.com
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v5
