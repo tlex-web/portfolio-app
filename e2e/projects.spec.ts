@@ -15,9 +15,12 @@ test.describe('Projects Page', () => {
   test('should navigate to project detail page', async ({ page }) => {
     await page.goto('/projects');
     
-    // Click first project link
-    const projectLink = page.getByRole('link', { name: /View Details|Learn More/i }).first();
+    // Click first project link (using aria-label that exists in ProjectCard)
+    const projectLink = page.getByRole('link', { name: /View details for/i }).first();
     await projectLink.click();
+    
+    // Wait for navigation
+    await page.waitForLoadState('domcontentloaded');
     
     // Should navigate to project detail page
     await expect(page).toHaveURL(/\/projects\/[\w-]+/);
