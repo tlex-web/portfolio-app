@@ -15,14 +15,19 @@ test.describe('Projects Page', () => {
   test('should navigate to project detail page', async ({ page }) => {
     await page.goto('/projects');
     
+    // Wait for project cards to load
+    await page.waitForSelector('[aria-label*="View details for"]', { state: 'visible' });
+    
     // Click first project link (using aria-label that exists in ProjectCard)
     const projectLink = page.getByRole('link', { name: /View details for/i }).first();
-    await projectLink.click();
     
-    // Wait for navigation
-    await page.waitForLoadState('domcontentloaded');
+    // Wait for navigation by using Promise.all
+    await Promise.all([
+      page.waitForURL(/\/projects\/[\w-]+/, { timeout: 10000 }),
+      projectLink.click()
+    ]);
     
-    // Should navigate to project detail page
+    // Verify we're on the project detail page
     await expect(page).toHaveURL(/\/projects\/[\w-]+/);
   });
 

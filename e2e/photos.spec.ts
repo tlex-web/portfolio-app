@@ -3,16 +3,20 @@ import { test, expect } from '@playwright/test';
 test.describe('Photo Gallery', () => {
   test('should display gallery grid', async ({ page }) => {
     await page.goto('/photos');
+    await page.waitForLoadState('networkidle');
     
     await expect(page.getByRole('heading', { name: /Landscape Gallery/i })).toBeVisible();
     
-    // Check that images are loaded
+    // Should have images
     const images = page.getByRole('button', { name: /View details for/i });
     await expect(images.first()).toBeVisible();
   });
 
   test('should open image detail modal when clicking on image', async ({ page }) => {
     await page.goto('/photos');
+    
+    // Wait for images to be fully loaded
+    await page.waitForLoadState('networkidle');
     
     // Click first image
     const firstImage = page.getByRole('button', { name: /View details for/i }).first();
@@ -21,27 +25,31 @@ test.describe('Photo Gallery', () => {
     // Modal should be visible
     await expect(page.getByRole('dialog')).toBeVisible();
     
-    // Should have close button
-    await expect(page.getByRole('button', { name: /Close/i })).toBeVisible();
+    // Should have close button (uses aria-label="Close modal")
+    await expect(page.getByLabel(/Close modal/i)).toBeVisible();
   });
 
   test('should close modal when clicking close button', async ({ page }) => {
     await page.goto('/photos');
+    await page.waitForLoadState('networkidle');
     
     // Open modal
-    await page.getByRole('button', { name: /View details for/i }).first().click();
+    const firstImage = page.getByRole('button', { name: /View details for/i }).first();
+    await firstImage.click();
     await expect(page.getByRole('dialog')).toBeVisible();
     
     // Close modal
-    await page.getByRole('button', { name: /Close/i }).click();
+    await page.getByLabel(/Close modal/i).click();
     await expect(page.getByRole('dialog')).not.toBeVisible();
   });
 
   test('should close modal when pressing Escape key', async ({ page }) => {
     await page.goto('/photos');
+    await page.waitForLoadState('networkidle');
     
     // Open modal
-    await page.getByRole('button', { name: /View details for/i }).first().click();
+    const firstImage = page.getByRole('button', { name: /View details for/i }).first();
+    await firstImage.click();
     await expect(page.getByRole('dialog')).toBeVisible();
     
     // Press Escape
@@ -51,6 +59,7 @@ test.describe('Photo Gallery', () => {
 
   test('should switch to 3D carousel view', async ({ page }) => {
     await page.goto('/photos');
+    await page.waitForLoadState('networkidle');
     
     // Click 3D view button
     await page.getByRole('button', { name: /3D Carousel/i }).click();
@@ -69,9 +78,7 @@ test.describe('Photo Gallery', () => {
 
   test('should switch between grid and 3D view', async ({ page }) => {
     await page.goto('/photos');
-    
-    // Wait for page to be loaded (but not networkidle - 3D animations prevent that)
-    await page.waitForLoadState('load');
+    await page.waitForLoadState('networkidle');
     
     // Check for view mode toggle buttons
     const gridButton = page.getByRole('button', { name: /Grid View|grid/i });
