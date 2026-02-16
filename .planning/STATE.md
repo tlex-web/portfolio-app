@@ -10,29 +10,29 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 Phase: 2 of 5 (Security & Reliability Hardening)
-Plan: 2 of 3 in current phase
-Status: Executing
-Last activity: 2026-02-16 — Completed 02-01 (nonce-based CSP via proxy.ts)
+Plan: 3 of 3 in current phase
+Status: Phase Complete
+Last activity: 2026-02-16 — Completed 02-03 (service worker cache invalidation)
 
-Progress: [####......] 40%
+Progress: [######....] 60%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 4.8min
-- Total execution time: 0.40 hours
+- Total plans completed: 6
+- Average duration: 4.7min
+- Total execution time: 0.47 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 3 | 16min | 5.3min |
-| 02 | 2 | 8min | 4.0min |
+| 02 | 3 | 12min | 4.0min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (10min), 01-02 (5min), 01-03 (1min), 02-02 (4min), 02-01 (4min)
-- Trend: improving
+- Last 5 plans: 01-02 (5min), 01-03 (1min), 02-02 (4min), 02-01 (4min), 02-03 (4min)
+- Trend: stable
 
 *Updated after each plan completion*
 
@@ -56,6 +56,8 @@ Recent decisions affecting current work:
 - [02-02]: First IP from x-forwarded-for chain for accurate client identification
 - [02-01]: Analytics/SpeedInsights rely on strict-dynamic trust propagation (no nonce prop in v1.6.1/v1.3.1)
 - [02-01]: Nonce read in root layout forces dynamic rendering for all routes (required for CSP nonces)
+- [02-03]: Cache invalidation by BUILD_HASH suffix matching -- simpler and more reliable than prefix-based filtering
+- [02-03]: Template-in-place pattern -- inject script modifies public/service-worker.js directly since Vercel deploys from public/
 
 ### Pending Todos
 
@@ -68,5 +70,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-16
-Stopped at: Completed 02-01-PLAN.md
-Resume file: .planning/phases/02-security-reliability-hardening/02-01-SUMMARY.md
+Stopped at: Completed 02-03-PLAN.md (Phase 2 complete)
+Resume file: .planning/phases/02-security-reliability-hardening/02-03-SUMMARY.md
