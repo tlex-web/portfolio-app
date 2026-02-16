@@ -17,6 +17,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "prebuild": "node scripts/optimize-images.mjs",
+    "postbuild": "node scripts/inject-build-hash.mjs",
     "optimize-images": "node scripts/optimize-images.mjs"
   },
   "keywords": [
