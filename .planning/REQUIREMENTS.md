@@ -86,29 +86,29 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DEPS-01 | — | Pending |
-| DEPS-02 | — | Pending |
-| SEC-01 | — | Pending |
-| SEC-02 | — | Pending |
-| REL-01 | — | Pending |
-| REL-02 | — | Pending |
-| QUAL-01 | — | Pending |
-| QUAL-02 | — | Pending |
-| DSGN-01 | — | Pending |
-| DSGN-02 | — | Pending |
-| DSGN-03 | — | Pending |
-| COMP-01 | — | Pending |
-| COMP-02 | — | Pending |
-| COMP-03 | — | Pending |
-| COMP-04 | — | Pending |
-| PERF-01 | — | Pending |
-| PERF-02 | — | Pending |
+| DEPS-01 | Phase 1 | Pending |
+| DEPS-02 | Phase 1 | Pending |
+| SEC-01 | Phase 2 | Pending |
+| SEC-02 | Phase 2 | Pending |
+| REL-01 | Phase 2 | Pending |
+| REL-02 | Phase 2 | Pending |
+| QUAL-01 | Phase 1 | Pending |
+| QUAL-02 | Phase 1 | Pending |
+| DSGN-01 | Phase 3 | Pending |
+| DSGN-02 | Phase 3 | Pending |
+| DSGN-03 | Phase 3 | Pending |
+| COMP-01 | Phase 4 | Pending |
+| COMP-02 | Phase 4 | Pending |
+| COMP-03 | Phase 4 | Pending |
+| COMP-04 | Phase 4 | Pending |
+| PERF-01 | Phase 5 | Pending |
+| PERF-02 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 17 total
-- Mapped to phases: 0
-- Unmapped: 17
+- Mapped to phases: 17
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-16*
-*Last updated: 2026-02-16 after initial definition*
+*Last updated: 2026-02-16 after roadmap creation*
