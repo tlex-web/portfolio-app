@@ -3,7 +3,7 @@
   "depth": "standard",
   "parallelization": true,
   "commit_docs": true,
-  "model_profile": "balanced",
+  "model_profile": "quality",
   "search_gitignored": false,
   "branching_strategy": "none",
   "phase_branch_template": "gsd/phase-{phase}-{slug}",
