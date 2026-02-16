@@ -12,26 +12,26 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 Phase: 3 of 5 (Design Foundation)
 Plan: 0 of ? in current phase
 Status: Planning needed
-Last activity: 2026-02-16 — Phase 2 complete (3/3 plans, verification passed)
+Last activity: 2026-02-17 — Phase 2 gap closure plan 04 complete (CSP fixes)
 
 Progress: [####......] 40%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 4.7min
-- Total execution time: 0.47 hours
+- Total plans completed: 7
+- Average duration: 4.1min
+- Total execution time: 0.48 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 3 | 16min | 5.3min |
-| 02 | 3 | 12min | 4.0min |
+| 02 | 3+1gc | 13min | 3.3min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (5min), 01-03 (1min), 02-02 (4min), 02-01 (4min), 02-03 (4min)
+- Last 5 plans: 01-03 (1min), 02-02 (4min), 02-01 (4min), 02-03 (4min), 02-04 (1min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -58,6 +58,8 @@ Recent decisions affecting current work:
 - [02-01]: Nonce read in root layout forces dynamic rendering for all routes (required for CSP nonces)
 - [02-03]: Cache invalidation by BUILD_HASH suffix matching -- simpler and more reliable than prefix-based filtering
 - [02-03]: Template-in-place pattern -- inject script modifies public/service-worker.js directly since Vercel deploys from public/
+- [02-04]: style-src 'unsafe-inline' required because CSP nonces cannot apply to style attributes, only style elements
+- [02-04]: connect-src allowlists only raw.githack.com (specific drei HDRI CDN), not a wildcard
 
 ### Pending Todos
 
@@ -69,6 +71,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-16
-Stopped at: Completed 02-03-PLAN.md (Phase 2 complete)
-Resume file: .planning/phases/02-security-reliability-hardening/02-03-SUMMARY.md
+Last session: 2026-02-17
+Stopped at: Completed 02-04-PLAN.md (gap closure)
+Resume file: .planning/phases/02-security-reliability-hardening/02-04-SUMMARY.md
