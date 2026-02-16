@@ -1,198 +1,218 @@
 {
-  "generatedAt": "2025-11-21T13:35:21.692Z",
-  "totalOriginalSize": 202746589,
-  "totalOptimizedSize": 83246217,
+  "generatedAt": "2026-02-16T19:59:56.015Z",
+  "totalOriginalSize": 39871634,
+  "totalOptimizedSize": 5484944,
   "images": [
     {
       "filename": "IMG_0605-Enhanced (2022_02_01 09_47_03 UTC).jpg",
-      "originalSize": 53683704,
+      "originalSize": 8265619,
       "optimizedSizes": {
-        "thumbnail_webp": {
-          "path": "IMG_0605-Enhanced (2022_02_01 09_47_03 UTC)-thumb.webp",
-          "size": 12910,
+        "sm_webp": {
+          "path": "IMG_0605-Enhanced (2022_02_01 09_47_03 UTC)-sm.webp",
+          "size": 23950,
+          "sizeMB": "0.02"
+        },
+        "sm_avif": {
+          "path": "IMG_0605-Enhanced (2022_02_01 09_47_03 UTC)-sm.avif",
+          "size": 12831,
           "sizeMB": "0.01"
         },
-        "thumbnail_jpeg": {
-          "path": "IMG_0605-Enhanced (2022_02_01 09_47_03 UTC)-thumb.jpg",
-          "size": 14566,
-          "sizeMB": "0.01"
+        "sm_jpeg": {
+          "path": "IMG_0605-Enhanced (2022_02_01 09_47_03 UTC)-sm.jpg",
+          "size": 27856,
+          "sizeMB": "0.03"
         },
-        "medium_webp": {
-          "path": "IMG_0605-Enhanced (2022_02_01 09_47_03 UTC)-medium.webp",
-          "size": 79610,
-          "sizeMB": "0.08"
+        "md_webp": {
+          "path": "IMG_0605-Enhanced (2022_02_01 09_47_03 UTC)-md.webp",
+          "size": 51674,
+          "sizeMB": "0.05"
         },
-        "medium_jpeg": {
-          "path": "IMG_0605-Enhanced (2022_02_01 09_47_03 UTC)-medium.jpg",
-          "size": 88887,
-          "sizeMB": "0.08"
+        "md_avif": {
+          "path": "IMG_0605-Enhanced (2022_02_01 09_47_03 UTC)-md.avif",
+          "size": 26583,
+          "sizeMB": "0.03"
         },
-        "large_webp": {
-          "path": "IMG_0605-Enhanced (2022_02_01 09_47_03 UTC)-large.webp",
-          "size": 269788,
-          "sizeMB": "0.26"
+        "md_jpeg": {
+          "path": "IMG_0605-Enhanced (2022_02_01 09_47_03 UTC)-md.jpg",
+          "size": 60937,
+          "sizeMB": "0.06"
         },
-        "large_jpeg": {
-          "path": "IMG_0605-Enhanced (2022_02_01 09_47_03 UTC)-large.jpg",
-          "size": 306854,
-          "sizeMB": "0.29"
+        "lg_webp": {
+          "path": "IMG_0605-Enhanced (2022_02_01 09_47_03 UTC)-lg.webp",
+          "size": 154734,
+          "sizeMB": "0.15"
         },
-        "original_webp": {
-          "path": "IMG_0605-Enhanced (2022_02_01 09_47_03 UTC).webp",
-          "size": 6471410,
-          "sizeMB": "6.17"
+        "lg_avif": {
+          "path": "IMG_0605-Enhanced (2022_02_01 09_47_03 UTC)-lg.avif",
+          "size": 76649,
+          "sizeMB": "0.07"
         },
-        "original_jpeg": {
-          "path": "IMG_0605-Enhanced (2022_02_01 09_47_03 UTC).jpg",
-          "size": 8265619,
-          "sizeMB": "7.88"
+        "lg_jpeg": {
+          "path": "IMG_0605-Enhanced (2022_02_01 09_47_03 UTC)-lg.jpg",
+          "size": 183063,
+          "sizeMB": "0.17"
         }
       }
     },
     {
       "filename": "IMG_0629-Enhanced (2022_07_29 07_19_54 UTC).jpg",
-      "originalSize": 81255950,
+      "originalSize": 17969936,
       "optimizedSizes": {
-        "thumbnail_webp": {
-          "path": "IMG_0629-Enhanced (2022_07_29 07_19_54 UTC)-thumb.webp",
-          "size": 28662,
+        "sm_webp": {
+          "path": "IMG_0629-Enhanced (2022_07_29 07_19_54 UTC)-sm.webp",
+          "size": 59204,
+          "sizeMB": "0.06"
+        },
+        "sm_avif": {
+          "path": "IMG_0629-Enhanced (2022_07_29 07_19_54 UTC)-sm.avif",
+          "size": 35084,
           "sizeMB": "0.03"
         },
-        "thumbnail_jpeg": {
-          "path": "IMG_0629-Enhanced (2022_07_29 07_19_54 UTC)-thumb.jpg",
-          "size": 25909,
-          "sizeMB": "0.02"
+        "sm_jpeg": {
+          "path": "IMG_0629-Enhanced (2022_07_29 07_19_54 UTC)-sm.jpg",
+          "size": 55079,
+          "sizeMB": "0.05"
         },
-        "medium_webp": {
-          "path": "IMG_0629-Enhanced (2022_07_29 07_19_54 UTC)-medium.webp",
-          "size": 217738,
-          "sizeMB": "0.21"
+        "md_webp": {
+          "path": "IMG_0629-Enhanced (2022_07_29 07_19_54 UTC)-md.webp",
+          "size": 141920,
+          "sizeMB": "0.14"
         },
-        "medium_jpeg": {
-          "path": "IMG_0629-Enhanced (2022_07_29 07_19_54 UTC)-medium.jpg",
-          "size": 201142,
-          "sizeMB": "0.19"
+        "md_avif": {
+          "path": "IMG_0629-Enhanced (2022_07_29 07_19_54 UTC)-md.avif",
+          "size": 81341,
+          "sizeMB": "0.08"
         },
-        "large_webp": {
-          "path": "IMG_0629-Enhanced (2022_07_29 07_19_54 UTC)-large.webp",
-          "size": 898026,
-          "sizeMB": "0.86"
+        "md_jpeg": {
+          "path": "IMG_0629-Enhanced (2022_07_29 07_19_54 UTC)-md.jpg",
+          "size": 133539,
+          "sizeMB": "0.13"
         },
-        "large_jpeg": {
-          "path": "IMG_0629-Enhanced (2022_07_29 07_19_54 UTC)-large.jpg",
-          "size": 773728,
-          "sizeMB": "0.74"
+        "lg_webp": {
+          "path": "IMG_0629-Enhanced (2022_07_29 07_19_54 UTC)-lg.webp",
+          "size": 484964,
+          "sizeMB": "0.46"
         },
-        "original_webp": {
-          "path": "IMG_0629-Enhanced (2022_07_29 07_19_54 UTC).webp",
-          "size": 17872984,
-          "sizeMB": "17.05"
+        "lg_avif": {
+          "path": "IMG_0629-Enhanced (2022_07_29 07_19_54 UTC)-lg.avif",
+          "size": 254206,
+          "sizeMB": "0.24"
         },
-        "original_jpeg": {
-          "path": "IMG_0629-Enhanced (2022_07_29 07_19_54 UTC).jpg",
-          "size": 17969936,
-          "sizeMB": "17.14"
+        "lg_jpeg": {
+          "path": "IMG_0629-Enhanced (2022_07_29 07_19_54 UTC)-lg.jpg",
+          "size": 446315,
+          "sizeMB": "0.43"
         }
       }
     },
     {
       "filename": "IMG_0662-Enhanced (2022_07_29 07_19_54 UTC).jpg",
-      "originalSize": 53549402,
+      "originalSize": 10694072,
       "optimizedSizes": {
-        "thumbnail_webp": {
-          "path": "IMG_0662-Enhanced (2022_07_29 07_19_54 UTC)-thumb.webp",
-          "size": 20816,
+        "sm_webp": {
+          "path": "IMG_0662-Enhanced (2022_07_29 07_19_54 UTC)-sm.webp",
+          "size": 41252,
+          "sizeMB": "0.04"
+        },
+        "sm_avif": {
+          "path": "IMG_0662-Enhanced (2022_07_29 07_19_54 UTC)-sm.avif",
+          "size": 25297,
           "sizeMB": "0.02"
         },
-        "thumbnail_jpeg": {
-          "path": "IMG_0662-Enhanced (2022_07_29 07_19_54 UTC)-thumb.jpg",
-          "size": 20581,
-          "sizeMB": "0.02"
+        "sm_jpeg": {
+          "path": "IMG_0662-Enhanced (2022_07_29 07_19_54 UTC)-sm.jpg",
+          "size": 42122,
+          "sizeMB": "0.04"
         },
-        "medium_webp": {
-          "path": "IMG_0662-Enhanced (2022_07_29 07_19_54 UTC)-medium.webp",
-          "size": 139460,
-          "sizeMB": "0.13"
+        "md_webp": {
+          "path": "IMG_0662-Enhanced (2022_07_29 07_19_54 UTC)-md.webp",
+          "size": 93122,
+          "sizeMB": "0.09"
         },
-        "medium_jpeg": {
-          "path": "IMG_0662-Enhanced (2022_07_29 07_19_54 UTC)-medium.jpg",
-          "size": 142367,
-          "sizeMB": "0.14"
+        "md_avif": {
+          "path": "IMG_0662-Enhanced (2022_07_29 07_19_54 UTC)-md.avif",
+          "size": 55853,
+          "sizeMB": "0.05"
         },
-        "large_webp": {
-          "path": "IMG_0662-Enhanced (2022_07_29 07_19_54 UTC)-large.webp",
-          "size": 494378,
-          "sizeMB": "0.47"
+        "md_jpeg": {
+          "path": "IMG_0662-Enhanced (2022_07_29 07_19_54 UTC)-md.jpg",
+          "size": 96947,
+          "sizeMB": "0.09"
         },
-        "large_jpeg": {
-          "path": "IMG_0662-Enhanced (2022_07_29 07_19_54 UTC)-large.jpg",
-          "size": 511368,
-          "sizeMB": "0.49"
+        "lg_webp": {
+          "path": "IMG_0662-Enhanced (2022_07_29 07_19_54 UTC)-lg.webp",
+          "size": 292828,
+          "sizeMB": "0.28"
         },
-        "original_webp": {
-          "path": "IMG_0662-Enhanced (2022_07_29 07_19_54 UTC).webp",
-          "size": 9254076,
-          "sizeMB": "8.83"
+        "lg_avif": {
+          "path": "IMG_0662-Enhanced (2022_07_29 07_19_54 UTC)-lg.avif",
+          "size": 171993,
+          "sizeMB": "0.16"
         },
-        "original_jpeg": {
-          "path": "IMG_0662-Enhanced (2022_07_29 07_19_54 UTC).jpg",
-          "size": 10694072,
-          "sizeMB": "10.20"
+        "lg_jpeg": {
+          "path": "IMG_0662-Enhanced (2022_07_29 07_19_54 UTC)-lg.jpg",
+          "size": 306460,
+          "sizeMB": "0.29"
         }
       }
     },
     {
       "filename": "R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC).jpg",
-      "originalSize": 14257533,
+      "originalSize": 2942007,
       "optimizedSizes": {
-        "thumbnail_webp": {
-          "path": "R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC)-thumb.webp",
-          "size": 28958,
-          "sizeMB": "0.03"
+        "sm_webp": {
+          "path": "R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC)-sm.webp",
+          "size": 64720,
+          "sizeMB": "0.06"
         },
-        "thumbnail_jpeg": {
-          "path": "R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC)-thumb.jpg",
-          "size": 27520,
-          "sizeMB": "0.03"
+        "sm_avif": {
+          "path": "R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC)-sm.avif",
+          "size": 41048,
+          "sizeMB": "0.04"
         },
-        "medium_webp": {
-          "path": "R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC)-medium.webp",
-          "size": 256910,
-          "sizeMB": "0.25"
+        "sm_jpeg": {
+          "path": "R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC)-sm.jpg",
+          "size": 61265,
+          "sizeMB": "0.06"
         },
-        "medium_jpeg": {
-          "path": "R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC)-medium.jpg",
-          "size": 227672,
-          "sizeMB": "0.22"
+        "md_webp": {
+          "path": "R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC)-md.webp",
+          "size": 163334,
+          "sizeMB": "0.16"
         },
-        "large_webp": {
-          "path": "R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC)-large.webp",
-          "size": 1078914,
-          "sizeMB": "1.03"
+        "md_avif": {
+          "path": "R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC)-md.avif",
+          "size": 101189,
+          "sizeMB": "0.10"
         },
-        "large_jpeg": {
-          "path": "R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC)-large.jpg",
-          "size": 923451,
-          "sizeMB": "0.88"
+        "md_jpeg": {
+          "path": "R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC)-md.jpg",
+          "size": 149670,
+          "sizeMB": "0.14"
         },
-        "original_webp": {
-          "path": "R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC).webp",
-          "size": 2985898,
-          "sizeMB": "2.85"
+        "lg_webp": {
+          "path": "R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC)-lg.webp",
+          "size": 599364,
+          "sizeMB": "0.57"
         },
-        "original_jpeg": {
-          "path": "R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC).jpg",
-          "size": 2942007,
-          "sizeMB": "2.81"
+        "lg_avif": {
+          "path": "R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC)-lg.avif",
+          "size": 351494,
+          "sizeMB": "0.34"
+        },
+        "lg_jpeg": {
+          "path": "R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC)-lg.jpg",
+          "size": 517057,
+          "sizeMB": "0.49"
         }
       }
     }
   ],
   "summary": {
     "totalImages": 4,
-    "totalOriginalSizeMB": "193.35",
-    "totalOptimizedSizeMB": "79.39",
-    "totalSavedMB": "113.96",
-    "percentSaved": "58.9%"
+    "totalOriginalSizeMB": "38.02",
+    "totalOptimizedSizeMB": "5.23",
+    "totalSavedMB": "32.79",
+    "percentSaved": "86.2%"
   }
 }
