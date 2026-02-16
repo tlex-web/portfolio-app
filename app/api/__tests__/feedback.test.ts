@@ -1,34 +1,47 @@
 /**
  * @jest-environment node
  */
-import { POST } from '../feedback/route';
-import { NextRequest } from 'next/server';
 
-// Mock the email service
+// Mocks must be declared before imports
 jest.mock('@/lib/email', () => ({
   sendFeedbackEmail: jest.fn(),
 }));
 
+jest.mock('@/lib/csrf', () => ({
+  validateOrigin: jest.fn(),
+}));
+
+jest.mock('@/lib/rate-limit', () => ({
+  feedbackRateLimit: { limit: jest.fn() },
+}));
+
+import { POST } from '../feedback/route';
+import { NextRequest } from 'next/server';
 import { sendFeedbackEmail } from '@/lib/email';
+import { validateOrigin } from '@/lib/csrf';
+import { feedbackRateLimit } from '@/lib/rate-limit';
 
 // Mock console methods
 const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
 const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
 
 describe('Feedback API Route', () => {
-  let testCounter = 0;
-
   beforeEach(() => {
     consoleLogSpy.mockClear();
     consoleErrorSpy.mockClear();
+    consoleWarnSpy.mockClear();
     (sendFeedbackEmail as jest.Mock).mockClear();
     (sendFeedbackEmail as jest.Mock).mockResolvedValue(undefined);
-    testCounter++;
+    // Default: CSRF passes, rate limit passes
+    (validateOrigin as jest.Mock).mockReturnValue(true);
+    (feedbackRateLimit.limit as jest.Mock).mockResolvedValue({ success: true, limit: 5, remaining: 4, reset: 0 });
   });
 
   afterAll(() => {
     consoleLogSpy.mockRestore();
     consoleErrorSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
   });
 
   interface FeedbackRequestBody {
@@ -41,7 +54,7 @@ describe('Feedback API Route', () => {
   const createMockRequest = (body: Partial<FeedbackRequestBody> & Record<string, unknown>, headers: Record<string, string> = {}) => {
     return {
       json: async () => body,
-      headers: new Map(Object.entries({ 'x-forwarded-for': `192.168.1.${testCounter}`, ...headers })),
+      headers: new Map(Object.entries({ 'x-forwarded-for': '192.168.1.1', ...headers })),
     } as unknown as NextRequest;
   };
 
@@ -166,57 +179,99 @@ describe('Feedback API Route', () => {
     });
   });
 
-  describe('Rate Limiting', () => {
-    it('allows requests within rate limit', async () => {
+  describe('CSRF Protection', () => {
+    it('rejects cross-origin requests', async () => {
+      (validateOrigin as jest.Mock).mockReturnValue(false);
+
       const request = createMockRequest({
         name: 'John Doe',
         email: 'john@example.com',
         message: 'This is a test message.',
-      }, { 'x-forwarded-for': '10.0.0.1' });
+      });
 
-      // Should allow first 5 requests
-      for (let i = 0; i < 5; i++) {
-        const response = await POST(request);
-        expect(response.status).toBe(200);
-      }
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(data.error).toBe('Your session may have expired. Please refresh and resubmit.');
     });
 
-    it('blocks requests exceeding rate limit', async () => {
+    it('allows same-origin requests', async () => {
+      (validateOrigin as jest.Mock).mockReturnValue(true);
+
       const request = createMockRequest({
         name: 'John Doe',
         email: 'john@example.com',
         message: 'This is a test message.',
-      }, { 'x-forwarded-for': '10.0.0.2' });
+      });
 
-      // Send 5 requests (at the limit)
-      for (let i = 0; i < 5; i++) {
-        await POST(request);
-      }
+      const response = await POST(request);
+      const data = await response.json();
 
-      // 6th request should be blocked
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+    });
+  });
+
+  describe('Rate Limiting', () => {
+    it('allows when rate limit not exceeded', async () => {
+      (feedbackRateLimit.limit as jest.Mock).mockResolvedValue({ success: true, limit: 5, remaining: 4, reset: 0 });
+
+      const request = createMockRequest({
+        name: 'John Doe',
+        email: 'john@example.com',
+        message: 'This is a test message.',
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+    });
+
+    it('rejects when rate limit exceeded', async () => {
+      (feedbackRateLimit.limit as jest.Mock).mockResolvedValue({ success: false, limit: 5, remaining: 0, reset: 1000 });
+
+      const request = createMockRequest({
+        name: 'John Doe',
+        email: 'john@example.com',
+        message: 'This is a test message.',
+      });
+
       const response = await POST(request);
       const data = await response.json();
 
       expect(response.status).toBe(429);
-      expect(data.error).toContain('Too many requests');
+      expect(data.error).toBe('Please wait a bit before sending another message.');
     });
 
-    it('uses x-real-ip header when x-forwarded-for is not available', async () => {
+    it('extracts IP from x-forwarded-for header', async () => {
       const request = createMockRequest({
         name: 'John Doe',
         email: 'john@example.com',
         message: 'This is a test message.',
-      }, { 'x-real-ip': '10.0.0.3' });
+      }, { 'x-forwarded-for': '203.0.113.42, 10.0.0.1' });
 
-      // Remove x-forwarded-for
-      delete (request.headers as any).get;
-      (request.headers as any).get = (key: string) => {
-        if (key === 'x-real-ip') return '10.0.0.3';
-        return null;
-      };
+      await POST(request);
 
-      const response = await POST(request);
-      expect(response.status).toBe(200);
+      // Rate limiter should be called with the first IP in the chain
+      expect(feedbackRateLimit.limit).toHaveBeenCalledWith('203.0.113.42');
+    });
+
+    it('falls back to x-real-ip when x-forwarded-for is not available', async () => {
+      const request = {
+        json: async () => ({
+          name: 'John Doe',
+          email: 'john@example.com',
+          message: 'This is a test message.',
+        }),
+        headers: new Map<string, string>([['x-real-ip', '10.0.0.3']]),
+      } as unknown as NextRequest;
+
+      await POST(request);
+
+      expect(feedbackRateLimit.limit).toHaveBeenCalledWith('10.0.0.3');
     });
   });
 
@@ -303,7 +358,7 @@ describe('Feedback API Route', () => {
       // Request should still succeed
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      
+
       // But error should be logged
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         'Failed to send email notification:',

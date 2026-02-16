@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { sendFeedbackEmail } from '@/lib/email';
+import { validateOrigin } from '@/lib/csrf';
+import { feedbackRateLimit } from '@/lib/rate-limit';
 
 // Define and validate input schema
 const feedbackSchema = z.object({
@@ -10,34 +12,41 @@ const feedbackSchema = z.object({
   interestedInCollaboration: z.boolean().optional(),
 });
 
-// Simple in-memory rate limiting (for production, use Redis or similar)
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const limit = rateLimitMap.get(ip);
-
-  if (!limit || now > limit.resetTime) {
-    // Reset or create new limit (5 requests per hour)
-    rateLimitMap.set(ip, { count: 1, resetTime: now + 60 * 60 * 1000 });
-    return true;
-  }
-
-  if (limit.count >= 5) {
-    return false;
-  }
-
-  limit.count++;
-  return true;
-}
-
 export async function POST(request: NextRequest) {
   try {
-    // Check rate limit
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
-    if (!checkRateLimit(ip)) {
+    // Extract IP for logging and rate limiting
+    const forwarded = request.headers.get('x-forwarded-for');
+    const ip = (forwarded ? forwarded.split(',')[0].trim() : null)
+      || request.headers.get('x-real-ip')
+      || 'unknown';
+
+    // CSRF check: reject cross-origin requests
+    if (!validateOrigin(request)) {
+      const origin = request.headers.get('origin') ?? 'none';
+      const host = request.headers.get('host') ?? 'none';
+      console.warn('[csrf] Cross-origin request rejected', {
+        event: 'csrf',
+        ip,
+        origin,
+        host,
+        timestamp: new Date().toISOString(),
+      });
       return NextResponse.json(
-        { error: 'Too many requests. Please try again later.' },
+        { error: 'Your session may have expired. Please refresh and resubmit.' },
+        { status: 403 }
+      );
+    }
+
+    // Rate limit check: persistent via Upstash Redis
+    const { success } = await feedbackRateLimit.limit(ip);
+    if (!success) {
+      console.warn('[rate-limit] Rate limit exceeded', {
+        event: 'ratelimit',
+        ip,
+        timestamp: new Date().toISOString(),
+      });
+      return NextResponse.json(
+        { error: 'Please wait a bit before sending another message.' },
         { status: 429 }
       );
     }
@@ -72,7 +81,6 @@ export async function POST(request: NextRequest) {
       // Log email error but don't fail the request
       // This allows form submissions to succeed even if email fails
       console.error('Failed to send email notification:', emailError);
-      // In production, you might want to queue this for retry or alert monitoring
     }
 
     // Success response
@@ -94,4 +102,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
