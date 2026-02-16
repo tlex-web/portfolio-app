@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { Analytics } from '@vercel/analytics/react';
+import { headers } from 'next/headers';
+import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration';
 import './globals.css';
@@ -10,19 +11,21 @@ export const metadata: Metadata = {
     'Personal portfolio showcasing landscape photography and programming projects',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Read nonce from proxy.ts x-nonce header -- forces dynamic rendering
+  // so Next.js can auto-inject nonces into all framework scripts
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
+
   return (
     <html lang="en">
       <head>
         {/* Resource Hints for Performance */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://vercel.com" />
-        
+
         {/* Prefetch Common Routes */}
         <link rel="prefetch" href="/projects" />
         <link rel="prefetch" href="/photos" />
@@ -36,6 +39,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-
-
