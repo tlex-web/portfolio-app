@@ -1,9 +1,9 @@
 ---
-status: complete
+status: diagnosed
 phase: 01-dependency-resolution-code-quality
 source: 01-01-SUMMARY.md, 01-02-SUMMARY.md
 started: 2026-02-16T21:00:00Z
-updated: 2026-02-16T21:10:00Z
+updated: 2026-02-16T21:12:00Z
 ---
 
 ## Current Test
@@ -49,7 +49,10 @@ skipped: 0
   reason: "User reported: React does not recognize the `blurDataURL` prop on a DOM element in GalleryGrid test. Console.error warning at GalleryGrid.test.tsx:72 during render."
   severity: minor
   test: 3
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Next.js Image mock in test spreads Next.js-specific props (blurDataURL, placeholder, loading, sizes) directly to DOM <img> element via ...rest"
+  artifacts:
+    - path: "components/__tests__/GalleryGrid.test.tsx"
+      issue: "Image mock destructures only `fill` but spreads remaining Next.js-specific props to <img> tag"
+  missing:
+    - "Destructure blurDataURL, placeholder, loading, sizes in the mock to prevent them reaching the DOM <img>"
+  debug_session: ".planning/debug/resolved/blur-data-url-prop-warning.md"
