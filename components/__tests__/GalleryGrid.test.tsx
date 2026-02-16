@@ -6,7 +6,7 @@ import { LandscapeImage } from '@/data/types';
 // Mock Next.js Image component
 jest.mock('next/image', () => ({
   __esModule: true,
-  default: (props: any) => {
+  default: (props: { fill?: boolean; src?: string; alt?: string; [key: string]: unknown }) => {
     const { fill, ...rest } = props;
     return <img {...rest} />;
   },
@@ -15,7 +15,7 @@ jest.mock('next/image', () => ({
 // Mock ImageDetailModal
 jest.mock('../ImageDetailModal', () => ({
   __esModule: true,
-  default: ({ image, onClose }: any) => {
+  default: ({ image, onClose }: { image: LandscapeImage | null; onClose: () => void }) => {
     if (!image) return null;
     return (
       <div data-testid="image-detail-modal">

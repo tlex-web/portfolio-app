@@ -4,11 +4,11 @@ import { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Environment, Stars } from '@react-three/drei';
 import * as THREE from 'three';
-import { useScroll, useTransform } from 'framer-motion';
+import { useScroll, useTransform, type MotionValue } from 'framer-motion';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 
 interface MountainProps {
-  scrollProgress: any;
+  scrollProgress: MotionValue<number>;
   prefersReducedMotion: boolean;
 }
 
@@ -175,6 +175,7 @@ interface MountainTerrain3DProps {
   className?: string;
 }
 
+/** Full-screen 3D mountain terrain scene with snow particles, stars, and scroll-linked animation. */
 export default function MountainTerrain3D({ className = '' }: MountainTerrain3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = useReducedMotion();

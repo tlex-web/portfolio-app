@@ -1,5 +1,11 @@
 // Data types for the portfolio application
 
+/** Primitive value types that can appear in project highlights. */
+type HighlightPrimitive = string | number | boolean;
+
+/** Recursive type for nested highlight data structures. */
+export type HighlightValue = HighlightPrimitive | HighlightValue[] | { [key: string]: HighlightValue };
+
 export interface LandscapeImage {
   id: string; // Unique identifier
   src: string; // Path to image file
@@ -40,7 +46,7 @@ export interface Project {
   roadmapItems?: string[]; // IDs of related RoadmapItems
   version?: string; // Current version
   features?: string[]; // Key features list
-  highlights?: Record<string, any>; // Performance metrics, stats, etc.
+  highlights?: Record<string, HighlightValue>; // Performance metrics, stats, etc.
   demoCommands?: DemoCommand[]; // For CLI tools - example commands
 }
 

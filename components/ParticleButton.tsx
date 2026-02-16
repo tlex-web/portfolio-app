@@ -34,6 +34,7 @@ interface ParticleButtonProps {
   href?: string;
 }
 
+/** Interactive button or anchor with configurable particle effects on click and hover. */
 export default function ParticleButton({
   children,
   onClick,
@@ -187,34 +188,16 @@ export default function ParticleButton({
     onClick?.();
   };
 
-  const Component = href ? 'a' : 'button';
-  
-  // Common props for both button and anchor
-  const commonProps = {
+  const sharedHandlers = {
     onClick: handleClick,
     onMouseEnter: () => setIsHovered(true),
     onMouseLeave: () => setIsHovered(false),
     onMouseMove: handleMouseMove,
-    className,
   };
+  const style = { position: 'relative' as const, display: 'inline-block' as const };
 
-  const props: any = href 
-    ? { 
-        ...commonProps,
-        ref: anchorRef,
-        href,
-      }
-    : { 
-        ...commonProps,
-        ref: buttonRef,
-        type,
-        disabled,
-      };
-
-  return (
-    <Component {...props} style={{ position: 'relative', display: 'inline-block' }}>
-      {children}
-      
+  const particleOverlay = (
+    <>
       {/* Particle Container */}
       <div className="absolute inset-0 pointer-events-none overflow-visible" style={{ zIndex: -1 }}>
         <AnimatePresence>
@@ -283,7 +266,23 @@ export default function ParticleButton({
           }}
         />
       )}
-    </Component>
+    </>
+  );
+
+  if (href) {
+    return (
+      <a ref={anchorRef} {...sharedHandlers} href={href} className={className} style={style}>
+        {children}
+        {particleOverlay}
+      </a>
+    );
+  }
+
+  return (
+    <button ref={buttonRef} {...sharedHandlers} type={type} disabled={disabled} className={className} style={style}>
+      {children}
+      {particleOverlay}
+    </button>
   );
 }
 

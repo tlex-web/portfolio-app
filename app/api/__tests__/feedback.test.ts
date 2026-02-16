@@ -31,7 +31,14 @@ describe('Feedback API Route', () => {
     consoleErrorSpy.mockRestore();
   });
 
-  const createMockRequest = (body: any, headers: Record<string, string> = {}) => {
+  interface FeedbackRequestBody {
+    name: string;
+    email: string;
+    message: string;
+    interestedInCollaboration?: boolean;
+  }
+
+  const createMockRequest = (body: Partial<FeedbackRequestBody> & Record<string, unknown>, headers: Record<string, string> = {}) => {
     return {
       json: async () => body,
       headers: new Map(Object.entries({ 'x-forwarded-for': `192.168.1.${testCounter}`, ...headers })),

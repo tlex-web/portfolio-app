@@ -1,14 +1,19 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import type { HighlightValue } from '@/data/types';
 
+/** Props for the ProjectHighlights component. */
 interface ProjectHighlightsProps {
-  highlights: Record<string, any>;
+  /** Key-value map of highlight sections to display. */
+  highlights: Record<string, HighlightValue>;
+  /** Optional heading above the highlights grid. */
   title?: string;
 }
 
+/** Renders a grid of project highlight cards with recursive value display. */
 export default function ProjectHighlights({ highlights, title = 'Project Highlights' }: ProjectHighlightsProps) {
-  const renderValue = (value: any): React.ReactNode => {
+  const renderValue = (value: HighlightValue): React.ReactNode => {
     if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
       return <span className="text-cyan-600 dark:text-cyan-400 font-semibold">{String(value)}</span>;
     }
