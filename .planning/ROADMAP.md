@@ -44,11 +44,12 @@ Plans:
   2. Submitting the feedback form from a different origin (cross-site) is rejected with a CSRF validation error
   3. Rate limiting persists after a new deployment -- hitting the rate limit, redeploying, and retrying still shows the user as rate-limited (not reset)
   4. After a new deployment, the service worker cache version changes automatically -- stale cached assets are invalidated without manual intervention
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [ ] 02-01-PLAN.md — Nonce-based CSP via proxy.ts with layout nonce propagation
+- [ ] 02-02-PLAN.md — CSRF protection and persistent Upstash rate limiting on feedback endpoint
+- [ ] 02-03-PLAN.md — Service worker build-hash cache invalidation with per-asset caching strategies
 
 ### Phase 3: Design Foundation
 **Goal**: The site has a defined visual language -- custom colors and typography that express the organic-meets-digital aesthetic -- verified for accessibility
@@ -99,7 +100,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Dependency Resolution & Code Quality | 3/3 | Complete | 2026-02-16 |
-| 2. Security & Reliability Hardening | 0/? | Not started | - |
+| 2. Security & Reliability Hardening | 0/3 | Not started | - |
 | 3. Design Foundation | 0/? | Not started | - |
 | 4. Design Components | 0/? | Not started | - |
 | 5. Performance & Accessibility Polish | 0/? | Not started | - |
