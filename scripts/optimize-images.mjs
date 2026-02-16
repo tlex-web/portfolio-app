@@ -2,21 +2,21 @@
 
 /**
  * Image Optimization Script for Portfolio App
- * 
- * This script optimizes images in the public/images directory for production use.
- * It creates web-optimized versions (WebP + optimized JPEG) with multiple sizes
- * for responsive loading.
- * 
+ *
+ * Optimizes source images in public/images/optimized/ for production use.
+ * Creates responsive variants (640, 1024, 1920) in WebP, AVIF, and JPEG formats.
+ *
  * Features:
- * - Converts to WebP format (better compression)
- * - Creates multiple responsive sizes (thumbnail, medium, large, original)
- * - Preserves EXIF data
+ * - Converts to WebP and AVIF formats (superior compression)
+ * - Creates responsive sizes: sm (640), md (1024), lg (1920)
  * - Generates optimized JPEGs as fallback
+ * - Idempotent: skips processing when outputs are up-to-date
+ * - Handles missing source images gracefully (exit 0)
  * - Creates a manifest file for tracking
- * 
+ *
  * Usage:
  *   npm run optimize-images
- *   node scripts/optimize-images.mjs --input ./public/images/landscapes --quality 85
+ *   node scripts/optimize-images.mjs
  */
 
 import sharp from 'sharp';
@@ -29,27 +29,30 @@ const __dirname = path.dirname(__filename);
 
 // Configuration
 const CONFIG = {
-  inputDir: path.join(__dirname, '..', 'public', 'images', 'landscapes'),
+  // Input and output are the same directory: source images live alongside optimized variants
+  inputDir: path.join(__dirname, '..', 'public', 'images', 'optimized'),
   outputDir: path.join(__dirname, '..', 'public', 'images', 'optimized'),
   quality: {
-    webp: 85,
-    jpeg: 85,
+    webp: 82,
+    avif: 50,
+    jpeg: 82,
   },
   sizes: {
-    thumbnail: { width: 400, suffix: '-thumb' },
-    medium: { width: 1200, suffix: '-medium' },
-    large: { width: 2400, suffix: '-large' },
-    original: { width: null, suffix: '' }, // Keep original dimensions but optimize
+    sm: { width: 640, suffix: '-sm' },
+    md: { width: 1024, suffix: '-md' },
+    lg: { width: 1920, suffix: '-lg' },
   },
-  formats: ['webp', 'jpeg'],
-  preserveMetadata: true,
+  formats: ['webp', 'avif', 'jpeg'],
 };
+
+// Suffixes used by old and new variants -- used to filter source images
+const VARIANT_SUFFIXES = ['-thumb', '-medium', '-large', '-sm', '-md', '-lg'];
 
 // Parse command line arguments
 function parseArgs() {
   const args = process.argv.slice(2);
   const config = { ...CONFIG };
-  
+
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--input' && args[i + 1]) {
       config.inputDir = path.resolve(args[i + 1]);
@@ -62,18 +65,72 @@ function parseArgs() {
       config.quality.webp = quality;
       config.quality.jpeg = quality;
       i++;
+    } else if (args[i] === '--force') {
+      config.force = true;
     }
   }
-  
+
   return config;
 }
 
-// Get all image files from directory
+// Get source image files from directory (only original-size JPEGs, no variants)
 async function getImageFiles(dir) {
-  const files = await fs.readdir(dir);
-  return files.filter(file => 
-    /\.(jpg|jpeg|png|tiff)$/i.test(file)
-  );
+  let files;
+  try {
+    files = await fs.readdir(dir);
+  } catch {
+    return [];
+  }
+
+  return files.filter((file) => {
+    // Only JPEG/PNG/TIFF source files
+    if (!/\.(jpg|jpeg|png|tiff)$/i.test(file)) return false;
+
+    // Exclude variant files (those with size suffixes before extension)
+    const baseName = file.replace(/\.(jpg|jpeg|png|tiff)$/i, '');
+    return !VARIANT_SUFFIXES.some((suffix) => baseName.endsWith(suffix));
+  });
+}
+
+// Build the list of expected output files for a given source image
+function getExpectedOutputs(filename, config) {
+  const outputs = [];
+  for (const sizeConfig of Object.values(config.sizes)) {
+    for (const format of config.formats) {
+      const ext = format === 'jpeg' ? 'jpg' : format;
+      const outputFilename = filename.replace(
+        /\.(jpg|jpeg|png|tiff)$/i,
+        `${sizeConfig.suffix}.${ext}`
+      );
+      outputs.push(outputFilename);
+    }
+  }
+  return outputs;
+}
+
+// Check if all outputs exist and are newer than the source file
+async function isUpToDate(sourceFile, config) {
+  const sourcePath = path.join(config.inputDir, sourceFile);
+  let sourceStat;
+  try {
+    sourceStat = await fs.stat(sourcePath);
+  } catch {
+    return false;
+  }
+
+  const expectedOutputs = getExpectedOutputs(sourceFile, config);
+  for (const output of expectedOutputs) {
+    const outputPath = path.join(config.outputDir, output);
+    try {
+      const outputStat = await fs.stat(outputPath);
+      if (outputStat.mtimeMs < sourceStat.mtimeMs) {
+        return false; // Output is older than source
+      }
+    } catch {
+      return false; // Output does not exist
+    }
+  }
+  return true;
 }
 
 // Optimize single image
@@ -90,46 +147,49 @@ async function optimizeImage(inputPath, outputDir, filename, config) {
 
     const image = sharp(inputPath);
     const metadata = await image.metadata();
-    
-    console.log(`\n📸 Processing: ${filename}`);
-    console.log(`   Original: ${(stats.originalSize / 1024 / 1024).toFixed(2)} MB (${metadata.width}x${metadata.height})`);
+
+    console.log(`\nProcessing: ${filename}`);
+    console.log(
+      `   Original: ${(stats.originalSize / 1024 / 1024).toFixed(2)} MB (${metadata.width}x${metadata.height})`
+    );
 
     // Process each size variant
     for (const [sizeName, sizeConfig] of Object.entries(config.sizes)) {
-      let processor = image.clone();
-
-      // Resize if width is specified
-      if (sizeConfig.width) {
-        processor = processor.resize({
-          width: sizeConfig.width,
-          withoutEnlargement: true,
-          fit: 'inside',
-        });
-      }
+      // Resize
+      let resized = image.clone().resize({
+        width: sizeConfig.width,
+        withoutEnlargement: true,
+        fit: 'inside',
+      });
 
       // Process each format
       for (const format of config.formats) {
         const ext = format === 'jpeg' ? 'jpg' : format;
-        const outputFilename = filename
-          .replace(/\.(jpg|jpeg|png|tiff)$/i, `${sizeConfig.suffix}.${ext}`);
+        const outputFilename = filename.replace(
+          /\.(jpg|jpeg|png|tiff)$/i,
+          `${sizeConfig.suffix}.${ext}`
+        );
         const outputPath = path.join(outputDir, outputFilename);
 
+        let processor;
         // Configure format-specific options
         if (format === 'webp') {
-          processor = processor.clone().webp({
+          processor = resized.clone().webp({
             quality: config.quality.webp,
-            effort: 6, // Higher effort = better compression (0-6)
+            effort: 6,
+          });
+        } else if (format === 'avif') {
+          processor = resized.clone().avif({
+            quality: config.quality.avif,
+            effort: 4,
           });
         } else if (format === 'jpeg') {
-          processor = processor.clone().jpeg({
+          processor = resized.clone().jpeg({
             quality: config.quality.jpeg,
             progressive: true,
-            mozjpeg: true, // Use mozjpeg for better compression
+            mozjpeg: true,
           });
         }
-
-        // Don't preserve metadata to avoid EXIF parsing issues
-        // The withMetadata call was causing errors with some images
 
         // Save the file
         await processor.toFile(outputPath);
@@ -142,14 +202,19 @@ async function optimizeImage(inputPath, outputDir, filename, config) {
           sizeMB: (outputStats.size / 1024 / 1024).toFixed(2),
         };
 
-        const saved = ((1 - outputStats.size / stats.originalSize) * 100).toFixed(1);
-        console.log(`   ✓ ${sizeName} (${format}): ${(outputStats.size / 1024 / 1024).toFixed(2)} MB (${saved}% smaller)`);
+        const saved = (
+          (1 - outputStats.size / stats.originalSize) *
+          100
+        ).toFixed(1);
+        console.log(
+          `   + ${sizeName} (${format}): ${(outputStats.size / 1024 / 1024).toFixed(2)} MB (${saved}% smaller)`
+        );
       }
     }
 
     return stats;
   } catch (error) {
-    console.error(`   ✗ Error processing ${filename}:`, error.message);
+    console.error(`   x Error processing ${filename}:`, error.message);
     return null;
   }
 }
@@ -160,24 +225,31 @@ async function generateManifest(optimizationStats, outputDir) {
     generatedAt: new Date().toISOString(),
     totalOriginalSize: 0,
     totalOptimizedSize: 0,
-    images: optimizationStats.filter(s => s !== null),
+    images: optimizationStats.filter((s) => s !== null),
   };
 
   // Calculate totals
-  manifest.images.forEach(img => {
+  manifest.images.forEach((img) => {
     manifest.totalOriginalSize += img.originalSize;
-    Object.values(img.optimizedSizes).forEach(size => {
+    Object.values(img.optimizedSizes).forEach((size) => {
       manifest.totalOptimizedSize += size.size;
     });
   });
 
   const totalSaved = manifest.totalOriginalSize - manifest.totalOptimizedSize;
-  const percentSaved = ((totalSaved / manifest.totalOriginalSize) * 100).toFixed(1);
+  const percentSaved = (
+    (totalSaved / manifest.totalOriginalSize) *
+    100
+  ).toFixed(1);
 
   manifest.summary = {
     totalImages: manifest.images.length,
     totalOriginalSizeMB: (manifest.totalOriginalSize / 1024 / 1024).toFixed(2),
-    totalOptimizedSizeMB: (manifest.totalOptimizedSize / 1024 / 1024).toFixed(2),
+    totalOptimizedSizeMB: (
+      manifest.totalOptimizedSize /
+      1024 /
+      1024
+    ).toFixed(2),
     totalSavedMB: (totalSaved / 1024 / 1024).toFixed(2),
     percentSaved: `${percentSaved}%`,
   };
@@ -188,74 +260,17 @@ async function generateManifest(optimizationStats, outputDir) {
   return manifest;
 }
 
-// Generate usage guide
-function generateUsageGuide(manifest, config) {
+// Print summary
+function printSummary(manifest) {
   console.log('\n' + '='.repeat(70));
-  console.log('📊 OPTIMIZATION COMPLETE');
+  console.log('OPTIMIZATION COMPLETE');
   console.log('='.repeat(70));
-  console.log(`\n✅ Processed: ${manifest.summary.totalImages} images`);
-  console.log(`📦 Original size: ${manifest.summary.totalOriginalSizeMB} MB`);
-  console.log(`🚀 Optimized size: ${manifest.summary.totalOptimizedSizeMB} MB`);
-  console.log(`💾 Total saved: ${manifest.summary.totalSavedMB} MB (${manifest.summary.percentSaved})`);
-  
-  console.log('\n' + '-'.repeat(70));
-  console.log('📝 NEXT STEPS:');
-  console.log('-'.repeat(70));
-  console.log('\n1. Update your data/landscapes.ts to use optimized images:');
-  console.log('\n   // Before:');
-  console.log('   src: \'/images/landscapes/IMG_0605-Enhanced.jpg\'');
-  console.log('\n   // After (use WebP with JPEG fallback):');
-  console.log('   src: \'/images/optimized/IMG_0605-Enhanced-large.webp\'');
-  console.log('   fallback: \'/images/optimized/IMG_0605-Enhanced-large.jpg\'');
-  
-  console.log('\n2. Implement responsive images in your components:');
-  console.log(`
-   <Image
-     src="/images/optimized/IMG_0605-Enhanced-large.webp"
-     alt="..."
-     width={2400}
-     height={1600}
-     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-     quality={85}
-   />
-  `);
-  
-  console.log('\n3. Use srcSet for responsive loading:');
-  console.log(`
-   <picture>
-     <source
-       type="image/webp"
-       srcSet="
-         /images/optimized/IMG_0605-Enhanced-thumb.webp 400w,
-         /images/optimized/IMG_0605-Enhanced-medium.webp 1200w,
-         /images/optimized/IMG_0605-Enhanced-large.webp 2400w
-       "
-     />
-     <source
-       type="image/jpeg"
-       srcSet="
-         /images/optimized/IMG_0605-Enhanced-thumb.jpg 400w,
-         /images/optimized/IMG_0605-Enhanced-medium.jpg 1200w,
-         /images/optimized/IMG_0605-Enhanced-large.jpg 2400w
-       "
-     />
-     <img src="/images/optimized/IMG_0605-Enhanced-large.jpg" alt="..." />
-   </picture>
-  `);
-  
-  console.log('\n4. Consider implementing lazy loading:');
-  console.log(`
-   <Image
-     src="/images/optimized/..."
-     alt="..."
-     loading="lazy"
-     placeholder="blur"
-     blurDataURL="/images/optimized/...-thumb.webp"
-   />
-  `);
-  
-  console.log('\n' + '='.repeat(70));
-  console.log(`📄 Full manifest: ${path.join(config.outputDir, 'optimization-manifest.json')}`);
+  console.log(`\nProcessed: ${manifest.summary.totalImages} images`);
+  console.log(`Original size: ${manifest.summary.totalOriginalSizeMB} MB`);
+  console.log(`Optimized size: ${manifest.summary.totalOptimizedSizeMB} MB`);
+  console.log(
+    `Total saved: ${manifest.summary.totalSavedMB} MB (${manifest.summary.percentSaved})`
+  );
   console.log('='.repeat(70) + '\n');
 }
 
@@ -263,42 +278,64 @@ function generateUsageGuide(manifest, config) {
 async function main() {
   const config = parseArgs();
 
-  console.log('🎨 Image Optimization Script');
+  console.log('Image Optimization Script');
   console.log('==========================\n');
   console.log(`Input:  ${config.inputDir}`);
   console.log(`Output: ${config.outputDir}`);
-  console.log(`Quality: ${config.quality.webp}%\n`);
+  console.log(
+    `Quality: webp=${config.quality.webp}, avif=${config.quality.avif}, jpeg=${config.quality.jpeg}\n`
+  );
 
   try {
     // Create output directory if it doesn't exist
     await fs.mkdir(config.outputDir, { recursive: true });
 
-    // Get all images
+    // Get source images (excludes variant files)
     const imageFiles = await getImageFiles(config.inputDir);
-    
+
     if (imageFiles.length === 0) {
-      console.log('❌ No images found in input directory');
-      process.exit(1);
+      console.log(
+        'No source images found, skipping optimization.'
+      );
+      process.exit(0);
     }
 
-    console.log(`Found ${imageFiles.length} images to process\n`);
+    console.log(`Found ${imageFiles.length} source images\n`);
+
+    // Idempotency check: skip if all outputs are up-to-date
+    if (!config.force) {
+      const upToDateChecks = await Promise.all(
+        imageFiles.map((file) => isUpToDate(file, config))
+      );
+      if (upToDateChecks.every(Boolean)) {
+        console.log('Images already optimized and up-to-date. Skipping.');
+        process.exit(0);
+      }
+    }
 
     // Process all images
     const optimizationStats = [];
     for (const file of imageFiles) {
       const inputPath = path.join(config.inputDir, file);
-      const stats = await optimizeImage(inputPath, config.outputDir, file, config);
+      const stats = await optimizeImage(
+        inputPath,
+        config.outputDir,
+        file,
+        config
+      );
       optimizationStats.push(stats);
     }
 
     // Generate manifest
-    const manifest = await generateManifest(optimizationStats, config.outputDir);
+    const manifest = await generateManifest(
+      optimizationStats,
+      config.outputDir
+    );
 
-    // Show usage guide
-    generateUsageGuide(manifest, config);
-
+    // Print summary
+    printSummary(manifest);
   } catch (error) {
-    console.error('❌ Fatal error:', error);
+    console.error('Fatal error:', error);
     process.exit(1);
   }
 }
