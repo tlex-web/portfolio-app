@@ -1,67 +1,108 @@
-// Service Worker with Workbox for Portfolio App
-// Provides offline functionality and optimized caching
+// Service Worker for Portfolio App
+// Build hash injected by scripts/inject-build-hash.mjs during postbuild
 
-// Cache names
-const CACHE_VERSION = 'v1';
-const STATIC_CACHE = `static-${CACHE_VERSION}`;
-const IMAGE_CACHE = `images-${CACHE_VERSION}`;
-const DYNAMIC_CACHE = `dynamic-${CACHE_VERSION}`;
+const BUILD_HASH = '__BUILD_HASH__';
+const STATIC_CACHE = `static-${BUILD_HASH}`;
+const IMAGE_CACHE = `images-${BUILD_HASH}`;
+const DYNAMIC_CACHE = `dynamic-${BUILD_HASH}`;
 
-// Cache expiration times
-const IMAGE_CACHE_MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 days
-const STATIC_CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
+// --- Caching strategy helpers ---
 
-// Install event - cache critical assets
-self.addEventListener('install', (event) => {
-  console.log('[Service Worker] Installing...');
-  
-  event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => {
-      console.log('[Service Worker] Caching static assets');
-      return cache.addAll([
-        '/',
-        '/photos',
-        '/projects',
-        '/roadmap',
-        '/contact',
-        '/offline',
-      ]);
+async function cacheFirst(request, cacheName) {
+  const cached = await caches.match(request);
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    const response = await fetch(request);
+    if (response && response.ok) {
+      const cache = await caches.open(cacheName);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    return undefined;
+  }
+}
+
+async function staleWhileRevalidate(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+
+  const fetchPromise = fetch(request)
+    .then((response) => {
+      if (response && response.ok) {
+        cache.put(request, response.clone());
+      }
+      return response;
+    })
+    .catch(() => undefined);
+
+  if (cached) {
+    return cached;
+  }
+
+  const response = await fetchPromise;
+  if (response) {
+    return response;
+  }
+
+  // Offline fallback for navigation requests
+  const offlinePage = await caches.match('/offline');
+  return (
+    offlinePage ||
+    new Response('Offline - please check your connection', {
+      status: 503,
+      statusText: 'Service Unavailable',
     })
   );
-  
-  // Force the waiting service worker to become the active service worker
+}
+
+async function networkFirst(request, cacheName) {
+  try {
+    const response = await fetch(request);
+    if (response && response.ok) {
+      const cache = await caches.open(cacheName);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    const cached = await caches.match(request);
+    return cached;
+  }
+}
+
+// --- Lifecycle events ---
+
+// Install: precache critical assets
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(STATIC_CACHE).then((cache) => {
+      return cache.addAll(['/', '/offline']);
+    })
+  );
+
   self.skipWaiting();
 });
 
-// Activate event - clean up old caches
+// Activate: delete all caches from previous builds
 self.addEventListener('activate', (event) => {
-  console.log('[Service Worker] Activating...');
-  
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((cacheName) => {
-            // Delete old version caches
-            return (
-              cacheName.startsWith('static-') ||
-              cacheName.startsWith('images-') ||
-              cacheName.startsWith('dynamic-')
-            ) && cacheName !== STATIC_CACHE && cacheName !== IMAGE_CACHE && cacheName !== DYNAMIC_CACHE;
-          })
-          .map((cacheName) => {
-            console.log('[Service Worker] Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          })
+          .filter((name) => !name.endsWith(BUILD_HASH))
+          .map((name) => caches.delete(name))
       );
     })
   );
-  
-  // Take control of all pages immediately
-  return self.clients.claim();
+
+  self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+// --- Fetch event ---
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -71,66 +112,49 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Skip Chrome extensions
+  // Skip chrome-extension protocol
   if (url.protocol === 'chrome-extension:') {
     return;
   }
 
-  event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      // Return cached response if found
-      if (cachedResponse) {
-        console.log('[Service Worker] Serving from cache:', request.url);
-        return cachedResponse;
-      }
+  // Network-only for API routes
+  if (url.pathname.startsWith('/api/')) {
+    return;
+  }
 
-      // Otherwise fetch from network
-      return fetch(request)
-        .then((response) => {
-          // Don't cache non-successful responses
-          if (!response || response.status !== 200 || response.type === 'error') {
-            return response;
-          }
+  // Cache-first for fingerprinted static assets
+  if (
+    url.pathname.startsWith('/_next/static/') ||
+    url.pathname.startsWith('/images/') ||
+    /\.(woff2|woff|ttf|otf)$/i.test(url.pathname)
+  ) {
+    event.respondWith(cacheFirst(request, STATIC_CACHE));
+    return;
+  }
 
-          // Clone the response
-          const responseToCache = response.clone();
+  // Cache-first for images
+  if (
+    url.pathname.startsWith('/_next/image') ||
+    request.destination === 'image'
+  ) {
+    event.respondWith(cacheFirst(request, IMAGE_CACHE));
+    return;
+  }
 
-          // Determine cache strategy based on request type
-          if (request.url.includes('/images/') || request.url.includes('/_next/image')) {
-            // Cache images
-            caches.open(IMAGE_CACHE).then((cache) => {
-              cache.put(request, responseToCache);
-            });
-          } else if (request.url.includes('/_next/static/')) {
-            // Cache static assets (JS, CSS)
-            caches.open(STATIC_CACHE).then((cache) => {
-              cache.put(request, responseToCache);
-            });
-          } else if (url.origin === location.origin) {
-            // Cache same-origin dynamic content
-            caches.open(DYNAMIC_CACHE).then((cache) => {
-              cache.put(request, responseToCache);
-            });
-          }
+  // Stale-while-revalidate for HTML pages
+  if (
+    request.mode === 'navigate' ||
+    (request.headers.get('accept') || '').includes('text/html')
+  ) {
+    event.respondWith(staleWhileRevalidate(request, DYNAMIC_CACHE));
+    return;
+  }
 
-          return response;
-        })
-        .catch(() => {
-          // Offline fallback
-          if (request.mode === 'navigate') {
-            return caches.match('/offline').then((offlinePage) => {
-              return offlinePage || new Response('Offline - please check your connection', {
-                status: 503,
-                statusText: 'Service Unavailable',
-              });
-            });
-          }
-        });
-    })
-  );
+  // Network-first for everything else
+  event.respondWith(networkFirst(request, DYNAMIC_CACHE));
 });
 
-// Message event - handle skip waiting
+// Message event: handle SKIP_WAITING
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
