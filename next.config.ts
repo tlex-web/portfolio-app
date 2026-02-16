@@ -35,51 +35,32 @@ const nextConfig: NextConfig = {
       }
     );
 
-    // Content Security Policy (production only)
-    if (process.env.NODE_ENV === 'production') {
-      headers.push({
-        source: '/:path*',
-        headers: [
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // Next.js requires unsafe-inline/unsafe-eval
-              "style-src 'self' 'unsafe-inline'", // Tailwind/styled-jsx require unsafe-inline
-              "img-src 'self' data: blob: https:", // Allow images from CDNs and data URIs
-              "font-src 'self' data:",
-              "connect-src 'self' https://vercel.live https://raw.githack.com https://raw.githubusercontent.com", // Vercel Analytics + Three.js assets
-              "frame-src 'self'",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              "frame-ancestors 'none'",
-              "upgrade-insecure-requests",
-            ].join('; '),
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-          {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block',
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin',
-          },
-          {
-            key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=()',
-          },
-        ],
-      });
-    }
+    // Security headers (CSP moved to proxy.ts for nonce-based approach)
+    headers.push({
+      source: '/:path*',
+      headers: [
+        {
+          key: 'X-Content-Type-Options',
+          value: 'nosniff',
+        },
+        {
+          key: 'X-Frame-Options',
+          value: 'DENY',
+        },
+        {
+          key: 'X-XSS-Protection',
+          value: '1; mode=block',
+        },
+        {
+          key: 'Referrer-Policy',
+          value: 'strict-origin-when-cross-origin',
+        },
+        {
+          key: 'Permissions-Policy',
+          value: 'camera=(), microphone=(), geolocation=()',
+        },
+      ],
+    });
 
     return headers;
   },
