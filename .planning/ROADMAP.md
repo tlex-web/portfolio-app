@@ -12,7 +12,7 @@ This milestone stabilizes the portfolio codebase (dependency conflicts, security
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Dependency Resolution & Code Quality** - Clean dependency tree and proper TypeScript types across the codebase
+- [x] **Phase 1: Dependency Resolution & Code Quality** - Clean dependency tree and proper TypeScript types across the codebase (completed 2026-02-16)
 - [ ] **Phase 2: Security & Reliability Hardening** - CSP, CSRF, persistent rate limiting, and service worker cache invalidation
 - [ ] **Phase 3: Design Foundation** - Custom color palette, typography system, and accessibility-verified design tokens
 - [ ] **Phase 4: Design Components** - Distinctive navigation, project cards, micro-interactions, and glowing accent system
@@ -29,11 +29,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. The `.npmrc` file no longer contains `legacy-peer-deps=true` and CI builds pass without it
   3. All previously documented `any` types (ParticleButton, MountainTerrain3D, ProjectHighlights, feedback test) are replaced with specific TypeScript types and `npm run typecheck` passes
   4. Running the build generates optimized images automatically -- `optimize-images.mjs` executes as a pre-build step and optimized image files exist in the output
-**Plans:** 2 plans
+**Plans:** 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Remove legacy-peer-deps and replace all any types
-- [ ] 01-02-PLAN.md — Image optimization pipeline with AVIF, responsive sizes, and prebuild hook
+- [x] 01-01-PLAN.md — Remove legacy-peer-deps and replace all any types
+- [x] 01-02-PLAN.md — Image optimization pipeline with AVIF, responsive sizes, and prebuild hook
 
 ### Phase 2: Security & Reliability Hardening
 **Goal**: The application has proper security boundaries and infrastructure that persists across serverless deployments
@@ -98,7 +98,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Dependency Resolution & Code Quality | 0/2 | Planned | - |
+| 1. Dependency Resolution & Code Quality | 3/3 | Complete | 2026-02-16 |
 | 2. Security & Reliability Hardening | 0/? | Not started | - |
 | 3. Design Foundation | 0/? | Not started | - |
 | 4. Design Components | 0/? | Not started | - |
