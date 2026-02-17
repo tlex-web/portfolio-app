@@ -19,9 +19,9 @@ Progress: [##########] 100%
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 21
-- Average duration: 3.1min
-- Total execution time: 1.13 hours
+- Total plans completed: 22
+- Average duration: 3.0min
+- Total execution time: 1.16 hours
 
 **By Phase:**
 
@@ -31,10 +31,10 @@ Progress: [##########] 100%
 | 02 | 3+3gc | 15min | 2.5min |
 | 03 | 2 | 5min | 2.5min |
 | 04 | 6 | 25min | 4.2min |
-| 05 | 3+1gc | 17min | 4.3min |
+| 05 | 3+2gc | 19min | 3.8min |
 
 **Recent Trend:**
-- Last 5 plans: 05-01 (4min), 05-02 (4min), 05-03 (7min), 05-04 (2min)
+- Last 5 plans: 05-01 (4min), 05-02 (4min), 05-03 (7min), 05-04 (2min), 05-05 (2min)
 - Trend: stable at ~3-5min per plan
 
 *Updated after each plan completion*
@@ -100,6 +100,9 @@ Recent decisions affecting current work:
 - [05-04]: In-flight Set<THREE.Texture> ref for effect teardown cleanup of textures loaded during cancelled window
 - [05-04]: Phase 2 loads only active + adjacent (3 max) full-res textures per navigation to reduce GPU pressure
 - [05-04]: Shadow map reduced from 2048 to 1024 -- ~12MB GPU savings with negligible visual impact
+- [05-05]: useState(getInitialValue) lazy initializer reads matchMedia synchronously on first client render
+- [05-05]: transition-property whitelist preserves color/opacity/background transitions under reduced motion
+- [05-05]: initial={false} in Framer Motion skips entrance animation, renders at whileInView target immediately
 
 ### Pending Todos
 
@@ -112,5 +115,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed 05-04-PLAN.md (WebGL context loss fix)
-Resume file: .planning/phases/05-performance-accessibility-polish/05-04-SUMMARY.md
+Stopped at: Completed 05-05-PLAN.md (Reduced-motion contrast fix - all gap closure plans complete)
+Resume file: .planning/phases/05-performance-accessibility-polish/05-05-SUMMARY.md
