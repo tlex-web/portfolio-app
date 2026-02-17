@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DemoCommand } from '@/data/types';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 
 interface TerminalDemoProps {
   commands: DemoCommand[];
@@ -11,6 +12,7 @@ interface TerminalDemoProps {
 }
 
 export default function TerminalDemo({ commands, autoPlay = true, loop = true }: TerminalDemoProps) {
+  const prefersReducedMotion = useReducedMotion();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
   const [displayedInput, setDisplayedInput] = useState('');
@@ -21,6 +23,25 @@ export default function TerminalDemo({ commands, autoPlay = true, loop = true }:
 
   useEffect(() => {
     if (isPaused || !currentCommand) return;
+
+    // When reduced motion is enabled, show full text immediately
+    if (prefersReducedMotion) {
+      setDisplayedInput(currentCommand.input);
+      setIsTyping(false);
+      setShowOutput(true);
+
+      const advanceTimeout = setTimeout(() => {
+        if (currentIndex < commands.length - 1) {
+          setCurrentIndex(currentIndex + 1);
+        } else if (loop) {
+          setCurrentIndex(0);
+        } else {
+          setIsPaused(true);
+        }
+      }, 3000);
+
+      return () => clearTimeout(advanceTimeout);
+    }
 
     // Reset state
     setDisplayedInput('');
@@ -37,11 +58,11 @@ export default function TerminalDemo({ commands, autoPlay = true, loop = true }:
       } else {
         clearInterval(typingInterval);
         setIsTyping(false);
-        
+
         // Show output after a pause
         setTimeout(() => {
           setShowOutput(true);
-          
+
           // Move to next command after another pause
           setTimeout(() => {
             if (currentIndex < commands.length - 1) {
@@ -57,7 +78,7 @@ export default function TerminalDemo({ commands, autoPlay = true, loop = true }:
     }, 50);
 
     return () => clearInterval(typingInterval);
-  }, [currentIndex, isPaused, currentCommand, commands.length, loop]);
+  }, [currentIndex, isPaused, currentCommand, commands.length, loop, prefersReducedMotion]);
 
   const getRiskColor = (level?: string) => {
     switch (level) {
@@ -136,11 +157,15 @@ export default function TerminalDemo({ commands, autoPlay = true, loop = true }:
               <span className="text-gray-300"> "</span>
               <span className="text-white">{displayedInput}</span>
               {isTyping && (
-                <motion.span
-                  className="inline-block w-2 h-4 bg-white ml-1"
-                  animate={{ opacity: [1, 0] }}
-                  transition={{ duration: 0.5, repeat: Infinity }}
-                />
+                prefersReducedMotion ? (
+                  <span className="inline-block w-2 h-4 bg-white ml-1" />
+                ) : (
+                  <motion.span
+                    className="inline-block w-2 h-4 bg-white ml-1"
+                    animate={{ opacity: [1, 0] }}
+                    transition={{ duration: 0.5, repeat: Infinity }}
+                  />
+                )
               )}
               {!isTyping && <span className="text-gray-300">"</span>}
             </div>
@@ -150,10 +175,10 @@ export default function TerminalDemo({ commands, autoPlay = true, loop = true }:
           <AnimatePresence mode="wait">
             {showOutput && currentCommand && (
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
+                transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.3 }}
               >
                 {/* Risk Level Badge */}
                 {currentCommand.riskLevel && (
@@ -204,11 +229,15 @@ export default function TerminalDemo({ commands, autoPlay = true, loop = true }:
                   <span className="text-red-400">[N]</span>
                   <span className="text-gray-500">/</span>
                   <span className="text-cyan-400">[E]xplain</span>
-                  <motion.span
-                    className="inline-block w-2 h-4 bg-white ml-1"
-                    animate={{ opacity: [1, 0] }}
-                    transition={{ duration: 0.5, repeat: Infinity }}
-                  />
+                  {prefersReducedMotion ? (
+                    <span className="inline-block w-2 h-4 bg-white ml-1" />
+                  ) : (
+                    <motion.span
+                      className="inline-block w-2 h-4 bg-white ml-1"
+                      animate={{ opacity: [1, 0] }}
+                      transition={{ duration: 0.5, repeat: Infinity }}
+                    />
+                  )}
                 </div>
               </motion.div>
             )}

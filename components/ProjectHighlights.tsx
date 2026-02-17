@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import type { HighlightValue } from '@/data/types';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 
 /** Props for the ProjectHighlights component. */
 interface ProjectHighlightsProps {
@@ -13,6 +14,7 @@ interface ProjectHighlightsProps {
 
 /** Renders a grid of project highlight cards with recursive value display. */
 export default function ProjectHighlights({ highlights, title = 'Project Highlights' }: ProjectHighlightsProps) {
+  const prefersReducedMotion = useReducedMotion();
   const renderValue = (value: HighlightValue): React.ReactNode => {
     if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
       return <span className="text-cyan-600 dark:text-cyan-400 font-semibold">{String(value)}</span>;
@@ -59,9 +61,9 @@ export default function ProjectHighlights({ highlights, title = 'Project Highlig
         {Object.entries(highlights).map(([key, value], index) => (
           <motion.div
             key={key}
-            initial={{ opacity: 0, y: 20 }}
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1, duration: 0.3 }}
+            transition={prefersReducedMotion ? { duration: 0 } : { delay: index * 0.1, duration: 0.3 }}
             className="group"
           >
             <div className="p-6 bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-cyan-500 transition-all duration-300 shadow-sm hover:shadow-xl h-full">

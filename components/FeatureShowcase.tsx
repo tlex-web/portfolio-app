@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useState } from 'react';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 
 interface Feature {
   title: string;
@@ -49,6 +50,7 @@ function getFeatureIcon(feature: string): { icon: string; color: string } {
 }
 
 export default function FeatureShowcase({ features, title = 'Key Features' }: FeatureShowcaseProps) {
+  const prefersReducedMotion = useReducedMotion();
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   return (
@@ -65,9 +67,9 @@ export default function FeatureShowcase({ features, title = 'Key Features' }: Fe
           return (
             <motion.div
               key={index}
-              initial={{ opacity: 0, y: 20 }}
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05, duration: 0.3 }}
+              transition={prefersReducedMotion ? { duration: 0 } : { delay: index * 0.05, duration: 0.3 }}
               onMouseEnter={() => setHoveredIndex(index)}
               onMouseLeave={() => setHoveredIndex(null)}
               className="relative group"
@@ -98,7 +100,7 @@ export default function FeatureShowcase({ features, title = 'Key Features' }: Fe
                   <motion.div
                     layoutId="feature-hover"
                     className="absolute inset-0 border-2 border-cyan-500 rounded-xl pointer-events-none"
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    transition={prefersReducedMotion ? { duration: 0 } : { type: 'spring', stiffness: 300, damping: 30 }}
                   />
                 )}
               </div>

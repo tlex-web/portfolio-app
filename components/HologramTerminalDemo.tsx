@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DemoCommand } from '@/data/types';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 
 interface HologramTerminalDemoProps {
   commands: DemoCommand[];
@@ -15,6 +16,7 @@ export default function HologramTerminalDemo({
   autoPlay = true,
   loopDelay = 3000,
 }: HologramTerminalDemoProps) {
+  const prefersReducedMotion = useReducedMotion();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [displayedInput, setDisplayedInput] = useState('');
@@ -26,6 +28,19 @@ export default function HologramTerminalDemo({
   // Typing animation effect
   useEffect(() => {
     if (!isPlaying) return;
+
+    // When reduced motion is enabled, show full text immediately
+    if (prefersReducedMotion) {
+      setDisplayedInput(currentCommand.input);
+      setDisplayedOutput(currentCommand.output);
+      setIsTyping(false);
+
+      const advanceTimeout = setTimeout(() => {
+        setCurrentIndex((prev) => (prev + 1) % commands.length);
+      }, loopDelay);
+
+      return () => clearTimeout(advanceTimeout);
+    }
 
     setIsTyping(true);
     setDisplayedInput('');
@@ -65,7 +80,7 @@ export default function HologramTerminalDemo({
     return () => {
       clearInterval(inputInterval);
     };
-  }, [currentIndex, isPlaying, currentCommand, commands.length, loopDelay]);
+  }, [currentIndex, isPlaying, currentCommand, commands.length, loopDelay, prefersReducedMotion]);
 
   const riskColors = {
     low: 'text-green-400 border-green-400',
@@ -131,10 +146,10 @@ export default function HologramTerminalDemo({
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}
-            initial={{ opacity: 0, x: -20 }}
+            initial={prefersReducedMotion ? false : { opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.3 }}
+            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.3 }}
           >
             {/* Natural Language Input */}
             <div className="flex items-start gap-2 mb-3">
@@ -163,7 +178,7 @@ export default function HologramTerminalDemo({
             {/* Warning (if present) */}
             {currentCommand.warning && displayedOutput === currentCommand.output && (
               <motion.div
-                initial={{ opacity: 0, y: -10 }}
+                initial={prefersReducedMotion ? false : { opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={`p-3 rounded-lg border-l-4 mb-3 ${
                   currentCommand.riskLevel === 'critical' || currentCommand.riskLevel === 'high'
@@ -187,9 +202,9 @@ export default function HologramTerminalDemo({
             {/* Explanation */}
             {!isTyping && currentCommand.explanation && (
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
+                transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.3 }}
                 className="p-4 bg-cyan-900/20 border border-cyan-500/30 rounded-lg"
               >
                 <div className="flex items-start gap-2">

@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 
 interface TechStackDisplayProps {
   techStack: string[];
@@ -52,6 +53,7 @@ function getTechStyle(tech: string): { color: string; bg: string } {
 }
 
 export default function TechStackDisplay({ techStack, title = 'Tech Stack' }: TechStackDisplayProps) {
+  const prefersReducedMotion = useReducedMotion();
   return (
     <div className="w-full">
       <h2 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white text-center">
@@ -65,10 +67,10 @@ export default function TechStackDisplay({ techStack, title = 'Tech Stack' }: Te
           return (
             <motion.div
               key={index}
-              initial={{ opacity: 0, scale: 0.8 }}
+              initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.05, duration: 0.3 }}
-              whileHover={{ scale: 1.1, y: -5 }}
+              transition={prefersReducedMotion ? { duration: 0 } : { delay: index * 0.05, duration: 0.3 }}
+              whileHover={prefersReducedMotion ? undefined : { scale: 1.1, y: -5 }}
               className="group relative"
             >
               <div
