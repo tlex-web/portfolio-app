@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 Phase: 4 of 5 (Design Components)
-Plan: 3 of 6 in current phase (complete)
+Plan: 4 of 6 in current phase (complete)
 Status: Executing
-Last activity: 2026-02-17 — Phase 4 plan 03 complete (crystalline project cards)
+Last activity: 2026-02-17 — Phase 4 plan 04 complete (geological button effects)
 
-Progress: [#######...] 73%
+Progress: [########..] 78%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14
-- Average duration: 3.2min
-- Total execution time: 0.74 hours
+- Total plans completed: 15
+- Average duration: 3.1min
+- Total execution time: 0.79 hours
 
 **By Phase:**
 
@@ -30,11 +30,11 @@ Progress: [#######...] 73%
 | 01 | 3 | 16min | 5.3min |
 | 02 | 3+3gc | 15min | 2.5min |
 | 03 | 2 | 5min | 2.5min |
-| 04 | 3 | 16min | 5.3min |
+| 04 | 4 | 19min | 4.8min |
 
 **Recent Trend:**
-- Last 5 plans: 03-01 (3min), 03-02 (2min), 04-01 (2min), 04-02 (7min), 04-03 (7min)
-- Trend: slightly increasing (design component work)
+- Last 5 plans: 03-02 (2min), 04-01 (2min), 04-02 (7min), 04-03 (7min), 04-04 (3min)
+- Trend: variable (design component complexity varies)
 
 *Updated after each plan completion*
 
@@ -79,6 +79,8 @@ Recent decisions affecting current work:
 - [04-03]: Two-layer card structure separates glow/tilt (outer) from content (inner hex-clip) to avoid clipping glow effects
 - [04-03]: Projects page converted to client component for useHexGrid hook integration
 - [Phase 04]: Spread operator [...EASING.geological] to satisfy Framer Motion Easing type (readonly tuple to mutable) — readonly [number, number, number, number] from animations.ts is incompatible with Framer Motion's mutable Easing type
+- [04-04]: Module-level effectIdCounter for unique AnimatePresence keys across rapid clicks
+- [04-04]: GeologicalButton replaces ParticleButton for production CTAs; ParticleButton retained (@deprecated) for demo pages
 
 ### Pending Todos
 
@@ -91,5 +93,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed 04-03-PLAN.md
-Resume file: .planning/phases/04-design-components/04-03-SUMMARY.md
+Stopped at: Completed 04-04-PLAN.md
+Resume file: .planning/phases/04-design-components/04-04-SUMMARY.md
