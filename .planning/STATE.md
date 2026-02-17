@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 Phase: 4 of 5 (Design Components)
-Plan: 4 of 6 in current phase (complete)
+Plan: 5 of 6 in current phase (complete)
 Status: Executing
-Last activity: 2026-02-17 — Phase 4 plan 04 complete (geological button effects)
+Last activity: 2026-02-17 — Phase 4 plan 05 complete (homepage/footer/header token migration)
 
-Progress: [########..] 78%
+Progress: [########..] 83%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15
+- Total plans completed: 16
 - Average duration: 3.1min
-- Total execution time: 0.79 hours
+- Total execution time: 0.86 hours
 
 **By Phase:**
 
@@ -30,10 +30,10 @@ Progress: [########..] 78%
 | 01 | 3 | 16min | 5.3min |
 | 02 | 3+3gc | 15min | 2.5min |
 | 03 | 2 | 5min | 2.5min |
-| 04 | 4 | 19min | 4.8min |
+| 04 | 5 | 23min | 4.6min |
 
 **Recent Trend:**
-- Last 5 plans: 03-02 (2min), 04-01 (2min), 04-02 (7min), 04-03 (7min), 04-04 (3min)
+- Last 5 plans: 04-01 (2min), 04-02 (7min), 04-03 (7min), 04-04 (3min), 04-05 (4min)
 - Trend: variable (design component complexity varies)
 
 *Updated after each plan completion*
@@ -81,6 +81,9 @@ Recent decisions affecting current work:
 - [Phase 04]: Spread operator [...EASING.geological] to satisfy Framer Motion Easing type (readonly tuple to mutable) — readonly [number, number, number, number] from animations.ts is incompatible with Framer Motion's mutable Easing type
 - [04-04]: Module-level effectIdCounter for unique AnimatePresence keys across rapid clicks
 - [04-04]: GeologicalButton replaces ParticleButton for production CTAs; ParticleButton retained (@deprecated) for demo pages
+- [04-05]: Removed bg-clip-text gradient patterns on headings in favor of direct text-frost-400 (simpler, consistent with token system)
+- [04-05]: Footer stratum-3 (deepest layer) to visually ground page bottom as geological bedrock
+- [04-05]: Header active nav uses glow-frost class for frost highlight consistent with GlassmorphismNav
 
 ### Pending Todos
 
@@ -93,5 +96,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed 04-04-PLAN.md
-Resume file: .planning/phases/04-design-components/04-04-SUMMARY.md
+Stopped at: Completed 04-05-PLAN.md
+Resume file: .planning/phases/04-design-components/04-05-SUMMARY.md
