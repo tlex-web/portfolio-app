@@ -36,6 +36,9 @@ export function useProgressiveTextures(
   // Track which indices already have full-res loaded to avoid re-loading
   const fullLoadedRef = useRef<Set<number>>(new Set());
 
+  // Track in-flight textures so they can be disposed on effect teardown
+  const inFlightRef = useRef<Set<THREE.Texture>>(new Set());
+
   // Configure a texture with consistent filter settings
   const configureTexture = useCallback((texture: THREE.Texture) => {
     texture.minFilter = THREE.LinearFilter;
@@ -52,6 +55,8 @@ export function useProgressiveTextures(
 
     // Pre-allocate texture slots with placeholder textures
     if (texturesRef.current.length !== images.length) {
+      // Dispose old placeholders before re-allocation to prevent orphaned GPU textures
+      texturesRef.current.forEach(t => t.dispose());
       texturesRef.current = images.map(() => {
         const t = new THREE.Texture();
         configureTexture(t);
@@ -64,8 +69,12 @@ export function useProgressiveTextures(
       loader.load(
         thumbUrl,
         (thumbTexture) => {
+          // Track in-flight texture BEFORE cancelled check so cleanup can dispose it
+          inFlightRef.current.add(thumbTexture);
+
           if (cancelled) {
             thumbTexture.dispose();
+            inFlightRef.current.delete(thumbTexture);
             return;
           }
 
@@ -77,6 +86,10 @@ export function useProgressiveTextures(
             existing.image = thumbTexture.image;
             existing.needsUpdate = true;
           }
+
+          // Dispose the intermediate texture -- .image data has been transferred
+          thumbTexture.dispose();
+          inFlightRef.current.delete(thumbTexture);
 
           loadedCount++;
 
@@ -109,6 +122,8 @@ export function useProgressiveTextures(
 
     return () => {
       cancelled = true;
+      inFlightRef.current.forEach(t => { t.dispose(); });
+      inFlightRef.current.clear();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [images.length]);
@@ -119,17 +134,11 @@ export function useProgressiveTextures(
     const len = images.length;
     if (len === 0) return;
 
-    // Build priority order: active, active+1, active-1, then remaining
+    // Load full-res only for active + adjacent (3 max) to reduce GPU pressure
     const priority = [
       activeIndex,
       (activeIndex + 1) % len,
       (activeIndex - 1 + len) % len,
-      ...Array.from({ length: len }, (_, i) => i).filter(
-        (i) =>
-          i !== activeIndex &&
-          i !== (activeIndex + 1) % len &&
-          i !== (activeIndex - 1 + len) % len
-      ),
     ];
 
     let cancelled = false;
@@ -144,8 +153,12 @@ export function useProgressiveTextures(
           loader.load(
             images[idx].src,
             (fullTexture) => {
+              // Track in-flight texture BEFORE cancelled check so cleanup can dispose it
+              inFlightRef.current.add(fullTexture);
+
               if (cancelled) {
                 fullTexture.dispose();
+                inFlightRef.current.delete(fullTexture);
                 resolve();
                 return;
               }
@@ -158,6 +171,10 @@ export function useProgressiveTextures(
                 existing.image = fullTexture.image;
                 existing.needsUpdate = true;
               }
+
+              // Dispose the intermediate texture -- .image data has been transferred
+              fullTexture.dispose();
+              inFlightRef.current.delete(fullTexture);
 
               fullLoadedRef.current.add(idx);
 
@@ -188,6 +205,8 @@ export function useProgressiveTextures(
 
     return () => {
       cancelled = true;
+      inFlightRef.current.forEach(t => { t.dispose(); });
+      inFlightRef.current.clear();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIndex, images.length]);
