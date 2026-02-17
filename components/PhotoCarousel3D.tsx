@@ -257,8 +257,8 @@ export default function PhotoCarousel3D({ images, onImageClick, className = '' }
           position={[10, 10, 5]}
           intensity={1}
           castShadow
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
+          shadow-mapSize-width={1024}
+          shadow-mapSize-height={1024}
         />
         <pointLight position={[-10, 5, -10]} intensity={0.5} color="#06b6d4" />
         <pointLight position={[10, 5, 10]} intensity={0.5} color="#8b5cf6" />
