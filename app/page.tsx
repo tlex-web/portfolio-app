@@ -8,8 +8,10 @@ import { landscapes } from '@/data/landscapes';
 import { projects } from '@/data/projects';
 import Image from 'next/image';
 import { EASING, DURATION } from '@/lib/animations';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 
 export default function HomePage() {
+  const prefersReducedMotion = useReducedMotion();
 
   const stats = [
     { value: landscapes.length, label: 'Landscape Photos', icon: '📸' },
@@ -27,9 +29,9 @@ export default function HomePage() {
       <div id="main-content" className="bg-alpine-900">
         {/* Stats Section */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: DURATION.enter, ease: [...EASING.geological] }}
+          transition={prefersReducedMotion ? { duration: 0 } : { duration: DURATION.enter, ease: [...EASING.geological] }}
           viewport={{ once: true }}
           className="container mx-auto px-4 sm:px-6 lg:px-8 py-16"
         >
@@ -37,9 +39,9 @@ export default function HomePage() {
             {stats.map((stat, index) => (
               <motion.div
                 key={stat.label}
-                initial={{ opacity: 0, scale: 0.8 }}
+                initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.8 }}
                 whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.08, duration: DURATION.enter, ease: [...EASING.crystallize] }}
+                transition={prefersReducedMotion ? { duration: 0 } : { delay: index * 0.08, duration: DURATION.enter, ease: [...EASING.crystallize] }}
                 viewport={{ once: true }}
                 className="stratum-1 glow-frost bg-alpine-800 rounded-2xl p-6 text-center border border-alpine-700 hover:border-frost-500 transition-all duration-300 hover:scale-105"
               >
@@ -56,9 +58,9 @@ export default function HomePage() {
         {/* Featured Sections */}
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <motion.h2
-            initial={{ opacity: 0, y: 20 }}
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: DURATION.enter, ease: [...EASING.geological] }}
+            transition={prefersReducedMotion ? { duration: 0 } : { duration: DURATION.enter, ease: [...EASING.geological] }}
             viewport={{ once: true }}
             className="text-4xl font-bold text-center mb-12 text-snow-50"
           >
@@ -68,9 +70,9 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
             {/* Photography Section */}
             <motion.div
-              initial={{ opacity: 0, x: -50 }}
+              initial={prefersReducedMotion ? false : { opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: DURATION.enter, ease: [...EASING.geological] }}
+              transition={prefersReducedMotion ? { duration: 0 } : { duration: DURATION.enter, ease: [...EASING.geological] }}
               viewport={{ once: true }}
             >
               <Link
@@ -123,9 +125,9 @@ export default function HomePage() {
 
             {/* Projects Section */}
             <motion.div
-              initial={{ opacity: 0, x: 50 }}
+              initial={prefersReducedMotion ? false : { opacity: 0, x: 50 }}
               whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: DURATION.enter, ease: [...EASING.geological] }}
+              transition={prefersReducedMotion ? { duration: 0 } : { duration: DURATION.enter, ease: [...EASING.geological] }}
               viewport={{ once: true }}
             >
               <Link
@@ -165,9 +167,9 @@ export default function HomePage() {
 
         {/* About Section */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: DURATION.enter, ease: [...EASING.geological] }}
+          transition={prefersReducedMotion ? { duration: 0 } : { duration: DURATION.enter, ease: [...EASING.geological] }}
           viewport={{ once: true }}
           className="container mx-auto px-4 sm:px-6 lg:px-8 py-16"
         >
@@ -187,7 +189,7 @@ export default function HomePage() {
                   and natural wonder.
                 </p>
                 <p>
-                  On the technology side, I develop CLI_X – an AI-powered command-line tool that converts natural
+                  On the technology side, I develop CLI_X -- an AI-powered command-line tool that converts natural
                   language into shell commands. Built with Rust and featuring enterprise-grade safety, it's helping
                   developers work more efficiently.
                 </p>
@@ -213,9 +215,9 @@ export default function HomePage() {
 
         {/* Call to Action */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: DURATION.enter, ease: [...EASING.geological] }}
+          transition={prefersReducedMotion ? { duration: 0 } : { duration: DURATION.enter, ease: [...EASING.geological] }}
           viewport={{ once: true }}
           className="container mx-auto px-4 sm:px-6 lg:px-8 py-16"
         >
