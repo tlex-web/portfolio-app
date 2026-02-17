@@ -29,9 +29,9 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Design Foundation
 
-- [ ] **DSGN-01**: Custom color palette defined in Tailwind `@theme` — organic earthy tones (greens, browns, warm neutrals) meeting digital accents (electric blue, glowing highlights)
-- [ ] **DSGN-02**: Custom typography system defined — nature-inspired display font paired with readable body font, full heading/body/caption hierarchy
-- [ ] **DSGN-03**: All custom color combinations meet WCAG AA contrast ratios (4.5:1 for body text, 3:1 for large text)
+- [x] **DSGN-01**: Custom color palette defined in Tailwind `@theme` — organic earthy tones (greens, browns, warm neutrals) meeting digital accents (electric blue, glowing highlights)
+- [x] **DSGN-02**: Custom typography system defined — nature-inspired display font paired with readable body font, full heading/body/caption hierarchy
+- [x] **DSGN-03**: All custom color combinations meet WCAG AA contrast ratios (4.5:1 for body text, 3:1 for large text)
 
 ### Design Components
 
@@ -94,9 +94,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REL-02 | Phase 2 | Pending |
 | QUAL-01 | Phase 1 | Pending |
 | QUAL-02 | Phase 1 | Pending |
-| DSGN-01 | Phase 3 | Pending |
-| DSGN-02 | Phase 3 | Pending |
-| DSGN-03 | Phase 3 | Pending |
+| DSGN-01 | Phase 3 | Complete |
+| DSGN-02 | Phase 3 | Complete |
+| DSGN-03 | Phase 3 | Complete |
 | COMP-01 | Phase 4 | Pending |
 | COMP-02 | Phase 4 | Pending |
 | COMP-03 | Phase 4 | Pending |
