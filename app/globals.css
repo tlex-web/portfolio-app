@@ -16,7 +16,7 @@
 
   /* Granite neutrals (slate-tinted grays) */
   --color-granite-500: oklch(0.45 0.010 250);
-  --color-granite-400: oklch(0.55 0.008 250);
+  --color-granite-400: oklch(0.60 0.008 250);
   --color-granite-300: oklch(0.65 0.006 250);
 
   /* Snow text tones (warm off-white) */
