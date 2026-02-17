@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 Phase: 4 of 5 (Design Components)
-Plan: 1 of 6 in current phase (complete)
+Plan: 3 of 6 in current phase (complete)
 Status: Executing
-Last activity: 2026-02-17 — Phase 4 plan 01 complete (design infrastructure)
+Last activity: 2026-02-17 — Phase 4 plan 03 complete (crystalline project cards)
 
-Progress: [######....] 63%
+Progress: [#######...] 73%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
+- Total plans completed: 14
 - Average duration: 3.2min
-- Total execution time: 0.63 hours
+- Total execution time: 0.74 hours
 
 **By Phase:**
 
@@ -30,11 +30,11 @@ Progress: [######....] 63%
 | 01 | 3 | 16min | 5.3min |
 | 02 | 3+3gc | 15min | 2.5min |
 | 03 | 2 | 5min | 2.5min |
-| 04 | 1 | 2min | 2min |
+| 04 | 3 | 16min | 5.3min |
 
 **Recent Trend:**
-- Last 5 plans: 02-05 (1min), 02-06 (1min), 03-01 (3min), 03-02 (2min), 04-01 (2min)
-- Trend: stable
+- Last 5 plans: 03-01 (3min), 03-02 (2min), 04-01 (2min), 04-02 (7min), 04-03 (7min)
+- Trend: slightly increasing (design component work)
 
 *Updated after each plan completion*
 
@@ -76,6 +76,8 @@ Recent decisions affecting current work:
 - [04-01]: Glow intensity range [1.0, 0.15] over [0, 800px] scroll -- full glow near hero, muted in content
 - [04-01]: Static 0.3 glow intensity for reduced-motion users -- visible but not animated
 - [04-01]: Stratum shadows use alpine-950 OKLCH for geological consistency with dark theme
+- [04-03]: Two-layer card structure separates glow/tilt (outer) from content (inner hex-clip) to avoid clipping glow effects
+- [04-03]: Projects page converted to client component for useHexGrid hook integration
 
 ### Pending Todos
 
@@ -88,5 +90,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed 04-01-PLAN.md
-Resume file: .planning/phases/04-design-components/04-01-SUMMARY.md
+Stopped at: Completed 04-03-PLAN.md
+Resume file: .planning/phases/04-design-components/04-03-SUMMARY.md
