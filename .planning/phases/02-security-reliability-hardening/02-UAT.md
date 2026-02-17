@@ -1,9 +1,9 @@
 ---
 status: resolved
 phase: 02-security-reliability-hardening
-source: 02-01-SUMMARY.md, 02-02-SUMMARY.md, 02-03-SUMMARY.md
-started: 2026-02-16T22:00:00Z
-updated: 2026-02-17T00:00:00Z
+source: 02-01-SUMMARY.md, 02-02-SUMMARY.md, 02-03-SUMMARY.md, 02-04-SUMMARY.md, 02-05-SUMMARY.md
+started: 2026-02-17T12:00:00Z
+updated: 2026-02-17T13:00:00Z
 ---
 
 ## Current Test
@@ -12,84 +12,73 @@ updated: 2026-02-17T00:00:00Z
 
 ## Tests
 
-### 1. CSP Header with Nonce
-expected: Open DevTools > Network tab, reload page, check document response headers. Content-Security-Policy header should be present with nonce-based values in script-src. No 'unsafe-inline' in script-src.
+### 1. CSP Header with Nonce and Style-src Fix
+expected: Open DevTools > Network tab, reload page, check document response headers. Content-Security-Policy header present with nonce in script-src (no unsafe-inline in script-src), 'unsafe-inline' in style-src, and 'https://raw.githack.com' in connect-src.
 result: issue
-reported: "CSP header is present with nonce, but causes massive inline style violations (style-src blocks all inline styles from React, Three.js, devtools), connect-src 'self' blocks Three.js HDRI loading from raw.githack.com causing 3D component crash ('Could not load dikhololo_night_1k.hdr: Failed to fetch'), script-src-elem report-only violations for inline scripts, and unsafe-eval report-only violations. The 3D canvas hits WebGLRenderer Context Lost."
+reported: "CSP header present with nonce, but style-src has both nonce and 'unsafe-inline' — per CSP spec, 'unsafe-inline' is ignored when a nonce is present, so all inline styles are blocked. connect-src has wrong domain (raw.githack.com instead of raw.githubusercontent.com where drei actually loads HDRI assets from)."
 severity: blocker
 
-### 2. Site Functions Under Strict CSP
-expected: Browse the site (home page, navigate between pages). All styles render correctly, scripts execute (interactive elements work), and the browser console shows NO CSP violation errors.
+### 2. Site Renders Without CSP Violations
+expected: Browse the site (home page, navigate between pages). All styles render correctly, scripts execute, interactive elements work. Browser console shows NO CSP violation errors. No blocked inline styles.
 result: issue
-reported: "Same CSP violations as Test 1. Dozens of blocked inline styles from React DOM, font-styles.tsx, and react-three-fiber. Three.js 3D component crashes entirely (connect-src blocks HDRI fetch from raw.githack.com, WebGLRenderer Context Lost). Styles visually broken due to blocked inline style application."
+reported: "Dozens of blocked inline style violations from React DOM, font-styles, and react-three-fiber. connect-src blocks HDRI fetch from raw.githubusercontent.com causing 3D component crash and WebGL Context Lost. Same root cause as Test 1."
 severity: blocker
 
-### 3. Feedback Form Works (Same-Origin)
-expected: Navigate to the feedback form and submit it normally from the site. The form should submit successfully and show a success response (or appropriate feedback). It should not be blocked by CSRF or rate limiting on the first attempt.
+### 3. 3D Components Load Under CSP
+expected: Navigate to a page with 3D components (terrain, carousel). The 3D scene renders fully — no WebGL context lost, no HDRI loading errors, environment lighting works correctly.
+result: issue
+reported: "3D crashes with HDRI fetch error and WebGL context lost"
+severity: blocker
+
+### 4. Feedback Form Submits Successfully
+expected: Navigate to the feedback form and submit it from the site. The form should submit successfully and show a success response. Not blocked by CSRF or rate limiting on first attempt.
 result: skipped
-reason: CSP blocker makes site difficult to navigate/use for UI testing
+reason: Can't test without fixing CSP style-src first
 
-### 4. CSRF Rejects Cross-Origin Request
-expected: In a terminal, run a curl command posting to the feedback API with a fake origin header. The response should be a 403 rejection with a CSRF error, not a success.
+### 5. CSRF Rejects Cross-Origin Request
+expected: In a terminal, run a curl/fetch posting to the feedback API with a fake Origin header (e.g., https://evil.com). The response should be a 403 rejection with a CSRF error.
 result: pass
 
-### 5. Service Worker Registers
-expected: Open DevTools > Application > Service Workers. The service worker should be registered and active for the site. Its source should be service-worker.js.
-result: issue
-reported: "No active service worker visible in DevTools > Application > Service Workers. Only service workers from other origins are shown."
-severity: major
+### 6. Service Worker Registers
+expected: Run a production build, open in browser, go to DevTools > Application > Service Workers. The service worker should be registered and active. (Note: production-only.)
+result: pass
 
-### 6. Build Completes with Hash Injection
-expected: Run `npm run build`. The build should complete successfully. After build, check `public/service-worker.js` -- the `__BUILD_HASH__` placeholder should be replaced with an actual hash string.
+### 7. Build Completes with Hash Injection
+expected: Run `npm run build`. Build completes successfully. After build, check `public/service-worker.js` — the __BUILD_HASH__ placeholder should be replaced with an actual hash string.
 result: pass
 
 ## Summary
 
-total: 6
-passed: 2
+total: 7
+passed: 3
 issues: 3
 pending: 0
 skipped: 1
 
 ## Gaps
 
-- truth: "CSP header present with nonce-based script allowlisting, no unsafe-inline in script-src, site loads without violations"
+- truth: "CSP style-src allows React inline style attributes"
   status: resolved
-  reason: "User reported: CSP style-src blocks all inline styles (React, Three.js, devtools inject styles dynamically). connect-src 'self' blocks Three.js HDRI from raw.githack.com causing 3D crash. Dozens of style-src and script-src-elem violations in console."
+  reason: "User reported: style-src has both nonce and 'unsafe-inline' — per CSP spec, 'unsafe-inline' is ignored when a nonce is present, so all inline styles are blocked."
   severity: blocker
   test: 1
-  root_cause: "style-src 'self' 'nonce-...' blocks inline style *attributes* — React's style prop, R3F Canvas, and 25+ components use style attributes which CANNOT receive nonces per CSP spec (only style elements can use nonces). connect-src 'self' blocks fetch to raw.githack.com where @react-three/drei Environment component loads HDRI .hdr files for presets (night, city, sunset)."
+  root_cause: "proxy.ts line 9: style-src 'self' 'nonce-${nonce}' 'unsafe-inline' — CSP Level 2 spec states that 'unsafe-inline' is ignored when any nonce or hash source is present in the directive. The nonce was added by 02-01 for style elements, then 02-04 added 'unsafe-inline' for style attributes, but the nonce's presence nullifies it."
   artifacts:
     - path: "proxy.ts"
-      issue: "style-src too restrictive (nonce-only, no unsafe-inline), connect-src missing raw.githack.com"
+      issue: "style-src line 9 has nonce AND unsafe-inline — nonce must be removed from style-src"
   missing:
-    - "Add 'unsafe-inline' to style-src (required for React style prop attributes)"
-    - "Add https://raw.githack.com to connect-src"
-  debug_session: ".planning/debug/csp-violations.md"
+    - "Remove 'nonce-${nonce}' from style-src, keep only 'self' 'unsafe-inline'"
+  debug_session: ""
 
-- truth: "Site functions normally under strict CSP - styles render, scripts execute, no console violations"
+- truth: "CSP connect-src allows Three.js HDRI loading from drei CDN"
   status: resolved
-  reason: "User reported: Same violations as Test 1. React DOM, font-styles.tsx, and Three.js inline styles all blocked. 3D component crashes entirely. Visual rendering broken."
+  reason: "User reported: connect-src has wrong domain (raw.githack.com instead of raw.githubusercontent.com where drei actually loads HDRI assets from). HDRI fetch blocked, 3D crash."
   severity: blocker
-  test: 2
-  root_cause: "Same root cause as gap 1. CSP style-src blocks all inline style attributes from React runtime. connect-src blocks Three.js HDRI loading. Both are proxy.ts CSP directive issues."
+  test: 3
+  root_cause: "proxy.ts line 12: connect-src 'self' https://raw.githack.com — the previous diagnosis incorrectly identified the CDN as raw.githack.com. The actual fetch URL shown in browser console is https://raw.githubusercontent.com/pmndrs/drei-assets/..."
   artifacts:
     - path: "proxy.ts"
-      issue: "CSP directives incompatible with React inline styles and Three.js CDN resources"
+      issue: "connect-src line 12 has wrong domain: raw.githack.com should be raw.githubusercontent.com"
   missing:
-    - "Fix proxy.ts CSP directives (same fix as gap 1)"
-  debug_session: ".planning/debug/csp-violations.md"
-
-- truth: "Service worker registers and is active in DevTools > Application > Service Workers"
-  status: resolved
-  reason: "User reported: No active service worker visible in DevTools. Only service workers from other origins shown."
-  severity: major
-  test: 5
-  root_cause: "Two issues: (1) Registration gated behind process.env.NODE_ENV === 'production' so it never runs in dev. (2) Latent production bug: window.addEventListener('load', ...) inside useEffect fires after load event has already occurred, so callback never executes even in production."
-  artifacts:
-    - path: "components/ServiceWorkerRegistration.tsx"
-      issue: "Production-only guard (line 10) and missed load event in useEffect (lines 12-14)"
-  missing:
-    - "Remove load event wrapper — call navigator.serviceWorker.register() directly in useEffect"
-    - "Decide: keep production-only guard (common practice) or allow dev registration for testing"
-  debug_session: ".planning/debug/sw-not-registering.md"
+    - "Change https://raw.githack.com to https://raw.githubusercontent.com in connect-src"
+  debug_session: ""

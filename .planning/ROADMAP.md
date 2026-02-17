@@ -13,7 +13,7 @@ This milestone stabilizes the portfolio codebase (dependency conflicts, security
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Dependency Resolution & Code Quality** - Clean dependency tree and proper TypeScript types across the codebase (completed 2026-02-16)
-- [x] **Phase 2: Security & Reliability Hardening** - CSP, CSRF, persistent rate limiting, and service worker cache invalidation (3/6 plans complete, gap closure in progress) (completed 2026-02-17)
+- [x] **Phase 2: Security & Reliability Hardening** - CSP, CSRF, persistent rate limiting, and service worker cache invalidation (completed 2026-02-17)
 - [ ] **Phase 3: Design Foundation** - Custom color palette, typography system, and accessibility-verified design tokens
 - [ ] **Phase 4: Design Components** - Distinctive navigation, project cards, micro-interactions, and glowing accent system
 - [ ] **Phase 5: Performance & Accessibility Polish** - Progressive 3D texture loading and consistent reduced-motion support
@@ -52,7 +52,7 @@ Plans:
 - [x] 02-03-PLAN.md — Service worker build-hash cache invalidation with per-asset caching strategies
 - [x] 02-04-PLAN.md — Fix CSP directives for React inline styles and Three.js HDRI CDN (gap closure)
 - [x] 02-05-PLAN.md — Fix service worker registration race condition and production guard (gap closure)
-- [ ] 02-06-PLAN.md — Fix CSP style-src nonce conflict and connect-src CDN domain (gap closure)
+- [x] 02-06-PLAN.md — Fix CSP style-src nonce conflict and connect-src CDN domain (gap closure)
 
 ### Phase 3: Design Foundation
 **Goal**: The site has a defined visual language -- custom colors and typography that express the organic-meets-digital aesthetic -- verified for accessibility
@@ -103,7 +103,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Dependency Resolution & Code Quality | 3/3 | Complete | 2026-02-16 |
-| 2. Security & Reliability Hardening | 3/6 | Complete    | 2026-02-17 |
+| 2. Security & Reliability Hardening | 6/6 | Complete | 2026-02-17 |
 | 3. Design Foundation | 0/? | Not started | - |
 | 4. Design Components | 0/? | Not started | - |
 | 5. Performance & Accessibility Polish | 0/? | Not started | - |
