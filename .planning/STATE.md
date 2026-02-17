@@ -12,26 +12,26 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 Phase: 3 of 5 (Design Foundation)
 Plan: 0 of ? in current phase
 Status: Planning needed
-Last activity: 2026-02-17 — Phase 2 gap closure plan 04 complete (CSP fixes)
+Last activity: 2026-02-17 — Phase 2 gap closure plan 05 complete (SW registration fix)
 
 Progress: [####......] 40%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
-- Average duration: 4.1min
-- Total execution time: 0.48 hours
+- Total plans completed: 8
+- Average duration: 3.8min
+- Total execution time: 0.49 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 3 | 16min | 5.3min |
-| 02 | 3+1gc | 13min | 3.3min |
+| 02 | 3+2gc | 14min | 2.8min |
 
 **Recent Trend:**
-- Last 5 plans: 01-03 (1min), 02-02 (4min), 02-01 (4min), 02-03 (4min), 02-04 (1min)
+- Last 5 plans: 02-02 (4min), 02-01 (4min), 02-03 (4min), 02-04 (1min), 02-05 (1min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -60,6 +60,8 @@ Recent decisions affecting current work:
 - [02-03]: Template-in-place pattern -- inject script modifies public/service-worker.js directly since Vercel deploys from public/
 - [02-04]: style-src 'unsafe-inline' required because CSP nonces cannot apply to style attributes, only style elements
 - [02-04]: connect-src allowlists only raw.githack.com (specific drei HDRI CDN), not a wildcard
+- [02-05]: Keep production-only guard for SW registration per user decision (standard practice)
+- [02-05]: Remove load event wrapper -- root cause of SW not registering in hydrated Next.js apps
 
 ### Pending Todos
 
@@ -72,5 +74,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed 02-04-PLAN.md (gap closure)
-Resume file: .planning/phases/02-security-reliability-hardening/02-04-SUMMARY.md
+Stopped at: Completed 02-05-PLAN.md (gap closure -- SW registration fix)
+Resume file: .planning/phases/02-security-reliability-hardening/02-05-SUMMARY.md
