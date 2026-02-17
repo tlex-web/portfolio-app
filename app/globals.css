@@ -217,3 +217,144 @@
     border: 1px solid rgba(0, 255, 255, 0.7);
   }
 }
+
+/* ===================================================================
+   Phase 4: Crystalline Design System
+   Glow utilities, hex grid, stratified depth, contour animation
+   =================================================================== */
+
+/* Ambient glow with scroll-responsive intensity */
+.ambient-glow {
+  position: relative;
+}
+
+.ambient-glow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow:
+    0 0 calc(8px * var(--glow-intensity, 0.5)) var(--color-frost-glow),
+    0 0 calc(20px * var(--glow-intensity, 0.5)) var(--color-frost-glow);
+  opacity: 0.6;
+  transition: opacity 0.35s ease;
+}
+
+.ambient-glow:hover::after {
+  opacity: 1;
+}
+
+/* Direct glow for non-clipped elements */
+.glow-frost {
+  box-shadow:
+    0 0 calc(8px * var(--glow-intensity, 0.5)) var(--color-frost-glow),
+    0 0 calc(20px * var(--glow-intensity, 0.5)) var(--color-frost-glow);
+  transition: box-shadow 0.35s ease;
+}
+
+.glow-frost:hover {
+  box-shadow:
+    0 0 calc(12px * var(--glow-intensity, 0.5)) var(--color-frost-glow),
+    0 0 calc(30px * var(--glow-intensity, 0.5)) var(--color-frost-glow);
+}
+
+/* Ember variant (sparingly used) */
+.glow-ember {
+  box-shadow:
+    0 0 calc(6px * var(--glow-intensity, 0.5)) var(--color-ember-glow),
+    0 0 calc(16px * var(--glow-intensity, 0.5)) var(--color-ember-glow);
+  transition: box-shadow 0.35s ease;
+}
+
+/* Hexagonal clip-path for crystalline cards */
+.hex-clip {
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+}
+
+/* Focus visibility for clipped elements (outline is clipped, use drop-shadow) */
+.hex-clip:focus-visible {
+  filter: drop-shadow(0 0 3px var(--color-frost-500));
+}
+
+/* Hex grid layout (flexbox-based with mobile fallback) */
+.hex-grid {
+  --hex-size: 340px;
+  --hex-gap: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hex-gap);
+  justify-content: center;
+  padding: 0 calc(var(--hex-size) / 4);
+}
+
+.hex-grid > * {
+  width: var(--hex-size);
+  flex-shrink: 0;
+}
+
+/* Offset items in even rows for honeycomb effect -- JS adds .hex-offset class */
+.hex-grid > .hex-offset {
+  margin-top: calc(var(--hex-gap) * -2);
+  margin-left: calc(var(--hex-size) / 2);
+}
+
+/* Responsive: single column on mobile with crystalline shapes preserved */
+@media (max-width: 767px) {
+  .hex-grid {
+    --hex-size: min(100%, 400px);
+    padding: 0 1rem;
+    flex-direction: column;
+    align-items: center;
+  }
+  .hex-grid > .hex-offset {
+    margin-top: 0;
+    margin-left: 0;
+  }
+}
+
+/* Geological strata depth -- increasing shadow layers */
+.stratum-1 {
+  box-shadow:
+    0 1px 2px oklch(0.13 0.015 155 / 0.4),
+    0 4px 8px oklch(0.13 0.015 155 / 0.2);
+}
+
+.stratum-2 {
+  box-shadow:
+    0 2px 4px oklch(0.13 0.015 155 / 0.4),
+    0 8px 16px oklch(0.13 0.015 155 / 0.2),
+    0 16px 32px oklch(0.13 0.015 155 / 0.1);
+}
+
+.stratum-3 {
+  box-shadow:
+    0 4px 8px oklch(0.13 0.015 155 / 0.4),
+    0 12px 24px oklch(0.13 0.015 155 / 0.2),
+    0 24px 48px oklch(0.13 0.015 155 / 0.15),
+    0 48px 96px oklch(0.13 0.015 155 / 0.08);
+}
+
+/* Contour line animation keyframes (for nav background) */
+@keyframes contour-drift {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.contour-animate {
+  animation: contour-drift 25s linear infinite;
+}
+
+/* Reduced motion guards for all Phase 4 animations */
+@media (prefers-reduced-motion: reduce) {
+  .contour-animate {
+    animation: none;
+  }
+  .ambient-glow::after {
+    transition: none;
+  }
+  .glow-frost,
+  .glow-ember {
+    transition: none;
+  }
+}
