@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { landscapes } from '@/data/landscapes';
 import { projects } from '@/data/projects';
 import Image from 'next/image';
+import { EASING, DURATION } from '@/lib/animations';
 
 export default function HomePage() {
 
@@ -23,12 +24,12 @@ export default function HomePage() {
       <Hero3DMountain />
 
       {/* Main Content */}
-      <div id="main-content" className="bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
+      <div id="main-content" className="bg-alpine-900">
         {/* Stats Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: DURATION.enter, ease: [...EASING.geological] }}
           viewport={{ once: true }}
           className="container mx-auto px-4 sm:px-6 lg:px-8 py-16"
         >
@@ -38,15 +39,15 @@ export default function HomePage() {
                 key={stat.label}
                 initial={{ opacity: 0, scale: 0.8 }}
                 whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.1, duration: 0.5 }}
+                transition={{ delay: index * 0.08, duration: DURATION.enter, ease: [...EASING.crystallize] }}
                 viewport={{ once: true }}
-                className="bg-white dark:bg-gray-800 rounded-2xl p-6 text-center shadow-lg border-2 border-gray-200 dark:border-gray-700 hover:border-cyan-500 dark:hover:border-cyan-500 transition-all duration-300 hover:scale-105"
+                className="stratum-1 glow-frost bg-alpine-800 rounded-2xl p-6 text-center border border-alpine-700 hover:border-frost-500 transition-all duration-300 hover:scale-105"
               >
                 <div className="text-4xl mb-2">{stat.icon}</div>
-                <div className="text-3xl font-bold text-cyan-600 dark:text-cyan-400 mb-1">
+                <div className="text-3xl font-bold text-frost-400 mb-1">
                   {stat.value}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</div>
+                <div className="text-sm text-granite-400">{stat.label}</div>
               </motion.div>
             ))}
           </div>
@@ -57,9 +58,9 @@ export default function HomePage() {
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: DURATION.enter, ease: [...EASING.geological] }}
             viewport={{ once: true }}
-            className="text-4xl font-bold text-center mb-12 text-gray-900 dark:text-white"
+            className="text-4xl font-bold text-center mb-12 text-snow-50"
           >
             Explore My Work
           </motion.h2>
@@ -69,7 +70,7 @@ export default function HomePage() {
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: DURATION.enter, ease: [...EASING.geological] }}
               viewport={{ once: true }}
             >
               <Link
@@ -107,10 +108,10 @@ export default function HomePage() {
                     />
                   </svg>
                   <h3 className="text-3xl font-bold mb-2">Landscape Photography</h3>
-                  <p className="text-gray-200 mb-4">
+                  <p className="text-snow-200 mb-4">
                     Explore {landscapes.length} stunning landscapes from the Swiss Alps with interactive hotspots
                   </p>
-                  <span className="inline-flex items-center gap-2 text-cyan-400 font-semibold group-hover:gap-4 transition-all">
+                  <span className="inline-flex items-center gap-2 text-frost-400 font-semibold group-hover:gap-4 transition-all">
                     View Gallery
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -124,14 +125,14 @@ export default function HomePage() {
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: DURATION.enter, ease: [...EASING.geological] }}
               viewport={{ once: true }}
             >
               <Link
                 href="/projects"
                 className="group block relative overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 h-[400px]"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-purple-700 to-pink-600 group-hover:scale-105 transition-transform duration-300" />
+                <div className="absolute inset-0 bg-gradient-to-br from-frost-600 via-alpine-700 to-frost-500 group-hover:scale-105 transition-transform duration-300" />
                 <div className="relative h-full flex flex-col justify-end p-8 text-white">
                   <svg
                     className="w-16 h-16 mb-4 opacity-80 group-hover:opacity-100 transition-opacity"
@@ -147,10 +148,10 @@ export default function HomePage() {
                     />
                   </svg>
                   <h3 className="text-3xl font-bold mb-2">Programming Projects</h3>
-                  <p className="text-purple-100 mb-4">
+                  <p className="text-snow-200 mb-4">
                     Discover {projects.length} innovative software solutions including AI-powered CLI tools
                   </p>
-                  <span className="inline-flex items-center gap-2 text-pink-300 font-semibold group-hover:gap-4 transition-all">
+                  <span className="inline-flex items-center gap-2 text-frost-400 font-semibold group-hover:gap-4 transition-all">
                     View Projects
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -166,16 +167,16 @@ export default function HomePage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: DURATION.enter, ease: [...EASING.geological] }}
           viewport={{ once: true }}
           className="container mx-auto px-4 sm:px-6 lg:px-8 py-16"
         >
           <div className="max-w-4xl mx-auto">
-            <div className="bg-white dark:bg-gray-800 rounded-3xl p-12 shadow-xl border-2 border-gray-200 dark:border-gray-700">
-              <h2 className="text-4xl font-bold mb-6 text-center bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">
+            <div className="stratum-2 bg-alpine-800 rounded-3xl p-12 border border-alpine-700">
+              <h2 className="text-4xl font-bold mb-6 text-center text-frost-400">
                 Blending Art and Technology
               </h2>
-              <div className="space-y-4 text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
+              <div className="space-y-4 text-lg text-snow-200 leading-relaxed">
                 <p>
                   I'm passionate about capturing the world's natural beauty through landscape photography
                   while also building elegant software solutions that solve real problems.
@@ -193,13 +194,13 @@ export default function HomePage() {
               </div>
 
               {/* Skills */}
-              <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
-                <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Core Skills</h3>
+              <div className="mt-8 pt-8 border-t border-alpine-700">
+                <h3 className="text-xl font-bold mb-4 text-snow-50">Core Skills</h3>
                 <div className="flex flex-wrap gap-3">
                   {['Photography', 'Rust', 'TypeScript', 'Next.js', 'React', 'AI/LLM Integration', 'UI/UX Design', 'Alpine Exploration'].map((skill) => (
                     <span
                       key={skill}
-                      className="px-4 py-2 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/30 dark:to-blue-900/30 text-cyan-700 dark:text-cyan-300 rounded-lg border border-cyan-200 dark:border-cyan-800 font-medium"
+                      className="px-4 py-2 bg-frost-500/10 text-frost-400 rounded-lg border border-frost-600/30 font-medium"
                     >
                       {skill}
                     </span>
@@ -214,25 +215,25 @@ export default function HomePage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: DURATION.enter, ease: [...EASING.geological] }}
           viewport={{ once: true }}
           className="container mx-auto px-4 sm:px-6 lg:px-8 py-16"
         >
-          <div className="bg-gradient-to-r from-cyan-600 to-blue-600 rounded-3xl p-12 text-center text-white shadow-2xl">
+          <div className="stratum-2 bg-gradient-to-r from-frost-600 to-frost-500 rounded-3xl p-12 text-center text-white shadow-2xl">
             <h2 className="text-4xl font-bold mb-4">Let's Work Together</h2>
-            <p className="text-xl text-cyan-100 mb-8 max-w-2xl mx-auto">
+            <p className="text-xl text-snow-200 mb-8 max-w-2xl mx-auto">
               Interested in collaboration, licensing my photos, or discussing technology projects? I'd love to hear from you.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
                 href="/contact"
-                className="px-8 py-4 bg-white text-cyan-600 rounded-xl hover:bg-gray-100 transition-colors font-bold text-lg shadow-lg hover:shadow-xl"
+                className="px-8 py-4 bg-snow-50 text-alpine-950 rounded-xl hover:bg-snow-100 transition-colors font-bold text-lg shadow-lg hover:shadow-xl"
               >
                 Get in Touch
               </Link>
               <Link
                 href="/roadmap"
-                className="px-8 py-4 bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white rounded-xl hover:bg-white/20 transition-colors font-bold text-lg"
+                className="px-8 py-4 bg-alpine-800/30 backdrop-blur-sm border-2 border-frost-500/30 text-snow-50 rounded-xl hover:bg-alpine-700/40 transition-colors font-bold text-lg"
               >
                 View Roadmap
               </Link>
