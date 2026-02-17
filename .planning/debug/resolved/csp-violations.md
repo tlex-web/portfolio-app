@@ -1,8 +1,8 @@
 ---
-status: diagnosed
+status: resolved
 trigger: "CSP too strict - blocks inline styles from React/Three.js and connect-src blocks HDRI loading"
 created: 2026-02-16T00:00:00Z
-updated: 2026-02-16T00:00:00Z
+updated: 2026-02-17T00:00:00Z
 ---
 
 ## Current Focus

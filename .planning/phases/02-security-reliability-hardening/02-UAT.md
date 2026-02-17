@@ -1,9 +1,9 @@
 ---
-status: diagnosed
+status: resolved
 phase: 02-security-reliability-hardening
 source: 02-01-SUMMARY.md, 02-02-SUMMARY.md, 02-03-SUMMARY.md
 started: 2026-02-16T22:00:00Z
-updated: 2026-02-16T22:20:00Z
+updated: 2026-02-17T00:00:00Z
 ---
 
 ## Current Test
@@ -54,7 +54,7 @@ skipped: 1
 ## Gaps
 
 - truth: "CSP header present with nonce-based script allowlisting, no unsafe-inline in script-src, site loads without violations"
-  status: failed
+  status: resolved
   reason: "User reported: CSP style-src blocks all inline styles (React, Three.js, devtools inject styles dynamically). connect-src 'self' blocks Three.js HDRI from raw.githack.com causing 3D crash. Dozens of style-src and script-src-elem violations in console."
   severity: blocker
   test: 1
@@ -68,7 +68,7 @@ skipped: 1
   debug_session: ".planning/debug/csp-violations.md"
 
 - truth: "Site functions normally under strict CSP - styles render, scripts execute, no console violations"
-  status: failed
+  status: resolved
   reason: "User reported: Same violations as Test 1. React DOM, font-styles.tsx, and Three.js inline styles all blocked. 3D component crashes entirely. Visual rendering broken."
   severity: blocker
   test: 2
@@ -81,7 +81,7 @@ skipped: 1
   debug_session: ".planning/debug/csp-violations.md"
 
 - truth: "Service worker registers and is active in DevTools > Application > Service Workers"
-  status: failed
+  status: resolved
   reason: "User reported: No active service worker visible in DevTools. Only service workers from other origins shown."
   severity: major
   test: 5
