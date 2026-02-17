@@ -62,10 +62,11 @@ Plans:
   1. Tailwind `@theme` defines a custom color palette with organic earthy tones and digital accent colors -- these colors appear in the rendered site replacing default Tailwind palette usage
   2. A custom typography system is applied site-wide -- a nature-inspired display font for headings and a readable body font, with a visible hierarchy across heading levels, body text, and captions
   3. Every custom color combination used for text-on-background passes WCAG AA contrast ratios (4.5:1 body, 3:1 large text) -- verified by automated contrast checking
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 03-01: TBD
+- [ ] 03-01-PLAN.md — Color palette tokens, font integration, and base typography hierarchy
+- [ ] 03-02-PLAN.md — WCAG contrast verification script and visual design checkpoint
 
 ### Phase 4: Design Components
 **Goal**: The portfolio has a distinctive, memorable visual identity -- custom navigation, project cards, organic micro-interactions, and glowing accents that connect the 2D UI to the existing 3D components
