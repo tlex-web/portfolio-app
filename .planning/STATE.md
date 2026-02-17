@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** A portfolio that is visually memorable and distinctive while being stable and well-maintained under the hood.
-**Current focus:** Phase 5 complete - Performance & Accessibility Polish
+**Current focus:** Phase 5 complete - All gap closure plans finished
 
 ## Current Position
 
 Phase: 5 of 5 (Performance & Accessibility Polish)
-Plan: 3 of 3 in current phase (complete)
+Plan: 5 of 5 in current phase (complete)
 Status: Phase Complete
-Last activity: 2026-02-17 — Completed 05-03 (Remaining components reduced-motion gating)
+Last activity: 2026-02-17 — Completed 05-05 (Reduced-motion contrast fix)
 
 Progress: [##########] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 20
-- Average duration: 3.2min
-- Total execution time: 1.1 hours
+- Total plans completed: 21
+- Average duration: 3.1min
+- Total execution time: 1.13 hours
 
 **By Phase:**
 
@@ -31,10 +31,10 @@ Progress: [##########] 100%
 | 02 | 3+3gc | 15min | 2.5min |
 | 03 | 2 | 5min | 2.5min |
 | 04 | 6 | 25min | 4.2min |
-| 05 | 3 | 15min | 5min |
+| 05 | 3+1gc | 17min | 4.3min |
 
 **Recent Trend:**
-- Last 5 plans: 04-06 (2min), 05-01 (4min), 05-02 (4min), 05-03 (7min)
+- Last 5 plans: 05-01 (4min), 05-02 (4min), 05-03 (7min), 05-04 (2min)
 - Trend: stable at ~3-5min per plan
 
 *Updated after each plan completion*
@@ -96,6 +96,10 @@ Recent decisions affecting current work:
 - [05-03]: Terminal typing animations bypass via early return showing full text, not slower typing
 - [05-03]: ZoomableImage zoom/pan interactivity preserved -- only transition duration set to 0
 - [05-03]: InteractiveHotspot pulse ring completely removed (not just frozen) when reduced motion active
+- [05-04]: Dispose intermediate THREE.Texture after .image hot-swap transfer -- GPU handle freed, image data retained
+- [05-04]: In-flight Set<THREE.Texture> ref for effect teardown cleanup of textures loaded during cancelled window
+- [05-04]: Phase 2 loads only active + adjacent (3 max) full-res textures per navigation to reduce GPU pressure
+- [05-04]: Shadow map reduced from 2048 to 1024 -- ~12MB GPU savings with negligible visual impact
 
 ### Pending Todos
 
@@ -108,5 +112,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed 05-03-PLAN.md (Phase 5 complete, all phases complete)
-Resume file: .planning/phases/05-performance-accessibility-polish/05-03-SUMMARY.md
+Stopped at: Completed 05-04-PLAN.md (WebGL context loss fix)
+Resume file: .planning/phases/05-performance-accessibility-polish/05-04-SUMMARY.md
