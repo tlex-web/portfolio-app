@@ -1,8 +1,9 @@
 'use client';
 
 import { useRef, useState, useMemo, useEffect, Suspense } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useTexture, Html, Environment, Preload } from '@react-three/drei';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { Html, Environment } from '@react-three/drei';
+import { useProgressiveTextures } from '@/lib/useProgressiveTextures';
 import * as THREE from 'three';
 import { useSpring, animated, config } from '@react-spring/three';
 import { useReducedMotion } from '@/lib/useReducedMotion';
@@ -118,24 +119,9 @@ interface CarouselProps {
 function Carousel({ images, onImageClick, prefersReducedMotion }: CarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const groupRef = useRef<THREE.Group>(null);
-  const { camera } = useThree();
 
-  // Preload ALL textures at once to prevent flickering
-  const textures = useTexture(images.map(img => img.src));
-  
-  // Normalize to array and stabilize textures
-  const textureArray = useMemo(() => {
-    const arr = Array.isArray(textures) ? textures : [textures];
-    arr.forEach(texture => {
-      if (texture) {
-        texture.minFilter = THREE.LinearFilter;
-        texture.magFilter = THREE.LinearFilter;
-        texture.generateMipmaps = false;
-        texture.anisotropy = 0;
-      }
-    });
-    return arr;
-  }, [textures]);
+  // Progressive texture loading: thumbnails first, then full-res by proximity
+  const { textures: textureArray, allThumbsLoaded } = useProgressiveTextures(images, activeIndex);
 
   const radius = 8;
   const angleStep = (Math.PI * 2) / images.length;
@@ -185,6 +171,17 @@ function Carousel({ images, onImageClick, prefersReducedMotion }: CarouselProps)
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [activeIndex, images]);
+
+  // Show loading indicator until all thumbnails are ready
+  if (!allThumbsLoaded) {
+    return (
+      <Html center>
+        <div className="text-snow-200 animate-pulse text-lg font-medium">
+          Loading gallery...
+        </div>
+      </Html>
+    );
+  }
 
   return (
     <group ref={groupRef}>
@@ -268,14 +265,13 @@ export default function PhotoCarousel3D({ images, onImageClick, className = '' }
         {/* Fog */}
         <fog attach="fog" args={['#0a0a0a', 10, 30]} />
 
-        {/* Carousel with Suspense to prevent texture loading flicker */}
+        {/* Carousel -- thumbnails load fast, no Suspense blocking */}
         <Suspense fallback={null}>
           <Carousel
             images={images}
             onImageClick={onImageClick}
             prefersReducedMotion={prefersReducedMotion}
           />
-          <Preload all />
         </Suspense>
       </Canvas>
 
