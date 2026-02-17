@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 Phase: 5 of 5 (Performance & Accessibility Polish)
-Plan: 1 of 3 in current phase (complete)
+Plan: 2 of 3 in current phase (complete)
 Status: In Progress
-Last activity: 2026-02-17 — Completed 05-01 (progressive textures + carousel reduced motion)
+Last activity: 2026-02-17 — Completed 05-02 (Header/Footer reduced-motion gating + universal CSS fallback)
 
-Progress: [#########.] 90%
+Progress: [##########] 93%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 18
+- Total plans completed: 19
 - Average duration: 3.1min
-- Total execution time: 0.96 hours
+- Total execution time: 1.0 hours
 
 **By Phase:**
 
@@ -31,10 +31,10 @@ Progress: [#########.] 90%
 | 02 | 3+3gc | 15min | 2.5min |
 | 03 | 2 | 5min | 2.5min |
 | 04 | 6 | 25min | 4.2min |
-| 05 | 1 | 4min | 4min |
+| 05 | 2 | 8min | 4min |
 
 **Recent Trend:**
-- Last 5 plans: 04-04 (3min), 04-05 (4min), 04-06 (2min), 05-01 (4min)
+- Last 5 plans: 04-05 (4min), 04-06 (2min), 05-01 (4min), 05-02 (4min)
 - Trend: stable at ~3-4min per plan
 
 *Updated after each plan completion*
@@ -89,6 +89,9 @@ Recent decisions affecting current work:
 - [05-01]: THREE.TextureLoader over drei useTexture to avoid Suspense blocking on progressive loads
 - [05-01]: In-place texture hot-swap (texture.image + needsUpdate) avoids component remount
 - [05-01]: Canvas frameloop=demand saves GPU cycles when all animations are disabled
+- [05-02]: Use 0.01ms instead of 0s for CSS transition/animation duration to preserve transitionend event compatibility
+- [05-02]: Keep layoutId prop on active tab indicator (Framer Motion handles instant transition with duration: 0)
+- [05-02]: Empty object {} for heart animate prop when reduced motion (not undefined) to prevent Framer Motion fallback
 
 ### Pending Todos
 
@@ -101,5 +104,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed 05-01-PLAN.md
-Resume file: .planning/phases/05-performance-accessibility-polish/05-01-SUMMARY.md
+Stopped at: Completed 05-02-PLAN.md
+Resume file: .planning/phases/05-performance-accessibility-polish/05-02-SUMMARY.md
