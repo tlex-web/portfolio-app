@@ -5,6 +5,7 @@ import { LandscapeImage } from '@/data/types';
 import Image from 'next/image';
 import InteractiveHotspot from './InteractiveHotspot';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 
 interface ImageDetailModalProps {
   image: LandscapeImage | null;
@@ -12,6 +13,7 @@ interface ImageDetailModalProps {
 }
 
 export default function ImageDetailModal({ image, onClose }: ImageDetailModalProps) {
+  const prefersReducedMotion = useReducedMotion();
   const [isZoomed, setIsZoomed] = useState(false);
 
   useEffect(() => {
@@ -74,7 +76,7 @@ export default function ImageDetailModal({ image, onClose }: ImageDetailModalPro
             animate={{
               scale: isZoomed ? 1.5 : 1,
             }}
-            transition={{
+            transition={prefersReducedMotion ? { duration: 0 } : {
               type: 'spring',
               stiffness: 300,
               damping: 30,

@@ -239,6 +239,7 @@ interface ShaderTransitionProps {
   texture2: THREE.Texture;
   progress: number;
   transitionType: TransitionType;
+  prefersReducedMotion?: boolean;
 }
 
 export default function ShaderTransition({
@@ -246,6 +247,7 @@ export default function ShaderTransition({
   texture2,
   progress,
   transitionType,
+  prefersReducedMotion = false,
 }: ShaderTransitionProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const { size } = useThree();

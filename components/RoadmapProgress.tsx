@@ -2,12 +2,14 @@
 
 import { motion } from 'framer-motion';
 import { RoadmapItem } from '@/data/types';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 
 interface RoadmapProgressProps {
   items: RoadmapItem[];
 }
 
 export default function RoadmapProgress({ items }: RoadmapProgressProps) {
+  const prefersReducedMotion = useReducedMotion();
   const totalItems = items.length;
   const completedItems = items.filter((item) => item.status === 'completed').length;
   const inProgressItems = items.filter((item) => item.status === 'in-progress').length;
@@ -59,9 +61,9 @@ export default function RoadmapProgress({ items }: RoadmapProgressProps) {
         <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
           <motion.div
             className="h-full bg-gradient-to-r from-cyan-500 to-blue-500"
-            initial={{ width: 0 }}
+            initial={prefersReducedMotion ? false : { width: 0 }}
             animate={{ width: `${completionPercentage}%` }}
-            transition={{ duration: 1, ease: 'easeOut' }}
+            transition={prefersReducedMotion ? { duration: 0 } : { duration: 1, ease: 'easeOut' }}
           />
         </div>
 
@@ -75,9 +77,9 @@ export default function RoadmapProgress({ items }: RoadmapProgressProps) {
         {stats.map((stat, index) => (
           <motion.div
             key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1, duration: 0.5 }}
+            transition={prefersReducedMotion ? { duration: 0 } : { delay: index * 0.1, duration: 0.5 }}
             className="bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-300 hover:scale-105"
           >
             <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${stat.color} flex items-center justify-center text-2xl mb-3`}>
@@ -126,9 +128,9 @@ export default function RoadmapProgress({ items }: RoadmapProgressProps) {
                 <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                   <motion.div
                     className={`h-full ${areaConfig[area].color}`}
-                    initial={{ width: 0 }}
+                    initial={prefersReducedMotion ? false : { width: 0 }}
                     animate={{ width: `${areaPercentage}%` }}
-                    transition={{ duration: 1, delay: 0.2 }}
+                    transition={prefersReducedMotion ? { duration: 0 } : { duration: 1, delay: 0.2 }}
                   />
                 </div>
               </div>

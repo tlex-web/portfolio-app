@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 
 interface ZoomableImageProps {
   src: string;
@@ -11,6 +12,7 @@ interface ZoomableImageProps {
 }
 
 export default function ZoomableImage({ src, alt, className = '' }: ZoomableImageProps) {
+  const prefersReducedMotion = useReducedMotion();
   const [isZoomed, setIsZoomed] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
@@ -94,7 +96,7 @@ export default function ZoomableImage({ src, alt, className = '' }: ZoomableImag
           x: xOutput,
           y: yOutput,
         }}
-        transition={{
+        transition={prefersReducedMotion ? { duration: 0 } : {
           type: 'spring',
           stiffness: 300,
           damping: 30,

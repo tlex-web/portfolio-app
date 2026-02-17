@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ImageAnnotation } from '@/data/types';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 
 interface InteractiveHotspotProps {
   annotation: ImageAnnotation;
@@ -43,6 +44,7 @@ const iconMap = {
 };
 
 export default function InteractiveHotspot({ annotation, onHover }: InteractiveHotspotProps) {
+  const prefersReducedMotion = useReducedMotion();
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -59,23 +61,25 @@ export default function InteractiveHotspot({ annotation, onHover }: InteractiveH
         }}
         onMouseEnter={() => onHover?.(annotation.id)}
         onMouseLeave={() => onHover?.(null)}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
+        whileHover={prefersReducedMotion ? undefined : { scale: 1.1 }}
+        whileTap={prefersReducedMotion ? undefined : { scale: 0.95 }}
         aria-label={`View ${annotation.title}`}
       >
         {/* Pulse Ring Animation */}
-        <motion.div
-          className="absolute inset-0 rounded-full bg-cyan-400/50"
-          animate={{
-            scale: [1, 1.8, 1],
-            opacity: [0.8, 0, 0.8],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
+        {!prefersReducedMotion && (
+          <motion.div
+            className="absolute inset-0 rounded-full bg-cyan-400/50"
+            animate={{
+              scale: [1, 1.8, 1],
+              opacity: [0.8, 0, 0.8],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          />
+        )}
 
         {/* Icon Circle */}
         <div className="relative w-12 h-12 rounded-full bg-cyan-500/80 backdrop-blur-md border-2 border-white/60 flex items-center justify-center text-white shadow-2xl group-hover:bg-cyan-400/90 group-hover:scale-110 transition-all">
@@ -97,9 +101,10 @@ export default function InteractiveHotspot({ annotation, onHover }: InteractiveH
           <>
             {/* Backdrop */}
             <motion.div
-              initial={{ opacity: 0 }}
+              initial={prefersReducedMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={prefersReducedMotion ? { duration: 0 } : undefined}
               className="fixed inset-0 bg-black/70 backdrop-blur-md"
               style={{ zIndex: 99998 }}
               onClick={(e) => {
@@ -110,9 +115,10 @@ export default function InteractiveHotspot({ annotation, onHover }: InteractiveH
 
             {/* Info Card */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 10 }}
+              initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.9, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              transition={prefersReducedMotion ? { duration: 0 } : undefined}
               className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md mx-4"
               style={{ zIndex: 99999 }}
               onClick={(e) => e.stopPropagation()}

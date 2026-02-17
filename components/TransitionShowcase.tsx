@@ -5,6 +5,7 @@ import { Canvas } from '@react-three/fiber';
 import { useTexture, OrbitControls, Environment } from '@react-three/drei';
 import ShaderTransition, { TransitionType } from './ShaderTransition';
 import { LandscapeImage } from '@/data/types';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 
 interface ShowcaseSceneProps {
   images: [LandscapeImage, LandscapeImage];
@@ -15,6 +16,7 @@ interface ShowcaseSceneProps {
 interface ShowcaseScenePropsExtended extends ShowcaseSceneProps {
   speed: number;
   easing: 'linear' | 'easeInOut' | 'easeIn' | 'easeOut';
+  prefersReducedMotion: boolean;
 }
 
 // Easing functions
@@ -25,7 +27,7 @@ const easingFunctions = {
   easeOut: (t: number) => t * (2 - t),
 };
 
-function ShowcaseScene({ images, transitionType, autoPlay, speed, easing }: ShowcaseScenePropsExtended) {
+function ShowcaseScene({ images, transitionType, autoPlay, speed, easing, prefersReducedMotion }: ShowcaseScenePropsExtended) {
   const [rawProgress, setRawProgress] = useState(0);
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
 
@@ -37,6 +39,23 @@ function ShowcaseScene({ images, transitionType, autoPlay, speed, easing }: Show
 
   useEffect(() => {
     if (!autoPlay) return;
+
+    // When reduced motion is enabled, snap between states instantly
+    if (prefersReducedMotion) {
+      const snapInterval = setInterval(() => {
+        setRawProgress((prev) => {
+          if (direction === 'forward') {
+            setDirection('backward');
+            return 1;
+          } else {
+            setDirection('forward');
+            return 0;
+          }
+        });
+      }, 3000);
+
+      return () => clearInterval(snapInterval);
+    }
 
     // Base speed is 0.002 per frame (much slower)
     // Speed multiplier: 0.5 = half speed, 2 = double speed
@@ -63,7 +82,7 @@ function ShowcaseScene({ images, transitionType, autoPlay, speed, easing }: Show
     }, 16); // ~60fps
 
     return () => clearInterval(interval);
-  }, [autoPlay, direction, speed]);
+  }, [autoPlay, direction, speed, prefersReducedMotion]);
 
   return (
     <>
@@ -74,6 +93,7 @@ function ShowcaseScene({ images, transitionType, autoPlay, speed, easing }: Show
         texture2={texture2}
         progress={progress}
         transitionType={transitionType}
+        prefersReducedMotion={prefersReducedMotion}
       />
       <Environment preset="sunset" />
     </>
@@ -86,6 +106,7 @@ interface TransitionShowcaseProps {
 }
 
 export default function TransitionShowcase({ images, className = '' }: TransitionShowcaseProps) {
+  const prefersReducedMotion = useReducedMotion();
   const [selectedTransition, setSelectedTransition] = useState<TransitionType>('dissolve');
   const [autoPlay, setAutoPlay] = useState(true);
   const [currentPair, setCurrentPair] = useState(0);
@@ -135,6 +156,7 @@ export default function TransitionShowcase({ images, className = '' }: Transitio
               autoPlay={autoPlay}
               speed={speed}
               easing={easing}
+              prefersReducedMotion={prefersReducedMotion}
             />
           </Suspense>
         </Canvas>

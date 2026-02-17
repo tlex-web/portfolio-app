@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 
 interface RoadmapFiltersProps {
   selectedArea: string;
@@ -15,6 +16,7 @@ export default function RoadmapFilters({
   onAreaChange,
   onStatusChange,
 }: RoadmapFiltersProps) {
+  const prefersReducedMotion = useReducedMotion();
   const areas = [
     { value: 'all', label: 'All Projects', icon: '🌐' },
     { value: 'portfolio', label: 'Portfolio', icon: '🎨' },
@@ -44,8 +46,8 @@ export default function RoadmapFilters({
               <motion.button
                 key={area.value}
                 onClick={() => onAreaChange(area.value)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={prefersReducedMotion ? undefined : { scale: 1.05 }}
+                whileTap={prefersReducedMotion ? undefined : { scale: 0.95 }}
                 className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                   isSelected
                     ? 'bg-cyan-600 text-white shadow-lg'
@@ -72,8 +74,8 @@ export default function RoadmapFilters({
               <motion.button
                 key={status.value}
                 onClick={() => onStatusChange(status.value)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={prefersReducedMotion ? undefined : { scale: 1.05 }}
+                whileTap={prefersReducedMotion ? undefined : { scale: 0.95 }}
                 className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                   isSelected
                     ? 'bg-blue-600 text-white shadow-lg'

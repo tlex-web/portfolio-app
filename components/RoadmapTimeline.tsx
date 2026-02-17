@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { RoadmapItem } from '@/data/types';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 
 interface RoadmapTimelineProps {
   items: RoadmapItem[];
@@ -80,6 +81,7 @@ const priorityConfig = {
 };
 
 export default function RoadmapTimeline({ items }: RoadmapTimelineProps) {
+  const prefersReducedMotion = useReducedMotion();
   return (
     <div className="relative">
       {/* Timeline Line */}
@@ -95,9 +97,9 @@ export default function RoadmapTimeline({ items }: RoadmapTimelineProps) {
           return (
             <motion.div
               key={item.id}
-              initial={{ opacity: 0, x: -50 }}
+              initial={prefersReducedMotion ? false : { opacity: 0, x: -50 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1, duration: 0.5 }}
+              transition={prefersReducedMotion ? { duration: 0 } : { delay: index * 0.1, duration: 0.5 }}
               className="relative pl-20"
             >
               {/* Timeline Dot */}
@@ -173,9 +175,9 @@ export default function RoadmapTimeline({ items }: RoadmapTimelineProps) {
                     <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                       <motion.div
                         className="h-full bg-gradient-to-r from-blue-500 to-cyan-500"
-                        initial={{ width: 0 }}
+                        initial={prefersReducedMotion ? false : { width: 0 }}
                         animate={{ width: '60%' }}
-                        transition={{ delay: index * 0.1 + 0.5, duration: 1 }}
+                        transition={prefersReducedMotion ? { duration: 0 } : { delay: index * 0.1 + 0.5, duration: 1 }}
                       />
                     </div>
                   </div>
