@@ -12,26 +12,26 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 Phase: 3 of 5 (Design Foundation)
 Plan: 0 of ? in current phase
 Status: Planning needed
-Last activity: 2026-02-17 — Phase 2 gap closure plan 05 complete (SW registration fix)
+Last activity: 2026-02-17 — Phase 2 gap closure plan 06 complete (CSP style-src/connect-src fixes)
 
 Progress: [####......] 40%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: 3.8min
-- Total execution time: 0.49 hours
+- Total plans completed: 9
+- Average duration: 3.4min
+- Total execution time: 0.51 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 3 | 16min | 5.3min |
-| 02 | 3+2gc | 14min | 2.8min |
+| 02 | 3+3gc | 15min | 2.5min |
 
 **Recent Trend:**
-- Last 5 plans: 02-02 (4min), 02-01 (4min), 02-03 (4min), 02-04 (1min), 02-05 (1min)
+- Last 5 plans: 02-01 (4min), 02-03 (4min), 02-04 (1min), 02-05 (1min), 02-06 (1min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -59,7 +59,9 @@ Recent decisions affecting current work:
 - [02-03]: Cache invalidation by BUILD_HASH suffix matching -- simpler and more reliable than prefix-based filtering
 - [02-03]: Template-in-place pattern -- inject script modifies public/service-worker.js directly since Vercel deploys from public/
 - [02-04]: style-src 'unsafe-inline' required because CSP nonces cannot apply to style attributes, only style elements
-- [02-04]: connect-src allowlists only raw.githack.com (specific drei HDRI CDN), not a wildcard
+- [02-04]: connect-src allowlists specific drei HDRI CDN domain, not a wildcard
+- [02-06]: Remove nonce from style-src per CSP Level 2 spec (nonce causes unsafe-inline to be ignored)
+- [02-06]: connect-src uses raw.githubusercontent.com for drei CDN assets (corrects raw.githack.com from 02-04)
 - [02-05]: Keep production-only guard for SW registration per user decision (standard practice)
 - [02-05]: Remove load event wrapper -- root cause of SW not registering in hydrated Next.js apps
 
@@ -74,5 +76,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed 02-05-PLAN.md (gap closure -- SW registration fix)
-Resume file: .planning/phases/02-security-reliability-hardening/02-05-SUMMARY.md
+Stopped at: Completed 02-06-PLAN.md (gap closure -- CSP style-src/connect-src fixes)
+Resume file: .planning/phases/02-security-reliability-hardening/02-06-SUMMARY.md
