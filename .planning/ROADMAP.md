@@ -95,12 +95,14 @@ Plans:
   1. The PhotoCarousel3D loads visible and adjacent image textures first, with remaining textures lazy-loaded -- navigating to the carousel shows content quickly rather than waiting for all textures
   2. Low-resolution placeholders are visible while full textures load in the PhotoCarousel3D, preventing layout shifts and blank spaces
   3. Enabling "Prefer reduced motion" in OS settings disables all micro-interactions, 3D animations, and particle effects across the entire site -- the site remains fully functional but static
-**Plans:** 3 plans
+**Plans:** 5 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Progressive texture loading hook and PhotoCarousel3D refactor with reduced-motion gating
-- [ ] 05-02-PLAN.md — Header/Footer reduced-motion gating and universal CSS animation guard
-- [ ] 05-03-PLAN.md — Reduced-motion gating for remaining 12 animated components
+- [x] 05-01-PLAN.md — Progressive texture loading hook and PhotoCarousel3D refactor with reduced-motion gating
+- [x] 05-02-PLAN.md — Header/Footer reduced-motion gating and universal CSS animation guard
+- [x] 05-03-PLAN.md — Reduced-motion gating for remaining 12 animated components
+- [ ] 05-04-PLAN.md — Fix WebGL context loss from leaked intermediate textures (gap closure)
+- [ ] 05-05-PLAN.md — Fix reduced-motion white/no-contrast from hydration race and CSS guard scope (gap closure)
 
 ## Progress
 
@@ -113,4 +115,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 2. Security & Reliability Hardening | 6/6 | Complete | 2026-02-17 |
 | 3. Design Foundation | 2/2 | Complete | 2026-02-17 |
 | 4. Design Components | 6/6 | Complete | 2026-02-17 |
-| 5. Performance & Accessibility Polish | 0/3 | Not started | - |
+| 5. Performance & Accessibility Polish | 3/5 | In Progress | - |
