@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** A portfolio that is visually memorable and distinctive while being stable and well-maintained under the hood.
-**Current focus:** Phase 4 complete - Design Components (ready for Phase 5)
+**Current focus:** Phase 5 in progress - Performance & Accessibility Polish
 
 ## Current Position
 
-Phase: 4 of 5 (Design Components)
-Plan: 6 of 6 in current phase (complete)
-Status: Phase Complete
-Last activity: 2026-02-17 — Phase 4 complete (all 6 plans, visual verification approved)
+Phase: 5 of 5 (Performance & Accessibility Polish)
+Plan: 1 of 3 in current phase (complete)
+Status: In Progress
+Last activity: 2026-02-17 — Completed 05-01 (progressive textures + carousel reduced motion)
 
 Progress: [#########.] 90%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 17
+- Total plans completed: 18
 - Average duration: 3.1min
-- Total execution time: 0.89 hours
+- Total execution time: 0.96 hours
 
 **By Phase:**
 
@@ -31,10 +31,11 @@ Progress: [#########.] 90%
 | 02 | 3+3gc | 15min | 2.5min |
 | 03 | 2 | 5min | 2.5min |
 | 04 | 6 | 25min | 4.2min |
+| 05 | 1 | 4min | 4min |
 
 **Recent Trend:**
-- Last 5 plans: 04-02 (7min), 04-03 (7min), 04-04 (3min), 04-05 (4min), 04-06 (2min)
-- Trend: variable (design component complexity varies)
+- Last 5 plans: 04-04 (3min), 04-05 (4min), 04-06 (2min), 05-01 (4min)
+- Trend: stable at ~3-4min per plan
 
 *Updated after each plan completion*
 
@@ -85,6 +86,9 @@ Recent decisions affecting current work:
 - [04-05]: Footer stratum-3 (deepest layer) to visually ground page bottom as geological bedrock
 - [04-05]: Header active nav uses glow-frost class for frost highlight consistent with GlassmorphismNav
 - [04-06]: ProjectCard hex clip-path moved to background layer so card content is not clipped
+- [05-01]: THREE.TextureLoader over drei useTexture to avoid Suspense blocking on progressive loads
+- [05-01]: In-place texture hot-swap (texture.image + needsUpdate) avoids component remount
+- [05-01]: Canvas frameloop=demand saves GPU cycles when all animations are disabled
 
 ### Pending Todos
 
@@ -97,5 +101,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed 04-06-PLAN.md (Phase 4 complete)
-Resume file: .planning/phases/04-design-components/04-06-SUMMARY.md
+Stopped at: Completed 05-01-PLAN.md
+Resume file: .planning/phases/05-performance-accessibility-polish/05-01-SUMMARY.md
