@@ -87,17 +87,20 @@ export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
         className="block h-full group outline-none"
         aria-label={`View details for ${project.name}`}
       >
-        {/* Inner hex-clipped content */}
-        <div className="relative h-full hex-clip bg-alpine-800/90 backdrop-blur-sm p-6 sm:p-8">
+        <div className="relative h-full p-6 sm:p-8">
+          {/* Hex-clipped background layer (decorative only) */}
+          <div className="absolute inset-0 hex-clip bg-alpine-800/90 backdrop-blur-sm" aria-hidden="true" />
+
           {/* Facet reveal overlay on hover */}
           <motion.div
-            className="absolute inset-0 bg-gradient-to-br from-frost-500/5 via-transparent to-frost-500/8 pointer-events-none"
+            className="absolute inset-0 hex-clip bg-gradient-to-br from-frost-500/5 via-transparent to-frost-500/8 pointer-events-none"
             initial={{ opacity: 0 }}
             animate={{ opacity: isHovered ? 1 : 0 }}
             transition={{ duration: DURATION.hover }}
+            aria-hidden="true"
           />
 
-          {/* Content */}
+          {/* Content (not clipped) */}
           <div className="relative z-10">
             {/* Header */}
             <div className="flex justify-between items-start mb-4">
