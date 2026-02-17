@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** A portfolio that is visually memorable and distinctive while being stable and well-maintained under the hood.
-**Current focus:** Phase 3 Complete - Ready for Phase 4
+**Current focus:** Phase 4 in progress - Design Components
 
 ## Current Position
 
-Phase: 3 of 5 (Design Foundation) -- COMPLETE
-Plan: 2 of 2 in current phase (all done)
-Status: Phase Complete
-Last activity: 2026-02-17 — Phase 3 plan 02 complete (WCAG AA contrast verification + visual approval)
+Phase: 4 of 5 (Design Components)
+Plan: 1 of 6 in current phase (complete)
+Status: Executing
+Last activity: 2026-02-17 — Phase 4 plan 01 complete (design infrastructure)
 
-Progress: [######....] 60%
+Progress: [######....] 63%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
-- Average duration: 3.3min
-- Total execution time: 0.59 hours
+- Total plans completed: 12
+- Average duration: 3.2min
+- Total execution time: 0.63 hours
 
 **By Phase:**
 
@@ -30,9 +30,10 @@ Progress: [######....] 60%
 | 01 | 3 | 16min | 5.3min |
 | 02 | 3+3gc | 15min | 2.5min |
 | 03 | 2 | 5min | 2.5min |
+| 04 | 1 | 2min | 2min |
 
 **Recent Trend:**
-- Last 5 plans: 02-04 (1min), 02-05 (1min), 02-06 (1min), 03-01 (3min), 03-02 (2min)
+- Last 5 plans: 02-05 (1min), 02-06 (1min), 03-01 (3min), 03-02 (2min), 04-01 (2min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -72,6 +73,9 @@ Recent decisions affecting current work:
 - [03-01]: Font variables on html not body -- required for Tailwind @theme resolution at :root level
 - [03-02]: granite-400 OKLCH lightness increased from 0.55 to 0.60 to meet 4.5:1 caption contrast threshold
 - [03-02]: colorjs.io used alongside wcag-contrast for accurate OKLCH-to-sRGB conversion
+- [04-01]: Glow intensity range [1.0, 0.15] over [0, 800px] scroll -- full glow near hero, muted in content
+- [04-01]: Static 0.3 glow intensity for reduced-motion users -- visible but not animated
+- [04-01]: Stratum shadows use alpine-950 OKLCH for geological consistency with dark theme
 
 ### Pending Todos
 
@@ -84,5 +88,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Phase 4 context gathered
-Resume file: .planning/phases/04-design-components/04-CONTEXT.md
+Stopped at: Completed 04-01-PLAN.md
+Resume file: .planning/phases/04-design-components/04-01-SUMMARY.md
