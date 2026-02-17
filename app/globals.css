@@ -366,12 +366,14 @@
     animation: none;
   }
 
-  /* Phase 5: Universal fallback -- catches all CSS transitions and animations */
+  /* Phase 5: Universal fallback -- disable motion transitions but preserve visual state changes */
   *,
   *::before,
   *::after {
-    transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+    transition-property: color, background-color, border-color, outline-color,
+      text-decoration-color, fill, stroke, opacity, box-shadow, filter,
+      backdrop-filter !important;
   }
 }
