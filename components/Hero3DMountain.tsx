@@ -3,6 +3,8 @@
 import { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useReducedMotion } from '@/lib/useReducedMotion';
+import { useGlowIntensity } from '@/lib/useGlowIntensity';
+import { EASING, DURATION } from '@/lib/animations';
 import MountainTerrain3D from './MountainTerrain3D';
 import DualParticleSystem from './DualParticleSystem';
 import GlassmorphismNav from './GlassmorphismNav';
@@ -11,6 +13,9 @@ import ParticleButton from './ParticleButton';
 export default function Hero3DMountain() {
   const containerRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = useReducedMotion();
+
+  // Establish scroll-linked glow bridge for the entire page
+  useGlowIntensity();
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -33,7 +38,7 @@ export default function Hero3DMountain() {
   );
 
   return (
-    <div ref={containerRef} className="relative h-screen w-full overflow-hidden bg-black">
+    <div ref={containerRef} className="relative h-screen w-full overflow-hidden bg-alpine-950">
       {/* Navigation */}
       <GlassmorphismNav />
 
@@ -56,16 +61,16 @@ export default function Hero3DMountain() {
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, delay: 0.5 }}
-              className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-4 drop-shadow-2xl"
+              transition={{ duration: DURATION.enter, delay: 0.5, ease: [...EASING.geological] }}
+              className="text-5xl md:text-7xl lg:text-8xl font-bold text-snow-50 mb-4 drop-shadow-2xl"
             >
               Welcome to My Portfolio
             </motion.h1>
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 1, delay: 0.8 }}
-              className="inline-block px-6 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full text-white font-semibold text-lg shadow-2xl"
+              transition={{ duration: DURATION.enter, delay: 0.8, ease: [...EASING.geological] }}
+              className="inline-block px-6 py-2 bg-gradient-to-r from-frost-500 to-frost-600 rounded-full text-snow-50 font-semibold text-lg shadow-2xl glow-frost"
             >
               Photography × Technology
             </motion.div>
@@ -76,8 +81,8 @@ export default function Hero3DMountain() {
             style={{ opacity: subtitleOpacity, y: subtitleY }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 1.2 }}
-            className="text-xl md:text-2xl text-gray-200 max-w-3xl mx-auto drop-shadow-lg"
+            transition={{ duration: DURATION.enter, delay: 1.2, ease: [...EASING.geological] }}
+            className="text-xl md:text-2xl text-snow-200 max-w-3xl mx-auto drop-shadow-lg"
           >
             Capturing the majesty of the Matterhorn and crafting elegant software solutions
           </motion.p>
@@ -86,14 +91,14 @@ export default function Hero3DMountain() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 1.5 }}
-            className="mt-12 flex flex-col sm:flex-row gap-4 justify-center"
+            transition={{ duration: DURATION.enter, delay: 1.5, ease: [...EASING.erosion] }}
+            className="mt-12 flex flex-col sm:flex-row gap-4 justify-center stratum-2"
           >
             <ParticleButton
               effect="trail"
               particleCount={0}
               href="#main-content"
-              className="group px-8 py-4 bg-white text-gray-900 rounded-xl hover:bg-gray-100 transition-all duration-300 font-bold text-lg shadow-2xl hover:shadow-cyan-500/50 hover:scale-105"
+              className="group px-8 py-4 bg-snow-50 text-alpine-950 rounded-xl hover:bg-snow-100 transition-all duration-300 font-bold text-lg shadow-2xl hover:shadow-frost-500/50 hover:scale-105"
             >
               <span className="flex items-center justify-center gap-2">
                 Explore My Work
@@ -117,7 +122,7 @@ export default function Hero3DMountain() {
               effect="sparkle"
               particleCount={20}
               href="/contact"
-              className="px-8 py-4 bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white rounded-xl hover:bg-white/20 transition-all duration-300 font-bold text-lg shadow-2xl hover:shadow-white/50 hover:scale-105"
+              className="px-8 py-4 bg-alpine-800/30 backdrop-blur-sm border-2 border-frost-500/30 text-snow-50 rounded-xl hover:bg-alpine-700/40 transition-all duration-300 font-bold text-lg shadow-2xl hover:scale-105"
             >
               Get in Touch
             </ParticleButton>
@@ -128,7 +133,7 @@ export default function Hero3DMountain() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, delay: 2 }}
-            className="mt-16 flex flex-wrap justify-center gap-8 text-white/80"
+            className="mt-16 flex flex-wrap justify-center gap-8 text-snow-200/80"
           >
             {[
               { icon: '📸', text: '4 Landscape Photos' },
@@ -157,7 +162,7 @@ export default function Hero3DMountain() {
           opacity: useTransform(scrollYProgress, [0, 0.2], [1, 0]),
         }}
       >
-        <div className="flex flex-col items-center text-white">
+        <div className="flex flex-col items-center text-snow-50">
           <span className="text-sm mb-2 drop-shadow-lg">Scroll to explore</span>
           <motion.div
             animate={prefersReducedMotion ? {} : { y: [0, 10, 0] }}
@@ -183,11 +188,10 @@ export default function Hero3DMountain() {
       {/* Skip to content link for accessibility */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-md"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-frost-600 focus:text-snow-50 focus:rounded-md"
       >
         Skip to content
       </a>
     </div>
   );
 }
-
