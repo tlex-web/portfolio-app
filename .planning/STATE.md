@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 Phase: 3 of 5 (Design Foundation)
-Plan: 0 of ? in current phase
-Status: Planning needed
-Last activity: 2026-02-17 — Phase 2 gap closure plan 06 complete (CSP style-src/connect-src fixes)
+Plan: 1 of 2 in current phase
+Status: Executing
+Last activity: 2026-02-17 — Phase 3 plan 01 complete (design token system)
 
-Progress: [####......] 40%
+Progress: [#####.....] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
+- Total plans completed: 10
 - Average duration: 3.4min
-- Total execution time: 0.51 hours
+- Total execution time: 0.56 hours
 
 **By Phase:**
 
@@ -29,9 +29,10 @@ Progress: [####......] 40%
 |-------|-------|-------|----------|
 | 01 | 3 | 16min | 5.3min |
 | 02 | 3+3gc | 15min | 2.5min |
+| 03 | 1 | 3min | 3min |
 
 **Recent Trend:**
-- Last 5 plans: 02-01 (4min), 02-03 (4min), 02-04 (1min), 02-05 (1min), 02-06 (1min)
+- Last 5 plans: 02-03 (4min), 02-04 (1min), 02-05 (1min), 02-06 (1min), 03-01 (3min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -64,6 +65,11 @@ Recent decisions affecting current work:
 - [02-06]: connect-src uses raw.githubusercontent.com for drei CDN assets (corrects raw.githack.com from 02-04)
 - [02-05]: Keep production-only guard for SW registration per user decision (standard practice)
 - [02-05]: Remove load event wrapper -- root cause of SW not registering in hydrated Next.js apps
+- [03-01]: OKLCH color space for perceptual uniformity across the custom palette
+- [03-01]: Dark-only site -- removed :root/dark media query blocks, no dark: variants needed
+- [03-01]: Deleted tailwind.config.ts -- Tailwind v4 uses CSS-first @theme, v3 config was empty
+- [03-01]: @theme inline for font tokens (runtime CSS vars from next/font) vs @theme for literal color values
+- [03-01]: Font variables on html not body -- required for Tailwind @theme resolution at :root level
 
 ### Pending Todos
 
@@ -76,5 +82,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-design-foundation/03-CONTEXT.md
+Stopped at: Completed 03-01-PLAN.md
+Resume file: .planning/phases/03-design-foundation/03-01-SUMMARY.md
