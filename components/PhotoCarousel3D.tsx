@@ -17,23 +17,26 @@ interface PhotoFrameProps {
   isActive: boolean;
   onClick: () => void;
   index: number;
+  prefersReducedMotion: boolean;
 }
 
-function PhotoFrame({ image, texture, position, rotation, isActive, onClick, index }: PhotoFrameProps) {
+function PhotoFrame({ image, texture, position, rotation, isActive, onClick, index, prefersReducedMotion }: PhotoFrameProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const groupRef = useRef<THREE.Group>(null);
   
-  // Smooth spring animation for active state
+  // Smooth spring animation for active state (instant when reduced motion)
   const { scale, posZ, opacity } = useSpring({
     scale: isActive ? 1.5 : 1,
     posZ: isActive ? 2 : 0,
     opacity: isActive ? 1 : 0.7,
-    config: config.gentle,
+    config: prefersReducedMotion ? { duration: 0 } : config.gentle,
+    immediate: prefersReducedMotion,
   });
 
-  // Gentle floating animation
+  // Gentle floating animation (disabled when reduced motion)
   useFrame((state) => {
     if (!groupRef.current) return;
+    if (prefersReducedMotion) return;
     const time = state.clock.getElapsedTime();
     const floatAmount = isActive ? 0.12 : 0.04; // Less movement for inactive photos
     groupRef.current.position.y = position[1] + Math.sin(time * 0.4 + index * 0.5) * floatAmount;
@@ -200,6 +203,7 @@ function Carousel({ images, onImageClick, prefersReducedMotion }: CarouselProps)
             }
           }}
           index={i}
+          prefersReducedMotion={prefersReducedMotion}
         />
       ))}
 
@@ -245,7 +249,7 @@ export default function PhotoCarousel3D({ images, onImageClick, className = '' }
           powerPreference: 'high-performance',
         }}
         dpr={[1, 2]}
-        frameloop="always"
+        frameloop={prefersReducedMotion ? 'demand' : 'always'}
       >
         {/* Lighting */}
         <ambientLight intensity={0.3} />

@@ -347,6 +347,7 @@
 
 /* Reduced motion guards for all Phase 4 animations */
 @media (prefers-reduced-motion: reduce) {
+  /* Phase 4 guards */
   .contour-animate {
     animation: none;
   }
@@ -356,5 +357,21 @@
   .glow-frost,
   .glow-ember {
     transition: none;
+  }
+
+  /* Phase 5: Tailwind animation utilities */
+  .animate-pulse,
+  .animate-spin,
+  .animate-bounce {
+    animation: none;
+  }
+
+  /* Phase 5: Universal fallback -- catches all CSS transitions and animations */
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }
