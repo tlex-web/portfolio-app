@@ -78,6 +78,7 @@ Recent decisions affecting current work:
 - [04-01]: Stratum shadows use alpine-950 OKLCH for geological consistency with dark theme
 - [04-03]: Two-layer card structure separates glow/tilt (outer) from content (inner hex-clip) to avoid clipping glow effects
 - [04-03]: Projects page converted to client component for useHexGrid hook integration
+- [Phase 04]: Spread operator [...EASING.geological] to satisfy Framer Motion Easing type (readonly tuple to mutable) — readonly [number, number, number, number] from animations.ts is incompatible with Framer Motion's mutable Easing type
 
 ### Pending Todos
 
