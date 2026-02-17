@@ -34,7 +34,11 @@ interface ParticleButtonProps {
   href?: string;
 }
 
-/** Interactive button or anchor with configurable particle effects on click and hover. */
+/**
+ * @deprecated Use GeologicalButton for production components. ParticleButton retained for demo pages.
+ *
+ * Interactive button or anchor with configurable particle effects on click and hover.
+ */
 export default function ParticleButton({
   children,
   onClick,
