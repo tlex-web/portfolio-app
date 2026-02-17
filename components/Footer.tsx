@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { EASING, DURATION } from '@/lib/animations';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -66,7 +67,7 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-gradient-to-b from-gray-900 to-black text-white">
+    <footer className="stratum-3 bg-alpine-950 text-snow-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           {/* Brand Section */}
@@ -74,12 +75,12 @@ export default function Footer() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: DURATION.enter, ease: [...EASING.geological] }}
             >
-              <h3 className="text-3xl font-bold mb-4 bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+              <h3 className="text-3xl font-bold mb-4 text-frost-400">
                 My Portfolio
               </h3>
-              <p className="text-gray-400 mb-6 max-w-md leading-relaxed">
+              <p className="text-granite-400 mb-6 max-w-md leading-relaxed">
                 Capturing stunning landscapes and building elegant software solutions. Explore my
                 photography and discover innovative CLI tools powered by AI.
               </p>
@@ -94,10 +95,10 @@ export default function Footer() {
                     rel="noopener noreferrer"
                     initial={{ opacity: 0, scale: 0 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.1, duration: 0.3 }}
+                    transition={{ delay: index * 0.1, duration: DURATION.hover, ease: [...EASING.crystallize] }}
                     whileHover={{ scale: 1.1, y: -2 }}
                     whileTap={{ scale: 0.95 }}
-                    className="w-12 h-12 rounded-full bg-gray-800 hover:bg-gradient-to-r hover:from-cyan-500 hover:to-blue-500 flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-cyan-500/50"
+                    className="w-12 h-12 rounded-full bg-alpine-800 hover:bg-frost-500 flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-frost-500/50 glow-frost"
                     aria-label={social.name}
                   >
                     {social.icon}
@@ -113,17 +114,17 @@ export default function Footer() {
               key={section.title}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 + sectionIndex * 0.1, duration: 0.5 }}
+              transition={{ delay: 0.2 + sectionIndex * 0.1, duration: DURATION.enter, ease: [...EASING.geological] }}
             >
-              <h4 className="text-lg font-bold mb-4 text-cyan-400">{section.title}</h4>
+              <h4 className="text-lg font-bold mb-4 text-frost-400">{section.title}</h4>
               <ul className="space-y-2">
                 {section.links.map((link) => (
                   <li key={link.name}>
                     <Link
                       href={link.href}
-                      className="text-gray-400 hover:text-white transition-colors duration-200 flex items-center gap-2 group"
+                      className="text-granite-400 hover:text-snow-50 transition-colors duration-200 flex items-center gap-2 group"
                     >
-                      <span className="w-0 h-0.5 bg-cyan-500 group-hover:w-4 transition-all duration-200" />
+                      <span className="w-0 h-0.5 bg-frost-500 group-hover:w-4 transition-all duration-200" />
                       {link.name}
                     </Link>
                   </li>
@@ -134,32 +135,32 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-gray-800 pt-8">
+        <div className="border-t border-alpine-700 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.5 }}
-              className="text-gray-400 text-sm"
+              transition={{ delay: 0.5, duration: DURATION.enter, ease: [...EASING.erosion] }}
+              className="text-granite-400 text-sm"
             >
-              © {currentYear} My Portfolio. All rights reserved.
+              &copy; {currentYear} My Portfolio. All rights reserved.
             </motion.p>
 
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.6, duration: 0.5 }}
+              transition={{ delay: 0.6, duration: DURATION.enter, ease: [...EASING.erosion] }}
               className="flex gap-6 text-sm"
             >
               <a
                 href="mailto:contact@example.com"
-                className="text-gray-400 hover:text-white transition-colors duration-200"
+                className="text-granite-400 hover:text-snow-50 transition-colors duration-200"
               >
                 Contact
               </a>
               <Link
                 href="/roadmap"
-                className="text-gray-400 hover:text-white transition-colors duration-200"
+                className="text-granite-400 hover:text-snow-50 transition-colors duration-200"
               >
                 Roadmap
               </Link>
@@ -170,15 +171,15 @@ export default function Footer() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.7, duration: 0.5 }}
+            transition={{ delay: 0.7, duration: DURATION.enter, ease: [...EASING.erosion] }}
             className="text-center mt-6"
           >
-            <p className="text-gray-500 text-sm flex items-center justify-center gap-2">
+            <p className="text-granite-500 text-sm flex items-center justify-center gap-2">
               Made with
               <motion.span
                 animate={{ scale: [1, 1.2, 1] }}
                 transition={{ duration: 1, repeat: Infinity, repeatDelay: 2 }}
-                className="text-red-500"
+                className="text-ember-500"
               >
                 ❤️
               </motion.span>

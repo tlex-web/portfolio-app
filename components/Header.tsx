@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
+import { EASING, DURATION } from '@/lib/animations';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -30,11 +31,11 @@ export default function Header() {
     <motion.header
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: DURATION.enter, ease: [...EASING.geological] }}
       className={`sticky top-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-lg'
-          : 'bg-white/60 dark:bg-gray-900/60 backdrop-blur-md shadow-md'
+          ? 'bg-alpine-900/80 backdrop-blur-xl shadow-lg'
+          : 'bg-alpine-900/60 backdrop-blur-md shadow-md'
       }`}
     >
       <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -48,10 +49,10 @@ export default function Header() {
               href="/"
               className="flex items-center gap-1 sm:gap-1.5 group"
             >
-              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg group-hover:shadow-cyan-500/50 transition-shadow">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-frost-500 to-frost-600 flex items-center justify-center shadow-lg group-hover:shadow-frost-500/50 transition-shadow">
                 <span className="text-white text-xl sm:text-2xl font-bold">P</span>
               </div>
-              <span className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-cyan-600 to-blue-600 dark:from-cyan-400 dark:to-blue-400 bg-clip-text text-transparent">
+              <span className="text-2xl sm:text-3xl font-bold text-frost-400">
                 ortfolio
               </span>
             </Link>
@@ -66,22 +67,22 @@ export default function Header() {
                   key={item.name}
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
+                  transition={{ delay: index * 0.1, ease: [...EASING.crystallize] }}
                 >
                   <Link
                     href={item.href}
                     className={`relative px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base font-medium transition-all duration-300 ${
                       isActive
-                        ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-105'
+                        ? 'bg-frost-500/20 text-snow-50 glow-frost'
+                        : 'text-snow-200 hover:bg-alpine-700/50 hover:scale-105'
                     }`}
                   >
                     {item.name}
                     {isActive && (
                       <motion.div
                         layoutId="activeTab"
-                        className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg -z-10"
-                        transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                        className="absolute inset-0 bg-frost-500/30 rounded-lg -z-10"
+                        transition={{ duration: DURATION.enter, ease: [...EASING.geological] }}
                       />
                     )}
                   </Link>
@@ -96,7 +97,7 @@ export default function Header() {
               whileTap={{ scale: 0.95 }}
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
+              className="inline-flex items-center justify-center p-2 rounded-lg text-snow-200 hover:bg-alpine-700/50 transition-all"
               aria-expanded={mobileMenuOpen}
               aria-label="Toggle menu"
             >
@@ -133,7 +134,7 @@ export default function Header() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: DURATION.hover, ease: [...EASING.geological] }}
               className="md:hidden overflow-hidden"
             >
               <div className="py-4 space-y-2">
@@ -144,14 +145,14 @@ export default function Header() {
                       key={item.name}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
+                      transition={{ delay: index * 0.1, ease: [...EASING.crystallize] }}
                     >
                       <Link
                         href={item.href}
                         className={`block px-4 py-3 rounded-lg text-lg font-medium transition-all ${
                           isActive
-                            ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg'
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                            ? 'bg-frost-500/20 text-snow-50 shadow-lg'
+                            : 'text-snow-200 hover:bg-alpine-700/50'
                         }`}
                         onClick={() => setMobileMenuOpen(false)}
                       >
@@ -167,8 +168,7 @@ export default function Header() {
       </nav>
 
       {/* Gradient Border Bottom */}
-      <div className="h-0.5 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50" />
+      <div className="h-0.5 bg-gradient-to-r from-transparent via-frost-500 to-transparent opacity-50" />
     </motion.header>
   );
 }
-
