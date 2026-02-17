@@ -13,8 +13,8 @@ This milestone stabilizes the portfolio codebase (dependency conflicts, security
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Dependency Resolution & Code Quality** - Clean dependency tree and proper TypeScript types across the codebase (completed 2026-02-16)
-- [x] **Phase 2: Security & Reliability Hardening** - CSP, CSRF, persistent rate limiting, and service worker cache invalidation (completed 2026-02-17)
-- [x] **Phase 3: Design Foundation** - Custom color palette, typography system, and accessibility-verified design tokens (completed 2026-02-17)
+- [x] **Phase 2: Security & Reliability Hardening** - CSP, CSRF, persistent rate limiting, and service worker cache invalidation (completed 2026-02-17)
+- [x] **Phase 3: Design Foundation** - Custom color palette, typography system, and accessibility-verified design tokens (completed 2026-02-17)
 - [ ] **Phase 4: Design Components** - Distinctive navigation, project cards, micro-interactions, and glowing accent system
 - [ ] **Phase 5: Performance & Accessibility Polish** - Progressive 3D texture loading and consistent reduced-motion support
 
@@ -65,8 +65,8 @@ Plans:
 **Plans:** 2/2 plans complete
 
 Plans:
-- [ ] 03-01-PLAN.md — Color palette tokens, font integration, and base typography hierarchy
-- [ ] 03-02-PLAN.md — WCAG contrast verification script and visual design checkpoint
+- [x] 03-01-PLAN.md — Color palette tokens, font integration, and base typography hierarchy
+- [x] 03-02-PLAN.md — WCAG contrast verification script and visual design checkpoint
 
 ### Phase 4: Design Components
 **Goal**: The portfolio has a distinctive, memorable visual identity -- custom navigation, project cards, organic micro-interactions, and glowing accents that connect the 2D UI to the existing 3D components
@@ -77,11 +77,15 @@ Plans:
   2. Project cards and tiles have a custom visual style reflecting the organic-meets-digital aesthetic -- visually distinct from default Tailwind rounded rectangles
   3. Interactive elements (buttons, cards, nav items) have biophilic micro-interactions -- organic easing curves and nature-inspired hover/click effects that are visible during normal browsing
   4. Glowing accents and depth effects are present on UI elements, creating a visible visual connection between the 2D interface and the existing 3D components (terrain, carousel)
-**Plans**: TBD
+**Plans:** 6 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
+- [ ] 04-01-PLAN.md — CSS utilities foundation, geological easing constants, and scroll-linked glow hook
+- [ ] 04-02-PLAN.md — Navigation redesign with organic glass morphing and contour line background
+- [ ] 04-03-PLAN.md — Crystalline hexagonal project cards with tilt hover and hex mosaic layout
+- [ ] 04-04-PLAN.md — GeologicalButton with crystal fracture and mineral dust effects
+- [ ] 04-05-PLAN.md — Homepage, Footer, and Header token migration with geological depth
+- [ ] 04-06-PLAN.md — Visual verification checkpoint for complete crystalline design system
 
 ### Phase 5: Performance & Accessibility Polish
 **Goal**: 3D content loads efficiently with progressive enhancement, and all animations respect user motion preferences
@@ -105,6 +109,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. Dependency Resolution & Code Quality | 3/3 | Complete | 2026-02-16 |
 | 2. Security & Reliability Hardening | 6/6 | Complete | 2026-02-17 |
-| 3. Design Foundation | 0/? | Complete    | 2026-02-17 |
-| 4. Design Components | 0/? | Not started | - |
+| 3. Design Foundation | 2/2 | Complete | 2026-02-17 |
+| 4. Design Components | 0/6 | In Progress | - |
 | 5. Performance & Accessibility Polish | 0/? | Not started | - |
