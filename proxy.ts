@@ -6,10 +6,10 @@ export function proxy(request: NextRequest) {
   const cspHeader = `
     default-src 'self';
     script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval';
-    style-src 'self' 'nonce-${nonce}' 'unsafe-inline';
+    style-src 'self' 'unsafe-inline';
     img-src 'self' blob: data:;
     font-src 'self' data:;
-    connect-src 'self' https://raw.githack.com;
+    connect-src 'self' https://raw.githubusercontent.com;
     frame-src 'none';
     object-src 'none';
     base-uri 'self';
