@@ -3,8 +3,10 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { EASING, DURATION } from '@/lib/animations';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 
 export default function Footer() {
+  const prefersReducedMotion = useReducedMotion();
   const currentYear = new Date().getFullYear();
 
   const socialLinks = [
@@ -73,9 +75,9 @@ export default function Footer() {
           {/* Brand Section */}
           <div className="lg:col-span-2">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: DURATION.enter, ease: [...EASING.geological] }}
+              transition={prefersReducedMotion ? { duration: 0 } : { duration: DURATION.enter, ease: [...EASING.geological] }}
             >
               <h3 className="text-3xl font-bold mb-4 text-frost-400">
                 My Portfolio
@@ -93,11 +95,11 @@ export default function Footer() {
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    initial={{ opacity: 0, scale: 0 }}
+                    initial={prefersReducedMotion ? false : { opacity: 0, scale: 0 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.1, duration: DURATION.hover, ease: [...EASING.crystallize] }}
-                    whileHover={{ scale: 1.1, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
+                    transition={prefersReducedMotion ? { duration: 0 } : { delay: index * 0.1, duration: DURATION.hover, ease: [...EASING.crystallize] }}
+                    whileHover={prefersReducedMotion ? undefined : { scale: 1.1, y: -2 }}
+                    whileTap={prefersReducedMotion ? undefined : { scale: 0.95 }}
                     className="w-12 h-12 rounded-full bg-alpine-800 hover:bg-frost-500 flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-frost-500/50 glow-frost"
                     aria-label={social.name}
                   >
@@ -112,9 +114,9 @@ export default function Footer() {
           {footerLinks.map((section, sectionIndex) => (
             <motion.div
               key={section.title}
-              initial={{ opacity: 0, y: 20 }}
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 + sectionIndex * 0.1, duration: DURATION.enter, ease: [...EASING.geological] }}
+              transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.2 + sectionIndex * 0.1, duration: DURATION.enter, ease: [...EASING.geological] }}
             >
               <h4 className="text-lg font-bold mb-4 text-frost-400">{section.title}</h4>
               <ul className="space-y-2">
@@ -138,18 +140,18 @@ export default function Footer() {
         <div className="border-t border-alpine-700 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <motion.p
-              initial={{ opacity: 0 }}
+              initial={prefersReducedMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.5, duration: DURATION.enter, ease: [...EASING.erosion] }}
+              transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.5, duration: DURATION.enter, ease: [...EASING.erosion] }}
               className="text-granite-400 text-sm"
             >
               &copy; {currentYear} My Portfolio. All rights reserved.
             </motion.p>
 
             <motion.div
-              initial={{ opacity: 0 }}
+              initial={prefersReducedMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.6, duration: DURATION.enter, ease: [...EASING.erosion] }}
+              transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.6, duration: DURATION.enter, ease: [...EASING.erosion] }}
               className="flex gap-6 text-sm"
             >
               <a
@@ -169,16 +171,16 @@ export default function Footer() {
 
           {/* Made with Love */}
           <motion.div
-            initial={{ opacity: 0 }}
+            initial={prefersReducedMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.7, duration: DURATION.enter, ease: [...EASING.erosion] }}
+            transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.7, duration: DURATION.enter, ease: [...EASING.erosion] }}
             className="text-center mt-6"
           >
             <p className="text-granite-500 text-sm flex items-center justify-center gap-2">
               Made with
               <motion.span
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 1, repeat: Infinity, repeatDelay: 2 }}
+                animate={prefersReducedMotion ? {} : { scale: [1, 1.2, 1] }}
+                transition={prefersReducedMotion ? undefined : { duration: 1, repeat: Infinity, repeatDelay: 2 }}
                 className="text-ember-500"
               >
                 ❤️

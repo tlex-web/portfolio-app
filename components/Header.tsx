@@ -5,11 +5,13 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { EASING, DURATION } from '@/lib/animations';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
+  const prefersReducedMotion = useReducedMotion();
 
   const navigation = [
     { name: 'Home', href: '/' },
@@ -29,9 +31,9 @@ export default function Header() {
 
   return (
     <motion.header
-      initial={{ y: -100 }}
+      initial={prefersReducedMotion ? false : { y: -100 }}
       animate={{ y: 0 }}
-      transition={{ duration: DURATION.enter, ease: [...EASING.geological] }}
+      transition={prefersReducedMotion ? { duration: 0 } : { duration: DURATION.enter, ease: [...EASING.geological] }}
       className={`sticky top-0 z-50 transition-all duration-300 ${
         scrolled
           ? 'bg-alpine-900/80 backdrop-blur-xl shadow-lg'
@@ -42,7 +44,7 @@ export default function Header() {
         <div className="flex justify-between items-center h-16 sm:h-20">
           {/* Logo/Brand with Gradient */}
           <motion.div
-            whileHover={{ scale: 1.05 }}
+            whileHover={prefersReducedMotion ? undefined : { scale: 1.05 }}
             className="flex-shrink-0"
           >
             <Link
@@ -65,9 +67,9 @@ export default function Header() {
               return (
                 <motion.div
                   key={item.name}
-                  initial={{ opacity: 0, y: -20 }}
+                  initial={prefersReducedMotion ? false : { opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1, ease: [...EASING.crystallize] }}
+                  transition={prefersReducedMotion ? { duration: 0 } : { delay: index * 0.1, ease: [...EASING.crystallize] }}
                 >
                   <Link
                     href={item.href}
@@ -82,7 +84,7 @@ export default function Header() {
                       <motion.div
                         layoutId="activeTab"
                         className="absolute inset-0 bg-frost-500/30 rounded-lg -z-10"
-                        transition={{ duration: DURATION.enter, ease: [...EASING.geological] }}
+                        transition={prefersReducedMotion ? { duration: 0 } : { duration: DURATION.enter, ease: [...EASING.geological] }}
                       />
                     )}
                   </Link>
@@ -94,7 +96,7 @@ export default function Header() {
           {/* Mobile menu button */}
           <div className="md:hidden">
             <motion.button
-              whileTap={{ scale: 0.95 }}
+              whileTap={prefersReducedMotion ? undefined : { scale: 0.95 }}
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="inline-flex items-center justify-center p-2 rounded-lg text-snow-200 hover:bg-alpine-700/50 transition-all"
@@ -131,10 +133,10 @@ export default function Header() {
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
+              initial={prefersReducedMotion ? false : { opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: DURATION.hover, ease: [...EASING.geological] }}
+              transition={prefersReducedMotion ? { duration: 0 } : { duration: DURATION.hover, ease: [...EASING.geological] }}
               className="md:hidden overflow-hidden"
             >
               <div className="py-4 space-y-2">
@@ -143,9 +145,9 @@ export default function Header() {
                   return (
                     <motion.div
                       key={item.name}
-                      initial={{ opacity: 0, x: -20 }}
+                      initial={prefersReducedMotion ? false : { opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1, ease: [...EASING.crystallize] }}
+                      transition={prefersReducedMotion ? { duration: 0 } : { delay: index * 0.1, ease: [...EASING.crystallize] }}
                     >
                       <Link
                         href={item.href}
