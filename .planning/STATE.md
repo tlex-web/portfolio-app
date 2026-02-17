@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** A portfolio that is visually memorable and distinctive while being stable and well-maintained under the hood.
-**Current focus:** Phase 4 in progress - Design Components
+**Current focus:** Phase 4 complete - Design Components (ready for Phase 5)
 
 ## Current Position
 
 Phase: 4 of 5 (Design Components)
-Plan: 5 of 6 in current phase (complete)
-Status: Executing
-Last activity: 2026-02-17 — Phase 4 plan 05 complete (homepage/footer/header token migration)
+Plan: 6 of 6 in current phase (complete)
+Status: Phase Complete
+Last activity: 2026-02-17 — Phase 4 complete (all 6 plans, visual verification approved)
 
-Progress: [########..] 83%
+Progress: [#########.] 90%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 16
+- Total plans completed: 17
 - Average duration: 3.1min
-- Total execution time: 0.86 hours
+- Total execution time: 0.89 hours
 
 **By Phase:**
 
@@ -30,10 +30,10 @@ Progress: [########..] 83%
 | 01 | 3 | 16min | 5.3min |
 | 02 | 3+3gc | 15min | 2.5min |
 | 03 | 2 | 5min | 2.5min |
-| 04 | 5 | 23min | 4.6min |
+| 04 | 6 | 25min | 4.2min |
 
 **Recent Trend:**
-- Last 5 plans: 04-01 (2min), 04-02 (7min), 04-03 (7min), 04-04 (3min), 04-05 (4min)
+- Last 5 plans: 04-02 (7min), 04-03 (7min), 04-04 (3min), 04-05 (4min), 04-06 (2min)
 - Trend: variable (design component complexity varies)
 
 *Updated after each plan completion*
@@ -84,6 +84,7 @@ Recent decisions affecting current work:
 - [04-05]: Removed bg-clip-text gradient patterns on headings in favor of direct text-frost-400 (simpler, consistent with token system)
 - [04-05]: Footer stratum-3 (deepest layer) to visually ground page bottom as geological bedrock
 - [04-05]: Header active nav uses glow-frost class for frost highlight consistent with GlassmorphismNav
+- [04-06]: ProjectCard hex clip-path moved to background layer so card content is not clipped
 
 ### Pending Todos
 
@@ -96,5 +97,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Completed 04-05-PLAN.md
-Resume file: .planning/phases/04-design-components/04-05-SUMMARY.md
+Stopped at: Completed 04-06-PLAN.md (Phase 4 complete)
+Resume file: .planning/phases/04-design-components/04-06-SUMMARY.md
