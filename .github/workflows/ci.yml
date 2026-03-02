@@ -96,7 +96,7 @@ jobs:
           FEEDBACK_FROM_EMAIL: noreply@example.com
 
       - name: Upload Playwright report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: playwright-report
@@ -134,7 +134,7 @@ jobs:
           FEEDBACK_FROM_EMAIL: noreply@example.com
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: nextjs-build
           path: .next/
