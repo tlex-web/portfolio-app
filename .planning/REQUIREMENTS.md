@@ -88,10 +88,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | DEPS-01 | Phase 1 | Pending |
 | DEPS-02 | Phase 1 | Pending |
-| SEC-01 | Phase 2 | Pending |
+| SEC-01 | Phase 6 | Pending |
 | SEC-02 | Phase 2 | Pending |
-| REL-01 | Phase 2 | Pending |
-| REL-02 | Phase 2 | Pending |
+| REL-01 | Phase 6 | Pending |
+| REL-02 | Phase 6 | Pending |
 | QUAL-01 | Phase 1 | Pending |
 | QUAL-02 | Phase 1 | Pending |
 | DSGN-01 | Phase 3 | Complete |

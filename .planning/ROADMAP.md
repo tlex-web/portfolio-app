@@ -17,6 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 3: Design Foundation** - Custom color palette, typography system, and accessibility-verified design tokens
 - [x] **Phase 4: Design Components** - Distinctive navigation, project cards, micro-interactions, and glowing accent system (completed 2026-02-17)
 - [ ] **Phase 5: Performance & Accessibility Polish** - Progressive 3D texture loading and consistent reduced-motion support
+- [ ] **Phase 6: Integration Wiring Fixes** - Fix 3 cross-phase wiring breaks found by milestone audit (SEC-01, REL-01, REL-02)
 
 ## Phase Details
 
@@ -105,6 +106,20 @@ Plans:
 - [ ] 05-04-PLAN.md — Fix WebGL context loss from leaked intermediate textures (gap closure)
 - [ ] 05-05-PLAN.md — Fix reduced-motion white/no-contrast from hydration race and CSS guard scope (gap closure)
 
+### Phase 6: Integration Wiring Fixes
+**Goal**: All Phase 2 security and reliability features are correctly wired into the runtime — CSP middleware executes, rate-limiting packages are installed, and build-hash injection runs during builds
+**Depends on**: Phase 2 (fixes wiring breaks in Phase 2 deliverables)
+**Requirements**: SEC-01, REL-01, REL-02
+**Gap Closure:** Closes gaps from v1.0 milestone audit
+**Success Criteria** (what must be TRUE):
+  1. `middleware.ts` exists (not `proxy.ts`) and Next.js executes it — CSP header appears in page responses
+  2. `@upstash/ratelimit` and `@upstash/redis` are in `package.json` dependencies and installed in `node_modules`
+  3. `package.json` postbuild script includes `inject-build-hash.mjs` — running `npm run build` replaces `__BUILD_HASH__` in service worker
+**Plans:** 0 plans (not yet planned)
+
+Plans:
+- [ ] 06-01-PLAN.md — Rename proxy.ts to middleware.ts, install Upstash packages, wire inject-build-hash into postbuild
+
 ## Progress
 
 **Execution Order:**
@@ -117,3 +132,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 3. Design Foundation | 2/3 | In Progress | - |
 | 4. Design Components | 6/6 | Complete | 2026-02-17 |
 | 5. Performance & Accessibility Polish | 3/5 | In Progress | - |
+| 6. Integration Wiring Fixes | 0/1 | Not Started | - |
