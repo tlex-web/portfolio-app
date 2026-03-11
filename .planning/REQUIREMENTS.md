@@ -14,13 +14,13 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Security
 
-- [ ] **SEC-01**: Content Security Policy uses nonce-based approach, removing `unsafe-inline` and `unsafe-eval` where possible
+- [x] **SEC-01**: Content Security Policy uses nonce-based approach, removing `unsafe-inline` and `unsafe-eval` where possible
 - [ ] **SEC-02**: Feedback API endpoint has CSRF token validation preventing cross-origin form submissions
 
 ### Reliability
 
-- [ ] **REL-01**: Rate limiting persists across deployments using Redis/Vercel KV with sliding window algorithm
-- [ ] **REL-02**: Service worker cache version is generated from build hash, automatically invalidating stale caches on deployment
+- [x] **REL-01**: Rate limiting persists across deployments using Redis/Vercel KV with sliding window algorithm
+- [x] **REL-02**: Service worker cache version is generated from build hash, automatically invalidating stale caches on deployment
 
 ### Code Quality
 
@@ -88,10 +88,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | DEPS-01 | Phase 1 | Pending |
 | DEPS-02 | Phase 1 | Pending |
-| SEC-01 | Phase 6 | Pending |
+| SEC-01 | Phase 6 | Complete |
 | SEC-02 | Phase 2 | Pending |
-| REL-01 | Phase 6 | Pending |
-| REL-02 | Phase 6 | Pending |
+| REL-01 | Phase 6 | Complete |
+| REL-02 | Phase 6 | Complete |
 | QUAL-01 | Phase 1 | Pending |
 | QUAL-02 | Phase 1 | Pending |
 | DSGN-01 | Phase 3 | Complete |
