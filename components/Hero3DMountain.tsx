@@ -92,12 +92,12 @@ export default function Hero3DMountain() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: DURATION.enter, delay: 1.5, ease: [...EASING.erosion] }}
-            className="mt-12 flex flex-col sm:flex-row gap-4 justify-center stratum-2"
+            className="mt-12 flex flex-col sm:flex-row gap-4 justify-center"
           >
             <GeologicalButton
               effect="ripple"
               href="#main-content"
-              className="group px-8 py-4 bg-snow-50 text-alpine-950 rounded-xl hover:bg-snow-100 transition-all duration-300 font-bold text-lg shadow-2xl hover:shadow-frost-500/50 hover:scale-105"
+              className="group px-8 py-4 bg-snow-50 text-alpine-950 rounded-xl hover:bg-snow-100 transition-all duration-300 font-bold text-lg shadow-lg hover:shadow-frost-500/30 hover:scale-105"
             >
               <span className="flex items-center justify-center gap-2">
                 Explore My Work
@@ -120,7 +120,7 @@ export default function Hero3DMountain() {
             <GeologicalButton
               effect="fracture"
               href="/contact"
-              className="px-8 py-4 bg-alpine-800/30 backdrop-blur-sm border-2 border-frost-500/30 text-snow-50 rounded-xl hover:bg-alpine-700/40 transition-all duration-300 font-bold text-lg shadow-2xl hover:scale-105"
+              className="px-8 py-4 bg-alpine-800/60 border-2 border-frost-500/30 text-snow-50 rounded-xl hover:bg-alpine-700/70 transition-all duration-300 font-bold text-lg shadow-lg hover:scale-105"
             >
               Get in Touch
             </GeologicalButton>
