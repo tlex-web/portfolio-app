@@ -115,7 +115,7 @@ Plans:
   1. `middleware.ts` exists (not `proxy.ts`) and Next.js executes it — CSP header appears in page responses
   2. `@upstash/ratelimit` and `@upstash/redis` are in `package.json` dependencies and installed in `node_modules`
   3. `package.json` postbuild script includes `inject-build-hash.mjs` — running `npm run build` replaces `__BUILD_HASH__` in service worker
-**Plans:** 0 plans (not yet planned)
+**Plans:** 1 plan
 
 Plans:
 - [ ] 06-01-PLAN.md — Rename proxy.ts to middleware.ts, install Upstash packages, wire inject-build-hash into postbuild
@@ -123,7 +123,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
