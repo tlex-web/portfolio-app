@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 03-design-foundation
 source: 03-01-SUMMARY.md, 03-02-SUMMARY.md
 started: 2026-03-11T17:45:00Z
@@ -51,9 +51,17 @@ skipped: 0
   reason: "User reported: The about this project section is barely readable. The section uses README content as description — should be removed or completely redone with a personalised mission statement instead of raw README dump."
   severity: major
   test: 4
-  root_cause: ""
-  artifacts: []
-  missing: []
+  root_cause: "ProjectDetailClient.tsx uses prose prose-lg dark:prose-invert classes but @tailwindcss/typography plugin is not installed — prose classes produce no styling, leaving raw markdown unstyled with poor contrast. Additionally, longDescription field in data/projects.ts contains 76+ lines of raw README markdown which is poor UX for a portfolio page."
+  artifacts:
+    - path: "components/ProjectDetailClient.tsx"
+      issue: "Uses prose classes that don't exist without typography plugin; renders raw markdown unstyled"
+    - path: "data/projects.ts"
+      issue: "longDescription contains raw README content — not suitable for portfolio presentation"
+    - path: "app/globals.css"
+      issue: "No prose-specific styles exist; base text color too dim for unstyled markdown"
+  missing:
+    - "Remove or redesign About This Project section with personalised mission content"
+    - "Either install @tailwindcss/typography or replace prose classes with custom styling"
   debug_session: ""
 
 - truth: "npm run verify-contrast runs successfully with all 24 combinations passing"
@@ -61,7 +69,13 @@ skipped: 0
   reason: "User reported: npm error Missing script: verify-contrast — the script file exists at scripts/verify-contrast.mjs but the npm script entry is missing from package.json"
   severity: major
   test: 5
-  root_cause: ""
-  artifacts: []
-  missing: []
+  root_cause: "The verify-contrast npm script entry was accidentally removed from package.json during commit ad73172 (eslint dependency bump). The prebuild and postbuild script entries were also lost in the same commit. The script file scripts/verify-contrast.mjs remains intact."
+  artifacts:
+    - path: "package.json"
+      issue: "Missing verify-contrast, prebuild, and postbuild script entries removed in commit ad73172"
+    - path: "scripts/verify-contrast.mjs"
+      issue: "Script file exists and is correct but unreachable via npm run"
+  missing:
+    - "Restore verify-contrast script entry in package.json"
+    - "Restore prebuild and postbuild script entries also lost in same commit"
   debug_session: ""
