@@ -1,7 +1,7 @@
 // Service Worker for Portfolio App
 // Build hash injected by scripts/inject-build-hash.mjs during postbuild
 
-const BUILD_HASH = '__BUILD_HASH__';
+const BUILD_HASH = 'T5Omvo7bhPVP9HRwZj9-X';
 const STATIC_CACHE = `static-${BUILD_HASH}`;
 const IMAGE_CACHE = `images-${BUILD_HASH}`;
 const DYNAMIC_CACHE = `dynamic-${BUILD_HASH}`;
