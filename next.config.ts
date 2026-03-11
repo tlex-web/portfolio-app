@@ -38,7 +38,7 @@ const nextConfig: NextConfig = {
       }
     );
 
-    // Security headers (CSP moved to proxy.ts for nonce-based approach)
+    // Security headers (CSP moved to middleware.ts for nonce-based approach)
     headers.push({
       source: '/:path*',
       headers: [
