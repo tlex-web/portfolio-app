@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { useTexture, OrbitControls, Environment } from '@react-three/drei';
+import { useTexture, OrbitControls } from '@react-three/drei';
 import ShaderTransition, { TransitionType } from './ShaderTransition';
 import { LandscapeImage } from '@/data/types';
 import { useReducedMotion } from '@/lib/useReducedMotion';
@@ -95,7 +95,6 @@ function ShowcaseScene({ images, transitionType, autoPlay, speed, easing, prefer
         transitionType={transitionType}
         prefersReducedMotion={prefersReducedMotion}
       />
-      <Environment preset="sunset" />
     </>
   );
 }

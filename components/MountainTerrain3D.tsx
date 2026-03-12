@@ -2,7 +2,7 @@
 
 import { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Environment, Stars } from '@react-three/drei';
+import { OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import { useScroll, useTransform, type MotionValue } from 'framer-motion';
 import { useReducedMotion } from '@/lib/useReducedMotion';
@@ -209,9 +209,6 @@ export default function MountainTerrain3D({ className = '' }: MountainTerrain3DP
 
         {/* Fog for depth */}
         <fog attach="fog" args={['#0a0a0a', 8, 25]} />
-
-        {/* Environment lighting */}
-        <Environment preset="night" />
 
         {/* Mountain */}
         <Mountain scrollProgress={scrollYProgress} prefersReducedMotion={prefersReducedMotion} />

@@ -4,7 +4,7 @@
   "description": "A modern portfolio website showcasing landscape photography and programming projects with 3D visualizations",
   "main": "index.js",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",

@@ -2,7 +2,7 @@
 
 import { useRef, useState, useMemo, useEffect, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Html, Environment } from '@react-three/drei';
+import { Html } from '@react-three/drei';
 import { useProgressiveTextures } from '@/lib/useProgressiveTextures';
 import * as THREE from 'three';
 import { useSpring, animated, config } from '@react-spring/three';
@@ -262,9 +262,6 @@ export default function PhotoCarousel3D({ images, onImageClick, className = '' }
         />
         <pointLight position={[-10, 5, -10]} intensity={0.5} color="#06b6d4" />
         <pointLight position={[10, 5, 10]} intensity={0.5} color="#8b5cf6" />
-
-        {/* Environment for reflections */}
-        <Environment preset="city" />
 
         {/* Fog */}
         <fog attach="fog" args={['#0a0a0a', 10, 30]} />

@@ -2,7 +2,7 @@
 
 import { useRef, useMemo, Suspense, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Html, Environment } from '@react-three/drei';
+import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 import { DemoCommand } from '@/data/types';
@@ -324,9 +324,6 @@ export default function HologramTerminal({ children, className = '' }: HologramT
             color="#00ffff"
             castShadow
           />
-
-          {/* Environment */}
-          <Environment preset="night" />
 
           {/* Particle Field */}
           <ParticleField prefersReducedMotion={prefersReducedMotion} />
