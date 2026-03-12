@@ -31,7 +31,7 @@ export default async function RootLayout({
 }>) {
   // Read nonce from middleware.ts x-nonce header -- forces dynamic rendering
   // so Next.js can auto-inject nonces into all framework scripts
-  const nonce = (await headers()).get('x-nonce') ?? undefined;
+  const _nonce = (await headers()).get('x-nonce') ?? undefined;
 
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>

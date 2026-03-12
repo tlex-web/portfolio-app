@@ -156,7 +156,7 @@ export default function ParticleButton({
     };
 
     requestAnimationFrame(animate);
-  }, [effect, particleCount, prefersReducedMotion, disabled]);
+  }, [effect, particleCount, prefersReducedMotion, disabled, colors, href]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
     if (prefersReducedMotion || disabled || effect !== 'trail' || !isHovered) return;

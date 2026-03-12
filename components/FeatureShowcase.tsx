@@ -4,13 +4,6 @@ import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 
-interface Feature {
-  title: string;
-  description: string;
-  icon: string;
-  color: string;
-}
-
 interface FeatureShowcaseProps {
   features: string[];
   title?: string;

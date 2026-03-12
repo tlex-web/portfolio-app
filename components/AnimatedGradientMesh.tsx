@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useMemo } from 'react';
+import { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useReducedMotion } from '@/lib/useReducedMotion';
@@ -222,7 +222,7 @@ function GradientMesh({ colorScheme, intensity, speed, prefersReducedMotion }: M
       fragmentShader: gradientMeshShader.fragmentShader,
       side: THREE.DoubleSide,
     });
-  }, [colorScheme, intensity, speed]);
+  }, [colorScheme, intensity, speed, palette.color1, palette.color2, palette.color3, palette.color4]);
 
   useFrame(({ clock }) => {
     if (meshRef.current && material) {
