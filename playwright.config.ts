@@ -35,11 +35,15 @@ export default defineConfig({
     },
   ],
 
-  /* Run local dev server before starting the tests */
+  /* Run local dev server before starting the tests.
+   * In CI, use a production build to avoid HMR WebSocket connections
+   * that prevent 'networkidle' from ever resolving. */
   webServer: {
-    command: 'npm run dev',
+    command: process.env.CI
+      ? 'npm run build && npm run start'
+      : 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
-    timeout: 120000, // 2 minutes to start server
+    timeout: process.env.CI ? 180000 : 120000, // 3 min in CI (build+start), 2 min locally
   },
 });
