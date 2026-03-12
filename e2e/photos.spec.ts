@@ -60,16 +60,9 @@ test.describe('Photo Gallery', () => {
     // Click 3D view button
     await page.getByRole('button', { name: /3D Carousel/i }).click();
 
-    // Wait for the 3D carousel to load (it's lazy loaded)
-    await page.waitForTimeout(1000);
-
-    // Should show canvas element (3D view) - check if it exists in DOM
+    // Wait for the lazy-loaded 3D canvas to appear (may take time to load WebGL)
     const canvas = page.locator('canvas');
-    await expect(canvas).toBeAttached();
-
-    // Verify it's actually rendered (might be visibility:hidden due to WebGL)
-    const canvasCount = await canvas.count();
-    expect(canvasCount).toBeGreaterThan(0);
+    await expect(canvas).toBeAttached({ timeout: 15000 });
   });
 
   test('should switch between grid and 3D view', async ({ page }) => {
