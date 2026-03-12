@@ -51,23 +51,23 @@ function PhotoFrame({ image, texture, position, rotation, isActive, onClick, ind
           e.stopPropagation();
           onClick();
         }}
-        scale={scale as any}
-        position-z={posZ as any}
+        scale={scale as unknown as number}
+        position-z={posZ as unknown as number}
       >
         <planeGeometry args={[4, 3]} />
         {/* @ts-expect-error - react-spring types conflict with r3f */}
         <animated.meshStandardMaterial
           map={texture}
           transparent
-          opacity={opacity as any}
+          opacity={opacity as unknown as number}
           side={THREE.DoubleSide}
         />
       </animated.mesh>
 
       {/* Frame border */}
       <animated.mesh
-        position-z={posZ as any}
-        scale={scale as any}
+        position-z={posZ as unknown as number}
+        scale={scale as unknown as number}
       >
         <planeGeometry args={[4.2, 3.2]} />
         <meshStandardMaterial
@@ -81,8 +81,8 @@ function PhotoFrame({ image, texture, position, rotation, isActive, onClick, ind
       <animated.mesh
         position-y={-1.58}
         rotation-x={Math.PI}
-        scale={scale as any}
-        position-z={posZ as any}
+        scale={scale as unknown as number}
+        position-z={posZ as unknown as number}
       >
         <planeGeometry args={[4, 3]} />
         <animated.meshStandardMaterial

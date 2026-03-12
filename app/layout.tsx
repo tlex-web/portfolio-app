@@ -29,9 +29,9 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Read nonce from middleware.ts x-nonce header -- forces dynamic rendering
-  // so Next.js can auto-inject nonces into all framework scripts
-  const _nonce = (await headers()).get('x-nonce') ?? undefined;
+  // Read headers to force dynamic rendering so Next.js can auto-inject
+  // nonces from middleware.ts into all framework scripts
+  await headers();
 
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>

@@ -222,7 +222,7 @@ function GradientMesh({ colorScheme, intensity, speed, prefersReducedMotion }: M
       fragmentShader: gradientMeshShader.fragmentShader,
       side: THREE.DoubleSide,
     });
-  }, [colorScheme, intensity, speed, palette.color1, palette.color2, palette.color3, palette.color4]);
+  }, [intensity, speed, palette.color1, palette.color2, palette.color3, palette.color4]);
 
   useFrame(({ clock }) => {
     if (meshRef.current && material) {
