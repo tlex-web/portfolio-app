@@ -33,6 +33,8 @@ export default [{
 {
     ...compat.extends("prettier")[0],
 
+    files: ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"],
+
     plugins: {
         "@typescript-eslint": typescriptEslint,
         react,
