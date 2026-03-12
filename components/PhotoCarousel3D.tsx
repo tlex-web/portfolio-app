@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useMemo, useEffect, Suspense } from 'react';
+import { useRef, useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import { useProgressiveTextures } from '@/lib/useProgressiveTextures';
@@ -137,10 +137,10 @@ function Carousel({ images, onImageClick, prefersReducedMotion }: CarouselProps)
       const z = Math.cos(angle) * radius;
       return [x, 0, z] as [number, number, number];
     });
-  }, [images.length, angleStep]);
+  }, [images.length, images, angleStep]);
 
   // Auto-rotation
-  useFrame((state) => {
+  useFrame((_state) => {
     if (!groupRef.current || prefersReducedMotion) return;
     
     // Smooth rotation to active photo with improved damping
@@ -159,7 +159,7 @@ function Carousel({ images, onImageClick, prefersReducedMotion }: CarouselProps)
   });
 
   // Keyboard controls
-  const handleKeyPress = (e: KeyboardEvent) => {
+  const handleKeyPress = useCallback((e: KeyboardEvent) => {
     if (e.key === 'ArrowLeft') {
       setActiveIndex((prev) => (prev - 1 + images.length) % images.length);
     } else if (e.key === 'ArrowRight') {
@@ -167,13 +167,13 @@ function Carousel({ images, onImageClick, prefersReducedMotion }: CarouselProps)
     } else if (e.key === 'Enter' && images[activeIndex]) {
       onImageClick(images[activeIndex]);
     }
-  };
+  }, [activeIndex, images, onImageClick]);
 
   // Attach keyboard listener
   useEffect(() => {
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [activeIndex, images]);
+  }, [handleKeyPress]);
 
   // Show loading indicator until all thumbnails are ready
   if (!allThumbsLoaded) {

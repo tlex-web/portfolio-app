@@ -80,20 +80,7 @@ export default function TerminalDemo({ commands, autoPlay = true, loop = true }:
     return () => clearInterval(typingInterval);
   }, [currentIndex, isPaused, currentCommand, commands.length, loop, prefersReducedMotion]);
 
-  const getRiskColor = (level?: string) => {
-    switch (level) {
-      case 'low':
-        return 'text-green-400';
-      case 'medium':
-        return 'text-yellow-400';
-      case 'high':
-        return 'text-orange-400';
-      case 'critical':
-        return 'text-red-400';
-      default:
-        return 'text-gray-400';
-    }
-  };
+
 
   const getRiskBadge = (level?: string) => {
     switch (level) {

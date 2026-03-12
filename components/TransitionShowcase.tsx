@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { useTexture, OrbitControls } from '@react-three/drei';
+import { useTexture } from '@react-three/drei';
 import ShaderTransition, { TransitionType } from './ShaderTransition';
 import { LandscapeImage } from '@/data/types';
 import { useReducedMotion } from '@/lib/useReducedMotion';
@@ -43,7 +43,7 @@ function ShowcaseScene({ images, transitionType, autoPlay, speed, easing, prefer
     // When reduced motion is enabled, snap between states instantly
     if (prefersReducedMotion) {
       const snapInterval = setInterval(() => {
-        setRawProgress((prev) => {
+        setRawProgress((_prev) => {
           if (direction === 'forward') {
             setDirection('backward');
             return 1;
@@ -93,7 +93,6 @@ function ShowcaseScene({ images, transitionType, autoPlay, speed, easing, prefer
         texture2={texture2}
         progress={progress}
         transitionType={transitionType}
-        prefersReducedMotion={prefersReducedMotion}
       />
     </>
   );
