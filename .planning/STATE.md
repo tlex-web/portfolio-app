@@ -1,119 +1,42 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: Stabilization & Visual Identity
+status: completed
+stopped_at: Milestone v1.0 archived
+last_updated: "2026-04-02"
+last_activity: 2026-04-02
+progress:
+  total_phases: 5
+  completed_phases: 5
+  total_plans: 22
+  completed_plans: 22
+  percent: 100
+---
+
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-16)
+See: .planning/PROJECT.md (updated 2026-04-02)
 
 **Core value:** A portfolio that is visually memorable and distinctive while being stable and well-maintained under the hood.
-**Current focus:** Phase 5 complete - All gap closure plans finished
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 5 of 5 (Performance & Accessibility Polish)
-Plan: 5 of 5 in current phase (complete)
-Status: Phase Complete
-Last activity: 2026-02-17 — Completed 05-05 (Reduced-motion contrast fix)
+Milestone v1.0 shipped 2026-04-02.
+All 5 phases (22 plans) complete and archived.
 
-Progress: [##########] 100%
-
-## Performance Metrics
-
-**Velocity:**
-- Total plans completed: 22
-- Average duration: 3.0min
-- Total execution time: 1.16 hours
-
-**By Phase:**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 01 | 3 | 16min | 5.3min |
-| 02 | 3+3gc | 15min | 2.5min |
-| 03 | 2 | 5min | 2.5min |
-| 04 | 6 | 25min | 4.2min |
-| 05 | 3+2gc | 19min | 3.8min |
-
-**Recent Trend:**
-- Last 5 plans: 05-01 (4min), 05-02 (4min), 05-03 (7min), 05-04 (2min), 05-05 (2min)
-- Trend: stable at ~3-5min per plan
-
-*Updated after each plan completion*
-
-## Accumulated Context
-
-### Decisions
-
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
-
-- [Roadmap]: Bugs and stability first (Phases 1-2), then visual identity (Phases 3-5)
-- [Roadmap]: Design tokens before components -- Phase 3 must complete before Phase 4
-- [01-02]: AVIF quality 50 comparable to JPEG 82 due to superior compression
-- [01-02]: New suffix naming (-sm/-md/-lg) avoids collision with old variants
-- [01-02]: Old variant files left in place; cleanup deferred to future phase
-- [Phase 01]: HighlightValue defined in data/types.ts to avoid circular deps between data and component layers
-- [Phase 01]: Conditional rendering pattern over dynamic Component variable to maintain type safety
-- [01-03]: Destructure all known Next.js Image-specific props in mock rather than just the reported one
-- [02-02]: Origin header CSRF validation (same mechanism as Next.js Server Actions)
-- [02-02]: Lazy initialization for rate limiter with graceful dev fallback (no crashes without Upstash)
-- [02-02]: First IP from x-forwarded-for chain for accurate client identification
-- [02-01]: Analytics/SpeedInsights rely on strict-dynamic trust propagation (no nonce prop in v1.6.1/v1.3.1)
-- [02-01]: Nonce read in root layout forces dynamic rendering for all routes (required for CSP nonces)
-- [02-03]: Cache invalidation by BUILD_HASH suffix matching -- simpler and more reliable than prefix-based filtering
-- [02-03]: Template-in-place pattern -- inject script modifies public/service-worker.js directly since Vercel deploys from public/
-- [02-04]: style-src 'unsafe-inline' required because CSP nonces cannot apply to style attributes, only style elements
-- [02-04]: connect-src allowlists specific drei HDRI CDN domain, not a wildcard
-- [02-06]: Remove nonce from style-src per CSP Level 2 spec (nonce causes unsafe-inline to be ignored)
-- [02-06]: connect-src uses raw.githubusercontent.com for drei CDN assets (corrects raw.githack.com from 02-04)
-- [02-05]: Keep production-only guard for SW registration per user decision (standard practice)
-- [02-05]: Remove load event wrapper -- root cause of SW not registering in hydrated Next.js apps
-- [03-01]: OKLCH color space for perceptual uniformity across the custom palette
-- [03-01]: Dark-only site -- removed :root/dark media query blocks, no dark: variants needed
-- [03-01]: Deleted tailwind.config.ts -- Tailwind v4 uses CSS-first @theme, v3 config was empty
-- [03-01]: @theme inline for font tokens (runtime CSS vars from next/font) vs @theme for literal color values
-- [03-01]: Font variables on html not body -- required for Tailwind @theme resolution at :root level
-- [03-02]: granite-400 OKLCH lightness increased from 0.55 to 0.60 to meet 4.5:1 caption contrast threshold
-- [03-02]: colorjs.io used alongside wcag-contrast for accurate OKLCH-to-sRGB conversion
-- [04-01]: Glow intensity range [1.0, 0.15] over [0, 800px] scroll -- full glow near hero, muted in content
-- [04-01]: Static 0.3 glow intensity for reduced-motion users -- visible but not animated
-- [04-01]: Stratum shadows use alpine-950 OKLCH for geological consistency with dark theme
-- [04-03]: Two-layer card structure separates glow/tilt (outer) from content (inner hex-clip) to avoid clipping glow effects
-- [04-03]: Projects page converted to client component for useHexGrid hook integration
-- [Phase 04]: Spread operator [...EASING.geological] to satisfy Framer Motion Easing type (readonly tuple to mutable) — readonly [number, number, number, number] from animations.ts is incompatible with Framer Motion's mutable Easing type
-- [04-04]: Module-level effectIdCounter for unique AnimatePresence keys across rapid clicks
-- [04-04]: GeologicalButton replaces ParticleButton for production CTAs; ParticleButton retained (@deprecated) for demo pages
-- [04-05]: Removed bg-clip-text gradient patterns on headings in favor of direct text-frost-400 (simpler, consistent with token system)
-- [04-05]: Footer stratum-3 (deepest layer) to visually ground page bottom as geological bedrock
-- [04-05]: Header active nav uses glow-frost class for frost highlight consistent with GlassmorphismNav
-- [04-06]: ProjectCard hex clip-path moved to background layer so card content is not clipped
-- [05-01]: THREE.TextureLoader over drei useTexture to avoid Suspense blocking on progressive loads
-- [05-01]: In-place texture hot-swap (texture.image + needsUpdate) avoids component remount
-- [05-01]: Canvas frameloop=demand saves GPU cycles when all animations are disabled
-- [05-02]: Use 0.01ms instead of 0s for CSS transition/animation duration to preserve transitionend event compatibility
-- [05-02]: Keep layoutId prop on active tab indicator (Framer Motion handles instant transition with duration: 0)
-- [05-02]: Empty object {} for heart animate prop when reduced motion (not undefined) to prevent Framer Motion fallback
-- [05-03]: ShaderTransition receives prefersReducedMotion as prop (R3F Canvas boundary prevents hook call)
-- [05-03]: Terminal typing animations bypass via early return showing full text, not slower typing
-- [05-03]: ZoomableImage zoom/pan interactivity preserved -- only transition duration set to 0
-- [05-03]: InteractiveHotspot pulse ring completely removed (not just frozen) when reduced motion active
-- [05-04]: Dispose intermediate THREE.Texture after .image hot-swap transfer -- GPU handle freed, image data retained
-- [05-04]: In-flight Set<THREE.Texture> ref for effect teardown cleanup of textures loaded during cancelled window
-- [05-04]: Phase 2 loads only active + adjacent (3 max) full-res textures per navigation to reduce GPU pressure
-- [05-04]: Shadow map reduced from 2048 to 1024 -- ~12MB GPU savings with negligible visual impact
-- [05-05]: useState(getInitialValue) lazy initializer reads matchMedia synchronously on first client render
-- [05-05]: transition-property whitelist preserves color/opacity/background transitions under reduced motion
-- [05-05]: initial={false} in Framer Motion skips entrance animation, renders at whileInView target immediately
-
-### Pending Todos
+## Pending Todos
 
 - Clean up old image variants (-thumb/-medium/-large) after component references are updated
 
-### Blockers/Concerns
+## Blockers/Concerns
 
 None.
 
 ## Session Continuity
 
-Last session: 2026-02-17
-Stopped at: Completed 05-05-PLAN.md (Reduced-motion contrast fix - all gap closure plans complete)
-Resume file: .planning/phases/05-performance-accessibility-polish/05-05-SUMMARY.md
+Last session: 2026-04-02
+Stopped at: Milestone v1.0 archived, ready for next milestone
