@@ -1,16 +1,21 @@
 # Milestones
 
-## v1.0 Stabilization & Visual Identity (Shipped: 2026-04-02)
+## v1.0 Stabilization & Visual Identity (Shipped: 2026-03-12)
 
-**Phases completed:** 5 phases, 22 plans, 40 tasks
+**Phases completed:** 6 phases, 24 plans, 0 tasks
 
 **Key accomplishments:**
+- Clean dependency tree — resolved React 19 peer conflicts, removed legacy-peer-deps, replaced 7 `any` types
+- Security hardening — nonce-based CSP, CSRF validation, Upstash Redis persistent rate limiting
+- Swiss Alps design system — 30 OKLCH color tokens, JetBrains Mono/Inter typography, WCAG AA verified
+- Crystalline UI components — glassmorphism nav, hexagonal cards, GeologicalButton, scroll-linked glow
+- Progressive 3D loading — thumbnail-first textures, reduced-motion gating across all animated components
+- Integration wiring fixes — middleware convention, Upstash packages, build-hash injection pipeline
 
-- Resolved all peer dependency conflicts, removed legacy-peer-deps workaround, added image optimization pipeline (AVIF/WebP/JPEG)
-- Implemented nonce-based CSP, CSRF protection, Redis-backed rate limiting, and build-hash service worker cache invalidation
-- Created Swiss Alps OKLCH design token system with WCAG AA verified contrast ratios
-- Built crystalline/geological design system: glassmorphism nav, hexagonal project cards, geological button effects, scroll-linked glow bridge
-- Progressive texture loading for 3D photo carousel, reduced-motion gating across all 12+ animated components
-- Fixed WebGL context loss (texture lifecycle), reduced-motion hydration race (useSyncExternalStore), and hero layout issues
+**Stats:**
+- Timeline: 24 days (2026-02-16 → 2026-03-12)
+- Commits: 134 | Files: 165 | Lines: +15,103 / -1,374
+- Codebase: 12,484 LOC (TypeScript/CSS)
 
 ---
+

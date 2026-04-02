@@ -13,10 +13,6 @@ const HologramTerminalDemo = dynamic(() => import('@/components/HologramTerminal
   ssr: false,
 });
 
-const ReactMarkdown = dynamic(() => import('react-markdown'), {
-  loading: () => <div className="animate-pulse bg-gray-100 dark:bg-gray-800 h-32 rounded" />,
-});
-
 interface ProjectDetailClientProps {
   project: Project;
 }
@@ -43,13 +39,17 @@ export default function ProjectDetailClient({ project }: ProjectDetailClientProp
         </section>
       )}
 
-      {/* Detailed Description with ReactMarkdown */}
+      {/* Overview */}
       <section className="max-w-none">
-        <h2 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white text-center">
-          About This Project
+        <h2 className="text-2xl font-heading font-semibold text-snow-50 mb-6 text-center">
+          Overview
         </h2>
-        <div className="prose prose-lg dark:prose-invert max-w-none bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg">
-          <ReactMarkdown>{project.longDescription}</ReactMarkdown>
+        <div className="bg-alpine-800 rounded-xl p-8 border border-alpine-600">
+          {project.longDescription.split('\n\n').map((paragraph, index) => (
+            <p key={index} className="text-snow-100 leading-relaxed mb-4 last:mb-0">
+              {paragraph}
+            </p>
+          ))}
         </div>
       </section>
     </div>

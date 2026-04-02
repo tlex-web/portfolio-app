@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useCallback, ReactNode } from 'react';
+import { useRef, useState, useCallback, useMemo, ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 
@@ -57,14 +57,14 @@ export default function ParticleButton({
   const prefersReducedMotion = useReducedMotion();
   const particleIdRef = useRef(0);
 
-  const colors = {
+  const colors = useMemo(() => ({
     explosion: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'],
     magnetic: ['#667eea', '#764ba2', '#f093fb', '#4facfe'],
     sparkle: ['#FFD700', '#FFA500', '#FFFF00', '#FFE4B5'],
     confetti: ['#FF0080', '#00FF80', '#0080FF', '#FF8000', '#8000FF'],
     ripple: ['#00FFFF', '#0080FF', '#00BFFF'],
     trail: ['#FF1493', '#FF69B4', '#FFB6C1'],
-  };
+  }), []);
 
   const createParticles = useCallback((e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
     if (prefersReducedMotion || disabled) return;
@@ -156,7 +156,7 @@ export default function ParticleButton({
     };
 
     requestAnimationFrame(animate);
-  }, [effect, particleCount, prefersReducedMotion, disabled]);
+  }, [effect, particleCount, prefersReducedMotion, disabled, colors, href]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
     if (prefersReducedMotion || disabled || effect !== 'trail' || !isHovered) return;
@@ -185,7 +185,7 @@ export default function ParticleButton({
     setTimeout(() => {
       setTrailParticles((prev) => prev.filter((p) => p.id !== newTrailParticle.id));
     }, 500);
-  }, [effect, isHovered, prefersReducedMotion, disabled]);
+  }, [effect, isHovered, prefersReducedMotion, disabled, colors.trail, href]);
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
     createParticles(e);

@@ -9,7 +9,7 @@ export function proxy(request: NextRequest) {
     style-src 'self' 'unsafe-inline';
     img-src 'self' blob: data:;
     font-src 'self' data:;
-    connect-src 'self' https://raw.githack.com https://raw.githubusercontent.com;
+    connect-src 'self' https://raw.githubusercontent.com;
     frame-src 'none';
     object-src 'none';
     base-uri 'self';

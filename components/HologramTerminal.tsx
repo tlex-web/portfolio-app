@@ -2,10 +2,9 @@
 
 import { useRef, useMemo, Suspense, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Html, Environment } from '@react-three/drei';
+import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useReducedMotion } from '@/lib/useReducedMotion';
-import { DemoCommand } from '@/data/types';
 
 // Laptop Model Component
 function LaptopModel({ prefersReducedMotion }: { prefersReducedMotion: boolean }) {
@@ -267,12 +266,10 @@ interface HologramTerminalProps {
 export default function HologramTerminal({ children, className = '' }: HologramTerminalProps) {
   const prefersReducedMotion = useReducedMotion();
   const [isMobile, setIsMobile] = useState(false);
-  const [isTablet, setIsTablet] = useState(false);
 
   useEffect(() => {
     const checkScreenSize = () => {
       setIsMobile(window.innerWidth < 768);
-      setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1024);
     };
     checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
@@ -324,9 +321,6 @@ export default function HologramTerminal({ children, className = '' }: HologramT
             color="#00ffff"
             castShadow
           />
-
-          {/* Environment */}
-          <Environment preset="night" />
 
           {/* Particle Field */}
           <ParticleField prefersReducedMotion={prefersReducedMotion} />

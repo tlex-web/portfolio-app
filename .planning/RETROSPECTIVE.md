@@ -4,45 +4,45 @@
 
 ## Milestone: v1.0 — Stabilization & Visual Identity
 
-**Shipped:** 2026-04-02
-**Phases:** 5 | **Plans:** 22 | **Tasks:** 40
+**Shipped:** 2026-03-12
+**Phases:** 6 | **Plans:** 24
 
 ### What Was Built
-- Clean dependency tree (React 19 compatible), image optimization pipeline (AVIF/WebP/JPEG)
-- Security hardening: nonce-based CSP, CSRF protection, Redis rate limiting, service worker cache invalidation
-- Swiss Alps OKLCH design token system with WCAG AA verified contrast
-- Crystalline/geological design system: glassmorphism nav, hexagonal project cards, geological button effects, scroll-linked glow bridge
-- Progressive 3D texture loading, reduced-motion gating across all animated components
-- Bug fixes: WebGL context loss, reduced-motion hydration race, hero layout issues
+- Clean dependency tree with React 19 peer compatibility, proper TypeScript types, AVIF image pipeline
+- Nonce-based CSP, CSRF validation, Upstash Redis persistent rate limiting, build-hash service worker
+- Swiss Alps OKLCH color palette (30 tokens), JetBrains Mono/Inter typography, WCAG AA verified
+- Crystalline UI: glassmorphism nav, hexagonal cards, GeologicalButton, scroll-linked glow system
+- Progressive 3D texture loading with thumbnail-first strategy, reduced-motion gating across all components
+- Integration wiring fixes closing 3 audit-discovered gaps
 
 ### What Worked
-- Phased approach (stability first, then design) prevented compounding issues
-- Design tokens before components ensured consistency across the system
-- OKLCH color space gave perceptual uniformity that hex/HSL couldn't achieve
-- Summary-driven execution with clear plan/summary pairs kept phases focused
-- Average plan execution of ~3min kept momentum high
+- **Stability-first sequencing:** Fixing deps and security before design work prevented compounding issues
+- **Gap closure plans:** Phase-level UAT caught real issues (missing npm scripts, contrast failures, SW race conditions) that phase execution missed
+- **Milestone audit:** Caught 3 critical wiring breaks (wrong filename, missing packages, unwired script) that would have shipped broken
+- **Fast execution velocity:** 24 plans in ~1.16 hours total, averaging 3min/plan
+- **Design token discipline:** OKLCH palette + @theme CSS-first meant components could reference tokens immediately
 
 ### What Was Inefficient
-- Requirements traceability table wasn't updated as phases completed (all showed "Pending" at milestone end)
-- Debug sessions diagnosed but left unfixed for weeks (reduced-motion, WebGL context loss)
-- Phase 5 required gap-closure plans (05-04, 05-05) after initial verification found issues
+- **ROADMAP.md checkbox staleness:** Phase 3, 5, 6 checkboxes weren't updated as plans completed — required manual reconciliation at milestone
+- **REQUIREMENTS.md traceability drift:** Only 6/17 requirements checked off despite all being implemented — traceability table not maintained during execution
+- **Multiple gap closure rounds:** Phases 2, 3, 5 each needed 1-3 gap closure plans after initial execution — could improve upfront verification
 
 ### Patterns Established
-- useSyncExternalStore for browser API hooks (avoids hydration race)
-- Spread operator [...EASING.constant] for Framer Motion readonly tuple compatibility
-- In-place texture hot-swap pattern (texture.image + needsUpdate) for progressive 3D loading
-- GeologicalButton as production CTA component (fracture/dust/ripple effects via AnimatePresence)
+- OKLCH color space with @theme inline for design tokens
+- Dark-only site — no dark: variants or media query toggles needed
+- 0.01ms duration for reduced-motion CSS (preserves transitionend events)
+- Geological depth system (stratum-1/2/3) for consistent visual layering
+- THREE.TextureLoader over drei useTexture for progressive loading patterns
 
 ### Key Lessons
-1. Update requirements traceability as you go, not at milestone end
-2. Fix diagnosed bugs promptly — leaving them "awaiting verify" creates a cleanup backlog
-3. Gap-closure plans are normal — first verification pass often reveals edge cases
-4. CSS reduced-motion blocks must be narrow (keyframes only, not transitions) to avoid breaking Tailwind utilities
+1. **Phase-level verification isn't enough** — the milestone audit found 3 wiring breaks that individual phase verifications missed. Cross-phase integration testing is essential.
+2. **Traceability tables need automation** — manual checkbox maintenance fails at scale. Consider auto-updating from SUMMARY.md frontmatter.
+3. **Gap closure plans are normal, not failures** — 8 of 24 plans were gap closures. Budget for ~30% gap work in future milestones.
 
 ### Cost Observations
-- Model mix: primarily opus for execution, quality profile
-- Execution time: ~1.16 hours total across 22 plans
-- Notable: 3-5min average per plan is sustainable pace
+- Model mix: primarily quality profile (opus for execution, sonnet for agents)
+- Total execution time: ~1.16 hours across 24 plans
+- Notable: gap closure plans were fastest (2-4min) since the code context was already loaded
 
 ---
 
@@ -52,9 +52,9 @@
 
 | Milestone | Phases | Plans | Key Change |
 |-----------|--------|-------|------------|
-| v1.0 | 5 | 22 | Established GSD workflow, design token system |
+| v1.0 | 6 | 24 | First milestone — established gap closure pattern |
 
 ### Top Lessons (Verified Across Milestones)
 
-1. Stability before features prevents cascading issues
-2. Design tokens before components ensures consistency
+1. Cross-phase integration testing catches wiring breaks that phase-level verification misses
+2. Gap closure plans (~30% of total) are a normal part of the process, not rework

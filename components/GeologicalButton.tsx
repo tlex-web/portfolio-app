@@ -159,7 +159,7 @@ export default function GeologicalButton({
               x: el.x,
               y: el.y,
               scaleY: 0,
-              opacity: 0.4,
+              opacity: 0.7,
             }}
             animate={{
               x: el.x + endX * 0.5,
@@ -178,7 +178,6 @@ export default function GeologicalButton({
               width: el.width,
               height: el.height,
               backgroundColor: 'var(--color-frost-500)',
-              opacity: 0.4,
               transformOrigin: '50% 0%',
               transform: `rotate(${el.rotation}deg)`,
               borderRadius: 1,
@@ -231,7 +230,7 @@ export default function GeologicalButton({
               x: el.x - el.width / 2,
               y: el.y - el.height / 2,
               scale: 0,
-              opacity: 0.4,
+              opacity: 0.6,
             }}
             animate={{
               scale: 3,
@@ -257,7 +256,7 @@ export default function GeologicalButton({
   };
 
   const effectOverlay = (
-    <div className="absolute inset-0 pointer-events-none overflow-visible" style={{ zIndex: -1 }}>
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
       <AnimatePresence>
         {effects.map(renderEffectElement)}
       </AnimatePresence>
@@ -269,11 +268,10 @@ export default function GeologicalButton({
       <motion.div
         className="absolute inset-0 pointer-events-none rounded-[inherit]"
         initial={{ opacity: 0 }}
-        animate={{ opacity: [0, 0.08, 0] }}
-        transition={{ duration: 3, repeat: Infinity, ease: [...EASING.erosion] }}
+        animate={{ opacity: [0, 0.15, 0] }}
+        transition={{ duration: 2, repeat: Infinity, ease: [...EASING.erosion] }}
         style={{
           backgroundColor: 'var(--color-frost-500)',
-          zIndex: -1,
         }}
       />
     ) : null;
@@ -283,13 +281,13 @@ export default function GeologicalButton({
     onMouseEnter: () => setIsHovered(true),
     onMouseLeave: () => setIsHovered(false),
     className,
-    style: { position: 'relative' as const },
+    style: { position: 'relative' as const, display: 'inline-block' as const, overflow: 'hidden' as const },
   };
 
   if (href) {
     return (
       <a ref={anchorRef} href={href} {...sharedProps}>
-        {children}
+        <span className="relative z-10">{children}</span>
         {effectOverlay}
         {hoverGlow}
       </a>
@@ -298,7 +296,7 @@ export default function GeologicalButton({
 
   return (
     <button ref={buttonRef} type={type} disabled={disabled} {...sharedProps}>
-      {children}
+      <span className="relative z-10">{children}</span>
       {effectOverlay}
       {hoverGlow}
     </button>

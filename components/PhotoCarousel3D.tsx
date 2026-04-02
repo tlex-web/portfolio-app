@@ -1,8 +1,8 @@
 'use client';
 
-import { useRef, useState, useMemo, useEffect, Suspense } from 'react';
+import { useRef, useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Html, Environment } from '@react-three/drei';
+import { Html } from '@react-three/drei';
 import { useProgressiveTextures } from '@/lib/useProgressiveTextures';
 import * as THREE from 'three';
 import { useSpring, animated, config } from '@react-spring/three';
@@ -51,23 +51,23 @@ function PhotoFrame({ image, texture, position, rotation, isActive, onClick, ind
           e.stopPropagation();
           onClick();
         }}
-        scale={scale as any}
-        position-z={posZ as any}
+        scale={scale as unknown as number}
+        position-z={posZ as unknown as number}
       >
         <planeGeometry args={[4, 3]} />
         {/* @ts-expect-error - react-spring types conflict with r3f */}
         <animated.meshStandardMaterial
           map={texture}
           transparent
-          opacity={opacity as any}
+          opacity={opacity as unknown as number}
           side={THREE.DoubleSide}
         />
       </animated.mesh>
 
       {/* Frame border */}
       <animated.mesh
-        position-z={posZ as any}
-        scale={scale as any}
+        position-z={posZ as unknown as number}
+        scale={scale as unknown as number}
       >
         <planeGeometry args={[4.2, 3.2]} />
         <meshStandardMaterial
@@ -81,8 +81,8 @@ function PhotoFrame({ image, texture, position, rotation, isActive, onClick, ind
       <animated.mesh
         position-y={-1.58}
         rotation-x={Math.PI}
-        scale={scale as any}
-        position-z={posZ as any}
+        scale={scale as unknown as number}
+        position-z={posZ as unknown as number}
       >
         <planeGeometry args={[4, 3]} />
         <animated.meshStandardMaterial
@@ -137,10 +137,10 @@ function Carousel({ images, onImageClick, prefersReducedMotion }: CarouselProps)
       const z = Math.cos(angle) * radius;
       return [x, 0, z] as [number, number, number];
     });
-  }, [images.length, angleStep]);
+  }, [images.length, images, angleStep]);
 
   // Auto-rotation
-  useFrame((state) => {
+  useFrame((_state) => {
     if (!groupRef.current || prefersReducedMotion) return;
     
     // Smooth rotation to active photo with improved damping
@@ -159,7 +159,7 @@ function Carousel({ images, onImageClick, prefersReducedMotion }: CarouselProps)
   });
 
   // Keyboard controls
-  const handleKeyPress = (e: KeyboardEvent) => {
+  const handleKeyPress = useCallback((e: KeyboardEvent) => {
     if (e.key === 'ArrowLeft') {
       setActiveIndex((prev) => (prev - 1 + images.length) % images.length);
     } else if (e.key === 'ArrowRight') {
@@ -167,13 +167,13 @@ function Carousel({ images, onImageClick, prefersReducedMotion }: CarouselProps)
     } else if (e.key === 'Enter' && images[activeIndex]) {
       onImageClick(images[activeIndex]);
     }
-  };
+  }, [activeIndex, images, onImageClick]);
 
   // Attach keyboard listener
   useEffect(() => {
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [activeIndex, images]);
+  }, [handleKeyPress]);
 
   // Show loading indicator until all thumbnails are ready
   if (!allThumbsLoaded) {
@@ -262,9 +262,6 @@ export default function PhotoCarousel3D({ images, onImageClick, className = '' }
         />
         <pointLight position={[-10, 5, -10]} intensity={0.5} color="#06b6d4" />
         <pointLight position={[10, 5, 10]} intensity={0.5} color="#8b5cf6" />
-
-        {/* Environment for reflections */}
-        <Environment preset="city" />
 
         {/* Fog */}
         <fog attach="fog" args={['#0a0a0a', 10, 30]} />

@@ -1,8 +1,7 @@
 'use client';
 
 import { useRef, useMemo } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
-import { useTexture } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
 // Enhanced Dissolve Transition Shader with brightness boost
@@ -239,7 +238,6 @@ interface ShaderTransitionProps {
   texture2: THREE.Texture;
   progress: number;
   transitionType: TransitionType;
-  prefersReducedMotion?: boolean;
 }
 
 export default function ShaderTransition({
@@ -247,10 +245,8 @@ export default function ShaderTransition({
   texture2,
   progress,
   transitionType,
-  prefersReducedMotion = false,
 }: ShaderTransitionProps) {
   const meshRef = useRef<THREE.Mesh>(null);
-  const { size } = useThree();
 
   // Select shader based on transition type
   const shader = useMemo(() => {
@@ -274,7 +270,7 @@ export default function ShaderTransition({
     const baseUniforms = {
       texture1: { value: texture1 },
       texture2: { value: texture2 },
-      progress: { value: progress },
+      progress: { value: 0 },
     };
 
     const typeSpecificUniforms = {
