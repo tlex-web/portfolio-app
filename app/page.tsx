@@ -189,7 +189,7 @@ export default function HomePage() {
                   and natural wonder.
                 </p>
                 <p>
-                  On the technology side, I develop CLI_X -- an AI-powered command-line tool that converts natural
+                  On the technology side, I develop CLI_X — an AI-powered command-line tool that converts natural
                   language into shell commands. Built with Rust and featuring enterprise-grade safety, it's helping
                   developers work more efficiently.
                 </p>

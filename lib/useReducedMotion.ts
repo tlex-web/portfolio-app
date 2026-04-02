@@ -1,26 +1,31 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 
-function getInitialValue(): boolean {
-  if (typeof window === 'undefined') return false;
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const QUERY = '(prefers-reduced-motion: reduce)';
+
+function subscribe(callback: () => void): () => void {
+  const mediaQuery = window.matchMedia(QUERY);
+  mediaQuery.addEventListener('change', callback);
+  return () => mediaQuery.removeEventListener('change', callback);
 }
 
-export function useReducedMotion() {
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(getInitialValue);
+function getSnapshot(): boolean {
+  return window.matchMedia(QUERY).matches;
+}
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setPrefersReducedMotion(mediaQuery.matches);
+function getServerSnapshot(): boolean {
+  return false;
+}
 
-    const listener = (event: MediaQueryListEvent) => {
-      setPrefersReducedMotion(event.matches);
-    };
-
-    mediaQuery.addEventListener('change', listener);
-    return () => mediaQuery.removeEventListener('change', listener);
-  }, []);
-
-  return prefersReducedMotion;
+/**
+ * Returns true when the user prefers reduced motion.
+ *
+ * Uses useSyncExternalStore to read the media query synchronously on the
+ * client, avoiding the two-render hydration race that caused elements to
+ * flash with their invisible initial states (opacity: 0) before the
+ * reduced-motion value was available.
+ */
+export function useReducedMotion(): boolean {
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

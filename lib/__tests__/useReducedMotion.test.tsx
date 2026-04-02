@@ -4,11 +4,15 @@ import { useReducedMotion } from '../useReducedMotion';
 describe('useReducedMotion', () => {
   let matchMediaMock: jest.Mock;
   let listeners: ((event: MediaQueryListEvent) => void)[] = [];
+  let currentMatches = false;
 
   beforeEach(() => {
     listeners = [];
+    currentMatches = false;
     matchMediaMock = jest.fn().mockImplementation((query) => ({
-      matches: false,
+      get matches() {
+        return currentMatches;
+      },
       media: query,
       onchange: null,
       addEventListener: jest.fn((event, listener) => {
@@ -35,20 +39,13 @@ describe('useReducedMotion', () => {
   });
 
   it('returns false when user does not prefer reduced motion', () => {
+    currentMatches = false;
     const { result } = renderHook(() => useReducedMotion());
     expect(result.current).toBe(false);
   });
 
   it('returns true when user prefers reduced motion', () => {
-    matchMediaMock.mockImplementation((query) => ({
-      matches: true,
-      media: query,
-      onchange: null,
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
-      dispatchEvent: jest.fn(),
-    }));
-
+    currentMatches = true;
     const { result } = renderHook(() => useReducedMotion());
     expect(result.current).toBe(true);
   });
@@ -59,12 +56,14 @@ describe('useReducedMotion', () => {
   });
 
   it('updates when media query changes', () => {
+    currentMatches = false;
     const { result } = renderHook(() => useReducedMotion());
-    
+
     expect(result.current).toBe(false);
 
     // Simulate media query change
     act(() => {
+      currentMatches = true;
       listeners.forEach((listener) =>
         listener({ matches: true } as MediaQueryListEvent)
       );

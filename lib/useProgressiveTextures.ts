@@ -39,6 +39,19 @@ export function useProgressiveTextures(
   // Track in-flight textures so they can be disposed on effect teardown
   const inFlightRef = useRef<Set<THREE.Texture>>(new Set());
 
+  // Strict Mode safety: track whether the component instance is mounted.
+  // Prevents the first unmount cleanup from disposing textures that the
+  // re-mounted instance is already referencing.
+  const mountedRef = useRef(false);
+
+  // Track activeIndex via ref so Phase 2 effect can read the latest value
+  // without re-triggering the entire sequential load chain.
+  const activeIndexRef = useRef(activeIndex);
+  activeIndexRef.current = activeIndex;
+
+  // Track whether Phase 2 is currently running to avoid overlapping loads
+  const phase2RunningRef = useRef(false);
+
   // Configure a texture with consistent filter settings
   const configureTexture = useCallback((texture: THREE.Texture) => {
     texture.minFilter = THREE.LinearFilter;
@@ -49,6 +62,7 @@ export function useProgressiveTextures(
 
   // Phase 1: Load ALL thumbnail textures on mount
   useEffect(() => {
+    mountedRef.current = true;
     const loader = loaderRef.current;
     let cancelled = false;
     let loadedCount = 0;
@@ -122,36 +136,57 @@ export function useProgressiveTextures(
 
     return () => {
       cancelled = true;
+      // Only dispose in-flight textures, not the persistent ones in texturesRef.
+      // Persistent textures are handled by the unmount cleanup below.
       inFlightRef.current.forEach(t => { t.dispose(); });
       inFlightRef.current.clear();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [images.length]);
 
-  // Phase 2: Load full-resolution textures by proximity to active image
+  // Phase 2: Load full-resolution textures by proximity to active image.
+  // Depends only on [allThumbsLoaded, images.length] -- NOT activeIndex.
+  // Reads activeIndexRef.current on each iteration so navigation does not
+  // cancel/restart the sequential load; it just changes which indices are
+  // prioritised next time a slot opens up.
   useEffect(() => {
+    if (!allThumbsLoaded) return;
+
     const loader = loaderRef.current;
     const len = images.length;
     if (len === 0) return;
 
-    // Load full-res only for active + adjacent (3 max) to reduce GPU pressure
-    const priority = [
-      activeIndex,
-      (activeIndex + 1) % len,
-      (activeIndex - 1 + len) % len,
-    ];
-
     let cancelled = false;
 
     async function loadSequentially() {
-      for (const idx of priority) {
-        if (cancelled) break;
-        // Skip if already loaded at full resolution
-        if (fullLoadedRef.current.has(idx)) continue;
+      if (phase2RunningRef.current) return;
+      phase2RunningRef.current = true;
+
+      // Keep loading until all indices have full-res or cancelled
+      while (!cancelled) {
+        const currentActive = activeIndexRef.current;
+
+        // Build priority list: active + adjacent first
+        const priority = [
+          currentActive,
+          (currentActive + 1) % len,
+          (currentActive - 1 + len) % len,
+        ];
+
+        // Then add remaining indices
+        for (let i = 0; i < len; i++) {
+          if (!priority.includes(i)) {
+            priority.push(i);
+          }
+        }
+
+        // Find next index that needs loading
+        const nextIdx = priority.find(idx => !fullLoadedRef.current.has(idx));
+        if (nextIdx === undefined) break; // All loaded
 
         await new Promise<void>((resolve) => {
           loader.load(
-            images[idx].src,
+            images[nextIdx].src,
             (fullTexture) => {
               // Track in-flight texture BEFORE cancelled check so cleanup can dispose it
               inFlightRef.current.add(fullTexture);
@@ -166,7 +201,7 @@ export function useProgressiveTextures(
               configureTexture(fullTexture);
 
               // Hot-swap: update existing texture's image data in-place
-              const existing = texturesRef.current[idx];
+              const existing = texturesRef.current[nextIdx];
               if (existing) {
                 existing.image = fullTexture.image;
                 existing.needsUpdate = true;
@@ -176,11 +211,11 @@ export function useProgressiveTextures(
               fullTexture.dispose();
               inFlightRef.current.delete(fullTexture);
 
-              fullLoadedRef.current.add(idx);
+              fullLoadedRef.current.add(nextIdx);
 
               setLoadState((prev) => {
                 const next = [...prev];
-                next[idx] = 'full';
+                next[nextIdx] = 'full';
                 return next;
               });
 
@@ -190,15 +225,19 @@ export function useProgressiveTextures(
             (error) => {
               if (!cancelled) {
                 console.warn(
-                  `Failed to load full-res for ${images[idx].id}:`,
+                  `Failed to load full-res for ${images[nextIdx].id}:`,
                   error
                 );
               }
+              // Mark as "loaded" to avoid infinite retry loop
+              fullLoadedRef.current.add(nextIdx);
               resolve();
             }
           );
         });
       }
+
+      phase2RunningRef.current = false;
     }
 
     loadSequentially();
@@ -207,18 +246,40 @@ export function useProgressiveTextures(
       cancelled = true;
       inFlightRef.current.forEach(t => { t.dispose(); });
       inFlightRef.current.clear();
+      phase2RunningRef.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeIndex, images.length]);
+  }, [allThumbsLoaded, images.length]);
 
   // Cleanup: dispose all textures on unmount
   useEffect(() => {
     return () => {
-      texturesRef.current.forEach((texture) => {
-        texture.dispose();
+      // Strict Mode guard: only dispose textures if we are still the mounted
+      // instance. React 18 Strict Mode unmounts the first instance AFTER the
+      // second has mounted, so mountedRef will have been set to true by the
+      // re-mount's Phase 1 effect before this cleanup runs. We use a
+      // microtask to check whether a new mount has already claimed ownership.
+      const texturesToDispose = [...texturesRef.current];
+      const currentInFlight = [...inFlightRef.current];
+
+      // Defer disposal to let Strict Mode re-mount claim ownership first
+      queueMicrotask(() => {
+        // If mountedRef is still true, a new mount took over -- do NOT dispose
+        if (mountedRef.current) return;
+
+        texturesToDispose.forEach((texture) => {
+          texture.dispose();
+        });
+        currentInFlight.forEach((t) => {
+          t.dispose();
+        });
       });
+
+      // Signal that this instance is unmounting
+      mountedRef.current = false;
       texturesRef.current = [];
       fullLoadedRef.current.clear();
+      inFlightRef.current.clear();
     };
   }, []);
 

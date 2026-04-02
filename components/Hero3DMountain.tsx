@@ -51,7 +51,7 @@ export default function Hero3DMountain() {
       <DualParticleSystem className="z-[5]" />
 
       {/* Content Overlay */}
-      <div className="relative z-10 h-full flex items-center justify-center">
+      <div className="relative z-10 h-full flex flex-col items-center justify-center pb-28">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
           {/* Main Title */}
           <motion.div
@@ -92,7 +92,7 @@ export default function Hero3DMountain() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: DURATION.enter, delay: 1.5, ease: [...EASING.erosion] }}
-            className="mt-12 flex flex-col sm:flex-row gap-4 justify-center stratum-2"
+            className="mt-12 flex flex-col sm:flex-row gap-4 justify-center"
           >
             <GeologicalButton
               effect="ripple"
@@ -126,30 +126,6 @@ export default function Hero3DMountain() {
             </GeologicalButton>
           </motion.div>
 
-          {/* Features Preview */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1, delay: 2 }}
-            className="mt-16 flex flex-wrap justify-center gap-8 text-snow-200/80"
-          >
-            {[
-              { icon: '📸', text: '4 Landscape Photos' },
-              { icon: '💻', text: '2 Active Projects' },
-              { icon: '✓', text: '850+ Tests Passing' },
-            ].map((item, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 2.2 + index * 0.1 }}
-                className="flex items-center gap-2"
-              >
-                <span className="text-2xl">{item.icon}</span>
-                <span className="text-sm font-medium">{item.text}</span>
-              </motion.div>
-            ))}
-          </motion.div>
         </div>
       </div>
 

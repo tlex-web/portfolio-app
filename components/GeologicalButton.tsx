@@ -283,7 +283,7 @@ export default function GeologicalButton({
     onMouseEnter: () => setIsHovered(true),
     onMouseLeave: () => setIsHovered(false),
     className,
-    style: { position: 'relative' as const, display: 'inline-block' as const },
+    style: { position: 'relative' as const },
   };
 
   if (href) {

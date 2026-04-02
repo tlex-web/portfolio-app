@@ -1,5 +1,5 @@
 ---
-status: diagnosed
+status: awaiting_human_verify
 trigger: "Enabling 'Prefer reduced motion' causes navbar, footer, and other elements to appear white with no contrast"
 created: 2026-02-17T00:00:00Z
 updated: 2026-02-17T00:05:00Z
@@ -131,6 +131,23 @@ root_cause: |
   - Elements that use whileInView in page.tsx have NO reduced-motion guard at all,
     so they always start at opacity:0 regardless
 
-fix:
-verification:
-files_changed: []
+fix: |
+    1. Rewrote useReducedMotion hook to use useSyncExternalStore instead of
+       useState+useEffect. This reads the media query synchronously on the
+       client, eliminating the two-render hydration race where elements
+       flashed at opacity:0 before the reduced-motion value was available.
+
+    2. Removed the transition-property !important override from the universal
+       CSS reduced-motion block in globals.css. The block now only overrides
+       animation-duration and animation-iteration-count (killing CSS keyframe
+       animations). Tailwind CSS transitions for hover effects, state changes,
+       and visual feedback are no longer forcibly restricted.
+  verification: |
+    - All 5 useReducedMotion unit tests pass
+    - Next.js production build succeeds with no errors
+    - Awaiting manual verification: enable reduced motion in OS, load site,
+      confirm navbar/footer/elements render with correct colors and contrast
+  files_changed:
+    - lib/useReducedMotion.ts
+    - lib/__tests__/useReducedMotion.test.tsx
+    - app/globals.css

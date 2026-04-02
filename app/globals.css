@@ -366,14 +366,14 @@
     animation: none;
   }
 
-  /* Phase 5: Universal fallback -- disable motion transitions but preserve visual state changes */
+  /* Phase 5: Universal fallback -- disable CSS keyframe animations only.
+     Framer Motion uses WAAPI (element.animate()), which is unaffected by
+     these CSS overrides. Tailwind CSS transitions (hover, state changes)
+     are intentionally left alone so visual feedback keeps working. */
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-property: color, background-color, border-color, outline-color,
-      text-decoration-color, fill, stroke, opacity, box-shadow, filter,
-      backdrop-filter !important;
   }
 }
