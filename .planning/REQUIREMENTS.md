@@ -17,7 +17,7 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 - [ ] **GUARD-03**: CI fails if the total test count drops below the previous phase's count (tests are rewritten, never silently deleted)
 - [ ] **GUARD-04**: CI fails on any `dark:` variant or stock Tailwind palette class in `app/`, `components/`, `lib/`, `data/` and tests, with a decreasing per-file ratchet for `white`/`black`
 - [ ] **GUARD-05**: The contrast check reads token values from `app/globals.css`, runs in `npm run lint`, and every text/background token pair passes WCAG AA
-- [ ] **GUARD-06**: jsx-a11y rules run in lint via `eslint-config-next`
+- [x] **GUARD-06**: jsx-a11y rules run in lint via `eslint-config-next`
 
 ### Dependencies
 
@@ -171,7 +171,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GUARD-03 | Phase 7 | Pending |
 | GUARD-04 | Phase 7 | Pending |
 | GUARD-05 | Phase 7 | Pending |
-| GUARD-06 | Phase 7 | Pending |
+| GUARD-06 | Phase 7 | Complete |
 | DEPS-03 | Phase 7 | Pending |
 | DEPS-04 | Phase 7 | Pending |
 | DEPS-05 | Phase 7 | Pending |
