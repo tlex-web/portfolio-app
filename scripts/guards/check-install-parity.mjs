@@ -157,7 +157,8 @@ if (workflowFiles.length === 0 && failures.every((f) => !f.startsWith(workflowDi
   fail(workflowDir, 'contains no workflow files');
 }
 
-const playwrightLock = lockVersion('@playwright/test');
+// The Playwright container tag must match the exact lockfile entry
+const playwrightLock = lock?.packages?.['node_modules/@playwright/test']?.version ?? null;
 for (const file of workflowFiles) {
   const rel = path.join(workflowDir, file).split(path.sep).join('/');
   const text = readText(rel);
