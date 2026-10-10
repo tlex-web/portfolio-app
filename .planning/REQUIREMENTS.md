@@ -13,7 +13,7 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 ### Guardrails
 
 - [ ] **GUARD-01**: Local, CI and Vercel installs match the lockfile exactly (`npm ci` everywhere; CI runs on Node 24)
-- [ ] **GUARD-02**: Playwright visual baselines exist for every route in dark and light color schemes, captured from a production build on Linux with service workers blocked and `retries: 0`, before any visual change lands
+- [x] **GUARD-02**: Playwright visual baselines exist for every route in dark and light color schemes, captured from a production build on Linux with service workers blocked and `retries: 0`, before any visual change lands
 - [ ] **GUARD-03**: CI fails if the total test count drops below the previous phase's count (tests are rewritten, never silently deleted)
 - [ ] **GUARD-04**: CI fails on any `dark:` variant or stock Tailwind palette class in `app/`, `components/`, `lib/`, `data/` and tests, with a decreasing per-file ratchet for `white`/`black`
 - [ ] **GUARD-05**: The contrast check reads token values from `app/globals.css`, runs in `npm run lint`, and every text/background token pair passes WCAG AA
@@ -167,7 +167,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | GUARD-01 | Phase 7 | Pending |
-| GUARD-02 | Phase 7 | Pending |
+| GUARD-02 | Phase 7 | Complete |
 | GUARD-03 | Phase 7 | Pending |
 | GUARD-04 | Phase 7 | Pending |
 | GUARD-05 | Phase 7 | Pending |

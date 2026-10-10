@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 07
 current_phase_name: Foundation & Guardrails
 status: executing
-stopped_at: Completed 07-03-PLAN.md
-last_updated: "2026-10-10T21:08:02.775Z"
+stopped_at: Completed 07-04-PLAN.md
+last_updated: "2026-10-10T23:52:00.998Z"
 last_activity: 2026-10-10
 last_activity_desc: Phase 07 execution started
-state_head: 4de94bc4e0ef36f164de4e5ef8ee84847ced0ecb
+state_head: 777fd1e857246c5cb3eda53568d1e97f0b18ba9d
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 26
-  completed_plans: 3
-  percent: 12
+  completed_plans: 4
+  percent: 15
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-10)
 ## Current Position
 
 Phase: 07 (Foundation & Guardrails) — EXECUTING
-Plan: 4 of 26
+Plan: 5 of 26
 Status: Ready to execute
 Last activity: 2026-10-10 — Phase 07 execution started
 
-Progress: [█░░░░░░░░░] 12%
+Progress: [██░░░░░░░░] 15%
 
 ## Performance Metrics
 
@@ -57,6 +57,7 @@ Progress: [█░░░░░░░░░] 12%
 | Phase 07 P01 | 11 min | 3 tasks | 35 files |
 | Phase 07 P02 | 6 min | 2 tasks | 16 files |
 | Phase 07 P03 | 45 min | 3 tasks | 88 files |
+| Phase 07 P04 | 2h 38m | 3 tasks | 21 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,9 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-03] Baseline-commit checks use per-slug --allow (e.g. --allow photos); --allow-all turns off the routes.spec.ts-snapshots/<slug>/ folder check
 - [Phase 07]: [07-03] Unzip the visual-baselines artifact's contents directly into e2e/visual/routes.spec.ts-snapshots/; never keep the Windows 'Extract all' wrapper folder
 - [Phase 07]: [07-03] The hero scroll-arrow pin in e2e/visual/hide-canvas.css must be removed when Phase 9 replaces the hero
+- [Phase 07]: [07-04] Re-baselines should use gh: gh workflow run visual-baselines.yml --ref ci/07-NN -f suite=visual -f update_mode=changed, then gh run download <id> -n visual-baselines -D e2e/visual/routes.spec.ts-snapshots (the browser dialog defaults to main)
+- [Phase 07]: [07-04] The visual-baselines artifact carries the whole snapshot folder, so stray subfolders come back; review git status against the expected list on every re-baseline
+- [Phase 07]: [07-04] GUARD-02 complete (CI Visual Regression gate live); SHELL-05 stays Pending until 07-23 ships the shell 404
 
 ### Pending Todos
 
@@ -92,6 +96,7 @@ Recent decisions affecting current work:
 - [Phase 7] Needs from Tim: real GitHub, LinkedIn, email and role line; display-face choice in the UI-SPEC.
 - [Phase 8] Needs from Tim: waterfall name/location, photo copy corrections, the swissALTIRegio attribution string, an approximate position for the film-scan photo (R004-011), and where the originals should live.
 - [Phase 11] Needs from Tim: CLI_X per-grade content and Medium/Critical demo commands with `riskScore`, metric sources, roadmap order and dates.
+- [Phase 7] Required status checks (Visual Regression, Lint and Type Check, Unit Tests) on main are not set yet; until Tim sets them a red visual job does not block merges (07-USER-SETUP.md)
 
 ## Deferred Items
 
@@ -103,6 +108,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-10T21:08:02.750Z
-Stopped at: Completed 07-03-PLAN.md
+Last session: 2026-10-10T23:51:52.150Z
+Stopped at: Completed 07-04-PLAN.md
 Resume file: None
