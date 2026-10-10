@@ -1,0 +1,24 @@
+name: CI fixture (good)
+on: push
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.60.0-noble
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Verify lockfile install
+        run: npm ls --depth=0
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+      - name: Multi-line step
+        run: |
+          echo "running e2e"
+          npm run test:e2e

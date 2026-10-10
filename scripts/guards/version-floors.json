@@ -1,0 +1,12 @@
+{
+  "floors": {
+    "next": "16.2.6",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "@react-three/fiber": "9.6.1",
+    "@react-three/drei": "10.7.7",
+    "@playwright/test": "1.60.0",
+    "eslint-config-next": "16.2.6"
+  },
+  "forbiddenDirect": []
+}

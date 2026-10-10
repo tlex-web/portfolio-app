@@ -1,0 +1,7 @@
+{
+  "floors": {
+    "next": "16.3.0",
+    "@playwright/test": "1.60.0"
+  },
+  "forbiddenDirect": ["framer-motion"]
+}

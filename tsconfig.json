@@ -41,6 +41,7 @@
     "**/*.test.ts",
     "**/*.test.tsx",
     "**/*.spec.ts",
-    "e2e/**"
+    "e2e/**",
+    "scripts/guards/__selftest__/**"
   ]
 }

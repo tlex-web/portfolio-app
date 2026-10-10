@@ -20,11 +20,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version-file: .node-version
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Verify lockfile install
+        run: npm ls --depth=0
 
       - name: Run ESLint
         run: npm run lint
@@ -44,11 +47,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version-file: .node-version
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Verify lockfile install
+        run: npm ls --depth=0
 
       - name: Run Jest tests
         run: npm test -- --coverage --passWithNoTests
@@ -75,11 +81,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version-file: .node-version
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Verify lockfile install
+        run: npm ls --depth=0
 
       # Skip image optimization - using pre-optimized images from repo
       # - name: Optimize images for tests
@@ -116,11 +125,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version-file: .node-version
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Verify lockfile install
+        run: npm ls --depth=0
 
       # Skip image optimization - using pre-optimized images from repo
       # - name: Optimize images for build
@@ -168,7 +180,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version-file: .node-version
           cache: 'npm'
 
       - name: Run npm audit
