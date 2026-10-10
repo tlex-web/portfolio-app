@@ -41,6 +41,7 @@
 ## Phase Details
 
 ### Phase 7: Foundation & Guardrails
+
 **Goal**: Every page renders inside one dark, token-driven site shell with Tim Lui's real identity, on upgraded dependencies, behind CI guardrails that catch visual regressions, deleted tests and off-system styling before they ship.
 **Depends on**: Nothing (first v2.0 phase; builds on the shipped v1.0 codebase)
 **Requirements**: GUARD-01, GUARD-02, GUARD-03, GUARD-04, GUARD-05, GUARD-06, DEPS-03, DEPS-04, DEPS-05, DSGN-05, DSGN-06, DSGN-07, DSGN-08, DSGN-09, DSGN-10, SHELL-01, SHELL-02, SHELL-03, SHELL-05, SHELL-06
@@ -50,35 +51,91 @@
   3. A visitor whose OS is set to light mode sees the same dark site as a dark-mode visitor (the dark and light baselines are identical). The site uses tokens v2 colors; a grotesk display face, Inter body text and JetBrains Mono only for data, with tabular figures; one SVG icon family and no emoji icons; a thin visible scrollbar that doesn't shift the page when a modal opens; and motion from shared tokens that settles to its final state under reduced motion.
   4. On every page a keyboard user finds one skip link, exactly one primary navigation with a visible current-page indicator, and exactly one main landmark. On mobile the menu opens with touch targets of at least 44 px and closes on route change and on Escape.
   5. Every page shows Tim Lui's name, role line and real GitHub, LinkedIn and email links, with no placeholder text or links. `/gradient-mesh`, `/particle-buttons` and `/transitions` return a 404 inside the site shell and no page links to them. The Contact heading and form fields pass WCAG AA for light-OS and dark-OS visitors alike.
+
 **Plans**: 26 plans (sequential waves 1-26, one plan per wave; locked build order preserved)
 
 Plans:
+**Wave 1**
 - [ ] 07-01-PLAN.md — Step 1a: Node 24 + npm ci everywhere, install-parity guard, test-count ratchet, Dependabot holds
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 07-02-PLAN.md — Step 1b: eslint-config-next flat config with jsx-a11y at error, pixel-neutral lint fixes
+
+**Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 07-03-PLAN.md — Step 2a: visual projects, route matrix spec, baseline workflow, initial Linux baselines
+
+**Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 07-04-PLAN.md — Step 2b + 3: CI Visual Regression gate; delete the playground; re-baseline /photos
+
+**Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 07-05-PLAN.md — Step 4: framer-motion -> motion 14.1 (zero diff)
+
+**Wave 6** *(blocked on Wave 5 completion)*
 - [ ] 07-06-PLAN.md — Step 5: Next 16.4 + React 19.3 + R3F 9.8.1 + drei 10.7.9 (zero diff)
+
+**Wave 7** *(blocked on Wave 6 completion)*
 - [ ] 07-07-PLAN.md — Step 5b: Next 2026-10-14 security patch (gated on the advisory; folds into 5 if already out)
+
+**Wave 8** *(blocked on Wave 7 completion)*
 - [ ] 07-08-PLAN.md — Step 6: Playwright 1.64 + container tags (re-baseline only if Chromium forces it)
+
+**Wave 9** *(blocked on Wave 8 completion)*
 - [ ] 07-09-PLAN.md — Step 7a: tokens v2 L1/L2, motion tokens + parity test, MotionConfig, amber -> caution
+
+**Wave 10** *(blocked on Wave 9 completion)*
 - [ ] 07-10-PLAN.md — Step 7b: v1 tokens retargeted as aliases; palette re-baseline
+
+**Wave 11** *(blocked on Wave 10 completion)*
 - [ ] 07-11-PLAN.md — Step 7c: Schibsted Grotesk + base type styles; design-system spec
+
+**Wave 12** *(blocked on Wave 11 completion)*
 - [ ] 07-12-PLAN.md — Step 7d: visible thin scrollbar with stable gutter (G3 check)
+
+**Wave 13** *(blocked on Wave 12 completion)*
 - [ ] 07-13-PLAN.md — Step 7e: Phosphor icon family replaces emoji icons; Roadmap tests rewritten
+
+**Wave 14** *(blocked on Wave 13 completion)*
 - [ ] 07-14-PLAN.md — Step 8a: neutralise dark: for everyone; light baselines assert dark
+
+**Wave 15** *(blocked on Wave 14 completion)*
 - [ ] 07-15-PLAN.md — Step 8b: collapse dark: pairs (zero diff)
+
+**Wave 16** *(blocked on Wave 15 completion)*
 - [ ] 07-16-PLAN.md — Step 8c: map Contact stock palette to semantic tokens
+
+**Wave 17** *(blocked on Wave 16 completion)*
 - [ ] 07-17-PLAN.md — Step 8c: map Roadmap stock palette to semantic tokens
+
+**Wave 18** *(blocked on Wave 17 completion)*
 - [ ] 07-18-PLAN.md — Step 8c: map Projects stock palette to semantic tokens
+
+**Wave 19** *(blocked on Wave 18 completion)*
 - [ ] 07-19-PLAN.md — Step 8c: map Photos + edge pages stock palette to semantic tokens
+
+**Wave 20** *(blocked on Wave 19 completion)*
 - [ ] 07-20-PLAN.md — Step 8d: remove dark variant; palette guard + white/black ratchet; contrast check from globals.css
+
+**Wave 21** *(blocked on Wave 20 completion)*
 - [ ] 07-21-PLAN.md — Step 9a: BLOCKING INPUT (email, LinkedIn); data/site.ts and shell components
+
+**Wave 22** *(blocked on Wave 21 completion)*
 - [ ] 07-22-PLAN.md — Step 9b: git mv into app/(site), mount SiteChrome, Home identity, shell spec
+
+**Wave 23** *(blocked on Wave 22 completion)*
 - [ ] 07-23-PLAN.md — Step 9c: 404 inside the shell; (site)/error + global-error with retry()
+
+**Wave 24** *(blocked on Wave 23 completion)*
 - [ ] 07-24-PLAN.md — Step 9d: Contact interim contrast fix with axe in both schemes (real email replaces the placeholder)
+
+**Wave 25** *(blocked on Wave 24 completion)*
 - [ ] 07-25-PLAN.md — Step 9e: identity metadata/author/email copy, forbidden-strings guard, emoji rule on
+
+**Wave 26** *(blocked on Wave 25 completion)*
 - [ ] 07-26-PLAN.md — Step 10: HOME-08 LCP/JS baseline; raise ratchet; restore Dependabot
+
+**Cross-cutting constraints:**
+- No v1 alias name, raw OKLCH, hex, rgba() or arbitrary colour value is introduced by the mapping
+
 **UI hint**: yes
 **Build order** (commit sequence matters, so keep it):
   1. Install parity and lint wiring: `npm ci` locally, in CI and in `vercel.json`; CI on Node 24; wire `eslint-config-next` (jsx-a11y); add the test-count ratchet (GUARD-01, GUARD-03, GUARD-06).
@@ -91,11 +148,13 @@ Plans:
   8. Staged `dark:` removal. First neutralise it (`@custom-variant dark`, `<html class="dark">`, `color-scheme: dark`). Then collapse each file to its `dark:` value with zero diff, and remove the variant. Only then enable the palette grep guard (scans `data/` and tests too, with a per-file `white`/`black` ratchet) and the contrast check that reads `globals.css` (DSGN-05, GUARD-04, GUARD-05).
   9. Shell: `data/site.ts` identity, `SiteNav`, `SiteFooter` and `SiteChrome`; `git mv` every route into `app/(site)/`; root `not-found` and `global-error` render inside the shell; fix the Contact heading and field contrast (SHELL-01, SHELL-02, SHELL-03, SHELL-06).
   10. At phase close, record the Home mobile LCP and JavaScript-size baseline that HOME-08 is measured against.
+
 **Research**: No research step needed (well-documented upgrades and token work). Design decisions go through `/gsd-ui-phase`.
 **Inputs from Tim**: Real GitHub URL, LinkedIn URL, email address and role line (also used for the `package.json` author). Display-face choice (Schibsted Grotesk, Host Grotesk or Archivo), settled in the Phase 7 UI-SPEC.
 **Hand-offs**: Deleted routes resolve to the shell's 404 here; the "off the marked trail" 404 content arrives with EDGE-01 in Phase 12. The footer stays a plain identity footer until Phase 8 turns it into the map legend (SHELL-04).
 
 ### Phase 8: Data & Terrain Pipeline
+
 **Goal**: Real swisstopo terrain and real photo EXIF become committed, typed, privacy-safe data that every later surface reads, and the site footer becomes a map legend drawn from that terrain.
 **Depends on**: Phase 7
 **Requirements**: DATA-01, DATA-02, DATA-03, DATA-04, DATA-05, DATA-06, DATA-07, DATA-08, SHELL-04
@@ -105,6 +164,7 @@ Plans:
   3. Photo content matches the evidence: capture dates match EXIF, the waterfall carries the location Tim confirmed, annotation altitudes agree with GPS, year tags are correct, and no two stories read as near-duplicates. The film-scan photo has a hand-placed position flagged as approximate in the data.
   4. No full-resolution original or GPS-bearing image can be fetched from the public site. Every served image is resized, correctly rotated and metadata-free, which a CI scan enforces. Components take image paths from the pipeline manifest, not from hard-coded variant filenames.
   5. Project highlights type-check against a per-project schema, and every CLI_X risk example carries a numeric `riskScore`.
+
 **Plans**: TBD
 **UI hint**: yes
 **Scope notes**:
@@ -116,11 +176,13 @@ Plans:
   - v1 alias usages are codemodded to v2 names here; the alias definitions are deleted in Phase 12.
   - The legacy `-thumb/-medium/-large` files stay on disk until Phase 12 (VERIFY-01).
   - The UI-SPEC covers only the footer legend.
+
 **Research**: Needs a research step during planning, covering:
   - The swissALTIRegio cross-border attribution string.
   - How to render the poster.
   - EXIF and GPS policy: naive local time stored with Europe/Zurich; DEM-sampled heights rather than EXIF altitude; `.rotate()` without `withMetadata()`; sharp `grey16` write from a `Uint16Array`.
   - Keeping d3-contour (ESM-only, y-down) out of Jest-imported components.
+
 **Inputs from Tim**:
   - The waterfall's name and location (its GPS points to the gorge just south of Zermatt, not the Teufelsschlucht).
   - Photo copy corrections: the Glacier Trail elevation copy, the `img-0605` year tag, and the near-duplicate stories.
@@ -129,6 +191,7 @@ Plans:
   - Where the 194 MB of originals should live.
 
 ### Phase 9: Home Ascent
+
 **Goal**: Visitors land on the real Matterhorn and climb it by scrolling, passing Tim's photographs where they were taken. Every visitor gets a complete, readable Home, with or without WebGL and motion.
 **Depends on**: Phase 8
 **Requirements**: HOME-01, HOME-02, HOME-03, HOME-04, HOME-05, HOME-06, HOME-07, HOME-08
@@ -138,6 +201,7 @@ Plans:
   3. Photo waypoints appear at their real positions and heights during the ascent, with the film-scan photo labelled approximate. An always-rendered list links to every photo. Two trail-sign links lead to Photographs and Engineering, and key stats read as a summit plaque.
   4. With reduced motion, Save-Data, no WebGL2, low device memory or a lost WebGL context, a static contour poster renders and every Home section shows its final readable state. The WebGL canvas renders on demand and pauses when scrolled off-screen.
   5. Mobile LCP and Home JavaScript size are no worse than the baseline recorded at the end of Phase 7.
+
 **Plans**: TBD
 **UI hint**: yes
 **Scope notes**:
@@ -147,10 +211,12 @@ Plans:
   - Waypoints sit at DEM-sampled heights.
   - Labels are HTML overlays, not drei `<Text>`, because CSP blocks its blob workers. No drei `useDetectGPU` or `ScrollControls`. GPU resources are disposed on unmount.
   - Until Phase 10 ships `/photos/[slug]`, waypoint links point at the photo in the gallery.
+
 **Research**: Needs a research step during planning, covering contour-shader tuning, mobile GPU capability thresholds, deterministic canvas screenshots (SwiftShader flags) and the poster rendering approach.
 **Inputs from Tim**: None beyond the Phase 8 data. The summit-plaque stats are chosen in the UI-SPEC.
 
 ### Phase 10: Photography
+
 **Goal**: Visitors explore Tim's photographs as a map, a grid or a carousel, and open any photo in a shareable, keyboard-friendly lightbox that shows its real EXIF, story and rights.
 **Depends on**: Phase 8
 **Requirements**: PHOTO-01, PHOTO-02, PHOTO-03, PHOTO-04, LBOX-01, LBOX-02, LBOX-03, LBOX-04, LBOX-05, LBOX-06, LBOX-07
@@ -163,6 +229,7 @@ Plans:
      - an EXIF strip (date, camera, lens, focal length, aperture, shutter, ISO, altitude, coordinates)
      - map-style hotspot callouts with leader lines, operable by tap and keyboard, with a legend on mobile and a toggle that hides them
      - "© {capture year} Tim Lui, all rights reserved", with no download button
+
 **Plans**: TBD
 **UI hint**: yes
 **Parallelism**: Can run in parallel with Phase 11. They share only the Phase 7 shell and the Phase 8 data.
@@ -174,13 +241,16 @@ Plans:
   - `photos.spec` and `GalleryGrid.test` are rewritten, not deleted.
   - Photo routes stay Server Components that export metadata, so Phase 12 can attach OG images (SEO-02).
   - If Phase 9 has shipped, its Home waypoint links are repointed to `/photos/[slug]`.
+
 **Research**: Needs a spike during planning:
   - `<dialog>` + `showModal()` versus an overlay + `inert`, with `<ViewTransition>`, in Chromium, Safari 26 and Firefox 157.
   - Closing on popstate (Back may skip the close animation, so nothing may depend on it).
   - Interception when a photo is opened from Home.
+
 **Inputs from Tim**: None. The Map default view, the rights wording and the no-download posture are already decided.
 
 ### Phase 11: Engineering & Roadmap
+
 **Goal**: Visitors read Tim's engineering work as surveyed routes (route-panel projects, case studies with honest metrics, and CLI_X's risk bands as Swiss trail grades) and follow his roadmap as a route log.
 **Depends on**: Phase 8
 **Requirements**: ENG-01, ENG-02, ENG-03, ENG-04, ENG-05, ROUTE-01, ROUTE-02, ROUTE-03
@@ -190,6 +260,7 @@ Plans:
   3. CLI_X's four risk bands appear as Swiss trail grades: T1 yellow, T2–T3 white-red-white, T4–T5 white-blue-white, and unmarked. Each has its marker glyph, text label and score range, and an equivalent data table follows, so the scale reads without color.
   4. The terminal demo is styled in tokens v2, stops auto-playing on focus, on hover and under reduced motion, and has a pause button.
   5. `/roadmap` places items in order on a vertical elevation axis: completed items below with their completion dates, in-progress items at the current camp, planned items above. It lists v2.0 as in progress and shows a "last surveyed" date. A segmented control filters by project and status, the filter lives in the URL, and empty filters are removed or disabled.
+
 **Plans**: TBD
 **UI hint**: yes
 **Parallelism**: Can run in parallel with Phase 10.
@@ -201,6 +272,7 @@ Plans:
   - `RouteLog` keeps its filter state in the URL via `router.replace`.
   - Project routes stay Server Components that export metadata, so Phase 12 can attach OG images (SEO-02).
   - Tests assert state (for example `aria-pressed`), not color classes.
+
 **Research**: No research step needed (established patterns), but the phase is gated on content: collect the inputs below before planning.
 **Inputs from Tim**:
   - CLI_X behavior per trail grade, and Medium and Critical demo commands with a `riskScore`.
@@ -209,6 +281,7 @@ Plans:
   - Confirmation that route panels use a generated elevation-profile glyph rather than screenshots.
 
 ### Phase 12: Contact, Edge Pages, Cleanup & Verification
+
 **Goal**: The last pages join the design system, every page can be found and previews well when shared, dead code is gone, and the whole site is verified accessible, cross-browser and regression-free.
 **Depends on**: Phase 9, Phase 10, Phase 11
 **Requirements**: CONTACT-01, CONTACT-02, CONTACT-03, EDGE-01, EDGE-02, SEO-01, SEO-02, SEO-03, VERIFY-01, VERIFY-02, VERIFY-03, VERIFY-04
@@ -222,6 +295,7 @@ Plans:
   3. Every route has its own title, description and canonical URL. Every photo and project page has its own Open Graph image. The site serves a generated `sitemap.xml` and `robots.txt`.
   4. `Header`, `GlassmorphismNav`, `ParticleButton`, `AnimatedGradientMesh`, `useHexGrid`/`hex-clip`, the legacy image variants, the v1 token aliases and unused CSP origins are gone from the repo, and the build, tests and baselines stay green.
   5. axe reports zero violations on every route, and a keyboard-only pass through navigation, map, lightbox and contact form succeeds. Chromium, Firefox and WebKit runs pass, including the View Transitions and WebGL fallbacks. No route has CLS above 0.1, broken internal links, missing images or CSP console errors.
+
 **Plans**: TBD
 **UI hint**: yes
 **Scope notes**:
@@ -233,6 +307,7 @@ Plans:
   - One shared contour OG-image template serves photo and project pages.
   - PROJECT.md is updated.
   - The PITFALLS "Looks Done But Isn't" checklist runs in the milestone audit.
+
 **Research**: No research step needed.
 **Inputs from Tim**: Which location to show as coordinates on the contact page.
 **Why SEO-02 is here**: Research placed photo OG images in Phase 10 and project OG images in Phase 11. SEO-02 is a single requirement covering both, and those phases run in parallel, so neither can satisfy it alone. It sits here, where one shared template covers both route families after they exist.
