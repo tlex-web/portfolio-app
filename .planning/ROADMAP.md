@@ -50,7 +50,35 @@
   3. A visitor whose OS is set to light mode sees the same dark site as a dark-mode visitor (the dark and light baselines are identical). The site uses tokens v2 colors; a grotesk display face, Inter body text and JetBrains Mono only for data, with tabular figures; one SVG icon family and no emoji icons; a thin visible scrollbar that doesn't shift the page when a modal opens; and motion from shared tokens that settles to its final state under reduced motion.
   4. On every page a keyboard user finds one skip link, exactly one primary navigation with a visible current-page indicator, and exactly one main landmark. On mobile the menu opens with touch targets of at least 44 px and closes on route change and on Escape.
   5. Every page shows Tim Lui's name, role line and real GitHub, LinkedIn and email links, with no placeholder text or links. `/gradient-mesh`, `/particle-buttons` and `/transitions` return a 404 inside the site shell and no page links to them. The Contact heading and form fields pass WCAG AA for light-OS and dark-OS visitors alike.
-**Plans**: TBD
+**Plans**: 26 plans (sequential waves 1-26, one plan per wave; locked build order preserved)
+
+Plans:
+- [ ] 07-01-PLAN.md — Step 1a: Node 24 + npm ci everywhere, install-parity guard, test-count ratchet, Dependabot holds
+- [ ] 07-02-PLAN.md — Step 1b: eslint-config-next flat config with jsx-a11y at error, pixel-neutral lint fixes
+- [ ] 07-03-PLAN.md — Step 2a: visual projects, route matrix spec, baseline workflow, initial Linux baselines
+- [ ] 07-04-PLAN.md — Step 2b + 3: CI Visual Regression gate; delete the playground; re-baseline /photos
+- [ ] 07-05-PLAN.md — Step 4: framer-motion -> motion 14.1 (zero diff)
+- [ ] 07-06-PLAN.md — Step 5: Next 16.4 + React 19.3 + R3F 9.8.1 + drei 10.7.9 (zero diff)
+- [ ] 07-07-PLAN.md — Step 5b: Next 2026-10-14 security patch (gated on the advisory; folds into 5 if already out)
+- [ ] 07-08-PLAN.md — Step 6: Playwright 1.64 + container tags (re-baseline only if Chromium forces it)
+- [ ] 07-09-PLAN.md — Step 7a: tokens v2 L1/L2, motion tokens + parity test, MotionConfig, amber -> caution
+- [ ] 07-10-PLAN.md — Step 7b: v1 tokens retargeted as aliases; palette re-baseline
+- [ ] 07-11-PLAN.md — Step 7c: Schibsted Grotesk + base type styles; design-system spec
+- [ ] 07-12-PLAN.md — Step 7d: visible thin scrollbar with stable gutter (G3 check)
+- [ ] 07-13-PLAN.md — Step 7e: Phosphor icon family replaces emoji icons; Roadmap tests rewritten
+- [ ] 07-14-PLAN.md — Step 8a: neutralise dark: for everyone; light baselines assert dark
+- [ ] 07-15-PLAN.md — Step 8b: collapse dark: pairs (zero diff)
+- [ ] 07-16-PLAN.md — Step 8c: map Contact stock palette to semantic tokens
+- [ ] 07-17-PLAN.md — Step 8c: map Roadmap stock palette to semantic tokens
+- [ ] 07-18-PLAN.md — Step 8c: map Projects stock palette to semantic tokens
+- [ ] 07-19-PLAN.md — Step 8c: map Photos + edge pages stock palette to semantic tokens
+- [ ] 07-20-PLAN.md — Step 8d: remove dark variant; palette guard + white/black ratchet; contrast check from globals.css
+- [ ] 07-21-PLAN.md — Step 9a: BLOCKING INPUT (email, LinkedIn); data/site.ts and shell components
+- [ ] 07-22-PLAN.md — Step 9b: git mv into app/(site), mount SiteChrome, Home identity, shell spec
+- [ ] 07-23-PLAN.md — Step 9c: 404 inside the shell; (site)/error + global-error with retry()
+- [ ] 07-24-PLAN.md — Step 9d: Contact interim contrast fix with axe in both schemes (real email replaces the placeholder)
+- [ ] 07-25-PLAN.md — Step 9e: identity metadata/author/email copy, forbidden-strings guard, emoji rule on
+- [ ] 07-26-PLAN.md — Step 10: HOME-08 LCP/JS baseline; raise ratchet; restore Dependabot
 **UI hint**: yes
 **Build order** (commit sequence matters, so keep it):
   1. Install parity and lint wiring: `npm ci` locally, in CI and in `vercel.json`; CI on Node 24; wire `eslint-config-next` (jsx-a11y); add the test-count ratchet (GUARD-01, GUARD-03, GUARD-06).
@@ -222,7 +250,7 @@
 | 4. Design Components | v1.0 | 6/6 | Complete | 2026-02-17 |
 | 5. Performance & Accessibility Polish | v1.0 | 5/5 | Complete | 2026-03-11 |
 | 6. Integration Wiring Fixes | v1.0 | 1/1 | Complete | 2026-03-12 |
-| 7. Foundation & Guardrails | v2.0 | 0/TBD | Not started | - |
+| 7. Foundation & Guardrails | v2.0 | 0/26 | Planned | - |
 | 8. Data & Terrain Pipeline | v2.0 | 0/TBD | Not started | - |
 | 9. Home Ascent | v2.0 | 0/TBD | Not started | - |
 | 10. Photography | v2.0 | 0/TBD | Not started | - |
