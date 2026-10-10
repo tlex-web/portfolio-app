@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Topographic Identity
-current_phase: 7
+current_phase: 07
 current_phase_name: Foundation & Guardrails
 status: executing
-stopped_at: Phase 7 UI-SPEC approved
-last_updated: "2026-10-10T13:26:30.103Z"
+stopped_at: Completed 07-01-PLAN.md
+last_updated: "2026-10-10T20:07:54.185Z"
 last_activity: 2026-10-10
-last_activity_desc: v2.0 roadmap created (Phases 7-12, 68/68 requirements mapped)
-state_head: 5026d27bd44502bbcc6903d402be9371535e8fb1
+last_activity_desc: Phase 07 execution started
+state_head: d4d84f57b852a10f646cbe3073088d1bb737c79a
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 26
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 4
 ---
 
 # Project State
@@ -25,16 +25,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-10)
 
 **Core value:** A portfolio that is visually memorable and distinctive (not another generic Tailwind site) while being stable and well-maintained under the hood.
-**Current focus:** Phase 7 — Foundation & Guardrails
+**Current focus:** Phase 07 — Foundation & Guardrails
 
 ## Current Position
 
-Phase: 7 (Foundation & Guardrails) — READY TO EXECUTE
-Plan: Not started
+Phase: 07 (Foundation & Guardrails) — EXECUTING
+Plan: 2 of 26
 Status: Ready to execute
-Last activity: 2026-10-10 — v2.0 roadmap created (Phases 7-12, 68/68 requirements mapped)
+Last activity: 2026-10-10 — Phase 07 execution started
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [░░░░░░░░░░] 4%
 
 ## Performance Metrics
 
@@ -50,6 +50,11 @@ Progress: [░░░░░░░░░░] 0%
 | - | - | - | - |
 
 *Updated after each plan completion. v1.0 history: 24 plans across Phases 1-6 (see MILESTONES.md).*
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 07 P01 | 11 min | 3 tasks | 35 files |
 
 ## Accumulated Context
 
@@ -63,6 +68,9 @@ Recent decisions affecting current work:
 - [Phase 7]: `dark:` removal is staged: neutralise, collapse to the dark value, remove, then enable the guard
 - [Phase 8]: The DEM source is swissALTIRegio (10 m, cross-border), not swissALTI3D
 - [Phase 10]: `/photos` opens on the Map view; deleted playground routes resolve to the designed 404 (no redirects)
+- [Phase 07]: [07-01] Phase 7 work lives on branch gsd/phase-07-foundation-guardrails (main is protected for executors); Tim merges to main
+- [Phase 07]: [07-01] Test-count ratchet baseline measured at jest 66 + e2e 25 = 91; raise only via --update at phase close
+- [Phase 07]: [07-01] Upgrade plans raise scripts/guards/version-floors.json floors (and forbiddenDirect) in the same commit as the upgrade
 
 ### Pending Todos
 
@@ -86,6 +94,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-10T12:06:29.366Z
-Stopped at: Phase 7 UI-SPEC approved
-Resume file: .planning/phases/07-foundation-guardrails/07-UI-SPEC.md
+Last session: 2026-10-10T20:07:54.162Z
+Stopped at: Completed 07-01-PLAN.md
+Resume file: None
