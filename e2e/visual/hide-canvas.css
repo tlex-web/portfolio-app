@@ -1,0 +1,14 @@
+/* Applied to visual-regression screenshots via toHaveScreenshot({ stylePath }).
+ * WebGL and random canvases are hidden, never masked: a mask paints an opaque
+ * box over the full bounding box, which would cover the full-bleed canvases
+ * (Contact AnimatedGradientMesh, Home DualParticleSystem) and the content above
+ * them. visibility keeps layout and shows the deterministic page ground. */
+canvas { visibility: hidden !important; }
+
+/* Time-based JS animations that Playwright's animations: 'disabled' cannot
+ * reach (Motion drives them with requestAnimationFrame, not the Web Animations
+ * API) are pinned to their initial state here, which is what 'disabled' does
+ * for infinite animations. Keep this list to animations that never stop.
+ *   - Home hero "Scroll to explore" arrow: y [0, 10, 0], repeat Infinity
+ *     (components/Hero3DMountain.tsx). Replaced with the hero in Phase 9. */
+div:has(> svg > path[d='M19 14l-7 7m0 0l-7-7m7 7V3']) { transform: none !important; }
