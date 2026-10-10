@@ -3,10 +3,10 @@ gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Topographic Identity
 status: planning
-last_updated: "2026-10-10T10:55:34.814Z"
+last_updated: "2026-10-10T11:32:02.000Z"
 last_activity: 2026-10-10
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,34 +17,70 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-12)
+See: .planning/PROJECT.md (updated 2026-10-10)
 
-**Core value:** A portfolio that is visually memorable and distinctive while being stable and well-maintained under the hood.
-**Current focus:** v1.0 shipped — planning next milestone
+**Core value:** A portfolio that is visually memorable and distinctive (not another generic Tailwind site) while being stable and well-maintained under the hood.
+**Current focus:** Phase 7 — Foundation & Guardrails
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-10-10 — Milestone v2.0 started
+Phase: 7 of 12 (Foundation & Guardrails)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-10-10 — v2.0 roadmap created (Phases 7-12, 68/68 requirements mapped)
+
+Progress: [░░░░░░░░░░] 0%
+
+## Performance Metrics
+
+**Velocity (v2.0):**
+- Total plans completed: 0
+- Average duration: -
+- Total execution time: 0 hours
+
+**By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| - | - | - | - |
+
+*Updated after each plan completion. v1.0 history: 24 plans across Phases 1-6 (see MILESTONES.md).*
 
 ## Accumulated Context
 
 ### Decisions
 
-All v1.0 decisions logged in PROJECT.md Key Decisions table.
+Decisions are logged in the PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
+
+- [Roadmap]: SEO-02 (OG images for photo and project pages) sits in Phase 12, because it spans Phases 10 and 11, which run in parallel
+- [Phase 7]: Upgrades land in isolated commits, in order: motion 14.1, then Next 16.4 + React 19.3 + R3F 9.8.1 + drei 10.7.9, then Playwright 1.64, each with zero visual diff
+- [Phase 7]: `dark:` removal is staged: neutralise, collapse to the dark value, remove, then enable the guard
+- [Phase 8]: The DEM source is swissALTIRegio (10 m, cross-border), not swissALTI3D
+- [Phase 10]: `/photos` opens on the Map view; deleted playground routes resolve to the designed 404 (no redirects)
 
 ### Pending Todos
 
-- Clean up old image variants (-thumb/-medium/-large) after component references are updated
+- Legacy image variants (-thumb/-medium/-large) are still live in `data/landscapes.ts`. Delete them in Phase 12 (VERIFY-01), only after the Phase 8 manifest exists and Phase 10 has migrated the consumers.
 
 ### Blockers/Concerns
 
-None.
+- [Phase 7] Local node_modules lag the lockfile (next 16.1.6 / framer-motion 12.35.1 vs 16.2.6 / 12.39.0). Run `npm ci` before capturing any baseline.
+- [Phase 7] A Next.js security release is due 2026-10-14; DEPS-04 must include it.
+- [Phase 7] Needs from Tim: real GitHub, LinkedIn, email and role line; display-face choice in the UI-SPEC.
+- [Phase 8] Needs from Tim: waterfall name/location, photo copy corrections, the swissALTIRegio attribution string, an approximate position for the film-scan photo (R004-011), and where the originals should live.
+- [Phase 11] Needs from Tim: CLI_X per-grade content and Medium/Critical demo commands with `riskScore`, metric sources, roadmap order and dates.
+
+## Deferred Items
+
+Items acknowledged and deferred at milestone close, most recent first:
+
+| Category | Item | Status | Deferred At | Milestone |
+|----------|------|--------|-------------|-----------|
+| *(none)* | | | | |
 
 ## Session Continuity
 
-Last session: 2026-03-12
-Stopped at: Milestone v1.0 complete
+Last session: 2026-10-10
+Stopped at: v2.0 roadmap created (Phases 7-12); awaiting approval
 Resume file: None

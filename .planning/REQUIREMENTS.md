@@ -166,12 +166,82 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
+| GUARD-01 | Phase 7 | Pending |
+| GUARD-02 | Phase 7 | Pending |
+| GUARD-03 | Phase 7 | Pending |
+| GUARD-04 | Phase 7 | Pending |
+| GUARD-05 | Phase 7 | Pending |
+| GUARD-06 | Phase 7 | Pending |
+| DEPS-03 | Phase 7 | Pending |
+| DEPS-04 | Phase 7 | Pending |
+| DEPS-05 | Phase 7 | Pending |
+| DSGN-05 | Phase 7 | Pending |
+| DSGN-06 | Phase 7 | Pending |
+| DSGN-07 | Phase 7 | Pending |
+| DSGN-08 | Phase 7 | Pending |
+| DSGN-09 | Phase 7 | Pending |
+| DSGN-10 | Phase 7 | Pending |
+| SHELL-01 | Phase 7 | Pending |
+| SHELL-02 | Phase 7 | Pending |
+| SHELL-03 | Phase 7 | Pending |
+| SHELL-04 | Phase 8 | Pending |
+| SHELL-05 | Phase 7 | Pending |
+| SHELL-06 | Phase 7 | Pending |
+| DATA-01 | Phase 8 | Pending |
+| DATA-02 | Phase 8 | Pending |
+| DATA-03 | Phase 8 | Pending |
+| DATA-04 | Phase 8 | Pending |
+| DATA-05 | Phase 8 | Pending |
+| DATA-06 | Phase 8 | Pending |
+| DATA-07 | Phase 8 | Pending |
+| DATA-08 | Phase 8 | Pending |
+| HOME-01 | Phase 9 | Pending |
+| HOME-02 | Phase 9 | Pending |
+| HOME-03 | Phase 9 | Pending |
+| HOME-04 | Phase 9 | Pending |
+| HOME-05 | Phase 9 | Pending |
+| HOME-06 | Phase 9 | Pending |
+| HOME-07 | Phase 9 | Pending |
+| HOME-08 | Phase 9 | Pending |
+| PHOTO-01 | Phase 10 | Pending |
+| PHOTO-02 | Phase 10 | Pending |
+| PHOTO-03 | Phase 10 | Pending |
+| PHOTO-04 | Phase 10 | Pending |
+| LBOX-01 | Phase 10 | Pending |
+| LBOX-02 | Phase 10 | Pending |
+| LBOX-03 | Phase 10 | Pending |
+| LBOX-04 | Phase 10 | Pending |
+| LBOX-05 | Phase 10 | Pending |
+| LBOX-06 | Phase 10 | Pending |
+| LBOX-07 | Phase 10 | Pending |
+| ENG-01 | Phase 11 | Pending |
+| ENG-02 | Phase 11 | Pending |
+| ENG-03 | Phase 11 | Pending |
+| ENG-04 | Phase 11 | Pending |
+| ENG-05 | Phase 11 | Pending |
+| ROUTE-01 | Phase 11 | Pending |
+| ROUTE-02 | Phase 11 | Pending |
+| ROUTE-03 | Phase 11 | Pending |
+| CONTACT-01 | Phase 12 | Pending |
+| CONTACT-02 | Phase 12 | Pending |
+| CONTACT-03 | Phase 12 | Pending |
+| EDGE-01 | Phase 12 | Pending |
+| EDGE-02 | Phase 12 | Pending |
+| SEO-01 | Phase 12 | Pending |
+| SEO-02 | Phase 12 | Pending |
+| SEO-03 | Phase 12 | Pending |
+| VERIFY-01 | Phase 12 | Pending |
+| VERIFY-02 | Phase 12 | Pending |
+| VERIFY-03 | Phase 12 | Pending |
+| VERIFY-04 | Phase 12 | Pending |
 
 **Coverage:**
 - v2.0 requirements: 68 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 68 ⚠️
+- Mapped to phases: 68
+- Unmapped: 0 ✓
+
+**Per phase:** Phase 7: 20 · Phase 8: 9 · Phase 9: 8 · Phase 10: 11 · Phase 11: 8 · Phase 12: 12
 
 ---
 *Requirements defined: 2026-10-10*
-*Last updated: 2026-10-10 after initial definition*
+*Last updated: 2026-10-10 after v2.0 roadmap creation (traceability mapped to Phases 7-12)*
