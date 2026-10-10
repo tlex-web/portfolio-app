@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 07
 current_phase_name: Foundation & Guardrails
 status: executing
-stopped_at: Completed 07-02-PLAN.md
-last_updated: "2026-10-10T20:19:02.338Z"
+stopped_at: Completed 07-03-PLAN.md
+last_updated: "2026-10-10T21:08:02.775Z"
 last_activity: 2026-10-10
 last_activity_desc: Phase 07 execution started
-state_head: 18a4f9916154ed9ead47981ad8a9b3454daebf6e
+state_head: 4de94bc4e0ef36f164de4e5ef8ee84847ced0ecb
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 26
-  completed_plans: 2
-  percent: 8
+  completed_plans: 3
+  percent: 12
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-10)
 ## Current Position
 
 Phase: 07 (Foundation & Guardrails) — EXECUTING
-Plan: 3 of 26
+Plan: 4 of 26
 Status: Ready to execute
 Last activity: 2026-10-10 — Phase 07 execution started
 
-Progress: [█░░░░░░░░░] 8%
+Progress: [█░░░░░░░░░] 12%
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Progress: [█░░░░░░░░░] 8%
 |------|----------|-------|-------|
 | Phase 07 P01 | 11 min | 3 tasks | 35 files |
 | Phase 07 P02 | 6 min | 2 tasks | 16 files |
+| Phase 07 P03 | 45 min | 3 tasks | 88 files |
 
 ## Accumulated Context
 
@@ -75,6 +76,10 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-02] jsx-a11y recommended rules run at error on all JSX/TSX; React Compiler rules warn only for LEGACY_COMPILER_FILES, which must shrink to zero by Phase 12
 - [Phase 07]: [07-02] Zero-diff plans run node scripts/guards/same-classnames.mjs <ref> before committing (className literal parity)
 - [Phase 07]: [07-02] Plan 07-04 removes the 3 temporary globalIgnores entries and TerminalDemo.tsx from LEGACY_COMPILER_FILES when it deletes those files
+- [Phase 07]: [07-03] Visual baselines come only from the workflow_dispatch job in mcr.microsoft.com/playwright:v1.60.0-noble (contents: read, artifact only); Tim reviews and commits them by hand
+- [Phase 07]: [07-03] Baseline-commit checks use per-slug --allow (e.g. --allow photos); --allow-all turns off the routes.spec.ts-snapshots/<slug>/ folder check
+- [Phase 07]: [07-03] Unzip the visual-baselines artifact's contents directly into e2e/visual/routes.spec.ts-snapshots/; never keep the Windows 'Extract all' wrapper folder
+- [Phase 07]: [07-03] The hero scroll-arrow pin in e2e/visual/hide-canvas.css must be removed when Phase 9 replaces the hero
 
 ### Pending Todos
 
@@ -98,6 +103,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-10T20:19:02.315Z
-Stopped at: Completed 07-02-PLAN.md
+Last session: 2026-10-10T21:08:02.750Z
+Stopped at: Completed 07-03-PLAN.md
 Resume file: None
