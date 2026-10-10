@@ -8,7 +8,7 @@ jest.mock('next/image', () => ({
   __esModule: true,
   default: (props: { fill?: boolean; src?: string; alt?: string; [key: string]: unknown }) => {
     const { fill, blurDataURL, placeholder, loading, sizes, ...rest } = props;
-    return <img {...rest} />;
+    return <img alt="" {...rest} />;
   },
 }));
 

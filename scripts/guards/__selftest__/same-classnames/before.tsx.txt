@@ -1,0 +1,9 @@
+export function A({ on }: { on: boolean }) {
+  return (
+    <div className="flex gap-4 p-2">
+      <p className='text-lg'>I'm here</p>
+      <span className={on ? 'bg-blue-600' : "bg-gray-50"} />
+      <a href="/" className={`px-6 ${on ? 'py-3' : 'py-2'}`}>Home</a>
+    </div>
+  );
+}

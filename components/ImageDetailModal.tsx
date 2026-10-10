@@ -41,6 +41,7 @@ export default function ImageDetailModal({ image, onClose }: ImageDetailModalPro
   if (!image) return null;
 
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- Escape is handled on document; replaced by the Phase 10 lightbox
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4"
       onClick={onClose}
@@ -48,6 +49,7 @@ export default function ImageDetailModal({ image, onClose }: ImageDetailModalPro
       aria-modal="true"
       aria-labelledby="modal-title"
     >
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Escape is handled on document; replaced by the Phase 10 lightbox */}
       <div
         className="relative w-full max-w-6xl max-h-[90vh] bg-white dark:bg-gray-900 rounded-lg overflow-y-auto"
         onClick={(e) => e.stopPropagation()}

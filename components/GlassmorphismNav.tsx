@@ -191,6 +191,7 @@ export default function GlassmorphismNav() {
             }}
           >
             {/* Full-screen backdrop */}
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- component removed from the page tree in build step 9 */}
             <div
               className="absolute inset-0 bg-alpine-950/95 backdrop-blur-xl"
               onClick={() => setMobileMenuOpen(false)}

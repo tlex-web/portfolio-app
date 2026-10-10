@@ -180,7 +180,7 @@ export default function HomePage() {
               </h2>
               <div className="space-y-4 text-lg text-snow-200 leading-relaxed">
                 <p>
-                  I'm passionate about capturing the world's natural beauty through landscape photography
+                  I&apos;m passionate about capturing the world&apos;s natural beauty through landscape photography
                   while also building elegant software solutions that solve real problems.
                 </p>
                 <p>
@@ -190,7 +190,7 @@ export default function HomePage() {
                 </p>
                 <p>
                   On the technology side, I develop CLI_X — an AI-powered command-line tool that converts natural
-                  language into shell commands. Built with Rust and featuring enterprise-grade safety, it's helping
+                  language into shell commands. Built with Rust and featuring enterprise-grade safety, it&apos;s helping
                   developers work more efficiently.
                 </p>
               </div>
@@ -222,9 +222,9 @@ export default function HomePage() {
           className="container mx-auto px-4 sm:px-6 lg:px-8 py-16"
         >
           <div className="stratum-2 bg-gradient-to-r from-frost-600 to-frost-500 rounded-3xl p-12 text-center text-white shadow-2xl">
-            <h2 className="text-4xl font-bold mb-4">Let's Work Together</h2>
+            <h2 className="text-4xl font-bold mb-4">Let&apos;s Work Together</h2>
             <p className="text-xl text-snow-200 mb-8 max-w-2xl mx-auto">
-              Interested in collaboration, licensing my photos, or discussing technology projects? I'd love to hear from you.
+              Interested in collaboration, licensing my photos, or discussing technology projects? I&apos;d love to hear from you.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link

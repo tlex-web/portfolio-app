@@ -33,7 +33,9 @@ const fixtures = path.join(here, '__selftest__');
 const PARITY = path.join(here, 'check-install-parity.mjs');
 const TEST_COUNT = path.join(here, 'test-count.mjs');
 const ESLINT = path.join(repoRoot, 'node_modules', 'eslint', 'bin', 'eslint.js');
+const SAME_CLASSNAMES = path.join(here, 'same-classnames.mjs');
 const tc = (...parts) => path.join(fixtures, 'test-count', ...parts);
+const sc = (...parts) => path.join(fixtures, 'same-classnames', ...parts);
 const tap = process.argv.includes('--tap');
 
 /** Copies a fixture baseline into a fresh temp dir so --update cases never touch the fixture. */
@@ -148,6 +150,20 @@ const cases = [
     cwd: repoRoot,
     expectExit: 1,
     expectOutput: ['jsx-a11y/'],
+  },
+  {
+    name: 'same-classnames: entity escape, <a> to <Link> and a JSX comment are neutral',
+    guard: SAME_CLASSNAMES,
+    args: ['--files', sc('before.tsx.txt'), sc('after-neutral.tsx.txt')],
+    expectExit: 0,
+    expectOutput: ['same-classnames: OK'],
+  },
+  {
+    name: 'same-classnames: a changed className literal fails',
+    guard: SAME_CLASSNAMES,
+    args: ['--files', sc('before.tsx.txt'), sc('after-changed.tsx.txt')],
+    expectExit: 1,
+    expectOutput: ['className literals differ', '- "flex gap-4 p-2"', '+ "flex gap-4 p-3"'],
   },
 ];
 

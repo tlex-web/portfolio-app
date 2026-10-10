@@ -41,8 +41,8 @@ export default function RoadmapPage() {
             >
               <h1 className="text-5xl font-bold mb-4">Project Roadmap</h1>
               <p className="text-xl text-purple-100 max-w-3xl mx-auto">
-                Track the evolution of my portfolio, CLI_X tool, and website platform. See what's
-                been accomplished and what's coming next.
+                Track the evolution of my portfolio, CLI_X tool, and website platform. See what&apos;s
+                been accomplished and what&apos;s coming next.
               </p>
             </motion.div>
           </div>
@@ -175,7 +175,7 @@ export default function RoadmapPage() {
             >
               <h2 className="text-3xl font-bold mb-4">Want to Collaborate?</h2>
               <p className="text-xl text-cyan-100 mb-8 max-w-2xl mx-auto">
-                I'm always open to feedback and collaboration opportunities. Get in touch to discuss
+                I&apos;m always open to feedback and collaboration opportunities. Get in touch to discuss
                 any of these projects!
               </p>
               <a
