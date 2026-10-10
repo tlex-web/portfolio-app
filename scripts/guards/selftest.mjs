@@ -9,6 +9,7 @@
  * that cannot fail on a bad fixture is not a guard.
  *
  * Case shape: { name, guard, args, expectExit, expectOutput?, input?, cwd?, setup?, check? }
+ *   or { name, fn } for pure helpers (fn returns an error string or null; no spawn)
  *   - input: optional, piped to the guard's stdin
  *   - cwd: optional, working directory of the spawn (defaults to this process's cwd)
  *   - setup(): optional, runs before the spawn and may return extra args
@@ -26,6 +27,8 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { evaluate, pickRun } from '../ci/check-visual-run.mjs';
+import { evaluateSnapshotChanges } from '../ci/check-snapshot-commit.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '..', '..');
@@ -34,9 +37,33 @@ const PARITY = path.join(here, 'check-install-parity.mjs');
 const TEST_COUNT = path.join(here, 'test-count.mjs');
 const ESLINT = path.join(repoRoot, 'node_modules', 'eslint', 'bin', 'eslint.js');
 const SAME_CLASSNAMES = path.join(here, 'same-classnames.mjs');
+const SNAPSHOT_COMMIT = path.join(repoRoot, 'scripts', 'ci', 'check-snapshot-commit.mjs');
 const tc = (...parts) => path.join(fixtures, 'test-count', ...parts);
 const sc = (...parts) => path.join(fixtures, 'same-classnames', ...parts);
 const tap = process.argv.includes('--tap');
+
+// check-visual-run.mjs: CI API responses captured as fixtures (no network here)
+const vr = (name) => JSON.parse(fs.readFileSync(path.join(fixtures, 'visual-run', name), 'utf-8'));
+const VISUAL_JOB = { workflow: 'CI', job: 'Visual Regression' };
+const runs = vr('runs.json').workflow_runs;
+const runsCompleted = runs.map((r) => (r.id === 102 ? { ...r, status: 'completed', conclusion: 'success' } : r));
+/** Returns null when `actual` equals `expected`, else an error string. */
+const expectEqual = (label, actual, expected) =>
+  actual === expected ? null : `${label}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`;
+
+// check-snapshot-commit.mjs: in-memory `git show --name-status` entries
+const SNAP = 'e2e/visual/routes.spec.ts-snapshots';
+const snap = (status, rel) => ({ status, path: `${SNAP}/${rel}` });
+/** Runs the rule check and compares ok plus the required violation fragments. */
+function snapshotCase(entries, opts, expectOk, fragments = []) {
+  const result = evaluateSnapshotChanges(entries, opts);
+  const problems = [];
+  if (result.ok !== expectOk) problems.push(`expected ok=${expectOk}, got ok=${result.ok}`);
+  for (const fragment of fragments) {
+    if (!result.violations.some((v) => v.includes(fragment))) problems.push(`no violation mentions: ${fragment}`);
+  }
+  return problems.length ? `${problems.join('; ')} (violations: ${JSON.stringify(result.violations)})` : null;
+}
 
 /** Copies a fixture baseline into a fresh temp dir so --update cases never touch the fixture. */
 function tempBaseline(fixtureName) {
@@ -165,11 +192,92 @@ const cases = [
     expectExit: 1,
     expectOutput: ['className literals differ', '- "flex gap-4 p-2"', '+ "flex gap-4 p-3"'],
   },
+  {
+    name: 'visual-run: the newest run of the named workflow is chosen',
+    fn: () => expectEqual('pickRun id', pickRun(runs, 'CI')?.id, 102),
+  },
+  {
+    name: 'visual-run: a successful Visual Regression job is pass',
+    fn: () => expectEqual('outcome', evaluate(runs, vr('jobs-pass.json').jobs, VISUAL_JOB), 'pass'),
+  },
+  {
+    name: 'visual-run: a failed Visual Regression job is fail',
+    fn: () => expectEqual('outcome', evaluate(runs, vr('jobs-fail.json').jobs, VISUAL_JOB), 'fail'),
+  },
+  {
+    name: 'visual-run: an in-progress job, or a running run without the job yet, is pending',
+    fn: () =>
+      expectEqual('in-progress job', evaluate(runs, vr('jobs-pending.json').jobs, VISUAL_JOB), 'pending') ??
+      expectEqual('running run, no job yet', evaluate(runs, vr('jobs-no-visual.json').jobs, VISUAL_JOB), 'pending'),
+  },
+  {
+    name: 'visual-run: no CI run, or a finished run without the job, is missing',
+    fn: () =>
+      expectEqual('no CI run', evaluate(vr('runs-no-ci.json').workflow_runs, [], VISUAL_JOB), 'missing') ??
+      expectEqual('finished run, no job', evaluate(runsCompleted, vr('jobs-no-visual.json').jobs, VISUAL_JOB), 'missing'),
+  },
+  {
+    name: 'snapshot-commit: linux PNGs inside an allowed subdirectory pass',
+    fn: () =>
+      snapshotCase(
+        [
+          snap('M', 'photos/375-reduced-visual-dark-linux.png'),
+          snap('A', 'photos/768-reduced-visual-light-linux.png'),
+          { status: 'M', path: 'e2e/visual/routes.spec.ts' },
+        ],
+        { allow: ['photos'] },
+        true,
+      ),
+  },
+  {
+    name: 'snapshot-commit: a non-linux PNG fails even with --allow-all',
+    fn: () => snapshotCase([snap('A', 'home/1440-reduced-visual-dark-win32.png')], { allowAll: true }, false, ['only -linux.png']),
+  },
+  {
+    name: 'snapshot-commit: --none fails on any added or modified PNG',
+    fn: () =>
+      snapshotCase([snap('M', 'home/375-reduced-visual-dark-linux.png')], { none: true }, false, ['must not change PNGs']) ??
+      snapshotCase([{ status: 'M', path: 'e2e/visual/routes.spec.ts' }], { none: true }, true),
+  },
+  {
+    name: 'snapshot-commit: --some fails when no PNG changed',
+    fn: () => snapshotCase([{ status: 'M', path: 'e2e/visual/README.md' }], { some: true, allowAll: true }, false, ['--some requires']),
+  },
+  {
+    name: 'snapshot-commit: a PNG outside the allow-list fails unless --allow-all',
+    fn: () =>
+      snapshotCase([snap('M', 'contact/375-reduced-visual-dark-linux.png')], { allow: ['photos'] }, false, ['outside the allowed']) ??
+      snapshotCase([snap('M', 'contact/375-reduced-visual-dark-linux.png')], { allowAll: true }, true),
+  },
+  {
+    name: 'snapshot-commit: a deleted PNG fails unless --allow-deletions',
+    fn: () =>
+      snapshotCase([snap('D', 'photos/375-reduced-visual-light-linux.png')], { allowAll: true }, false, ['deleted']) ??
+      snapshotCase([snap('D', 'photos/375-reduced-visual-light-linux.png')], { allowAll: true, allowDeletions: true }, true),
+  },
+  {
+    name: 'snapshot-commit: a git failure exits 2, never a silent pass',
+    guard: SNAPSHOT_COMMIT,
+    args: ['--sha', 'no-such-rev-for-selftest', '--allow-all'],
+    cwd: repoRoot,
+    expectExit: 2,
+    expectOutput: ['git show no-such-rev-for-selftest failed'],
+  },
 ];
 
 let failed = 0;
 if (tap) console.log(`TAP version 13\n1..${cases.length}`);
 for (const [index, c] of cases.entries()) {
+  if (c.fn) {
+    let error;
+    try {
+      error = c.fn();
+    } catch (err) {
+      error = `threw: ${err.message}`;
+    }
+    report(index, c, error ? [error] : [], '');
+    continue;
+  }
   const extraArgs = c.setup ? c.setup() ?? [] : [];
   const result = spawnSync(process.execPath, [c.guard, ...c.args, ...extraArgs], {
     encoding: 'utf-8',
@@ -187,7 +295,10 @@ for (const [index, c] of cases.entries()) {
   }
   const checkError = c.check ? c.check() : null;
   if (checkError) problems.push(checkError);
+  report(index, c, problems, output);
+}
 
+function report(index, c, problems, output) {
   if (problems.length > 0) failed++;
   if (tap) {
     // TAP 13 report (for tooling that consumes a standard test format)
@@ -202,7 +313,7 @@ for (const [index, c] of cases.entries()) {
   } else {
     console.log(`FAIL ${c.name}`);
     for (const p of problems) console.log(`  - ${p}`);
-    console.log(output.replace(/\r\n/g, '\n').replace(/^/gm, '    | '));
+    if (output) console.log(output.replace(/\r\n/g, '\n').replace(/^/gm, '    | '));
   }
 }
 
