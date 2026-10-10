@@ -63,7 +63,10 @@ For a plan that is meant to change some screenshots:
    `ci/07-NN` with suite `visual` (update_mode `changed`, or `all` for a full
    regeneration).
 4. Tim downloads the `visual-baselines` artifact and unzips it into
-   `e2e/visual/routes.spec.ts-snapshots/`, overwriting existing files.
+   `e2e/visual/routes.spec.ts-snapshots/`, overwriting existing files. The
+   zip's contents (the route folders `home/`, `photos/`, ...) go directly into
+   that folder. Windows "Extract all" adds a wrapper folder named after the
+   zip (`visual-baselines/`); do not keep it.
 5. Tim reviews `git status --short e2e/visual` against the plan's expected
    list and opens the changed PNGs.
 6. Tim commits by hand:
