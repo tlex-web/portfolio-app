@@ -115,6 +115,53 @@ jobs:
           path: playwright-report/
           retention-days: 30
 
+  # GUARD-02: compares every route against the committed -linux.png baselines
+  # (e2e/visual/README.md). The job name is what scripts/ci/check-visual-run.mjs
+  # looks up. The update mode stays "none" (never the missing or all modes): a
+  # missing or differing PNG must fail the run.
+  visual-regression:
+    name: Visual Regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    # The tag must equal the lockfile @playwright/test version
+    # (enforced by scripts/guards/check-install-parity.mjs).
+    container:
+      image: mcr.microsoft.com/playwright:v1.60.0-noble
+      options: --ipc=host
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify lockfile install
+        run: npm ls --depth=0
+
+      - name: Compare visual snapshots
+        run: npx playwright test --project=visual-dark --project=visual-light --update-snapshots=none
+        env:
+          CI: '1'
+          RESEND_API_KEY: dummy_key_for_tests
+          FEEDBACK_RECIPIENT_EMAIL: test@example.com
+          FEEDBACK_FROM_EMAIL: noreply@example.com
+
+      - name: Upload visual diffs
+        uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: visual-diff
+          path: test-results/
+          retention-days: 14
+
   build:
     name: Build Application
     runs-on: ubuntu-latest
