@@ -1,0 +1,11 @@
+{
+  "command": "node scripts/guards/selftest.mjs --tap",
+  "exitCode": 1,
+  "output": "TAP version 13\n1..9\nok 1 - parity: good fixture passes\nok 2 - parity: bad fixture fails (npm install, node-version 20, container tag drift)\nnot ok 3 - test-count: total equal to the baseline passes\n  ---\n  message: \"output lacks: test-count: jest 66 + e2e 25 = 91 (baseline 91)\"\n  ...\nnot ok 4 - test-count: total one below the baseline fails\n  ---\n  message: \"expected exit 1, got 0; output lacks: test-count: jest 65 + e2e 25 = 90 (baseline 91); output lacks: rewrite tests, never delete\"\n  ...\nnot ok 5 - test-count: a spec listed under two projects counts once\n  ---\n  message: \"output lacks: test-count: jest 66 + e2e 25 = 91 (baseline 91)\"\n  ...\nnot ok 6 - test-count: a skipped Jest test fails\n  ---\n  message: \"expected exit 1, got 0; output lacks: 1 skipped Jest test\"\n  ...\nnot ok 7 - test-count: a test.only( call under e2e/ fails\n  ---\n  message: \"expected exit 1, got 0; output lacks: focused/skipped call; output lacks: x.ts:2\"\n  ...\nnot ok 8 - test-count: --update with a lower total fails and leaves the baseline unchanged\n  ---\n  message: \"expected exit 1, got 0; output lacks: rewrite tests, never delete\"\n  ...\nnot ok 9 - test-count: --update with a higher total raises the baseline\n  ---\n  message: \"output lacks: test-count: jest 66 + e2e 25 = 91 (baseline 90); baseline not raised: {\\\"jest\\\":66,\\\"e2e\\\":24,\\\"total\\\":90,\\\"recordedAt\\\":\\\"2026-10-10\\\",\\\"commit\\\":null}\"\n  ...\n# tests 9\n# pass 2\n# fail 7\n",
+  "targetTest": "test-count: total one below the baseline fails",
+  "targetFile": "scripts/guards/selftest.mjs",
+  "expected": "guard exits 1 and prints \"test-count: jest 65 + e2e 25 = 90 (baseline 91)\" and \"rewrite tests, never delete\"",
+  "actual": "stub guard exits 0 with no output",
+  "runStartedAt": "2026-10-10T20:03:33Z",
+  "semanticAssessment": "Valid RED. The selftest harness loaded and executed all 9 cases; the 7 new test-count cases ran against an inert stub (exit 0, no output) and failed on their planned assertions (exit code and required ratchet output), not on load, syntax or fixture faults. The 2 parity cases still pass."
+}

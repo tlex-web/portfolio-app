@@ -20,12 +20,27 @@
  */
 
 import { spawnSync } from 'child_process';
+import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const fixtures = path.join(here, '__selftest__');
 const PARITY = path.join(here, 'check-install-parity.mjs');
+const TEST_COUNT = path.join(here, 'test-count.mjs');
+const tc = (...parts) => path.join(fixtures, 'test-count', ...parts);
+const tap = process.argv.includes('--tap');
+
+/** Copies a fixture baseline into a fresh temp dir so --update cases never touch the fixture. */
+function tempBaseline(fixtureName) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
+  const file = path.join(dir, 'baseline.json');
+  fs.copyFileSync(tc(fixtureName), file);
+  return file;
+}
+let lowerUpdateBaseline = null;
+let raiseUpdateBaseline = null;
 
 const cases = [
   {
@@ -52,10 +67,78 @@ const cases = [
       'framer-motion is a forbidden direct dependency',
     ],
   },
+  {
+    name: 'test-count: total equal to the baseline passes',
+    guard: TEST_COUNT,
+    args: ['--jest', tc('jest-66.json'), '--list', tc('list-25.json'), '--baseline', tc('baseline-91.json'), '--root', tc('clean')],
+    expectExit: 0,
+    expectOutput: ['test-count: jest 66 + e2e 25 = 91 (baseline 91)'],
+  },
+  {
+    name: 'test-count: total one below the baseline fails',
+    guard: TEST_COUNT,
+    args: ['--jest', tc('jest-65.json'), '--list', tc('list-25.json'), '--baseline', tc('baseline-91.json'), '--root', tc('clean')],
+    expectExit: 1,
+    expectOutput: ['test-count: jest 65 + e2e 25 = 90 (baseline 91)', 'rewrite tests, never delete'],
+  },
+  {
+    name: 'test-count: a spec listed under two projects counts once',
+    guard: TEST_COUNT,
+    args: ['--jest', tc('jest-66.json'), '--list', tc('list-25-two-projects.json'), '--baseline', tc('baseline-91.json'), '--root', tc('clean')],
+    expectExit: 0,
+    expectOutput: ['test-count: jest 66 + e2e 25 = 91 (baseline 91)'],
+  },
+  {
+    name: 'test-count: a skipped Jest test fails',
+    guard: TEST_COUNT,
+    args: ['--jest', tc('jest-pending.json'), '--list', tc('list-25.json'), '--baseline', tc('baseline-91.json'), '--root', tc('clean')],
+    expectExit: 1,
+    expectOutput: ['1 skipped Jest test'],
+  },
+  {
+    name: 'test-count: a test.only( call under e2e/ fails',
+    guard: TEST_COUNT,
+    args: ['--jest', tc('jest-66.json'), '--list', tc('list-25.json'), '--baseline', tc('baseline-91.json'), '--root', tc('focused')],
+    expectExit: 1,
+    expectOutput: ['focused/skipped call', 'x.ts:2'],
+  },
+  {
+    name: 'test-count: --update with a lower total fails and leaves the baseline unchanged',
+    guard: TEST_COUNT,
+    args: ['--jest', tc('jest-65.json'), '--list', tc('list-25.json'), '--root', tc('clean'), '--update'],
+    setup: () => {
+      lowerUpdateBaseline = tempBaseline('baseline-91.json');
+      return ['--baseline', lowerUpdateBaseline];
+    },
+    expectExit: 1,
+    expectOutput: ['rewrite tests, never delete'],
+    check: () =>
+      fs.readFileSync(lowerUpdateBaseline, 'utf-8') === fs.readFileSync(tc('baseline-91.json'), 'utf-8')
+        ? null
+        : 'baseline copy was modified by a refused --update',
+  },
+  {
+    name: 'test-count: --update with a higher total raises the baseline',
+    guard: TEST_COUNT,
+    args: ['--jest', tc('jest-66.json'), '--list', tc('list-25.json'), '--root', tc('clean'), '--update'],
+    setup: () => {
+      raiseUpdateBaseline = tempBaseline('baseline-90.json');
+      return ['--baseline', raiseUpdateBaseline];
+    },
+    expectExit: 0,
+    expectOutput: ['test-count: jest 66 + e2e 25 = 91 (baseline 90)'],
+    check: () => {
+      const written = JSON.parse(fs.readFileSync(raiseUpdateBaseline, 'utf-8'));
+      return written.jest === 66 && written.e2e === 25 && written.total === 91 && typeof written.recordedAt === 'string'
+        ? null
+        : `baseline not raised: ${JSON.stringify(written)}`;
+    },
+  },
 ];
 
 let failed = 0;
-for (const c of cases) {
+if (tap) console.log(`TAP version 13\n1..${cases.length}`);
+for (const [index, c] of cases.entries()) {
   const extraArgs = c.setup ? c.setup() ?? [] : [];
   const result = spawnSync(process.execPath, [c.guard, ...c.args, ...extraArgs], {
     encoding: 'utf-8',
@@ -72,15 +155,27 @@ for (const c of cases) {
   const checkError = c.check ? c.check() : null;
   if (checkError) problems.push(checkError);
 
-  if (problems.length === 0) {
+  if (problems.length > 0) failed++;
+  if (tap) {
+    // TAP 13 report (for tooling that consumes a standard test format)
+    console.log(`${problems.length === 0 ? 'ok' : 'not ok'} ${index + 1} - ${c.name}`);
+    if (problems.length > 0) {
+      console.log('  ---');
+      console.log(`  message: ${JSON.stringify(problems.join('; '))}`);
+      console.log('  ...');
+    }
+  } else if (problems.length === 0) {
     console.log(`PASS ${c.name}`);
   } else {
-    failed++;
     console.log(`FAIL ${c.name}`);
     for (const p of problems) console.log(`  - ${p}`);
-    console.log(output.replace(/^/gm, '    | '));
+    console.log(output.replace(/\r\n/g, '\n').replace(/^/gm, '    | '));
   }
 }
 
-console.log(`selftest: ${cases.length - failed}/${cases.length} cases passed`);
+if (tap) {
+  console.log(`# tests ${cases.length}\n# pass ${cases.length - failed}\n# fail ${failed}`);
+} else {
+  console.log(`selftest: ${cases.length - failed}/${cases.length} cases passed`);
+}
 process.exit(failed > 0 ? 1 : 0);
