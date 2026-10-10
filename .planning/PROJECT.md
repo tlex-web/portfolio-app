@@ -13,7 +13,7 @@ A portfolio that is visually memorable and distinctive — not another generic T
 **Goal:** Rebuild the whole UI around the real Matterhorn terrain so Tim Lui's photography and engineering read as one Swiss "topographic survey" — on a single enforced design system, without visual regressions.
 
 **Target features:**
-- Foundation & guardrails: Playwright screenshot baselines, tokens v2, zero `dark:` variants / stock Tailwind palette classes (lint-enforced), one `SiteNav` in a shared `(site)` layout, "Tim Lui" identity with real links, visible scrollbar, contact contrast fix, framer-motion 12 → 14 upgrade in isolation
+- Foundation & guardrails: Playwright screenshot baselines, tokens v2, zero `dark:` variants / stock Tailwind palette classes (lint-enforced), one `SiteNav` in a shared `(site)` layout, "Tim Lui" identity with real links, visible scrollbar, contact contrast fix, framer-motion 12 → 14 upgrade in isolation, React 19.2 → 19.3 / Next 16.2 → 16.4 upgrade in isolation (prerequisite for `<ViewTransition>`)
 - Data & terrain pipeline: swisstopo swissALTI3D DEM → heightmap + contour SVG (d3-contour) at build time, EXIF → typed photo data (exif-reader + sharp), corrected capture dates and waterfall location, typed project highlight schemas
 - Home "ascent": real Matterhorn terrain with contour-line shader (R3F), altimeter rail 1,626 m → 4,478 m, photo waypoints placed by EXIF GPS/altitude, Swiss trail-sign routes, static fallback for reduced motion / no WebGL
 - Photography: dark light table with Map / Grid / Carousel views, gallery-black lightbox with EXIF strip and hotspot callouts, View Transitions thumbnail → lightbox
@@ -131,6 +131,7 @@ UI audit (2026-10-10, before v2.0):
 | Delete `/gradient-mesh`, `/particle-buttons`, `/transitions` | Playground pages dilute the portfolio and are linked from Photos | — Pending |
 | Retire hex project cards (`hex-clip`, `useHexGrid`) | Two projects don't need a grid; clip-path complicates focus and content | — Pending |
 | Upgrade framer-motion 12 → 14 first, in isolation | Avoid building new motion on an API about to change; isolate regression risk | — Pending |
+| Upgrade React 19.3 / Next 16.4 in Phase 7, in isolation | `<ViewTransition>` and `addTransitionType` ship only in React 19.3; R3F 9.8 supports React <19.4; installed node_modules (19.2.4 / 16.1.6) also lag the lockfile — user approved 2026-10-10 | — Pending |
 | Build-time DEM + EXIF pipeline (d3-contour, exif-reader + sharp) | Zero client cost, same-origin assets, typed data | — Pending |
 | Platform APIs over libraries (View Transitions, CSS scroll-driven animations); skip GSAP | 0 KB client cost; GSAP would duplicate Motion | — Pending |
 
