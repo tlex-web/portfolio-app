@@ -8,7 +8,9 @@
  * given, required output fragments) with what the case expects. A guard
  * that cannot fail on a bad fixture is not a guard.
  *
- * Case shape: { name, guard, args, expectExit, expectOutput?, setup?, check? }
+ * Case shape: { name, guard, args, expectExit, expectOutput?, input?, cwd?, setup?, check? }
+ *   - input: optional, piped to the guard's stdin
+ *   - cwd: optional, working directory of the spawn (defaults to this process's cwd)
  *   - setup(): optional, runs before the spawn and may return extra args
  *   - check(): optional, runs after the spawn; returns an error string or null
  *
@@ -26,9 +28,11 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(here, '..', '..');
 const fixtures = path.join(here, '__selftest__');
 const PARITY = path.join(here, 'check-install-parity.mjs');
 const TEST_COUNT = path.join(here, 'test-count.mjs');
+const ESLINT = path.join(repoRoot, 'node_modules', 'eslint', 'bin', 'eslint.js');
 const tc = (...parts) => path.join(fixtures, 'test-count', ...parts);
 const tap = process.argv.includes('--tap');
 
@@ -134,6 +138,17 @@ const cases = [
         : `baseline not raised: ${JSON.stringify(written)}`;
     },
   },
+  {
+    // GUARD-06: a jsx-a11y violation must fail lint (exit 1 with a jsx-a11y rule id).
+    // ESLint exits 2 on a config or parse fault, so exit 1 plus the rule prefix proves the rule fired.
+    name: 'a11y probe',
+    guard: ESLINT,
+    args: ['--stdin', '--stdin-filename', 'probe.tsx'],
+    input: 'export const X = () => <div onClick={() => {}} />;\n',
+    cwd: repoRoot,
+    expectExit: 1,
+    expectOutput: ['jsx-a11y/'],
+  },
 ];
 
 let failed = 0;
@@ -142,6 +157,8 @@ for (const [index, c] of cases.entries()) {
   const extraArgs = c.setup ? c.setup() ?? [] : [];
   const result = spawnSync(process.execPath, [c.guard, ...c.args, ...extraArgs], {
     encoding: 'utf-8',
+    input: c.input,
+    cwd: c.cwd,
   });
   const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
   const problems = [];
