@@ -14,8 +14,6 @@ const LEGACY_COMPILER_FILES = [
   'components/GeologicalButton.tsx',
   'components/AnimatedGradientMesh.tsx',
   'components/GlassmorphismNav.tsx',
-  'components/ShaderTransition.tsx',
-  'components/TerminalDemo.tsx',
   'lib/useProgressiveTextures.ts',
 ];
 
@@ -60,9 +58,5 @@ export default defineConfig([
     'project_concept/**',
     'public/**',
     'scripts/guards/__selftest__/**',
-    // deleted in build step 3 (plan 07-04); remove these entries there
-    'app/gradient-mesh/**',
-    'components/TransitionShowcase.tsx',
-    'components/TerminalDemo.tsx',
   ]),
 ]);

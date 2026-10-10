@@ -8,7 +8,6 @@ A modern, responsive portfolio website showcasing landscape photography and prog
 - **Interactive Grid & 3D Carousel**: View photos in a responsive grid or immersive 3D carousel
 - **Detailed Modal Views**: Zoom-in on high-resolution images with interactive hotspots
 - **Rich Metadata**: Camera settings, location, stories behind each photograph
-- **Shader Transitions**: Smooth WebGL-powered image transitions
 
 ### Projects Showcase
 - **Holographic Terminal**: Interactive 3D terminal demonstration for CLI projects
@@ -167,10 +166,6 @@ portfolio-app/
 │   │       └── route.ts          # Feedback API endpoint with rate limiting
 │   ├── contact/
 │   │   └── page.tsx              # Contact page with animated mesh background
-│   ├── gradient-mesh/
-│   │   └── page.tsx              # Gradient mesh demo page
-│   ├── particle-buttons/
-│   │   └── page.tsx              # Interactive particle buttons demo
 │   ├── photos/
 │   │   └── page.tsx              # Photography gallery with grid/3D views
 │   ├── projects/
@@ -179,8 +174,6 @@ portfolio-app/
 │   │   └── page.tsx              # Projects listing page
 │   ├── roadmap/
 │   │   └── page.tsx              # Development roadmap with filters
-│   ├── transitions/
-│   │   └── page.tsx              # Shader transitions demo
 │   ├── error.tsx                 # Error boundary
 │   ├── globals.css               # Global styles and Tailwind directives
 │   ├── layout.tsx                # Root layout with metadata
@@ -200,24 +193,18 @@ portfolio-app/
 │   ├── GlassmorphismNav.tsx      # Glassmorphic navigation
 │   ├── Header.tsx                # Site header/navigation
 │   ├── Hero3DMountain.tsx        # 3D mountain scene for hero
-│   ├── Hero3DSection.tsx         # Alternative 3D hero
 │   ├── HologramTerminal.tsx      # 3D holographic terminal
 │   ├── HologramTerminalDemo.tsx  # Terminal demo with typing effect
 │   ├── ImageDetailModal.tsx      # Full-screen image viewer
 │   ├── InteractiveHotspot.tsx    # Image annotation hotspots
 │   ├── MountainTerrain3D.tsx     # 3D terrain generation
-│   ├── ParticleButton.tsx        # Particle-enhanced buttons
 │   ├── PhotoCarousel3D.tsx       # 3D carousel for photos
 │   ├── ProjectCard.tsx           # Project preview cards
 │   ├── ProjectHighlights.tsx     # Project metrics display
 │   ├── RoadmapFilters.tsx        # Roadmap filtering controls
 │   ├── RoadmapProgress.tsx       # Progress visualization
 │   ├── RoadmapTimeline.tsx       # Timeline component
-│   ├── ShaderTransition.tsx      # WebGL transition effects
-│   ├── TechStackDisplay.tsx      # Tech stack visualization
-│   ├── TerminalDemo.tsx          # Simple terminal demo
-│   ├── TransitionShowcase.tsx    # Transition effects showcase
-│   └── ZoomableImage.tsx         # Pinch-to-zoom image viewer
+│   └── TechStackDisplay.tsx      # Tech stack visualization
 │
 ├── data/                          # Content data
 │   ├── landscapes.ts             # Photography data with metadata
