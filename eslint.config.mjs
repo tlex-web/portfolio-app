@@ -43,6 +43,17 @@ export default defineConfig([
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
     },
   },
+  {
+    // Banned import paths, all files. Add one entry per replaced package.
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [{ name: 'framer-motion', message: 'Import from motion/react (DEPS-03).' }],
+        },
+      ],
+    },
+  },
   prettier,
   globalIgnores([
     '.next/**',

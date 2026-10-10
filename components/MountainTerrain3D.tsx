@@ -4,7 +4,7 @@ import { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
-import { useScroll, type MotionValue } from 'framer-motion';
+import { useScroll, type MotionValue } from 'motion/react';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 
 interface MountainProps {

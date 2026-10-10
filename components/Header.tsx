@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { usePathname } from 'next/navigation';
 import { EASING, DURATION } from '@/lib/animations';
 import { useReducedMotion } from '@/lib/useReducedMotion';

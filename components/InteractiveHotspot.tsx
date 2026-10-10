@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { ImageAnnotation } from '@/data/types';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 

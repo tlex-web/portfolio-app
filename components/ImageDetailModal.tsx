@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { LandscapeImage } from '@/data/types';
 import Image from 'next/image';
 import InteractiveHotspot from './InteractiveHotspot';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 
 interface ImageDetailModalProps {

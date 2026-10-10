@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import type { HighlightValue } from '@/data/types';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 

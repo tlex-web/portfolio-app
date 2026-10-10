@@ -6,7 +6,7 @@ import {
   useTransform,
   useMotionValueEvent,
   type MotionValue,
-} from 'framer-motion';
+} from 'motion/react';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 
 /**

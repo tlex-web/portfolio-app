@@ -9,7 +9,7 @@ import {
   useTransform,
   useMotionValueEvent,
   AnimatePresence,
-} from 'framer-motion';
+} from 'motion/react';
 import { EASING, DURATION } from '@/lib/animations';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 import ContourBackground from './ContourBackground';

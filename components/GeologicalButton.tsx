@@ -10,7 +10,7 @@
  */
 
 import { useRef, useState, useCallback, ReactNode } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { EASING, DURATION } from '@/lib/animations';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 

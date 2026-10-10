@@ -3,7 +3,7 @@
 import Hero3DMountain from '@/components/Hero3DMountain';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { landscapes } from '@/data/landscapes';
 import { projects } from '@/data/projects';
 import Image from 'next/image';

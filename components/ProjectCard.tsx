@@ -2,7 +2,7 @@
 
 import { useRef, useCallback, useState } from 'react';
 import Link from 'next/link';
-import { motion, useMotionValue, animate } from 'framer-motion';
+import { motion, useMotionValue, animate } from 'motion/react';
 import { Project } from '@/data/types';
 import { EASING, DURATION, TILT_CONFIG } from '@/lib/animations';
 import { useReducedMotion } from '@/lib/useReducedMotion';

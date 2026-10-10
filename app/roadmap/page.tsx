@@ -7,7 +7,7 @@ import RoadmapTimeline from '@/components/RoadmapTimeline';
 import RoadmapFilters from '@/components/RoadmapFilters';
 import RoadmapProgress from '@/components/RoadmapProgress';
 import { roadmapItems } from '@/data/roadmap';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 
 export default function RoadmapPage() {
   const [selectedArea, setSelectedArea] = useState('all');
