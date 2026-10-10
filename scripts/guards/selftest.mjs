@@ -173,6 +173,10 @@ for (const [index, c] of cases.entries()) {
   }
 }
 
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline]) {
+  if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
+}
+
 if (tap) {
   console.log(`# tests ${cases.length}\n# pass ${cases.length - failed}\n# fail ${failed}`);
 } else {

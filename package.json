@@ -21,7 +21,8 @@
     "prebuild": "node scripts/optimize-images.mjs",
     "postbuild": "node scripts/inject-build-hash.mjs && node scripts/verify-contrast.mjs",
     "guard:parity": "node scripts/guards/check-install-parity.mjs",
-    "guard:selftest": "node scripts/guards/selftest.mjs"
+    "guard:selftest": "node scripts/guards/selftest.mjs",
+    "guard:tests": "node scripts/guards/test-count.mjs --jest jest-results.json"
   },
   "engines": {
     "node": "24.x"

@@ -12,6 +12,7 @@
 /test-results/
 /.nyc_output
 *.lcov
+/jest-results.json
 
 # Next.js
 /.next/

@@ -57,7 +57,10 @@ jobs:
         run: npm ls --depth=0
 
       - name: Run Jest tests
-        run: npm test -- --coverage --passWithNoTests
+        run: npm test -- --coverage --json --outputFile=jest-results.json
+
+      - name: Test-count ratchet
+        run: npm run guard:tests
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v6
