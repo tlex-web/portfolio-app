@@ -77,6 +77,24 @@ For a plan that is meant to change some screenshots:
    (add `--allow-deletions` only when the plan deletes PNGs), and the green CI
    run with `node scripts/ci/check-visual-run.mjs --sha <HEAD> --wait 30`.
 
+### With the GitHub CLI (optional, replaces steps 3-4)
+
+The browser dialog defaults to `main` and Windows "Extract all" adds a wrapper
+folder; both went wrong once in 07-04. `gh` avoids both, because `--ref` is
+explicit and `-D` extracts the artifact's contents with no wrapper:
+
+```bash
+gh workflow run visual-baselines.yml --ref ci/07-NN -f suite=visual -f update_mode=changed
+gh run list --workflow visual-baselines.yml --branch ci/07-NN --limit 1   # note the run id; gh run watch <id> to follow it
+gh run download <id> -n visual-baselines -D e2e/visual/routes.spec.ts-snapshots
+```
+
+If `gh run download` refuses to overwrite existing files, download to a temp
+folder and copy only the changed PNGs into place. The workflow uploads the
+whole `routes.spec.ts-snapshots/` folder, so a stray subfolder committed there
+comes back in the artifact; check `git status --short e2e/visual` for anything
+outside the expected list.
+
 ## Running locally
 
 `npx playwright test --project=visual-dark --list` lists the matrix. A local
