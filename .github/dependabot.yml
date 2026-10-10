@@ -35,12 +35,18 @@ updates:
     # Ignore specific packages if needed
     ignore:
       # Major version updates for these packages require manual review
-      - dependency-name: "next"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "react"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "react-dom"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: "next" # Phase 7 hold: restore update-types ["version-update:semver-major"] at phase close
+      - dependency-name: "react" # Phase 7 hold: restore update-types ["version-update:semver-major"] at phase close
+      - dependency-name: "react-dom" # Phase 7 hold: restore update-types ["version-update:semver-major"] at phase close
+      # Phase 7 temporary holds: remove at phase close (plan 07-26)
+      - dependency-name: "motion"
+      - dependency-name: "framer-motion"
+      - dependency-name: "@types/react"
+      - dependency-name: "@types/react-dom"
+      - dependency-name: "@react-three/fiber"
+      - dependency-name: "@react-three/drei"
+      - dependency-name: "@playwright/test"
+      - dependency-name: "eslint-config-next"
 
   # Enable version updates for GitHub Actions
   - package-ecosystem: "github-actions"
