@@ -14,7 +14,7 @@ A portfolio that is visually memorable and distinctive — not another generic T
 
 **Target features:**
 - Foundation & guardrails: Playwright screenshot baselines, tokens v2, zero `dark:` variants / stock Tailwind palette classes (lint-enforced), one `SiteNav` in a shared `(site)` layout, "Tim Lui" identity with real links, visible scrollbar, contact contrast fix, framer-motion 12 → 14 upgrade in isolation, React 19.2 → 19.3 / Next 16.2 → 16.4 upgrade in isolation (prerequisite for `<ViewTransition>`)
-- Data & terrain pipeline: swisstopo swissALTI3D DEM → heightmap + contour SVG (d3-contour) at build time, EXIF → typed photo data (exif-reader + sharp), corrected capture dates and waterfall location, typed project highlight schemas
+- Data & terrain pipeline: swisstopo swissALTIRegio (10 m, cross-border) DEM → 16-bit heightmap + contour SVG (d3-contour) at build time, originals moved out of `/public`, EXIF → typed photo data (exif-reader + sharp), corrected capture dates and waterfall location, typed project highlight schemas
 - Home "ascent": real Matterhorn terrain with contour-line shader (R3F), altimeter rail 1,626 m → 4,478 m, photo waypoints placed by EXIF GPS/altitude, Swiss trail-sign routes, static fallback for reduced motion / no WebGL
 - Photography: dark light table with Map / Grid / Carousel views, gallery-black lightbox with EXIF strip and hotspot callouts, View Transitions thumbnail → lightbox
 - Engineering & roadmap: project route panels (hex cards retired), case-study template, CLI_X risk bands shown as Swiss trail grades (T1 yellow / T2–T3 white-red-white / T4–T5 white-blue-white / unmarked), terminal restyled to tokens, route-log roadmap
@@ -86,7 +86,7 @@ Deployed on Vercel with Upstash Redis for rate limiting.
 Design system: "Swiss Alps" crystalline aesthetic — 30 OKLCH tokens across 8 color families (alpine, granite, snow, frost, ember, pine, rust, amber), geological depth shadows (stratum-1/2/3), hex grid layouts, scroll-linked glow intensity.
 
 Known tech debt:
-- Old image variants (-thumb/-medium/-large) still in repo, unused
+- Old image variants (-thumb/-medium/-large) still in repo — NOT unused (corrected 2026-10-10): `data/landscapes.ts` has 12 live references feeding the Home LCP image, PhotoCarousel3D and GalleryGrid; delete only after the v2.0 manifest migration
 - ParticleButton deprecated but retained for demo pages
 - SEC-02 (CSRF) traceability was stale in REQUIREMENTS.md but implemented in Phase 2
 
@@ -108,7 +108,9 @@ UI audit (2026-10-10, before v2.0):
 - **Design**: Dark-only site (no light mode toggle needed) — enforced: no `dark:` variants, no OS-theme-dependent styling
 - **Design process**: All UI/UX work (specs, components, styling, layout, interaction, a11y) uses the `ui-ux-pro-max` skill — user requirement for v2.0
 - **Assets**: Elevation data, fonts and contour assets must be same-origin (committed to `/public` or generated at build) — nonce CSP in `proxy.ts`, no runtime tile fetches
-- **Attribution**: swisstopo data requires source attribution ("© swisstopo") in the footer
+- **Attribution**: swisstopo data requires source attribution ("© swisstopo", height model swissALTIRegio — confirm exact string) in the footer
+- **Photo rights**: All rights reserved ("© {capture year} Tim Lui"); no download button; full-resolution originals never served publicly
+- **Location privacy**: Shipped photo coordinates rounded to 4 decimals (~10 m)
 
 ## Key Decisions
 
@@ -134,6 +136,15 @@ UI audit (2026-10-10, before v2.0):
 | Upgrade React 19.3 / Next 16.4 in Phase 7, in isolation | `<ViewTransition>` and `addTransitionType` ship only in React 19.3; R3F 9.8 supports React <19.4; installed node_modules (19.2.4 / 16.1.6) also lag the lockfile — user approved 2026-10-10 | — Pending |
 | Build-time DEM + EXIF pipeline (d3-contour, exif-reader + sharp) | Zero client cost, same-origin assets, typed data | — Pending |
 | Platform APIs over libraries (View Transitions, CSS scroll-driven animations); skip GSAP | 0 KB client cost; GSAP would duplicate Motion | — Pending |
+| swissALTIRegio (10 m) instead of swissALTI3D | swissALTI3D lacks the Italian side south of the summit (10 tiles); Regio is hole-free across the border and ample for a 512² heightmap — user decision 2026-10-10 | — Pending |
+| Film-scan photo without GPS gets a hand-placed "approx." pin | Keeps all 4 photos on the map and ascent without inventing precision | — Pending |
+| Move GPS-bearing originals (194 MB) out of `/public` | They were publicly downloadable at full resolution with GPS EXIF | — Pending |
+| `/photos` opens on the Map view | User preference: lead with the most distinctive view; Grid and Carousel one click away | — Pending |
+| Deleted playground routes resolve to the designed 404 (no redirects) | No known inbound links | — Pending |
+| Coordinates rounded to ~10 m and shown in the lightbox | Useful context without exposing more precision than needed | — Pending |
+| Photos "all rights reserved" | Supports licensing enquiries via Contact | — Pending |
+| Add photo deep links + full lightbox, and SEO/link previews to scope | Research gaps G1–G3, G2; users expect shareable photo URLs and per-page previews | — Pending |
+| Defer "Ask about this photo" and terminal step controls/transcript | Not needed for v2.0; the demo still gets a WCAG 2.2.2 pause control | — Pending |
 
 ## Evolution
 
