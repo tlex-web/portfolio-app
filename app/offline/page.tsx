@@ -36,7 +36,8 @@ export default function OfflinePage() {
 
           <div className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-6 mb-8">
             <p className="text-gray-700 dark:text-gray-300">
-              <strong>Good news!</strong> This site uses service workers to cache content. 
+              <strong>Good news!</strong>{' '}
+              This site uses service workers to cache content.
               Pages and images you&apos;ve visited before should still be available.
             </p>
           </div>
