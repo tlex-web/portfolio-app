@@ -1,7 +1,8 @@
 'use client';
 
 import { useRef, useMemo } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
+import SafeCanvas from '@/components/SafeCanvas';
 import * as THREE from 'three';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 
@@ -268,7 +269,7 @@ export default function AnimatedGradientMesh({
         filter: blur ? 'blur(80px)' : 'none',
       }}
     >
-      <Canvas
+      <SafeCanvas
         camera={{ position: [0, 0, 5], fov: 75 }}
         dpr={[1, 2]}
         style={{ 
@@ -282,7 +283,7 @@ export default function AnimatedGradientMesh({
           speed={prefersReducedMotion ? 0 : speed}
           prefersReducedMotion={prefersReducedMotion}
         />
-      </Canvas>
+      </SafeCanvas>
     </div>
   );
 }

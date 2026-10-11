@@ -49,7 +49,15 @@ export default defineConfig([
       'no-restricted-imports': [
         'error',
         {
-          paths: [{ name: 'framer-motion', message: 'Import from motion/react (DEPS-03).' }],
+          paths: [
+            { name: 'framer-motion', message: 'Import from motion/react (DEPS-03).' },
+            {
+              name: '@react-three/fiber',
+              importNames: ['Canvas'],
+              message:
+                'Use @/components/SafeCanvas: since R3F 9.8 a bare <Canvas> without WebGL replaces the whole route with app/error.tsx.',
+            },
+          ],
         },
       ],
     },

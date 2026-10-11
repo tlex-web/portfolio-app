@@ -179,6 +179,16 @@ const cases = [
     expectOutput: ['jsx-a11y/'],
   },
   {
+    // A bare R3F <Canvas> has no error boundary: without WebGL it replaces the route (R3F >= 9.8).
+    name: 'bare R3F Canvas import probe',
+    guard: ESLINT,
+    args: ['--stdin', '--stdin-filename', 'probe.tsx'],
+    input: "import { Canvas } from '@react-three/fiber';\nexport const X = Canvas;\n",
+    cwd: repoRoot,
+    expectExit: 1,
+    expectOutput: ['no-restricted-imports', 'SafeCanvas'],
+  },
+  {
     name: 'same-classnames: entity escape, <a> to <Link> and a JSX comment are neutral',
     guard: SAME_CLASSNAMES,
     args: ['--files', sc('before.tsx.txt'), sc('after-neutral.tsx.txt')],

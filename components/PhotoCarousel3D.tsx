@@ -1,7 +1,8 @@
 'use client';
 
 import { useRef, useState, useMemo, useEffect, useCallback, Suspense } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
+import SafeCanvas from '@/components/SafeCanvas';
 import { Html } from '@react-three/drei';
 import { useProgressiveTextures } from '@/lib/useProgressiveTextures';
 import * as THREE from 'three';
@@ -239,7 +240,7 @@ export default function PhotoCarousel3D({ images, onImageClick, className = '' }
 
   return (
     <div className={`relative w-full h-[600px] ${className}`}>
-      <Canvas
+      <SafeCanvas
         camera={{ position: [0, 2, 12], fov: 50 }}
         shadows
         gl={{ 
@@ -274,7 +275,7 @@ export default function PhotoCarousel3D({ images, onImageClick, className = '' }
             prefersReducedMotion={prefersReducedMotion}
           />
         </Suspense>
-      </Canvas>
+      </SafeCanvas>
 
       {/* Controls UI */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 bg-black/80 backdrop-blur-sm px-6 py-3 rounded-full">

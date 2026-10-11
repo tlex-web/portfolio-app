@@ -1,7 +1,8 @@
 'use client';
 
 import { useRef, useMemo } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
+import SafeCanvas from '@/components/SafeCanvas';
 import * as THREE from 'three';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 
@@ -224,7 +225,7 @@ export default function DualParticleSystem({ className = '' }: DualParticleSyste
 
   return (
     <div className={`absolute inset-0 pointer-events-none ${className}`}>
-      <Canvas
+      <SafeCanvas
         camera={{ position: [0, 0, 10], fov: 60 }}
         gl={{ alpha: true, antialias: false }}
       >
@@ -239,7 +240,7 @@ export default function DualParticleSystem({ className = '' }: DualParticleSyste
         
         {/* Floating everywhere - Binary (0s and 1s) */}
         <BinaryParticles prefersReducedMotion={prefersReducedMotion} />
-      </Canvas>
+      </SafeCanvas>
     </div>
   );
 }

@@ -1,7 +1,8 @@
 'use client';
 
 import { useRef, useMemo } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
+import SafeCanvas from '@/components/SafeCanvas';
 import { OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import { useScroll, type MotionValue } from 'motion/react';
@@ -187,7 +188,7 @@ export default function MountainTerrain3D({ className = '' }: MountainTerrain3DP
 
   return (
     <div ref={containerRef} className={`relative w-full h-screen ${className}`}>
-      <Canvas
+      <SafeCanvas
         camera={{ position: [0, 3, 8], fov: 50 }}
         gl={{ antialias: true, alpha: true }}
         className="absolute inset-0"
@@ -227,7 +228,7 @@ export default function MountainTerrain3D({ className = '' }: MountainTerrain3DP
             autoRotateSpeed={0.5}
           />
         )}
-      </Canvas>
+      </SafeCanvas>
 
       {/* Gradient overlay for text readability */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60 pointer-events-none" />

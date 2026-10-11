@@ -1,7 +1,8 @@
 'use client';
 
 import { useRef, useMemo, Suspense, useState, useEffect } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
+import SafeCanvas from '@/components/SafeCanvas';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useReducedMotion } from '@/lib/useReducedMotion';
@@ -314,7 +315,7 @@ export default function HologramTerminal({ children, className = '' }: HologramT
 
   return (
     <div className={`relative ${className} w-full overflow-hidden`} style={{ height: getContainerHeight() }}>
-      <Canvas camera={{ position: cameraPosition, fov: cameraFov }}>
+      <SafeCanvas camera={{ position: cameraPosition, fov: cameraFov }}>
         <Suspense fallback={null}>
           {/* Lighting */}
           <ambientLight intensity={0.4} />
@@ -341,7 +342,7 @@ export default function HologramTerminal({ children, className = '' }: HologramT
             {children}
           </HologramShell>
         </Suspense>
-      </Canvas>
+      </SafeCanvas>
 
       {/* Holographic Display Banner */}
       <div className="absolute top-2 sm:top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 backdrop-blur-sm px-2 sm:px-3 md:px-6 py-1.5 sm:py-2 md:py-3 rounded-full text-cyan-400 text-[10px] sm:text-xs md:text-sm font-bold border-2 border-cyan-500/50 shadow-lg shadow-cyan-500/30">
