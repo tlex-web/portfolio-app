@@ -99,7 +99,6 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-- [Phase 7] Local node_modules lag the lockfile (next 16.1.6 / framer-motion 12.35.1 vs 16.2.6 / 12.39.0). Run `npm ci` before capturing any baseline.
 - [Phase 7] A Next.js security release is due 2026-10-14; DEPS-04 must include it.
 - [Phase 7] Needs from Tim: real GitHub, LinkedIn, email and role line; display-face choice in the UI-SPEC.
 - [Phase 8] Needs from Tim: waterfall name/location, photo copy corrections, the swissALTIRegio attribution string, an approximate position for the film-scan photo (R004-011), and where the originals should live.
