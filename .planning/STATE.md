@@ -99,7 +99,7 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-- [Phase 7] A Next.js security release is due 2026-10-14; DEPS-04 must include it.
+- [Phase 7] A Next.js security release is due 2026-10-14; DEPS-04 must include it. Execution is paused at 07-07: on 2026-10-11 its blocking-human precondition was unmet (npm `next` latest = 16.4.0, no newer 16.4.x), and 07-08..07-26 all chain on 07-07. Tim chose to halt rather than reorder; re-run `/gsd-execute-phase 07` once a 16.4.x > 16.4.0 is on npm.
 - [Phase 7] Needs from Tim: real GitHub, LinkedIn, email and role line; display-face choice in the UI-SPEC.
 - [Phase 8] Needs from Tim: waterfall name/location, photo copy corrections, the swissALTIRegio attribution string, an approximate position for the film-scan photo (R004-011), and where the originals should live.
 - [Phase 11] Needs from Tim: CLI_X per-grade content and Medium/Critical demo commands with `riskScore`, metric sources, roadmap order and dates.
@@ -116,5 +116,5 @@ Items acknowledged and deferred at milestone close, most recent first:
 ## Session Continuity
 
 Last session: 2026-10-11T11:20:54.728Z
-Stopped at: Completed 07-06-PLAN.md
+Stopped at: 07-07 halted at precondition (Next security patch not yet published; expected 2026-10-14)
 Resume file: None
