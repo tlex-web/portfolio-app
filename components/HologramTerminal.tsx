@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useMemo, Suspense, useState, useEffect } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useReducedMotion } from '@/lib/useReducedMotion';
@@ -96,6 +96,13 @@ function HologramShell({ children, prefersReducedMotion, isMobile, htmlWidth }: 
   const glowRef = useRef<THREE.Mesh>(null);
   const scanlineRef = useRef<THREE.Mesh>(null);
 
+  // Pin drei <Html>'s mount target. Its default (events.connected || gl.domElement.parentNode)
+  // changes while R3F >= 9.8 mounts the scene synchronously inside React DOM's commit; the change
+  // remounts Html's private React root on the same element, and the stale root's deferred first
+  // commit (clearContainer) wipes the live root's DOM. A target that never changes means one root.
+  const gl = useThree((state) => state.gl);
+  const htmlPortal = useMemo(() => ({ current: gl.domElement.parentElement as HTMLElement }), [gl]);
+
   // Floating and emerging animation from laptop
   useFrame(({ clock }) => {
     const time = clock.getElapsedTime();
@@ -185,6 +192,7 @@ function HologramShell({ children, prefersReducedMotion, isMobile, htmlWidth }: 
 
       {/* HTML Content */}
       <Html
+        portal={htmlPortal}
         transform
         distanceFactor={6}
         position={[0, 0, 0.01]}
