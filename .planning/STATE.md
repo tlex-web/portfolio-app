@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 07
 current_phase_name: Foundation & Guardrails
 status: executing
-stopped_at: Completed 07-04-PLAN.md
-last_updated: "2026-10-10T23:52:00.998Z"
+stopped_at: Completed 07-05-PLAN.md
+last_updated: "2026-10-11T00:36:53.046Z"
 last_activity: 2026-10-10
 last_activity_desc: Phase 07 execution started
-state_head: 777fd1e857246c5cb3eda53568d1e97f0b18ba9d
+state_head: cba71f2e401cb4cbb4053e598510e01a791c1724
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 26
-  completed_plans: 4
-  percent: 15
+  completed_plans: 5
+  percent: 19
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-10)
 ## Current Position
 
 Phase: 07 (Foundation & Guardrails) — EXECUTING
-Plan: 5 of 26
+Plan: 6 of 26
 Status: Ready to execute
 Last activity: 2026-10-10 — Phase 07 execution started
 
-Progress: [██░░░░░░░░] 15%
+Progress: [██░░░░░░░░] 19%
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Progress: [██░░░░░░░░] 15%
 | Phase 07 P02 | 6 min | 2 tasks | 16 files |
 | Phase 07 P03 | 45 min | 3 tasks | 88 files |
 | Phase 07 P04 | 2h 38m | 3 tasks | 21 files |
+| Phase 07 P05 | 43 min | 3 tasks | 30 files |
 
 ## Accumulated Context
 
@@ -84,6 +85,9 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-04] Re-baselines should use gh: gh workflow run visual-baselines.yml --ref ci/07-NN -f suite=visual -f update_mode=changed, then gh run download <id> -n visual-baselines -D e2e/visual/routes.spec.ts-snapshots (the browser dialog defaults to main)
 - [Phase 07]: [07-04] The visual-baselines artifact carries the whole snapshot folder, so stray subfolders come back; review git status against the expected list on every re-baseline
 - [Phase 07]: [07-04] GUARD-02 complete (CI Visual Regression gate live); SHELL-05 stays Pending until 07-23 ships the shell 404
+- [Phase 07]: [07-05] Zero-diff exception policy: a diff that is a verified upstream bug fix, matching the code's intent, may be re-baselined with Tim's explicit approval and a documented reason (verify with check-snapshot-commit.mjs --some --allow <slug>, never --allow-all)
+- [Phase 07]: [07-05] motion 14.1.0 replaces framer-motion; import from motion/react only (ESLint no-restricted-imports block, extended by 07-13); 6 home scroll-50 baselines re-baselined under the exception policy (motion 13.4.7 ViewTimeline offset fix)
+- [Phase 07]: [07-05] DEPS-03 complete
 
 ### Pending Todos
 
@@ -108,6 +112,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-10T23:51:52.150Z
-Stopped at: Completed 07-04-PLAN.md
+Last session: 2026-10-11T00:36:42.223Z
+Stopped at: Completed 07-05-PLAN.md
 Resume file: None
