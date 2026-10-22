@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 07
 current_phase_name: Foundation & Guardrails
 status: executing
-stopped_at: Completed 07-09-PLAN.md
-last_updated: "2026-10-22T16:32:51.286Z"
+stopped_at: Completed 07-10-PLAN.md
+last_updated: "2026-10-22T18:53:10.624Z"
 last_activity: 2026-10-22
 last_activity_desc: Phase 07 execution started
-state_head: 5245f1304d5addb654ff2d33d44da19861a8478f
+state_head: ca379e7dade6ff1c6fe0ce42a1ca6346834ce486
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 26
-  completed_plans: 9
-  percent: 35
+  completed_plans: 10
+  percent: 38
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-10)
 ## Current Position
 
 Phase: 07 (Foundation & Guardrails) — EXECUTING
-Plan: 10 of 26
+Plan: 11 of 26
 Status: Ready to execute
 Last activity: 2026-10-22 — Phase 07 execution started
 
-Progress: [████░░░░░░] 35%
+Progress: [████░░░░░░] 38%
 
 ## Performance Metrics
 
@@ -63,6 +63,7 @@ Progress: [████░░░░░░] 35%
 | Phase 07 P07 | 26 min | 3 tasks | 3 files |
 | Phase 07 P08 | 3h 42m | 3 tasks | 11 files |
 | Phase 07 P09 | 19 min | 2 tasks | 6 files |
+| Phase 07 P10 | 41 min | 2 tasks | 73 files |
 
 ## Accumulated Context
 
@@ -103,6 +104,8 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-09] Task 2 closed as zero-diff (Tim's option A): CI visual green on cd5ac18 and update_mode=changed rewrote 0 of 72 PNGs, because the amber-500 -> caution-400 stop (YIQ ~355) is below Playwright's default per-pixel threshold 0.2 (~1409); no baseline commit, no amend, no force-push; the cd5ac18 body's "Re-baseline ... clix-cli/clix-website" line is superseded by 07-09-SUMMARY
 - [Phase 07]: [post-07-09, Tim's option A] Visual guard hardened to per-pixel `threshold: 0` (playwright.config.ts, e2e/visual/README.md; 850c80e). Threshold 0 exposed 26 shots of drift hidden by 0.2: home (14) and photos (6) image-codec noise (sharp 0.35.5 / Chromium 156, max channel delta 48), clix-cli (6) caching-icon caution-400 stop. CI renders are deterministic at threshold 0: three independent runs produced pixel-identical shots. All 26 re-baselined by Tim; CI run 39827903461 all green. From now on `update_mode=changed` captures every changed pixel, so re-baselines need no `all` mode
 - [Phase 07]: [post-07-09, Tim's option A] HologramTerminalDemo starts paused under prefers-reduced-motion (0cf000b): its 3s auto-advance made the clix-cli reduced shots timing-dependent (baseline showed command 1/4, CI had drifted to 2/4) and auto-rotating content must stop under reduced motion (WAI / WCAG 2.2.2). Play and the command dots still work; motion users unchanged
+- [Phase 07]: [07-10] Every v1 colour token (alpine, granite, snow, frost, ember, pine, rust) is now a `@theme inline` L3 alias onto a tokens v2 primitive (27 aliases, each "@deprecated v1 alias, removed in Phase 12"); body uses --color-ink / --color-surface; /NN opacity modifiers compile to color-mix(in oklab, var(--glacier-400) NN%, transparent). All 72 baselines re-baselined (colour-only, Tim reviewed, amended into e200fb2; CI run 39834067428 green). DSGN-06 stays Pending: 07-16..07-20 still declare it. Watch item: roadmap/1440-reduced-visual-light showed 9 px of ±1 AA noise on the "2.5.0" pill edge once; post-amend CI passed
+- [Phase 07]: [07-10] Next 16.4 (Turbopack) writes compiled CSS to .next/static/chunks/*.css, not .next/static/css/; plans that grep compiled CSS (07-16..07-20 may carry the stale path) should use `grep -r ... .next/static/ --include=*.css`
 
 ### Pending Todos
 
@@ -115,6 +118,8 @@ Recent decisions affecting current work:
 - [Phase 11] Needs from Tim: CLI_X per-grade content and Medium/Critical demo commands with `riskScore`, metric sources, roadmap order and dates.
 - [Phase 7] Required status checks (Visual Regression, Lint and Type Check, Unit Tests) on main are not set yet; until Tim sets them a red visual job does not block merges (07-USER-SETUP.md)
 - [Phase 7] main (Vercel production) lacks the Next 16.4.2 / sharp 0.35.5 security patch until Tim merges gsd/phase-07-foundation-guardrails; GitHub reported 84 Dependabot alerts on the default branch (9 critical). Merge recommended soon.
+- [Phase 7, from 07-10] Hero badge `components/Hero3DMountain.tsx:73` (text-snow-50 on from-frost-500 to-frost-600, 18px semibold = not large text) is now 1.42-2.17:1 after the locked v1->v2 alias map (v1 was 2.10-2.93:1, also failing). No Phase 7 plan fixes it explicitly: catch it in the 07-20 contrast guard or the Phase 9 hero rework
+- [Phase 7, from 07-10] Lost hover background: `app/page.tsx:232` and `components/Hero3DMountain.tsx:100` use `bg-snow-50 hover:bg-snow-100`, and both aliases now map to firn-50, so the hover background no longer changes (shadow/scale remain). Restore a distinct hover state when 07-20 / Phase 9 migrate these to semantic tokens
 
 ## Deferred Items
 
@@ -126,6 +131,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-22T16:32:51.247Z
-Stopped at: Completed 07-09-PLAN.md
+Last session: 2026-10-22T18:53:10.581Z
+Stopped at: Completed 07-10-PLAN.md
 Resume file: None
