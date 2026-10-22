@@ -208,15 +208,40 @@
   }
 }
 
-/* Hide scrollbar for Chrome, Safari and Opera */
-*::-webkit-scrollbar {
-  display: none;
+/* Scrollbar (DSGN-09, UI-SPEC "Scrollbar"): thin and visible, with a stable
+   gutter so a scroll lock never moves the layout sideways. Primitives, not
+   @theme variables, because L1 is always emitted. Thumb (line-strong) on track
+   (surface) is 4.85:1. */
+html {
+  color-scheme: dark;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--night-500) var(--night-950);
 }
 
-/* Hide scrollbar for IE, Edge and Firefox */
-* {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+@supports not (scrollbar-color: auto) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--night-950);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--night-500);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--mist-300);
+  }
+}
+
+/* Opt-out for inner scrollers that must stay hidden (no Phase 7 element uses it) */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @layer utilities {
