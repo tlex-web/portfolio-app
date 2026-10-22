@@ -7,9 +7,11 @@ Phase 7 plan is judged against these files.
 
 ## Rules
 
-- Comparison is zero tolerance: `threshold: 0`, no `maxDiffPixels`. One
-  differing pixel fails the run, however small its colour change. Playwright's
-  default per-pixel threshold (0.2) hides token-level colour shifts.
+- Comparison is near-zero tolerance: `threshold: 0.01`, no `maxDiffPixels`.
+  One differing pixel fails the run unless its colour moved by only 1-2 RGB
+  levels, which is Chromium's anti-aliasing noise on some edges (roadmap
+  release pill, 07-11). Playwright's default per-pixel threshold (0.2) hides
+  token-level colour shifts.
 - Baselines are captured only from a production build inside
   `mcr.microsoft.com/playwright:v<lockfile @playwright/test version>-noble`,
   by the **Update visual baselines** workflow (`workflow_dispatch`, read-only

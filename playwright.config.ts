@@ -34,9 +34,11 @@ export default defineConfig({
    * Baselines are regenerated only by the "Update visual baselines" workflow. */
   updateSnapshots: process.env.CI ? 'none' : 'missing',
   expect: {
-    // Zero tolerance: no maxDiffPixels and no per-pixel colour tolerance.
-    // The default threshold (0.2) let 07-09's amber -> caution stop pass.
-    toHaveScreenshot: { animations: 'disabled', caret: 'hide', threshold: 0 },
+    // Near-zero tolerance: no maxDiffPixels and a per-pixel colour tolerance
+    // of 0.01, which only absorbs the +/-1 anti-aliasing noise Chromium leaves
+    // on some edges. The default threshold (0.2) let 07-09's amber -> caution
+    // stop pass.
+    toHaveScreenshot: { animations: 'disabled', caret: 'hide', threshold: 0.01 },
   },
   use: {
     baseURL: 'http://localhost:3000',
