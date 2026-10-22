@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, chromium } from '@playwright/test';
 
 /**
  * DSGN-07 type stack (UI-SPEC "Typography", build step 7c): Schibsted Grotesk
@@ -106,6 +106,91 @@ test.describe('Design system', () => {
       );
       console.log(`CLS ${route}: ${cls.toFixed(4)}`);
       expect(cls, `layout-shift sum on ${route}`).toBeLessThan(0.1);
+    }
+  });
+});
+
+/**
+ * DSGN-09 (UI-SPEC "Scrollbar", build step 7d): a thin visible scrollbar with
+ * a stable gutter. Headless Chromium launches with --hide-scrollbars (RESEARCH
+ * Pitfall 4), so the root rules are asserted as computed styles, and the G3
+ * box check runs with that flag removed so real scrollbars take up space.
+ */
+test.describe('Scrollbar', () => {
+  test('html carries the stable gutter, thin width and dark scheme', async ({ page, browserName }) => {
+    await page.goto('/');
+
+    const style = await page.evaluate(() => {
+      const cs = getComputedStyle(document.documentElement);
+      return {
+        scrollbarGutter: cs.scrollbarGutter,
+        scrollbarWidth: cs.scrollbarWidth,
+        colorScheme: cs.colorScheme,
+      };
+    });
+
+    expect(style.scrollbarGutter).toBe('stable');
+    // Playwright's headless Firefox hides scrollbars by forcing the root's
+    // scrollbar-width to none (CI 07-12: gutter "stable", width "none"), so the
+    // authored width is only observable in Chromium and WebKit.
+    if (browserName !== 'firefox') {
+      expect(style.scrollbarWidth).toBe('thin');
+    }
+    expect(style.colorScheme).toBe('dark');
+  });
+
+  // G3 (PITFALLS 18): opening a scroll-locking overlay must not move the
+  // header's bounding box. Playwright forbids launchOptions in test.use inside
+  // a describe (it forces a new worker), so this test launches its own
+  // Chromium without --hide-scrollbars instead of changing the whole file.
+  // The @chromium-only tag keeps it out of the Firefox project.
+  test('scroll lock keeps the header box @chromium-only', async ({ baseURL }) => {
+    const browser = await chromium.launch({ ignoreDefaultArgs: ['--hide-scrollbars'] });
+    try {
+      const context = await browser.newContext({
+        baseURL,
+        viewport: { width: 1440, height: 900 },
+      });
+      const page = await context.newPage();
+      await page.goto('/photos');
+
+      const header = page.getByRole('banner').first();
+      await expect(header).toBeVisible();
+
+      // Guard against a trivial pass: the classic scrollbar must take up layout
+      // width here, or the box check below proves nothing.
+      const gutter = await page.evaluate(
+        () => window.innerWidth - document.documentElement.clientWidth
+      );
+      console.log(`G3 scrollbar gutter: ${gutter}px`);
+      expect(gutter, 'real scrollbar width (gutter)').toBeGreaterThan(0);
+
+      // The v1 Header slides in from y -100 (Motion entrance, DURATION.enter),
+      // so read the box only once two consecutive reads agree.
+      const settledBox = async () => {
+        let prev = await header.boundingBox();
+        for (let i = 0; i < 50; i++) {
+          await page.waitForTimeout(100);
+          const next = await header.boundingBox();
+          if (prev && next && JSON.stringify(prev) === JSON.stringify(next)) return next;
+          prev = next;
+        }
+        throw new Error('header box never settled');
+      };
+
+      const before = await settledBox();
+
+      await page.getByRole('button', { name: /View details for/i }).first().click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+
+      const after = await settledBox();
+      console.log(`G3 header box before ${JSON.stringify(before)} after ${JSON.stringify(after)}`);
+
+      expect(after.x).toBe(before.x);
+      expect(after.y).toBe(before.y);
+      expect(after.width).toBe(before.width);
+    } finally {
+      await browser.close();
     }
   });
 });
