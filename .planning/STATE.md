@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 07
 current_phase_name: Foundation & Guardrails
 status: executing
-stopped_at: Completed 07-12-PLAN.md
-last_updated: "2026-10-22T22:49:01.847Z"
+stopped_at: Completed 07-13-PLAN.md
+last_updated: "2026-10-22T23:37:35.417Z"
 last_activity: 2026-10-22
 last_activity_desc: Phase 07 execution started
-state_head: 3221b37d00177c0a4ca762249d556a560b77868a
+state_head: 0f007e0989656e6bfe8fb8a9ff546851b8b8e4cc
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 26
-  completed_plans: 12
-  percent: 46
+  completed_plans: 13
+  percent: 50
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-10)
 ## Current Position
 
 Phase: 07 (Foundation & Guardrails) — EXECUTING
-Plan: 13 of 26
+Plan: 14 of 26
 Status: Ready to execute
 Last activity: 2026-10-22 — Phase 07 execution started
 
-Progress: [█████░░░░░] 46%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
@@ -66,6 +66,7 @@ Progress: [█████░░░░░] 46%
 | Phase 07 P10 | 41 min | 2 tasks | 73 files |
 | Phase 07 P11 | 2h 48m | 2 tasks | 76 files |
 | Phase 07 P12 | 1h 0m | 2 tasks | 74 files |
+| Phase 07 P13 | 44 min | 2 tasks | 48 files |
 
 ## Accumulated Context
 
@@ -114,6 +115,9 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-12] Assumption A3 holds: body overflow:hidden keeps the gutter on html (G3 header box {0,0,1430,82} before and after opening the /photos modal; a scrollbar-gutter: auto negative control went 1430 -> 1440), so no scroll-lock change was needed and ImageDetailModal / GlassmorphismNav are untouched. G3 launches its own Chromium with ignoreDefaultArgs ['--hide-scrollbars'] (test.use launchOptions in a describe forces a new worker), reads the box only once two reads agree, and asserts a gutter > 0 first; future scroll-locking overlays (Phase 10 lightbox, 07-22 SiteNav menu) extend it
 - [Phase 07]: [07-12] Playwright's headless Firefox forces the root's scrollbar-width to none (computed scrollbarGutter is still stable, so the html rule applies): scrollbar assertions omit only the scrollbarWidth check when browserName === 'firefox' (an in-test condition, not test.skip); gutter and color-scheme are asserted in every browser
 - [Phase 07]: [07-12] G3 (and any browser-scoped test) must never use test.skip: scripts/guards/test-count.mjs rejects any .skip( ("tests are rewritten, never skipped"; CI run 39860744640 Unit failed on it). Scope a test with the @chromium-only title tag instead; G3 running in the WebKit project is harmless because it launches its own Chromium
+- [Phase 07]: [07-13] DSGN-10 live UI (82d0cd0): @phosphor-icons/react 2.1.10 (exact pin) replaces every live emoji icon in app/page.tsx, FeatureShowcase (Circle fallback), ProjectHighlights (ChartBar fallback), RoadmapFilters/Progress/Timeline and PhotoCarousel3D; 20px, aria-hidden, beside the visible label, no weight prop. ESLint no-restricted-imports bans the @phosphor-icons/react root ("Import icons from @phosphor-icons/react/dist/ssr (DSGN-10)") and the pattern @phosphor-icons/react/dist/csr*, so icons import only from dist/ssr. RoadmapFilters/Timeline tests rewritten (labels, one svg[aria-hidden] per option, aria-pressed instead of colour classes; Jest 82 unchanged). 36/72 baselines re-baselined (home 18, clix-cli 6, clix-website 6, roadmap 6; Tim reviewed; CI run 39871752110 green). DSGN-10 stays Pending: 07-25 also declares it (emoji guard rule, lib/email.ts sparkle)
+- [Phase 07]: [07-13, Tim's option A] The 375px roadmap release-pill overflow is accepted: 20px icons make the RoadmapTimeline badges 144.5x32 instead of 140x28, so the "Target Release" pill and label cross the card's right border by up to ~7px in the CI 375px render (Medium Priority cards and at least one completed card, v2.4.0; ~5px of it from 7e on top of the 07-12 gutter). Measured locally without a gutter (real-phone-like 375px), the pill crosses the inner border edge on 5 of 6 Medium cards by 0.8-5.1px. Rejected: B 16px icons in the badges only, C card layout change. The locked 20px stays; Phase 11 fixes the card header
+- [Phase 07]: [07-13] Note for a future lint: in @phosphor-icons/react 2.1.10 the locked bare icon names (Camera, Path, ...) are @deprecated aliases of the *Icon exports (same component). No change now; a deprecation lint would flag them, so new code should prefer the *Icon names and a later plan can rename the existing imports mechanically
 
 ### Pending Todos
 
@@ -130,6 +134,7 @@ Recent decisions affecting current work:
 - [Phase 7, from 07-10] Hero badge `components/Hero3DMountain.tsx:73` (text-snow-50 on from-frost-500 to-frost-600, 18px semibold = not large text) is now 1.42-2.17:1 after the locked v1->v2 alias map (v1 was 2.10-2.93:1, also failing). No Phase 7 plan fixes it explicitly: catch it in the 07-20 contrast guard or the Phase 9 hero rework
 - [Phase 7, from 07-10] Lost hover background: `app/page.tsx:232` and `components/Hero3DMountain.tsx:100` use `bg-snow-50 hover:bg-snow-100`, and both aliases now map to firn-50, so the hover background no longer changes (shadow/scale remain). Restore a distinct hover state when 07-20 / Phase 9 migrate these to semantic tokens
 - [Phase 9-12, from 07-11] 37 utility-styled headings in 20 files (e.g. Hero3DMountain.tsx:65 font-bold text-snow-50 drop-shadow-2xl; /projects text-shadow-glow; /contact, /error, /not-found, /offline text-gray-900 dark:text-white) still carry font-bold, glow and v1 colours because utilities beat the 7c @layer base rules; they get the 7c weight/no-glow/ink only when their redesign phase removes those utilities
+- [Phase 11, from 07-13] Roadmap card header overflows at narrow widths: at 375px the RoadmapTimeline "Target Release" pill and its label cross the card's right border by up to ~7px (CI render; 0.8-5.1px on 5 of 6 Medium cards without the CI gutter), after the 20px 7e icons grew the badges to 144.5x32. Tim accepted it for now (07-13 option A); the Phase 11 route-log roadmap redesign must fix the card header so the release block cannot overflow at narrow widths
 
 ## Deferred Items
 
@@ -141,6 +146,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-22T22:49:01.804Z
-Stopped at: Completed 07-12-PLAN.md
+Last session: 2026-10-22T23:37:35.373Z
+Stopped at: Completed 07-13-PLAN.md
 Resume file: None

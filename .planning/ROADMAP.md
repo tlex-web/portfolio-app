@@ -52,7 +52,7 @@
   4. On every page a keyboard user finds one skip link, exactly one primary navigation with a visible current-page indicator, and exactly one main landmark. On mobile the menu opens with touch targets of at least 44 px and closes on route change and on Escape.
   5. Every page shows Tim Lui's name, role line and real GitHub, LinkedIn and email links, with no placeholder text or links. `/gradient-mesh`, `/particle-buttons` and `/transitions` return a 404 inside the site shell and no page links to them. The Contact heading and form fields pass WCAG AA for light-OS and dark-OS visitors alike.
 
-**Plans**: 12/26 plans executed (sequential waves 1-26, one plan per wave; locked build order preserved)
+**Plans**: 13/26 plans executed (sequential waves 1-26, one plan per wave; locked build order preserved)
 
 Plans:
 **Wave 1**
@@ -92,7 +92,7 @@ Plans:
 - [x] 07-12-PLAN.md — Step 7d: visible thin scrollbar with stable gutter (G3 check)
 
 **Wave 13** *(blocked on Wave 12 completion)*
-- [ ] 07-13-PLAN.md — Step 7e: Phosphor icon family replaces emoji icons; Roadmap tests rewritten
+- [x] 07-13-PLAN.md — Step 7e: Phosphor icon family replaces emoji icons; Roadmap tests rewritten
 
 **Wave 14** *(blocked on Wave 13 completion)*
 - [ ] 07-14-PLAN.md — Step 8a: neutralise dark: for everyone; light baselines assert dark
@@ -325,7 +325,7 @@ Plans:
 | 4. Design Components | v1.0 | 6/6 | Complete | 2026-02-17 |
 | 5. Performance & Accessibility Polish | v1.0 | 5/5 | Complete | 2026-03-11 |
 | 6. Integration Wiring Fixes | v1.0 | 1/1 | Complete | 2026-03-12 |
-| 7. Foundation & Guardrails | v2.0 | 12/26 | In Progress | - |
+| 7. Foundation & Guardrails | v2.0 | 13/26 | In Progress | - |
 | 8. Data & Terrain Pipeline | v2.0 | 0/TBD | Not started | - |
 | 9. Home Ascent | v2.0 | 0/TBD | Not started | - |
 | 10. Photography | v2.0 | 0/TBD | Not started | - |
