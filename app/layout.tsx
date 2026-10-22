@@ -4,6 +4,7 @@ import { Inter, JetBrains_Mono } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration';
+import MotionProvider from '@/components/providers/MotionProvider';
 import './globals.css';
 
 const inter = Inter({
@@ -45,7 +46,7 @@ export default async function RootLayout({
       </head>
       <body className="font-body antialiased">
         <ServiceWorkerRegistration />
-        {children}
+        <MotionProvider>{children}</MotionProvider>
         <Analytics />
         <SpeedInsights />
       </body>

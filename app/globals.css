@@ -1,9 +1,67 @@
 @import "tailwindcss";
 
+/* Tokens v2 -- L1 primitives (DSGN-06). Always emitted, readable from JS and
+   shaders, generate no utilities. New code uses the L2 semantic tokens below. */
+:root {
+  --night-950: oklch(0.17 0.024 255);
+  --night-900: oklch(0.205 0.026 255);
+  --night-850: oklch(0.24 0.028 255);
+  --night-700: oklch(0.34 0.026 255);
+  --night-500: oklch(0.60 0.022 255);
+  --firn-50: oklch(0.94 0.008 85);
+  --mist-300: oklch(0.76 0.016 250);
+  --glacier-300: oklch(0.88 0.075 215);
+  --glacier-400: oklch(0.82 0.10 215);
+  --glacier-500: oklch(0.70 0.115 220);
+  --signal-400: oklch(0.72 0.16 25);
+  --caution-400: oklch(0.84 0.13 85);
+  --meadow-400: oklch(0.80 0.14 150);
+  --gallery-black: oklch(0.13 0 0);
+
+  /* Motion durations (DSGN-08) -- parity with DURATION in lib/animations.ts,
+     enforced by lib/__tests__/motion-tokens.test.ts */
+  --duration-fast: 150ms;
+  --duration-panel: 250ms;
+  --duration-hover: 350ms;
+  --duration-fracture: 300ms;
+  --duration-enter: 450ms;
+  --duration-settle: 500ms;
+}
+
 @theme inline {
   --font-body: var(--font-inter);
   --font-heading: var(--font-jetbrains);
   --font-mono: var(--font-jetbrains);
+}
+
+/* Tokens v2 -- L2 semantic tokens (DSGN-06): the only colour utilities new code may use */
+@theme inline {
+  --color-surface: var(--night-950);
+  --color-surface-raised: var(--night-900);
+  --color-surface-overlay: var(--night-850);
+  --color-gallery: var(--gallery-black);
+  --color-ink: var(--firn-50);
+  --color-ink-muted: var(--mist-300);
+  --color-ink-inverse: var(--night-950);
+  --color-line: var(--night-700);
+  --color-line-strong: var(--night-500);
+  --color-accent: var(--glacier-400);
+  --color-accent-hover: var(--glacier-300);
+  --color-focus: var(--glacier-300);
+  --color-danger: var(--signal-400);
+  --color-caution: var(--caution-400);
+  --color-success: var(--meadow-400);
+  --color-contour: oklch(0.94 0.008 85 / 0.14);
+}
+
+/* Motion easings (DSGN-08) -- static so the variables are always emitted for JS;
+   parity with EASING in lib/animations.ts */
+@theme static {
+  --ease-geological: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-crystallize: cubic-bezier(0.16, 0.85, 0.45, 1);
+  --ease-tectonic: cubic-bezier(0.33, 0, 0.2, 1);
+  --ease-erosion: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-descent: cubic-bezier(0.4, 0, 1, 1);
 }
 
 @theme {
@@ -47,11 +105,6 @@
   --color-rust-600: oklch(0.48 0.17 25);
   --color-rust-500: oklch(0.58 0.16 25);
   --color-rust-400: oklch(0.65 0.14 25);
-
-  /* Semantic -- Amber (warning) */
-  --color-amber-600: oklch(0.68 0.16 85);
-  --color-amber-500: oklch(0.78 0.15 85);
-  --color-amber-400: oklch(0.83 0.13 85);
 
   /* Text shadow glow tokens (Tailwind v4.1 native text-shadow utilities) */
   --text-shadow-glow: 0 0 10px var(--color-frost-glow), 0 0 25px var(--color-frost-glow);
@@ -375,5 +428,15 @@
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+  }
+
+  /* Phase 7 (DSGN-08): settle view transitions and scrolling to the final state */
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+  html {
+    scroll-behavior: auto;
   }
 }

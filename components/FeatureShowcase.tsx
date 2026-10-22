@@ -20,7 +20,7 @@ const iconMap: Record<string, { icon: string; color: string }> = {
   template: { icon: '📋', color: 'from-yellow-500 to-orange-500' },
   ollama: { icon: '🦙', color: 'from-green-500 to-lime-500' },
   analytics: { icon: '📊', color: 'from-purple-500 to-indigo-500' },
-  caching: { icon: '⚡', color: 'from-yellow-500 to-amber-500' },
+  caching: { icon: '⚡', color: 'from-yellow-500 to-caution' },
   audit: { icon: '📝', color: 'from-gray-500 to-slate-500' },
   subscription: { icon: '💳', color: 'from-green-500 to-emerald-500' },
   license: { icon: '🔐', color: 'from-blue-500 to-indigo-500' },
