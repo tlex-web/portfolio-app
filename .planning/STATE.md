@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 07
 current_phase_name: Foundation & Guardrails
 status: executing
-stopped_at: Completed 07-10-PLAN.md
-last_updated: "2026-10-22T18:53:10.624Z"
+stopped_at: Completed 07-11-PLAN.md
+last_updated: "2026-10-22T21:45:39.729Z"
 last_activity: 2026-10-22
 last_activity_desc: Phase 07 execution started
-state_head: ca379e7dade6ff1c6fe0ce42a1ca6346834ce486
+state_head: 27a24473108f98e104f9a1c162dc3e4b39176e9d
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 26
-  completed_plans: 10
-  percent: 38
+  completed_plans: 11
+  percent: 42
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-10)
 ## Current Position
 
 Phase: 07 (Foundation & Guardrails) — EXECUTING
-Plan: 11 of 26
+Plan: 12 of 26
 Status: Ready to execute
 Last activity: 2026-10-22 — Phase 07 execution started
 
-Progress: [████░░░░░░] 38%
+Progress: [████░░░░░░] 42%
 
 ## Performance Metrics
 
@@ -64,6 +64,7 @@ Progress: [████░░░░░░] 38%
 | Phase 07 P08 | 3h 42m | 3 tasks | 11 files |
 | Phase 07 P09 | 19 min | 2 tasks | 6 files |
 | Phase 07 P10 | 41 min | 2 tasks | 73 files |
+| Phase 07 P11 | 2h 48m | 2 tasks | 76 files |
 
 ## Accumulated Context
 
@@ -102,14 +103,17 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-08] GUARD-01 stays Pending although 07-08 is its last declaring plan: the Vercel build-log check (Node 24.x + npm ci, 07-USER-SETUP.md) from 07-01 is unconfirmed; flip it to Complete once Tim confirms
 - [Phase 07]: [07-09] Tokens v2 L1 primitives (:root) + 16 L2 semantic tokens (@theme inline) + motion tokens (--duration-* in :root, --ease-* in @theme static) mirrored by lib/animations.ts and held by motion-tokens.test.ts (13 tests); MotionConfig reducedMotion="user" wraps the app; v1 amber renamed caution, no alias (cd5ac18). DSGN-06/DSGN-08 stay Pending: later plans (07-10, 07-16..07-20, 07-22) still declare them
 - [Phase 07]: [07-09] Task 2 closed as zero-diff (Tim's option A): CI visual green on cd5ac18 and update_mode=changed rewrote 0 of 72 PNGs, because the amber-500 -> caution-400 stop (YIQ ~355) is below Playwright's default per-pixel threshold 0.2 (~1409); no baseline commit, no amend, no force-push; the cd5ac18 body's "Re-baseline ... clix-cli/clix-website" line is superseded by 07-09-SUMMARY
-- [Phase 07]: [post-07-09, Tim's option A] Visual guard hardened to per-pixel `threshold: 0` (playwright.config.ts, e2e/visual/README.md; 850c80e). Threshold 0 exposed 26 shots of drift hidden by 0.2: home (14) and photos (6) image-codec noise (sharp 0.35.5 / Chromium 156, max channel delta 48), clix-cli (6) caching-icon caution-400 stop. CI renders are deterministic at threshold 0: three independent runs produced pixel-identical shots. All 26 re-baselined by Tim; CI run 39827903461 all green. From now on `update_mode=changed` captures every changed pixel, so re-baselines need no `all` mode
+- [Phase 07]: [post-07-09, Tim's option A] Visual guard hardened to per-pixel `threshold: 0` (playwright.config.ts, e2e/visual/README.md; 850c80e). Threshold 0 exposed 26 shots of drift hidden by 0.2: home (14) and photos (6) image-codec noise (sharp 0.35.5 / Chromium 156, max channel delta 48), clix-cli (6) caching-icon caution-400 stop. CI renders are deterministic at threshold 0: three independent runs produced pixel-identical shots. All 26 re-baselined by Tim; CI run 39827903461 all green. **Updated by 07-11 (Tim's option A, 2d96f50): threshold is now 0.01**, because roadmap/1440-reduced-visual-light flipped at random between two renders 9 px apart (±1 RGB level on the AA edge of the "v2.5.0" pill) that includeAA:false does not exclude. Verified with Playwright's own comparator: 0.01 passes that flake and still fails the 07-09 caution stop alone (1953 px), the 07-08 textarea grabber (36 px) and the 07-10 palette shift; no baselines changed; CI run 39851101533 green. `update_mode=changed` captures every change above ±1-level AA noise, so re-baselines still need no `all` mode
 - [Phase 07]: [post-07-09, Tim's option A] HologramTerminalDemo starts paused under prefers-reduced-motion (0cf000b): its 3s auto-advance made the clix-cli reduced shots timing-dependent (baseline showed command 1/4, CI had drifted to 2/4) and auto-rotating content must stop under reduced motion (WAI / WCAG 2.2.2). Play and the command dots still work; motion users unchanged
 - [Phase 07]: [07-10] Every v1 colour token (alpine, granite, snow, frost, ember, pine, rust) is now a `@theme inline` L3 alias onto a tokens v2 primitive (27 aliases, each "@deprecated v1 alias, removed in Phase 12"); body uses --color-ink / --color-surface; /NN opacity modifiers compile to color-mix(in oklab, var(--glacier-400) NN%, transparent). All 72 baselines re-baselined (colour-only, Tim reviewed, amended into e200fb2; CI run 39834067428 green). DSGN-06 stays Pending: 07-16..07-20 still declare it. Watch item: roadmap/1440-reduced-visual-light showed 9 px of ±1 AA noise on the "2.5.0" pill edge once; post-amend CI passed
 - [Phase 07]: [07-10] Next 16.4 (Turbopack) writes compiled CSS to .next/static/chunks/*.css, not .next/static/css/; plans that grep compiled CSS (07-16..07-20 may carry the stale path) should use `grep -r ... .next/static/ --include=*.css`
+- [Phase 07]: [07-11, Tim's option D] 7c type stack live (497780d): Schibsted Grotesk via next/font as --font-display (--font-heading deprecated alias), @layer base h1/h2 Schibsted 600 no glow, Inter body/h3/h4, tabular-nums on code/kbd/samp/pre/.font-mono, 2px focus-visible ring; 70/72 baselines re-baselined (Tim reviewed); CI run 39851101533 green; DSGN-07 Complete. Tailwind utilities beat @layer base, so the base rule is proven on an injected bare <h1> and the real-page check asserts only the Schibsted family; utility-styled headings keep weight/glow/colour until Phases 9-12 (only family + h1 balance change now). The UI-SPEC/plan line "only family, weight, colour and glow change for them" is inaccurate. Rejected: sweep 20 files, fix only the home h1, !important
+- [Phase 07]: [07-11, Tim's option A] RoadmapTimeline badge spans get whitespace-nowrap (folded into 497780d): the narrower Schibsted card heading stopped holding the flex-1 header column open at 375 px (flex min-content: monospace "Scheduling" ~120 px vs Schibsted ~105 px), so badges wrapped internally and cards grew 16 px. Medium Priority release pills now sit up to ~9 px into the card's right padding, unclipped (Tim accepted). Check flex-1 text columns next to fixed-width pills at 375 px after any font-family change
 
 ### Pending Todos
 
 - Legacy image variants (-thumb/-medium/-large) are still live in `data/landscapes.ts`. Delete them in Phase 12 (VERIFY-01), only after the Phase 8 manifest exists and Phase 10 has migrated the consumers.
+- [Phase 7, from 07-11] Open item for Tim: `next dev` created an untracked `AGENTS.md` at the repo root. It is left untracked; Tim decides whether to keep and commit it, gitignore it, or delete it.
 
 ### Blockers/Concerns
 
@@ -120,6 +124,7 @@ Recent decisions affecting current work:
 - [Phase 7] main (Vercel production) lacks the Next 16.4.2 / sharp 0.35.5 security patch until Tim merges gsd/phase-07-foundation-guardrails; GitHub reported 84 Dependabot alerts on the default branch (9 critical). Merge recommended soon.
 - [Phase 7, from 07-10] Hero badge `components/Hero3DMountain.tsx:73` (text-snow-50 on from-frost-500 to-frost-600, 18px semibold = not large text) is now 1.42-2.17:1 after the locked v1->v2 alias map (v1 was 2.10-2.93:1, also failing). No Phase 7 plan fixes it explicitly: catch it in the 07-20 contrast guard or the Phase 9 hero rework
 - [Phase 7, from 07-10] Lost hover background: `app/page.tsx:232` and `components/Hero3DMountain.tsx:100` use `bg-snow-50 hover:bg-snow-100`, and both aliases now map to firn-50, so the hover background no longer changes (shadow/scale remain). Restore a distinct hover state when 07-20 / Phase 9 migrate these to semantic tokens
+- [Phase 9-12, from 07-11] 37 utility-styled headings in 20 files (e.g. Hero3DMountain.tsx:65 font-bold text-snow-50 drop-shadow-2xl; /projects text-shadow-glow; /contact, /error, /not-found, /offline text-gray-900 dark:text-white) still carry font-bold, glow and v1 colours because utilities beat the 7c @layer base rules; they get the 7c weight/no-glow/ink only when their redesign phase removes those utilities
 
 ## Deferred Items
 
@@ -131,6 +136,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-22T18:53:10.581Z
-Stopped at: Completed 07-10-PLAN.md
+Last session: 2026-10-22T21:45:39.688Z
+Stopped at: Completed 07-11-PLAN.md
 Resume file: None
