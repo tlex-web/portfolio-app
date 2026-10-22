@@ -64,48 +64,45 @@
   --ease-descent: cubic-bezier(0.4, 0, 1, 1);
 }
 
+/* L3 v1 aliases: @deprecated v1 alias, removed in Phase 12 */
+@theme inline {
+  --color-alpine-950: var(--night-950); /* @deprecated v1 alias, removed in Phase 12 */
+  --color-alpine-900: var(--night-950); /* @deprecated v1 alias, removed in Phase 12 */
+  --color-alpine-800: var(--night-900); /* @deprecated v1 alias, removed in Phase 12 */
+  --color-alpine-700: var(--night-850); /* @deprecated v1 alias, removed in Phase 12 */
+  --color-alpine-600: var(--night-700); /* @deprecated v1 alias, removed in Phase 12 */
+
+  --color-granite-500: var(--mist-300); /* @deprecated v1 alias, removed in Phase 12 */
+  --color-granite-400: var(--mist-300); /* @deprecated v1 alias, removed in Phase 12 */
+  --color-granite-300: var(--mist-300); /* @deprecated v1 alias, removed in Phase 12 */
+
+  --color-snow-50: var(--firn-50); /* @deprecated v1 alias, removed in Phase 12 */
+  --color-snow-100: var(--firn-50); /* @deprecated v1 alias, removed in Phase 12 */
+  --color-snow-200: var(--mist-300); /* @deprecated v1 alias, removed in Phase 12 */
+
+  --color-frost-600: var(--glacier-500); /* @deprecated v1 alias, removed in Phase 12 */
+  --color-frost-500: var(--glacier-400); /* @deprecated v1 alias, removed in Phase 12 */
+  --color-frost-400: var(--glacier-400); /* @deprecated v1 alias, removed in Phase 12 */
+  --color-frost-300: var(--glacier-300); /* @deprecated v1 alias, removed in Phase 12 */
+  --color-frost-glow: oklch(0.82 0.10 215 / 0.3); /* @deprecated v1 alias, removed in Phase 12 */
+
+  --color-ember-600: var(--caution-400); /* @deprecated v1 alias, removed in Phase 12 */
+  --color-ember-500: var(--caution-400); /* @deprecated v1 alias, removed in Phase 12 */
+  --color-ember-400: var(--caution-400); /* @deprecated v1 alias, removed in Phase 12 */
+  --color-ember-300: var(--caution-400); /* @deprecated v1 alias, removed in Phase 12 */
+  --color-ember-glow: oklch(0.84 0.13 85 / 0.3); /* @deprecated v1 alias, removed in Phase 12 */
+
+  --color-pine-600: var(--meadow-400); /* @deprecated v1 alias, removed in Phase 12 */
+  --color-pine-500: var(--meadow-400); /* @deprecated v1 alias, removed in Phase 12 */
+  --color-pine-400: var(--meadow-400); /* @deprecated v1 alias, removed in Phase 12 */
+
+  --color-rust-600: var(--signal-400); /* @deprecated v1 alias, removed in Phase 12 */
+  --color-rust-500: var(--signal-400); /* @deprecated v1 alias, removed in Phase 12 */
+  --color-rust-400: var(--signal-400); /* @deprecated v1 alias, removed in Phase 12 */
+}
+
+/* Legacy glow tokens: kept until Phase 12, built on the deprecated glow aliases above */
 @theme {
-  /* Alpine dark layers (green-tinted backgrounds) */
-  --color-alpine-950: oklch(0.13 0.015 155);
-  --color-alpine-900: oklch(0.16 0.018 155);
-  --color-alpine-800: oklch(0.20 0.020 155);
-  --color-alpine-700: oklch(0.25 0.018 155);
-  --color-alpine-600: oklch(0.30 0.015 155);
-
-  /* Granite neutrals (slate-tinted grays) */
-  --color-granite-500: oklch(0.45 0.010 250);
-  --color-granite-400: oklch(0.60 0.008 250);
-  --color-granite-300: oklch(0.65 0.006 250);
-
-  /* Snow text tones (warm off-white) */
-  --color-snow-50: oklch(0.97 0.005 80);
-  --color-snow-100: oklch(0.93 0.008 80);
-  --color-snow-200: oklch(0.85 0.006 80);
-
-  /* Frost accent (cyan/teal -- hologram terminal) */
-  --color-frost-600: oklch(0.62 0.15 195);
-  --color-frost-500: oklch(0.72 0.14 195);
-  --color-frost-400: oklch(0.78 0.12 195);
-  --color-frost-300: oklch(0.84 0.09 195);
-  --color-frost-glow: oklch(0.72 0.14 195 / 0.3);
-
-  /* Ember accent (amber/gold -- sunrise) */
-  --color-ember-600: oklch(0.65 0.17 75);
-  --color-ember-500: oklch(0.75 0.16 75);
-  --color-ember-400: oklch(0.80 0.14 75);
-  --color-ember-300: oklch(0.85 0.11 75);
-  --color-ember-glow: oklch(0.75 0.16 75 / 0.3);
-
-  /* Semantic -- Pine (success/forest green) */
-  --color-pine-600: oklch(0.50 0.15 145);
-  --color-pine-500: oklch(0.60 0.14 145);
-  --color-pine-400: oklch(0.68 0.12 145);
-
-  /* Semantic -- Rust (error) */
-  --color-rust-600: oklch(0.48 0.17 25);
-  --color-rust-500: oklch(0.58 0.16 25);
-  --color-rust-400: oklch(0.65 0.14 25);
-
   /* Text shadow glow tokens (Tailwind v4.1 native text-shadow utilities) */
   --text-shadow-glow: 0 0 10px var(--color-frost-glow), 0 0 25px var(--color-frost-glow);
   --text-shadow-glow-lg: 0 0 20px var(--color-frost-glow), 0 0 40px var(--color-frost-glow);
@@ -115,8 +112,8 @@
 @layer base {
   body {
     font-family: var(--font-body);
-    color: var(--color-snow-100);
-    background-color: var(--color-alpine-900);
+    color: var(--color-ink);
+    background-color: var(--color-surface);
   }
 
   h1 {
