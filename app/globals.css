@@ -28,10 +28,22 @@
   --duration-settle: 500ms;
 }
 
+/* Font families (DSGN-07): Schibsted Grotesk display, Inter body, JetBrains Mono data only */
 @theme inline {
+  --font-display: var(--font-schibsted);
   --font-body: var(--font-inter);
-  --font-heading: var(--font-jetbrains);
+  --font-heading: var(--font-schibsted); /* @deprecated v1 alias, removed in Phase 12 */
   --font-mono: var(--font-jetbrains);
+}
+
+/* Type scale (DSGN-07): heading 24/32 and display 40/44; text-sm and text-base are stock */
+@theme {
+  --text-heading: 1.5rem;
+  --text-heading--line-height: 2rem;
+  --text-heading--letter-spacing: -0.01em;
+  --text-display: 2.5rem;
+  --text-display--line-height: 2.75rem;
+  --text-display--letter-spacing: -0.02em;
 }
 
 /* Tokens v2 -- L2 semantic tokens (DSGN-06): the only colour utilities new code may use */
@@ -109,50 +121,90 @@
   --text-shadow-glow-ember: 0 0 10px var(--color-ember-glow), 0 0 25px var(--color-ember-glow);
 }
 
+/* Base element styles (DSGN-07, UI-SPEC "Base element styles"). Headings carry
+   no text-shadow: the --text-shadow-glow* tokens above are legacy and no base
+   rule references them. Size utilities on a heading still win (utilities layer). */
 @layer base {
   body {
     font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.5rem;
     color: var(--color-ink);
     background-color: var(--color-surface);
   }
 
   h1 {
-    font-family: var(--font-heading);
-    font-weight: 700;
+    font-family: var(--font-display);
     font-size: 2.5rem;
-    line-height: 1.2;
-    color: var(--color-snow-50);
-    text-shadow: var(--text-shadow-glow-lg);
+    line-height: 2.75rem;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+    color: var(--color-ink);
+    text-wrap: balance;
   }
 
   h2 {
-    font-family: var(--font-heading);
-    font-weight: 600;
-    font-size: 1.875rem;
-    line-height: 1.3;
-    color: var(--color-snow-50);
-  }
-
-  h3 {
-    font-family: var(--font-heading);
-    font-weight: 500;
+    font-family: var(--font-display);
     font-size: 1.5rem;
-    line-height: 1.4;
-    color: var(--color-snow-100);
+    line-height: 2rem;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+    color: var(--color-ink);
   }
 
+  h3,
   h4 {
-    font-family: var(--font-heading);
-    font-weight: 500;
-    font-size: 1.25rem;
-    line-height: 1.4;
-    color: var(--color-snow-100);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+    color: var(--color-ink);
   }
 
-  small, .caption {
+  small,
+  .caption {
     font-size: 0.875rem;
-    line-height: 1.5;
-    color: var(--color-granite-400);
+    line-height: 1.25rem;
+    font-weight: 400;
+    color: var(--color-ink-muted);
+  }
+
+  /* JetBrains Mono is data-only and always tabular */
+  code,
+  kbd,
+  samp,
+  pre,
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Links in prose only */
+  main p a,
+  .prose-link {
+    color: var(--color-accent);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: 1px;
+  }
+
+  main p a:hover,
+  .prose-link:hover {
+    color: var(--color-accent-hover);
+  }
+
+  /* Global focus ring (UI-SPEC "Interaction States") */
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  [tabindex="-1"]:focus {
+    outline: none;
   }
 }
 
