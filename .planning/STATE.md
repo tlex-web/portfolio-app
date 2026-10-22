@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 07
 current_phase_name: Foundation & Guardrails
 status: executing
-stopped_at: Completed 07-08-PLAN.md
-last_updated: "2026-10-22T16:10:33.988Z"
+stopped_at: Completed 07-09-PLAN.md
+last_updated: "2026-10-22T16:32:51.286Z"
 last_activity: 2026-10-22
 last_activity_desc: Phase 07 execution started
-state_head: 23a56900bbe6f168f6bf9ae08d838f532f11ef30
+state_head: 5245f1304d5addb654ff2d33d44da19861a8478f
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 26
-  completed_plans: 8
-  percent: 31
+  completed_plans: 9
+  percent: 35
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-10)
 ## Current Position
 
 Phase: 07 (Foundation & Guardrails) — EXECUTING
-Plan: 9 of 26
+Plan: 10 of 26
 Status: Ready to execute
 Last activity: 2026-10-22 — Phase 07 execution started
 
-Progress: [███░░░░░░░] 31%
+Progress: [████░░░░░░] 35%
 
 ## Performance Metrics
 
@@ -62,6 +62,7 @@ Progress: [███░░░░░░░] 31%
 | Phase 07 P06 | 10h 24m | 3 tasks | 20 files |
 | Phase 07 P07 | 26 min | 3 tasks | 3 files |
 | Phase 07 P08 | 3h 42m | 3 tasks | 11 files |
+| Phase 07 P09 | 19 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -98,6 +99,8 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-07] version-floors.json gains a sharp floor (0.35.5, advisory minimum for CVE-2026-96889); advisory-named transitive packages get their own floor even as devDependencies
 - [Phase 07]: [07-08] DEPS-05 complete: @playwright/test 1.64.0 (Chromium 156) + both workflow containers on v1.64.0-noble + floor 1.64.0 in one commit (fdd2652); 6 contact/*-reduced baselines re-baselined (Tim's option A) for the Chromium 156 textarea resize-grabber glyph (36 px in an 8x8 box), no layout/content change; CI run 39809853089 all green
 - [Phase 07]: [07-08] GUARD-01 stays Pending although 07-08 is its last declaring plan: the Vercel build-log check (Node 24.x + npm ci, 07-USER-SETUP.md) from 07-01 is unconfirmed; flip it to Complete once Tim confirms
+- [Phase 07]: [07-09] Tokens v2 L1 primitives (:root) + 16 L2 semantic tokens (@theme inline) + motion tokens (--duration-* in :root, --ease-* in @theme static) mirrored by lib/animations.ts and held by motion-tokens.test.ts (13 tests); MotionConfig reducedMotion="user" wraps the app; v1 amber renamed caution, no alias (cd5ac18). DSGN-06/DSGN-08 stay Pending: later plans (07-10, 07-16..07-20, 07-22) still declare them
+- [Phase 07]: [07-09] Task 2 closed as zero-diff (Tim's option A): CI visual green on cd5ac18 and update_mode=changed rewrote 0 of 72 PNGs, because the amber-500 -> caution-400 stop (YIQ ~355) is below Playwright's default per-pixel threshold 0.2 (~1409); no baseline commit, no amend, no force-push; the cd5ac18 body's "Re-baseline ... clix-cli/clix-website" line is superseded by 07-09-SUMMARY
 
 ### Pending Todos
 
@@ -110,6 +113,7 @@ Recent decisions affecting current work:
 - [Phase 11] Needs from Tim: CLI_X per-grade content and Medium/Critical demo commands with `riskScore`, metric sources, roadmap order and dates.
 - [Phase 7] Required status checks (Visual Regression, Lint and Type Check, Unit Tests) on main are not set yet; until Tim sets them a red visual job does not block merges (07-USER-SETUP.md)
 - [Phase 7] main (Vercel production) lacks the Next 16.4.2 / sharp 0.35.5 security patch until Tim merges gsd/phase-07-foundation-guardrails; GitHub reported 84 Dependabot alerts on the default branch (9 critical). Merge recommended soon.
+- [Phase 7] Visual guard (GUARD-02) uses Playwright's default per-pixel threshold 0.2, so token colour shifts up to YIQ ~1409 per pixel pass silently (07-09's to-caution stop did); this weakens "zero visual diff" as proof of colour neutrality for 07-10 (7b token retarget) and later plans. Tim to decide: lower expect.toHaveScreenshot threshold to 0 or 0.1 in playwright.config.ts (CI renders are deterministic). Also, update_mode=changed never writes sub-threshold drift, so clix-cli baselines differ slightly from the true render (caching icon gradient)
 
 ## Deferred Items
 
@@ -121,6 +125,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-22T16:10:33.951Z
-Stopped at: Completed 07-08-PLAN.md
+Last session: 2026-10-22T16:32:51.247Z
+Stopped at: Completed 07-09-PLAN.md
 Resume file: None
