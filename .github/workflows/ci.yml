@@ -128,7 +128,7 @@ jobs:
     # The tag must equal the lockfile @playwright/test version
     # (enforced by scripts/guards/check-install-parity.mjs).
     container:
-      image: mcr.microsoft.com/playwright:v1.60.0-noble
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
       options: --ipc=host
 
     steps:
