@@ -1,6 +1,16 @@
 'use client';
 
 import { motion } from 'motion/react';
+import {
+  ChartBar,
+  CheckCircle,
+  CircleDashed,
+  CircleHalf,
+  Mountains,
+  Package,
+  ShoppingCart,
+  TerminalWindow,
+} from '@phosphor-icons/react/dist/ssr';
 import { RoadmapItem } from '@/data/types';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 
@@ -21,25 +31,25 @@ export default function RoadmapProgress({ items }: RoadmapProgressProps) {
     {
       label: 'Total Items',
       value: totalItems,
-      icon: '📊',
+      Icon: ChartBar,
       color: 'from-purple-500 to-pink-500',
     },
     {
       label: 'Completed',
       value: completedItems,
-      icon: '✓',
+      Icon: CheckCircle,
       color: 'from-green-500 to-emerald-500',
     },
     {
       label: 'In Progress',
       value: inProgressItems,
-      icon: '⚡',
+      Icon: CircleHalf,
       color: 'from-blue-500 to-cyan-500',
     },
     {
       label: 'Planned',
       value: plannedItems,
-      icon: '📋',
+      Icon: CircleDashed,
       color: 'from-gray-500 to-gray-600',
     },
   ];
@@ -82,8 +92,8 @@ export default function RoadmapProgress({ items }: RoadmapProgressProps) {
             transition={prefersReducedMotion ? { duration: 0 } : { delay: index * 0.1, duration: 0.5 }}
             className="bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-300 hover:scale-105"
           >
-            <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${stat.color} flex items-center justify-center text-2xl mb-3`}>
-              {stat.icon}
+            <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${stat.color} flex items-center justify-center mb-3`}>
+              <stat.Icon size={20} aria-hidden="true" />
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
               {stat.value}
@@ -107,19 +117,22 @@ export default function RoadmapProgress({ items }: RoadmapProgressProps) {
             const areaPercentage = areaItems.length > 0 ? Math.round((areaCompleted / areaItems.length) * 100) : 0;
 
             const areaConfig = {
-              portfolio: { label: 'Portfolio', icon: '🎨', color: 'bg-purple-500' },
-              cli: { label: 'CLI_X Tool', icon: '⌨️', color: 'bg-cyan-500' },
-              webshop: { label: 'Website', icon: '🛒', color: 'bg-orange-500' },
-              other: { label: 'Other', icon: '📦', color: 'bg-gray-500' },
+              portfolio: { label: 'Portfolio', Icon: Mountains, color: 'bg-purple-500' },
+              cli: { label: 'CLI_X Tool', Icon: TerminalWindow, color: 'bg-cyan-500' },
+              webshop: { label: 'Website', Icon: ShoppingCart, color: 'bg-orange-500' },
+              other: { label: 'Other', Icon: Package, color: 'bg-gray-500' },
             };
 
             if (areaItems.length === 0) return null;
 
+            const AreaIcon = areaConfig[area].Icon;
+
             return (
               <div key={area}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {areaConfig[area].icon} {areaConfig[area].label}
+                  <span className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <AreaIcon size={20} aria-hidden="true" />
+                    {areaConfig[area].label}
                   </span>
                   <span className="text-sm font-semibold text-gray-900 dark:text-white">
                     {areaCompleted}/{areaItems.length}

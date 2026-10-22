@@ -1,6 +1,18 @@
 'use client';
 
 import { motion } from 'motion/react';
+import {
+  CaretDoubleUp,
+  CaretDown,
+  CheckCircle,
+  CircleDashed,
+  CircleHalf,
+  Equals,
+  Mountains,
+  Package,
+  ShoppingCart,
+  TerminalWindow,
+} from '@phosphor-icons/react/dist/ssr';
 import { RoadmapItem } from '@/data/types';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 
@@ -14,7 +26,7 @@ const statusConfig = {
     textColor: 'text-green-700 dark:text-green-300',
     bgColor: 'bg-green-50 dark:bg-green-900/20',
     borderColor: 'border-green-200 dark:border-green-800',
-    icon: '✓',
+    Icon: CheckCircle,
     label: 'Completed',
   },
   'in-progress': {
@@ -22,7 +34,7 @@ const statusConfig = {
     textColor: 'text-blue-700 dark:text-blue-300',
     bgColor: 'bg-blue-50 dark:bg-blue-900/20',
     borderColor: 'border-blue-200 dark:border-blue-800',
-    icon: '⚡',
+    Icon: CircleHalf,
     label: 'In Progress',
   },
   planned: {
@@ -30,7 +42,7 @@ const statusConfig = {
     textColor: 'text-gray-700 dark:text-gray-300',
     bgColor: 'bg-gray-50 dark:bg-gray-900/20',
     borderColor: 'border-gray-200 dark:border-gray-700',
-    icon: '📋',
+    Icon: CircleDashed,
     label: 'Planned',
   },
 };
@@ -39,25 +51,25 @@ const areaConfig = {
   portfolio: {
     color: 'bg-purple-500',
     textColor: 'text-purple-700 dark:text-purple-300',
-    icon: '🎨',
+    Icon: Mountains,
     label: 'Portfolio',
   },
   cli: {
     color: 'bg-cyan-500',
     textColor: 'text-cyan-700 dark:text-cyan-300',
-    icon: '⌨️',
+    Icon: TerminalWindow,
     label: 'CLI_X Tool',
   },
   webshop: {
     color: 'bg-orange-500',
     textColor: 'text-orange-700 dark:text-orange-300',
-    icon: '🛒',
+    Icon: ShoppingCart,
     label: 'Website',
   },
   other: {
     color: 'bg-gray-500',
     textColor: 'text-gray-700 dark:text-gray-300',
-    icon: '📦',
+    Icon: Package,
     label: 'Other',
   },
 };
@@ -65,17 +77,17 @@ const areaConfig = {
 const priorityConfig = {
   high: {
     color: 'text-red-600 dark:text-red-400',
-    icon: '🔴',
+    Icon: CaretDoubleUp,
     label: 'High Priority',
   },
   medium: {
     color: 'text-yellow-600 dark:text-yellow-400',
-    icon: '🟡',
+    Icon: Equals,
     label: 'Medium Priority',
   },
   low: {
     color: 'text-green-600 dark:text-green-400',
-    icon: '🟢',
+    Icon: CaretDown,
     label: 'Low Priority',
   },
 };
@@ -107,7 +119,7 @@ export default function RoadmapTimeline({ items }: RoadmapTimelineProps) {
                 <div
                   className={`w-6 h-6 rounded-full ${status.color} border-4 border-white dark:border-gray-900 shadow-lg flex items-center justify-center`}
                 >
-                  <span className="text-white text-xs">{status.icon}</span>
+                  <status.Icon size={20} aria-hidden="true" className="text-white" />
                 </div>
               </div>
 
@@ -126,14 +138,16 @@ export default function RoadmapTimeline({ items }: RoadmapTimelineProps) {
                       <span
                         className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${status.textColor} ${status.bgColor} border ${status.borderColor}`}
                       >
-                        {status.icon} {status.label}
+                        <status.Icon size={20} aria-hidden="true" />
+                        {status.label}
                       </span>
 
                       {/* Area Badge */}
                       <span
                         className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap text-white ${area.color}`}
                       >
-                        {area.icon} {area.label}
+                        <area.Icon size={20} aria-hidden="true" />
+                        {area.label}
                       </span>
 
                       {/* Priority Badge */}
@@ -141,7 +155,8 @@ export default function RoadmapTimeline({ items }: RoadmapTimelineProps) {
                         <span
                           className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${priority.color} bg-white dark:bg-gray-800 border-2 border-current`}
                         >
-                          {priority.icon} {priority.label}
+                          <priority.Icon size={20} aria-hidden="true" />
+                          {priority.label}
                         </span>
                       )}
                     </div>

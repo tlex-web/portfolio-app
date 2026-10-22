@@ -7,6 +7,7 @@ import { motion } from 'motion/react';
 import { landscapes } from '@/data/landscapes';
 import { projects } from '@/data/projects';
 import Image from 'next/image';
+import { Camera, CheckCircle, Code, Path } from '@phosphor-icons/react/dist/ssr';
 import { EASING, DURATION } from '@/lib/animations';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 
@@ -14,10 +15,10 @@ export default function HomePage() {
   const prefersReducedMotion = useReducedMotion();
 
   const stats = [
-    { value: landscapes.length, label: 'Landscape Photos', icon: '📸' },
-    { value: projects.length, label: 'Active Projects', icon: '💻' },
-    { value: '850+', label: 'Tests Passing', icon: '✓' },
-    { value: '20%', label: 'Roadmap Complete', icon: '🚀' },
+    { value: landscapes.length, label: 'Landscape Photos', Icon: Camera },
+    { value: projects.length, label: 'Active Projects', Icon: Code },
+    { value: '850+', label: 'Tests Passing', Icon: CheckCircle },
+    { value: '20%', label: 'Roadmap Complete', Icon: Path },
   ];
 
   return (
@@ -45,7 +46,9 @@ export default function HomePage() {
                 viewport={{ once: true }}
                 className="stratum-1 glow-frost bg-alpine-800 rounded-2xl p-6 text-center border border-alpine-700 hover:border-frost-500 transition-all duration-300 hover:scale-105"
               >
-                <div className="text-4xl mb-2">{stat.icon}</div>
+                <div className="mb-2 flex justify-center">
+                  <stat.Icon size={20} aria-hidden="true" />
+                </div>
                 <div className="text-3xl font-bold text-frost-400 mb-1">
                   {stat.value}
                 </div>

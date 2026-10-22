@@ -57,6 +57,16 @@ export default defineConfig([
               message:
                 'Use @/components/SafeCanvas: since R3F 9.8 a bare <Canvas> without WebGL replaces the whole route with app/error.tsx.',
             },
+            {
+              name: '@phosphor-icons/react',
+              message: 'Import icons from @phosphor-icons/react/dist/ssr (DSGN-10)',
+            },
+          ],
+          patterns: [
+            {
+              group: ['@phosphor-icons/react/dist/csr*'],
+              message: 'Import icons from @phosphor-icons/react/dist/ssr (DSGN-10)',
+            },
           ],
         },
       ],

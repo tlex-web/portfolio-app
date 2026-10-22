@@ -92,25 +92,35 @@ describe('RoadmapTimeline', () => {
     expect(timelineLine).toBeInTheDocument();
   });
 
-  it('shows status icons', () => {
-    const { container } = render(<RoadmapTimeline items={mockItems} />);
+  // Each badge keeps its visible label plus exactly one aria-hidden Phosphor svg (DSGN-10).
+  const expectBadgeIcon = (badge: HTMLElement, label: string) => {
+    expect(badge).toHaveTextContent(label);
+    expect(badge.querySelectorAll('svg')).toHaveLength(1);
+    expect(badge.querySelectorAll('svg[aria-hidden="true"]')).toHaveLength(1);
+  };
 
-    expect(container.textContent).toContain('⚡'); // In Progress
-    expect(container.textContent).toContain('📋'); // Planned
-    expect(container.textContent).toContain('✓'); // Completed
+  it('shows status icons', () => {
+    render(<RoadmapTimeline items={mockItems} />);
+
+    for (const label of ['In Progress', 'Planned', 'Completed']) {
+      expectBadgeIcon(screen.getByText(label), label);
+    }
   });
 
   it('shows area icons', () => {
-    const { container } = render(<RoadmapTimeline items={mockItems} />);
+    render(<RoadmapTimeline items={mockItems} />);
 
-    expect(container.textContent).toContain('🎨'); // Portfolio
-    expect(container.textContent).toContain('⌨️'); // CLI
+    const portfolioBadges = screen.getAllByText('Portfolio');
+    expect(portfolioBadges).toHaveLength(2);
+    portfolioBadges.forEach((badge) => expectBadgeIcon(badge, 'Portfolio'));
+    expectBadgeIcon(screen.getByText('CLI_X Tool'), 'CLI_X Tool');
   });
 
   it('shows priority icons', () => {
-    const { container } = render(<RoadmapTimeline items={mockItems} />);
+    render(<RoadmapTimeline items={mockItems} />);
 
-    expect(container.textContent).toContain('🔴'); // High
-    expect(container.textContent).toContain('🟡'); // Medium
+    for (const label of ['High Priority', 'Medium Priority']) {
+      expectBadgeIcon(screen.getByText(label), label);
+    }
   });
 });

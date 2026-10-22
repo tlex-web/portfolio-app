@@ -312,7 +312,7 @@ export default function PhotoCarousel3D({ images, onImageClick, className = '' }
 
       {/* Instructions */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-cyan-600/90 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-medium">
-        🎡 Interactive 3D Gallery
+        Interactive 3D Gallery
       </div>
     </div>
   );

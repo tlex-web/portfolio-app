@@ -90,8 +90,9 @@ describe('RoadmapFilters', () => {
       />
     );
 
-    const portfolioButton = screen.getByText('Portfolio').closest('button');
-    expect(portfolioButton).toHaveClass('bg-cyan-600');
+    expect(screen.getByRole('button', { name: 'Portfolio' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'All Projects' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'CLI_X Tool' })).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('highlights selected status filter', () => {
@@ -104,8 +105,9 @@ describe('RoadmapFilters', () => {
       />
     );
 
-    const completedButton = screen.getByText('Completed').closest('button');
-    expect(completedButton).toHaveClass('bg-blue-600');
+    expect(screen.getByRole('button', { name: 'Completed' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'All Statuses' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'In Progress' })).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('renders filter section headers', () => {
@@ -123,7 +125,7 @@ describe('RoadmapFilters', () => {
   });
 
   it('displays icons for each filter option', () => {
-    const { container } = render(
+    render(
       <RoadmapFilters
         selectedArea="all"
         selectedStatus="all"
@@ -132,11 +134,24 @@ describe('RoadmapFilters', () => {
       />
     );
 
-    // Check for emojis (icons) in the rendered output
-    expect(container.textContent).toContain('🌐');
-    expect(container.textContent).toContain('🎨');
-    expect(container.textContent).toContain('⌨️');
-    expect(container.textContent).toContain('✓');
-    expect(container.textContent).toContain('⚡');
+    // Each option keeps its visible label (the accessible name) plus exactly one
+    // decorative Phosphor svg hidden from assistive tech (DSGN-10).
+    const labels = [
+      'All Projects',
+      'Portfolio',
+      'CLI_X Tool',
+      'Website',
+      'Other',
+      'All Statuses',
+      'Completed',
+      'In Progress',
+      'Planned',
+    ];
+    for (const label of labels) {
+      const button = screen.getByRole('button', { name: label });
+      expect(button).toHaveTextContent(label);
+      expect(button.querySelectorAll('svg')).toHaveLength(1);
+      expect(button.querySelectorAll('svg[aria-hidden="true"]')).toHaveLength(1);
+    }
   });
 });

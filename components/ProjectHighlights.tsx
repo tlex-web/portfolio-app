@@ -1,8 +1,29 @@
 'use client';
 
 import { motion } from 'motion/react';
+import {
+  ChartBar,
+  CheckCircle,
+  CreditCard,
+  Gauge,
+  ListChecks,
+  LockKey,
+  ShieldCheck,
+  Wrench,
+} from '@phosphor-icons/react/dist/ssr';
 import type { HighlightValue } from '@/data/types';
 import { useReducedMotion } from '@/lib/useReducedMotion';
+
+/** Highlight key -> Phosphor icon; unmapped keys fall back to ChartBar. */
+const highlightIcons: Record<string, typeof ChartBar> = {
+  performance: Gauge,
+  testing: CheckCircle,
+  safety: ShieldCheck,
+  features: ListChecks,
+  pricingTiers: CreditCard,
+  security: LockKey,
+  techStack: Wrench,
+};
 
 /** Props for the ProjectHighlights component. */
 interface ProjectHighlightsProps {
@@ -58,41 +79,35 @@ export default function ProjectHighlights({ highlights, title = 'Project Highlig
       </h2>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {Object.entries(highlights).map(([key, value], index) => (
-          <motion.div
-            key={key}
-            initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={prefersReducedMotion ? { duration: 0 } : { delay: index * 0.1, duration: 0.3 }}
-            className="group"
-          >
-            <div className="p-6 bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-cyan-500 transition-all duration-300 shadow-sm hover:shadow-xl h-full">
-              {/* Section Title */}
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
-                  <span className="text-white text-xl">
-                    {key === 'performance' && '⚡'}
-                    {key === 'testing' && '✓'}
-                    {key === 'safety' && '🛡️'}
-                    {key === 'features' && '✨'}
-                    {key === 'pricingTiers' && '💰'}
-                    {key === 'security' && '🔐'}
-                    {key === 'techStack' && '🛠️'}
-                    {!['performance', 'testing', 'safety', 'features', 'pricingTiers', 'security', 'techStack'].includes(key) && '📊'}
-                  </span>
+        {Object.entries(highlights).map(([key, value], index) => {
+          const Icon = highlightIcons[key] ?? ChartBar;
+          return (
+            <motion.div
+              key={key}
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={prefersReducedMotion ? { duration: 0 } : { delay: index * 0.1, duration: 0.3 }}
+              className="group"
+            >
+              <div className="p-6 bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-cyan-500 transition-all duration-300 shadow-sm hover:shadow-xl h-full">
+                {/* Section Title */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
+                    <Icon size={20} aria-hidden="true" className="text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white capitalize">
+                    {key.replace(/([A-Z])/g, ' $1').trim()}
+                  </h3>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white capitalize">
-                  {key.replace(/([A-Z])/g, ' $1').trim()}
-                </h3>
-              </div>
 
-              {/* Section Content */}
-              <div className="text-gray-700 dark:text-gray-300">
-                {renderValue(value)}
+                {/* Section Content */}
+                <div className="text-gray-700 dark:text-gray-300">
+                  {renderValue(value)}
+                </div>
               </div>
-            </div>
-          </motion.div>
-        ))}
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );
