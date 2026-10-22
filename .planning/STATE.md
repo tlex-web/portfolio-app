@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 07
 current_phase_name: Foundation & Guardrails
 status: executing
-stopped_at: Completed 07-13-PLAN.md
-last_updated: "2026-10-22T23:37:35.417Z"
+stopped_at: Completed 07-14-PLAN.md
+last_updated: "2026-10-22T23:55:29.431Z"
 last_activity: 2026-10-22
 last_activity_desc: Phase 07 execution started
-state_head: 0f007e0989656e6bfe8fb8a9ff546851b8b8e4cc
+state_head: 1b82f57e17b49736b434483b3078a6877808baaa
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 26
-  completed_plans: 13
-  percent: 50
+  completed_plans: 14
+  percent: 54
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-10)
 ## Current Position
 
 Phase: 07 (Foundation & Guardrails) — EXECUTING
-Plan: 14 of 26
+Plan: 15 of 26
 Status: Ready to execute
 Last activity: 2026-10-22 — Phase 07 execution started
 
-Progress: [█████░░░░░] 50%
+Progress: [█████░░░░░] 54%
 
 ## Performance Metrics
 
@@ -67,6 +67,7 @@ Progress: [█████░░░░░] 50%
 | Phase 07 P11 | 2h 48m | 2 tasks | 76 files |
 | Phase 07 P12 | 1h 0m | 2 tasks | 74 files |
 | Phase 07 P13 | 44 min | 2 tasks | 48 files |
+| Phase 07 P14 | 14 min | 2 tasks | 41 files |
 
 ## Accumulated Context
 
@@ -118,6 +119,9 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-13] DSGN-10 live UI (82d0cd0): @phosphor-icons/react 2.1.10 (exact pin) replaces every live emoji icon in app/page.tsx, FeatureShowcase (Circle fallback), ProjectHighlights (ChartBar fallback), RoadmapFilters/Progress/Timeline and PhotoCarousel3D; 20px, aria-hidden, beside the visible label, no weight prop. ESLint no-restricted-imports bans the @phosphor-icons/react root ("Import icons from @phosphor-icons/react/dist/ssr (DSGN-10)") and the pattern @phosphor-icons/react/dist/csr*, so icons import only from dist/ssr. RoadmapFilters/Timeline tests rewritten (labels, one svg[aria-hidden] per option, aria-pressed instead of colour classes; Jest 82 unchanged). 36/72 baselines re-baselined (home 18, clix-cli 6, clix-website 6, roadmap 6; Tim reviewed; CI run 39871752110 green). DSGN-10 stays Pending: 07-25 also declares it (emoji guard rule, lib/email.ts sparkle)
 - [Phase 07]: [07-13, Tim's option A] The 375px roadmap release-pill overflow is accepted: 20px icons make the RoadmapTimeline badges 144.5x32 instead of 140x28, so the "Target Release" pill and label cross the card's right border by up to ~7px in the CI 375px render (Medium Priority cards and at least one completed card, v2.4.0; ~5px of it from 7e on top of the 07-12 gutter). Measured locally without a gutter (real-phone-like 375px), the pill crosses the inner border edge on 5 of 6 Medium cards by 0.8-5.1px. Rejected: B 16px icons in the badges only, C card layout change. The locked 20px stays; Phase 11 fixes the card header
 - [Phase 07]: [07-13] Note for a future lint: in @phosphor-icons/react 2.1.10 the locked bare icon names (Camera, Path, ...) are @deprecated aliases of the *Icon exports (same component). No change now; a deprecation lint would flag them, so new code should prefer the *Icon names and a later plan can rename the existing imports mechanically
+- [Phase 07]: [07-14] DSGN-05 stage 1 neutralise (5737aeb): dark: is class-based via html.dark (@custom-variant dark (&:where(.dark, .dark *)) in app/globals.css, temporary, removed in 07-20); <html> carries the dark class permanently (LOCKED shell contract); color-scheme: dark was already on html (07-12). Zero markup change; compiled CSS has 0 prefers-color-scheme rules and 87 :where(.dark,.dark *) selectors. DSGN-05 stays Pending: 07-15 and 07-20 also declare it
+- [Phase 07]: [07-14] visual-light asserts against the visual-dark PNGs (expect.toHaveScreenshot pathTemplate: DARK_PATH); the 36 *-visual-light-linux.png are deleted and visual-baselines.yml updates --project=visual-dark only (0 visual-light strings), so an update can never overwrite dark files with light output. CI run 39873723006 green on the first push (Visual 72 passed: dark unchanged, light identical to dark at threshold 0.01); no re-baseline. Re-baselines from now on produce dark PNGs only
+- [Phase 07]: [07-14] A project-level expect in Playwright REPLACES the top-level expect (takeFirst(projectConfig.expect, config.expect, {}), node_modules/playwright/lib/common/index.js:607), so a project override without the shared options silently falls back to threshold 0.2. playwright.config.ts now has const SCREENSHOT = { animations: disabled, caret: hide, threshold: 0.01 }, used at the top level and spread into visual-light; any future project override must spread SCREENSHOT
 
 ### Pending Todos
 
@@ -135,6 +139,7 @@ Recent decisions affecting current work:
 - [Phase 7, from 07-10] Lost hover background: `app/page.tsx:232` and `components/Hero3DMountain.tsx:100` use `bg-snow-50 hover:bg-snow-100`, and both aliases now map to firn-50, so the hover background no longer changes (shadow/scale remain). Restore a distinct hover state when 07-20 / Phase 9 migrate these to semantic tokens
 - [Phase 9-12, from 07-11] 37 utility-styled headings in 20 files (e.g. Hero3DMountain.tsx:65 font-bold text-snow-50 drop-shadow-2xl; /projects text-shadow-glow; /contact, /error, /not-found, /offline text-gray-900 dark:text-white) still carry font-bold, glow and v1 colours because utilities beat the 7c @layer base rules; they get the 7c weight/no-glow/ink only when their redesign phase removes those utilities
 - [Phase 11, from 07-13] Roadmap card header overflows at narrow widths: at 375px the RoadmapTimeline "Target Release" pill and its label cross the card's right border by up to ~7px (CI render; 0.8-5.1px on 5 of 6 Medium cards without the CI gutter), after the 20px 7e icons grew the badges to 144.5x32. Tim accepted it for now (07-13 option A); the Phase 11 route-log roadmap redesign must fix the card header so the release block cannot overflow at narrow widths
+- [Phase 7, from 07-14] Stock dark: pairs now reach every visitor, not only dark-OS ones: e.g. dark:text-gray-400 (29 uses) on dark:bg-gray-800 (20 uses), and the contrast guard is not active until 07-20. Check those pairs against 4.5:1 in the 07-20 contrast guard, and after the 07-15 collapse removes the light base classes check the FeedbackForm field placeholder and autofill colours
 
 ## Deferred Items
 
@@ -146,6 +151,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-22T23:37:35.373Z
-Stopped at: Completed 07-13-PLAN.md
+Last session: 2026-10-22T23:55:29.389Z
+Stopped at: Completed 07-14-PLAN.md
 Resume file: None
