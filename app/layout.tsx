@@ -1,11 +1,20 @@
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
-import { Inter, JetBrains_Mono } from 'next/font/google';
+import { Inter, JetBrains_Mono, Schibsted_Grotesk } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration';
 import MotionProvider from '@/components/providers/MotionProvider';
 import './globals.css';
+
+// Display face (DSGN-07): h1, h2 and the wordmark. Variable wght 400-900;
+// adjustFontFallback size-adjusts the local fallback so a late swap stays CLS-safe.
+const schibsted = Schibsted_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-schibsted',
+  display: 'swap',
+  adjustFontFallback: true,
+});
 
 const inter = Inter({
   subsets: ['latin'],
@@ -35,7 +44,7 @@ export default async function RootLayout({
   await headers();
 
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`${schibsted.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
       <head>
         {/* Resource Hints for Performance */}
         <link rel="dns-prefetch" href="https://vercel.com" />

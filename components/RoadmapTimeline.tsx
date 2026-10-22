@@ -124,14 +124,14 @@ export default function RoadmapTimeline({ items }: RoadmapTimelineProps) {
                     <div className="flex flex-wrap gap-2">
                       {/* Status Badge */}
                       <span
-                        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${status.textColor} ${status.bgColor} border ${status.borderColor}`}
+                        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${status.textColor} ${status.bgColor} border ${status.borderColor}`}
                       >
                         {status.icon} {status.label}
                       </span>
 
                       {/* Area Badge */}
                       <span
-                        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-white ${area.color}`}
+                        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap text-white ${area.color}`}
                       >
                         {area.icon} {area.label}
                       </span>
@@ -139,7 +139,7 @@ export default function RoadmapTimeline({ items }: RoadmapTimelineProps) {
                       {/* Priority Badge */}
                       {priority && (
                         <span
-                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${priority.color} bg-white dark:bg-gray-800 border-2 border-current`}
+                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${priority.color} bg-white dark:bg-gray-800 border-2 border-current`}
                         >
                           {priority.icon} {priority.label}
                         </span>
