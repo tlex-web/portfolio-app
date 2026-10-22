@@ -34,8 +34,9 @@ export default defineConfig({
    * Baselines are regenerated only by the "Update visual baselines" workflow. */
   updateSnapshots: process.env.CI ? 'none' : 'missing',
   expect: {
-    // Zero tolerance: default threshold, no maxDiffPixels.
-    toHaveScreenshot: { animations: 'disabled', caret: 'hide' },
+    // Zero tolerance: no maxDiffPixels and no per-pixel colour tolerance.
+    // The default threshold (0.2) let 07-09's amber -> caution stop pass.
+    toHaveScreenshot: { animations: 'disabled', caret: 'hide', threshold: 0 },
   },
   use: {
     baseURL: 'http://localhost:3000',

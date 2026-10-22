@@ -7,8 +7,9 @@ Phase 7 plan is judged against these files.
 
 ## Rules
 
-- Comparison is zero tolerance: default threshold, no `maxDiffPixels`. One
-  differing pixel fails the run.
+- Comparison is zero tolerance: `threshold: 0`, no `maxDiffPixels`. One
+  differing pixel fails the run, however small its colour change. Playwright's
+  default per-pixel threshold (0.2) hides token-level colour shifts.
 - Baselines are captured only from a production build inside
   `mcr.microsoft.com/playwright:v<lockfile @playwright/test version>-noble`,
   by the **Update visual baselines** workflow (`workflow_dispatch`, read-only
