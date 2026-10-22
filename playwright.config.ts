@@ -8,13 +8,22 @@ import { defineConfig, devices } from '@playwright/test';
 const VISUAL = /visual\/.*\.spec\.ts$/;
 
 /**
- * Snapshot path of the dark baselines. Unused until plan 07-14 (the `dark:`
- * neutralise commit): from then on `visual-light` points its
+ * Snapshot path of the dark baselines, active since build step 8a (plan 07-14,
+ * the `dark:` neutralise commit): `visual-light` points its
  * `expect.toHaveScreenshot.pathTemplate` here, so the light run asserts that
- * light renders identically to dark. Exported so it is not flagged as unused.
+ * light renders identically to dark. No light PNGs exist any more.
  */
 export const DARK_PATH =
   '{snapshotDir}/{testFileDir}/{testFileName}-snapshots/{arg}-visual-dark{-snapshotSuffix}{ext}';
+
+/**
+ * Near-zero tolerance: no maxDiffPixels and a per-pixel colour tolerance of
+ * 0.01, which only absorbs the +/-1 anti-aliasing noise Chromium leaves on some
+ * edges. The default threshold (0.2) let 07-09's amber -> caution stop pass.
+ * Shared, because a project-level `expect` replaces the top-level one whole
+ * (Playwright takeFirst), so visual-light must spread it in again.
+ */
+const SCREENSHOT = { animations: 'disabled', caret: 'hide', threshold: 0.01 } as const;
 
 /**
  * Production server in CI, and locally when PW_PROD is set. Visual baselines
@@ -33,13 +42,7 @@ export default defineConfig({
   /* A missing baseline fails a CI run instead of being written silently.
    * Baselines are regenerated only by the "Update visual baselines" workflow. */
   updateSnapshots: process.env.CI ? 'none' : 'missing',
-  expect: {
-    // Near-zero tolerance: no maxDiffPixels and a per-pixel colour tolerance
-    // of 0.01, which only absorbs the +/-1 anti-aliasing noise Chromium leaves
-    // on some edges. The default threshold (0.2) let 07-09's amber -> caution
-    // stop pass.
-    toHaveScreenshot: { animations: 'disabled', caret: 'hide', threshold: 0.01 },
-  },
+  expect: { toHaveScreenshot: SCREENSHOT },
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
@@ -83,8 +86,8 @@ export default defineConfig({
       testMatch: VISUAL,
       retries: 0,
       use: { ...devices['Desktop Chrome'], colorScheme: 'light', serviceWorkers: 'block' },
-      // From plan 07-14 on (light must equal dark):
-      // expect: { toHaveScreenshot: { pathTemplate: DARK_PATH } },
+      // Light must equal dark (DSGN-05): compare against the visual-dark PNGs.
+      expect: { toHaveScreenshot: { ...SCREENSHOT, pathTemplate: DARK_PATH } },
     },
   ],
 

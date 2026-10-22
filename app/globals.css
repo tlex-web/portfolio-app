@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* Build step 8 neutralise: removed in plan 07-20 once no dark: utility remains */
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* Tokens v2 -- L1 primitives (DSGN-06). Always emitted, readable from JS and
    shaders, generate no utilities. New code uses the L2 semantic tokens below. */

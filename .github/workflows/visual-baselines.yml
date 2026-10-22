@@ -48,9 +48,11 @@ jobs:
         run: npm ls --depth=0
 
       # Inputs reach the shell only through env, never through ${{ }} in run.
+      # Dark project only (since 07-14): the light project compares against the
+      # dark PNGs, so updating it would overwrite them with light output.
       - name: Generate visual baselines
         if: inputs.suite == 'visual'
-        run: npx playwright test --project=visual-dark --project=visual-light --update-snapshots="$UPDATE_MODE"
+        run: npx playwright test --project=visual-dark --update-snapshots="$UPDATE_MODE"
         env:
           UPDATE_MODE: ${{ inputs.update_mode }}
           CI: '1'

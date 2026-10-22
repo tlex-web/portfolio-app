@@ -2,8 +2,14 @@
 
 `routes.spec.ts` screenshots every route at 375, 768 and 1440 px in the
 `visual-dark` and `visual-light` Playwright projects, plus Home at 0 / 50 /
-100 % scroll with motion enabled: 36 tests per scheme, 72 PNGs. Every later
-Phase 7 plan is judged against these files.
+100 % scroll with motion enabled: 36 tests per scheme. Every later Phase 7
+plan is judged against these files.
+
+Since 07-14 only visual-dark PNGs exist (36 files); visual-light asserts
+against them through `expect.toHaveScreenshot.pathTemplate: DARK_PATH`, so a
+light-OS visitor must see exactly the dark site (DSGN-05). Update with
+visual-dark only: the baseline workflow runs `--project=visual-dark`, and an
+update run on visual-light would overwrite the dark files with light output.
 
 ## Rules
 

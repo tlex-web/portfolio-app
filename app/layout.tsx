@@ -44,7 +44,7 @@ export default async function RootLayout({
   await headers();
 
   return (
-    <html lang="en" className={`${schibsted.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`dark ${schibsted.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
       <head>
         {/* Resource Hints for Performance */}
         <link rel="dns-prefetch" href="https://vercel.com" />
