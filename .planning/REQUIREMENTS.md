@@ -31,7 +31,7 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 - [ ] **DSGN-06**: Every page uses tokens v2 (night-map OKLCH palette with semantic tokens); v1 token names survive only as temporary aliases
 - [x] **DSGN-07**: Type uses one Swiss-style grotesk display face, Inter for body text and JetBrains Mono only for data, with tabular numerals for figures (display face chosen in the Phase 7 UI-SPEC)
 - [ ] **DSGN-08**: Motion durations and easings come from shared tokens used by both CSS and Motion, and all motion respects `prefers-reduced-motion`
-- [ ] **DSGN-09**: A thin, visible scrollbar is shown with a stable gutter, so opening a modal never shifts the layout
+- [x] **DSGN-09**: A thin, visible scrollbar is shown with a stable gutter, so opening a modal never shifts the layout
 - [ ] **DSGN-10**: Icons come from one SVG family; no emoji are used as icons
 
 ### Shell & Identity
@@ -179,7 +179,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DSGN-06 | Phase 7 | Pending |
 | DSGN-07 | Phase 7 | Complete |
 | DSGN-08 | Phase 7 | Pending |
-| DSGN-09 | Phase 7 | Pending |
+| DSGN-09 | Phase 7 | Complete |
 | DSGN-10 | Phase 7 | Pending |
 | SHELL-01 | Phase 7 | Pending |
 | SHELL-02 | Phase 7 | Pending |

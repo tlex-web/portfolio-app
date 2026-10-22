@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 07
 current_phase_name: Foundation & Guardrails
 status: executing
-stopped_at: Completed 07-11-PLAN.md
-last_updated: "2026-10-22T21:45:39.729Z"
+stopped_at: Completed 07-12-PLAN.md
+last_updated: "2026-10-22T22:49:01.847Z"
 last_activity: 2026-10-22
 last_activity_desc: Phase 07 execution started
-state_head: 27a24473108f98e104f9a1c162dc3e4b39176e9d
+state_head: 3221b37d00177c0a4ca762249d556a560b77868a
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 26
-  completed_plans: 11
-  percent: 42
+  completed_plans: 12
+  percent: 46
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-10)
 ## Current Position
 
 Phase: 07 (Foundation & Guardrails) — EXECUTING
-Plan: 12 of 26
+Plan: 13 of 26
 Status: Ready to execute
 Last activity: 2026-10-22 — Phase 07 execution started
 
-Progress: [████░░░░░░] 42%
+Progress: [█████░░░░░] 46%
 
 ## Performance Metrics
 
@@ -65,6 +65,7 @@ Progress: [████░░░░░░] 42%
 | Phase 07 P09 | 19 min | 2 tasks | 6 files |
 | Phase 07 P10 | 41 min | 2 tasks | 73 files |
 | Phase 07 P11 | 2h 48m | 2 tasks | 76 files |
+| Phase 07 P12 | 1h 0m | 2 tasks | 74 files |
 
 ## Accumulated Context
 
@@ -109,6 +110,10 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-10] Next 16.4 (Turbopack) writes compiled CSS to .next/static/chunks/*.css, not .next/static/css/; plans that grep compiled CSS (07-16..07-20 may carry the stale path) should use `grep -r ... .next/static/ --include=*.css`
 - [Phase 07]: [07-11, Tim's option D] 7c type stack live (497780d): Schibsted Grotesk via next/font as --font-display (--font-heading deprecated alias), @layer base h1/h2 Schibsted 600 no glow, Inter body/h3/h4, tabular-nums on code/kbd/samp/pre/.font-mono, 2px focus-visible ring; 70/72 baselines re-baselined (Tim reviewed); CI run 39851101533 green; DSGN-07 Complete. Tailwind utilities beat @layer base, so the base rule is proven on an injected bare <h1> and the real-page check asserts only the Schibsted family; utility-styled headings keep weight/glow/colour until Phases 9-12 (only family + h1 balance change now). The UI-SPEC/plan line "only family, weight, colour and glow change for them" is inaccurate. Rejected: sweep 20 files, fix only the home h1, !important
 - [Phase 07]: [07-11, Tim's option A] RoadmapTimeline badge spans get whitespace-nowrap (folded into 497780d): the narrower Schibsted card heading stopped holding the flex-1 header column open at 375 px (flex min-content: monospace "Scheduling" ~120 px vs Schibsted ~105 px), so badges wrapped internally and cards grew 16 px. Medium Priority release pills now sit up to ~9 px into the card's right padding, unclipped (Tim accepted). Check flex-1 text columns next to fixed-width pills at 375 px after any font-family change
+- [Phase 07]: [07-12] DSGN-09 visible scrollbar live (f14d82c): global hide rules removed; html color-scheme dark, scrollbar-gutter stable, scrollbar-width thin, scrollbar-color night-500 on night-950 (4.85:1); @supports-not webkit fallback; @utility scrollbar-none. Assumption A2 is false: scrollbar-gutter: stable reserves a 10px gutter even under --hide-scrollbars, so all 72 baselines were re-baselined in the 7d commit (layout 10px narrower, centred content 5px left; Tim reviewed; CI run 39862935420 green). The 375px baselines are therefore 10px narrower than real phones, whose overlay scrollbars reserve no gutter (test-environment quirk, not a site bug). DSGN-09 Complete
+- [Phase 07]: [07-12] Assumption A3 holds: body overflow:hidden keeps the gutter on html (G3 header box {0,0,1430,82} before and after opening the /photos modal; a scrollbar-gutter: auto negative control went 1430 -> 1440), so no scroll-lock change was needed and ImageDetailModal / GlassmorphismNav are untouched. G3 launches its own Chromium with ignoreDefaultArgs ['--hide-scrollbars'] (test.use launchOptions in a describe forces a new worker), reads the box only once two reads agree, and asserts a gutter > 0 first; future scroll-locking overlays (Phase 10 lightbox, 07-22 SiteNav menu) extend it
+- [Phase 07]: [07-12] Playwright's headless Firefox forces the root's scrollbar-width to none (computed scrollbarGutter is still stable, so the html rule applies): scrollbar assertions omit only the scrollbarWidth check when browserName === 'firefox' (an in-test condition, not test.skip); gutter and color-scheme are asserted in every browser
+- [Phase 07]: [07-12] G3 (and any browser-scoped test) must never use test.skip: scripts/guards/test-count.mjs rejects any .skip( ("tests are rewritten, never skipped"; CI run 39860744640 Unit failed on it). Scope a test with the @chromium-only title tag instead; G3 running in the WebKit project is harmless because it launches its own Chromium
 
 ### Pending Todos
 
@@ -136,6 +141,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-22T21:45:39.688Z
-Stopped at: Completed 07-11-PLAN.md
+Last session: 2026-10-22T22:49:01.804Z
+Stopped at: Completed 07-12-PLAN.md
 Resume file: None
