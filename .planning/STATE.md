@@ -101,6 +101,8 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-08] GUARD-01 stays Pending although 07-08 is its last declaring plan: the Vercel build-log check (Node 24.x + npm ci, 07-USER-SETUP.md) from 07-01 is unconfirmed; flip it to Complete once Tim confirms
 - [Phase 07]: [07-09] Tokens v2 L1 primitives (:root) + 16 L2 semantic tokens (@theme inline) + motion tokens (--duration-* in :root, --ease-* in @theme static) mirrored by lib/animations.ts and held by motion-tokens.test.ts (13 tests); MotionConfig reducedMotion="user" wraps the app; v1 amber renamed caution, no alias (cd5ac18). DSGN-06/DSGN-08 stay Pending: later plans (07-10, 07-16..07-20, 07-22) still declare them
 - [Phase 07]: [07-09] Task 2 closed as zero-diff (Tim's option A): CI visual green on cd5ac18 and update_mode=changed rewrote 0 of 72 PNGs, because the amber-500 -> caution-400 stop (YIQ ~355) is below Playwright's default per-pixel threshold 0.2 (~1409); no baseline commit, no amend, no force-push; the cd5ac18 body's "Re-baseline ... clix-cli/clix-website" line is superseded by 07-09-SUMMARY
+- [Phase 07]: [post-07-09, Tim's option A] Visual guard hardened to per-pixel `threshold: 0` (playwright.config.ts, e2e/visual/README.md; 850c80e). Threshold 0 exposed 26 shots of drift hidden by 0.2: home (14) and photos (6) image-codec noise (sharp 0.35.5 / Chromium 156, max channel delta 48), clix-cli (6) caching-icon caution-400 stop. CI renders are deterministic at threshold 0: three independent runs produced pixel-identical shots. All 26 re-baselined by Tim; CI run 39827903461 all green. From now on `update_mode=changed` captures every changed pixel, so re-baselines need no `all` mode
+- [Phase 07]: [post-07-09, Tim's option A] HologramTerminalDemo starts paused under prefers-reduced-motion (0cf000b): its 3s auto-advance made the clix-cli reduced shots timing-dependent (baseline showed command 1/4, CI had drifted to 2/4) and auto-rotating content must stop under reduced motion (WAI / WCAG 2.2.2). Play and the command dots still work; motion users unchanged
 
 ### Pending Todos
 
@@ -113,7 +115,6 @@ Recent decisions affecting current work:
 - [Phase 11] Needs from Tim: CLI_X per-grade content and Medium/Critical demo commands with `riskScore`, metric sources, roadmap order and dates.
 - [Phase 7] Required status checks (Visual Regression, Lint and Type Check, Unit Tests) on main are not set yet; until Tim sets them a red visual job does not block merges (07-USER-SETUP.md)
 - [Phase 7] main (Vercel production) lacks the Next 16.4.2 / sharp 0.35.5 security patch until Tim merges gsd/phase-07-foundation-guardrails; GitHub reported 84 Dependabot alerts on the default branch (9 critical). Merge recommended soon.
-- [Phase 7] Visual guard (GUARD-02) uses Playwright's default per-pixel threshold 0.2, so token colour shifts up to YIQ ~1409 per pixel pass silently (07-09's to-caution stop did); this weakens "zero visual diff" as proof of colour neutrality for 07-10 (7b token retarget) and later plans. Tim to decide: lower expect.toHaveScreenshot threshold to 0 or 0.1 in playwright.config.ts (CI renders are deterministic). Also, update_mode=changed never writes sub-threshold drift, so clix-cli baselines differ slightly from the true render (caching icon gradient)
 
 ## Deferred Items
 
