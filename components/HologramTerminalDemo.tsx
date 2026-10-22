@@ -18,7 +18,11 @@ export default function HologramTerminalDemo({
 }: HologramTerminalDemoProps) {
   const prefersReducedMotion = useReducedMotion();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(autoPlay);
+  // null until the user presses Play/Pause. Under reduced motion the demo
+  // starts paused: auto-rotating content must stop when reduced motion is
+  // requested, and a timed advance made the visual baselines timing-dependent.
+  const [playOverride, setPlayOverride] = useState<boolean | null>(null);
+  const isPlaying = playOverride ?? (autoPlay && !prefersReducedMotion);
   const [displayedInput, setDisplayedInput] = useState('');
   const [displayedOutput, setDisplayedOutput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -27,13 +31,13 @@ export default function HologramTerminalDemo({
 
   // Typing animation effect
   useEffect(() => {
-    if (!isPlaying) return;
-
-    // When reduced motion is enabled, show full text immediately
+    // When reduced motion is enabled, show full text immediately (also while
+    // paused, so the first command and dot-selected commands are complete)
     if (prefersReducedMotion) {
       setDisplayedInput(currentCommand.input);
       setDisplayedOutput(currentCommand.output);
       setIsTyping(false);
+      if (!isPlaying) return;
 
       const advanceTimeout = setTimeout(() => {
         setCurrentIndex((prev) => (prev + 1) % commands.length);
@@ -41,6 +45,8 @@ export default function HologramTerminalDemo({
 
       return () => clearTimeout(advanceTimeout);
     }
+
+    if (!isPlaying) return;
 
     setIsTyping(true);
     setDisplayedInput('');
@@ -116,7 +122,7 @@ export default function HologramTerminalDemo({
 
           {/* Play/Pause */}
           <button
-            onClick={() => setIsPlaying(!isPlaying)}
+            onClick={() => setPlayOverride(!isPlaying)}
             className="w-9 h-9 sm:w-10 sm:h-10 min-w-[44px] min-h-[44px] rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 flex items-center justify-center transition-all"
             aria-label={isPlaying ? 'Pause' : 'Play'}
           >
