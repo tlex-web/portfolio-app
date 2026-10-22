@@ -23,7 +23,7 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 
 - [x] **DEPS-03**: framer-motion is replaced by `motion` 14.1 (`motion/react` imports) with zero visual diff against the baselines, including mid-scroll captures
 - [x] **DEPS-04**: Next 16.4.x (including the 2026-10-14 security patch), React 19.3, `@react-three/fiber` 9.8.1 and drei 10.7.9 are upgraded in one isolated commit with zero visual diff
-- [ ] **DEPS-05**: Playwright is upgraded to 1.64 in its own commit after baselining on the lockfile version
+- [x] **DEPS-05**: Playwright is upgraded to 1.64 in its own commit after baselining on the lockfile version
 
 ### Design System
 
@@ -174,7 +174,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GUARD-06 | Phase 7 | Complete |
 | DEPS-03 | Phase 7 | Complete |
 | DEPS-04 | Phase 7 | Complete |
-| DEPS-05 | Phase 7 | Pending |
+| DEPS-05 | Phase 7 | Complete |
 | DSGN-05 | Phase 7 | Pending |
 | DSGN-06 | Phase 7 | Pending |
 | DSGN-07 | Phase 7 | Pending |
