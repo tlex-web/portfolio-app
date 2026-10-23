@@ -38,7 +38,9 @@ const TEST_COUNT = path.join(here, 'test-count.mjs');
 const ESLINT = path.join(repoRoot, 'node_modules', 'eslint', 'bin', 'eslint.js');
 const SAME_CLASSNAMES = path.join(here, 'same-classnames.mjs');
 const SNAPSHOT_COMMIT = path.join(repoRoot, 'scripts', 'ci', 'check-snapshot-commit.mjs');
+const PALETTE = path.join(here, 'check-palette.mjs');
 const tc = (...parts) => path.join(fixtures, 'test-count', ...parts);
+const pal = (...parts) => path.join(fixtures, 'palette', ...parts);
 const sc = (...parts) => path.join(fixtures, 'same-classnames', ...parts);
 const tap = process.argv.includes('--tap');
 
@@ -74,6 +76,16 @@ function tempBaseline(fixtureName) {
 }
 let lowerUpdateBaseline = null;
 let raiseUpdateBaseline = null;
+
+/** Copies a palette fixture ratchet into a fresh temp dir so --update cases never touch the fixture. */
+function tempRatchet(fixtureName) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
+  const file = path.join(dir, 'palette-ratchet.json');
+  fs.copyFileSync(pal(fixtureName, 'palette-ratchet.json'), file);
+  return file;
+}
+let raisePaletteRatchet = null;
+let lowerPaletteRatchet = null;
 
 const cases = [
   {
@@ -273,6 +285,108 @@ const cases = [
     expectExit: 2,
     expectOutput: ['git show no-such-rev-for-selftest failed'],
   },
+  {
+    name: 'palette: semantic utilities, (c), the prompt glyph and a white utility at its ratchet pass',
+    guard: PALETTE,
+    args: ['--root', pal('good')],
+    expectExit: 0,
+    expectOutput: ['palette: OK'],
+  },
+  {
+    name: 'palette: a dark: variant utility fails',
+    guard: PALETTE,
+    args: ['--root', pal('bad-dark')],
+    expectExit: 1,
+    expectOutput: ['app/page.tsx:3 dark dark:'],
+  },
+  {
+    name: 'palette: a stock palette class inside an object map fails',
+    guard: PALETTE,
+    args: ['--root', pal('bad-stock')],
+    expectExit: 1,
+    expectOutput: ['app/badges.tsx:4 stock hover:text-red-500/80'],
+  },
+  {
+    name: 'palette: one white/black utility above the ratchet fails',
+    guard: PALETTE,
+    args: ['--root', pal('bad-wb')],
+    expectExit: 1,
+    expectOutput: ['app/page.tsx wb 2 white/black utilities above the ratchet of 1', 'app/page.tsx:6 wb hover:bg-white/10'],
+  },
+  {
+    name: 'palette: a white/black count below the ratchet fails until --update records it',
+    guard: PALETTE,
+    args: ['--root', pal('wb-tighten')],
+    expectExit: 1,
+    expectOutput: ['app/page.tsx wb 1 white/black utilities below the ratchet of 2', 'ratchet can tighten'],
+  },
+  {
+    name: 'palette: a non-linux PNG under e2e/ fails',
+    guard: PALETTE,
+    args: ['--root', pal('bad-png')],
+    expectExit: 1,
+    expectOutput: ['e2e/x-win32.png:0 png'],
+  },
+  {
+    name: 'palette: an emoji in a data map fails',
+    guard: PALETTE,
+    args: ['--root', pal('bad-emoji')],
+    expectExit: 1,
+    expectOutput: ['data/tags.ts:3 emoji'],
+  },
+  {
+    name: 'palette: --skip emoji turns the emoji rule off',
+    guard: PALETTE,
+    args: ['--root', pal('bad-emoji'), '--skip', 'emoji'],
+    expectExit: 0,
+    expectOutput: ['palette: OK'],
+  },
+  {
+    name: 'palette: @custom-variant dark and a stock class in CSS @apply fail',
+    guard: PALETTE,
+    args: ['--root', pal('bad-variant')],
+    expectExit: 1,
+    expectOutput: ['app/globals.css:3 variant @custom-variant dark', 'app/globals.css:6 stock text-amber-400'],
+  },
+  {
+    name: 'palette: a v1 alias name in a new shell file fails',
+    guard: PALETTE,
+    args: ['--root', pal('bad-v1names')],
+    expectExit: 1,
+    expectOutput: ['components/site/SiteNav.tsx:3 v1names frost-4'],
+  },
+  {
+    name: 'palette: --update refuses a raise and leaves the ratchet unchanged',
+    guard: PALETTE,
+    args: ['--root', pal('bad-wb'), '--update'],
+    setup: () => {
+      raisePaletteRatchet = tempRatchet('bad-wb');
+      return ['--ratchet', raisePaletteRatchet];
+    },
+    expectExit: 1,
+    expectOutput: ['--update refused'],
+    check: () =>
+      fs.readFileSync(raisePaletteRatchet, 'utf-8') === fs.readFileSync(pal('bad-wb', 'palette-ratchet.json'), 'utf-8')
+        ? null
+        : 'ratchet copy was modified by a refused --update',
+  },
+  {
+    name: 'palette: --update records a lower count',
+    guard: PALETTE,
+    args: ['--root', pal('wb-tighten'), '--update'],
+    setup: () => {
+      lowerPaletteRatchet = tempRatchet('wb-tighten');
+      return ['--ratchet', lowerPaletteRatchet];
+    },
+    expectExit: 0,
+    expectOutput: ['palette: ratchet written', 'palette: OK'],
+    check: () => {
+      const written = JSON.parse(fs.readFileSync(lowerPaletteRatchet, 'utf-8'));
+      return written['app/page.tsx'] === 1 && Object.keys(written).length === 1
+        ? null
+        : `ratchet not lowered: ${JSON.stringify(written)}`;
+    },
+  },
 ];
 
 let failed = 0;
@@ -327,7 +441,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 

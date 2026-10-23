@@ -7,7 +7,7 @@
     "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint . && npm run guard:parity && npm run guard:selftest",
+    "lint": "eslint . && npm run guard:parity && npm run guard:palette && npm run guard:selftest",
     "format": "prettier --write .",
     "type-check": "tsc --noEmit",
     "test": "jest",
@@ -21,6 +21,7 @@
     "prebuild": "node scripts/optimize-images.mjs",
     "postbuild": "node scripts/inject-build-hash.mjs && node scripts/verify-contrast.mjs",
     "guard:parity": "node scripts/guards/check-install-parity.mjs",
+    "guard:palette": "node scripts/guards/check-palette.mjs --skip emoji",
     "guard:selftest": "node scripts/guards/selftest.mjs",
     "guard:tests": "node scripts/guards/test-count.mjs --jest jest-results.json"
   },
