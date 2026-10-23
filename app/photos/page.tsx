@@ -7,12 +7,12 @@ export default function PhotosPage() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800">
+      <div className="min-h-screen bg-gradient-to-b from-surface to-surface-raised">
         {/* Hero Section - Static Server Component */}
-        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-20">
+        <div className="bg-surface-raised border-t border-line py-20">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="text-5xl font-bold mb-6">Landscape Gallery</h1>
-            <p className="text-xl text-blue-100 max-w-3xl mx-auto mb-8">
+            <h1 className="text-5xl font-bold mb-6 text-ink">Landscape Gallery</h1>
+            <p className="text-xl text-ink-muted max-w-3xl mx-auto mb-8">
               A collection of {landscapes.length} stunning landscape photographs from the Swiss Alps, each with interactive hotspots,
               technical details, and the stories behind the shots.
             </p>

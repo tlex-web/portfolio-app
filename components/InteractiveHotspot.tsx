@@ -68,7 +68,7 @@ export default function InteractiveHotspot({ annotation, onHover }: InteractiveH
         {/* Pulse Ring Animation */}
         {!prefersReducedMotion && (
           <motion.div
-            className="absolute inset-0 rounded-full bg-cyan-400/50"
+            className="absolute inset-0 rounded-full bg-accent"
             animate={{
               scale: [1, 1.8, 1],
               opacity: [0.8, 0, 0.8],
@@ -82,15 +82,15 @@ export default function InteractiveHotspot({ annotation, onHover }: InteractiveH
         )}
 
         {/* Icon Circle */}
-        <div className="relative w-12 h-12 rounded-full bg-cyan-500/80 backdrop-blur-md border-2 border-white/60 flex items-center justify-center text-white shadow-2xl group-hover:bg-cyan-400/90 group-hover:scale-110 transition-all">
+        <div className="relative w-12 h-12 rounded-full bg-accent border-2 border-ink flex items-center justify-center text-ink-inverse shadow-2xl group-hover:bg-accent-hover group-hover:scale-110 transition-all">
           {iconMap[annotation.icon]}
         </div>
 
         {/* Quick Label */}
         <div className="absolute left-14 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-40">
-          <div className="bg-cyan-600 backdrop-blur-sm text-white px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap shadow-2xl border border-cyan-400">
+          <div className="bg-surface-raised text-ink px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap shadow-2xl border border-line-strong">
             {annotation.title}
-            <div className="text-xs text-cyan-100 mt-0.5">Click to learn more</div>
+            <div className="text-xs text-ink-muted mt-0.5">Click to learn more</div>
           </div>
         </div>
       </motion.button>
@@ -123,19 +123,19 @@ export default function InteractiveHotspot({ annotation, onHover }: InteractiveH
               style={{ zIndex: 99999 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl p-6 border border-white/20">
+              <div className="bg-surface rounded-2xl shadow-2xl p-6 border border-line-strong">
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white">
+                    <div className="w-12 h-12 rounded-full bg-surface-overlay flex items-center justify-center text-ink-muted">
                       {iconMap[annotation.icon]}
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-white">
+                      <h3 className="text-xl font-bold text-ink">
                         {annotation.title}
                       </h3>
                       {annotation.details?.elevation && (
-                        <p className="text-sm text-gray-400">
+                        <p className="text-sm text-ink-muted">
                           {annotation.details.elevation}
                         </p>
                       )}
@@ -143,11 +143,11 @@ export default function InteractiveHotspot({ annotation, onHover }: InteractiveH
                   </div>
                   <button
                     onClick={() => setIsOpen(false)}
-                    className="p-2 rounded-lg hover:bg-gray-800 transition-colors"
+                    className="p-2 rounded-lg hover:bg-surface-raised transition-colors"
                     aria-label="Close"
                   >
                     <svg
-                      className="w-5 h-5 text-gray-500"
+                      className="w-5 h-5 text-ink-muted"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -163,7 +163,7 @@ export default function InteractiveHotspot({ annotation, onHover }: InteractiveH
                 </div>
 
                 {/* Description */}
-                <p className="text-gray-300 mb-4">
+                <p className="text-ink mb-4">
                   {annotation.description}
                 </p>
 
@@ -171,19 +171,19 @@ export default function InteractiveHotspot({ annotation, onHover }: InteractiveH
                 {annotation.details && (
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     {annotation.details.temperature && (
-                      <div className="bg-gray-800 rounded-lg p-3">
-                        <p className="text-xs text-gray-400 mb-1">
+                      <div className="bg-surface-raised rounded-lg p-3">
+                        <p className="text-xs text-ink-muted mb-1">
                           Temperature
                         </p>
-                        <p className="text-sm font-semibold text-white">
+                        <p className="text-sm font-semibold text-ink">
                           {annotation.details.temperature}
                         </p>
                       </div>
                     )}
                     {annotation.details.distance && (
-                      <div className="bg-gray-800 rounded-lg p-3">
-                        <p className="text-xs text-gray-400 mb-1">Distance</p>
-                        <p className="text-sm font-semibold text-white">
+                      <div className="bg-surface-raised rounded-lg p-3">
+                        <p className="text-xs text-ink-muted mb-1">Distance</p>
+                        <p className="text-sm font-semibold text-ink">
                           {annotation.details.distance}
                         </p>
                       </div>
@@ -193,15 +193,15 @@ export default function InteractiveHotspot({ annotation, onHover }: InteractiveH
 
                 {/* Fun Facts */}
                 {annotation.details?.facts && annotation.details.facts.length > 0 && (
-                  <div className="border-t border-gray-700 pt-4">
-                    <h4 className="text-sm font-semibold text-white mb-2">
+                  <div className="border-t border-line pt-4">
+                    <h4 className="text-sm font-semibold text-ink mb-2">
                       Did you know?
                     </h4>
                     <ul className="space-y-2">
                       {annotation.details.facts.map((fact, index) => (
                         <li key={index} className="flex items-start gap-2 text-sm">
-                          <span className="text-cyan-500 mt-0.5">•</span>
-                          <span className="text-gray-400">{fact}</span>
+                          <span className="text-accent mt-0.5">•</span>
+                          <span className="text-ink-muted">{fact}</span>
                         </li>
                       ))}
                     </ul>

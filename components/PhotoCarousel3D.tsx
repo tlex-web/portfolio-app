@@ -105,7 +105,7 @@ function PhotoFrame({ image, texture, position, rotation, isActive, onClick, ind
             userSelect: 'none',
           }}
         >
-          <div className="bg-black/80 backdrop-blur-sm text-white px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap">
+          <div className="bg-black/80 backdrop-blur-sm text-ink px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap">
             {image.title}
           </div>
         </Html>
@@ -233,7 +233,7 @@ export default function PhotoCarousel3D({ images, onImageClick, className = '' }
   if (images.length === 0) {
     return (
       <div className={`flex items-center justify-center h-96 ${className}`}>
-        <p className="text-gray-400">No images to display</p>
+        <p className="text-ink-muted">No images to display</p>
       </div>
     );
   }
@@ -287,12 +287,12 @@ export default function PhotoCarousel3D({ images, onImageClick, className = '' }
           className="p-2 hover:bg-white/10 rounded-full transition-colors"
           aria-label="Previous photo"
         >
-          <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-6 h-6 text-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
 
-        <span className="text-white text-sm font-medium">
+        <span className="text-ink text-sm font-medium">
           Use arrow keys or click photos
         </span>
 
@@ -304,14 +304,14 @@ export default function PhotoCarousel3D({ images, onImageClick, className = '' }
           className="p-2 hover:bg-white/10 rounded-full transition-colors"
           aria-label="Next photo"
         >
-          <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-6 h-6 text-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>
       </div>
 
       {/* Instructions */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-cyan-600/90 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-medium">
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-surface-raised text-ink border border-line-strong px-4 py-2 rounded-full text-sm font-medium">
         Interactive 3D Gallery
       </div>
     </div>

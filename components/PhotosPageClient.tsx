@@ -10,7 +10,7 @@ import { LandscapeImage } from '@/data/types';
 const PhotoCarousel3D = dynamic(() => import('@/components/PhotoCarousel3D'), {
   loading: () => (
     <div className="bg-black rounded-2xl h-[600px] flex items-center justify-center">
-      <div className="text-white animate-pulse">Loading 3D viewer...</div>
+      <div className="text-ink animate-pulse">Loading 3D viewer...</div>
     </div>
   ),
   ssr: false, // Three.js doesn't work server-side
@@ -27,16 +27,16 @@ export default function PhotosPageClient({ images }: PhotosPageClientProps) {
   return (
     <>
       {/* View Mode Toggle */}
-      <div className="bg-gradient-to-r from-blue-600 to-cyan-600 pb-6">
+      <div className="bg-surface-raised border-b border-line pb-6">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-center">
-            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full p-1">
+            <div className="inline-flex items-center gap-2 bg-surface-overlay rounded-full p-1">
               <button
                 onClick={() => setViewMode('grid')}
                 className={`px-6 py-2 rounded-full font-medium transition-all ${
                   viewMode === 'grid'
-                    ? 'bg-white text-blue-600 shadow-lg'
-                    : 'text-white hover:bg-white/10'
+                    ? 'bg-accent text-ink-inverse shadow-lg'
+                    : 'text-ink hover:text-accent'
                 }`}
               >
                 <span className="flex items-center gap-2">
@@ -50,8 +50,8 @@ export default function PhotosPageClient({ images }: PhotosPageClientProps) {
                 onClick={() => setViewMode('3d')}
                 className={`px-6 py-2 rounded-full font-medium transition-all ${
                   viewMode === '3d'
-                    ? 'bg-white text-blue-600 shadow-lg'
-                    : 'text-white hover:bg-white/10'
+                    ? 'bg-accent text-ink-inverse shadow-lg'
+                    : 'text-ink hover:text-accent'
                 }`}
               >
                 <span className="flex items-center gap-2">

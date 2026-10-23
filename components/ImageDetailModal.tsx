@@ -51,13 +51,13 @@ export default function ImageDetailModal({ image, onClose }: ImageDetailModalPro
     >
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Escape is handled on document; replaced by the Phase 10 lightbox */}
       <div
-        className="relative w-full max-w-6xl max-h-[90vh] bg-gray-900 rounded-lg overflow-y-auto"
+        className="relative w-full max-w-6xl max-h-[90vh] bg-surface rounded-lg overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 p-2 bg-gray-900 bg-opacity-50 hover:bg-opacity-75 rounded-full text-white transition-all"
+          className="absolute top-4 right-4 z-10 p-2 bg-surface bg-opacity-50 hover:bg-opacity-75 rounded-full text-ink transition-all"
           aria-label="Close modal"
         >
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -71,7 +71,7 @@ export default function ImageDetailModal({ image, onClose }: ImageDetailModalPro
         </button>
 
         {/* Image */}
-        <div className="relative w-full h-96 md:h-[600px] bg-gray-900">
+        <div className="relative w-full h-96 md:h-[600px] bg-surface">
           <motion.div
             className="relative w-full h-full cursor-zoom-in"
             onClick={() => setIsZoomed(!isZoomed)}
@@ -108,7 +108,7 @@ export default function ImageDetailModal({ image, onClose }: ImageDetailModalPro
           </motion.div>
 
           {/* Zoom Indicator */}
-          <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-sm text-white px-3 py-2 rounded-lg text-sm pointer-events-none">
+          <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-sm text-ink px-3 py-2 rounded-lg text-sm pointer-events-none">
             {isZoomed ? (
               <>
                 <svg className="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -129,66 +129,66 @@ export default function ImageDetailModal({ image, onClose }: ImageDetailModalPro
 
         {/* Details */}
         <div className="p-6 md:p-8">
-          <h2 id="modal-title" className="text-3xl font-bold mb-2 text-white">
+          <h2 id="modal-title" className="text-3xl font-bold mb-2 text-ink">
             {image.title}
           </h2>
-          <p className="text-lg text-gray-400 mb-6">{image.location}</p>
+          <p className="text-lg text-ink-muted mb-6">{image.location}</p>
 
           <div className="mb-6">
-            <h3 className="text-xl font-semibold mb-2 text-white">Story</h3>
-            <p className="text-gray-300 leading-relaxed">{image.story}</p>
+            <h3 className="text-xl font-semibold mb-2 text-ink">Story</h3>
+            <p className="text-ink leading-relaxed">{image.story}</p>
           </div>
 
           {/* Technical Details */}
           <div className="mb-6">
-            <h3 className="text-xl font-semibold mb-3 text-white">
+            <h3 className="text-xl font-semibold mb-3 text-ink">
               Technical Details
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {image.technicalDetails.camera && (
                 <div>
-                  <span className="text-sm text-gray-400">Camera</span>
-                  <p className="font-medium text-white">
+                  <span className="text-sm text-ink-muted">Camera</span>
+                  <p className="font-medium text-ink">
                     {image.technicalDetails.camera}
                   </p>
                 </div>
               )}
               {image.technicalDetails.lens && (
                 <div>
-                  <span className="text-sm text-gray-400">Lens</span>
-                  <p className="font-medium text-white">
+                  <span className="text-sm text-ink-muted">Lens</span>
+                  <p className="font-medium text-ink">
                     {image.technicalDetails.lens}
                   </p>
                 </div>
               )}
               {image.technicalDetails.aperture && (
                 <div>
-                  <span className="text-sm text-gray-400">Aperture</span>
-                  <p className="font-medium text-white">
+                  <span className="text-sm text-ink-muted">Aperture</span>
+                  <p className="font-medium text-ink">
                     {image.technicalDetails.aperture}
                   </p>
                 </div>
               )}
               {image.technicalDetails.shutterSpeed && (
                 <div>
-                  <span className="text-sm text-gray-400">Shutter Speed</span>
-                  <p className="font-medium text-white">
+                  <span className="text-sm text-ink-muted">Shutter Speed</span>
+                  <p className="font-medium text-ink">
                     {image.technicalDetails.shutterSpeed}
                   </p>
                 </div>
               )}
               {image.technicalDetails.iso && (
                 <div>
-                  <span className="text-sm text-gray-400">ISO</span>
-                  <p className="font-medium text-white">
+                  <span className="text-sm text-ink-muted">ISO</span>
+                  <p className="font-medium text-ink">
                     {image.technicalDetails.iso}
                   </p>
                 </div>
               )}
               {image.technicalDetails.captureDate && (
                 <div>
-                  <span className="text-sm text-gray-400">Date</span>
-                  <p className="font-medium text-white">
+                  <span className="text-sm text-ink-muted">Date</span>
+                  <p className="font-medium text-ink">
                     {new Date(image.technicalDetails.captureDate).toLocaleDateString()}
                   </p>
                 </div>
@@ -198,12 +198,12 @@ export default function ImageDetailModal({ image, onClose }: ImageDetailModalPro
 
           {/* Tags */}
           <div>
-            <h3 className="text-xl font-semibold mb-3 text-white">Tags</h3>
+            <h3 className="text-xl font-semibold mb-3 text-ink">Tags</h3>
             <div className="flex flex-wrap gap-2">
               {image.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="px-3 py-1 bg-gray-700 text-gray-200 rounded-full text-sm"
+                  className="px-3 py-1 bg-surface-overlay text-ink rounded-full text-sm"
                 >
                   {tag}
                 </span>

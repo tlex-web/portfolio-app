@@ -17,22 +17,22 @@ export default function Error({
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center">
-      <h1 className="text-4xl font-bold mb-4 text-white">
+      <h1 className="text-4xl font-bold mb-4 text-ink">
         Something went wrong!
       </h1>
-      <p className="text-lg text-gray-300 mb-8">
+      <p className="text-lg text-ink mb-8">
         We apologize for the inconvenience. An error occurred while rendering this page.
       </p>
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
         <button
           onClick={reset}
-          className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          className="px-6 py-3 bg-accent text-ink-inverse rounded-md hover:bg-accent-hover transition-colors"
         >
           Try again
         </button>
         <Link
           href="/"
-          className="px-6 py-3 border-2 border-gray-600 rounded-md hover:bg-gray-800 transition-colors"
+          className="px-6 py-3 border-2 border-line-strong rounded-md hover:bg-surface-raised transition-colors"
         >
           Go to Homepage
         </Link>
