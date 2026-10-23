@@ -236,6 +236,14 @@ test.describe('Shell mobile menu', () => {
     await expect(button).toHaveAttribute('aria-expanded', 'true');
     await expect(panel).toBeVisible();
 
+    // The panel enters with an @starting-style fade and -8px settle. Mid-transition the
+    // rows sit at fractional y offsets, so bottom - top can come out a float hair under
+    // 48 (47.99998). Measure the settled layout: wait for every panel transition to end.
+    await panel.evaluate((el) =>
+      Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined))),
+    );
+    expect(await panel.evaluate((el) => el.getAnimations({ subtree: true }).length)).toBe(0);
+
     const rows = panel.getByRole('link');
     await expect(rows).toHaveCount(site.nav.length);
     for (let i = 0; i < site.nav.length; i++) {
