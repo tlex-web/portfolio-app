@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 07
 current_phase_name: Foundation & Guardrails
 status: executing
-stopped_at: Completed 07-18-PLAN.md
-last_updated: "2026-10-23T18:33:48.784Z"
+stopped_at: Completed 07-19-PLAN.md
+last_updated: "2026-10-23T19:08:05.752Z"
 last_activity: 2026-10-23
 last_activity_desc: Phase 07 execution resumed (wave continue)
-state_head: 62dbbf4ac4ceb03381c077bd19e5659a88b2360c
+state_head: 69c19734c653350031250c169c5111850bb5151d
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 26
-  completed_plans: 18
-  percent: 69
+  completed_plans: 19
+  percent: 73
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-10)
 ## Current Position
 
 Phase: 07 (Foundation & Guardrails) — EXECUTING
-Plan: 19 of 26
+Plan: 20 of 26
 Status: Executing Phase 07
 Last activity: 2026-10-23 — Phase 07 execution resumed (wave continue)
 
-Progress: [███████░░░] 69%
+Progress: [███████░░░] 73%
 
 ## Performance Metrics
 
@@ -72,6 +72,7 @@ Progress: [███████░░░] 69%
 | Phase 07 P16 | 18 min | 2 tasks | 5 files |
 | Phase 07 P17 | 19 min | 2 tasks | 7 files |
 | Phase 07 P18 | 46 min | 2 tasks | 13 files |
+| Phase 07 P19 | 24 min | 2 tasks | 18 files |
 
 ## Accumulated Context
 
@@ -130,6 +131,7 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-16] 8c map, group Contact (1807682): every stock palette class in app/contact/page.tsx and components/FeedbackForm.tsx mapped to L2 semantic utilities (stock count 0; no v1 alias, hex, oklch, rgba or arbitrary colour added; focus:ring-* removed for the global focus-visible ring). Status boxes outlined (bg-surface-overlay border border-success/danger text-ink) and pending submit is the faded accent (bg-accent text-ink-inverse opacity-50), Tim's D1/D2 choices recorded in 1807682. contact/{375,768,1440}-reduced-visual-dark re-baselined in the same commit (check-snapshot-commit --allow contact --some OK, 3 changed); CI run 39879694150 green (Visual, Unit, E2E). DSGN-06 and GUARD-04 stay Pending: 07-17..07-20 also declare them
 - [Phase 07]: [07-17] 8c map, group Roadmap (b7b56cf): all 98 stock palette classes in app/roadmap/page.tsx, RoadmapTimeline, RoadmapProgress and RoadmapFilters mapped to L2 semantic utilities (stock count 0; no v1 alias, hex, oklch, rgba, arbitrary colour, text-white, bg-white or black left, so the 07-20 white/black ratchet starts at 0 for this group). Tim's D1 = A outlined status on neutral (cards bg-surface-raised border-2 border-success/accent/line, badges bg-surface-overlay border text-success/accent), D2 = A neutral hero and CTA bands (bg-surface-raised border-y border-line; Contact Me the one bg-accent text-ink-inverse CTA), D3 = A neutral area chips (bg-surface-overlay text-ink border-line-strong) with bg-accent Breakdown bars, chip edge kept mechanical; recorded in b7b56cf. White on accent/success fails (1.69/1.77:1), so icons on those fills use text-ink-inverse. Page height grew (1440/768 +4px from the two border-y bands; 375 +34px, +2px per card from the 1px area-chip border where badges stack). roadmap/{375,768,1440}-reduced-visual-dark re-baselined in the same commit (check-snapshot-commit --allow roadmap --some OK, 3 changed); CI run 39995314853 green (Visual, Unit, E2E). DSGN-06 and GUARD-04 stay Pending: 07-18..07-20 also declare them
 - [Phase 07]: [07-18] 8c map, group Projects (2d87a01): all 198 stock palette classes in app/projects/[slug]/page.tsx, TechStackDisplay, FeatureShowcase, ProjectHighlights, ProjectDetailClient, HologramTerminalDemo and HologramTerminal mapped to L2 semantic utilities (stock count 0; white/black utilities 29 -> 0, so the 07-20 white/black ratchet starts at 0 for this group; no v1 alias, hex, oklch, rgba or arbitrary colour added). Tim's answer 'All recommended': D1 = A neutral hero (bg-surface-raised border-y border-line) and flat What's Next card with border-line; D2 = A GitHub the one bg-accent text-ink-inverse primary, Live Demo and Documentation secondary (bg-surface-overlay text-ink border-line-strong); D3 = A outlined status badge on neutral; D4 = A one neutral tech-chip class (hue map and getTechStyle removed) and neutral feature/highlight tiles, label + icon only; D5 = A no alpha tints (solid surface/line tokens, coloured shadow tints dropped); D6 high risk = danger, window dots bg-line-strong, USER label muted with accent prompt/command; recorded in 2d87a01. Dark ink on accent fails (1.42:1), so accent fills carry text-ink-inverse. Page height +2px from the hero border-y (clix-website 375 +4px with the bordered Live Demo button on its own row). clix-cli/* and clix-website/* {375,768,1440}-reduced-visual-dark re-baselined in the same commit (check-snapshot-commit --allow clix-cli --allow clix-website --allow projects --some OK, 6 changed; projects/* unchanged, the index renders none of the 7 components); CI run 40003018857 green (Visual, Unit, E2E). DSGN-06 and GUARD-04 stay Pending: 07-19 and 07-20 also declare them
+- [Phase 07]: [07-19] 8c map, group Photos + edge pages, the last group (baffad8): all 87 stock palette classes in app/photos/page.tsx, PhotosPageClient, GalleryGrid, ImageDetailModal, InteractiveHotspot, PhotoCarousel3D, app/offline/page.tsx, app/error.tsx and app/not-found.tsx mapped to L2 semantic utilities (no v1 alias, hex, oklch, rgba or arbitrary colour added). The stock count is now 0 across the whole scan set (app, components, lib, data, e2e incl. app/api/__tests__, components/__tests__, lib/__tests__); the 87 left at b1ea33d were all in this group, so 07-20 can enable the palette guard at 0. White/black utilities in the group 56 -> 10, all deliberate black scrims/frames over photos and canvas plus the carousel hover:bg-white/10 (listed in 07-19-SUMMARY; the 07-20 ratchet starts there). Tim's answer 'All recommended': D1 = A photos hero + toggle strip one neutral bg-surface-raised band with border-t/border-b border-line, accent active segment; D2 = B neutral outlined hotspot-count badge; D3 = A black scrims kept, text on them text-ink/text-accent; D4 = A solid bg-accent text-ink-inverse hotspot markers, neutral hover label; D5 = A solid bg-surface hotspot info card, neutral icon tile; D6 = A neutral carousel pill, bg-black frame kept; D7 offline box border-2 border-line-strong, icon text-ink-muted; recorded in baffad8. Fixes the pre-existing offline failures from the 07-14 concern (icon 2.35:1, box border 2.01:1, offline:61 small text now text-ink-muted 8.92:1) and white on the cyan hotspot badge / 3D pill (2.36 / 3.60:1). Page height photos +2px (D1 band hairlines); offline and not-found unchanged. photos/*, offline/* and not-found/* {375,768,1440}-reduced-visual-dark re-baselined in the same commit (check-snapshot-commit --allow photos --allow offline --allow not-found --some OK, 9 changed); CI run 40007564121 green (Visual, Unit, E2E). DSGN-06 and GUARD-04 stay Pending: 07-20 also declares them
 
 ### Pending Todos
 
@@ -151,6 +153,7 @@ Recent decisions affecting current work:
 - [Phase 7, from 07-15, for 07-20] Add `@source not` for `.planning` and `.claude` in app/globals.css before any compiled-CSS guard: Tailwind v4 source detection reads tracked Markdown (.planning/milestones/v1.0-phases/04-design-components/04-03-PLAN.md, 04-05-PLAN.md, 04-RESEARCH.md, .claude/skills/ui-styling/references/shadcn-theming.md), so the compiled CSS (.next/static/chunks/*.css) still has 41 phantom :where(.dark,.dark *) selectors (e.g. dark:scale-0, dark:-rotate-90, dark:group-hover:text-cyan-400) and dead stock classes (07-09's .to-amber-500) that no code uses. No visual effect, but a palette or dark: guard over the compiled CSS would count them
 - [Phase 7, from 07-16, for 07-24] app/contact/page.tsx:67/93/119 keep hue-coloured hover glows as inline motion props (whileHover boxShadow rgba(6,182,212,0.3), rgba(59,130,246,0.3), rgba(168,85,247,0.3)); they are not classes, so the stock-palette grep and a class-based palette guard miss them. Move them to tokens or drop them in the 07-24 Contact interim restyle
 - [Phase 9/12, from 07-18] Colours the class grep cannot see stay in the Projects group: components/HologramTerminal.tsx keeps Three.js material/light hex (L26-330) and a <style jsx global> block with rgba/hex (L368-486, incl. the .hologram-content navy panel the terminal demo text sits on), out of scope until Phase 9 (UI-SPEC v2-only rule); a class-based palette guard misses them. components/ProjectDetailClient.tsx still uses 4 v1 aliases (snow-50, alpine-800, alpine-600, snow-100; count unchanged 4 -> 4), which must move to semantic tokens before the v1 alias layer is removed in Phase 12
+- [Phase 10, from 07-19, unverified] During the local e2e/photos.spec.ts run the dev server logged three deprecation warnings and a React 'removeChild ... not a child' console error on the /photos grid/3D toggle; the tests pass. Class-string edits cannot cause a DOM removal error, so it very likely predates 07-19, but it was not checked at HEAD~1 and CI E2E logs do not capture the browser console. Reproduce and fix in the Phase 10 photos/lightbox rework. Also for Phase 10: components/ImageDetailModal.tsx L46/L60 use Tailwind v3 bg-opacity-* classes that Tailwind 4.3 does not generate, so the modal backdrop and close button render fully opaque (pre-existing); components/PhotoCarousel3D.tsx keeps Three.js inline hex (L75, L215, L264, L265, L268 fog) and the v1 alias text-snow-200 (L183)
 
 ## Deferred Items
 
@@ -162,6 +165,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-23T18:33:22.714Z
-Stopped at: Completed 07-18-PLAN.md
+Last session: 2026-10-23T19:08:05.705Z
+Stopped at: Completed 07-19-PLAN.md
 Resume file: None
