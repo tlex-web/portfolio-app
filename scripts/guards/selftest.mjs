@@ -39,6 +39,8 @@ const ESLINT = path.join(repoRoot, 'node_modules', 'eslint', 'bin', 'eslint.js')
 const SAME_CLASSNAMES = path.join(here, 'same-classnames.mjs');
 const SNAPSHOT_COMMIT = path.join(repoRoot, 'scripts', 'ci', 'check-snapshot-commit.mjs');
 const PALETTE = path.join(here, 'check-palette.mjs');
+const CONTRAST = path.join(here, 'check-contrast.mjs');
+const con = (name) => path.join(fixtures, 'contrast', name);
 const tc = (...parts) => path.join(fixtures, 'test-count', ...parts);
 const pal = (...parts) => path.join(fixtures, 'palette', ...parts);
 const sc = (...parts) => path.join(fixtures, 'same-classnames', ...parts);
@@ -386,6 +388,62 @@ const cases = [
         ? null
         : `ratchet not lowered: ${JSON.stringify(written)}`;
     },
+  },
+  {
+    name: 'contrast: the real app/globals.css passes all 28 UI-SPEC pairs in table order',
+    guard: CONTRAST,
+    args: ['--css', path.join(repoRoot, 'app', 'globals.css')],
+    expectExit: 0,
+    expectOutput: ['ink/surface 16.03 4.5 PASS', 'danger/surface-raised 6.74 4.5 PASS', 'line-strong/surface-overlay 4.17 3 PASS', 'contrast: OK (28 pairs)'],
+  },
+  {
+    name: 'contrast: a pair exactly at 4.5:1 passes (inclusive raw-float threshold)',
+    guard: CONTRAST,
+    args: ['--css', con('at-threshold.css')],
+    expectExit: 0,
+    expectOutput: ['ink-muted/surface 4.50 4.5 PASS', 'ink-muted/surface-overlay 4.50 4.5 PASS', 'contrast: OK (28 pairs)'],
+  },
+  {
+    name: 'contrast: a pair 0.01 below 4.5:1 fails',
+    guard: CONTRAST,
+    args: ['--css', con('below-threshold.css')],
+    expectExit: 1,
+    expectOutput: ['ink-muted/surface 4.49 4.5 FAIL'],
+  },
+  {
+    name: 'contrast: --color-ink resolving to 3:1 on surface fails',
+    guard: CONTRAST,
+    args: ['--css', con('low-ink.css')],
+    expectExit: 1,
+    expectOutput: ['ink/surface 3.00 4.5 FAIL', 'contrast: 1 failures'],
+  },
+  {
+    name: 'contrast: an unknown --color-foo token fails',
+    guard: CONTRAST,
+    args: ['--css', con('unknown-token.css')],
+    expectExit: 1,
+    expectOutput: ['unknown token --color-foo'],
+  },
+  {
+    name: 'contrast: a missing --color-danger fails its pairs',
+    guard: CONTRAST,
+    args: ['--css', con('missing-danger.css')],
+    expectExit: 1,
+    expectOutput: ['missing token for pair danger/surface', 'missing token for pair danger/surface-overlay'],
+  },
+  {
+    name: 'contrast: a file with no :root or @theme block fails',
+    guard: CONTRAST,
+    args: ['--css', con('empty.css')],
+    expectExit: 1,
+    expectOutput: ['no :root or @theme block'],
+  },
+  {
+    name: 'contrast: a var() cycle fails instead of recursing',
+    guard: CONTRAST,
+    args: ['--css', con('var-cycle.css')],
+    expectExit: 1,
+    expectOutput: ['var() cycle'],
   },
 ];
 

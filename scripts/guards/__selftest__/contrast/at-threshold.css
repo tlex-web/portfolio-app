@@ -1,0 +1,37 @@
+/* Fixture: every pair passes; ink-muted on every background sits exactly at 4.5:1
+   (luminance 0.85 on 0.15), so the threshold must be inclusive. Covers :root,
+   @theme, @theme inline and @theme static blocks, a var() chain, an alias and
+   alpha-bearing decorative/alias tokens that must never be measured. */
+:root {
+  --base-bg: color(xyz-d65 0.15 0.15 0.15);
+  --base-fg: #fff;
+  --edge: color(xyz-d65 0.85 0.85 0.85);
+}
+
+@theme {
+  --text-heading: 1.5rem;
+}
+
+@theme inline {
+  --color-surface: var(--base-bg);
+  --color-surface-raised: var(--color-surface);
+  --color-surface-overlay: var(--color-surface-raised);
+  --color-gallery: var(--base-bg);
+  --color-ink: var(--base-fg);
+  --color-ink-muted: var(--edge);
+  --color-ink-inverse: #000;
+  --color-line: #222;
+  --color-line-strong: #fff;
+  --color-accent: #fff;
+  --color-accent-hover: #fff;
+  --color-focus: #fff;
+  --color-danger: #fff;
+  --color-caution: #fff;
+  --color-success: #fff;
+  --color-contour: oklch(0.94 0.008 85 / 0.14);
+}
+
+@theme static {
+  --color-frost-glow: oklch(0.82 0.1 215 / 0.3); /* v1 alias: skipped */
+  --color-alpine-950: var(--base-bg);
+}

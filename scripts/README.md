@@ -105,6 +105,49 @@ rm -rf public/images/optimized
 npm run optimize-images
 ```
 
+## Guards (`scripts/guards/`)
+
+CI guards that run in `npm run lint` (`eslint . && guard:parity && guard:palette && guard:contrast && guard:selftest`). Each guard prints one line per violation and exits 1 on any failure. `selftest.mjs` runs every guard against the fixtures in `scripts/guards/__selftest__/` and proves that each one can fail.
+
+### `check-palette.mjs` (GUARD-04)
+
+Raw-text scan of `app/`, `components/`, `lib/`, `data/` and `e2e/` (every `__tests__` included), so object maps, template literals, tests and CSS `@apply` are covered.
+
+| Rule | Fails on |
+|------|----------|
+| `dark` | any `dark:` variant |
+| `stock` | any stock Tailwind palette class (`bg-red-500`, `hover:text-cyan-400/50`, ...) |
+| `variant` | a `@custom-variant dark` line in CSS |
+| `wb` | a file's `white`/`black` utility count differing from `palette-ratchet.json` (absent entry = 0) |
+| `png` | a `.png` under `e2e/` that does not end in `-linux.png` |
+| `v1names` | a v1 alias name (`frost-500`, ...) in `components/site/**`, `components/providers/**`, `data/site.ts` |
+| `emoji` | emoji in `.ts/.tsx/.js/.mjs` (©, ®, ™ and ❯ allowed; ✓ ✔ ✗ ✘ banned); skipped in lint until plan 07-25 |
+
+```bash
+npm run guard:palette                     # read-only check (never writes the ratchet)
+npm run guard:palette -- --update         # record lower white/black counts
+node scripts/guards/check-palette.mjs --root <dir> [--ratchet <file>] [--skip <rule,...>]
+```
+
+The ratchet only goes down: a higher count fails, a lower count fails until `--update` records it, and `--update` refuses to raise any count. Never raise a count or add an exemption to make the guard pass.
+
+### `check-contrast.mjs` (GUARD-05)
+
+Reads every token from `app/globals.css` (`:root` and all `@theme` blocks), resolves `var()` chains and measures the 28 UI-SPEC pairs with `colorjs.io` (`contrast(…, 'WCAG21')`): text pairs need 4.5:1, non-text pairs (focus, line-strong) 3:1, compared as raw floats. An unknown `--color-*` token, a missing pair token, an alpha token in a measured pair or a file without token blocks fails. v1 alias tokens are skipped; `line` and `contour` are decorative and exempt. Adding a semantic token means adding it and its pairs to the script in the same commit.
+
+```bash
+npm run guard:contrast
+node scripts/guards/check-contrast.mjs --css <file>
+```
+
+This replaces the old `verify-contrast.mjs` postbuild step, which checked a hand-copied hex table.
+
+### Other guards
+
+- `check-install-parity.mjs` (`guard:parity`): npm ci everywhere, Node 24 pins, Playwright image matches the lockfile, version floors.
+- `test-count.mjs` (`guard:tests`, CI unit job): the test count may only go up; no skipped or focused tests.
+- `same-classnames.mjs`: proves a refactor left every `className` literal unchanged.
+
 ## Adding New Scripts
 
 To add a new utility script:

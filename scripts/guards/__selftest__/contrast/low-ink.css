@@ -1,0 +1,24 @@
+/* Fixture: --color-ink resolves to a 3:1 colour on surface (luminance 0.55 on 0.15) and must fail */
+:root {
+  --base-bg: color(xyz-d65 0.15 0.15 0.15);
+  --dim: color(xyz-d65 0.55 0.55 0.55);
+}
+
+@theme inline {
+  --color-surface: var(--base-bg);
+  --color-surface-raised: #000;
+  --color-surface-overlay: #000;
+  --color-gallery: #000;
+  --color-ink: var(--dim);
+  --color-ink-muted: #fff;
+  --color-ink-inverse: #000;
+  --color-line: #222;
+  --color-line-strong: #fff;
+  --color-accent: #fff;
+  --color-accent-hover: #fff;
+  --color-focus: #fff;
+  --color-danger: #fff;
+  --color-caution: #fff;
+  --color-success: #fff;
+  --color-contour: oklch(0.94 0.008 85 / 0.14);
+}

@@ -1,0 +1,24 @@
+/* Fixture: a var() cycle must fail instead of recursing forever */
+:root {
+  --loop-a: var(--loop-b);
+  --loop-b: var(--loop-a);
+}
+
+@theme inline {
+  --color-surface: #000;
+  --color-surface-raised: #000;
+  --color-surface-overlay: #000;
+  --color-gallery: #000;
+  --color-ink: var(--loop-a);
+  --color-ink-muted: #fff;
+  --color-ink-inverse: #000;
+  --color-line: #222;
+  --color-line-strong: #fff;
+  --color-accent: #fff;
+  --color-accent-hover: #fff;
+  --color-focus: #fff;
+  --color-danger: #fff;
+  --color-caution: #fff;
+  --color-success: #fff;
+  --color-contour: oklch(0.94 0.008 85 / 0.14);
+}

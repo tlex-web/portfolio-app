@@ -7,7 +7,7 @@
     "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint . && npm run guard:parity && npm run guard:palette && npm run guard:selftest",
+    "lint": "eslint . && npm run guard:parity && npm run guard:palette && npm run guard:contrast && npm run guard:selftest",
     "format": "prettier --write .",
     "type-check": "tsc --noEmit",
     "test": "jest",
@@ -17,11 +17,11 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "optimize-images": "node scripts/optimize-images.mjs",
-    "verify-contrast": "node scripts/verify-contrast.mjs",
     "prebuild": "node scripts/optimize-images.mjs",
-    "postbuild": "node scripts/inject-build-hash.mjs && node scripts/verify-contrast.mjs",
+    "postbuild": "node scripts/inject-build-hash.mjs",
     "guard:parity": "node scripts/guards/check-install-parity.mjs",
     "guard:palette": "node scripts/guards/check-palette.mjs --skip emoji",
+    "guard:contrast": "node scripts/guards/check-contrast.mjs",
     "guard:selftest": "node scripts/guards/selftest.mjs",
     "guard:tests": "node scripts/guards/test-count.mjs --jest jest-results.json"
   },
@@ -78,6 +78,7 @@
     "@typescript-eslint/eslint-plugin": "^8.59.3",
     "@typescript-eslint/parser": "^8.59.0",
     "autoprefixer": "^10.5.0",
+    "colorjs.io": "^0.7.1",
     "cross-env": "^10.1.0",
     "eslint": "^9.28.0",
     "eslint-config-next": "^16.4.2",
@@ -90,7 +91,6 @@
     "prettier": "^3.8.3",
     "sharp": "^0.35.5",
     "tailwindcss": "^4.3.0",
-    "typescript": "^6.0.3",
-    "wcag-contrast": "^3.0.0"
+    "typescript": "^6.0.3"
   }
 }

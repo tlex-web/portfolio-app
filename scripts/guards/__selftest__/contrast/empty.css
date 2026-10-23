@@ -1,0 +1,5 @@
+/* Fixture: no :root or @theme block at all must fail, never pass vacuously */
+body {
+  color: #fff;
+  background: #000;
+}

@@ -1,0 +1,18 @@
+/* Fixture: --color-danger is not declared, so its pairs cannot be measured and must fail */
+@theme inline {
+  --color-surface: #000;
+  --color-surface-raised: #000;
+  --color-surface-overlay: #000;
+  --color-gallery: #000;
+  --color-ink: #fff;
+  --color-ink-muted: #fff;
+  --color-ink-inverse: #000;
+  --color-line: #222;
+  --color-line-strong: #fff;
+  --color-accent: #fff;
+  --color-accent-hover: #fff;
+  --color-focus: #fff;
+  --color-caution: #fff;
+  --color-success: #fff;
+  --color-contour: oklch(0.94 0.008 85 / 0.14);
+}

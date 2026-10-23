@@ -1,0 +1,23 @@
+/* Fixture: ink-muted at 4.49:1 (luminance 0.848 on 0.15) must fail: 0.01 below the threshold */
+:root {
+  --base-bg: color(xyz-d65 0.15 0.15 0.15);
+}
+
+@theme inline {
+  --color-surface: var(--base-bg);
+  --color-surface-raised: var(--base-bg);
+  --color-surface-overlay: var(--base-bg);
+  --color-gallery: var(--base-bg);
+  --color-ink: #fff;
+  --color-ink-muted: color(xyz-d65 0.848 0.848 0.848);
+  --color-ink-inverse: #000;
+  --color-line: #222;
+  --color-line-strong: #fff;
+  --color-accent: #fff;
+  --color-accent-hover: #fff;
+  --color-focus: #fff;
+  --color-danger: #fff;
+  --color-caution: #fff;
+  --color-success: #fff;
+  --color-contour: oklch(0.94 0.008 85 / 0.14);
+}
