@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 07
 current_phase_name: Foundation & Guardrails
 status: executing
-stopped_at: Completed 07-20-PLAN.md
-last_updated: "2026-10-23T19:54:05.480Z"
+stopped_at: Completed 07-21-PLAN.md
+last_updated: "2026-10-23T20:07:15.886Z"
 last_activity: 2026-10-23
 last_activity_desc: Phase 07 execution resumed (wave continue)
-state_head: 9c9f252cceb7c879d1c844e3d4cf226f70e8360f
+state_head: 8b9028bc84e44b42d66a5ce211f1160220915ae8
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 26
-  completed_plans: 20
-  percent: 77
+  completed_plans: 21
+  percent: 81
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-10)
 ## Current Position
 
 Phase: 07 (Foundation & Guardrails) — EXECUTING
-Plan: 21 of 26
+Plan: 22 of 26
 Status: Executing Phase 07
 Last activity: 2026-10-23 — Phase 07 execution resumed (wave continue)
 
-Progress: [████████░░] 77%
+Progress: [████████░░] 81%
 
 ## Performance Metrics
 
@@ -74,6 +74,7 @@ Progress: [████████░░] 77%
 | Phase 07 P18 | 46 min | 2 tasks | 13 files |
 | Phase 07 P19 | 24 min | 2 tasks | 18 files |
 | Phase 07 P20 | 13 min | 3 tasks | 28 files |
+| Phase 07 P21 | 9 min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -134,6 +135,9 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-18] 8c map, group Projects (2d87a01): all 198 stock palette classes in app/projects/[slug]/page.tsx, TechStackDisplay, FeatureShowcase, ProjectHighlights, ProjectDetailClient, HologramTerminalDemo and HologramTerminal mapped to L2 semantic utilities (stock count 0; white/black utilities 29 -> 0, so the 07-20 white/black ratchet starts at 0 for this group; no v1 alias, hex, oklch, rgba or arbitrary colour added). Tim's answer 'All recommended': D1 = A neutral hero (bg-surface-raised border-y border-line) and flat What's Next card with border-line; D2 = A GitHub the one bg-accent text-ink-inverse primary, Live Demo and Documentation secondary (bg-surface-overlay text-ink border-line-strong); D3 = A outlined status badge on neutral; D4 = A one neutral tech-chip class (hue map and getTechStyle removed) and neutral feature/highlight tiles, label + icon only; D5 = A no alpha tints (solid surface/line tokens, coloured shadow tints dropped); D6 high risk = danger, window dots bg-line-strong, USER label muted with accent prompt/command; recorded in 2d87a01. Dark ink on accent fails (1.42:1), so accent fills carry text-ink-inverse. Page height +2px from the hero border-y (clix-website 375 +4px with the bordered Live Demo button on its own row). clix-cli/* and clix-website/* {375,768,1440}-reduced-visual-dark re-baselined in the same commit (check-snapshot-commit --allow clix-cli --allow clix-website --allow projects --some OK, 6 changed; projects/* unchanged, the index renders none of the 7 components); CI run 40003018857 green (Visual, Unit, E2E). DSGN-06 and GUARD-04 stay Pending: 07-19 and 07-20 also declare them
 - [Phase 07]: [07-19] 8c map, group Photos + edge pages, the last group (baffad8): all 87 stock palette classes in app/photos/page.tsx, PhotosPageClient, GalleryGrid, ImageDetailModal, InteractiveHotspot, PhotoCarousel3D, app/offline/page.tsx, app/error.tsx and app/not-found.tsx mapped to L2 semantic utilities (no v1 alias, hex, oklch, rgba or arbitrary colour added). The stock count is now 0 across the whole scan set (app, components, lib, data, e2e incl. app/api/__tests__, components/__tests__, lib/__tests__); the 87 left at b1ea33d were all in this group, so 07-20 can enable the palette guard at 0. White/black utilities in the group 56 -> 10, all deliberate black scrims/frames over photos and canvas plus the carousel hover:bg-white/10 (listed in 07-19-SUMMARY; the 07-20 ratchet starts there). Tim's answer 'All recommended': D1 = A photos hero + toggle strip one neutral bg-surface-raised band with border-t/border-b border-line, accent active segment; D2 = B neutral outlined hotspot-count badge; D3 = A black scrims kept, text on them text-ink/text-accent; D4 = A solid bg-accent text-ink-inverse hotspot markers, neutral hover label; D5 = A solid bg-surface hotspot info card, neutral icon tile; D6 = A neutral carousel pill, bg-black frame kept; D7 offline box border-2 border-line-strong, icon text-ink-muted; recorded in baffad8. Fixes the pre-existing offline failures from the 07-14 concern (icon 2.35:1, box border 2.01:1, offline:61 small text now text-ink-muted 8.92:1) and white on the cyan hotspot badge / 3D pill (2.36 / 3.60:1). Page height photos +2px (D1 band hairlines); offline and not-found unchanged. photos/*, offline/* and not-found/* {375,768,1440}-reduced-visual-dark re-baselined in the same commit (check-snapshot-commit --allow photos --allow offline --allow not-found --some OK, 9 changed); CI run 40007564121 green (Visual, Unit, E2E). DSGN-06 and GUARD-04 stay Pending: 07-20 also declares them
 - [Phase 07]: [07-20] 8d remove + enable (9656640, 565f319): @custom-variant dark removed (the dark class stays on <html>, LOCKED shell contract, inert without the variant); scripts/guards/check-palette.mjs (GUARD-04: dark, stock, wb, variant, png, v1names, emoji rules over app, components, lib, data, e2e incl. every __tests__; read-only unless --update, which refuses a raise) with palette-ratchet.json at 17 white/black utilities in 8 files; scripts/guards/check-contrast.mjs (GUARD-05: reads :root and every @theme block of app/globals.css via colorjs.io 0.7.1, 28 UI-SPEC pairs as raw floats, contrast: OK (28 pairs), lowest text danger/surface-overlay 6.18, non-text line-strong/surface-overlay 4.17); lint = eslint + parity + palette + contrast + selftest (45/45). verify-contrast.mjs, its postbuild hook and wcag-contrast removed. guard:palette runs --skip emoji until 07-25 (Footer.tsx:186, email.ts:123). @source not ../.planning, ../.claude, ../graphify-out, ../scripts added to globals.css (compiled CSS 32 dark / 126 stock selectors -> 0 / 0, strict subset), otherwise default dark: would compile to prefers-color-scheme. Zero-diff: CI run 40010907977 green, no re-baseline; Tim approved. GUARD-04, GUARD-05, DSGN-05, DSGN-06 Complete (ready-ids: all ready)
+- [Phase 07]: [07-21] Tim supplied the public email and LinkedIn URL at the Task 1 checkpoint (his reply in session); written verbatim to data/site.ts (old2shatterhand@gmail.com, https://www.linkedin.com/in/luitim/), not derived from git config or account metadata
+- [Phase 07]: [07-21] Shell components built and tested in jsdom, not yet mounted (1ae6ea8, bfb981b RED, 1676756 GREEN): SiteChrome {children, variant default|static}; static SiteNav header is min-h-16 (wrapping row); desktop <ul> precedes the Menu button in DOM order; menu closes on route change (state adjusted during render), Escape, second press, outside pointerdown, focusout to outside the header (null relatedTarget ignored) and (min-width: 768px). SHELL-01/02/03 stay Pending (07-22, 07-23, 07-25 still declare them)
+- [Phase 07]: [07-21] v1 .sr-only/.not-sr-only removed from app/globals.css (77010e7): its clip: rect(0,0,0,0) survived Tailwind's focus:not-sr-only, so focused skip links (new SkipLink and Hero3DMountain) were invisible. globals.css also gained --nav-h/--z-* and html scroll-padding-top; none of these global CSS changes is CI-verified yet (no push), so 07-22's visual run covers them
 
 ### Pending Todos
 
@@ -167,6 +171,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-23T19:53:57.671Z
-Stopped at: Completed 07-20-PLAN.md
+Last session: 2026-10-23T20:07:15.849Z
+Stopped at: Completed 07-21-PLAN.md
 Resume file: None
