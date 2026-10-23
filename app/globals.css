@@ -220,6 +220,15 @@
   [tabindex="-1"]:focus {
     outline: none;
   }
+
+  /* The sticky SiteNav never hides a focused or anchored target (WCAG 2.2
+     focus-not-obscured). Margin on the targets, not scroll padding on html:
+     Motion's useScroll({ target }) is a native ViewTimeline whose `auto` inset
+     is the container's scroll padding, which faded the hero at scrollY 0 (07-21).
+     :where() keeps specificity 0 so scroll-mt-* utilities still override. */
+  :where(*) {
+    scroll-margin-top: calc(var(--nav-h) + 16px);
+  }
 }
 
 /* Scrollbar (DSGN-09, UI-SPEC "Scrollbar"): thin and visible, with a stable
@@ -231,8 +240,6 @@ html {
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: var(--night-500) var(--night-950);
-  /* The sticky SiteNav never hides a focused or anchored target (WCAG 2.2 focus-not-obscured) */
-  scroll-padding-top: calc(var(--nav-h) + 16px);
 }
 
 @supports not (scrollbar-color: auto) {
