@@ -29,7 +29,7 @@ export default function RoadmapPage() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800">
         {/* Hero Section */}
         <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white py-20">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -67,9 +67,9 @@ export default function RoadmapPage() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
-                className="bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-700 sticky top-6"
+                className="bg-gray-800 rounded-xl p-6 border-2 border-gray-700 sticky top-6"
               >
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+                <h2 className="text-2xl font-bold text-white mb-6">
                   Filters
                 </h2>
                 <RoadmapFilters
@@ -81,9 +81,9 @@ export default function RoadmapPage() {
 
                 {/* Active Filters Summary */}
                 {(selectedArea !== 'all' || selectedStatus !== 'all') && (
-                  <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <div className="mt-6 pt-6 border-t border-gray-700">
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      <span className="text-sm font-semibold text-gray-300">
                         Active Filters
                       </span>
                       <button
@@ -91,12 +91,12 @@ export default function RoadmapPage() {
                           setSelectedArea('all');
                           setSelectedStatus('all');
                         }}
-                        className="text-xs text-cyan-600 dark:text-cyan-400 hover:underline"
+                        className="text-xs text-cyan-400 hover:underline"
                       >
                         Clear All
                       </button>
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <div className="text-sm text-gray-400">
                       Showing {filteredItems.length} of {roadmapItems.length} items
                     </div>
                   </div>
@@ -113,10 +113,10 @@ export default function RoadmapPage() {
               >
                 {/* Results Header */}
                 <div className="mb-8">
-                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                  <h2 className="text-3xl font-bold text-white mb-2">
                     Roadmap Timeline
                   </h2>
-                  <p className="text-gray-600 dark:text-gray-400">
+                  <p className="text-gray-400">
                     {filteredItems.length === 0
                       ? 'No items match your filters'
                       : `Showing ${filteredItems.length} roadmap ${
@@ -129,7 +129,7 @@ export default function RoadmapPage() {
                 {filteredItems.length > 0 ? (
                   <RoadmapTimeline items={sortedItems} />
                 ) : (
-                  <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-12 text-center border-2 border-dashed border-gray-300 dark:border-gray-600">
+                  <div className="bg-gray-800 rounded-xl p-12 text-center border-2 border-dashed border-gray-600">
                     <svg
                       className="w-16 h-16 mx-auto mb-4 text-gray-400"
                       fill="none"
@@ -143,10 +143,10 @@ export default function RoadmapPage() {
                         d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                       />
                     </svg>
-                    <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    <h3 className="text-xl font-semibold text-gray-300 mb-2">
                       No Results Found
                     </h3>
-                    <p className="text-gray-600 dark:text-gray-400 mb-6">
+                    <p className="text-gray-400 mb-6">
                       Try adjusting your filters to see more roadmap items
                     </p>
                     <button

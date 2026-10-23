@@ -103,7 +103,7 @@ export default function FeedbackForm() {
     <form onSubmit={handleSubmit} className="max-w-2xl" noValidate>
       {/* Name Field */}
       <div className="mb-6">
-        <label htmlFor="name" className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">
+        <label htmlFor="name" className="block text-sm font-medium mb-2 text-white">
           Name <span className="text-red-600">*</span>
         </label>
         <input
@@ -111,10 +111,10 @@ export default function FeedbackForm() {
           id="name"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white ${
+          className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white ${
             errors.name
               ? 'border-red-500'
-              : 'border-gray-300 dark:border-gray-600'
+              : 'border-gray-600'
           }`}
           aria-invalid={!!errors.name}
           aria-describedby={errors.name ? 'name-error' : undefined}
@@ -128,7 +128,7 @@ export default function FeedbackForm() {
 
       {/* Email Field */}
       <div className="mb-6">
-        <label htmlFor="email" className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">
+        <label htmlFor="email" className="block text-sm font-medium mb-2 text-white">
           Email <span className="text-red-600">*</span>
         </label>
         <input
@@ -136,10 +136,10 @@ export default function FeedbackForm() {
           id="email"
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white ${
+          className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white ${
             errors.email
               ? 'border-red-500'
-              : 'border-gray-300 dark:border-gray-600'
+              : 'border-gray-600'
           }`}
           aria-invalid={!!errors.email}
           aria-describedby={errors.email ? 'email-error' : undefined}
@@ -153,7 +153,7 @@ export default function FeedbackForm() {
 
       {/* Message Field */}
       <div className="mb-6">
-        <label htmlFor="message" className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">
+        <label htmlFor="message" className="block text-sm font-medium mb-2 text-white">
           Message <span className="text-red-600">*</span>
         </label>
         <textarea
@@ -161,10 +161,10 @@ export default function FeedbackForm() {
           rows={6}
           value={formData.message}
           onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-          className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white ${
+          className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white ${
             errors.message
               ? 'border-red-500'
-              : 'border-gray-300 dark:border-gray-600'
+              : 'border-gray-600'
           }`}
           aria-invalid={!!errors.message}
           aria-describedby={errors.message ? 'message-error' : undefined}
@@ -174,7 +174,7 @@ export default function FeedbackForm() {
             {errors.message}
           </p>
         )}
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        <p className="mt-1 text-sm text-gray-400">
           {formData.message.length} / 2000 characters
         </p>
       </div>
@@ -190,7 +190,7 @@ export default function FeedbackForm() {
             }
             className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
           />
-          <span className="ml-2 text-sm text-gray-900 dark:text-white">
+          <span className="ml-2 text-sm text-white">
             I&apos;m interested in collaboration opportunities
           </span>
         </label>
@@ -212,7 +212,7 @@ export default function FeedbackForm() {
       {/* Status Messages */}
       {submitStatus === 'success' && (
         <div
-          className="mt-4 p-4 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-md"
+          className="mt-4 p-4 bg-green-900 text-green-200 rounded-md"
           role="status"
         >
           {submitMessage}
@@ -220,7 +220,7 @@ export default function FeedbackForm() {
       )}
       {submitStatus === 'error' && (
         <div
-          className="mt-4 p-4 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-md"
+          className="mt-4 p-4 bg-red-900 text-red-200 rounded-md"
           role="alert"
         >
           {submitMessage}

@@ -23,25 +23,25 @@ interface RoadmapTimelineProps {
 const statusConfig = {
   completed: {
     color: 'bg-green-500',
-    textColor: 'text-green-700 dark:text-green-300',
-    bgColor: 'bg-green-50 dark:bg-green-900/20',
-    borderColor: 'border-green-200 dark:border-green-800',
+    textColor: 'text-green-300',
+    bgColor: 'bg-green-900/20',
+    borderColor: 'border-green-800',
     Icon: CheckCircle,
     label: 'Completed',
   },
   'in-progress': {
     color: 'bg-blue-500',
-    textColor: 'text-blue-700 dark:text-blue-300',
-    bgColor: 'bg-blue-50 dark:bg-blue-900/20',
-    borderColor: 'border-blue-200 dark:border-blue-800',
+    textColor: 'text-blue-300',
+    bgColor: 'bg-blue-900/20',
+    borderColor: 'border-blue-800',
     Icon: CircleHalf,
     label: 'In Progress',
   },
   planned: {
     color: 'bg-gray-400',
-    textColor: 'text-gray-700 dark:text-gray-300',
-    bgColor: 'bg-gray-50 dark:bg-gray-900/20',
-    borderColor: 'border-gray-200 dark:border-gray-700',
+    textColor: 'text-gray-300',
+    bgColor: 'bg-gray-900/20',
+    borderColor: 'border-gray-700',
     Icon: CircleDashed,
     label: 'Planned',
   },
@@ -50,25 +50,25 @@ const statusConfig = {
 const areaConfig = {
   portfolio: {
     color: 'bg-purple-500',
-    textColor: 'text-purple-700 dark:text-purple-300',
+    textColor: 'text-purple-300',
     Icon: Mountains,
     label: 'Portfolio',
   },
   cli: {
     color: 'bg-cyan-500',
-    textColor: 'text-cyan-700 dark:text-cyan-300',
+    textColor: 'text-cyan-300',
     Icon: TerminalWindow,
     label: 'CLI_X Tool',
   },
   webshop: {
     color: 'bg-orange-500',
-    textColor: 'text-orange-700 dark:text-orange-300',
+    textColor: 'text-orange-300',
     Icon: ShoppingCart,
     label: 'Website',
   },
   other: {
     color: 'bg-gray-500',
-    textColor: 'text-gray-700 dark:text-gray-300',
+    textColor: 'text-gray-300',
     Icon: Package,
     label: 'Other',
   },
@@ -76,17 +76,17 @@ const areaConfig = {
 
 const priorityConfig = {
   high: {
-    color: 'text-red-600 dark:text-red-400',
+    color: 'text-red-400',
     Icon: CaretDoubleUp,
     label: 'High Priority',
   },
   medium: {
-    color: 'text-yellow-600 dark:text-yellow-400',
+    color: 'text-yellow-400',
     Icon: Equals,
     label: 'Medium Priority',
   },
   low: {
-    color: 'text-green-600 dark:text-green-400',
+    color: 'text-green-400',
     Icon: CaretDown,
     label: 'Low Priority',
   },
@@ -117,7 +117,7 @@ export default function RoadmapTimeline({ items }: RoadmapTimelineProps) {
               {/* Timeline Dot */}
               <div className="absolute left-6 top-6 -translate-x-1/2">
                 <div
-                  className={`w-6 h-6 rounded-full ${status.color} border-4 border-white dark:border-gray-900 shadow-lg flex items-center justify-center`}
+                  className={`w-6 h-6 rounded-full ${status.color} border-4 border-gray-900 shadow-lg flex items-center justify-center`}
                 >
                   <status.Icon size={20} aria-hidden="true" className="text-white" />
                 </div>
@@ -130,7 +130,7 @@ export default function RoadmapTimeline({ items }: RoadmapTimelineProps) {
                 {/* Header */}
                 <div className="flex items-start justify-between gap-4 mb-3">
                   <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                    <h3 className="text-xl font-bold text-white mb-2">
                       {item.title}
                     </h3>
                     <div className="flex flex-wrap gap-2">
@@ -153,7 +153,7 @@ export default function RoadmapTimeline({ items }: RoadmapTimelineProps) {
                       {/* Priority Badge */}
                       {priority && (
                         <span
-                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${priority.color} bg-white dark:bg-gray-800 border-2 border-current`}
+                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${priority.color} bg-gray-800 border-2 border-current`}
                         >
                           <priority.Icon size={20} aria-hidden="true" />
                           {priority.label}
@@ -165,10 +165,10 @@ export default function RoadmapTimeline({ items }: RoadmapTimelineProps) {
                   {/* Target Release */}
                   {item.targetRelease && (
                     <div className="text-right">
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                      <div className="text-xs text-gray-400 mb-1">
                         Target Release
                       </div>
-                      <div className="text-sm font-semibold text-gray-900 dark:text-white px-3 py-1 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <div className="text-sm font-semibold text-white px-3 py-1 bg-gray-800 rounded-lg border border-gray-700">
                         {item.targetRelease}
                       </div>
                     </div>
@@ -176,18 +176,18 @@ export default function RoadmapTimeline({ items }: RoadmapTimelineProps) {
                 </div>
 
                 {/* Description */}
-                <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                <p className="text-gray-300 leading-relaxed">
                   {item.description}
                 </p>
 
                 {/* Progress Bar for In-Progress Items */}
                 {item.status === 'in-progress' && (
                   <div className="mt-4">
-                    <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-2">
+                    <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
                       <span>Progress</span>
                       <span>In Development</span>
                     </div>
-                    <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
                       <motion.div
                         className="h-full bg-gradient-to-r from-blue-500 to-cyan-500"
                         initial={prefersReducedMotion ? false : { width: 0 }}
@@ -200,7 +200,7 @@ export default function RoadmapTimeline({ items }: RoadmapTimelineProps) {
 
                 {/* Completion Indicator for Completed Items */}
                 {item.status === 'completed' && (
-                  <div className="mt-4 flex items-center gap-2 text-green-600 dark:text-green-400">
+                  <div className="mt-4 flex items-center gap-2 text-green-400">
                     <svg
                       className="w-5 h-5"
                       fill="currentColor"

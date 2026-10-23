@@ -17,10 +17,10 @@ export default function Error({
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center">
-      <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-white">
+      <h1 className="text-4xl font-bold mb-4 text-white">
         Something went wrong!
       </h1>
-      <p className="text-lg text-gray-700 dark:text-gray-300 mb-8">
+      <p className="text-lg text-gray-300 mb-8">
         We apologize for the inconvenience. An error occurred while rendering this page.
       </p>
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -32,7 +32,7 @@ export default function Error({
         </button>
         <Link
           href="/"
-          className="px-6 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          className="px-6 py-3 border-2 border-gray-600 rounded-md hover:bg-gray-800 transition-colors"
         >
           Go to Homepage
         </Link>

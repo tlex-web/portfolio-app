@@ -48,7 +48,7 @@ export default function RoadmapFilters({
     <div className="space-y-6">
       {/* Area Filter */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+        <h3 className="text-sm font-semibold text-gray-300 mb-3">
           Filter by Project
         </h3>
         <div className="flex flex-wrap gap-2">
@@ -65,7 +65,7 @@ export default function RoadmapFilters({
                 className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                   isSelected
                     ? 'bg-cyan-600 text-white shadow-lg'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                 }`}
               >
                 <area.Icon size={20} aria-hidden="true" />
@@ -78,7 +78,7 @@ export default function RoadmapFilters({
 
       {/* Status Filter */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+        <h3 className="text-sm font-semibold text-gray-300 mb-3">
           Filter by Status
         </h3>
         <div className="flex flex-wrap gap-2">
@@ -95,7 +95,7 @@ export default function RoadmapFilters({
                 className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                   isSelected
                     ? 'bg-blue-600 text-white shadow-lg'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                 }`}
               >
                 <status.Icon size={20} aria-hidden="true" />
