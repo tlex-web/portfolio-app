@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 07
 current_phase_name: Foundation & Guardrails
 status: executing
-stopped_at: Completed 07-16-PLAN.md
-last_updated: "2026-10-23T17:08:40.588Z"
+stopped_at: Completed 07-17-PLAN.md
+last_updated: "2026-10-23T17:38:16.054Z"
 last_activity: 2026-10-23
 last_activity_desc: Phase 07 execution resumed (wave continue)
-state_head: 74044b0eec6c1936337f26153ea2ac3a71d2f4fc
+state_head: dfcbe202da69a1905ec604da384bea9bde69db66
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 26
-  completed_plans: 16
-  percent: 62
+  completed_plans: 17
+  percent: 65
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-10)
 ## Current Position
 
 Phase: 07 (Foundation & Guardrails) — EXECUTING
-Plan: 17 of 26
+Plan: 18 of 26
 Status: Executing Phase 07
 Last activity: 2026-10-23 — Phase 07 execution resumed (wave continue)
 
-Progress: [██████░░░░] 62%
+Progress: [███████░░░] 65%
 
 ## Performance Metrics
 
@@ -70,6 +70,7 @@ Progress: [██████░░░░] 62%
 | Phase 07 P14 | 14 min | 2 tasks | 41 files |
 | Phase 07 P15 | 16 min | 3 tasks | 18 files |
 | Phase 07 P16 | 18 min | 2 tasks | 5 files |
+| Phase 07 P17 | 19 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -126,6 +127,7 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-14] A project-level expect in Playwright REPLACES the top-level expect (takeFirst(projectConfig.expect, config.expect, {}), node_modules/playwright/lib/common/index.js:607), so a project override without the shared options silently falls back to threshold 0.2. playwright.config.ts now has const SCREENSHOT = { animations: disabled, caret: hide, threshold: 0.01 }, used at the top level and spread into visual-light; any future project override must spread SCREENSHOT
 - [Phase 07]: [07-15] DSGN-05 stage 2 collapse (0951de8, d114b42): every `A dark:B` pair in the 18 files collapsed to `B` (228 dark: tokens on 177 lines -> 0; 6 unpaired FeedbackForm dark: utilities lost their prefix). The 8b collapse is zero-diff: CI run 39875749247 green (Visual, Unit, E2E), 0 PNGs changed, no re-baseline. The dark: utilities are gone from code (app, components, lib, data, e2e count 0); only @custom-variant dark in app/globals.css remains (removed in 07-20). DSGN-05 stays Pending: 07-20 also declares it
 - [Phase 07]: [07-16] 8c map, group Contact (1807682): every stock palette class in app/contact/page.tsx and components/FeedbackForm.tsx mapped to L2 semantic utilities (stock count 0; no v1 alias, hex, oklch, rgba or arbitrary colour added; focus:ring-* removed for the global focus-visible ring). Status boxes outlined (bg-surface-overlay border border-success/danger text-ink) and pending submit is the faded accent (bg-accent text-ink-inverse opacity-50), Tim's D1/D2 choices recorded in 1807682. contact/{375,768,1440}-reduced-visual-dark re-baselined in the same commit (check-snapshot-commit --allow contact --some OK, 3 changed); CI run 39879694150 green (Visual, Unit, E2E). DSGN-06 and GUARD-04 stay Pending: 07-17..07-20 also declare them
+- [Phase 07]: [07-17] 8c map, group Roadmap (b7b56cf): all 98 stock palette classes in app/roadmap/page.tsx, RoadmapTimeline, RoadmapProgress and RoadmapFilters mapped to L2 semantic utilities (stock count 0; no v1 alias, hex, oklch, rgba, arbitrary colour, text-white, bg-white or black left, so the 07-20 white/black ratchet starts at 0 for this group). Tim's D1 = A outlined status on neutral (cards bg-surface-raised border-2 border-success/accent/line, badges bg-surface-overlay border text-success/accent), D2 = A neutral hero and CTA bands (bg-surface-raised border-y border-line; Contact Me the one bg-accent text-ink-inverse CTA), D3 = A neutral area chips (bg-surface-overlay text-ink border-line-strong) with bg-accent Breakdown bars, chip edge kept mechanical; recorded in b7b56cf. White on accent/success fails (1.69/1.77:1), so icons on those fills use text-ink-inverse. Page height grew (1440/768 +4px from the two border-y bands; 375 +34px, +2px per card from the 1px area-chip border where badges stack). roadmap/{375,768,1440}-reduced-visual-dark re-baselined in the same commit (check-snapshot-commit --allow roadmap --some OK, 3 changed); CI run 39995314853 green (Visual, Unit, E2E). DSGN-06 and GUARD-04 stay Pending: 07-18..07-20 also declare them
 
 ### Pending Todos
 
@@ -157,6 +159,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-23T17:08:12.055Z
-Stopped at: Completed 07-16-PLAN.md
+Last session: 2026-10-23T17:38:16.020Z
+Stopped at: Completed 07-17-PLAN.md
 Resume file: None
