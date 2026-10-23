@@ -51,7 +51,7 @@ export default function ImageDetailModal({ image, onClose }: ImageDetailModalPro
     >
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Escape is handled on document; replaced by the Phase 10 lightbox */}
       <div
-        className="relative w-full max-w-6xl max-h-[90vh] bg-white dark:bg-gray-900 rounded-lg overflow-y-auto"
+        className="relative w-full max-w-6xl max-h-[90vh] bg-gray-900 rounded-lg overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
@@ -129,66 +129,66 @@ export default function ImageDetailModal({ image, onClose }: ImageDetailModalPro
 
         {/* Details */}
         <div className="p-6 md:p-8">
-          <h2 id="modal-title" className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
+          <h2 id="modal-title" className="text-3xl font-bold mb-2 text-white">
             {image.title}
           </h2>
-          <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">{image.location}</p>
+          <p className="text-lg text-gray-400 mb-6">{image.location}</p>
 
           <div className="mb-6">
-            <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Story</h3>
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{image.story}</p>
+            <h3 className="text-xl font-semibold mb-2 text-white">Story</h3>
+            <p className="text-gray-300 leading-relaxed">{image.story}</p>
           </div>
 
           {/* Technical Details */}
           <div className="mb-6">
-            <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">
+            <h3 className="text-xl font-semibold mb-3 text-white">
               Technical Details
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {image.technicalDetails.camera && (
                 <div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Camera</span>
-                  <p className="font-medium text-gray-900 dark:text-white">
+                  <span className="text-sm text-gray-400">Camera</span>
+                  <p className="font-medium text-white">
                     {image.technicalDetails.camera}
                   </p>
                 </div>
               )}
               {image.technicalDetails.lens && (
                 <div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Lens</span>
-                  <p className="font-medium text-gray-900 dark:text-white">
+                  <span className="text-sm text-gray-400">Lens</span>
+                  <p className="font-medium text-white">
                     {image.technicalDetails.lens}
                   </p>
                 </div>
               )}
               {image.technicalDetails.aperture && (
                 <div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Aperture</span>
-                  <p className="font-medium text-gray-900 dark:text-white">
+                  <span className="text-sm text-gray-400">Aperture</span>
+                  <p className="font-medium text-white">
                     {image.technicalDetails.aperture}
                   </p>
                 </div>
               )}
               {image.technicalDetails.shutterSpeed && (
                 <div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Shutter Speed</span>
-                  <p className="font-medium text-gray-900 dark:text-white">
+                  <span className="text-sm text-gray-400">Shutter Speed</span>
+                  <p className="font-medium text-white">
                     {image.technicalDetails.shutterSpeed}
                   </p>
                 </div>
               )}
               {image.technicalDetails.iso && (
                 <div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">ISO</span>
-                  <p className="font-medium text-gray-900 dark:text-white">
+                  <span className="text-sm text-gray-400">ISO</span>
+                  <p className="font-medium text-white">
                     {image.technicalDetails.iso}
                   </p>
                 </div>
               )}
               {image.technicalDetails.captureDate && (
                 <div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Date</span>
-                  <p className="font-medium text-gray-900 dark:text-white">
+                  <span className="text-sm text-gray-400">Date</span>
+                  <p className="font-medium text-white">
                     {new Date(image.technicalDetails.captureDate).toLocaleDateString()}
                   </p>
                 </div>
@@ -198,12 +198,12 @@ export default function ImageDetailModal({ image, onClose }: ImageDetailModalPro
 
           {/* Tags */}
           <div>
-            <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">Tags</h3>
+            <h3 className="text-xl font-semibold mb-3 text-white">Tags</h3>
             <div className="flex flex-wrap gap-2">
               {image.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-full text-sm"
+                  className="px-3 py-1 bg-gray-700 text-gray-200 rounded-full text-sm"
                 >
                   {tag}
                 </span>

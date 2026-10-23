@@ -21,16 +21,16 @@ export default async function ProjectDetailPage({ params }: PageProps) {
   }
 
   const statusColors = {
-    active: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-    beta: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-    complete: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-    archived: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
+    active: 'bg-green-900 text-green-200',
+    beta: 'bg-yellow-900 text-yellow-200',
+    complete: 'bg-blue-900 text-blue-200',
+    archived: 'bg-gray-700 text-gray-200',
   };
 
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800">
         {/* Hero Section - Server Component */}
         <div className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white py-20">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -141,11 +141,11 @@ export default async function ProjectDetailPage({ params }: PageProps) {
           {/* Related Roadmap Items */}
           {project.roadmapItems && project.roadmapItems.length > 0 && (
             <section>
-              <h2 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white text-center">
+              <h2 className="text-3xl font-bold mb-8 text-white text-center">
                 What&apos;s Next?
               </h2>
-              <div className="bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 rounded-xl p-8 border-2 border-cyan-200 dark:border-cyan-800">
-                <p className="text-lg text-gray-700 dark:text-gray-300 mb-4 text-center">
+              <div className="bg-gradient-to-br from-gray-800 to-gray-700 rounded-xl p-8 border-2 border-cyan-800">
+                <p className="text-lg text-gray-300 mb-4 text-center">
                   Check out the roadmap to see planned features and improvements for this project.
                 </p>
                 <div className="text-center">

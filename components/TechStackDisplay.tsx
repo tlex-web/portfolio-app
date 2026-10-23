@@ -20,7 +20,7 @@ const techLogos: Record<string, { color: string; bg: string }> = {
   ollama: { color: 'text-green-500', bg: 'bg-green-500/10' },
   sqlite: { color: 'text-blue-400', bg: 'bg-blue-400/10' },
   docker: { color: 'text-blue-600', bg: 'bg-blue-600/10' },
-  'next.js': { color: 'text-gray-900 dark:text-white', bg: 'bg-gray-900/10 dark:bg-white/10' },
+  'next.js': { color: 'text-white', bg: 'bg-white/10' },
   typescript: { color: 'text-blue-600', bg: 'bg-blue-600/10' },
   react: { color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
   tailwind: { color: 'text-cyan-400', bg: 'bg-cyan-400/10' },
@@ -29,13 +29,13 @@ const techLogos: Record<string, { color: string; bg: string }> = {
   prisma: { color: 'text-indigo-600', bg: 'bg-indigo-600/10' },
   nextauth: { color: 'text-purple-600', bg: 'bg-purple-600/10' },
   stripe: { color: 'text-indigo-600', bg: 'bg-indigo-600/10' },
-  vercel: { color: 'text-gray-900 dark:text-white', bg: 'bg-gray-900/10 dark:bg-white/10' },
+  vercel: { color: 'text-white', bg: 'bg-white/10' },
   node: { color: 'text-green-600', bg: 'bg-green-600/10' },
   python: { color: 'text-blue-500', bg: 'bg-blue-500/10' },
   zod: { color: 'text-blue-600', bg: 'bg-blue-600/10' },
   clap: { color: 'text-orange-500', bg: 'bg-orange-500/10' },
   serde: { color: 'text-orange-500', bg: 'bg-orange-500/10' },
-  'shadcn/ui': { color: 'text-gray-900 dark:text-white', bg: 'bg-gray-900/10 dark:bg-white/10' },
+  'shadcn/ui': { color: 'text-white', bg: 'bg-white/10' },
   'react hook form': { color: 'text-pink-500', bg: 'bg-pink-500/10' },
 };
 
@@ -49,14 +49,14 @@ function getTechStyle(tech: string): { color: string; bg: string } {
   }
   
   // Default style
-  return { color: 'text-gray-600 dark:text-gray-300', bg: 'bg-gray-500/10' };
+  return { color: 'text-gray-300', bg: 'bg-gray-500/10' };
 }
 
 export default function TechStackDisplay({ techStack, title = 'Tech Stack' }: TechStackDisplayProps) {
   const prefersReducedMotion = useReducedMotion();
   return (
     <div className="w-full">
-      <h2 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white text-center">
+      <h2 className="text-3xl font-bold mb-8 text-white text-center">
         {title}
       </h2>
 
@@ -96,11 +96,11 @@ export default function TechStackDisplay({ techStack, title = 'Tech Stack' }: Te
       {/* Tech Count */}
       <div className="mt-8 text-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/10 border border-purple-500/30 rounded-full">
-          <span className="text-purple-600 dark:text-purple-400 font-semibold">
+          <span className="text-purple-400 font-semibold">
             {techStack.length} Technologies
           </span>
-          <span className="text-gray-500 dark:text-gray-400">•</span>
-          <span className="text-gray-600 dark:text-gray-300">Production Ready</span>
+          <span className="text-gray-400">•</span>
+          <span className="text-gray-300">Production Ready</span>
         </div>
       </div>
     </div>

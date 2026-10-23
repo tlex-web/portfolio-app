@@ -123,7 +123,7 @@ export default function InteractiveHotspot({ annotation, onHover }: InteractiveH
               style={{ zIndex: 99999 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl p-6 border border-white/20">
+              <div className="bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl p-6 border border-white/20">
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -131,11 +131,11 @@ export default function InteractiveHotspot({ annotation, onHover }: InteractiveH
                       {iconMap[annotation.icon]}
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                      <h3 className="text-xl font-bold text-white">
                         {annotation.title}
                       </h3>
                       {annotation.details?.elevation && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-sm text-gray-400">
                           {annotation.details.elevation}
                         </p>
                       )}
@@ -143,7 +143,7 @@ export default function InteractiveHotspot({ annotation, onHover }: InteractiveH
                   </div>
                   <button
                     onClick={() => setIsOpen(false)}
-                    className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    className="p-2 rounded-lg hover:bg-gray-800 transition-colors"
                     aria-label="Close"
                   >
                     <svg
@@ -163,7 +163,7 @@ export default function InteractiveHotspot({ annotation, onHover }: InteractiveH
                 </div>
 
                 {/* Description */}
-                <p className="text-gray-700 dark:text-gray-300 mb-4">
+                <p className="text-gray-300 mb-4">
                   {annotation.description}
                 </p>
 
@@ -171,19 +171,19 @@ export default function InteractiveHotspot({ annotation, onHover }: InteractiveH
                 {annotation.details && (
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     {annotation.details.temperature && (
-                      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                      <div className="bg-gray-800 rounded-lg p-3">
+                        <p className="text-xs text-gray-400 mb-1">
                           Temperature
                         </p>
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                        <p className="text-sm font-semibold text-white">
                           {annotation.details.temperature}
                         </p>
                       </div>
                     )}
                     {annotation.details.distance && (
-                      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Distance</p>
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                      <div className="bg-gray-800 rounded-lg p-3">
+                        <p className="text-xs text-gray-400 mb-1">Distance</p>
+                        <p className="text-sm font-semibold text-white">
                           {annotation.details.distance}
                         </p>
                       </div>
@@ -193,15 +193,15 @@ export default function InteractiveHotspot({ annotation, onHover }: InteractiveH
 
                 {/* Fun Facts */}
                 {annotation.details?.facts && annotation.details.facts.length > 0 && (
-                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                  <div className="border-t border-gray-700 pt-4">
+                    <h4 className="text-sm font-semibold text-white mb-2">
                       Did you know?
                     </h4>
                     <ul className="space-y-2">
                       {annotation.details.facts.map((fact, index) => (
                         <li key={index} className="flex items-start gap-2 text-sm">
                           <span className="text-cyan-500 mt-0.5">•</span>
-                          <span className="text-gray-600 dark:text-gray-400">{fact}</span>
+                          <span className="text-gray-400">{fact}</span>
                         </li>
                       ))}
                     </ul>

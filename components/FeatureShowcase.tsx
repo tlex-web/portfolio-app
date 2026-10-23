@@ -71,7 +71,7 @@ export default function FeatureShowcase({ features, title = 'Key Features' }: Fe
 
   return (
     <div className="w-full">
-      <h2 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white text-center">
+      <h2 className="text-3xl font-bold mb-8 text-white text-center">
         {title}
       </h2>
 
@@ -93,8 +93,8 @@ export default function FeatureShowcase({ features, title = 'Key Features' }: Fe
               <div
                 className={`relative h-full p-6 rounded-xl border-2 transition-all duration-300 ${
                   isHovered
-                    ? 'border-cyan-500 bg-white dark:bg-gray-800 shadow-xl scale-105'
-                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50'
+                    ? 'border-cyan-500 bg-gray-800 shadow-xl scale-105'
+                    : 'border-gray-700 bg-gray-800/50'
                 }`}
               >
                 {/* Icon */}
@@ -107,7 +107,7 @@ export default function FeatureShowcase({ features, title = 'Key Features' }: Fe
                 </div>
 
                 {/* Feature Text */}
-                <div className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                <div className="text-gray-300 leading-relaxed">
                   {feature}
                 </div>
 
@@ -128,11 +128,11 @@ export default function FeatureShowcase({ features, title = 'Key Features' }: Fe
       {/* Feature Count */}
       <div className="mt-8 text-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-500/10 border border-cyan-500/30 rounded-full">
-          <span className="text-cyan-600 dark:text-cyan-400 font-semibold">
+          <span className="text-cyan-400 font-semibold">
             {features.length} Features
           </span>
-          <span className="text-gray-500 dark:text-gray-400">•</span>
-          <span className="text-gray-600 dark:text-gray-300">Fully Implemented</span>
+          <span className="text-gray-400">•</span>
+          <span className="text-gray-300">Fully Implemented</span>
         </div>
       </div>
     </div>

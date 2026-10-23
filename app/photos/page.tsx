@@ -7,7 +7,7 @@ export default function PhotosPage() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800">
         {/* Hero Section - Static Server Component */}
         <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-20">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">

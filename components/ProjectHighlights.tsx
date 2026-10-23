@@ -38,7 +38,7 @@ export default function ProjectHighlights({ highlights, title = 'Project Highlig
   const prefersReducedMotion = useReducedMotion();
   const renderValue = (value: HighlightValue): React.ReactNode => {
     if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-      return <span className="text-cyan-600 dark:text-cyan-400 font-semibold">{String(value)}</span>;
+      return <span className="text-cyan-400 font-semibold">{String(value)}</span>;
     }
     
     if (Array.isArray(value)) {
@@ -58,8 +58,8 @@ export default function ProjectHighlights({ highlights, title = 'Project Highlig
       return (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
           {Object.entries(value).map(([subKey, subValue]) => (
-            <div key={subKey} className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-              <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
+            <div key={subKey} className="p-3 bg-gray-800/50 rounded-lg">
+              <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">
                 {subKey.replace(/([A-Z])/g, ' $1').trim()}
               </div>
               <div className="text-sm">{renderValue(subValue)}</div>
@@ -74,7 +74,7 @@ export default function ProjectHighlights({ highlights, title = 'Project Highlig
 
   return (
     <div className="w-full">
-      <h2 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white text-center">
+      <h2 className="text-3xl font-bold mb-8 text-white text-center">
         {title}
       </h2>
 
@@ -89,19 +89,19 @@ export default function ProjectHighlights({ highlights, title = 'Project Highlig
               transition={prefersReducedMotion ? { duration: 0 } : { delay: index * 0.1, duration: 0.3 }}
               className="group"
             >
-              <div className="p-6 bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-cyan-500 transition-all duration-300 shadow-sm hover:shadow-xl h-full">
+              <div className="p-6 bg-gray-800 rounded-xl border-2 border-gray-700 hover:border-cyan-500 transition-all duration-300 shadow-sm hover:shadow-xl h-full">
                 {/* Section Title */}
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
                     <Icon size={20} aria-hidden="true" className="text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white capitalize">
+                  <h3 className="text-xl font-bold text-white capitalize">
                     {key.replace(/([A-Z])/g, ' $1').trim()}
                   </h3>
                 </div>
 
                 {/* Section Content */}
-                <div className="text-gray-700 dark:text-gray-300">
+                <div className="text-gray-300">
                   {renderValue(value)}
                 </div>
               </div>

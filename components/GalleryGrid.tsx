@@ -34,7 +34,7 @@ export default function GalleryGrid({ images, itemsPerPage = 12 }: GalleryGridPr
           <button
             key={image.id}
             onClick={() => setSelectedImage(image)}
-            className="group relative aspect-[4/3] overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800 hover:scale-105 transition-transform duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="group relative aspect-[4/3] overflow-hidden rounded-lg bg-gray-800 hover:scale-105 transition-transform duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label={`View details for ${image.title}`}
           >
             <Image
@@ -87,7 +87,7 @@ export default function GalleryGrid({ images, itemsPerPage = 12 }: GalleryGridPr
             <button
               onClick={() => goToPage(currentPage - 1)}
               disabled={currentPage === 1}
-              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium border border-gray-300 dark:border-gray-600"
+              className="px-4 py-2 rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium border border-gray-600"
               aria-label="Previous page"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -104,7 +104,7 @@ export default function GalleryGrid({ images, itemsPerPage = 12 }: GalleryGridPr
                   className={`px-4 py-2 rounded-lg font-medium transition-all ${
                     page === currentPage
                       ? 'bg-blue-600 text-white shadow-lg'
-                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600'
+                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-600'
                   }`}
                   aria-label={`Go to page ${page}`}
                   aria-current={page === currentPage ? 'page' : undefined}
@@ -118,7 +118,7 @@ export default function GalleryGrid({ images, itemsPerPage = 12 }: GalleryGridPr
             <button
               onClick={() => goToPage(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium border border-gray-300 dark:border-gray-600"
+              className="px-4 py-2 rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium border border-gray-600"
               aria-label="Next page"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -128,7 +128,7 @@ export default function GalleryGrid({ images, itemsPerPage = 12 }: GalleryGridPr
           </div>
 
           {/* Page Info */}
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-gray-400">
             Showing {startIndex + 1}-{Math.min(endIndex, images.length)} of {images.length} images
           </p>
         </div>
