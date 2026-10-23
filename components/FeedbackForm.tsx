@@ -103,24 +103,24 @@ export default function FeedbackForm() {
     <form onSubmit={handleSubmit} className="max-w-2xl" noValidate>
       {/* Name Field */}
       <div className="mb-6">
-        <label htmlFor="name" className="block text-sm font-medium mb-2 text-white">
-          Name <span className="text-red-600">*</span>
+        <label htmlFor="name" className="block text-sm font-medium mb-2 text-ink">
+          Name <span className="text-danger">*</span>
         </label>
         <input
           type="text"
           id="name"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white ${
+          className={`w-full px-4 py-2 border rounded-md bg-surface-overlay text-ink ${
             errors.name
-              ? 'border-red-500'
-              : 'border-gray-600'
+              ? 'border-danger'
+              : 'border-line-strong'
           }`}
           aria-invalid={!!errors.name}
           aria-describedby={errors.name ? 'name-error' : undefined}
         />
         {errors.name && (
-          <p id="name-error" className="mt-1 text-sm text-red-600" role="alert">
+          <p id="name-error" className="mt-1 text-sm text-danger" role="alert">
             {errors.name}
           </p>
         )}
@@ -128,24 +128,24 @@ export default function FeedbackForm() {
 
       {/* Email Field */}
       <div className="mb-6">
-        <label htmlFor="email" className="block text-sm font-medium mb-2 text-white">
-          Email <span className="text-red-600">*</span>
+        <label htmlFor="email" className="block text-sm font-medium mb-2 text-ink">
+          Email <span className="text-danger">*</span>
         </label>
         <input
           type="email"
           id="email"
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white ${
+          className={`w-full px-4 py-2 border rounded-md bg-surface-overlay text-ink ${
             errors.email
-              ? 'border-red-500'
-              : 'border-gray-600'
+              ? 'border-danger'
+              : 'border-line-strong'
           }`}
           aria-invalid={!!errors.email}
           aria-describedby={errors.email ? 'email-error' : undefined}
         />
         {errors.email && (
-          <p id="email-error" className="mt-1 text-sm text-red-600" role="alert">
+          <p id="email-error" className="mt-1 text-sm text-danger" role="alert">
             {errors.email}
           </p>
         )}
@@ -153,28 +153,28 @@ export default function FeedbackForm() {
 
       {/* Message Field */}
       <div className="mb-6">
-        <label htmlFor="message" className="block text-sm font-medium mb-2 text-white">
-          Message <span className="text-red-600">*</span>
+        <label htmlFor="message" className="block text-sm font-medium mb-2 text-ink">
+          Message <span className="text-danger">*</span>
         </label>
         <textarea
           id="message"
           rows={6}
           value={formData.message}
           onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-          className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white ${
+          className={`w-full px-4 py-2 border rounded-md bg-surface-overlay text-ink ${
             errors.message
-              ? 'border-red-500'
-              : 'border-gray-600'
+              ? 'border-danger'
+              : 'border-line-strong'
           }`}
           aria-invalid={!!errors.message}
           aria-describedby={errors.message ? 'message-error' : undefined}
         />
         {errors.message && (
-          <p id="message-error" className="mt-1 text-sm text-red-600" role="alert">
+          <p id="message-error" className="mt-1 text-sm text-danger" role="alert">
             {errors.message}
           </p>
         )}
-        <p className="mt-1 text-sm text-gray-400">
+        <p className="mt-1 text-sm text-ink-muted">
           {formData.message.length} / 2000 characters
         </p>
       </div>
@@ -188,9 +188,9 @@ export default function FeedbackForm() {
             onChange={(e) =>
               setFormData({ ...formData, interestedInCollaboration: e.target.checked })
             }
-            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            className="w-4 h-4 text-accent border-line-strong rounded"
           />
-          <span className="ml-2 text-sm text-white">
+          <span className="ml-2 text-sm text-ink">
             I&apos;m interested in collaboration opportunities
           </span>
         </label>
@@ -200,10 +200,10 @@ export default function FeedbackForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className={`px-6 py-3 rounded-md font-medium transition-colors ${
+        className={`px-6 py-3 rounded-md font-medium transition-colors bg-accent text-ink-inverse ${
           isSubmitting
-            ? 'bg-gray-400 cursor-not-allowed'
-            : 'bg-blue-600 hover:bg-blue-700 text-white'
+            ? 'opacity-50 cursor-not-allowed'
+            : 'hover:bg-accent-hover'
         }`}
       >
         {isSubmitting ? 'Sending...' : 'Send Message'}
@@ -212,7 +212,7 @@ export default function FeedbackForm() {
       {/* Status Messages */}
       {submitStatus === 'success' && (
         <div
-          className="mt-4 p-4 bg-green-900 text-green-200 rounded-md"
+          className="mt-4 p-4 bg-surface-overlay border border-success text-ink rounded-md"
           role="status"
         >
           {submitMessage}
@@ -220,7 +220,7 @@ export default function FeedbackForm() {
       )}
       {submitStatus === 'error' && (
         <div
-          className="mt-4 p-4 bg-red-900 text-red-200 rounded-md"
+          className="mt-4 p-4 bg-surface-overlay border border-danger text-ink rounded-md"
           role="alert"
         >
           {submitMessage}
