@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 07
 current_phase_name: Foundation & Guardrails
 status: executing
-stopped_at: Completed 07-21-PLAN.md
-last_updated: "2026-10-23T20:26:42.469Z"
+stopped_at: Completed 07-22-PLAN.md
+last_updated: "2026-10-23T22:06:15.394Z"
 last_activity: 2026-10-23
 last_activity_desc: Phase 07 execution resumed (wave continue)
-state_head: 5544cc3a90b3043dcb00e016fb1c35f301ce7728
+state_head: 91ca56629ffe32ba17f2eda1bb22e3c02f9807ef
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 26
-  completed_plans: 21
-  percent: 81
+  completed_plans: 22
+  percent: 85
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-10)
 ## Current Position
 
 Phase: 07 (Foundation & Guardrails) — EXECUTING
-Plan: 22 of 26
+Plan: 23 of 26
 Status: Executing Phase 07
 Last activity: 2026-10-23 — Phase 07 execution resumed (wave continue)
 
-Progress: [████████░░] 81%
+Progress: [█████████░] 85%
 
 ## Performance Metrics
 
@@ -75,6 +75,7 @@ Progress: [████████░░] 81%
 | Phase 07 P19 | 24 min | 2 tasks | 18 files |
 | Phase 07 P20 | 13 min | 3 tasks | 28 files |
 | Phase 07 P21 | 9 min | 3 tasks | 9 files |
+| Phase 07 P22 | 1h 28m | 3 tasks | 47 files |
 
 ## Accumulated Context
 
@@ -139,6 +140,8 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-21] Shell components built and tested in jsdom, not yet mounted (1ae6ea8, bfb981b RED, 1676756 GREEN): SiteChrome {children, variant default|static}; static SiteNav header is min-h-16 (wrapping row); desktop <ul> precedes the Menu button in DOM order; menu closes on route change (state adjusted during render), Escape, second press, outside pointerdown, focusout to outside the header (null relatedTarget ignored) and (min-width: 768px). SHELL-01/02/03 stay Pending (07-22, 07-23, 07-25 still declare them)
 - [Phase 07]: [07-21] v1 .sr-only/.not-sr-only removed from app/globals.css (77010e7): its clip: rect(0,0,0,0) survived Tailwind's focus:not-sr-only, so focused skip links (new SkipLink and Hero3DMountain) were invisible. globals.css also gained --nav-h/--z-* and html scroll-padding-top; none of these global CSS changes is CI-verified yet (no push), so 07-22's visual run covers them
 - [Phase 07]: [07-21 post-close] The sticky-nav offset is :where(*) { scroll-margin-top: calc(var(--nav-h) + 16px) } in @layer base, never scroll-padding on html: Motion useScroll({ target }) is a native ViewTimeline whose auto inset equals the container's scroll-padding, which faded the home hero to ~0.7 at scrollY 0 (CI 40016881820; Tim's choice A; fix 5544cc3)
+- [Phase 07]: [07-22] Shell mounted (0c57f7f, one atomic commit with Tim's 33-PNG amend): every content route git mv'd into app/(site)/ (renames 89-100%), app/(site)/layout.tsx renders <SiteChrome>, root layout drops MotionProvider, v1 Header/Footer/GlassmorphismNav gone; app/api, layout.tsx, globals.css, not-found.tsx stay at the root, URLs unchanged. Home: inner anchor #home-content, hero h-[calc(100svh-var(--nav-h))], h1 {site.name}, pill {site.role}. palette-ratchet.json key app/page.tsx -> app/(site)/page.tsx (count 5). Re-baseline: 33 PNGs (home, photos, projects, clix-cli, clix-website, roadmap, contact, offline; not-found unchanged), pages 247-629 px shorter (v1 header + tall footer -> 64 px nav + plain footer); CI run 40028858703 green
+- [Phase 07]: [07-22] e2e/shell.spec.ts (fbdbd1d, 17 tests, chromium + firefox green in CI run 40030195076): landmarks via toHaveCount(1) per route, skip link first Tab, aria-current, footer hrefs = site values, 768 header 64 px, mobile menu, reduced motion (getAnimations = 0). No-horizontal-scroll is asserted as scrollWidth <= clientWidth (07-12 stable gutter makes innerWidth wrong). SHELL-02 and DSGN-08 Complete (ready-ids); SHELL-01 waits for 07-23, SHELL-03 for 07-25
 
 ### Pending Todos
 
@@ -161,6 +164,7 @@ Recent decisions affecting current work:
 - [Phase 7, from 07-16, for 07-24] app/contact/page.tsx:67/93/119 keep hue-coloured hover glows as inline motion props (whileHover boxShadow rgba(6,182,212,0.3), rgba(59,130,246,0.3), rgba(168,85,247,0.3)); they are not classes, so the stock-palette grep and a class-based palette guard miss them. Move them to tokens or drop them in the 07-24 Contact interim restyle
 - [Phase 9/12, from 07-18] Colours the class grep cannot see stay in the Projects group: components/HologramTerminal.tsx keeps Three.js material/light hex (L26-330) and a <style jsx global> block with rgba/hex (L368-486, incl. the .hologram-content navy panel the terminal demo text sits on), out of scope until Phase 9 (UI-SPEC v2-only rule); a class-based palette guard misses them. components/ProjectDetailClient.tsx still uses 4 v1 aliases (snow-50, alpine-800, alpine-600, snow-100; count unchanged 4 -> 4), which must move to semantic tokens before the v1 alias layer is removed in Phase 12
 - [Phase 10, from 07-19, unverified] During the local e2e/photos.spec.ts run the dev server logged three deprecation warnings and a React 'removeChild ... not a child' console error on the /photos grid/3D toggle; the tests pass. Class-string edits cannot cause a DOM removal error, so it very likely predates 07-19, but it was not checked at HEAD~1 and CI E2E logs do not capture the browser console. Reproduce and fix in the Phase 10 photos/lightbox rework. Also for Phase 10: components/ImageDetailModal.tsx L46/L60 use Tailwind v3 bg-opacity-* classes that Tailwind 4.3 does not generate, so the modal backdrop and close button render fully opaque (pre-existing); components/PhotoCarousel3D.tsx keeps Three.js inline hex (L75, L215, L264, L265, L268 fog) and the v1 alias text-snow-200 (L183)
+- [Phase 9, from 07-22] Home overflows horizontally before its v1 whileInView animations fire: a 'Programming Projects' card starts at initial x: 50, so unsettled scrollWidth is 399 at 375 px and 784 at 768 px (passes only after settling). Real for visitors who have not scrolled yet; the Phase 9 Home rebuild must not translate content past the viewport edge (or clip it)
 
 ## Deferred Items
 
@@ -172,6 +176,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-23T20:07:15.849Z
-Stopped at: Completed 07-21-PLAN.md
+Last session: 2026-10-23T22:06:15.344Z
+Stopped at: Completed 07-22-PLAN.md
 Resume file: None

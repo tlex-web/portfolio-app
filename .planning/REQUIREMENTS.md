@@ -30,14 +30,14 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 - [x] **DSGN-05**: Every visitor sees the same dark design regardless of their OS light/dark setting (no `dark:` variants; `color-scheme: dark`)
 - [x] **DSGN-06**: Every page uses tokens v2 (night-map OKLCH palette with semantic tokens); v1 token names survive only as temporary aliases
 - [x] **DSGN-07**: Type uses one Swiss-style grotesk display face, Inter for body text and JetBrains Mono only for data, with tabular numerals for figures (display face chosen in the Phase 7 UI-SPEC)
-- [ ] **DSGN-08**: Motion durations and easings come from shared tokens used by both CSS and Motion, and all motion respects `prefers-reduced-motion`
+- [x] **DSGN-08**: Motion durations and easings come from shared tokens used by both CSS and Motion, and all motion respects `prefers-reduced-motion`
 - [x] **DSGN-09**: A thin, visible scrollbar is shown with a stable gutter, so opening a modal never shifts the layout
 - [ ] **DSGN-10**: Icons come from one SVG family; no emoji are used as icons
 
 ### Shell & Identity
 
 - [ ] **SHELL-01**: Every page has exactly one primary navigation and one main landmark, with a skip link and a visible current-page indicator
-- [ ] **SHELL-02**: On mobile, the navigation opens a menu with touch targets of at least 44 px that closes on route change and on Escape
+- [x] **SHELL-02**: On mobile, the navigation opens a menu with touch targets of at least 44 px that closes on route change and on Escape
 - [ ] **SHELL-03**: The site shows Tim Lui's real name, role line and real GitHub, LinkedIn and email links everywhere; no placeholder text or links remain
 - [ ] **SHELL-04**: The footer is a map legend with contour art, a scale bar and swisstopo attribution
 - [ ] **SHELL-05**: `/gradient-mesh`, `/particle-buttons` and `/transitions` are removed and resolve to the designed 404, and no page links to them
@@ -178,11 +178,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DSGN-05 | Phase 7 | Complete |
 | DSGN-06 | Phase 7 | Complete |
 | DSGN-07 | Phase 7 | Complete |
-| DSGN-08 | Phase 7 | Pending |
+| DSGN-08 | Phase 7 | Complete |
 | DSGN-09 | Phase 7 | Complete |
 | DSGN-10 | Phase 7 | Pending |
 | SHELL-01 | Phase 7 | Pending |
-| SHELL-02 | Phase 7 | Pending |
+| SHELL-02 | Phase 7 | Complete |
 | SHELL-03 | Phase 7 | Pending |
 | SHELL-04 | Phase 8 | Pending |
 | SHELL-05 | Phase 7 | Pending |
