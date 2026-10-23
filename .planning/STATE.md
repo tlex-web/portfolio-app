@@ -6,10 +6,10 @@ current_phase: 07
 current_phase_name: Foundation & Guardrails
 status: executing
 stopped_at: Completed 07-21-PLAN.md
-last_updated: "2026-10-23T20:07:15.886Z"
+last_updated: "2026-10-23T20:26:42.469Z"
 last_activity: 2026-10-23
 last_activity_desc: Phase 07 execution resumed (wave continue)
-state_head: 8b9028bc84e44b42d66a5ce211f1160220915ae8
+state_head: 5544cc3a90b3043dcb00e016fb1c35f301ce7728
 progress:
   total_phases: 6
   completed_phases: 6
@@ -138,6 +138,7 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-21] Tim supplied the public email and LinkedIn URL at the Task 1 checkpoint (his reply in session); written verbatim to data/site.ts (old2shatterhand@gmail.com, https://www.linkedin.com/in/luitim/), not derived from git config or account metadata
 - [Phase 07]: [07-21] Shell components built and tested in jsdom, not yet mounted (1ae6ea8, bfb981b RED, 1676756 GREEN): SiteChrome {children, variant default|static}; static SiteNav header is min-h-16 (wrapping row); desktop <ul> precedes the Menu button in DOM order; menu closes on route change (state adjusted during render), Escape, second press, outside pointerdown, focusout to outside the header (null relatedTarget ignored) and (min-width: 768px). SHELL-01/02/03 stay Pending (07-22, 07-23, 07-25 still declare them)
 - [Phase 07]: [07-21] v1 .sr-only/.not-sr-only removed from app/globals.css (77010e7): its clip: rect(0,0,0,0) survived Tailwind's focus:not-sr-only, so focused skip links (new SkipLink and Hero3DMountain) were invisible. globals.css also gained --nav-h/--z-* and html scroll-padding-top; none of these global CSS changes is CI-verified yet (no push), so 07-22's visual run covers them
+- [Phase 07]: [07-21 post-close] The sticky-nav offset is :where(*) { scroll-margin-top: calc(var(--nav-h) + 16px) } in @layer base, never scroll-padding on html: Motion useScroll({ target }) is a native ViewTimeline whose auto inset equals the container's scroll-padding, which faded the home hero to ~0.7 at scrollY 0 (CI 40016881820; Tim's choice A; fix 5544cc3)
 
 ### Pending Todos
 

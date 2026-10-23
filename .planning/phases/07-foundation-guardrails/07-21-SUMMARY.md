@@ -251,6 +251,15 @@ None from this plan.
 - `1ae6ea8`, `bfb981b`, `1676756` and `77010e7` are ancestors of HEAD. `git rev-list --count fbcd74a..HEAD` = 4.
 - Acceptance criteria for Tasks 2 and 3 and the plan-level verification were re-run (table above) and pass.
 
+## Post-close fix
+
+- **What regressed:** CI run 40016881820 (ci/07-21, tip 0577637) failed Visual Regression only on home scroll-0 at 375/768/1440, dark and light. At scrollY 0 the hero h1, pill, subtitle and "Scroll to explore" rendered at about 70% opacity. Nothing moved, and every other shot matched pixel for pixel.
+- **Root cause:** the `html { scroll-padding-top: calc(var(--nav-h) + 16px) }` from `1ae6ea8`. `Hero3DMountain.tsx` and `MountainTerrain3D.tsx` call `useScroll({ target, offset: ['start start', 'end start'] })`. Motion 14.1.0 turns that into a native `ViewTimeline` with no inset, and a ViewTimeline's `auto` inset is the scroll container's scroll-padding. The 80px padding pushed progress to about 0.09 at the top, so the `[0, 0.3] -> [1, 0]` opacity transform gave about 0.7.
+- **Tim's choice:** A, "scroll-margin on targets (Recommended)".
+- **Fix (`5544cc3`, app/globals.css only):** the `html` scroll-padding is gone. `@layer base` now has `:where(*) { scroll-margin-top: calc(var(--nav-h) + 16px); }`. Scroll-into-view (focus, anchors) honours the target's scroll-margin and ViewTimeline ignores it. `:where()` keeps specificity at 0, so `scroll-mt-*` utilities still override it.
+- **UI-SPEC "Scroll offset" row:** the intent stays the same (the sticky nav never hides focused or anchored content, WCAG 2.2 focus-not-obscured). It is now implemented with `scroll-margin-top` on the targets, not `scroll-padding-top` on `html`. The row's literal CSS is out of date. Treat this addendum as the source of truth.
+- **Local checks:** `grep -c scroll-padding app/globals.css` = 0. `npm run build` passes, and the emitted CSS has `:where(*){scroll-margin-top:calc(var(--nav-h) + 16px)}` inside `@layer base`. `npm run lint` (full chain, selftest 45/45), `npm run type-check` and `npx jest --silent` (97/97) all pass. `e2e/homepage.spec.ts` on chromium passes 5/5. On the production build in Chromium with `reducedMotion: 'no-preference'`, a probe read hero h1 opacity 1 and wrapper chain opacity 1 at scrollY 0 for 375, 768 and 1440 (html scroll-padding-top `auto`, h1 scroll-margin-top `80px`). The 07-20 baselines are expected to show no visual diff. The orchestrator confirms this in CI.
+
 ---
 *Phase: 07-foundation-guardrails*
 *Completed: 2026-10-23*
