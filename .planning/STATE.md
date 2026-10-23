@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 07
 current_phase_name: Foundation & Guardrails
 status: executing
-stopped_at: Completed 07-22-PLAN.md
-last_updated: "2026-10-23T22:06:15.394Z"
+stopped_at: Completed 07-23-PLAN.md
+last_updated: "2026-10-23T23:28:03.493Z"
 last_activity: 2026-10-23
 last_activity_desc: Phase 07 execution resumed (wave continue)
-state_head: 91ca56629ffe32ba17f2eda1bb22e3c02f9807ef
+state_head: b91df336db084c0c647a7fdb8ee3714f583f5ae3
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 26
-  completed_plans: 22
-  percent: 85
+  completed_plans: 23
+  percent: 88
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-10)
 ## Current Position
 
 Phase: 07 (Foundation & Guardrails) — EXECUTING
-Plan: 23 of 26
+Plan: 24 of 26
 Status: Executing Phase 07
 Last activity: 2026-10-23 — Phase 07 execution resumed (wave continue)
 
-Progress: [█████████░] 85%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 
@@ -76,6 +76,7 @@ Progress: [█████████░] 85%
 | Phase 07 P20 | 13 min | 3 tasks | 28 files |
 | Phase 07 P21 | 9 min | 3 tasks | 9 files |
 | Phase 07 P22 | 1h 28m | 3 tasks | 47 files |
+| Phase 07 P23 | 1h 9m | 3 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -142,6 +143,8 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-21 post-close] The sticky-nav offset is :where(*) { scroll-margin-top: calc(var(--nav-h) + 16px) } in @layer base, never scroll-padding on html: Motion useScroll({ target }) is a native ViewTimeline whose auto inset equals the container's scroll-padding, which faded the home hero to ~0.7 at scrollY 0 (CI 40016881820; Tim's choice A; fix 5544cc3)
 - [Phase 07]: [07-22] Shell mounted (0c57f7f, one atomic commit with Tim's 33-PNG amend): every content route git mv'd into app/(site)/ (renames 89-100%), app/(site)/layout.tsx renders <SiteChrome>, root layout drops MotionProvider, v1 Header/Footer/GlassmorphismNav gone; app/api, layout.tsx, globals.css, not-found.tsx stay at the root, URLs unchanged. Home: inner anchor #home-content, hero h-[calc(100svh-var(--nav-h))], h1 {site.name}, pill {site.role}. palette-ratchet.json key app/page.tsx -> app/(site)/page.tsx (count 5). Re-baseline: 33 PNGs (home, photos, projects, clix-cli, clix-website, roadmap, contact, offline; not-found unchanged), pages 247-629 px shorter (v1 header + tall footer -> 64 px nav + plain footer); CI run 40028858703 green
 - [Phase 07]: [07-22] e2e/shell.spec.ts (fbdbd1d, 17 tests, chromium + firefox green in CI run 40030195076): landmarks via toHaveCount(1) per route, skip link first Tab, aria-current, footer hrefs = site values, 768 header 64 px, mobile menu, reduced motion (getAnimations = 0). No-horizontal-scroll is asserted as scrollWidth <= clientWidth (07-12 stable gutter makes innerWidth wrong). SHELL-02 and DSGN-08 Complete (ready-ids); SHELL-01 waits for 07-23, SHELL-03 for 07-25
+- [Phase 07]: [07-23] 404 and error boundaries inside the shell (ecf7670 with Tim's 3-PNG not-found amend, af5434c RED, e1cbdc7 GREEN): app/not-found.tsx renders <SiteChrome><NotFoundBody /></SiteChrome> because Next 16.4.2's root not-found is wrapped only by the root layout; app/(site)/not-found.tsx renders <NotFoundBody /> for notFound() in the group; no redirects. /__no-such-page__, /gradient-mesh, /particle-buttons, /transitions and /projects/no-such-slug return 404 with no redirect and one nav/main (e2e 'Shell 404', 6 tests). ErrorBody {variant section|root, onRetry} never receives the error (T-07-31), focuses its h1 on mount; Try again calls retry() (reset unused, user-approved 2026-10-10); global-error has its own html.dark/body, globals.css and fonts, SiteChrome variant=static, no MotionProvider. CI run 40038984475 on d3ec816 green (E2E 116, 0 flaky). SHELL-01 and SHELL-05 Complete (ready-ids: both ready)
+- [Phase 07]: [07-23] Touch-target e2e measured inside an animated panel must wait until getAnimations() is empty (and assert none left) before measuring: the 07-22 mobile-menu row test read 47.99998 vs >= 48 mid-transition (flaky on Firefox and chromium; control 3/20 failed). Fixed test-only in 6a82527, threshold unchanged, 20/20 dev and PW_PROD
 
 ### Pending Todos
 
@@ -165,6 +168,7 @@ Recent decisions affecting current work:
 - [Phase 9/12, from 07-18] Colours the class grep cannot see stay in the Projects group: components/HologramTerminal.tsx keeps Three.js material/light hex (L26-330) and a <style jsx global> block with rgba/hex (L368-486, incl. the .hologram-content navy panel the terminal demo text sits on), out of scope until Phase 9 (UI-SPEC v2-only rule); a class-based palette guard misses them. components/ProjectDetailClient.tsx still uses 4 v1 aliases (snow-50, alpine-800, alpine-600, snow-100; count unchanged 4 -> 4), which must move to semantic tokens before the v1 alias layer is removed in Phase 12
 - [Phase 10, from 07-19, unverified] During the local e2e/photos.spec.ts run the dev server logged three deprecation warnings and a React 'removeChild ... not a child' console error on the /photos grid/3D toggle; the tests pass. Class-string edits cannot cause a DOM removal error, so it very likely predates 07-19, but it was not checked at HEAD~1 and CI E2E logs do not capture the browser console. Reproduce and fix in the Phase 10 photos/lightbox rework. Also for Phase 10: components/ImageDetailModal.tsx L46/L60 use Tailwind v3 bg-opacity-* classes that Tailwind 4.3 does not generate, so the modal backdrop and close button render fully opaque (pre-existing); components/PhotoCarousel3D.tsx keeps Three.js inline hex (L75, L215, L264, L265, L268 fog) and the v1 alias text-snow-200 (L183)
 - [Phase 9, from 07-22] Home overflows horizontally before its v1 whileInView animations fire: a 'Programming Projects' card starts at initial x: 50, so unsettled scrollWidth is 399 at 375 px and 784 at 768 px (passes only after settling). Real for visitors who have not scrolled yet; the Phase 9 Home rebuild must not translate content past the viewport edge (or clip it)
+- [Phase 12 / EDGE-01, from 07-23, pre-existing] notFound() inside /projects/[slug] returns HTTP 404 but the server HTML is an empty <html id="__next_error__">; the shell and 404 UI render client-side from the RSC payload (same with app/(site)/not-found.tsx removed), so that path has no server-rendered 404 without JS. Root unmatched URLs are server-rendered. Investigate before EDGE-01 sign-off
 
 ## Deferred Items
 
@@ -176,6 +180,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-23T22:06:15.344Z
-Stopped at: Completed 07-22-PLAN.md
+Last session: 2026-10-23T23:28:03.453Z
+Stopped at: Completed 07-23-PLAN.md
 Resume file: None
