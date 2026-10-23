@@ -5,7 +5,7 @@ import { test, expect, type Page } from '@playwright/test';
  * acceleration off, webgl.disabled, headless Firefox on the CI runner).
  *
  * Since @react-three/fiber 9.8 a WebGLRenderer that cannot be created is rethrown through
- * React, so a <Canvas> outside SafeCanvas replaces the whole route with app/error.tsx.
+ * React, so a <Canvas> outside SafeCanvas replaces the whole route with app/(site)/error.tsx.
  * WebGL is switched off with an init script, so the check behaves the same in every browser.
  */
 

@@ -55,7 +55,7 @@ export default defineConfig([
               name: '@react-three/fiber',
               importNames: ['Canvas'],
               message:
-                'Use @/components/SafeCanvas: since R3F 9.8 a bare <Canvas> without WebGL replaces the whole route with app/error.tsx.',
+                'Use @/components/SafeCanvas: since R3F 9.8 a bare <Canvas> without WebGL replaces the whole route with app/(site)/error.tsx.',
             },
             {
               name: '@phosphor-icons/react',

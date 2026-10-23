@@ -56,7 +56,7 @@ function InertCanvas({
  * Since @react-three/fiber 9.8 a WebGLRenderer that cannot be created (no WebGL: hardware
  * acceleration off, webgl.disabled, headless Firefox on CI) is rethrown through React
  * (`configure().catch(setError)`, then `throw error` in the Canvas render). Without a boundary
- * that error reaches app/error.tsx and replaces the whole page. Here the canvas turns into an
+ * that error reaches app/(site)/error.tsx and replaces the whole page. Here the canvas turns into an
  * empty one instead, which is what users without WebGL got before 9.8: a blank 3D area on an
  * intact page.
  */
