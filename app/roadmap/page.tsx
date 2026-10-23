@@ -29,9 +29,9 @@ export default function RoadmapPage() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800">
+      <div className="min-h-screen bg-gradient-to-b from-surface to-surface-raised">
         {/* Hero Section */}
-        <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white py-20">
+        <div className="bg-surface-raised border-y border-line py-20">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -39,8 +39,8 @@ export default function RoadmapPage() {
               transition={{ duration: 0.5 }}
               className="text-center"
             >
-              <h1 className="text-5xl font-bold mb-4">Project Roadmap</h1>
-              <p className="text-xl text-purple-100 max-w-3xl mx-auto">
+              <h1 className="text-5xl font-bold text-ink mb-4">Project Roadmap</h1>
+              <p className="text-xl text-ink-muted max-w-3xl mx-auto">
                 Track the evolution of my portfolio, CLI_X tool, and website platform. See what&apos;s
                 been accomplished and what&apos;s coming next.
               </p>
@@ -67,9 +67,9 @@ export default function RoadmapPage() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
-                className="bg-gray-800 rounded-xl p-6 border-2 border-gray-700 sticky top-6"
+                className="bg-surface-raised rounded-xl p-6 border-2 border-line sticky top-6"
               >
-                <h2 className="text-2xl font-bold text-white mb-6">
+                <h2 className="text-2xl font-bold text-ink mb-6">
                   Filters
                 </h2>
                 <RoadmapFilters
@@ -81,9 +81,9 @@ export default function RoadmapPage() {
 
                 {/* Active Filters Summary */}
                 {(selectedArea !== 'all' || selectedStatus !== 'all') && (
-                  <div className="mt-6 pt-6 border-t border-gray-700">
+                  <div className="mt-6 pt-6 border-t border-line">
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-semibold text-gray-300">
+                      <span className="text-sm font-semibold text-ink">
                         Active Filters
                       </span>
                       <button
@@ -91,12 +91,12 @@ export default function RoadmapPage() {
                           setSelectedArea('all');
                           setSelectedStatus('all');
                         }}
-                        className="text-xs text-cyan-400 hover:underline"
+                        className="text-xs text-accent hover:underline"
                       >
                         Clear All
                       </button>
                     </div>
-                    <div className="text-sm text-gray-400">
+                    <div className="text-sm text-ink-muted">
                       Showing {filteredItems.length} of {roadmapItems.length} items
                     </div>
                   </div>
@@ -113,10 +113,10 @@ export default function RoadmapPage() {
               >
                 {/* Results Header */}
                 <div className="mb-8">
-                  <h2 className="text-3xl font-bold text-white mb-2">
+                  <h2 className="text-3xl font-bold text-ink mb-2">
                     Roadmap Timeline
                   </h2>
-                  <p className="text-gray-400">
+                  <p className="text-ink-muted">
                     {filteredItems.length === 0
                       ? 'No items match your filters'
                       : `Showing ${filteredItems.length} roadmap ${
@@ -129,9 +129,9 @@ export default function RoadmapPage() {
                 {filteredItems.length > 0 ? (
                   <RoadmapTimeline items={sortedItems} />
                 ) : (
-                  <div className="bg-gray-800 rounded-xl p-12 text-center border-2 border-dashed border-gray-600">
+                  <div className="bg-surface-raised rounded-xl p-12 text-center border-2 border-dashed border-line">
                     <svg
-                      className="w-16 h-16 mx-auto mb-4 text-gray-400"
+                      className="w-16 h-16 mx-auto mb-4 text-ink-muted"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -143,10 +143,10 @@ export default function RoadmapPage() {
                         d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                       />
                     </svg>
-                    <h3 className="text-xl font-semibold text-gray-300 mb-2">
+                    <h3 className="text-xl font-semibold text-ink mb-2">
                       No Results Found
                     </h3>
-                    <p className="text-gray-400 mb-6">
+                    <p className="text-ink-muted mb-6">
                       Try adjusting your filters to see more roadmap items
                     </p>
                     <button
@@ -154,7 +154,7 @@ export default function RoadmapPage() {
                         setSelectedArea('all');
                         setSelectedStatus('all');
                       }}
-                      className="px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors font-semibold"
+                      className="px-6 py-3 bg-accent text-ink-inverse rounded-lg hover:bg-accent-hover transition-colors font-semibold"
                     >
                       Clear Filters
                     </button>
@@ -166,21 +166,21 @@ export default function RoadmapPage() {
         </div>
 
         {/* Call to Action */}
-        <div className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white py-16">
+        <div className="bg-surface-raised border-y border-line py-16">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <h2 className="text-3xl font-bold mb-4">Want to Collaborate?</h2>
-              <p className="text-xl text-cyan-100 mb-8 max-w-2xl mx-auto">
+              <h2 className="text-3xl font-bold text-ink mb-4">Want to Collaborate?</h2>
+              <p className="text-xl text-ink-muted mb-8 max-w-2xl mx-auto">
                 I&apos;m always open to feedback and collaboration opportunities. Get in touch to discuss
                 any of these projects!
               </p>
               <a
                 href="/contact"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-white text-cyan-600 rounded-lg hover:bg-gray-100 transition-colors font-bold text-lg"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-accent text-ink-inverse rounded-lg hover:bg-accent-hover transition-colors font-bold text-lg"
               >
                 Contact Me
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

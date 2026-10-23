@@ -48,7 +48,7 @@ export default function RoadmapFilters({
     <div className="space-y-6">
       {/* Area Filter */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-300 mb-3">
+        <h3 className="text-sm font-semibold text-ink mb-3">
           Filter by Project
         </h3>
         <div className="flex flex-wrap gap-2">
@@ -64,8 +64,8 @@ export default function RoadmapFilters({
                 whileTap={prefersReducedMotion ? undefined : { scale: 0.95 }}
                 className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                   isSelected
-                    ? 'bg-cyan-600 text-white shadow-lg'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                    ? 'bg-accent text-ink-inverse shadow-lg'
+                    : 'bg-surface-raised text-ink hover:bg-surface-overlay'
                 }`}
               >
                 <area.Icon size={20} aria-hidden="true" />
@@ -78,7 +78,7 @@ export default function RoadmapFilters({
 
       {/* Status Filter */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-300 mb-3">
+        <h3 className="text-sm font-semibold text-ink mb-3">
           Filter by Status
         </h3>
         <div className="flex flex-wrap gap-2">
@@ -94,8 +94,8 @@ export default function RoadmapFilters({
                 whileTap={prefersReducedMotion ? undefined : { scale: 0.95 }}
                 className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                   isSelected
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                    ? 'bg-accent text-ink-inverse shadow-lg'
+                    : 'bg-surface-raised text-ink hover:bg-surface-overlay'
                 }`}
               >
                 <status.Icon size={20} aria-hidden="true" />
