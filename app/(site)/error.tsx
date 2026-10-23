@@ -1,13 +1,20 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect } from 'react';
+import ErrorBody from '@/components/site/ErrorBody';
 
+/**
+ * Section error boundary (SHELL-05). Renders inside the (site) group chrome.
+ * Try again calls `retry()`, Next 16.4's documented recovery API (user-approved
+ * deviation from the UI-SPEC's `reset()` wording, 2026-10-10); `reset` stays in
+ * the props signature but is not used. The error is logged, never rendered.
+ */
 export default function Error({
   error,
-  reset,
+  retry,
 }: {
   error: Error & { digest?: string };
+  retry: () => void;
   reset: () => void;
 }) {
   useEffect(() => {
@@ -15,29 +22,5 @@ export default function Error({
     console.error('Application error:', error);
   }, [error]);
 
-  return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center">
-      <h1 className="text-4xl font-bold mb-4 text-ink">
-        Something went wrong!
-      </h1>
-      <p className="text-lg text-ink mb-8">
-        We apologize for the inconvenience. An error occurred while rendering this page.
-      </p>
-      <div className="flex flex-col sm:flex-row gap-4 justify-center">
-        <button
-          onClick={reset}
-          className="px-6 py-3 bg-accent text-ink-inverse rounded-md hover:bg-accent-hover transition-colors"
-        >
-          Try again
-        </button>
-        <Link
-          href="/"
-          className="px-6 py-3 border-2 border-line-strong rounded-md hover:bg-surface-raised transition-colors"
-        >
-          Go to Homepage
-        </Link>
-      </div>
-    </div>
-  );
+  return <ErrorBody variant="section" onRetry={retry} />;
 }
-
