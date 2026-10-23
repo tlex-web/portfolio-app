@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 07
 current_phase_name: Foundation & Guardrails
 status: executing
-stopped_at: Completed 07-17-PLAN.md
-last_updated: "2026-10-23T17:38:16.054Z"
+stopped_at: Completed 07-18-PLAN.md
+last_updated: "2026-10-23T18:33:48.784Z"
 last_activity: 2026-10-23
 last_activity_desc: Phase 07 execution resumed (wave continue)
-state_head: dfcbe202da69a1905ec604da384bea9bde69db66
+state_head: 62dbbf4ac4ceb03381c077bd19e5659a88b2360c
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 26
-  completed_plans: 17
-  percent: 65
+  completed_plans: 18
+  percent: 69
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-10)
 ## Current Position
 
 Phase: 07 (Foundation & Guardrails) — EXECUTING
-Plan: 18 of 26
+Plan: 19 of 26
 Status: Executing Phase 07
 Last activity: 2026-10-23 — Phase 07 execution resumed (wave continue)
 
-Progress: [███████░░░] 65%
+Progress: [███████░░░] 69%
 
 ## Performance Metrics
 
@@ -71,6 +71,7 @@ Progress: [███████░░░] 65%
 | Phase 07 P15 | 16 min | 3 tasks | 18 files |
 | Phase 07 P16 | 18 min | 2 tasks | 5 files |
 | Phase 07 P17 | 19 min | 2 tasks | 7 files |
+| Phase 07 P18 | 46 min | 2 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -128,6 +129,7 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-15] DSGN-05 stage 2 collapse (0951de8, d114b42): every `A dark:B` pair in the 18 files collapsed to `B` (228 dark: tokens on 177 lines -> 0; 6 unpaired FeedbackForm dark: utilities lost their prefix). The 8b collapse is zero-diff: CI run 39875749247 green (Visual, Unit, E2E), 0 PNGs changed, no re-baseline. The dark: utilities are gone from code (app, components, lib, data, e2e count 0); only @custom-variant dark in app/globals.css remains (removed in 07-20). DSGN-05 stays Pending: 07-20 also declares it
 - [Phase 07]: [07-16] 8c map, group Contact (1807682): every stock palette class in app/contact/page.tsx and components/FeedbackForm.tsx mapped to L2 semantic utilities (stock count 0; no v1 alias, hex, oklch, rgba or arbitrary colour added; focus:ring-* removed for the global focus-visible ring). Status boxes outlined (bg-surface-overlay border border-success/danger text-ink) and pending submit is the faded accent (bg-accent text-ink-inverse opacity-50), Tim's D1/D2 choices recorded in 1807682. contact/{375,768,1440}-reduced-visual-dark re-baselined in the same commit (check-snapshot-commit --allow contact --some OK, 3 changed); CI run 39879694150 green (Visual, Unit, E2E). DSGN-06 and GUARD-04 stay Pending: 07-17..07-20 also declare them
 - [Phase 07]: [07-17] 8c map, group Roadmap (b7b56cf): all 98 stock palette classes in app/roadmap/page.tsx, RoadmapTimeline, RoadmapProgress and RoadmapFilters mapped to L2 semantic utilities (stock count 0; no v1 alias, hex, oklch, rgba, arbitrary colour, text-white, bg-white or black left, so the 07-20 white/black ratchet starts at 0 for this group). Tim's D1 = A outlined status on neutral (cards bg-surface-raised border-2 border-success/accent/line, badges bg-surface-overlay border text-success/accent), D2 = A neutral hero and CTA bands (bg-surface-raised border-y border-line; Contact Me the one bg-accent text-ink-inverse CTA), D3 = A neutral area chips (bg-surface-overlay text-ink border-line-strong) with bg-accent Breakdown bars, chip edge kept mechanical; recorded in b7b56cf. White on accent/success fails (1.69/1.77:1), so icons on those fills use text-ink-inverse. Page height grew (1440/768 +4px from the two border-y bands; 375 +34px, +2px per card from the 1px area-chip border where badges stack). roadmap/{375,768,1440}-reduced-visual-dark re-baselined in the same commit (check-snapshot-commit --allow roadmap --some OK, 3 changed); CI run 39995314853 green (Visual, Unit, E2E). DSGN-06 and GUARD-04 stay Pending: 07-18..07-20 also declare them
+- [Phase 07]: [07-18] 8c map, group Projects (2d87a01): all 198 stock palette classes in app/projects/[slug]/page.tsx, TechStackDisplay, FeatureShowcase, ProjectHighlights, ProjectDetailClient, HologramTerminalDemo and HologramTerminal mapped to L2 semantic utilities (stock count 0; white/black utilities 29 -> 0, so the 07-20 white/black ratchet starts at 0 for this group; no v1 alias, hex, oklch, rgba or arbitrary colour added). Tim's answer 'All recommended': D1 = A neutral hero (bg-surface-raised border-y border-line) and flat What's Next card with border-line; D2 = A GitHub the one bg-accent text-ink-inverse primary, Live Demo and Documentation secondary (bg-surface-overlay text-ink border-line-strong); D3 = A outlined status badge on neutral; D4 = A one neutral tech-chip class (hue map and getTechStyle removed) and neutral feature/highlight tiles, label + icon only; D5 = A no alpha tints (solid surface/line tokens, coloured shadow tints dropped); D6 high risk = danger, window dots bg-line-strong, USER label muted with accent prompt/command; recorded in 2d87a01. Dark ink on accent fails (1.42:1), so accent fills carry text-ink-inverse. Page height +2px from the hero border-y (clix-website 375 +4px with the bordered Live Demo button on its own row). clix-cli/* and clix-website/* {375,768,1440}-reduced-visual-dark re-baselined in the same commit (check-snapshot-commit --allow clix-cli --allow clix-website --allow projects --some OK, 6 changed; projects/* unchanged, the index renders none of the 7 components); CI run 40003018857 green (Visual, Unit, E2E). DSGN-06 and GUARD-04 stay Pending: 07-19 and 07-20 also declare them
 
 ### Pending Todos
 
@@ -148,6 +150,7 @@ Recent decisions affecting current work:
 - [Phase 7, from 07-14, updated by 07-15 and 07-16] (07-16: the FeedbackForm error text and input borders below are now text-danger and border-line-strong on bg-surface-overlay; their ratios were not re-measured, so the 07-20 contrast guard must confirm them.) Stock dark values now reach every visitor, not only dark-OS ones (since 07-15 collapsed as plain classes, e.g. text-gray-400 on bg-gray-800), and the contrast guard is not active until 07-20. Measured failures to fix in 07-16..07-20: FeedbackForm error text-red-600 on the dark card ~3.2:1 (needs 4.5:1), FeedbackForm input borders border-gray-600 on bg-gray-800 ~1.9:1 (needs 3:1 non-text), app/offline/page.tsx:61 text-gray-500 small text on the gray-900/800 gradient ~3.6:1 (offline:15 icon text-gray-600 ~2.3:1 is fine only if decorative). The FeedbackForm placeholder/autofill part is RESOLVED by 07-15: the light base classes are gone and the inputs have no placeholder class, so the browser default under color-scheme: dark applies
 - [Phase 7, from 07-15, for 07-20] Add `@source not` for `.planning` and `.claude` in app/globals.css before any compiled-CSS guard: Tailwind v4 source detection reads tracked Markdown (.planning/milestones/v1.0-phases/04-design-components/04-03-PLAN.md, 04-05-PLAN.md, 04-RESEARCH.md, .claude/skills/ui-styling/references/shadcn-theming.md), so the compiled CSS (.next/static/chunks/*.css) still has 41 phantom :where(.dark,.dark *) selectors (e.g. dark:scale-0, dark:-rotate-90, dark:group-hover:text-cyan-400) and dead stock classes (07-09's .to-amber-500) that no code uses. No visual effect, but a palette or dark: guard over the compiled CSS would count them
 - [Phase 7, from 07-16, for 07-24] app/contact/page.tsx:67/93/119 keep hue-coloured hover glows as inline motion props (whileHover boxShadow rgba(6,182,212,0.3), rgba(59,130,246,0.3), rgba(168,85,247,0.3)); they are not classes, so the stock-palette grep and a class-based palette guard miss them. Move them to tokens or drop them in the 07-24 Contact interim restyle
+- [Phase 9/12, from 07-18] Colours the class grep cannot see stay in the Projects group: components/HologramTerminal.tsx keeps Three.js material/light hex (L26-330) and a <style jsx global> block with rgba/hex (L368-486, incl. the .hologram-content navy panel the terminal demo text sits on), out of scope until Phase 9 (UI-SPEC v2-only rule); a class-based palette guard misses them. components/ProjectDetailClient.tsx still uses 4 v1 aliases (snow-50, alpine-800, alpine-600, snow-100; count unchanged 4 -> 4), which must move to semantic tokens before the v1 alias layer is removed in Phase 12
 
 ## Deferred Items
 
@@ -159,6 +162,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-23T17:38:16.020Z
-Stopped at: Completed 07-17-PLAN.md
+Last session: 2026-10-23T18:33:22.714Z
+Stopped at: Completed 07-18-PLAN.md
 Resume file: None
