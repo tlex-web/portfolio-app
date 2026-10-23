@@ -1,6 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { CheckCircle, WarningCircle } from '@phosphor-icons/react/dist/ssr';
+
+/** Class strings per UI-SPEC "Contact Interim Contrast Fix (SHELL-06)". */
+const fieldClass = (invalid: boolean) =>
+  `w-full min-h-11 px-4 py-2 rounded-sm bg-surface-overlay text-ink border placeholder:text-ink-muted ${
+    invalid ? 'border-danger' : 'border-line-strong'
+  }`;
 
 interface FormData {
   name: string;
@@ -103,24 +110,21 @@ export default function FeedbackForm() {
     <form onSubmit={handleSubmit} className="max-w-2xl" noValidate>
       {/* Name Field */}
       <div className="mb-6">
-        <label htmlFor="name" className="block text-sm font-medium mb-2 text-ink">
-          Name <span className="text-danger">*</span>
+        <label htmlFor="name" className="block text-sm font-semibold mb-2 text-ink">
+          Name <span className="text-danger" aria-hidden="true">*</span>
         </label>
         <input
           type="text"
           id="name"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className={`w-full px-4 py-2 border rounded-md bg-surface-overlay text-ink ${
-            errors.name
-              ? 'border-danger'
-              : 'border-line-strong'
-          }`}
+          className={fieldClass(!!errors.name)}
+          required
           aria-invalid={!!errors.name}
           aria-describedby={errors.name ? 'name-error' : undefined}
         />
         {errors.name && (
-          <p id="name-error" className="mt-1 text-sm text-danger" role="alert">
+          <p id="name-error" className="mt-2 text-sm text-danger" role="alert">
             {errors.name}
           </p>
         )}
@@ -128,24 +132,21 @@ export default function FeedbackForm() {
 
       {/* Email Field */}
       <div className="mb-6">
-        <label htmlFor="email" className="block text-sm font-medium mb-2 text-ink">
-          Email <span className="text-danger">*</span>
+        <label htmlFor="email" className="block text-sm font-semibold mb-2 text-ink">
+          Email <span className="text-danger" aria-hidden="true">*</span>
         </label>
         <input
           type="email"
           id="email"
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          className={`w-full px-4 py-2 border rounded-md bg-surface-overlay text-ink ${
-            errors.email
-              ? 'border-danger'
-              : 'border-line-strong'
-          }`}
+          className={fieldClass(!!errors.email)}
+          required
           aria-invalid={!!errors.email}
           aria-describedby={errors.email ? 'email-error' : undefined}
         />
         {errors.email && (
-          <p id="email-error" className="mt-1 text-sm text-danger" role="alert">
+          <p id="email-error" className="mt-2 text-sm text-danger" role="alert">
             {errors.email}
           </p>
         )}
@@ -153,24 +154,21 @@ export default function FeedbackForm() {
 
       {/* Message Field */}
       <div className="mb-6">
-        <label htmlFor="message" className="block text-sm font-medium mb-2 text-ink">
-          Message <span className="text-danger">*</span>
+        <label htmlFor="message" className="block text-sm font-semibold mb-2 text-ink">
+          Message <span className="text-danger" aria-hidden="true">*</span>
         </label>
         <textarea
           id="message"
           rows={6}
           value={formData.message}
           onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-          className={`w-full px-4 py-2 border rounded-md bg-surface-overlay text-ink ${
-            errors.message
-              ? 'border-danger'
-              : 'border-line-strong'
-          }`}
+          className={`${fieldClass(!!errors.message)} resize-y`}
+          required
           aria-invalid={!!errors.message}
           aria-describedby={errors.message ? 'message-error' : undefined}
         />
         {errors.message && (
-          <p id="message-error" className="mt-1 text-sm text-danger" role="alert">
+          <p id="message-error" className="mt-2 text-sm text-danger" role="alert">
             {errors.message}
           </p>
         )}
@@ -188,7 +186,7 @@ export default function FeedbackForm() {
             onChange={(e) =>
               setFormData({ ...formData, interestedInCollaboration: e.target.checked })
             }
-            className="w-4 h-4 text-accent border-line-strong rounded"
+            className="w-4 h-4 accent-accent border-line-strong rounded"
           />
           <span className="ml-2 text-sm text-ink">
             I&apos;m interested in collaboration opportunities
@@ -200,11 +198,7 @@ export default function FeedbackForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className={`px-6 py-3 rounded-md font-medium transition-colors bg-accent text-ink-inverse ${
-          isSubmitting
-            ? 'opacity-50 cursor-not-allowed'
-            : 'hover:bg-accent-hover'
-        }`}
+        className="inline-flex items-center gap-2 min-h-11 px-6 rounded-sm bg-accent text-ink-inverse font-semibold text-base cursor-pointer transition-colors duration-(--duration-fast) ease-erosion enabled:hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isSubmitting ? 'Sending...' : 'Send Message'}
       </button>
@@ -212,18 +206,20 @@ export default function FeedbackForm() {
       {/* Status Messages */}
       {submitStatus === 'success' && (
         <div
-          className="mt-4 p-4 bg-surface-overlay border border-success text-ink rounded-md"
+          className="mt-4 flex items-start gap-2 p-4 bg-surface-overlay border border-success text-ink rounded-sm"
           role="status"
         >
-          {submitMessage}
+          <CheckCircle size={20} aria-hidden="true" className="shrink-0 mt-0.5" />
+          <span className="min-w-0 wrap-break-word">{submitMessage}</span>
         </div>
       )}
       {submitStatus === 'error' && (
         <div
-          className="mt-4 p-4 bg-surface-overlay border border-danger text-ink rounded-md"
+          className="mt-4 flex items-start gap-2 p-4 bg-surface-overlay border border-danger text-ink rounded-sm"
           role="alert"
         >
-          {submitMessage}
+          <WarningCircle size={20} aria-hidden="true" className="shrink-0 mt-0.5" />
+          <span className="min-w-0 wrap-break-word">{submitMessage}</span>
         </div>
       )}
     </form>
