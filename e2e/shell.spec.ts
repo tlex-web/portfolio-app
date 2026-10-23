@@ -124,6 +124,99 @@ test.describe('Shell landmarks', () => {
   }
 });
 
+/**
+ * SHELL-05 / SHELL-01 empty-content case: every unmatched URL, including the
+ * deleted playground routes, returns HTTP 404 with no redirect and renders the
+ * designed 404 inside one shell (app/not-found.tsx renders SiteChrome itself).
+ * /projects/no-such-slug exercises notFound() inside the (site) group, which
+ * renders app/(site)/not-found.tsx inside the group layout's chrome.
+ */
+const NOT_FOUND_PATHS: ReadonlyArray<readonly [path: string, current: Label | null]> = [
+  ['/__no-such-page__', null],
+  ['/gradient-mesh', null],
+  ['/particle-buttons', null],
+  ['/transitions', null],
+  // Under /projects the Engineering destination stays current (prefix match).
+  ['/projects/no-such-slug', 'Engineering'],
+];
+
+test.describe('Shell 404', () => {
+  for (const [path, current] of NOT_FOUND_PATHS) {
+    test(`${path}: HTTP 404, no redirect, one shell, designed 404 body`, async ({ page }) => {
+      const response = await page.goto(path);
+
+      expect(response?.status()).toBe(404);
+      expect(new URL(page.url()).pathname).toBe(path);
+
+      await expect(page.getByRole('banner')).toHaveCount(1);
+      await expect(primaryNav(page)).toHaveCount(1);
+      await expect(page.locator('#main-content')).toHaveCount(1);
+      await expect(page.getByRole('main')).toHaveCount(1);
+      await expect(page.getByRole('contentinfo')).toHaveCount(1);
+
+      const main = page.getByRole('main');
+      await expect(main.getByRole('heading', { level: 1 })).toHaveCount(1);
+      await expect(main.getByRole('heading', { level: 1 })).toHaveText('Page not found');
+      await expect(main.getByText('Error 404', { exact: true })).toHaveCount(1);
+      await expect(main.getByRole('link', { name: 'Go to the homepage', exact: true })).toHaveAttribute(
+        'href',
+        '/',
+      );
+      await expect(main.getByRole('link', { name: 'Photographs', exact: true })).toHaveAttribute(
+        'href',
+        '/photos',
+      );
+      await expect(main.getByRole('link', { name: 'Engineering', exact: true })).toHaveAttribute(
+        'href',
+        '/projects',
+      );
+
+      // Unmatched top-level URLs have no current destination.
+      const nav = primaryNav(page);
+      await expect(nav.locator('a[aria-current="page"]:visible')).toHaveCount(current ? 1 : 0);
+      if (current) {
+        await expect(nav.getByRole('link', { name: current, exact: true })).toHaveAttribute(
+          'aria-current',
+          'page',
+        );
+      }
+    });
+  }
+
+  test.describe('375 px', () => {
+    test.use({ viewport: { width: 375, height: 812 } });
+
+    test('no horizontal scroll; h1 wraps to at most two lines; actions are 44 px targets', async ({
+      page,
+    }) => {
+      await page.goto('/__no-such-page__');
+      await page.evaluate(() => document.fonts.ready);
+
+      // clientWidth (<= innerWidth) because of the stable scrollbar gutter (07-12):
+      // the stricter bound, so scrollWidth <= innerWidth holds as well.
+      const { scrollWidth, clientWidth, innerWidth } = await page.evaluate(() => ({
+        scrollWidth: document.documentElement.scrollWidth,
+        clientWidth: document.documentElement.clientWidth,
+        innerWidth: window.innerWidth,
+      }));
+      expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+      expect(clientWidth).toBeLessThanOrEqual(innerWidth);
+
+      // Display line height is 44 px (UI-SPEC type scale): two lines at most.
+      const main = page.getByRole('main');
+      const h1 = await main.getByRole('heading', { level: 1 }).boundingBox();
+      expect(h1?.height).toBeLessThanOrEqual(2 * 44);
+
+      // The action row wraps: every action is a 44 px target inside the viewport.
+      for (const name of ['Go to the homepage', 'Photographs', 'Engineering']) {
+        const box = await main.getByRole('link', { name, exact: true }).boundingBox();
+        expect(box?.height).toBeGreaterThanOrEqual(44);
+        expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(clientWidth);
+      }
+    });
+  });
+});
+
 test.describe('Shell mobile menu', () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
