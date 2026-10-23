@@ -33,6 +33,13 @@
   --duration-fracture: 300ms;
   --duration-enter: 450ms;
   --duration-settle: 500ms;
+
+  /* Shell layout (SHELL-01, UI-SPEC "Layout widths, gutters, breakpoints, layers").
+     70 and above are reserved for the Phase 10 lightbox. */
+  --nav-h: 64px;
+  --z-nav: 40;
+  --z-menu: 50;
+  --z-skip: 60;
 }
 
 /* Font families (DSGN-07): Schibsted Grotesk display, Inter body, JetBrains Mono data only */
@@ -224,6 +231,8 @@ html {
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: var(--night-500) var(--night-950);
+  /* The sticky SiteNav never hides a focused or anchored target (WCAG 2.2 focus-not-obscured) */
+  scroll-padding-top: calc(var(--nav-h) + 16px);
 }
 
 @supports not (scrollbar-color: auto) {

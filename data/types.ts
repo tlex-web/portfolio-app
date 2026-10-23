@@ -68,6 +68,28 @@ export interface RoadmapItem {
   priority?: 'low' | 'medium' | 'high';
 }
 
+/** One primary navigation destination (SHELL-01). */
+export interface NavItem {
+  label: string;
+  href: string;
+}
+
+/**
+ * Site identity, links and nav (SHELL-03). `email` and `links.linkedin` are
+ * required strings, so removing either fails `tsc` instead of rendering an
+ * empty link.
+ */
+export interface Site {
+  name: string;
+  role: string;
+  email: string;
+  links: {
+    github: string;
+    linkedin: string;
+  };
+  nav: readonly NavItem[];
+}
+
 export interface ImageAnnotation {
   id: string; // Unique identifier
   title: string; // Feature name
