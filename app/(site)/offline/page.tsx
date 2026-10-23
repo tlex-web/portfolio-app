@@ -1,13 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 
 export default function OfflinePage() {
   return (
     <>
-      <Header />
       <div className="min-h-screen bg-gradient-to-b from-surface to-surface-raised flex items-center justify-center px-4">
         <div className="max-w-2xl mx-auto text-center">
           <div className="mb-8">
@@ -80,7 +77,6 @@ export default function OfflinePage() {
           </div>
         </div>
       </div>
-      <Footer />
     </>
   );
 }

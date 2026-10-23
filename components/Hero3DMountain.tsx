@@ -5,9 +5,9 @@ import { motion, useScroll, useTransform } from 'motion/react';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 import { useGlowIntensity } from '@/lib/useGlowIntensity';
 import { EASING, DURATION } from '@/lib/animations';
+import { site } from '@/data/site';
 import MountainTerrain3D from './MountainTerrain3D';
 import DualParticleSystem from './DualParticleSystem';
-import GlassmorphismNav from './GlassmorphismNav';
 import GeologicalButton from './GeologicalButton';
 
 export default function Hero3DMountain() {
@@ -38,10 +38,7 @@ export default function Hero3DMountain() {
   );
 
   return (
-    <div ref={containerRef} className="relative h-screen w-full overflow-hidden bg-alpine-950">
-      {/* Navigation */}
-      <GlassmorphismNav />
-
+    <div ref={containerRef} className="relative h-[calc(100svh-var(--nav-h))] w-full overflow-hidden bg-alpine-950">
       {/* 3D Mountain Background */}
       <div className="absolute inset-0">
         <MountainTerrain3D />
@@ -64,7 +61,7 @@ export default function Hero3DMountain() {
               transition={{ duration: DURATION.enter, delay: 0.5, ease: [...EASING.geological] }}
               className="text-5xl md:text-7xl lg:text-8xl font-bold text-snow-50 mb-4 drop-shadow-2xl"
             >
-              Welcome to My Portfolio
+              {site.name}
             </motion.h1>
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -72,7 +69,7 @@ export default function Hero3DMountain() {
               transition={{ duration: DURATION.enter, delay: 0.8, ease: [...EASING.geological] }}
               className="inline-block px-6 py-2 bg-gradient-to-r from-frost-500 to-frost-600 rounded-full text-snow-50 font-semibold text-lg shadow-2xl glow-frost"
             >
-              Photography × Technology
+              {site.role}
             </motion.div>
           </motion.div>
 
@@ -96,7 +93,7 @@ export default function Hero3DMountain() {
           >
             <GeologicalButton
               effect="ripple"
-              href="#main-content"
+              href="#home-content"
               className="group px-8 py-4 bg-snow-50 text-alpine-950 rounded-xl hover:bg-snow-100 transition-all duration-300 font-bold text-lg shadow-lg hover:shadow-frost-500/30 hover:scale-105"
             >
               <span className="flex items-center justify-center gap-2">
@@ -161,7 +158,7 @@ export default function Hero3DMountain() {
 
       {/* Skip to content link for accessibility */}
       <a
-        href="#main-content"
+        href="#home-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-frost-600 focus:text-snow-50 focus:rounded-md"
       >
         Skip to content

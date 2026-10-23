@@ -2,14 +2,11 @@
 
 import { motion } from 'motion/react';
 import FeedbackForm from '@/components/FeedbackForm';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import AnimatedGradientMesh from '@/components/AnimatedGradientMesh';
 
 export default function ContactPage() {
   return (
     <>
-      <Header />
       <div className="min-h-screen relative overflow-hidden">
         {/* Animated Gradient Mesh Background */}
         <AnimatedGradientMesh
@@ -138,7 +135,6 @@ export default function ContactPage() {
           </div>
         </div>
       </div>
-      <Footer />
     </>
   );
 }

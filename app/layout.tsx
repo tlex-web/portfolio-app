@@ -4,7 +4,6 @@ import { Inter, JetBrains_Mono, Schibsted_Grotesk } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration';
-import MotionProvider from '@/components/providers/MotionProvider';
 import './globals.css';
 
 // Display face (DSGN-07): h1, h2 and the wordmark. Variable wght 400-900;
@@ -55,7 +54,7 @@ export default async function RootLayout({
       </head>
       <body className="font-body antialiased">
         <ServiceWorkerRegistration />
-        <MotionProvider>{children}</MotionProvider>
+        {children}
         <Analytics />
         <SpeedInsights />
       </body>

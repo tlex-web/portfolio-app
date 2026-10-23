@@ -2,8 +2,6 @@
 
 import { useRef } from 'react';
 import ProjectCard from '@/components/ProjectCard';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import { projects } from '@/data/projects';
 import { useHexGrid } from '@/lib/useHexGrid';
 
@@ -19,7 +17,6 @@ export default function ProjectsPage() {
 
   return (
     <>
-      <Header />
       <div className="min-h-screen bg-alpine-900">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="mb-16 text-center">
@@ -59,7 +56,6 @@ export default function ProjectsPage() {
           )}
         </div>
       </div>
-      <Footer />
     </>
   );
 }

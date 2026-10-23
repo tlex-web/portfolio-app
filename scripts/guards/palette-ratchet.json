@@ -1,5 +1,5 @@
 {
-  "app/page.tsx": 5,
+  "app/(site)/page.tsx": 5,
   "components/GalleryGrid.tsx": 1,
   "components/Header.tsx": 1,
   "components/ImageDetailModal.tsx": 2,

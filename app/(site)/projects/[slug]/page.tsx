@@ -1,7 +1,5 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import FeatureShowcase from '@/components/FeatureShowcase';
 import TechStackDisplay from '@/components/TechStackDisplay';
 import ProjectHighlights from '@/components/ProjectHighlights';
@@ -29,7 +27,6 @@ export default async function ProjectDetailPage({ params }: PageProps) {
 
   return (
     <>
-      <Header />
       <div className="min-h-screen bg-gradient-to-b from-surface to-surface-raised">
         {/* Hero Section - Server Component */}
         <div className="bg-surface-raised border-y border-line text-ink py-20">
@@ -164,7 +161,6 @@ export default async function ProjectDetailPage({ params }: PageProps) {
           )}
         </div>
       </div>
-      <Footer />
     </>
   );
 }

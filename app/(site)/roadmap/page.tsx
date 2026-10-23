@@ -1,8 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import RoadmapTimeline from '@/components/RoadmapTimeline';
 import RoadmapFilters from '@/components/RoadmapFilters';
 import RoadmapProgress from '@/components/RoadmapProgress';
@@ -28,7 +26,6 @@ export default function RoadmapPage() {
 
   return (
     <>
-      <Header />
       <div className="min-h-screen bg-gradient-to-b from-surface to-surface-raised">
         {/* Hero Section */}
         <div className="bg-surface-raised border-y border-line py-20">
@@ -196,7 +193,6 @@ export default function RoadmapPage() {
           </div>
         </div>
       </div>
-      <Footer />
     </>
   );
 }

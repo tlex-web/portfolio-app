@@ -1,12 +1,9 @@
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import PhotosPageClient from '@/components/PhotosPageClient';
 import { landscapes } from '@/data/landscapes';
 
 export default function PhotosPage() {
   return (
     <>
-      <Header />
       <div className="min-h-screen bg-gradient-to-b from-surface to-surface-raised">
         {/* Hero Section - Static Server Component */}
         <div className="bg-surface-raised border-t border-line py-20">
@@ -23,7 +20,6 @@ export default function PhotosPage() {
         <PhotosPageClient images={landscapes} />
       </div>
 
-      <Footer />
     </>
   );
 }

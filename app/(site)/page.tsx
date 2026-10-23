@@ -1,7 +1,6 @@
 'use client';
 
 import Hero3DMountain from '@/components/Hero3DMountain';
-import Footer from '@/components/Footer';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import { landscapes } from '@/data/landscapes';
@@ -27,7 +26,7 @@ export default function HomePage() {
       <Hero3DMountain />
 
       {/* Main Content */}
-      <div id="main-content" className="bg-alpine-900">
+      <div id="home-content" className="bg-alpine-900">
         {/* Stats Section */}
         <motion.div
           initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
@@ -247,8 +246,6 @@ export default function HomePage() {
         </motion.div>
       </div>
 
-      {/* Footer */}
-      <Footer />
     </>
   );
 }
