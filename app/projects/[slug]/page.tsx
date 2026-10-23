@@ -21,22 +21,22 @@ export default async function ProjectDetailPage({ params }: PageProps) {
   }
 
   const statusColors = {
-    active: 'bg-green-900 text-green-200',
-    beta: 'bg-yellow-900 text-yellow-200',
-    complete: 'bg-blue-900 text-blue-200',
-    archived: 'bg-gray-700 text-gray-200',
+    active: 'bg-surface-overlay border border-success text-success',
+    beta: 'bg-surface-overlay border border-caution text-caution',
+    complete: 'bg-surface-overlay border border-accent text-accent',
+    archived: 'bg-surface-overlay border border-line-strong text-ink-muted',
   };
 
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800">
+      <div className="min-h-screen bg-gradient-to-b from-surface to-surface-raised">
         {/* Hero Section - Server Component */}
-        <div className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white py-20">
+        <div className="bg-surface-raised border-y border-line text-ink py-20">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <Link
               href="/projects"
-              className="text-white/80 hover:text-white hover:underline mb-6 inline-flex items-center gap-2"
+              className="text-ink-muted hover:text-ink hover:underline mb-6 inline-flex items-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -46,9 +46,9 @@ export default async function ProjectDetailPage({ params }: PageProps) {
 
             <div className="flex items-start justify-between flex-wrap gap-4">
               <div className="flex-1">
-                <h1 className="text-5xl font-bold mb-4">{project.name}</h1>
-                <p className="text-2xl text-cyan-100 mb-6">{project.tagline}</p>
-                <p className="text-lg text-cyan-50 max-w-3xl">{project.shortDescription}</p>
+                <h1 className="text-5xl font-bold mb-4 text-ink">{project.name}</h1>
+                <p className="text-2xl text-ink mb-6">{project.tagline}</p>
+                <p className="text-lg text-ink-muted max-w-3xl">{project.shortDescription}</p>
               </div>
               
               <div className="flex flex-col gap-3">
@@ -56,7 +56,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
                   {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
                 </span>
                 {project.version && (
-                  <span className="px-4 py-2 text-sm font-semibold rounded-full bg-white/20 backdrop-blur-sm text-white border border-white/30">
+                  <span className="px-4 py-2 text-sm font-semibold rounded-full bg-surface-overlay text-ink border border-line-strong">
                     {project.version}
                   </span>
                 )}
@@ -70,7 +70,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
                   href={project.links.github}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-6 py-3 bg-white text-gray-900 rounded-lg hover:bg-gray-100 transition-colors font-semibold flex items-center gap-2"
+                  className="px-6 py-3 bg-accent text-ink-inverse rounded-lg hover:bg-accent-hover transition-colors font-semibold flex items-center gap-2"
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                     <path
@@ -87,7 +87,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
                   href={project.links.demo}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-6 py-3 bg-cyan-700 text-white rounded-lg hover:bg-cyan-800 transition-colors font-semibold flex items-center gap-2"
+                  className="px-6 py-3 bg-surface-overlay text-ink rounded-lg hover:bg-surface transition-colors font-semibold border border-line-strong flex items-center gap-2"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -100,7 +100,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
                   href={project.links.docs}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-6 py-3 bg-white/10 backdrop-blur-sm text-white rounded-lg hover:bg-white/20 transition-colors font-semibold border border-white/30 flex items-center gap-2"
+                  className="px-6 py-3 bg-surface-overlay text-ink rounded-lg hover:bg-surface transition-colors font-semibold border border-line-strong flex items-center gap-2"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -141,17 +141,17 @@ export default async function ProjectDetailPage({ params }: PageProps) {
           {/* Related Roadmap Items */}
           {project.roadmapItems && project.roadmapItems.length > 0 && (
             <section>
-              <h2 className="text-3xl font-bold mb-8 text-white text-center">
+              <h2 className="text-3xl font-bold mb-8 text-ink text-center">
                 What&apos;s Next?
               </h2>
-              <div className="bg-gradient-to-br from-gray-800 to-gray-700 rounded-xl p-8 border-2 border-cyan-800">
-                <p className="text-lg text-gray-300 mb-4 text-center">
+              <div className="bg-surface-raised rounded-xl p-8 border-2 border-line">
+                <p className="text-lg text-ink mb-4 text-center">
                   Check out the roadmap to see planned features and improvements for this project.
                 </p>
                 <div className="text-center">
                   <Link
                     href="/roadmap"
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors font-semibold"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-ink-inverse rounded-lg hover:bg-accent-hover transition-colors font-semibold"
                   >
                     View Roadmap
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

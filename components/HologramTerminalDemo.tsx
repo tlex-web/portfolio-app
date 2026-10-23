@@ -89,23 +89,23 @@ export default function HologramTerminalDemo({
   }, [currentIndex, isPlaying, currentCommand, commands.length, loopDelay, prefersReducedMotion]);
 
   const riskColors = {
-    low: 'text-green-400 border-green-400',
-    medium: 'text-yellow-400 border-yellow-400',
-    high: 'text-orange-400 border-orange-400',
-    critical: 'text-red-400 border-red-400',
+    low: 'text-success border-success',
+    medium: 'text-caution border-caution',
+    high: 'text-danger border-danger',
+    critical: 'text-danger border-danger',
   };
 
   return (
     <div className="relative">
       {/* Terminal Header */}
-      <div className="flex items-center justify-between mb-3 sm:mb-4 pb-2 sm:pb-3 border-b border-cyan-500/30">
+      <div className="flex items-center justify-between mb-3 sm:mb-4 pb-2 sm:pb-3 border-b border-line">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="flex gap-1.5 sm:gap-2">
-            <div className="w-3 h-3 rounded-full bg-red-500 shadow-lg shadow-red-500/50"></div>
-            <div className="w-3 h-3 rounded-full bg-yellow-500 shadow-lg shadow-yellow-500/50"></div>
-            <div className="w-3 h-3 rounded-full bg-green-500 shadow-lg shadow-green-500/50"></div>
+            <div className="w-3 h-3 rounded-full bg-line-strong shadow-lg"></div>
+            <div className="w-3 h-3 rounded-full bg-line-strong shadow-lg"></div>
+            <div className="w-3 h-3 rounded-full bg-line-strong shadow-lg"></div>
           </div>
-          <span className="text-cyan-400 text-xs sm:text-sm font-bold tracking-wider">CLI_X TERMINAL</span>
+          <span className="text-accent text-xs sm:text-sm font-bold tracking-wider">CLI_X TERMINAL</span>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
@@ -123,11 +123,11 @@ export default function HologramTerminalDemo({
           {/* Play/Pause */}
           <button
             onClick={() => setPlayOverride(!isPlaying)}
-            className="w-9 h-9 sm:w-10 sm:h-10 min-w-[44px] min-h-[44px] rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 flex items-center justify-center transition-all"
+            className="w-9 h-9 sm:w-10 sm:h-10 min-w-[44px] min-h-[44px] rounded-full bg-surface-overlay hover:bg-surface-raised border border-line-strong flex items-center justify-center transition-all"
             aria-label={isPlaying ? 'Pause' : 'Play'}
           >
             {isPlaying ? (
-              <svg className="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"
                   d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z"
@@ -135,7 +135,7 @@ export default function HologramTerminalDemo({
                 />
               </svg>
             ) : (
-              <svg className="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"
                   d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
@@ -159,11 +159,11 @@ export default function HologramTerminalDemo({
           >
             {/* Natural Language Input */}
             <div className="flex items-start gap-2 mb-3">
-              <span className="text-purple-400 font-bold text-sm">USER:</span>
-              <span className="text-white font-normal text-sm flex-1">
+              <span className="text-ink-muted font-bold text-sm">USER:</span>
+              <span className="text-ink font-normal text-sm flex-1">
                 {displayedInput}
                 {isTyping && displayedInput.length < currentCommand.input.length && (
-                  <span className="inline-block w-2 h-4 bg-purple-400 ml-1 animate-pulse"></span>
+                  <span className="inline-block w-2 h-4 bg-ink-muted ml-1 animate-pulse"></span>
                 )}
               </span>
             </div>
@@ -171,11 +171,11 @@ export default function HologramTerminalDemo({
             {/* Generated Command */}
             {displayedOutput && (
               <div className="flex items-start gap-2 mb-2">
-                <span className="text-green-400 font-bold text-lg">❯</span>
-                <span className="text-cyan-300 font-mono text-sm flex-1">
+                <span className="text-accent font-bold text-lg">❯</span>
+                <span className="text-accent font-mono text-sm flex-1">
                   {displayedOutput}
                   {isTyping && displayedOutput.length < currentCommand.output.length && (
-                    <span className="inline-block w-2 h-4 bg-cyan-400 ml-1 animate-pulse"></span>
+                    <span className="inline-block w-2 h-4 bg-accent ml-1 animate-pulse"></span>
                   )}
                 </span>
               </div>
@@ -188,8 +188,8 @@ export default function HologramTerminalDemo({
                 animate={{ opacity: 1, y: 0 }}
                 className={`p-3 rounded-lg border-l-4 mb-3 ${
                   currentCommand.riskLevel === 'critical' || currentCommand.riskLevel === 'high'
-                    ? 'bg-red-900/20 border-red-500 text-red-300'
-                    : 'bg-yellow-900/20 border-yellow-500 text-yellow-300'
+                    ? 'bg-surface-overlay border-danger text-danger'
+                    : 'bg-surface-overlay border-caution text-caution'
                 }`}
               >
                 <div className="flex items-start gap-2">
@@ -211,11 +211,11 @@ export default function HologramTerminalDemo({
                 initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.3 }}
-                className="p-4 bg-cyan-900/20 border border-cyan-500/30 rounded-lg"
+                className="p-4 bg-surface-overlay border border-line-strong rounded-lg"
               >
                 <div className="flex items-start gap-2">
                   <svg
-                    className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5"
+                    className="w-5 h-5 text-accent flex-shrink-0 mt-0.5"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -225,7 +225,7 @@ export default function HologramTerminalDemo({
                       clipRule="evenodd"
                     />
                   </svg>
-                  <p className="text-cyan-200 text-sm leading-relaxed">{currentCommand.explanation}</p>
+                  <p className="text-ink text-sm leading-relaxed">{currentCommand.explanation}</p>
                 </div>
               </motion.div>
             )}
@@ -234,9 +234,9 @@ export default function HologramTerminalDemo({
       </div>
 
       {/* Progress Indicator */}
-      <div className="mt-4 pt-4 border-t border-cyan-500/30">
+      <div className="mt-4 pt-4 border-t border-line">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-cyan-400 text-xs font-bold">
+          <span className="text-accent text-xs font-bold">
             COMMAND {currentIndex + 1} / {commands.length}
           </span>
           <div className="flex gap-1">
@@ -246,8 +246,8 @@ export default function HologramTerminalDemo({
                 onClick={() => setCurrentIndex(idx)}
                 className={`w-2 h-2 rounded-full transition-all ${
                   idx === currentIndex
-                    ? 'bg-cyan-400 w-6'
-                    : 'bg-cyan-400/30 hover:bg-cyan-400/50'
+                    ? 'bg-accent w-6'
+                    : 'bg-line-strong hover:bg-ink-muted'
                 }`}
                 aria-label={`Go to command ${idx + 1}`}
               />

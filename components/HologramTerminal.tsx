@@ -345,21 +345,21 @@ export default function HologramTerminal({ children, className = '' }: HologramT
       </SafeCanvas>
 
       {/* Holographic Display Banner */}
-      <div className="absolute top-2 sm:top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 backdrop-blur-sm px-2 sm:px-3 md:px-6 py-1.5 sm:py-2 md:py-3 rounded-full text-cyan-400 text-[10px] sm:text-xs md:text-sm font-bold border-2 border-cyan-500/50 shadow-lg shadow-cyan-500/30">
+      <div className="absolute top-2 sm:top-4 left-1/2 -translate-x-1/2 bg-surface-raised px-2 sm:px-3 md:px-6 py-1.5 sm:py-2 md:py-3 rounded-full text-accent text-[10px] sm:text-xs md:text-sm font-bold border-2 border-accent shadow-lg">
         <span className="inline-flex items-center gap-3">
           <span className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-accent"></span>
           </span>
           CLI_X HOLOGRAPHIC TERMINAL
-          <span className="px-2 py-1 bg-purple-500/30 text-purple-300 text-xs rounded-md font-mono">3D</span>
+          <span className="px-2 py-1 bg-surface-overlay text-accent text-xs rounded-md font-mono">3D</span>
         </span>
       </div>
 
       {/* Hologram Label */}
-      <div className="hidden sm:flex absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-sm px-4 sm:px-6 py-1.5 sm:py-2 rounded-full text-cyan-400 text-xs sm:text-sm font-bold border border-cyan-500/50 shadow-lg shadow-cyan-500/30">
+      <div className="hidden sm:flex absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 bg-surface px-4 sm:px-6 py-1.5 sm:py-2 rounded-full text-accent text-xs sm:text-sm font-bold border border-line-strong shadow-lg">
         <span className="inline-flex items-center gap-2">
-          <span className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+          <span className="w-2 h-2 bg-accent rounded-full animate-pulse"></span>
           HOLOGRAPHIC DISPLAY ACTIVE
         </span>
       </div>
