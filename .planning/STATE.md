@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 07
 current_phase_name: Foundation & Guardrails
 status: executing
-stopped_at: Completed 07-14-PLAN.md
-last_updated: "2026-10-22T23:55:29.431Z"
+stopped_at: Completed 07-15-PLAN.md
+last_updated: "2026-10-23T00:14:28.987Z"
 last_activity: 2026-10-22
 last_activity_desc: Phase 07 execution started
-state_head: 1b82f57e17b49736b434483b3078a6877808baaa
+state_head: 8f565104430ceea8388b58c749f14fd828b56ac6
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 26
-  completed_plans: 14
-  percent: 54
+  completed_plans: 15
+  percent: 58
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-10)
 ## Current Position
 
 Phase: 07 (Foundation & Guardrails) — EXECUTING
-Plan: 15 of 26
+Plan: 16 of 26
 Status: Ready to execute
 Last activity: 2026-10-22 — Phase 07 execution started
 
-Progress: [█████░░░░░] 54%
+Progress: [██████░░░░] 58%
 
 ## Performance Metrics
 
@@ -68,6 +68,7 @@ Progress: [█████░░░░░] 54%
 | Phase 07 P12 | 1h 0m | 2 tasks | 74 files |
 | Phase 07 P13 | 44 min | 2 tasks | 48 files |
 | Phase 07 P14 | 14 min | 2 tasks | 41 files |
+| Phase 07 P15 | 16 min | 3 tasks | 18 files |
 
 ## Accumulated Context
 
@@ -122,6 +123,7 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-14] DSGN-05 stage 1 neutralise (5737aeb): dark: is class-based via html.dark (@custom-variant dark (&:where(.dark, .dark *)) in app/globals.css, temporary, removed in 07-20); <html> carries the dark class permanently (LOCKED shell contract); color-scheme: dark was already on html (07-12). Zero markup change; compiled CSS has 0 prefers-color-scheme rules and 87 :where(.dark,.dark *) selectors. DSGN-05 stays Pending: 07-15 and 07-20 also declare it
 - [Phase 07]: [07-14] visual-light asserts against the visual-dark PNGs (expect.toHaveScreenshot pathTemplate: DARK_PATH); the 36 *-visual-light-linux.png are deleted and visual-baselines.yml updates --project=visual-dark only (0 visual-light strings), so an update can never overwrite dark files with light output. CI run 39873723006 green on the first push (Visual 72 passed: dark unchanged, light identical to dark at threshold 0.01); no re-baseline. Re-baselines from now on produce dark PNGs only
 - [Phase 07]: [07-14] A project-level expect in Playwright REPLACES the top-level expect (takeFirst(projectConfig.expect, config.expect, {}), node_modules/playwright/lib/common/index.js:607), so a project override without the shared options silently falls back to threshold 0.2. playwright.config.ts now has const SCREENSHOT = { animations: disabled, caret: hide, threshold: 0.01 }, used at the top level and spread into visual-light; any future project override must spread SCREENSHOT
+- [Phase 07]: [07-15] DSGN-05 stage 2 collapse (0951de8, d114b42): every `A dark:B` pair in the 18 files collapsed to `B` (228 dark: tokens on 177 lines -> 0; 6 unpaired FeedbackForm dark: utilities lost their prefix). The 8b collapse is zero-diff: CI run 39875749247 green (Visual, Unit, E2E), 0 PNGs changed, no re-baseline. The dark: utilities are gone from code (app, components, lib, data, e2e count 0); only @custom-variant dark in app/globals.css remains (removed in 07-20). DSGN-05 stays Pending: 07-20 also declares it
 
 ### Pending Todos
 
@@ -139,7 +141,8 @@ Recent decisions affecting current work:
 - [Phase 7, from 07-10] Lost hover background: `app/page.tsx:232` and `components/Hero3DMountain.tsx:100` use `bg-snow-50 hover:bg-snow-100`, and both aliases now map to firn-50, so the hover background no longer changes (shadow/scale remain). Restore a distinct hover state when 07-20 / Phase 9 migrate these to semantic tokens
 - [Phase 9-12, from 07-11] 37 utility-styled headings in 20 files (e.g. Hero3DMountain.tsx:65 font-bold text-snow-50 drop-shadow-2xl; /projects text-shadow-glow; /contact, /error, /not-found, /offline text-gray-900 dark:text-white) still carry font-bold, glow and v1 colours because utilities beat the 7c @layer base rules; they get the 7c weight/no-glow/ink only when their redesign phase removes those utilities
 - [Phase 11, from 07-13] Roadmap card header overflows at narrow widths: at 375px the RoadmapTimeline "Target Release" pill and its label cross the card's right border by up to ~7px (CI render; 0.8-5.1px on 5 of 6 Medium cards without the CI gutter), after the 20px 7e icons grew the badges to 144.5x32. Tim accepted it for now (07-13 option A); the Phase 11 route-log roadmap redesign must fix the card header so the release block cannot overflow at narrow widths
-- [Phase 7, from 07-14] Stock dark: pairs now reach every visitor, not only dark-OS ones: e.g. dark:text-gray-400 (29 uses) on dark:bg-gray-800 (20 uses), and the contrast guard is not active until 07-20. Check those pairs against 4.5:1 in the 07-20 contrast guard, and after the 07-15 collapse removes the light base classes check the FeedbackForm field placeholder and autofill colours
+- [Phase 7, from 07-14, updated by 07-15] Stock dark values now reach every visitor, not only dark-OS ones (since 07-15 collapsed as plain classes, e.g. text-gray-400 on bg-gray-800), and the contrast guard is not active until 07-20. Measured failures to fix in 07-16..07-20: FeedbackForm error text-red-600 on the dark card ~3.2:1 (needs 4.5:1), FeedbackForm input borders border-gray-600 on bg-gray-800 ~1.9:1 (needs 3:1 non-text), app/offline/page.tsx:61 text-gray-500 small text on the gray-900/800 gradient ~3.6:1 (offline:15 icon text-gray-600 ~2.3:1 is fine only if decorative). The FeedbackForm placeholder/autofill part is RESOLVED by 07-15: the light base classes are gone and the inputs have no placeholder class, so the browser default under color-scheme: dark applies
+- [Phase 7, from 07-15, for 07-20] Add `@source not` for `.planning` and `.claude` in app/globals.css before any compiled-CSS guard: Tailwind v4 source detection reads tracked Markdown (.planning/milestones/v1.0-phases/04-design-components/04-03-PLAN.md, 04-05-PLAN.md, 04-RESEARCH.md, .claude/skills/ui-styling/references/shadcn-theming.md), so the compiled CSS (.next/static/chunks/*.css) still has 41 phantom :where(.dark,.dark *) selectors (e.g. dark:scale-0, dark:-rotate-90, dark:group-hover:text-cyan-400) and dead stock classes (07-09's .to-amber-500) that no code uses. No visual effect, but a palette or dark: guard over the compiled CSS would count them
 
 ## Deferred Items
 
@@ -151,6 +154,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-22T23:55:29.389Z
-Stopped at: Completed 07-14-PLAN.md
+Last session: 2026-10-23T00:14:28.944Z
+Stopped at: Completed 07-15-PLAN.md
 Resume file: None
