@@ -31,7 +31,7 @@
 
 **Execution order:** 7 → 8 → 9 → 10 ∥ 11 → 12. Phase 8 blocks everything after it. Phases 10 and 11 each depend only on Phase 8 (plus the Phase 7 shell) and not on each other, so they can run in parallel. Phase 9 also depends only on Phase 8 and keeps its numeric slot before 10. Phase 12 needs 9, 10 and 11.
 
-- [ ] **Phase 7: Foundation & Guardrails** - Regression nets, isolated dependency upgrades, tokens v2 and one site shell with Tim Lui's real identity
+- [x] **Phase 7: Foundation & Guardrails** - Regression nets, isolated dependency upgrades, tokens v2 and one site shell with Tim Lui's real identity (completed 2026-10-24)
 - [ ] **Phase 8: Data & Terrain Pipeline** - Build-time swissALTIRegio terrain and EXIF photo data, privacy-safe images, typed highlights, and the footer map legend
 - [ ] **Phase 9: Home Ascent** - Real Matterhorn hero with a native-scroll ascent, altimeter rail and photo waypoints, plus a static fallback
 - [ ] **Phase 10: Photography** - Map / Grid / Carousel light table and a deep-linkable gallery-black lightbox with EXIF and hotspots
@@ -52,7 +52,7 @@
   4. On every page a keyboard user finds one skip link, exactly one primary navigation with a visible current-page indicator, and exactly one main landmark. On mobile the menu opens with touch targets of at least 44 px and closes on route change and on Escape.
   5. Every page shows Tim Lui's name, role line and real GitHub, LinkedIn and email links, with no placeholder text or links. `/gradient-mesh`, `/particle-buttons` and `/transitions` return a 404 inside the site shell and no page links to them. The Contact heading and form fields pass WCAG AA for light-OS and dark-OS visitors alike.
 
-**Plans**: 27/27 plans executed: 26/26 executed (sequential waves 1-26, one plan per wave; locked build order preserved) + 1 gap-closure plan (07-27, wave 27)
+**Plans**: 27/27 plans complete: 26/26 executed (sequential waves 1-26, one plan per wave; locked build order preserved) + 1 gap-closure plan (07-27, wave 27)
 
 Plans:
 **Wave 1**
@@ -328,7 +328,7 @@ Plans:
 | 4. Design Components | v1.0 | 6/6 | Complete | 2026-02-17 |
 | 5. Performance & Accessibility Polish | v1.0 | 5/5 | Complete | 2026-03-11 |
 | 6. Integration Wiring Fixes | v1.0 | 1/1 | Complete | 2026-03-12 |
-| 7. Foundation & Guardrails | v2.0 | 27/27 | In Progress | - |
+| 7. Foundation & Guardrails | v2.0 | 27/27 | Complete    | 2026-10-24 |
 | 8. Data & Terrain Pipeline | v2.0 | 0/TBD | Not started | - |
 | 9. Home Ascent | v2.0 | 0/TBD | Not started | - |
 | 10. Photography | v2.0 | 0/TBD | Not started | - |

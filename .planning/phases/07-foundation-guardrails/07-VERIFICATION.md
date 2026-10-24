@@ -1,8 +1,8 @@
 ---
 phase: 07-foundation-guardrails
 verified: 2026-10-24T15:10:00Z
-status: human_needed
-score: 4/5 must-haves verified
+status: passed
+score: 5/5 must-haves verified (SC2 via override)
 covered_files:
   - ".github/dependabot.yml"
   - ".github/workflows/ci.yml"
@@ -85,7 +85,12 @@ covered_files:
   - "vercel.json"
 covered_digest: "v3:sha256:f6e27af0c6cbaceae1444bb9c00257f41a3475d7d9d420799af76e8b4ced6bd8"
 behavior_unverified: 0
-overrides_applied: 0
+overrides_applied: 1
+overrides:
+  - must_have: "Each passes the baseline run with zero visual diff, mid-scroll captures included"
+    reason: "Three documented re-baselines: motion 14 hero scroll indicator (73880a2), Next 16.4 SWC JSX-space fix on /offline (e72c661), Chromium 156 textarea grabber on /contact (fdd2652); each limited to the named shots, all other shots byte-identical, CI green"
+    accepted_by: "Tim"
+    accepted_at: "2026-10-24T11:16:30Z"
 re_verification:
   previous_status: gaps_found
   previous_score: 3/5
@@ -126,12 +131,12 @@ human_verification:
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
 | 1 | Local, CI (Node 24) and Vercel installs use `npm ci`; CI holds baselines for every route in dark and light from a Linux production build; CI fails on screenshot diff, test-count drop, `dark:`/stock palette class, sub-AA token pair, jsx-a11y violation | VERIFIED (repo side; the live Vercel setting is a human item) | Unchanged since the first verification (code identical apart from the two 07-27 files). Re-run here: `npm run lint` exit 0 with guard selftest 55/55; `npm run type-check` exit 0; Jest 13 suites / 107 tests passed; `test-count.mjs` "jest 107 + e2e 99 = 206 (baseline 206) OK". CI run 40086883766 on 460b3a4: Unit, Lint and Type Check, E2E, Visual Regression, Security Audit, Build all success (Dependency Review skipped) |
-| 2 | motion 14.1, Next 16.4.x/React 19.3/R3F 9.8.1/drei 10.7.9 and Playwright 1.64 land as three separate commits; each passes the baseline run with zero visual diff, mid-scroll captures included | UNCERTAIN (human decision) | Unchanged from the first verification. Three separate commits (`73880a2`, `a3c2b81` plus fix commits and the `fdeb9fe` security patch, `fdd2652`), all CI green, but each re-baselined PNGs (6 home scroll-50, 6 offline, 6 contact). Literal "zero visual diff" is not met; see human_verification and the override suggestion below. Code is not changed by 07-27 |
+| 2 | motion 14.1, Next 16.4.x/React 19.3/R3F 9.8.1/drei 10.7.9 and Playwright 1.64 land as three separate commits; each passes the baseline run with zero visual diff, mid-scroll captures included | PASSED (override) | Override accepted by Tim on 2026-10-24 during UAT test 2 ("all three exceptions are acceptable"). Unchanged from the first verification. Three separate commits (`73880a2`, `a3c2b81` plus fix commits and the `fdeb9fe` security patch, `fdd2652`), all CI green, but each re-baselined PNGs (6 home scroll-50, 6 offline, 6 contact). Literal "zero visual diff" is not met; see human_verification and the override suggestion below. Code is not changed by 07-27 |
 | 3 | Light-OS visitor sees the same dark site; tokens v2; grotesk + Inter + JetBrains Mono; one SVG icon family, no emoji icons; thin scrollbar with stable gutter; motion from shared tokens that settles under reduced motion | VERIFIED | Unchanged. Not touched by 07-27 (the only edit in `components/Hero3DMountain.tsx` is the deleted anchor and its comment; the removed class list used `sr-only`/`focus:` utilities with no palette violation). Visual Regression 72 passed on 460b3a4, including `visual-light` against the dark PNGs |
 | 4 | On every page a keyboard user finds one skip link, exactly one primary navigation with a visible current-page indicator, exactly one main landmark; mobile menu has >=44 px targets and closes on route change and Escape | VERIFIED | Previously the one failing part. Now: `components/Hero3DMountain.tsx` contains no skip anchor (diff vs `4969072` shows the 8 deleted lines: comment + `<a href="#home-content" class="sr-only focus:not-sr-only ...">Skip to content</a>`). `grep 'href="#' app components lib` finds only `SkipLink.tsx:9` (`#main-content`) and the hero CTA `Hero3DMountain.tsx:96` (`#home-content`, a visible button with a layout box, target `id="home-content"` at `app/(site)/page.tsx:29` intact). `SiteChrome` renders `<SkipLink />` first (line 21). `e2e/shell.spec.ts` has `skipLinks = page.getByRole('link', { name: /skip to/i })` (line 30, no `.first()`/`:visible`/`includeHidden`) and `toHaveCount(1)` at line 69 (7 routes) and line 161 (5 404 paths); test count unchanged (23 shell tests, ratchet 206). Red/green proof checked against GitHub: run 40086334529 on RED `5f403af` has E2E Tests = failure and every other job success; run 40086883766 on GREEN `460b3a4` has all jobs success. The remaining parts (one nav, one main, aria-current, 44 px, Escape/route-change close) are unchanged and still asserted by `shell.spec.ts` and `SiteNav.test.tsx` |
 | 5 | Every page shows Tim Lui's name, role line and real GitHub, LinkedIn, email; no placeholder text/links; `/gradient-mesh`, `/particle-buttons`, `/transitions` 404 inside the shell and nothing links to them; Contact heading and fields pass AA for light-OS and dark-OS | VERIFIED | Unchanged. `guard:identity` passes inside `npm run lint`; Shell 404 tests (now also asserting one skip link) and `a11y-contact.spec.ts` green in CI E2E |
 
-**Score:** 4/5 truths verified (SC2 awaiting a human decision). 0 present-but-behavior-unverified. The behavior-dependent truths (menu close triggers, reduced-motion settle, light equals dark, single skip link) each have a passing behavioral test, and the skip-link test was demonstrated red before green.
+**Score:** 5/5 truths verified (SC2 via override, accepted by Tim during UAT). 0 present-but-behavior-unverified. The behavior-dependent truths (menu close triggers, reduced-motion settle, light equals dark, single skip link) each have a passing behavioral test, and the skip-link test was demonstrated red before green.
 
 ### Deferred Items
 

@@ -2,44 +2,44 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Topographic Identity
-current_phase: 07
-current_phase_name: Foundation & Guardrails
-status: verifying
-stopped_at: Completed 07-27-PLAN.md
-last_updated: "2026-10-24T10:50:04.924Z"
+current_phase: 8
+current_phase_name: Data & Terrain Pipeline
+status: planning
+stopped_at: Phase 07 complete, ready to plan Phase 8
+last_updated: "2026-10-24T11:20:58.192Z"
 last_activity: 2026-10-24
-last_activity_desc: Phase 07 execution started
-state_head: 4e0e41946f26638dea19ecf0c8b77f0c7e04355a
+last_activity_desc: Phase 07 complete, transitioned to Phase 8
+state_head: da0771c423606d8d7303db07d321ae0362756ce6
 progress:
   total_phases: 6
-  completed_phases: 6
+  completed_phases: 1
   total_plans: 27
   completed_plans: 27
-  percent: 100
+  percent: 17
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-10)
+See: .planning/PROJECT.md (updated 2026-10-24)
 
 **Core value:** A portfolio that is visually memorable and distinctive (not another generic Tailwind site) while being stable and well-maintained under the hood.
-**Current focus:** Phase 07 — Foundation & Guardrails
+**Current focus:** Phase 8 — Data & Terrain Pipeline
 
 ## Current Position
 
-Phase: 07 (Foundation & Guardrails) — EXECUTING
-Plan: 27 of 27
-Status: Phase complete — ready for verification
-Last activity: 2026-10-24 — Phase 07 execution started
+Phase: 8 — Data & Terrain Pipeline
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-10-24 — Phase 07 complete, transitioned to Phase 8
 
-Progress: [██████████] 100%
+Progress: [██░░░░░░░░] 17% (1 of 6 v2.0 phases; 27/27 planned plans done)
 
 ## Performance Metrics
 
 **Velocity (v2.0):**
-- Total plans completed: 0
+- Total plans completed: 27
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -47,7 +47,7 @@ Progress: [██████████] 100%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 07 | 27 | - | - |
 
 *Updated after each plan completion. v1.0 history: 24 plans across Phases 1-6 (see MILESTONES.md).*
 **Per-Plan Metrics:**
@@ -155,6 +155,7 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-26] HOME-08 baseline for Phase 9 (e2e/perf/home-baseline.json, 38b9704): Home on Pixel 7, 4x CPU, 150 ms, 200000/93750 B/s, 5 runs, medians, recorded in mcr.microsoft.com/playwright:v1.64.0-noble (Playwright 1.64.0, Chromium 156.0.8078.4) at b21dbc9: LCP 4692 ms (samples 4264/4748/4692/4700/4688), script transfer 468770 B, decoded 1625352 B. Phase 9 re-measures with --project=perf in the same container and must not exceed these
 - [Phase 07]: [07-26] Phase close (8eddb50): test-count ratchet 91 -> 206 (jest 107 + e2e 99); Phase 8 ratchets from 206. dependabot.yml restored byte-identical to pre-07-01 (next/react/react-dom semver-major-only ignores; the eight temporary holds removed)
 - [Phase 07]: [07-27] SHELL-01 gap closed: the v1 hero's own 'Skip to content' anchor (#home-content) was deleted, so the shell SkipLink is the only skip link; e2e/shell.spec.ts asserts getByRole('link', { name: /skip to/i }) toHaveCount(1) on 7 routes + 5 404 paths. RED 5f403af failed CI E2E only on / (Expected 1 Received 2, run 40086334529); GREEN 460b3a4 passed all five jobs, zero visual diff (run 40086883766). IN-04 fixed. A Phase 9 hero skip link must not reintroduce a second 'Skip to ...' link
+- [Phase 07]: UAT 2026-10-24 (07-UAT.md, 5/5 pass): Vercel builds on Node 24.x with npm ci (GUARD-01 confirmed); Visual Regression, Lint and Type Check and Unit Tests are required checks on main; Tim ratified the three SC2 zero-diff re-baselines ("all three exceptions are acceptable, add the overrides"), recorded as an override in 07-VERIFICATION.md; Firefox/WebKit keyboard pass and real-device visual sign-off passed
 
 ### Pending Todos
 
@@ -166,7 +167,7 @@ Recent decisions affecting current work:
 - [Phase 7] Needs from Tim: real GitHub, LinkedIn, email and role line; display-face choice in the UI-SPEC.
 - [Phase 8] Needs from Tim: waterfall name/location, photo copy corrections, the swissALTIRegio attribution string, an approximate position for the film-scan photo (R004-011), and where the originals should live.
 - [Phase 11] Needs from Tim: CLI_X per-grade content and Medium/Critical demo commands with `riskScore`, metric sources, roadmap order and dates.
-- [Phase 7] Required status checks (Visual Regression, Lint and Type Check, Unit Tests) on main are not set yet; until Tim sets them a red visual job does not block merges (07-USER-SETUP.md)
+- [Phase 7; RESOLVED at Phase 07 UAT 2026-10-24, test 3: Tim confirmed the three jobs are Required on main] Required status checks (Visual Regression, Lint and Type Check, Unit Tests) on main are not set yet; until Tim sets them a red visual job does not block merges (07-USER-SETUP.md)
 - [Phase 7] main (Vercel production) lacks the Next 16.4.2 / sharp 0.35.5 security patch until Tim merges gsd/phase-07-foundation-guardrails; GitHub reported 84 Dependabot alerts on the default branch (9 critical). Merge recommended soon.
 - [Phase 7, from 07-10] Hero badge `components/Hero3DMountain.tsx:73` (text-snow-50 on from-frost-500 to-frost-600, 18px semibold = not large text) is now 1.42-2.17:1 after the locked v1->v2 alias map (v1 was 2.10-2.93:1, also failing). No Phase 7 plan fixes it explicitly: catch it in the 07-20 contrast guard or the Phase 9 hero rework
 - [Phase 7, from 07-10] Lost hover background: `app/page.tsx:232` and `components/Hero3DMountain.tsx:100` use `bg-snow-50 hover:bg-snow-100`, and both aliases now map to firn-50, so the hover background no longer changes (shadow/scale remain). Restore a distinct hover state when 07-20 / Phase 9 migrate these to semantic tokens
@@ -190,6 +191,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-24T10:50:04.865Z
-Stopped at: Completed 07-27-PLAN.md
+Last session: 2026-10-24T11:22:41Z
+Stopped at: Phase 07 complete, ready to plan Phase 8
 Resume file: None

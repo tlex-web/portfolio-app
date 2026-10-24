@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A personal portfolio web application built with Next.js and React, showcasing projects and landscape photography through interactive 3D visualizations. Features a distinctive "Swiss Alps" crystalline design system with geological depth effects, glassmorphism navigation, hexagonal project cards, and progressive 3D texture loading — all with full reduced-motion accessibility support.
+A personal portfolio web application built with Next.js and React, showcasing projects and landscape photography through interactive 3D visualizations. Since v2.0 Phase 7, every page renders inside one dark, token-driven site shell (tokens v2, a single `SiteNav`, Tim Lui's real identity) behind CI guardrails for visual regressions, deleted tests and off-system styling. The v1.0 "Swiss Alps" crystalline pieces (geological depth effects, hexagonal project cards, progressive 3D texture loading) remain on pages v2.0 has not rebuilt yet. Everything supports reduced motion.
 
 ## Core Value
 
@@ -53,18 +53,19 @@ A portfolio that is visually memorable and distinctive — not another generic T
 - ✓ Glowing accents connecting 2D UI to 3D components — v1.0
 - ✓ Progressive texture loading for PhotoCarousel3D — v1.0
 - ✓ Reduced-motion support across all animated components — v1.0
+- ✓ One enforced design system across every page (tokens v2, no `dark:` variants, no stock palette classes, lint-enforced) — Phase 7
+- ✓ Real identity (Tim Lui) and real contact/social links everywhere — Phase 7
+- ✓ CI regression nets: Linux visual baselines for every route in dark and light, test-count ratchet, palette/contrast/jsx-a11y guards — Phase 7
 
 ### Active
 
 <!-- Current scope. Building toward these in v2.0. -->
 
-- [ ] One enforced design system across every page (tokens v2, no `dark:` variants, no stock palette classes)
-- [ ] Real identity (Tim Lui) and real contact/social links everywhere
 - [ ] Real Matterhorn terrain hero with scroll "ascent" and photo waypoints
 - [ ] Photography experience driven by real EXIF data (map, grid, carousel, lightbox)
 - [ ] Engineering case studies with trail-grade risk visualization
 - [ ] Route-log roadmap, summit-register contact, designed edge pages
-- [ ] Playground routes and dead code removed
+- [ ] Playground routes and dead code removed (playground routes removed and resolving to the designed 404 in Phase 7; dead code, e.g. the unused `GlassmorphismNav.tsx`, remains for Phase 12)
 - [ ] No visual or functional regressions (screenshot baselines, tests rewritten not deleted, axe clean)
 
 ### Out of Scope
@@ -81,6 +82,7 @@ A portfolio that is visually memorable and distinctive — not another generic T
 
 Shipped v1.0 with 12,484 LOC TypeScript/CSS across 165 files.
 Tech stack: Next.js 16, React 19, Tailwind v4 (CSS-first @theme), Three.js/R3F/drei, Framer Motion.
+After v2.0 Phase 7: Next 16.4.2, React 19.3.1, `motion` 14.1 (`motion/react`), R3F 9.8.1, drei 10.7.9, Playwright 1.64, Node 24 with `npm ci` locally, in CI and on Vercel.
 Deployed on Vercel with Upstash Redis for rate limiting.
 
 Design system: "Swiss Alps" crystalline aesthetic — 30 OKLCH tokens across 8 color families (alpine, granite, snow, frost, ember, pine, rust, amber), geological depth shadows (stratum-1/2/3), hex grid layouts, scroll-linked glow intensity.
@@ -129,22 +131,26 @@ UI audit (2026-10-10, before v2.0):
 | GeologicalButton replaces ParticleButton | Consistent with crystalline design system | ✓ Good |
 | v2.0 direction A "Topographic Survey" over Console / Field Journal | Only direction where photography and engineering share one content source (real terrain, EXIF GPS, trail-grade risk); continues v1.0 contours/easing/OKLCH | — Pending |
 | Gallery-black surface inside the photo viewer | Map palette must never color-cast the photographs | — Pending |
-| Identity: Tim Lui | Replace all placeholder branding and links | — Pending |
-| Delete `/gradient-mesh`, `/particle-buttons`, `/transitions` | Playground pages dilute the portfolio and are linked from Photos | — Pending |
+| Identity: Tim Lui | Replace all placeholder branding and links | ✓ Good — shipped in Phase 7, held by `guard:identity` |
+| Delete `/gradient-mesh`, `/particle-buttons`, `/transitions` | Playground pages dilute the portfolio and are linked from Photos | ✓ Good — removed in Phase 7 |
 | Retire hex project cards (`hex-clip`, `useHexGrid`) | Two projects don't need a grid; clip-path complicates focus and content | — Pending |
-| Upgrade framer-motion 12 → 14 first, in isolation | Avoid building new motion on an API about to change; isolate regression risk | — Pending |
-| Upgrade React 19.3 / Next 16.4 in Phase 7, in isolation | `<ViewTransition>` and `addTransitionType` ship only in React 19.3; R3F 9.8 supports React <19.4; installed node_modules (19.2.4 / 16.1.6) also lag the lockfile — user approved 2026-10-10 | — Pending |
+| Upgrade framer-motion 12 → 14 first, in isolation | Avoid building new motion on an API about to change; isolate regression risk | ✓ Good — `motion` 14.1 in 73880a2; 6 home scroll-50 re-baselines ratified by Tim at Phase 7 UAT |
+| Upgrade React 19.3 / Next 16.4 in Phase 7, in isolation | `<ViewTransition>` and `addTransitionType` ship only in React 19.3; R3F 9.8 supports React <19.4; installed node_modules (19.2.4 / 16.1.6) also lag the lockfile — user approved 2026-10-10 | ✓ Good — Next 16.4.2 + React 19.3.1 in fdeb9fe (security release); 6 offline re-baselines ratified at Phase 7 UAT |
 | Build-time DEM + EXIF pipeline (d3-contour, exif-reader + sharp) | Zero client cost, same-origin assets, typed data | — Pending |
 | Platform APIs over libraries (View Transitions, CSS scroll-driven animations); skip GSAP | 0 KB client cost; GSAP would duplicate Motion | — Pending |
 | swissALTIRegio (10 m) instead of swissALTI3D | swissALTI3D lacks the Italian side south of the summit (10 tiles); Regio is hole-free across the border and ample for a 512² heightmap — user decision 2026-10-10 | — Pending |
 | Film-scan photo without GPS gets a hand-placed "approx." pin | Keeps all 4 photos on the map and ascent without inventing precision | — Pending |
 | Move GPS-bearing originals (194 MB) out of `/public` | They were publicly downloadable at full resolution with GPS EXIF | — Pending |
 | `/photos` opens on the Map view | User preference: lead with the most distinctive view; Grid and Carousel one click away | — Pending |
-| Deleted playground routes resolve to the designed 404 (no redirects) | No known inbound links | — Pending |
+| Deleted playground routes resolve to the designed 404 (no redirects) | No known inbound links | ✓ Good — Phase 7 shell 404 |
 | Coordinates rounded to ~10 m and shown in the lightbox | Useful context without exposing more precision than needed | — Pending |
 | Photos "all rights reserved" | Supports licensing enquiries via Contact | — Pending |
 | Add photo deep links + full lightbox, and SEO/link previews to scope | Research gaps G1–G3, G2; users expect shareable photo URLs and per-page previews | — Pending |
 | Defer "Ask about this photo" and terminal step controls/transcript | Not needed for v2.0; the demo still gets a WCAG 2.2.2 pause control | — Pending |
+| Zero-diff exception policy for upgrades | A screenshot diff that is a verified upstream bug fix matching the code's intent may be re-baselined, with Tim's explicit approval, a documented reason and per-slug checks (Phase 7) | ✓ Good — 3 exceptions (motion 14, Next 16.4 SWC, Chromium 156) ratified at Phase 7 UAT |
+| Visual baselines come only from the CI `workflow_dispatch` container; only Tim commits PNGs | Linux-rendered, reproducible baselines; a human reviews every pixel change (Phase 7) | ✓ Good |
+| R3F canvases render only through `SafeCanvas` | R3F ≥ 9.8 rethrows WebGL-creation errors through React; the error boundary keeps pages up (Phase 7) | ✓ Good |
+| Phase work lives on `gsd/phase-NN-*` branches; Tim merges to `main` | `main` is protected for executors (Phase 7) | ✓ Good |
 
 ## Evolution
 
@@ -164,4 +170,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-10 at start of v2.0 Topographic Identity milestone*
+*Last updated: 2026-10-24 after Phase 7*
