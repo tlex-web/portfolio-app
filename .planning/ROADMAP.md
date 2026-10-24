@@ -238,7 +238,44 @@ Plans:
   4. With reduced motion, Save-Data, no WebGL2, low device memory or a lost WebGL context, a static contour poster renders and every Home section shows its final readable state. The WebGL canvas renders on demand and pauses when scrolled off-screen.
   5. Mobile LCP and Home JavaScript size are no worse than the baseline recorded at the end of Phase 7.
 
-**Plans**: TBD
+**Plans**: 13 plans in 11 waves
+
+Plans:
+**Wave 1**
+- [ ] 09-01-PLAN.md — Server Component Home: ascent grid, relief poster (LCP), hero copy, trail signs; dead hero chain deleted
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 09-02-PLAN.md — Waypoint cards as the always-rendered HOME-05 list; /photos#slug fragment ids
+- [ ] 09-03-PLAN.md — Generated shader colour tokens from globals.css with --check
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 09-04-PLAN.md — Summit plaque (derived stats), About and contact (DRAFT), Start the ascent / Skip to the summit cues
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 09-05-PLAN.md — One damped progress value: altimeter rail, lit poster pins, focus contract, native-scroll e2e
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 09-06-PLAN.md — Capability gate, lazy TerrainStage chunk, static modes, composed-contrast backstops
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 09-07-PLAN.md — fast-png terrain mesh, CSS-parity contour shader, plan-view reveal over the poster
+- [ ] 09-08-PLAN.md — Visual shots at fixed ascent positions; HOME-08 perf spec counts the lazy chunk
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 09-09-PLAN.md — Camera route (tilt-in, legs, summit look-back), mobile view offset, 3D pins
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 09-10-PLAN.md — Context loss, demand-aware frame budget, off-screen pause, SwiftShader resilience e2e
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [ ] 09-11-PLAN.md — Tim's review: About copy (D-14) and terrain tuning; apply (checkpoints)
+
+**Wave 10** *(blocked on Wave 9 completion)*
+- [ ] 09-12-PLAN.md — Tim's go-ahead for ci/09-NN; CI and container perf numbers; HOME-08 gate decision (checkpoints)
+
+**Wave 11** *(blocked on Wave 10 completion)*
+- [ ] 09-13-PLAN.md — Apply the frame-budget choice; Home re-baseline (Tim commits PNGs); ratchet raise
+
 **UI hint**: yes
 **Scope notes**:
   - `AscentHero` has a server-rendered hillshade poster as the LCP and a DOM waypoint list beneath a lazy R3F canvas.
@@ -363,7 +400,7 @@ Plans:
 | 6. Integration Wiring Fixes | v1.0 | 1/1 | Complete | 2026-03-12 |
 | 7. Foundation & Guardrails | v2.0 | 27/27 | Complete    | 2026-10-24 |
 | 8. Data & Terrain Pipeline | v2.0 | 13/13 | Complete    | 2026-10-24 |
-| 9. Home Ascent | v2.0 | 0/TBD | Not started | - |
+| 9. Home Ascent | v2.0 | 0/13 | Not started | - |
 | 10. Photography | v2.0 | 0/TBD | Not started | - |
 | 11. Engineering & Roadmap | v2.0 | 0/TBD | Not started | - |
 | 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 0/TBD | Not started | - |
