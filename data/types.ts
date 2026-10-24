@@ -26,6 +26,8 @@ export interface LandscapeImage {
     shutterSpeed?: string;
     iso?: number;
     captureDate?: string; // ISO 8601 format (YYYY-MM-DD)
+    /** Preformatted by lib/photo-format (no locale APIs; year-only captures stay year-only). */
+    captureLabel?: string;
   };
   tags: string[]; // e.g., ['mountains', 'sunrise', 'long-exposure']
   annotations?: ImageAnnotation[]; // Optional interactive hotspots
