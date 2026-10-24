@@ -120,7 +120,7 @@ ${escapeHtml(data.message)}
                   ${data.interestedInCollaboration ? `
                   <div style="margin-bottom: 30px; padding: 16px 20px; background-color: #ecfeff; border: 1px solid #06b6d4; border-radius: 8px;">
                     <p style="margin: 0; font-size: 14px; color: #0e7490; font-weight: 600;">
-                      ✨ Interested in collaboration opportunities
+                      Interested in collaboration opportunities
                     </p>
                   </div>
                   ` : ''}
@@ -145,7 +145,7 @@ ${escapeHtml(data.message)}
               <tr>
                 <td style="background-color: #f8fafc; padding: 20px 30px; text-align: center; border-top: 1px solid #e2e8f0;">
                   <p style="margin: 0; font-size: 13px; color: #64748b;">
-                    This message was sent via your portfolio website contact form
+                    This message was sent via the contact form on Tim Lui's website
                   </p>
                 </td>
               </tr>
@@ -183,7 +183,7 @@ RECEIVED: ${new Date(data.timestamp).toLocaleString('en-US', {
 IP ADDRESS: ${data.ip}
 
 ---
-This message was sent via your portfolio website contact form.
+This message was sent via the contact form on Tim Lui's website.
 Reply directly to this email to respond to ${data.name}.
   `.trim();
 }

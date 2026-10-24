@@ -28,9 +28,10 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Portfolio | Landscape Photography & Projects',
+  // SHELL-03: identity from data/site.ts (name, role); child segments render "<page> · Tim Lui"
+  title: { default: 'Tim Lui · Developer & photographer', template: '%s · Tim Lui' },
   description:
-    'Personal portfolio showcasing landscape photography and programming projects',
+    'Tim Lui is a developer and photographer. Landscape photographs from the Matterhorn region and software projects.',
 };
 
 export default async function RootLayout({

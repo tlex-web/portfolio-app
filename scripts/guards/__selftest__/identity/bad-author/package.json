@@ -1,0 +1,5 @@
+{
+  "private": true,
+  "description": "Fixture: author drifted from data/site.ts (no name field, so Jest's haste map ignores it)",
+  "author": "Tim Lui (https://github.com/someone-else)"
+}

@@ -7,7 +7,7 @@
     "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint . && npm run guard:parity && npm run guard:palette && npm run guard:contrast && npm run guard:selftest",
+    "lint": "eslint . && npm run guard:parity && npm run guard:palette && npm run guard:contrast && npm run guard:identity && npm run guard:selftest",
     "format": "prettier --write .",
     "type-check": "tsc --noEmit",
     "test": "jest",
@@ -22,6 +22,7 @@
     "guard:parity": "node scripts/guards/check-install-parity.mjs",
     "guard:palette": "node scripts/guards/check-palette.mjs --skip emoji",
     "guard:contrast": "node scripts/guards/check-contrast.mjs",
+    "guard:identity": "node scripts/guards/check-identity.mjs",
     "guard:selftest": "node scripts/guards/selftest.mjs",
     "guard:tests": "node scripts/guards/test-count.mjs --jest jest-results.json"
   },
@@ -37,7 +38,7 @@
     "3d",
     "webgl"
   ],
-  "author": "Your Name <your.email@example.com>",
+  "author": "Tim Lui (https://github.com/tlex-web)",
   "license": "MIT",
   "repository": {
     "type": "git",

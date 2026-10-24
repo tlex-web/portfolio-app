@@ -40,7 +40,9 @@ const SAME_CLASSNAMES = path.join(here, 'same-classnames.mjs');
 const SNAPSHOT_COMMIT = path.join(repoRoot, 'scripts', 'ci', 'check-snapshot-commit.mjs');
 const PALETTE = path.join(here, 'check-palette.mjs');
 const CONTRAST = path.join(here, 'check-contrast.mjs');
+const IDENTITY = path.join(here, 'check-identity.mjs');
 const con = (name) => path.join(fixtures, 'contrast', name);
+const idf = (name) => path.join(fixtures, 'identity', name);
 const tc = (...parts) => path.join(fixtures, 'test-count', ...parts);
 const pal = (...parts) => path.join(fixtures, 'palette', ...parts);
 const sc = (...parts) => path.join(fixtures, 'same-classnames', ...parts);
@@ -388,6 +390,59 @@ const cases = [
         ? null
         : `ratchet not lowered: ${JSON.stringify(written)}`;
     },
+  },
+  {
+    name: 'identity: real record, derived author, in-word Portfolio and an unimported legacy Footer with placeholders pass',
+    guard: IDENTITY,
+    args: ['--root', idf('good')],
+    expectExit: 0,
+    expectOutput: ['identity: OK'],
+  },
+  {
+    name: 'identity: contact@example.com in a live component fails',
+    guard: IDENTITY,
+    args: ['--root', idf('bad-placeholder')],
+    expectExit: 1,
+    expectOutput: ['components/ContactCard.tsx:3 forbidden contact@example.com'],
+  },
+  {
+    name: 'identity: the split P + ortfolio wordmark fails',
+    guard: IDENTITY,
+    args: ['--root', idf('bad-wordmark')],
+    expectExit: 1,
+    expectOutput: ['components/Brand.tsx:6 forbidden split wordmark'],
+  },
+  {
+    name: 'identity: a package.json author that drifts from data/site.ts fails',
+    guard: IDENTITY,
+    args: ['--root', idf('bad-author')],
+    expectExit: 1,
+    expectOutput: ['package.json: author', 'expected "Tim Lui (https://github.com/tlex-web)"'],
+  },
+  {
+    name: 'identity: a bare https://linkedin.com in data/site.ts fails',
+    guard: IDENTITY,
+    args: ['--root', idf('bad-linkedin')],
+    expectExit: 1,
+    expectOutput: ['data/site.ts:8 forbidden bare LinkedIn root href', 'links.linkedin "https://linkedin.com" is not a full'],
+  },
+  {
+    name: 'identity: an example.com email in data/site.ts fails the shape check',
+    guard: IDENTITY,
+    args: ['--root', idf('bad-email')],
+    expectExit: 1,
+    expectOutput: ['data/site.ts: email "hello@example.com" is not a real address'],
+  },
+  {
+    name: 'identity: importing a legacy v1 file (alias or relative) voids its exemption and fails',
+    guard: IDENTITY,
+    args: ['--root', idf('bad-dead-import')],
+    expectExit: 1,
+    expectOutput: [
+      'app/page.tsx:2 legacy file is imported again: components/Header.tsx',
+      'components/Shell.tsx:2 legacy file is imported again: components/Footer.tsx',
+      'components/Header.tsx:6 forbidden split wordmark',
+    ],
   },
   {
     name: 'contrast: the real app/globals.css passes all 28 UI-SPEC pairs in table order',

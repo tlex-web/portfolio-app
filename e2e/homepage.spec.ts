@@ -4,8 +4,8 @@ test.describe('Homepage', () => {
   test('should load the homepage successfully', async ({ page }) => {
     await page.goto('/');
 
-    // The title stays /Portfolio/i until 07-25 rewrites the root metadata.
-    await expect(page).toHaveTitle(/Portfolio/i);
+    // Root metadata title from SHELL-03 (07-25): 'Tim Lui · Developer & photographer'.
+    await expect(page).toHaveTitle(/Tim Lui/);
     // The shell's main landmark (SiteChrome), exactly one per route.
     await expect(page.locator('#main-content')).toHaveCount(1);
     await expect(page.locator('#main-content')).toBeVisible();
