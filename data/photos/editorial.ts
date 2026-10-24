@@ -10,8 +10,8 @@
  * The schema is data/schemas/editorial.ts; data/__tests__/editorial.test.ts
  * parses this file with it.
  *
- * Status: draft pending Tim's approval at 08-10 Task 3. The slugs become
- * public URLs when Phase 10 ships /photos/[slug] (D-07).
+ * Copy and slugs decided by Tim at the 08-10 copy review; see 08-10-SUMMARY.md
+ * The slugs become public URLs when Phase 10 ships /photos/[slug] (D-07).
  */
 import type { Editorial } from '@/data/schemas/editorial';
 import type { photos } from '@/data/generated/photos';
