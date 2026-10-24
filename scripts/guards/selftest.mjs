@@ -205,6 +205,43 @@ const cases = [
     expectOutput: ['no-restricted-imports', 'SafeCanvas'],
   },
   {
+    // DATA-01: generator libraries are build-time only and never reach shipped code.
+    name: 'generator import ban: d3-contour in components/ fails',
+    guard: ESLINT,
+    args: ['--stdin', '--stdin-filename', 'components/probe.tsx'],
+    input: "import { contours } from 'd3-contour';\nexport const X = contours;\n",
+    cwd: repoRoot,
+    expectExit: 1,
+    expectOutput: ['no-restricted-imports', 'Build-time only'],
+  },
+  {
+    name: 'generator import ban: d3-contour in scripts/**/*.mjs passes',
+    guard: ESLINT,
+    args: ['--stdin', '--stdin-filename', 'scripts/terrain/probe.mjs'],
+    input: "import { contours } from 'd3-contour';\nexport const X = contours;\n",
+    cwd: repoRoot,
+    expectExit: 0,
+  },
+  {
+    name: 'generator import ban: sharp in lib/ fails',
+    guard: ESLINT,
+    args: ['--stdin', '--stdin-filename', 'lib/probe.ts'],
+    input: "import sharp from 'sharp';\nexport const X = sharp;\n",
+    cwd: repoRoot,
+    expectExit: 1,
+    expectOutput: ['no-restricted-imports', 'Build-time only'],
+  },
+  {
+    // The scripts/**/*.mjs override must restate the old bans (flat config replaces options).
+    name: 'generator import ban: framer-motion in scripts/**/*.mjs still fails',
+    guard: ESLINT,
+    args: ['--stdin', '--stdin-filename', 'scripts/terrain/probe.mjs'],
+    input: "import { motion } from 'framer-motion';\nexport const X = motion;\n",
+    cwd: repoRoot,
+    expectExit: 1,
+    expectOutput: ['no-restricted-imports', 'motion/react'],
+  },
+  {
     name: 'same-classnames: entity escape, <a> to <Link> and a JSX comment are neutral',
     guard: SAME_CLASSNAMES,
     args: ['--files', sc('before.tsx.txt'), sc('after-neutral.tsx.txt')],

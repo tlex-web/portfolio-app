@@ -17,6 +17,29 @@ const LEGACY_COMPILER_FILES = [
   'lib/useProgressiveTextures.ts',
 ];
 
+// Banned everywhere, scripts included. Shared by the global block and the
+// scripts/**/*.mjs block below, because flat config REPLACES no-restricted-imports
+// options per matching object instead of merging them (RESEARCH Pitfall 8).
+const BANNED_PATHS = [
+  { name: 'framer-motion', message: 'Import from motion/react (DEPS-03).' },
+  {
+    name: '@react-three/fiber',
+    importNames: ['Canvas'],
+    message:
+      'Use @/components/SafeCanvas: since R3F 9.8 a bare <Canvas> without WebGL replaces the whole route with app/(site)/error.tsx.',
+  },
+  {
+    name: '@phosphor-icons/react',
+    message: 'Import icons from @phosphor-icons/react/dist/ssr (DSGN-10)',
+  },
+];
+const BANNED_PATTERNS = [
+  {
+    group: ['@phosphor-icons/react/dist/csr*'],
+    message: 'Import icons from @phosphor-icons/react/dist/ssr (DSGN-10)',
+  },
+];
+
 export default defineConfig([
   ...nextVitals,
   ...nextTs,
@@ -45,31 +68,46 @@ export default defineConfig([
   },
   {
     // Banned import paths, all files. Add one entry per replaced package.
+    // The generator libraries are build-time only (DATA-01): no generator code or
+    // raw DEM data may reach a module that app/, components/, lib/ or data/ import.
     rules: {
       'no-restricted-imports': [
         'error',
         {
           paths: [
-            { name: 'framer-motion', message: 'Import from motion/react (DEPS-03).' },
+            ...BANNED_PATHS,
             {
-              name: '@react-three/fiber',
-              importNames: ['Canvas'],
-              message:
-                'Use @/components/SafeCanvas: since R3F 9.8 a bare <Canvas> without WebGL replaces the whole route with app/(site)/error.tsx.',
+              name: 'd3-contour',
+              message: 'Build-time only: import generator libraries from scripts/** (DATA-01).',
             },
             {
-              name: '@phosphor-icons/react',
-              message: 'Import icons from @phosphor-icons/react/dist/ssr (DSGN-10)',
+              name: 'geotiff',
+              message: 'Build-time only: import generator libraries from scripts/** (DATA-01).',
+            },
+            {
+              name: 'simplify-js',
+              message: 'Build-time only: import generator libraries from scripts/** (DATA-01).',
+            },
+            {
+              name: 'exif-reader',
+              message: 'Build-time only: import generator libraries from scripts/** (DATA-01).',
+            },
+            {
+              name: 'sharp',
+              message: 'Build-time only: import generator libraries from scripts/** (DATA-01).',
             },
           ],
-          patterns: [
-            {
-              group: ['@phosphor-icons/react/dist/csr*'],
-              message: 'Import icons from @phosphor-icons/react/dist/ssr (DSGN-10)',
-            },
-          ],
+          patterns: BANNED_PATTERNS,
         },
       ],
+    },
+  },
+  {
+    // Build scripts may import the generator libraries; every other ban still applies.
+    // This block must restate BANNED_PATHS/BANNED_PATTERNS (Pitfall 8: options replace).
+    files: ['scripts/**/*.mjs'],
+    rules: {
+      'no-restricted-imports': ['error', { paths: BANNED_PATHS, patterns: BANNED_PATTERNS }],
     },
   },
   prettier,
