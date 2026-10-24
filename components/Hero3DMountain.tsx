@@ -155,14 +155,6 @@ export default function Hero3DMountain() {
           </motion.div>
         </div>
       </motion.div>
-
-      {/* Skip to content link for accessibility */}
-      <a
-        href="#home-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-frost-600 focus:text-snow-50 focus:rounded-md"
-      >
-        Skip to content
-      </a>
     </div>
   );
 }
