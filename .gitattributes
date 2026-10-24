@@ -14,3 +14,8 @@ public/terrain/*.png binary
 # Lossy hillshade posters (08-06): hashed by their bytes, never normalised.
 public/terrain/*.avif binary
 public/terrain/*.webp binary
+
+# Photo derivatives (08-07): the manifest is byte-compared with a rebuild from disk;
+# the lossy derivatives are hashed by their bytes, never normalised.
+data/generated/image-manifest.ts text eol=lf
+public/images/photos/* binary

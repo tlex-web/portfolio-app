@@ -26,9 +26,10 @@
     "guard:selftest": "node scripts/guards/selftest.mjs",
     "guard:tests": "node scripts/guards/test-count.mjs --jest jest-results.json",
     "photos:exif": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/photos/extract-exif.mjs",
+    "photos:derive": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/photos/build-derivatives.mjs",
     "terrain:fetch": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/terrain/fetch-dem.mjs",
     "terrain:build": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/terrain/build-terrain.mjs",
-    "data:check": "npm run terrain:build -- --check && npm run photos:exif -- --check"
+    "data:check": "npm run terrain:build -- --check && npm run photos:exif -- --check && npm run photos:derive -- --check"
   },
   "engines": {
     "node": "24.x"
