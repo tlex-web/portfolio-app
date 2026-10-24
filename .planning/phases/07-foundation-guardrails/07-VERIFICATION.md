@@ -1,8 +1,8 @@
 ---
 phase: 07-foundation-guardrails
-verified: 2026-10-24T13:30:00Z
-status: gaps_found
-score: 3/5 must-haves verified
+verified: 2026-10-24T15:10:00Z
+status: human_needed
+score: 4/5 must-haves verified
 covered_files:
   - ".github/dependabot.yml"
   - ".github/workflows/ci.yml"
@@ -59,6 +59,8 @@ covered_files:
   - ".planning/phases/07-foundation-guardrails/07-25-SUMMARY.md"
   - ".planning/phases/07-foundation-guardrails/07-26-PLAN.md"
   - ".planning/phases/07-foundation-guardrails/07-26-SUMMARY.md"
+  - ".planning/phases/07-foundation-guardrails/07-27-PLAN.md"
+  - ".planning/phases/07-foundation-guardrails/07-27-SUMMARY.md"
   - "app/(site)/layout.tsx"
   - "app/global-error.tsx"
   - "app/globals.css"
@@ -81,23 +83,20 @@ covered_files:
   - "scripts/guards/check-palette.mjs"
   - "scripts/guards/test-count.mjs"
   - "vercel.json"
-covered_digest: "v3:sha256:2e2c99974df4d520e535bf4340e9f61fd7d29fc226ffebe958ff39b69a9c4ede"
+covered_digest: "v3:sha256:f6e27af0c6cbaceae1444bb9c00257f41a3475d7d9d420799af76e8b4ced6bd8"
 behavior_unverified: 0
 overrides_applied: 0
-gaps:
-  - truth: "On every page a keyboard user finds one skip link, exactly one primary navigation with a visible current-page indicator, and exactly one main landmark (ROADMAP SC4)"
-    status: partial
-    reason: "Navigation, current-page indicator and main landmark are exactly one on every route (e2e/shell.spec.ts, CI green). The skip link is not: Home renders the shell SkipLink (#main-content) AND the v1 hero's own sr-only 'Skip to content' link (#home-content), so a keyboard user meets two skip links on that page. shell.spec.ts only asserts the first Tab stop, never the count, so nothing catches it. Code review IN-04 recorded it as info/open; the roadmap wording is 'one skip link'."
-    artifacts:
-      - path: "components/Hero3DMountain.tsx"
-        issue: "lines 159-165: second skip link with v1 classes (focus:bg-frost-600 focus:text-snow-50), target #home-content"
-    missing:
-      - "Remove the hero's 'Skip to content' link (or fold it into the shell link), and add a count assertion (exactly one link named /skip to/i) to the Shell landmarks test so a second one fails"
-      - "Alternative: Tim accepts it as deferred to the Phase 9 hero rebuild (then record it as an override or deferred item)"
+re_verification:
+  previous_status: gaps_found
+  previous_score: 3/5
+  gaps_closed:
+    - "On every page a keyboard user finds one skip link (ROADMAP SC4 / SHELL-01): Home no longer renders the hero's second skip link; shell.spec.ts now counts skip links on 7 routes and 5 404 paths"
+  gaps_remaining: []
+  regressions: []
 human_verification:
   - test: "Confirm Vercel builds on Node 24.x with npm ci (GUARD-01, 07-USER-SETUP.md item 1)"
     expected: "Vercel -> Project -> Deployments -> latest -> Build Logs shows Node 24.x and the install step runs npm ci. If it still shows Node 20, set Settings -> Build and Deployment -> Node.js Version to 24.x"
-    why_human: "Vercel project settings live outside the repo. vercel.json installCommand is 'npm ci' and package.json engines.node is '24.x' (both verified here), but no committed file can prove the live project honours them. REQUIREMENTS.md still lists GUARD-01 as Pending for exactly this reason"
+    why_human: "Vercel project settings live outside the repo. vercel.json installCommand is 'npm ci' and package.json engines.node is '24.x' (both verified), but no committed file can prove the live project honours them. GUARD-01 stays Pending for exactly this reason"
   - test: "Ratify the three documented zero-diff exceptions for ROADMAP SC2 (DEPS-03, DEPS-04, DEPS-05)"
     expected: "Tim confirms in his own words that re-baselining (a) 6 home/*-scroll-50 shots in 73880a2 (motion 14 renders the hero 'Scroll to explore' indicator at opacity 0 where motion 12 left a stale faint one), (b) 6 offline/*-reduced shots in e72c661 (Next 16.2.6 SWC dropped a JSX space, fixed in 16.4.0), and (c) 6 contact/*-reduced shots in fdd2652 (Chromium 156 textarea resize-grabber, 36 px per shot) are acceptable. Then add the overrides block from the SC2 row to this file"
     why_human: "SC2 says 'zero visual diff'. All three commits re-baselined PNGs. Each commit message and SUMMARY records Tim's approval, but this verifier cannot confirm his literal reply, and whether an intended visual change is acceptable is a human judgement. DEPS-05 is permitted by the roadmap build order ('re-baseline only if Chromium rendering forces it'); DEPS-03 and DEPS-04 are not covered by that carve-out"
@@ -115,10 +114,10 @@ human_verification:
 # Phase 7: Foundation & Guardrails Verification Report
 
 **Phase Goal:** Every page renders inside one dark, token-driven site shell with Tim Lui's real identity, on upgraded dependencies, behind CI guardrails that catch visual regressions, deleted tests and off-system styling before they ship.
-**Verified:** 2026-10-24T13:30:00Z
-**Status:** gaps_found
-**Re-verification:** No, initial verification
-**Code under test:** HEAD `ec04d2a`; `git diff 4969072 HEAD -- . ':!.planning'` is empty, so the code equals the commit CI run 40045453857 tested.
+**Verified:** 2026-10-24T15:10:00Z
+**Status:** human_needed
+**Re-verification:** Yes, after gap closure (plan 07-27)
+**Code under test:** HEAD `c7e2808`. `git diff 460b3a4 HEAD -- . ':!.planning'` is empty, so the code equals the commit CI run 40086883766 tested (all jobs success). `git diff 4969072 HEAD -- . ':!.planning'` lists exactly `components/Hero3DMountain.tsx` and `e2e/shell.spec.ts`, and `git diff 4969072 HEAD -- '*.png'` is empty. Because the earlier verification covered `4969072`-identical code, the 07-27 delta is the only new surface, and I re-checked it in full. The other four truths got a regression check (lint, type-check, Jest, test-count re-run, plus the unchanged-code argument above).
 
 ## Goal Achievement
 
@@ -126,51 +125,36 @@ human_verification:
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | Local, CI (Node 24) and Vercel installs use `npm ci`; CI holds baselines for every route in dark and light from a Linux production build; CI fails on screenshot diff, test-count drop, `dark:`/stock palette class, sub-AA token pair, jsx-a11y violation | VERIFIED (repo side; Vercel live setting is a human item) | `.node-version`=24, `engines.node`=24.x, `vercel.json installCommand: npm ci`, every `ci.yml` job runs `npm ci` + `npm ls --depth=0`. 9 routes x 3 widths reduced + 9 home scroll shots = 36 `*-visual-dark-linux.png` on disk; `playwright.config.ts` visual-dark/visual-light with `retries: 0`, `serviceWorkers: 'block'`, `threshold: 0.01`, prod build when `CI`; `visual-light` compares against the dark PNGs. Guards in `npm run lint` (re-run here, exit 0): parity, palette (dark/stock/white-black ratchet/emoji), contrast (28 pairs from `app/globals.css`), identity, selftest 55/55. `guard:tests` in the CI unit job: "jest 107 + e2e 99 = 206 (baseline 206) OK" re-run here. jsx-a11y recommended at error in `eslint.config.mjs`. CI run 40045453857: Visual Regression (72 passed), Unit, E2E (122 passed), Lint and Type Check, Build, Security Audit all success |
-| 2 | motion 14.1, Next 16.4.x/React 19.3/R3F 9.8.1/drei 10.7.9 and Playwright 1.64 land as three separate commits; each passes the baseline run with zero visual diff, mid-scroll captures included | UNCERTAIN (human decision) | Three separate commits exist: `73880a2` (motion 14.1.0), `a3c2b81` (Next 16.4.0, React 19.3.0, R3F 9.8.1, drei 10.7.9; followed by fix commits `8d37032`, `e72c661` and the security release `fdeb9fe` Next 16.4.2/React 19.3.1, Next 16.4.0 was the latest at the time, the patch shipped later), `fdd2652` (Playwright 1.64.0). Installed: `npm ls` motion 14.1.0, next 16.4.2, react 19.3.1, fiber 9.8.1, drei 10.7.9, playwright 1.64.0; single `motion-dom@14.1.0`; no `framer-motion` import in source. All CI-green. **But not zero diff:** 6 home scroll-50 PNGs re-baselined in `73880a2`, 6 offline PNGs in `e72c661`, 6 contact PNGs in `fdd2652` (see human_verification) |
-| 3 | Light-OS visitor sees the same dark site; tokens v2 colours; grotesk display + Inter + JetBrains Mono only for data, tabular figures; one SVG icon family, no emoji icons; thin visible scrollbar with stable gutter; motion from shared tokens that settles under reduced motion | VERIFIED | No `dark:` and no stock palette class in `app/ components/ lib/ data/` (grep, zero hits); no `@custom-variant`; `<html class="dark">` + `html { color-scheme: dark; scrollbar-gutter: stable; scrollbar-width: thin }`; `visual-light` passes against the dark PNGs in CI. Night-map OKLCH L1 + L2 semantic tokens + v1 aliases marked `@deprecated` in `app/globals.css`. `Schibsted_Grotesk` + `Inter` + `JetBrains_Mono` in `app/layout.tsx`; `e2e/design-system.spec.ts` asserts computed families, 40/44 h1, tabular mono. Only `@phosphor-icons/react/dist/ssr` allowed (ESLint ban on the root and csr entries); an Extended_Pictographic scan of `app components lib data` finds only the unimported legacy `components/Footer.tsx:186` (guard-exempt while unimported) and the (c) sign. Motion: `DURATION`/`EASING` in `lib/animations.ts` mirrored by `--duration-*`/`--ease-*`, parity pinned by `lib/__tests__/motion-tokens.test.ts` (jest, passes); `MotionConfig reducedMotion="user"` in `MotionProvider`; reduced-motion CSS block in `globals.css`; `shell.spec.ts` "Shell reduced motion" asserts 0 running animations |
-| 4 | Keyboard user finds one skip link, exactly one primary nav with a visible current-page indicator, exactly one main landmark; mobile menu has >=44 px targets and closes on route change and Escape | FAILED (partial) | Verified: `SiteChrome` (mounted by `app/(site)/layout.tsx`, `app/not-found.tsx`, `app/global-error.tsx`) renders SkipLink first, one `nav[aria-label=Primary]` in one header, one `main#main-content`, one footer. `shell.spec.ts` asserts `toHaveCount(1)` for banner/nav/main/contentinfo, `aria-current="page"` and the first Tab stop on 7 routes + 5 404 paths; 44 px button and 48 px rows; Escape and route-change close. `SiteNav.test.tsx` covers all six close triggers (jest passes). CI E2E 122 passed (chromium + firefox). **Not verified:** "one skip link" is false on Home, see gap |
-| 5 | Every page shows Tim Lui's name, role line and real GitHub, LinkedIn, email; no placeholder text/links; `/gradient-mesh`, `/particle-buttons`, `/transitions` 404 inside the shell and nothing links to them; Contact heading and fields pass AA for light-OS and dark-OS | VERIFIED | `data/site.ts` is the single source (name "Tim Lui", role "Developer & photographer", github.com/tlex-web, linkedin.com/in/luitim, email); `SiteNav` wordmark and `SiteFooter` read it on every route; `guard:identity` (in lint, passes) fails on `example.com`, split wordmark, `package.json` author drift. Live code contains no placeholder email or "My Portfolio" (hits only in unimported legacy `components/Footer.tsx`). The three playground routes are gone from `app/`, no source link to them; `shell.spec.ts` "Shell 404" asserts HTTP 404, no redirect, one shell, designed body for all three. `e2e/a11y-contact.spec.ts` runs axe color-contrast for dark-OS, light-OS and no-mesh with field errors and failure box, CI green |
+| 1 | Local, CI (Node 24) and Vercel installs use `npm ci`; CI holds baselines for every route in dark and light from a Linux production build; CI fails on screenshot diff, test-count drop, `dark:`/stock palette class, sub-AA token pair, jsx-a11y violation | VERIFIED (repo side; the live Vercel setting is a human item) | Unchanged since the first verification (code identical apart from the two 07-27 files). Re-run here: `npm run lint` exit 0 with guard selftest 55/55; `npm run type-check` exit 0; Jest 13 suites / 107 tests passed; `test-count.mjs` "jest 107 + e2e 99 = 206 (baseline 206) OK". CI run 40086883766 on 460b3a4: Unit, Lint and Type Check, E2E, Visual Regression, Security Audit, Build all success (Dependency Review skipped) |
+| 2 | motion 14.1, Next 16.4.x/React 19.3/R3F 9.8.1/drei 10.7.9 and Playwright 1.64 land as three separate commits; each passes the baseline run with zero visual diff, mid-scroll captures included | UNCERTAIN (human decision) | Unchanged from the first verification. Three separate commits (`73880a2`, `a3c2b81` plus fix commits and the `fdeb9fe` security patch, `fdd2652`), all CI green, but each re-baselined PNGs (6 home scroll-50, 6 offline, 6 contact). Literal "zero visual diff" is not met; see human_verification and the override suggestion below. Code is not changed by 07-27 |
+| 3 | Light-OS visitor sees the same dark site; tokens v2; grotesk + Inter + JetBrains Mono; one SVG icon family, no emoji icons; thin scrollbar with stable gutter; motion from shared tokens that settles under reduced motion | VERIFIED | Unchanged. Not touched by 07-27 (the only edit in `components/Hero3DMountain.tsx` is the deleted anchor and its comment; the removed class list used `sr-only`/`focus:` utilities with no palette violation). Visual Regression 72 passed on 460b3a4, including `visual-light` against the dark PNGs |
+| 4 | On every page a keyboard user finds one skip link, exactly one primary navigation with a visible current-page indicator, exactly one main landmark; mobile menu has >=44 px targets and closes on route change and Escape | VERIFIED | Previously the one failing part. Now: `components/Hero3DMountain.tsx` contains no skip anchor (diff vs `4969072` shows the 8 deleted lines: comment + `<a href="#home-content" class="sr-only focus:not-sr-only ...">Skip to content</a>`). `grep 'href="#' app components lib` finds only `SkipLink.tsx:9` (`#main-content`) and the hero CTA `Hero3DMountain.tsx:96` (`#home-content`, a visible button with a layout box, target `id="home-content"` at `app/(site)/page.tsx:29` intact). `SiteChrome` renders `<SkipLink />` first (line 21). `e2e/shell.spec.ts` has `skipLinks = page.getByRole('link', { name: /skip to/i })` (line 30, no `.first()`/`:visible`/`includeHidden`) and `toHaveCount(1)` at line 69 (7 routes) and line 161 (5 404 paths); test count unchanged (23 shell tests, ratchet 206). Red/green proof checked against GitHub: run 40086334529 on RED `5f403af` has E2E Tests = failure and every other job success; run 40086883766 on GREEN `460b3a4` has all jobs success. The remaining parts (one nav, one main, aria-current, 44 px, Escape/route-change close) are unchanged and still asserted by `shell.spec.ts` and `SiteNav.test.tsx` |
+| 5 | Every page shows Tim Lui's name, role line and real GitHub, LinkedIn, email; no placeholder text/links; `/gradient-mesh`, `/particle-buttons`, `/transitions` 404 inside the shell and nothing links to them; Contact heading and fields pass AA for light-OS and dark-OS | VERIFIED | Unchanged. `guard:identity` passes inside `npm run lint`; Shell 404 tests (now also asserting one skip link) and `a11y-contact.spec.ts` green in CI E2E |
 
-**Score:** 3/5 truths verified (SC2 awaiting a human decision, SC4 partial failure). 0 present-but-behavior-unverified. The behavior-dependent truths (menu close triggers, reduced-motion settle, light equals dark) all have a passing behavioral test.
+**Score:** 4/5 truths verified (SC2 awaiting a human decision). 0 present-but-behavior-unverified. The behavior-dependent truths (menu close triggers, reduced-motion settle, light equals dark, single skip link) each have a passing behavioral test, and the skip-link test was demonstrated red before green.
 
-### Requirements Coverage
+### Deferred Items
 
-All 20 phase IDs appear in at least one PLAN `requirements:` field and in REQUIREMENTS.md; no orphans.
+None. The SC2 exceptions are not covered by a later phase.
 
-| Requirement | Source Plans | Status | Evidence |
-|-------------|--------------|--------|----------|
-| GUARD-01 | 07-01, 07-08 | NEEDS HUMAN | Repo side verified (see SC1). Live Vercel Node 24 + `npm ci` unconfirmed; REQUIREMENTS.md correctly leaves it `[ ]`/Pending |
-| GUARD-02 | 07-03, 07-04 | SATISFIED | 36 dark baselines, CI Visual Regression 72 passed, light asserts dark |
-| GUARD-03 | 07-01, 07-26 | SATISFIED | `test-count.mjs` ratchet 206/206, fails on drop, `.skip(`, `.only(`, in CI unit job |
-| GUARD-04 | 07-16..19, 07-20 | SATISFIED | `check-palette.mjs` in lint; independent grep finds zero `dark:`/stock classes; ratchet 17 across 8 files |
-| GUARD-05 | 07-20 | SATISFIED | `check-contrast.mjs` reads `app/globals.css`, 28 pairs, in lint |
-| GUARD-06 | 07-02 | SATISFIED | jsx-a11y recommended at error; selftest probe |
-| DEPS-03 | 07-05 | SATISFIED with caveat | motion 14.1.0 own commit; 6 PNGs re-baselined (SC2 human item) |
-| DEPS-04 | 07-06, 07-07 | SATISFIED with caveat | Versions installed; 6 offline PNGs re-baselined; patch is a second commit (SC2 human item) |
-| DEPS-05 | 07-08 | SATISFIED | Playwright 1.64.0 own commit, container tags equal lockfile (parity guard); Chromium-forced re-baseline allowed by roadmap |
-| DSGN-05 | 07-14, 07-15, 07-20 | SATISFIED | See SC3 |
-| DSGN-06 | 07-09, 07-10, 07-16..19, 07-20 | SATISFIED | Tokens v2 + deprecated aliases |
-| DSGN-07 | 07-11 | SATISFIED | See SC3 |
-| DSGN-08 | 07-09, 07-22 | SATISFIED | See SC3 |
-| DSGN-09 | 07-12 | SATISFIED | `scrollbar-gutter: stable`, thin; `design-system.spec.ts` asserts gutter and scroll-lock header box |
-| DSGN-10 | 07-13, 07-25 | SATISFIED | Phosphor only; emoji rule on in lint |
-| SHELL-01 | 07-21, 07-22, 07-23 | PARTIAL | One nav/main and skip link present; Home has a second skip link (gap) |
-| SHELL-02 | 07-21 | SATISFIED | See SC4 |
-| SHELL-03 | 07-21, 07-22, 07-25 | SATISFIED | See SC5 |
-| SHELL-05 | 07-04, 07-23 | SATISFIED | See SC5 |
-| SHELL-06 | 07-24 | SATISFIED | axe AA in both schemes |
+### Required Artifacts
+
+| Artifact | Expected | Status | Details |
+|----------|----------|--------|---------|
+| `e2e/shell.spec.ts` | `skipLinks` helper plus exactly-one assertions on all shell routes and 404 paths | VERIFIED | Lines 30, 69, 161; comment header names one skip link; no test added or removed |
+| `components/Hero3DMountain.tsx` | Hero without its own skip anchor; CTA to `#home-content` kept | VERIFIED | Anchor gone; `href="#home-content"` once (CTA); `app/(site)/page.tsx:29` `id="home-content"` once |
+| `components/site/SkipLink.tsx` | The single skip link, first in body | VERIFIED | `href="#main-content"`, text "Skip to main content", rendered first by `SiteChrome` |
+| `.planning/.../07-REVIEW-DISPOSITION.md` | IN-04 `fixed` | VERIFIED | Frontmatter entry `disposition: fixed` |
 
 ### Key Link Verification
 
 | From | To | Via | Status |
 |------|----|-----|--------|
-| `app/(site)/layout.tsx` | `SiteChrome` | direct render of all 8 content routes | WIRED |
-| `app/not-found.tsx` / `app/global-error.tsx` | `SiteChrome` | root 404 and error render the chrome themselves (static variant for global-error) | WIRED |
-| `SiteNav` / `SiteFooter` | `data/site.ts` | `site.nav`, `site.links`, `site.email` | WIRED |
-| `package.json` `lint` | five guards + eslint | `npm run lint` chain, re-run here exit 0 | WIRED |
-| CI `unit-tests` | `guard:tests` | step "Test-count ratchet" after `jest --json` | WIRED |
-| CI `visual-regression` | container `playwright:v1.64.0-noble` | tag equals lockfile (parity guard) | WIRED |
+| `e2e/shell.spec.ts` | `SkipLink.tsx` | `getByRole('link', { name: /skip to/i })` `toHaveCount(1)` on 7 routes + 5 404 paths | WIRED |
+| `SiteChrome.tsx` | `SkipLink.tsx` | `<SkipLink />` first child (line 21) | WIRED |
+| Hero CTA | `app/(site)/page.tsx` | `#home-content` target still exists | WIRED |
+| `app/(site)/layout.tsx`, `not-found.tsx`, `global-error.tsx` | `SiteChrome` | all pages inherit the single skip link | WIRED (unchanged) |
+| `package.json` `lint`, CI `unit-tests` | guards, `guard:tests` | re-run here, exit 0 | WIRED |
 
 ### Behavioral Spot-Checks
 
@@ -180,27 +164,60 @@ All 20 phase IDs appear in at least one PLAN `requirements:` field and in REQUIR
 | Types | `npm run type-check` | exit 0 | PASS |
 | Unit tests | `npx jest --silent` | 13 suites, 107 tests passed | PASS |
 | Test-count ratchet | `node scripts/guards/test-count.mjs --jest <fresh json>` | 206 = baseline 206, OK | PASS |
-| Installed tree matches lockfile | `npm ls --depth=0`, `npm ls motion-dom` | versions as required, one motion-dom | PASS |
-| CI on the same code | `gh run view 40045453857` | all jobs success on `4969072`; code identical to HEAD | PASS |
-| Visual and E2E suites | CI only (not run locally per instructions) | 72 and 122 passed in the run above | PASS (via CI) |
+| One skip link, red then green | `gh run view 40086334529` / `40086883766` `--json jobs` | RED: E2E Tests failure, all else success. GREEN: all success. Branch `ci/07-27` on origin = `460b3a4` | PASS (via CI) |
+| Zero visual diff for the fix | `git diff --name-only 4969072 HEAD -- '*.png'` | empty; Visual Regression success on 460b3a4 | PASS |
+| Code at HEAD equals CI-tested code | `git diff --name-only 460b3a4 HEAD -- . ':!.planning'` | empty | PASS |
+
+### Probe Execution
+
+SKIPPED: the phase declares no `probe-*.sh` scripts.
+
+### Requirements Coverage
+
+All 20 IDs in the phase brief appear in at least one PLAN `requirements:` field (GUARD-01..06, DEPS-03/04/05, DSGN-05..10, SHELL-01/02/03/05/06) and in REQUIREMENTS.md; SHELL-04 belongs to Phase 8 and is correctly not claimed. No orphans. REQUIREMENTS.md currently shows these as "Gaps Found" (GUARD-01 "Pending"), which is stale after this re-verification; see the note below the table.
+
+| Requirement | Source Plans | Status | Evidence |
+|-------------|--------------|--------|----------|
+| GUARD-01 | 07-01, 07-08 | NEEDS HUMAN | Repo side verified (SC1). Live Vercel Node 24 + `npm ci` unconfirmed |
+| GUARD-02 | 07-03, 07-04 | SATISFIED | 36 dark baselines, Visual Regression 72 passed, light asserts dark |
+| GUARD-03 | 07-01, 07-26 | SATISFIED | Ratchet 206/206, re-run here |
+| GUARD-04 | 07-16..19, 07-20 | SATISFIED | `check-palette.mjs` in lint, passes |
+| GUARD-05 | 07-20 | SATISFIED | `check-contrast.mjs` in lint, passes |
+| GUARD-06 | 07-02 | SATISFIED | jsx-a11y at error, in lint |
+| DEPS-03 | 07-05 | SATISFIED with caveat | 6 PNGs re-baselined (SC2 human item) |
+| DEPS-04 | 07-06, 07-07 | SATISFIED with caveat | 6 offline PNGs re-baselined (SC2 human item) |
+| DEPS-05 | 07-08 | SATISFIED | Chromium-forced re-baseline allowed by the roadmap |
+| DSGN-05 | 07-14, 07-15, 07-20 | SATISFIED | SC3 |
+| DSGN-06 | 07-09, 07-10, 07-16..19, 07-20 | SATISFIED | SC3 |
+| DSGN-07 | 07-11 | SATISFIED | SC3 |
+| DSGN-08 | 07-09, 07-22 | SATISFIED | SC3 |
+| DSGN-09 | 07-12 | SATISFIED | SC3 |
+| DSGN-10 | 07-13, 07-25 | SATISFIED | SC3 |
+| SHELL-01 | 07-21, 07-22, 07-23, 07-27 | SATISFIED | Gap closed: one skip link, one nav, one main, current-page indicator on every route, enforced in CI |
+| SHELL-02 | 07-21 | SATISFIED | SC4 |
+| SHELL-03 | 07-21, 07-22, 07-25 | SATISFIED | SC5 |
+| SHELL-05 | 07-04, 07-23 | SATISFIED | SC5 |
+| SHELL-06 | 07-24 | SATISFIED | axe AA in both schemes |
+
+Suggested REQUIREMENTS.md status: 17 IDs can move to Complete now (all except GUARD-01, DEPS-03, DEPS-04). DEPS-03 and DEPS-04 are code-satisfied but wait on Tim's ratification of the SC2 re-baselines; GUARD-01 waits on the Vercel check. That call is the orchestrator's; I did not edit REQUIREMENTS.md.
 
 ### Anti-Patterns Found
 
 | File | Line | Pattern | Severity | Impact |
 |------|------|---------|----------|--------|
-| `components/Hero3DMountain.tsx` | 159-165 | Second skip link, v1 classes | Blocker for SC4 literal wording | The gap above |
-| `app/layout.tsx` / all pages | 30-35 | Every route shares one `document.title` (review CR-01); the template comment promises per-page titles that no segment provides | Warning, outside the five SCs | Client navigations are not announced by Next's route announcer; WCAG 2.4.2. Review disposition still `open`. Worth triage before Phase 12 EDGE-01, which relies on the announcement |
-| `components/site/SiteNav.tsx` | 62-98 | Choosing the current page link does not close the mobile panel (review WR-06) | Warning | SC4 only requires close on route change and Escape; minor UX |
-| `scripts/guards/check-contrast.mjs` | 71, 89-103 | Merges `:root` blocks nested in `@media` (review WR-01) | Warning | Guard can be masked by a media-scoped override; hardens GUARD-05 |
-| `components/Header.tsx`, `Footer.tsx`, `GlassmorphismNav.tsx` | n/a | Dead v1 shells with zero importers (verified), `Footer.tsx` holds placeholders and an emoji | Info | Not rendered; palette/identity guards exempt them only while unimported; removal scheduled for Phase 12 |
-| `app/(site)/page.tsx` | 19-20 | Hard-coded "850+ Tests Passing" / "20% Roadmap Complete" (review IN-05) | Info | False figures on Home; Phase 9 rebuild |
-| Debt markers | n/a | No unreferenced `TBD`/`FIXME`/`XXX` found in the guard and shell files read | n/a | n/a |
+| `e2e/shell.spec.ts` | 30, 68-69, 160-161 | Skip-link guard matches name `/skip to/i` only, but the comment says any second skip link fails (review WR-09); count is taken once before hydration settles (IN-17) | Warning (advisory, review `open`) | Does not falsify SC4 today: I grepped every `href="#` in `app components lib` and found only the shell link and the visible Hero CTA. It weakens the regression guard for the Phase 9 hero, the likeliest source of a new second link. The 07-27 SUMMARY "Phase 9" note advises naming around the guard (the review's complaint). Fix before or during Phase 9 |
+| `app/layout.tsx` | 30-35 | One shared `document.title` on every route (CR-01) | Warning, outside the five SCs | Route announcer never fires; WCAG 2.4.2. Triage before Phase 12 EDGE-01 |
+| `components/site/SiteNav.tsx` | 62-98 | Current-page link does not close the mobile panel (WR-06) | Warning | SC4 needs only route-change and Escape close |
+| `scripts/guards/check-contrast.mjs` | 71, 89-103 | Merges `:root` blocks nested in `@media` (WR-01) | Warning | Hardens GUARD-05 |
+| `components/Header.tsx`, `Footer.tsx`, `GlassmorphismNav.tsx` | n/a | Dead v1 shells, zero importers | Info | Removal scheduled for Phase 12 |
+| `app/(site)/page.tsx` | 19-20 | Hard-coded "850+ Tests Passing" / "20% Roadmap Complete" (IN-05) | Info | Phase 9 rebuild |
+| Debt markers | n/a | No unreferenced `TBD`/`FIXME`/`XXX` in the 07-27 files | n/a | n/a |
 
-Review findings WR-02, WR-03, WR-04, WR-05, WR-07, WR-08 and the other info items in `07-REVIEW.md` (all still `open` in `07-REVIEW-DISPOSITION.md`) were read but not re-verified one by one; none contradicts a success criterion.
+The Hero3DMountain.tsx diff contains no new markers or stubs. Remaining open review findings (24, `07-REVIEW-DISPOSITION.md`) were read for contradiction with the five SCs; none contradicts one.
 
 ### Human Verification Required
 
-See the `human_verification` frontmatter: Vercel Node/`npm ci` confirmation, ratification of the three PNG re-baseline exceptions (with the override stanza below), required status checks on `main`, a Firefox/WebKit keyboard pass, and a visual sign-off.
+See the `human_verification` frontmatter: (1) Vercel Node 24 and `npm ci` confirmation, (2) Tim's ratification of the three PNG re-baseline exceptions with the override stanza below, (3) required status checks on `main`, (4) Firefox/WebKit keyboard pass, (5) device visual sign-off.
 
 Override suggestion for SC2, to add only after Tim confirms in his own words (the verifier does not fabricate `accepted_by`):
 
@@ -214,13 +231,11 @@ overrides:
 
 ### Gaps Summary
 
-One gap blocks a clean pass. Home renders two skip links, the shell's and the v1 hero's, against a success criterion that says "one skip link". The fix is small: delete the hero link (or merge it), and add a count assertion to `e2e/shell.spec.ts` so it cannot recur. It cannot be deferred on current evidence, because Phase 9's skip link ("jumps past the ascent") is a new, separate feature rather than this duplicate; Tim may still choose to accept it.
+No gaps remain. The single gap from the first verification (Home rendering two skip links) is closed in the code, not just in the SUMMARY: the hero anchor is deleted, the only remaining skip link is the shell's, the count assertion exists in both the 7-route and 5-path tests, GitHub shows the assertion red on the pre-fix commit and green on the fix, and nothing outside the two planned files or any PNG changed. Lint, type-check, Jest and the test-count ratchet were re-run here and are green; HEAD code equals the CI-green commit.
 
-Everything else holds in the code, not just in the SUMMARYs. The shell, identity, tokens, type stack, scrollbar, icon family, 404 and error boundaries, and the guard suite exist, are wired, and are exercised by passing tests. I re-ran lint, type-check and Jest locally (all green, 206 = baseline 206), and CI run 40045453857 is green on code identical to HEAD (Visual 72 passed, E2E 122 passed).
-
-Two items are outside the verifier's reach and keep the phase from being fully closed even after the gap is fixed: the live Vercel configuration (GUARD-01 stays Pending) and Tim's ratification of the three visual re-baselines that SC2's "zero visual diff" wording does not literally allow.
+The status is `human_needed`, not `passed`, because five items are outside the verifier's reach: the live Vercel configuration (GUARD-01), Tim's decision on the SC2 "zero visual diff" exceptions, branch protection on `main`, a Firefox/WebKit keyboard pass and a device visual sign-off. None is a code defect. Advisory review findings WR-09 and IN-17 (the guard is name-based and counts once) are recommended hardening before the Phase 9 hero rebuild, not blockers for this phase.
 
 ---
 
-_Verified: 2026-10-24T13:30:00Z_
+_Verified: 2026-10-24T15:10:00Z_
 _Verifier: Claude (gsd-verifier)_
