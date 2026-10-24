@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { site } from '@/data/site';
+import { terrain } from '@/data/generated/terrain';
 
 test.describe('Homepage', () => {
   test('should load the homepage successfully', async ({ page }) => {
@@ -38,12 +40,19 @@ test.describe('Homepage', () => {
     await expect(page).toHaveURL(/\/projects/, { timeout: 15000 });
   });
 
-  test('should display stats section', async ({ page }) => {
-    await page.goto('/');
+  test('server HTML shows the name, role and relief poster (HOME-01)', async ({ page }) => {
+    // The raw server response, before any script runs: the first viewport is
+    // complete HTML (09-UI-SPEC "Hero Block", "Stage: Poster, Sheet Box and Canvas").
+    const response = await page.request.get('/');
+    expect(response.ok()).toBe(true);
+    const html = await response.text();
+    expect(html).toContain('<h1');
+    expect(html).toContain(site.name);
+    // React escapes '&' in text children; compare against the escaped form.
+    expect(html).toContain(site.role.replace('&', '&amp;'));
+    expect(html).toContain(terrain.assets.hillshade.webp['1100']);
 
-    // Check for stat cards (using .first() since text may appear multiple times)
-    await expect(page.getByText(/Landscape Photos/i).first()).toBeVisible();
-    await expect(page.getByText(/Active Projects/i).first()).toBeVisible();
-    await expect(page.getByText(/Roadmap Complete/i).first()).toBeVisible();
+    await page.goto('/');
+    await expect(page.getByRole('heading', { level: 1, name: site.name })).toBeVisible();
   });
 });

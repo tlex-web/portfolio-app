@@ -40,6 +40,10 @@
   --z-nav: 40;
   --z-menu: 50;
   --z-skip: 60;
+
+  /* Home relief poster (09-UI-SPEC "Night-tinted relief (D-17)"): the hillshade
+     over bg-surface at this opacity, no blend mode. The 3D shader reads the same value */
+  --relief-opacity: 0.32;
 }
 
 /* Font families (DSGN-07): Schibsted Grotesk display, Inter body, JetBrains Mono data only */
@@ -58,6 +62,10 @@
   --text-display: 2.5rem;
   --text-display--line-height: 2.75rem;
   --text-display--letter-spacing: -0.02em;
+  /* Hero display 64/64 (09-UI-SPEC "Typography"): the Home h1 only */
+  --text-hero: 4rem;
+  --text-hero--line-height: 4rem;
+  --text-hero--letter-spacing: -0.03em;
 }
 
 /* Tokens v2 -- L2 semantic tokens (DSGN-06): the only colour utilities new code may use */
