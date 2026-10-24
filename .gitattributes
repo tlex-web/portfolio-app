@@ -2,3 +2,11 @@
 # working tree, also under core.autocrlf=true on Windows, or a plain checkout
 # would make the committed file differ from a fresh extraction.
 data/photos/exif-sidecar.json text eol=lf
+
+# Terrain (08-04): build-terrain --check byte-compares these against a fresh build.
+data/terrain/source/source.json text eol=lf
+data/generated/terrain.ts text eol=lf
+public/terrain/*.svg text eol=lf
+# 16-bit PNGs: never touch the bytes (source sha256 and hashed file names).
+data/terrain/source/*.png binary
+public/terrain/*.png binary
