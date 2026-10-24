@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 08
 current_phase_name: Data & Terrain Pipeline
 status: executing
-stopped_at: Completed 08-07-PLAN.md (08-06 still paused at its Task 3 checkpoint)
-last_updated: "2026-10-24T16:42:55.473Z"
+stopped_at: Completed 08-06-PLAN.md (Wave 3 done; next 08-08)
+last_updated: "2026-10-24T16:46:54.677Z"
 last_activity: 2026-10-24
-last_activity_desc: Completed 08-07; 08-06 paused at its Task 3 checkpoint
-state_head: 6fe31f397cef83ceb110bc118adc4cc9f05b4ffd
+last_activity_desc: Completed 08-06 (poster approved, no tuning); Wave 3 done, next 08-08
+state_head: 021f0d4993aac7523f6290624b2679cbdfc72143
 progress:
   total_phases: 6
   completed_phases: 7
   total_plans: 40
-  completed_plans: 33
-  percent: 83
+  completed_plans: 34
+  percent: 85
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-24)
 ## Current Position
 
 Phase: 08 (Data & Terrain Pipeline) — EXECUTING
-Plan: 6 of 13 done (08-01..08-05 and 08-07); 08-06 paused at its Task 3 human-verify checkpoint
-Status: Waiting on 08-06 Task 3 (Tim reviewing the hillshade poster); Wave 4 (08-08+) starts after 08-06 closes
-Last activity: 2026-10-24 — Completed 08-07 (hashed photo derivatives, image manifest, full-res copies and prebuild removed)
+Plan: 7 of 13 done (08-01..08-07); Wave 3 complete, next is 08-08 (Wave 4)
+Status: Ready to execute 08-08 (Wave 4)
+Last activity: 2026-10-24 — Completed 08-06 (Tim approved the hillshade poster without tuning; /terrain immutable delivery and SW precache)
 
-Progress: [████████░░] 83% (1 of 6 v2.0 phases; 27/27 planned plans done)
+Progress: [█████████░] 85% (1 of 6 v2.0 phases; 27/27 planned plans done)
 
 ## Performance Metrics
 
@@ -87,6 +87,7 @@ Progress: [████████░░] 83% (1 of 6 v2.0 phases; 27/27 planne
 | Phase 08 P04 | 10 min | 3 tasks | 15 files |
 | Phase 08 P05 | 44 min | 3 tasks | 21 files |
 | Phase 08 P07 | 10 min | 2 tasks | 54 files |
+| Phase 08 P06 | 30 min | 3 tasks | 17 files |
 
 ## Accumulated Context
 
@@ -177,6 +178,8 @@ Recent decisions affecting current work:
 - [Phase 08]: Open for Tim: command 4 (pkill -f chrome) explanation "High-risk operation" beside its CRITICAL RISK badge was not answered; data/projects.ts left unchanged
 - [Phase 08]: [08-07] Photo derivatives are generated locally by npm run photos:derive (rotate + long-edge resize + default sharp output, AVIF/WebP 640/1024/1600/2560 + 1200 JPEG, <id>-<edge>.<sha256[:10]>.<ext> in public/images/photos/) and committed; data/generated/image-manifest.ts is rebuilt from disk + sidecar and byte-checked by photos:derive -- --check inside npm run lint
 - [Phase 08]: [08-07] D-11 applied: the 8 full-res copies, optimization-manifest.json, scripts/optimize-images.mjs and the prebuild step are gone from HEAD (normal git rm); D-12 history exposure recorded in PROJECT.md Key Decisions, no history rewrite
+- [Phase 08]: [08-06] Hillshade poster (D-16) approved by Tim as built ("approved"), no tuning: lights 315/45 w0.75 + 270/55 w0.25, gamma 1, AVIF q50 / WebP q75. The light tone (valley floor ~73% grey) and near-black SE faces were shown with tuning options (gamma 1.6/2.25, black floor 0.08, softer altitudes/fill weight) and declined, so they are deliberate; tune only via the HILLSHADE block in build-terrain.mjs (terrain.ts records the parameters, --check catches an un-rebuilt edit)
+- [Phase 08]: [08-06] SW precache comes only from data/generated/precache.json (content-hashed /terrain/ URLs, injected at postbuild into /*__PRECACHE_URLS__*/[]); /terrain/:path* is immutable and proxy.ts skips images/ and terrain/. A second local npm run build needs git checkout -- public/service-worker.js first (postbuild now fails instead of keeping a stale hash); CI/Vercel unaffected
 
 ### Pending Todos
 
@@ -211,6 +214,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-24T16:42:55.312Z
-Stopped at: Completed 08-07-PLAN.md (08-06 still paused at its Task 3 checkpoint)
+Last session: 2026-10-24T16:46:53.796Z
+Stopped at: Completed 08-06-PLAN.md (Wave 3 done; next 08-08)
 Resume file: None

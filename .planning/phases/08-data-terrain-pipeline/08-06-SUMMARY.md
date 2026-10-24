@@ -282,3 +282,9 @@ None. The matcher exclusion (T-08-16) and the immutable header (T-08-15) are in 
 ---
 *Phase: 08-data-terrain-pipeline*
 *Completed: 2026-10-24*
+
+## Self-Check: PASSED
+
+- Files: precache.json, precache.test.ts, the four hillshade posters and this SUMMARY exist on disk.
+- Commits: d035090, 865ca82 and 021f0d4 are ancestors of HEAD; evaluation-scope resolves 08-06 to these commits on this branch.
+- `npm run terrain:build -- --check` exit 0 (terrain: OK) at HEAD 67fcc0f.
