@@ -123,9 +123,9 @@ files_reviewed_list:
   - vercel.json
 findings:
   critical: 1
-  warning: 8
-  info: 16
-  total: 25
+  warning: 9
+  info: 17
+  total: 27
 status: issues_found
 ---
 
@@ -155,6 +155,8 @@ The guards do what their self-tests cover. The main problems are gaps those self
 The one BLOCKER is in the shell: every route has the same `document.title`, so Next's route announcer never announces a client-side navigation. The 404 body's design relies on that announcement (CR-01).
 
 Items already listed in `.planning/STATE.md` "Blockers/Concerns" that I came across are reported as Info and tagged "known, deferred" (IN-13 to IN-16).
+
+**Incremental re-review after gap-closure plan 07-27 (2026-10-24, standard depth, diff `0745a54..HEAD`):** `components/Hero3DMountain.tsx` and `e2e/shell.spec.ts`, both already in the list above. The removal of the hero's own skip anchor leaves nothing dangling (`#home-content` is still the CTA target at `Hero3DMountain.tsx:96` and exists at `app/(site)/page.tsx:29`), and the new count assertion is not vacuous (red on `5f403af`, green on `460b3a4`). IN-04 is resolved. Two new findings, numbered on from this report: WR-09 (the guard is name-based) and IN-17 (the count is taken once, before hydration settles).
 
 ## Narrative Findings (AI reviewer)
 
@@ -306,6 +308,29 @@ const intervals: ReturnType<typeof setInterval>[] = [];
 return () => { timers.forEach(clearTimeout); intervals.forEach(clearInterval); };
 ```
 
+### WR-09: The skip-link guard only catches links named "Skip to ...", but the comment says it catches any second skip link (and the 07-27 handoff advises naming around it)
+
+**File:** `e2e/shell.spec.ts:30`, `e2e/shell.spec.ts:68-69`, `e2e/shell.spec.ts:160-161` (incremental review after 07-27)
+**Issue:** `skipLinks` is `page.getByRole('link', { name: /skip to/i })`. The comment on lines 68 and 160 says "exactly one skip link, so a page-level second skip link fails here". In fact only a second link whose name contains "skip to" fails. A second bypass link named "Skip navigation", "Skip past the hero", "Jump to content", "Bypass the intro" or an icon-only `aria-label="Skip"` keeps the test green, although SC4 / SHELL-01 forbids it. The 07-27 SUMMARY's Phase 9 handoff note (`07-27-SUMMARY.md:148`) says a new hero "jump past the ascent" link "must not be named 'Skip to ...' ... or this guard goes red", which tells the next implementer how to avoid the guard rather than how to satisfy the invariant. The Phase 9 hero rebuild is exactly where the original duplicate came from.
+**Fix:** Detect a skip link by how it is built, not only by its name, then reword the comment and the SUMMARY note so they say a second bypass link is not allowed:
+```ts
+// Any same-page fragment link that is visually hidden until focus is a skip link,
+// whatever it is called. The visible "Explore My Work" CTA (#home-content) is excluded
+// because it has a real layout box.
+async function countSkipLinks(page: Page) {
+  return page.evaluate(() =>
+    [...document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]')].filter((a) => {
+      const r = a.getBoundingClientRect();
+      return r.width <= 1 && r.height <= 1; // sr-only box before focus
+    }).length,
+  );
+}
+
+await expect(skipLinks(page)).toHaveCount(1);                    // keep the named check
+await expect.poll(() => countSkipLinks(page)).toBe(1);           // structural check
+```
+At minimum, widen the name match to `/\b(skip|jump|bypass)\b/i` and state in the comment that the check is name-based.
+
 ## Info
 
 ### IN-01: scripts/README.md lint chain and emoji row are stale
@@ -404,8 +429,21 @@ return () => { timers.forEach(clearTimeout); intervals.forEach(clearInterval); }
 **Issue:** The server sends HTTP 404 with an empty `__next_error__` document, and the shell and 404 body render only on the client. Combined with CR-01, a screen-reader user who follows a bad project link gets neither a server page nor an announcement.
 **Fix:** Investigate before EDGE-01 sign-off, as planned (for example a `generateStaticParams` plus `dynamicParams = false` route, so unknown slugs reach the root not-found).
 
+### IN-17: The skip-link count passes as soon as it first reads 1, so a link added after hydration is not counted
+
+**File:** `e2e/shell.spec.ts:69`, `e2e/shell.spec.ts:161` (incremental review after 07-27)
+**Issue:** `toHaveCount(1)` retries only while the count is wrong and stops at the first match. `page.goto` resolves on `load`, so the assertion usually runs against the server-rendered DOM. A second skip link rendered only on the client, for example from a `dynamic(..., { ssr: false })` hero (the pattern the Phase 9 3D hero is likely to use) or after a post-load effect, can mount after the check has passed. The RED proof covered only a server-rendered duplicate. The landmark counts on lines 63-67 work the same way, but they guard server-rendered shell parts, whereas a second skip link is most likely to come from client-side page content.
+**Fix:** Count again at the end of the test, after the Tab/Enter sequence, when the page has hydrated and focus has moved:
+```ts
+await page.keyboard.press('Enter');
+await expect(page.locator('#main-content')).toBeFocused();
+await expect(skipLinks(page)).toHaveCount(1); // re-check after hydration and interaction
+```
+In the 404 test, add the same re-check after the `nav` assertions. Alternatively, wait for `page.waitForLoadState('networkidle')` before the first count.
+
 ---
 
 _Reviewed: 2026-10-24T12:00:00Z_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
+_Incremental re-review (07-27, `0745a54..HEAD`): 2026-10-24, standard depth, WR-09 and IN-17 added_
