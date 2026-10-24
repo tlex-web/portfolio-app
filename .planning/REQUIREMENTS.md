@@ -32,13 +32,13 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 - [x] **DSGN-07**: Type uses one Swiss-style grotesk display face, Inter for body text and JetBrains Mono only for data, with tabular numerals for figures (display face chosen in the Phase 7 UI-SPEC)
 - [x] **DSGN-08**: Motion durations and easings come from shared tokens used by both CSS and Motion, and all motion respects `prefers-reduced-motion`
 - [x] **DSGN-09**: A thin, visible scrollbar is shown with a stable gutter, so opening a modal never shifts the layout
-- [ ] **DSGN-10**: Icons come from one SVG family; no emoji are used as icons
+- [x] **DSGN-10**: Icons come from one SVG family; no emoji are used as icons
 
 ### Shell & Identity
 
 - [x] **SHELL-01**: Every page has exactly one primary navigation and one main landmark, with a skip link and a visible current-page indicator
 - [x] **SHELL-02**: On mobile, the navigation opens a menu with touch targets of at least 44 px that closes on route change and on Escape
-- [ ] **SHELL-03**: The site shows Tim Lui's real name, role line and real GitHub, LinkedIn and email links everywhere; no placeholder text or links remain
+- [x] **SHELL-03**: The site shows Tim Lui's real name, role line and real GitHub, LinkedIn and email links everywhere; no placeholder text or links remain
 - [ ] **SHELL-04**: The footer is a map legend with contour art, a scale bar and swisstopo attribution
 - [x] **SHELL-05**: `/gradient-mesh`, `/particle-buttons` and `/transitions` are removed and resolve to the designed 404, and no page links to them
 - [x] **SHELL-06**: The Contact heading and form fields meet WCAG AA contrast for every visitor (interim fix ahead of the Contact redesign)
@@ -180,10 +180,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DSGN-07 | Phase 7 | Complete |
 | DSGN-08 | Phase 7 | Complete |
 | DSGN-09 | Phase 7 | Complete |
-| DSGN-10 | Phase 7 | Pending |
+| DSGN-10 | Phase 7 | Complete |
 | SHELL-01 | Phase 7 | Complete |
 | SHELL-02 | Phase 7 | Complete |
-| SHELL-03 | Phase 7 | Pending |
+| SHELL-03 | Phase 7 | Complete |
 | SHELL-04 | Phase 8 | Pending |
 | SHELL-05 | Phase 7 | Complete |
 | SHELL-06 | Phase 7 | Complete |

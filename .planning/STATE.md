@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 07
 current_phase_name: Foundation & Guardrails
 status: executing
-stopped_at: Completed 07-24-PLAN.md
-last_updated: "2026-10-24T00:00:18.859Z"
+stopped_at: Completed 07-25-PLAN.md
+last_updated: "2026-10-24T00:10:12.464Z"
 last_activity: 2026-10-23
 last_activity_desc: Phase 07 execution resumed (wave continue)
-state_head: 587c6bcc09c71d95c5318474f9e8a49b686aa5bd
+state_head: 94b80a26d3a1b1eb92e0f14b8823e6d2d95d92ca
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 26
-  completed_plans: 24
-  percent: 92
+  completed_plans: 25
+  percent: 96
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-10)
 ## Current Position
 
 Phase: 07 (Foundation & Guardrails) — EXECUTING
-Plan: 25 of 26
+Plan: 26 of 26
 Status: Executing Phase 07
 Last activity: 2026-10-23 — Phase 07 execution resumed (wave continue)
 
-Progress: [█████████░] 92%
+Progress: [█████████░] 96%
 
 ## Performance Metrics
 
@@ -78,6 +78,7 @@ Progress: [█████████░] 92%
 | Phase 07 P22 | 1h 28m | 3 tasks | 47 files |
 | Phase 07 P23 | 1h 9m | 3 tasks | 15 files |
 | Phase 07 P24 | 20 min | 2 tasks | 8 files |
+| Phase 07 P25 | 6 min | 2 tasks | 36 files |
 
 ## Accumulated Context
 
@@ -147,6 +148,8 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-23] 404 and error boundaries inside the shell (ecf7670 with Tim's 3-PNG not-found amend, af5434c RED, e1cbdc7 GREEN): app/not-found.tsx renders <SiteChrome><NotFoundBody /></SiteChrome> because Next 16.4.2's root not-found is wrapped only by the root layout; app/(site)/not-found.tsx renders <NotFoundBody /> for notFound() in the group; no redirects. /__no-such-page__, /gradient-mesh, /particle-buttons, /transitions and /projects/no-such-slug return 404 with no redirect and one nav/main (e2e 'Shell 404', 6 tests). ErrorBody {variant section|root, onRetry} never receives the error (T-07-31), focuses its h1 on mount; Try again calls retry() (reset unused, user-approved 2026-10-10); global-error has its own html.dark/body, globals.css and fonts, SiteChrome variant=static, no MotionProvider. CI run 40038984475 on d3ec816 green (E2E 116, 0 flaky). SHELL-01 and SHELL-05 Complete (ready-ids: both ready)
 - [Phase 07]: [07-23] Touch-target e2e measured inside an animated panel must wait until getAnimations() is empty (and assert none left) before measuring: the 07-22 mobile-menu row test read 47.99998 vs >= 48 mid-transition (flaky on Firefox and chromium; control 3/20 failed). Fixed test-only in 6a82527, threshold unchanged, 20/20 dev and PW_PROD
 - [Phase 07]: [07-24] Contact interim contrast fix (c9aac91, Tim's 3-PNG contact amend of 9e5a579): hero, form card and three info cards on solid bg-surface-raised border-line panels above the unchanged AnimatedGradientMesh (Phase 12 removes it); Phosphor Clock/EnvelopeSimple/MapPin in bg-surface-overlay tiles; Email card shows site.email (old2shatterhand@gmail.com) with wrap-anywhere and a <wbr> after '@'; FeedbackForm labels text-ink + aria-hidden text-danger asterisk, inputs bg-surface-overlay border-line-strong (border-danger when invalid), errors text-danger; required added to Name/Email/Message (noValidate keeps validation); Tim's 07-16 D1/D2 kept. e2e/a11y-contact.spec.ts (3 tests: dark, light, light with canvases hidden; empty-submit errors and mocked 500 failure box; asserts axe measured the key nodes) passes with zero color-contrast violations and no incomplete nodes. @axe-core/playwright 4.13.0 exact pin (axe-core deduped 4.11.2 -> 4.13.0 under eslint-plugin-jsx-a11y). contact/{375,768,1440} re-baselined (+46/+86/+62 px); CI run 40041886574 green (E2E 122, 0 flaky). SHELL-06 Complete (ready-ids: ready)
+- [Phase 07]: 07-25: data/site.ts is the single identity record; package.json author is a derived copy checked by check-identity.mjs; v1 Header/Footer/GlassmorphismNav are exempt from the identity and emoji rules only while assertNoImporters() finds no importer
+- [Phase 07]: 07-25: CI verification of 168f176 and 44612f3 is pending (no pixel changes, no baseline checkpoint); the orchestrator pushes next and 07-26's CI check covers these commits
 
 ### Pending Todos
 
@@ -182,6 +185,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-24T00:00:18.823Z
-Stopped at: Completed 07-24-PLAN.md
+Last session: 2026-10-24T00:10:12.426Z
+Stopped at: Completed 07-25-PLAN.md
 Resume file: None
