@@ -71,10 +71,48 @@ export const TerrainSource = z
   );
 export type TerrainSource = z.infer<typeof TerrainSource>;
 
-/** A content-hashed terrain asset URL: `/terrain/<name>.<10 hex>.<svg|png>`. */
+/** A content-hashed terrain asset URL: `/terrain/<name>.<10 hex>.<svg|png|avif|webp>`. */
 export const TerrainAssetUrl = z
   .string()
-  .regex(/^\/terrain\/[a-z0-9-]+\.[0-9a-f]{10}\.(svg|png)$/, 'hashed /terrain/ asset URL');
+  .regex(
+    /^\/terrain\/[a-z0-9-]+\.[0-9a-f]{10}\.(svg|png|avif|webp)$/,
+    'hashed /terrain/ asset URL'
+  );
+
+/** Content-hashed hillshade poster URLs, one schema per format. */
+const PosterAvif = z
+  .string()
+  .regex(/^\/terrain\/hillshade-(1100|640)\.[0-9a-f]{10}\.avif$/, 'hashed hillshade AVIF URL');
+const PosterWebp = z
+  .string()
+  .regex(/^\/terrain\/hillshade-(1100|640)\.[0-9a-f]{10}\.webp$/, 'hashed hillshade WebP URL');
+
+/** One hillshade light: azimuth clockwise from north, altitude above the horizon. */
+const Light = z.strictObject({
+  azimuthDeg: z.number().min(0).lt(360),
+  altitudeDeg: z.number().gt(0).max(90),
+  weight: z.number().gt(0).max(1),
+});
+
+/**
+ * D-16 poster shading parameters. Recorded in terrain.ts so `--check` notices
+ * when the script's parameters change but the committed poster was not rebuilt.
+ */
+const Hillshade = z
+  .strictObject({
+    /** Imhof/swisstopo NW light, blended: lights[0] weight + lights[1] weight = 1. */
+    lights: z.tuple([Light, Light]),
+    /** Tone curve `grey = shade ^ gamma` before 8-bit quantisation (1 = linear). */
+    gamma: z.number().positive(),
+    quality: z.strictObject({
+      avif: z.number().int().min(1).max(100),
+      webp: z.number().int().min(1).max(100),
+    }),
+  })
+  .refine(
+    (h) => Math.abs(h.lights[0].weight + h.lights[1].weight - 1) < 1e-9,
+    'light weights must sum to 1'
+  );
 
 const Lod = z.strictObject({
   intervalM: z.number().int().positive(),
@@ -101,6 +139,7 @@ export const TerrainMeta = z.strictObject({
     map: Lod,
     strip: Lod.extend({ lv95: Lv95Bbox }),
   }),
+  hillshade: Hillshade,
   summit: z.strictObject({
     name: z.literal('Matterhorn'),
     /** Official summit height (D-17); a 10 m DEM rounds the peak off. */
@@ -119,6 +158,27 @@ export const TerrainMeta = z.strictObject({
       map: TerrainAssetUrl,
       strip: TerrainAssetUrl,
     }),
+    /**
+     * D-16 greyscale hillshade poster at the native 1100 grid and 640, AVIF and
+     * WebP. Lossy bytes are not reproducible across platforms, so `--check`
+     * verifies hash-in-name, dimensions, no metadata, and `sourceSha256` (the
+     * source.json sha256 the poster was generated from).
+     */
+    hillshade: z
+      .strictObject({
+        avif: z.strictObject({ 1100: PosterAvif, 640: PosterAvif }),
+        webp: z.strictObject({ 1100: PosterWebp, 640: PosterWebp }),
+        sourceSha256: Sha256,
+      })
+      .refine(
+        (h) =>
+          ([1100, 640] as const).every(
+            (s) =>
+              h.avif[s].startsWith(`/terrain/hillshade-${s}.`) &&
+              h.webp[s].startsWith(`/terrain/hillshade-${s}.`)
+          ),
+        'each size key points at the poster of that size'
+      ),
   }),
 });
 export type TerrainMeta = z.infer<typeof TerrainMeta>;

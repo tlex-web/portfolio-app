@@ -11,3 +11,6 @@ public/terrain/*.svg text eol=lf
 # 16-bit PNGs: never touch the bytes (source sha256 and hashed file names).
 data/terrain/source/*.png binary
 public/terrain/*.png binary
+# Lossy hillshade posters (08-06): hashed by their bytes, never normalised.
+public/terrain/*.avif binary
+public/terrain/*.webp binary

@@ -6,7 +6,9 @@
  * scripts/terrain/build-terrain.mjs from the committed source raster. These
  * tests read the committed files with fs only (sharp is ESLint-banned outside
  * scripts/), and pin the one-extent contract, the hash-in-name rule, the PNG
- * format, the SVG safety and no-frame rules, the LOD intervals and the summit.
+ * format, the SVG safety and no-frame rules, the LOD intervals, the summit and
+ * the D-16 hillshade poster (dimensions and metadata are checked by
+ * `terrain:build --check`, which decodes with sharp).
  */
 import crypto from 'node:crypto';
 import fs from 'node:fs';
@@ -21,9 +23,14 @@ const metaText = read('data/generated/terrain.ts').toString('utf8');
 const source = TerrainSource.parse(JSON.parse(read('data/terrain/source/source.json').toString()));
 const sha256 = (b: Buffer) => crypto.createHash('sha256').update(b).digest('hex');
 
+const posterUrls: string[] = [
+  ...Object.values(terrain.assets.hillshade.avif),
+  ...Object.values(terrain.assets.hillshade.webp),
+];
 const urls: string[] = [
   ...Object.values(terrain.assets.heightmap),
   ...Object.values(terrain.assets.contours),
+  ...posterUrls,
 ];
 const lods = ['hero', 'map', 'strip'] as const;
 const svgOf = (lod: (typeof lods)[number]) =>
@@ -71,7 +78,7 @@ describe('terrain module (T-08-12)', () => {
 
 describe('hashed assets', () => {
   test.each(urls)('%s exists and its 10-hex part is the sha256 of its bytes', (url) => {
-    const m = /\.([0-9a-f]{10})\.(svg|png)$/.exec(url);
+    const m = /\.([0-9a-f]{10})\.(svg|png|avif|webp)$/.exec(url);
     expect(m).not.toBeNull();
     const bytes = read(`public${url}`);
     expect(sha256(bytes).slice(0, 10)).toBe(m![1]);
@@ -88,6 +95,42 @@ describe('hashed assets', () => {
     expect(png.readUInt32BE(20)).toBe(size);
     expect(png[24]).toBe(16); // bit depth
     expect(png[25]).toBe(0); // colour type: greyscale
+  });
+});
+
+describe('hillshade poster (D-16)', () => {
+  test('four distinct URLs: 1100 and 640, AVIF and WebP, each under its own key', () => {
+    expect(new Set(posterUrls).size).toBe(4);
+    for (const ext of ['avif', 'webp'] as const) {
+      for (const size of [1100, 640] as const) {
+        const url = terrain.assets.hillshade[ext][size];
+        expect(url).toMatch(new RegExp(`^/terrain/hillshade-${size}\\.[0-9a-f]{10}\\.${ext}$`));
+        expect(fs.existsSync(path.join(ROOT, 'public', url))).toBe(true);
+      }
+    }
+  });
+
+  test.each(Object.values(terrain.assets.hillshade.avif))('%s is an AVIF file', (url) => {
+    const b = read(`public${url}`);
+    expect(b.toString('latin1', 4, 8)).toBe('ftyp');
+    expect(b.toString('latin1', 8, 12)).toBe('avif');
+  });
+
+  test.each(Object.values(terrain.assets.hillshade.webp))('%s is a WebP file', (url) => {
+    const b = read(`public${url}`);
+    expect(b.toString('latin1', 0, 4)).toBe('RIFF');
+    expect(b.toString('latin1', 8, 12)).toBe('WEBP');
+  });
+
+  test('sourceSha256 equals the committed source.json sha256', () => {
+    expect(terrain.assets.hillshade.sourceSha256).toBe(source.sha256);
+  });
+
+  test('NW light: 0.75 x (315, 45) + 0.25 x (270, 55)', () => {
+    expect(terrain.hillshade.lights).toEqual([
+      { azimuthDeg: 315, altitudeDeg: 45, weight: 0.75 },
+      { azimuthDeg: 270, altitudeDeg: 55, weight: 0.25 },
+    ]);
   });
 });
 

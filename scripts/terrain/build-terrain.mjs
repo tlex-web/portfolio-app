@@ -18,6 +18,10 @@
  *        stored in the source unit (decimetres, heightScale 0.1) as grey16 PNG
  *     -> contours-hero (512 grid, 100 m) and contours-map (512 grid, 50 m)
  *     -> contours-strip: native-grid row window through the summit (5:1), 100 m
+ *     -> hillshade-1100 / hillshade-640 (D-16): Horn hillshade, two NW lights
+ *        blended (lib/terrain/hillshade.ts), 8-bit grey, AVIF + WebP. 1100 is the
+ *        native grid; 640 resamples the HEIGHTS first (resampleBilinear) and
+ *        shades with the scaled cell size (never resize a float raster with sharp)
  *     -> summit DEM sample (bilinear at pixel centres on the native grid) and UV
  *     -> data/generated/terrain.ts (scalars and hashed URLs only)
  *     -> data/generated/precache.json (the strip URL; postbuild injects it into
@@ -36,13 +40,20 @@
  *   heightmap PNG        the name's hash must equal sha256 of the committed bytes,
  *                        and the decoded pixels must equal the regenerated array
  *                        (deflate bytes may differ across platforms, pixels may not).
+ *   hillshade AVIF/WebP  lossy bytes are not reproducible across platforms
+ *                        (RESEARCH A1), so never regenerated in --check: the name's
+ *                        hash must equal sha256 of the bytes, width/height must
+ *                        match, EXIF/XMP/IPTC/ICC must be absent, and the
+ *                        sourceSha256 and shading parameters recorded in
+ *                        terrain.ts must equal source.json and HILLSHADE.
  *   source raster        sha256 equals source.json.
  *   public/terrain/      missing or extra managed files (contours-*.svg,
- *                        heightmap-*.png) are reported.
+ *                        heightmap-*.png, hillshade-*.avif/webp) are reported.
  *
  * Modes:
  *   (default)  write every artifact and delete stale managed files. A committed
- *              heightmap whose hash and pixels already match is kept as is.
+ *              heightmap whose hash and pixels already match is kept as is, and
+ *              so is a committed poster set that passes the --check rules.
  *   --check    one line per problem, then `terrain: OK` or `terrain: N stale` (exit 1).
  *
  * Usage:
@@ -60,6 +71,7 @@ import sharp from 'sharp';
 import { lv95ToUv, round4, stripBbox } from '../../lib/geo.ts';
 import { contourSvg, isIndexLevel, openRuns, runToPath } from '../../lib/terrain/contour-paths.ts';
 import { resampleBilinear, sampleAtLv95 } from '../../lib/terrain/dem-sample.ts';
+import { blendShades, hillshade, toGrey8 } from '../../lib/terrain/hillshade.ts';
 import { TerrainMeta, TerrainSource } from '../../data/schemas/terrain.ts';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -74,7 +86,8 @@ const PRECACHE_PATH = path.join(ROOT, PRECACHE_REL);
 const NAME = 'terrain';
 
 /** Files this script owns in public/terrain/; anything else there is left alone. */
-const MANAGED = /^(contours-[a-z0-9-]+\.[^.]+\.svg|heightmap-[0-9]+\.[^.]+\.png)$/;
+const MANAGED =
+  /^(contours-[a-z0-9-]+\.[^.]+\.svg|heightmap-[0-9]+\.[^.]+\.png|hillshade-[0-9]+\.[^.]+\.(avif|webp))$/;
 
 /** D-17: the official summit, beside the DEM-sampled height. */
 const SUMMIT = {
@@ -90,6 +103,27 @@ const GRIDS = { desktop: 512, mobile: 256 };
 const HERO = { intervalM: 100, indexEvery: 5 };
 const MAP = { intervalM: 50, indexEvery: 5 };
 const STRIP = { intervalM: 100, indexEvery: 5, ratio: 5 };
+
+/**
+ * D-16 hillshade poster (Imhof/swisstopo convention, NW light). These are the
+ * tunable parameters for Tim's poster review: the two lights (azimuth, altitude,
+ * blend weight), the tone curve (`grey = shade ^ gamma`, 1 = linear) and the
+ * encoder quality. They are recorded in terrain.ts, so changing one here without
+ * rebuilding the poster makes --check fail.
+ */
+const HILLSHADE = {
+  lights: [
+    { azimuthDeg: 315, altitudeDeg: 45, weight: 0.75 },
+    { azimuthDeg: 270, altitudeDeg: 55, weight: 0.25 },
+  ],
+  gamma: 1,
+  quality: { avif: 50, webp: 75 },
+};
+/** Poster sizes: the native 1100 grid (about 10 m/px) and 640 for small screens. */
+const POSTER_SIZES = [1100, 640];
+const POSTER_FORMATS = ['avif', 'webp'];
+/** sharp metadata `format` (and AVIF `compression`) per poster extension. */
+const POSTER_DECODED = { avif: { format: 'heif', compression: 'av1' }, webp: { format: 'webp' } };
 
 const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex');
 const hashedName = (base, ext, bytes) => `${base}.${sha256(bytes).slice(0, 10)}.${ext}`;
@@ -230,8 +264,136 @@ async function resolveHeightmap(size, u16) {
   return { name: hashedName(base, 'png', bytes), bytes, committed: false, problems };
 }
 
+/** 8-bit grey poster shading of a W x H metres grid with cell size `cellM`. */
+function shadeGrey8(grid, W, H, cellM) {
+  const h = Float32Array.from(grid);
+  const [a, b] = HILLSHADE.lights;
+  let shade = blendShades(
+    hillshade(h, W, H, cellM, a.azimuthDeg, a.altitudeDeg),
+    hillshade(h, W, H, cellM, b.azimuthDeg, b.altitudeDeg),
+    a.weight
+  );
+  if (HILLSHADE.gamma !== 1) shade = shade.map((v) => Math.pow(Math.max(0, v), HILLSHADE.gamma));
+  return toGrey8(shade);
+}
+
+/**
+ * The poster raster at `size`: the native grid as is, any other size from
+ * bilinear-resampled heights shaded with the scaled cell size.
+ */
+function posterGrey8(source, metres, size) {
+  const { width: W, height: H, cellM } = source;
+  if (W !== H) throw new Error('the poster needs a square source grid');
+  if (size === W) return shadeGrey8(metres, W, H, cellM);
+  return shadeGrey8(resampleBilinear(metres, W, H, size, size), size, size, (cellM * W) / size);
+}
+
+/** Encode a single-channel 8-bit raster. The default pipeline keeps no metadata (Pitfall 3). */
+function encodePoster(grey8, size, format) {
+  const img = sharp(Buffer.from(grey8.buffer, grey8.byteOffset, grey8.byteLength), {
+    raw: { width: size, height: size, channels: 1 },
+  });
+  return format === 'avif'
+    ? img.avif({ quality: HILLSHADE.quality.avif }).toBuffer()
+    : img.webp({ quality: HILLSHADE.quality.webp }).toBuffer();
+}
+
+/** Why the committed poster `file` fails the --check rules, or null when it passes. */
+async function inspectPoster(file, size, format) {
+  const m = new RegExp(`^hillshade-${size}\\.([0-9a-f]{10})\\.${format}$`).exec(file);
+  if (!m) return `name is not hillshade-${size}.<hash>.${format}`;
+  const p = path.join(PUBLIC_DIR, file);
+  if (!fs.existsSync(p)) return 'missing';
+  const bytes = fs.readFileSync(p);
+  if (sha256(bytes).slice(0, 10) !== m[1]) return 'sha256 of the bytes does not match the name';
+  let info;
+  try {
+    info = await sharp(bytes).metadata();
+  } catch {
+    return 'not a decodable image';
+  }
+  const want = POSTER_DECODED[format];
+  if (info.format !== want.format || (want.compression && info.compression !== want.compression))
+    return `decodes as ${info.format}${info.compression ? `/${info.compression}` : ''}, not ${format}`;
+  if (info.width !== size || info.height !== size)
+    return `${info.width} x ${info.height}, expected ${size} x ${size}`;
+  const carried = ['exif', 'xmp', 'iptc', 'icc'].filter((k) => info[k]);
+  if (carried.length > 0) return `carries ${carried.join(', ')} metadata`;
+  return null;
+}
+
+/** The committed terrain.ts as data, or null when it is missing or unreadable. */
+function committedMeta() {
+  if (!fs.existsSync(META_PATH)) return null;
+  const m = /export const terrain = ([\s\S]*) as const;\s*$/.exec(
+    fs.readFileSync(META_PATH, 'utf8')
+  );
+  if (!m) return null;
+  try {
+    return JSON.parse(m[1]);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Lossy posters are never compared with a regeneration. The committed set (the
+ * URLs recorded in terrain.ts) is kept when every file passes inspectPoster and
+ * terrain.ts records the current source sha256 and HILLSHADE; `problems` lists
+ * each file that does not, with the reasons. With `encode`, a failing set is
+ * replaced by a fresh encoding (`files`); without it (--check), `urls` stays the
+ * recorded set so the terrain.ts comparison reports only other drift.
+ */
+async function resolvePosters(source, metres, { encode }) {
+  const committed = committedMeta();
+  const rec = committed?.assets?.hillshade;
+  const problems = [];
+  if (!rec) {
+    problems.push({ file: 'hillshade-*', reason: `no assets.hillshade in ${META_REL}` });
+  } else {
+    const sameSource = rec.sourceSha256 === source.sha256;
+    const sameParams = JSON.stringify(committed.hillshade) === JSON.stringify(HILLSHADE);
+    for (const format of POSTER_FORMATS) {
+      for (const size of POSTER_SIZES) {
+        const url = rec[format]?.[size];
+        const file =
+          typeof url === 'string'
+            ? url.replace(/^\/terrain\//, '')
+            : `hillshade-${size}.<hash>.${format}`;
+        const reasons = [];
+        const bad =
+          typeof url === 'string'
+            ? await inspectPoster(file, size, format)
+            : `not recorded in ${META_REL}`;
+        if (bad) reasons.push(bad);
+        if (!sameSource)
+          reasons.push(
+            `generated from source sha256 ${String(rec.sourceSha256).slice(0, 10)}, source.json has ${source.sha256.slice(0, 10)}`
+          );
+        if (!sameParams) reasons.push('HILLSHADE parameters changed since it was generated');
+        if (reasons.length > 0) problems.push({ file, reason: reasons.join('; ') });
+      }
+    }
+  }
+  const recorded = rec ? { avif: { ...rec.avif }, webp: { ...rec.webp } } : null;
+  if (problems.length === 0) return { urls: recorded, files: [], committed: true, problems };
+  if (!encode) return { urls: recorded, files: [], committed: false, problems };
+  const urls = { avif: {}, webp: {} };
+  const files = [];
+  for (const size of POSTER_SIZES) {
+    const grey = posterGrey8(source, metres, size);
+    for (const format of POSTER_FORMATS) {
+      const bytes = await encodePoster(grey, size, format);
+      const name = hashedName(`hillshade-${size}`, format, bytes);
+      files.push({ name, bytes });
+      urls[format][size] = `/terrain/${name}`;
+    }
+  }
+  return { urls, files, committed: false, problems };
+}
+
 /** Every artifact plus the terrain.ts text, all in memory. */
-async function buildAll(source, metres) {
+async function buildAll(source, metres, { encode }) {
   const { extent, width: W, height: H } = source;
   const svgs = [];
   const pngs = [];
@@ -261,6 +423,10 @@ async function buildAll(source, metres) {
   const uv = lv95ToUv(SUMMIT.lv95, extent);
   const pngUrl = (size) => `/terrain/${pngs.find((p) => p.size === size).name}`;
 
+  const posters = await resolvePosters(source, metres, { encode });
+  // --check with no recorded poster: terrain.ts cannot be rebuilt, the problem says why.
+  if (!posters.urls) return { svgs, pngs, posters, metaText: null, precacheText: null };
+
   const meta = TerrainMeta.parse({
     crs: source.crs,
     extent: {
@@ -281,10 +447,12 @@ async function buildAll(source, metres) {
       map: MAP,
       strip: { intervalM: STRIP.intervalM, indexEvery: STRIP.indexEvery, lv95: strip },
     },
+    hillshade: HILLSHADE,
     summit: { ...SUMMIT, demM, uv: { u: round4(uv.u), v: round4(uv.v) } },
     assets: {
       heightmap: { 512: pngUrl(GRIDS.desktop), 256: pngUrl(GRIDS.mobile) },
       contours: { hero: heroUrl, map: mapUrl, strip: stripUrl },
+      hillshade: { ...posters.urls, sourceSha256: source.sha256 },
     },
   });
 
@@ -294,7 +462,15 @@ async function buildAll(source, metres) {
     `export const terrain = ${JSON.stringify(meta, null, 2)} as const;\n`;
   // The footer strip is precached so /offline keeps its band (UI-SPEC "Contour band").
   const precacheText = `${JSON.stringify([meta.assets.contours.strip], null, 2)}\n`;
-  return { svgs, pngs, metaText, precacheText };
+  return { svgs, pngs, posters, metaText, precacheText };
+}
+
+/** File names of a poster URL set ({ avif: { 1100, 640 }, webp: { 1100, 640 } }). */
+function posterFiles(urls) {
+  if (!urls) return [];
+  return POSTER_FORMATS.flatMap((format) =>
+    POSTER_SIZES.map((size) => urls[format]?.[size]).filter((u) => typeof u === 'string')
+  ).map((u) => u.replace(/^\/terrain\//, ''));
 }
 
 function managedFiles() {
@@ -308,7 +484,11 @@ function managedFiles() {
 async function write() {
   const loaded = await loadSource();
   if (loaded.error) throw new Error(`${loaded.error}; re-run npm run terrain:fetch`);
-  const { svgs, pngs, metaText, precacheText } = await buildAll(loaded.source, loaded.metres);
+  const { svgs, pngs, posters, metaText, precacheText } = await buildAll(
+    loaded.source,
+    loaded.metres,
+    { encode: true }
+  );
   fs.mkdirSync(PUBLIC_DIR, { recursive: true });
   for (const s of svgs) {
     fs.writeFileSync(path.join(PUBLIC_DIR, s.name), s.text, 'utf8');
@@ -322,7 +502,15 @@ async function write() {
     fs.writeFileSync(path.join(PUBLIC_DIR, p.name), p.bytes);
     console.log(`${NAME}: wrote ${PUBLIC_REL}/${p.name} (${p.bytes.length} bytes)`);
   }
-  const keep = new Set([...svgs, ...pngs].map((a) => a.name));
+  for (const f of posters.files) {
+    fs.writeFileSync(path.join(PUBLIC_DIR, f.name), f.bytes);
+    console.log(`${NAME}: wrote ${PUBLIC_REL}/${f.name} (${f.bytes.length} bytes)`);
+  }
+  const posterNames = posterFiles(posters.urls);
+  if (posters.committed)
+    for (const f of posterNames)
+      console.log(`${NAME}: kept ${PUBLIC_REL}/${f} (poster checks pass)`);
+  const keep = new Set([...svgs.map((a) => a.name), ...pngs.map((a) => a.name), ...posterNames]);
   for (const f of managedFiles()) {
     if (!keep.has(f)) {
       fs.unlinkSync(path.join(PUBLIC_DIR, f));
@@ -341,13 +529,35 @@ async function check() {
   const lines = [];
   const loaded = await loadSource();
   if (loaded.error) {
-    console.log(`${NAME}: ${loaded.error}`);
-    console.log(`${NAME}: 1 stale`);
+    lines.push(`${NAME}: ${loaded.error}`);
+    // The posters record the source they were generated from; name every one
+    // that source.json no longer vouches for.
+    const rec = committedMeta()?.assets?.hillshade;
+    if (rec && rec.sourceSha256 !== loaded.source.sha256) {
+      for (const f of posterFiles(rec))
+        lines.push(
+          `${NAME}: stale ${PUBLIC_REL}/${f} (generated from source sha256 ${String(rec.sourceSha256).slice(0, 10)}, source.json has ${loaded.source.sha256.slice(0, 10)})`
+        );
+    }
+    for (const l of lines) console.log(l);
+    console.log(`${NAME}: ${lines.length} stale`);
     process.exit(1);
   }
-  const { svgs, pngs, metaText, precacheText } = await buildAll(loaded.source, loaded.metres);
-  const expected = new Set([...svgs, ...pngs].map((a) => a.name));
+  const { svgs, pngs, posters, metaText, precacheText } = await buildAll(
+    loaded.source,
+    loaded.metres,
+    { encode: false }
+  );
+  const expected = new Set([
+    ...svgs.map((a) => a.name),
+    ...pngs.map((a) => a.name),
+    ...posterFiles(posters.urls),
+  ]);
   const reported = new Set();
+  for (const bad of posters.problems) {
+    lines.push(`${NAME}: stale ${PUBLIC_REL}/${bad.file} (${bad.reason})`);
+    reported.add(bad.file);
+  }
   for (const s of svgs) {
     const p = path.join(PUBLIC_DIR, s.name);
     if (!fs.existsSync(p)) lines.push(`${NAME}: missing ${PUBLIC_REL}/${s.name}`);
@@ -366,9 +576,11 @@ async function check() {
     if (!expected.has(f) && !reported.has(f)) lines.push(`${NAME}: extra ${PUBLIC_REL}/${f}`);
   }
   if (!fs.existsSync(META_PATH)) lines.push(`${NAME}: missing ${META_REL}`);
-  else if (fs.readFileSync(META_PATH, 'utf8') !== metaText)
+  else if (metaText !== null && fs.readFileSync(META_PATH, 'utf8') !== metaText)
     lines.push(`${NAME}: stale ${META_REL} (bytes differ from a fresh build)`);
-  if (!fs.existsSync(PRECACHE_PATH)) lines.push(`${NAME}: missing ${PRECACHE_REL}`);
+  if (precacheText === null) {
+    // Without a recorded poster set terrain.ts cannot be rebuilt; reported above.
+  } else if (!fs.existsSync(PRECACHE_PATH)) lines.push(`${NAME}: missing ${PRECACHE_REL}`);
   else if (fs.readFileSync(PRECACHE_PATH, 'utf8') !== precacheText)
     lines.push(`${NAME}: stale ${PRECACHE_REL} (bytes differ from a fresh build)`);
 

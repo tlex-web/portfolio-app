@@ -43,6 +43,25 @@ export const terrain = {
       }
     }
   },
+  "hillshade": {
+    "lights": [
+      {
+        "azimuthDeg": 315,
+        "altitudeDeg": 45,
+        "weight": 0.75
+      },
+      {
+        "azimuthDeg": 270,
+        "altitudeDeg": 55,
+        "weight": 0.25
+      }
+    ],
+    "gamma": 1,
+    "quality": {
+      "avif": 50,
+      "webp": 75
+    }
+  },
   "summit": {
     "name": "Matterhorn",
     "officialM": 4478,
@@ -66,6 +85,17 @@ export const terrain = {
       "hero": "/terrain/contours-hero.2f3a04accc.svg",
       "map": "/terrain/contours-map.f78bc9a25c.svg",
       "strip": "/terrain/contours-strip.e1af353f82.svg"
+    },
+    "hillshade": {
+      "avif": {
+        "640": "/terrain/hillshade-640.b019a3335a.avif",
+        "1100": "/terrain/hillshade-1100.ba22a91f95.avif"
+      },
+      "webp": {
+        "640": "/terrain/hillshade-640.80f2045ea4.webp",
+        "1100": "/terrain/hillshade-1100.5b6bae8c54.webp"
+      },
+      "sourceSha256": "fa08701af6ed3724b825464b4088d50224e67ac7f8461cc287e9436ac2e99e7f"
     }
   }
 } as const;
