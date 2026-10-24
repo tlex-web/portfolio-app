@@ -6,7 +6,8 @@ import { site } from '@/data/site';
  * Constraints" Landmarks row and "UI Considerations" E1-E4, E10).
  *
  * Every content route renders inside app/(site)/layout.tsx -> SiteChrome:
- * one banner holding one Primary nav, one main#main-content, one contentinfo.
+ * one skip link, one banner holding one Primary nav, one main#main-content,
+ * one contentinfo.
  * Landmarks are counted with toHaveCount(1), never narrowed with .first(),
  * so a duplicated shell fails here instead of being hidden (PITFALLS 5, 7).
  */
@@ -26,6 +27,7 @@ const ROUTES: ReadonlyArray<readonly [path: string, current: Label | null]> = [
 ];
 
 const primaryNav = (page: Page) => page.getByRole('navigation', { name: 'Primary' });
+const skipLinks = (page: Page) => page.getByRole('link', { name: /skip to/i });
 
 /**
  * Fires every once:true whileInView animation by scrolling the full height,
@@ -63,6 +65,8 @@ test.describe('Shell landmarks', () => {
       await expect(page.locator('#main-content')).toHaveCount(1);
       await expect(page.getByRole('main')).toHaveCount(1);
       await expect(page.getByRole('contentinfo')).toHaveCount(1);
+      // SHELL-01 / SC4: exactly one skip link, so a page-level second skip link fails here.
+      await expect(skipLinks(page)).toHaveCount(1);
       // The Primary nav lives in the banner; the footer holds no nav.
       await expect(page.getByRole('banner').getByRole('navigation', { name: 'Primary' })).toHaveCount(1);
       await expect(page.getByRole('contentinfo').getByRole('navigation')).toHaveCount(0);
@@ -153,6 +157,8 @@ test.describe('Shell 404', () => {
       await expect(page.locator('#main-content')).toHaveCount(1);
       await expect(page.getByRole('main')).toHaveCount(1);
       await expect(page.getByRole('contentinfo')).toHaveCount(1);
+      // SHELL-01 / SC4: exactly one skip link, so a page-level second skip link fails here.
+      await expect(skipLinks(page)).toHaveCount(1);
 
       const main = page.getByRole('main');
       await expect(main.getByRole('heading', { level: 1 })).toHaveCount(1);
