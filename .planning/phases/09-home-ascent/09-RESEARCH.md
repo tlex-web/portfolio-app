@@ -613,6 +613,8 @@ await page.addInitScript(() => {
 | C4 | D-18 "a PerformanceMonitor fallback" | drei's monitor misfires under demand frameloop | Demand-aware frame budget (Pattern 10) satisfies the intent |
 | C5 | Pins anchored at "DEM height" | Pins sink into the mesh by up to 27 m | DEM numbers on labels, mesh height for the 3D anchor |
 
+Disposition: C1–C5 are rows of the Pre-execution gate in `09-01-PLAN.md`, together with the planner's C6–C8 and the UI-SPEC Defaults 1–15. Execution does not start until Tim's answer is recorded on every row.
+
 ## Assumptions Log
 
 | # | Claim | Section | Risk if Wrong |
@@ -626,15 +628,21 @@ await page.addInitScript(() => {
 | A7 | `navigator.connection.saveData` is Chromium-only | Pattern 2 | Low: undefined → pass |
 | A8 | Firefox honours `failIfMajorPerformanceCaveat` for software WebGL | Pattern 2 | Low: the frame budget catches slow devices anyway |
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+Each question below has a disposition in the plans (revision of 2026-10-25, plan numbers 09-01 … 09-14). "Resolved" means routed to a named decision point or closed, not pre-answered for Tim.
 
 1. **Does CI SwiftShader stay inside the frame budget for the smoke test?**
    - Known: locally 8.5 ms/frame (256², 375×603 @1.5) and 29–39 ms (512², 1440×836).
    - Unclear: `ubuntu-latest` 4-vCPU timing.
    - Recommendation: run the smoke at 412×839 DPR 1, and have it attach the measured median frame interval as a test annotation on the first `ci/09-NN` run. If it declines, choose between (a) relaxing the threshold to 66 ms (15 fps), (b) skipping the frame-budget probe when `navigator.webdriver` is true (only removes a downgrade for automation; perf and smoke then always exercise 3D), or (c) the Playwright clock. Present (a)/(b) to Tim as a table.
+   - **RESOLVED:** decided by Tim at the blocking checkpoint 09-13 Task 3 from the CI numbers (options total-keep, total-relax = (a), total-webdriver = (b); (c) is not offered), and applied in 09-14 Task 1. The smoke runs at 412×839 DPR 1 (09-08, 09-10), and 09-11 Task 3 prints the verdict line and attaches it as an annotation; 09-13 Task 2 routes a CI decline to that decision instead of treating it as a defect.
 2. **The HOME-08 metric definition.** Keep the old field (`jsTransferBytes` at load+3 s) for continuity and add `totalJsTransferBytes` (after canvas ready) as the gate? Recommendation: gate on the stricter total and record both; Tim confirms at the perf checkpoint.
+   - **RESOLVED:** 09-09 records both (the legacy field plus `initialJsTransferBytes` and `totalJsTransferBytes`) and takes the first local byte measurement of the lazy chunk (early signal, with a trim lever); 09-12 Task 3 repeats it on the final chunk; Tim chooses the gate at the blocking checkpoint 09-13 Task 3, and 09-14 Task 1 records the verdict. A failing gate is reported as HOME-08 not met, never relabelled.
 3. **Relief vertical exaggeration** (1.0 vs ~1.15) and the summit pull-back distance: visual checkpoint items with Tim (ui-ux-pro-max), not research blockers.
+   - **RESOLVED:** decided by Tim at the blocking checkpoint 09-12 Task 2 from prepared renders (with the relief opacity), applied in 09-12 Task 3; only the constants in `lib/ascent/route.ts` and `--relief-opacity` change.
 4. **Phase 8 review warnings WR-01…WR-08:** Phase 9 only reads photo data, so per CONTEXT they pass to Phase 10 unless a plan touches the photo pipeline (none should).
+   - **RESOLVED:** passed to Phase 10. No Phase 9 plan touches `scripts/photos/` (recorded in the flagged assumptions of 09-01 and 09-03; 09-03 edits only the legacy bridge `data/landscapes.ts` to copy the slug).
 
 ## Environment Availability
 

@@ -238,43 +238,44 @@ Plans:
   4. With reduced motion, Save-Data, no WebGL2, low device memory or a lost WebGL context, a static contour poster renders and every Home section shows its final readable state. The WebGL canvas renders on demand and pauses when scrolled off-screen.
   5. Mobile LCP and Home JavaScript size are no worse than the baseline recorded at the end of Phase 7.
 
-**Plans**: 13 plans in 11 waves
+**Plans**: 14 plans in 11 waves
 
 Plans:
 **Wave 1**
-- [ ] 09-01-PLAN.md — Server Component Home: ascent grid, relief poster (LCP), hero copy, trail signs; dead hero chain deleted
+- [ ] 09-01-PLAN.md — Server Component Home: ascent grid, relief poster (LCP), hero copy, trail signs; carries the pre-execution gate on C1-C8 and Defaults 1-15
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 09-02-PLAN.md — Waypoint cards as the always-rendered HOME-05 list; /photos#slug fragment ids
-- [ ] 09-03-PLAN.md — Generated shader colour tokens from globals.css with --check
+- [ ] 09-02-PLAN.md — Dead hero chain deleted, guards tightened, RSC boundary test, HOME-01 proven with JavaScript disabled
+- [ ] 09-03-PLAN.md — Waypoint cards as the always-rendered HOME-05 list; /photos#slug fragment ids
+- [ ] 09-04-PLAN.md — Generated shader colour tokens from globals.css with --check
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 09-04-PLAN.md — Summit plaque (derived stats), About and contact (DRAFT), Start the ascent / Skip to the summit cues
+- [ ] 09-05-PLAN.md — Summit plaque (derived stats), About and contact (DRAFT), Start the ascent / Skip to the summit cues
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 09-05-PLAN.md — One damped progress value: altimeter rail, lit poster pins, focus contract, native-scroll e2e
+- [ ] 09-06-PLAN.md — One damped progress value: altimeter rail, lit poster pins, focus contract, native-scroll e2e
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 09-06-PLAN.md — Capability gate, lazy TerrainStage chunk, static modes, composed-contrast backstops
+- [ ] 09-07-PLAN.md — Capability gate, lazy TerrainStage chunk, static modes, composed-contrast backstops
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 09-07-PLAN.md — fast-png terrain mesh, CSS-parity contour shader, plan-view reveal over the poster
-- [ ] 09-08-PLAN.md — Visual shots at fixed ascent positions; HOME-08 perf spec counts the lazy chunk
+- [ ] 09-08-PLAN.md — fast-png terrain mesh, CSS-parity contour shader, plan-view reveal over the poster
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 09-09-PLAN.md — Camera route (tilt-in, legs, summit look-back), mobile view offset, 3D pins
+- [ ] 09-09-PLAN.md — Visual shots at fixed ascent positions; HOME-08 perf spec counts the lazy chunk; early local byte check
+- [ ] 09-10-PLAN.md — Camera route (tilt-in, legs, summit look-back), mobile view offset, 3D pins
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 09-10-PLAN.md — Context loss, demand-aware frame budget, off-screen pause, SwiftShader resilience e2e
+- [ ] 09-11-PLAN.md — Context loss, demand-aware frame budget, off-screen pause, SwiftShader resilience e2e
 
 **Wave 9** *(blocked on Wave 8 completion)*
-- [ ] 09-11-PLAN.md — Tim's review: About copy (D-14) and terrain tuning; apply (checkpoints)
+- [ ] 09-12-PLAN.md — Tim's review: About copy (D-14) and terrain tuning; apply (checkpoints)
 
 **Wave 10** *(blocked on Wave 9 completion)*
-- [ ] 09-12-PLAN.md — Tim's go-ahead for ci/09-NN; CI and container perf numbers; HOME-08 gate decision (checkpoints)
+- [ ] 09-13-PLAN.md — Tim's go-ahead for ci/09-NN; CI and container perf numbers; HOME-08 gate decision (checkpoints)
 
 **Wave 11** *(blocked on Wave 10 completion)*
-- [ ] 09-13-PLAN.md — Apply the frame-budget choice; Home re-baseline (Tim commits PNGs); ratchet raise
+- [ ] 09-14-PLAN.md — Apply the frame-budget choice; Home re-baseline (Tim commits PNGs); ratchet raise
 
 **UI hint**: yes
 **Scope notes**:
