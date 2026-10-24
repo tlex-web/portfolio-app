@@ -1,0 +1,56 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-10-24T00:32:45.826Z",
+  "phase": "07",
+  "phase_name": "Foundation & Guardrails",
+  "phase_dir": ".planning/phases/07-foundation-guardrails",
+  "plan": 26,
+  "task": 26,
+  "total_tasks": 26,
+  "status": "paused",
+  "completed_tasks": [
+    {"id": 16, "name": "07-16 map Contact (8c)", "status": "done", "commit": "1807682"},
+    {"id": 17, "name": "07-17 map Roadmap (8c)", "status": "done", "commit": "b7b56cf"},
+    {"id": 18, "name": "07-18 map Projects (8c)", "status": "done", "commit": "2d87a01"},
+    {"id": 19, "name": "07-19 map Photos + edge pages (8c)", "status": "done", "commit": "baffad8"},
+    {"id": 20, "name": "07-20 remove dark variant; palette + contrast guards (8d)", "status": "done", "commit": "565f319"},
+    {"id": 21, "name": "07-21 identity data + shell components (+ post-close fix 5544cc3)", "status": "done", "commit": "77010e7"},
+    {"id": 22, "name": "07-22 shell mount via app/(site) + shell spec", "status": "done", "commit": "fbdbd1d"},
+    {"id": 23, "name": "07-23 404 + error boundaries in the shell (+ 07-22 flake fix)", "status": "done", "commit": "d3ec816"},
+    {"id": 24, "name": "07-24 interim Contact contrast fix (SHELL-06)", "status": "done", "commit": "c9aac91"},
+    {"id": 25, "name": "07-25 identity copy + identity guard + emoji rule", "status": "done", "commit": "44612f3"},
+    {"id": 26, "name": "07-26 HOME-08 baseline + test-count ratchet + Dependabot restored", "status": "done", "commit": "8eddb50"}
+  ],
+  "remaining_tasks": [
+    {"id": 27, "name": "Phase 07 verification gates: verify:post hooks (nyquist validate-phase [halt on error], secure-phase [halt on error; no 07-SECURITY.md yet], ui-review [skip on error]), execute:post code-review, gsd-verifier", "status": "not_started"},
+    {"id": 28, "name": "phase.complete + roadmap/state + transition (only after verification passes)", "status": "not_started"},
+    {"id": 29, "name": "After Phase 07 closes: gsd-tools worktree set-base-ref (memory phase07-worktree-branching) and tell Tim", "status": "not_started"}
+  ],
+  "blockers": [],
+  "async_jobs": [],
+  "human_actions_pending": [
+    {"action": "Merge gsd/phase-07-foundation-guardrails to main (branch is local-only; 100+ commits ahead)", "context": "main (Vercel production) still lacks the Next 16.4.2 / sharp 0.35.5 security patch; Dependabot reports 84 alerts on main (9 critical)", "blocking": false},
+    {"action": "Confirm Vercel uses Node 24.x + npm ci (GUARD-01)", "context": "carried from 07-08", "blocking": false},
+    {"action": "Set required status checks on main (Visual Regression, Lint and Type Check, Unit Tests)", "context": "07-USER-SETUP.md", "blocking": false},
+    {"action": "Decide on untracked AGENTS.md (written by next dev)", "context": "never staged by executors", "blocking": false},
+    {"action": "Optional: approve updating the STATE 'Needs from Tim' Phase 7 line now that email + LinkedIn were supplied (07-21); it is kept word for word until Tim says so", "context": "anti-pattern: unanswered proposal treated as approval", "blocking": false}
+  ],
+  "decisions": [
+    {"decision": "Tim's design choices: 07-17 D1-D3 A; 07-18 all recommended; 07-19 all recommended; 07-16 D1/D2 kept in 07-24", "rationale": "neutral surfaces, single accent CTA, no alpha tints, categories by icon+label", "phase": "07"},
+    {"decision": "Sticky-nav offset via :where(*) { scroll-margin-top } not html scroll-padding-top (Tim option A)", "rationale": "Motion useScroll({target}) uses a native ViewTimeline whose auto inset = scroll-padding; it faded the Home hero at the top", "phase": "07"},
+    {"decision": "HOME-08 baseline: LCP 4692 ms median, JS 468770 B transferred / 1625352 B decoded (Pixel 7, 4x CPU, 150 ms, 1.6 Mbit/s, playwright v1.64.0-noble, measured at b21dbc9)", "rationale": "Phase 9 compares like for like", "phase": "07"},
+    {"decision": "Tim's public identity: email old2shatterhand@gmail.com, LinkedIn https://www.linkedin.com/in/luitim/ (data/site.ts)", "rationale": "supplied by Tim at 07-21 Task 1", "phase": "07"}
+  ],
+  "uncommitted_files": [
+    " M .planning/config.json",
+    "?? .claude/",
+    "?? .planning/debug/e2e-test-ci-failures.md",
+    "?? .planning/debug/eslint10-ci-failures.md",
+    "?? .planning/milestone.lock",
+    "?? .planning/state.json",
+    "?? AGENTS.md",
+    "?? graphify-out/"
+  ],
+  "next_action": "/clear, then /gsd-execute-phase 07 - it skips the 26 summarized plans and resumes at the verification gates (verification_status missing -> route execute-phase). First confirm CI run on ci/07-26 at 4969072 is green.",
+  "context_notes": "Every plan this session was verified in CI on a ci/07-NN scratch branch (pixel determinism, blob compare, height root-causing). Verification pushes outside a plan's push checkpoint (ci/07-21, ci/07-21-r2, ci/07-25) caught a real regression (07-21 hero fade). Phase branch is local only."
+}
