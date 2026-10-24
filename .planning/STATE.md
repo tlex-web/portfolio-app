@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 07
 current_phase_name: Foundation & Guardrails
 status: executing
-stopped_at: Completed 07-25-PLAN.md
-last_updated: "2026-10-24T00:10:12.464Z"
+stopped_at: Completed 07-26-PLAN.md (26/26 plans executed; phase verification pending)
+last_updated: "2026-10-24T00:31:16.638Z"
 last_activity: 2026-10-23
 last_activity_desc: Phase 07 execution resumed (wave continue)
-state_head: 94b80a26d3a1b1eb92e0f14b8823e6d2d95d92ca
+state_head: b5cfed87a3354eb2b3005979382da648b9d88952
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 26
-  completed_plans: 25
-  percent: 96
+  completed_plans: 26
+  percent: 100
 ---
 
 # Project State
@@ -34,7 +34,7 @@ Plan: 26 of 26
 Status: Executing Phase 07
 Last activity: 2026-10-23 — Phase 07 execution resumed (wave continue)
 
-Progress: [█████████░] 96%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -79,6 +79,7 @@ Progress: [█████████░] 96%
 | Phase 07 P23 | 1h 9m | 3 tasks | 15 files |
 | Phase 07 P24 | 20 min | 2 tasks | 8 files |
 | Phase 07 P25 | 6 min | 2 tasks | 36 files |
+| Phase 07 P26 | 20 min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -150,6 +151,8 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-24] Contact interim contrast fix (c9aac91, Tim's 3-PNG contact amend of 9e5a579): hero, form card and three info cards on solid bg-surface-raised border-line panels above the unchanged AnimatedGradientMesh (Phase 12 removes it); Phosphor Clock/EnvelopeSimple/MapPin in bg-surface-overlay tiles; Email card shows site.email (old2shatterhand@gmail.com) with wrap-anywhere and a <wbr> after '@'; FeedbackForm labels text-ink + aria-hidden text-danger asterisk, inputs bg-surface-overlay border-line-strong (border-danger when invalid), errors text-danger; required added to Name/Email/Message (noValidate keeps validation); Tim's 07-16 D1/D2 kept. e2e/a11y-contact.spec.ts (3 tests: dark, light, light with canvases hidden; empty-submit errors and mocked 500 failure box; asserts axe measured the key nodes) passes with zero color-contrast violations and no incomplete nodes. @axe-core/playwright 4.13.0 exact pin (axe-core deduped 4.11.2 -> 4.13.0 under eslint-plugin-jsx-a11y). contact/{375,768,1440} re-baselined (+46/+86/+62 px); CI run 40041886574 green (E2E 122, 0 flaky). SHELL-06 Complete (ready-ids: ready)
 - [Phase 07]: 07-25: data/site.ts is the single identity record; package.json author is a derived copy checked by check-identity.mjs; v1 Header/Footer/GlassmorphismNav are exempt from the identity and emoji rules only while assertNoImporters() finds no importer
 - [Phase 07]: 07-25: CI verification of 168f176 and 44612f3 is pending (no pixel changes, no baseline checkpoint); the orchestrator pushes next and 07-26's CI check covers these commits
+- [Phase 07]: [07-26] HOME-08 baseline for Phase 9 (e2e/perf/home-baseline.json, 38b9704): Home on Pixel 7, 4x CPU, 150 ms, 200000/93750 B/s, 5 runs, medians, recorded in mcr.microsoft.com/playwright:v1.64.0-noble (Playwright 1.64.0, Chromium 156.0.8078.4) at b21dbc9: LCP 4692 ms (samples 4264/4748/4692/4700/4688), script transfer 468770 B, decoded 1625352 B. Phase 9 re-measures with --project=perf in the same container and must not exceed these
+- [Phase 07]: [07-26] Phase close (8eddb50): test-count ratchet 91 -> 206 (jest 107 + e2e 99); Phase 8 ratchets from 206. dependabot.yml restored byte-identical to pre-07-01 (next/react/react-dom semver-major-only ignores; the eight temporary holds removed)
 
 ### Pending Todos
 
@@ -185,6 +188,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-24T00:10:12.426Z
-Stopped at: Completed 07-25-PLAN.md
+Last session: 2026-10-24T00:31:16.599Z
+Stopped at: Completed 07-26-PLAN.md (26/26 plans executed; phase verification pending)
 Resume file: None
