@@ -1,10 +1,15 @@
 // Service Worker for Portfolio App
-// Build hash injected by scripts/inject-build-hash.mjs during postbuild
+// Build hash and precache URLs injected by scripts/inject-build-hash.mjs during postbuild
 
 const BUILD_HASH = '__BUILD_HASH__';
 const STATIC_CACHE = `static-${BUILD_HASH}`;
 const IMAGE_CACHE = `images-${BUILD_HASH}`;
 const DYNAMIC_CACHE = `dynamic-${BUILD_HASH}`;
+
+// Content-hashed same-origin URLs from data/generated/precache.json (the footer
+// contour strip, so /offline keeps its band). Postbuild replaces the whole
+// comment-plus-[] token with the JSON array; uninjected it is a valid empty list.
+const PRECACHE = /*__PRECACHE_URLS__*/[];
 
 // --- Caching strategy helpers ---
 
@@ -79,7 +84,7 @@ async function networkFirst(request, cacheName) {
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => {
-      return cache.addAll(['/', '/offline']);
+      return cache.addAll(['/', '/offline', ...PRECACHE]);
     })
   );
 
@@ -122,10 +127,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first for fingerprinted static assets
+  // Cache-first for fingerprinted static assets (every /terrain/ file carries a
+  // content hash in its name; fetch() of a heightmap has no image destination)
   if (
     url.pathname.startsWith('/_next/static/') ||
     url.pathname.startsWith('/images/') ||
+    url.pathname.startsWith('/terrain/') ||
     /\.(woff2|woff|ttf|otf)$/i.test(url.pathname)
   ) {
     event.respondWith(cacheFirst(request, STATIC_CACHE));

@@ -43,8 +43,10 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     {
+      // Static public assets (images/, terrain/; trailing slash so a future
+      // /images-x page still gets its CSP) skip the per-request nonce work.
       source:
-        '/((?!api|_next/static|_next/image|favicon.ico|service-worker.js).*)',
+        '/((?!api|_next/static|_next/image|favicon.ico|service-worker.js|images/|terrain/).*)',
       missing: [
         { type: 'header', key: 'next-router-prefetch' },
         { type: 'header', key: 'purpose', value: 'prefetch' },
