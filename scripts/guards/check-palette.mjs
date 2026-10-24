@@ -20,7 +20,11 @@
  *               files: components/site/**, components/providers/**, data/site.ts
  *   - emoji:    Extended_Pictographic in .ts/.tsx/.js/.mjs files, except the
  *               copyright, registered and trademark signs, plus the check marks
- *               U+2713, U+2714, U+2717 and U+2718 (the prompt glyph U+276F is allowed)
+ *               U+2713, U+2714, U+2717 and U+2718 (the prompt glyph U+276F is allowed).
+ *               LEGACY_DEAD_FILES (scripts/guards/lib/legacy-dead-files.mjs) are
+ *               skipped only while assertNoImporters() finds no importer; once one
+ *               is imported again its emoji count and an "imported legacy file"
+ *               violation are reported
  *
  * Without --update the script only reads, so parallel or interrupted runs can
  * never corrupt the ratchet. --update writes the current per-file white/black
@@ -30,12 +34,13 @@
  * Usage:
  *   node scripts/guards/check-palette.mjs [--root <dir>] [--ratchet <file>]
  *     [--skip <rule,...>] [--update]
- *   (Runs from `npm run lint` via `npm run guard:palette`, with --skip emoji until 07-25)
+ *   (Runs from `npm run lint` via `npm run guard:palette`, every rule on since 07-25)
  */
 
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { LEGACY_DEAD_FILES, assertNoImporters } from './lib/legacy-dead-files.mjs';
 
 // Regexes verbatim from 07-RESEARCH.md "Pattern 2" (they produced the audited counts)
 const FAM = 'slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose';
@@ -137,6 +142,15 @@ function main() {
   const wbCounts = {};
   const wbHits = {};
 
+  // Emoji exemption for v1 dead files holds only while nothing imports them
+  const emojiExempt = new Set();
+  if (on('emoji')) {
+    const importers = assertNoImporters(args.root);
+    for (const { importer, line, target } of importers) report(importer, line, 'emoji', `imported legacy file ${target}`);
+    const revived = new Set(importers.map((o) => o.target));
+    for (const rel of LEGACY_DEAD_FILES) if (!revived.has(rel)) emojiExempt.add(rel);
+  }
+
   const files = SCAN_DIRS.flatMap((dir) => walk(path.join(args.root, dir), true))
     .map((full) => ({ full, rel: toPosix(path.relative(args.root, full)) }))
     .filter(({ rel }) => TEXT_EXT.has(path.extname(rel)))
@@ -149,7 +163,7 @@ function main() {
     if (on('stock')) for (const h of hits(lines, STOCK)) report(rel, h.line, 'stock', h.match);
     if (on('variant') && ext === '.css') for (const h of hits(lines, VARIANT)) report(rel, h.line, 'variant', h.match);
     if (on('v1names') && isShellFile(rel)) for (const h of hits(lines, V1NAMES)) report(rel, h.line, 'v1names', h.match);
-    if (on('emoji') && SCRIPT_EXT.has(ext)) for (const h of hits(lines, EMOJI)) report(rel, h.line, 'emoji', h.match);
+    if (on('emoji') && SCRIPT_EXT.has(ext) && !emojiExempt.has(rel)) for (const h of hits(lines, EMOJI)) report(rel, h.line, 'emoji', h.match);
     const wb = hits(lines, WB);
     if (wb.length > 0) {
       wbCounts[rel] = wb.length;

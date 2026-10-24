@@ -20,7 +20,7 @@
     "prebuild": "node scripts/optimize-images.mjs",
     "postbuild": "node scripts/inject-build-hash.mjs",
     "guard:parity": "node scripts/guards/check-install-parity.mjs",
-    "guard:palette": "node scripts/guards/check-palette.mjs --skip emoji",
+    "guard:palette": "node scripts/guards/check-palette.mjs",
     "guard:contrast": "node scripts/guards/check-contrast.mjs",
     "guard:identity": "node scripts/guards/check-identity.mjs",
     "guard:selftest": "node scripts/guards/selftest.mjs",

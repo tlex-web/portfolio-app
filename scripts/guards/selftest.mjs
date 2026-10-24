@@ -346,6 +346,27 @@ const cases = [
     expectOutput: ['palette: OK'],
   },
   {
+    name: 'palette: an emoji in a non-legacy component fails',
+    guard: PALETTE,
+    args: ['--root', pal('bad-emoji-component')],
+    expectExit: 1,
+    expectOutput: ['components/Badge.tsx:3 emoji ❤'],
+  },
+  {
+    name: 'palette: the same emoji in an unimported legacy components/Footer.tsx passes',
+    guard: PALETTE,
+    args: ['--root', pal('emoji-legacy-dead')],
+    expectExit: 0,
+    expectOutput: ['palette: OK'],
+  },
+  {
+    name: 'palette: importing the legacy Footer voids its emoji exemption and fails',
+    guard: PALETTE,
+    args: ['--root', pal('bad-emoji-legacy-imported')],
+    expectExit: 1,
+    expectOutput: ['app/page.tsx:2 emoji imported legacy file components/Footer.tsx', 'components/Footer.tsx:3 emoji ❤'],
+  },
+  {
     name: 'palette: @custom-variant dark and a stock class in CSS @apply fail',
     guard: PALETTE,
     args: ['--root', pal('bad-variant')],
