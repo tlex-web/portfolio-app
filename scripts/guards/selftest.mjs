@@ -41,8 +41,10 @@ const SNAPSHOT_COMMIT = path.join(repoRoot, 'scripts', 'ci', 'check-snapshot-com
 const PALETTE = path.join(here, 'check-palette.mjs');
 const CONTRAST = path.join(here, 'check-contrast.mjs');
 const IDENTITY = path.join(here, 'check-identity.mjs');
+const SERVED = path.join(here, 'check-served-images.mjs');
 const con = (name) => path.join(fixtures, 'contrast', name);
 const idf = (name) => path.join(fixtures, 'identity', name);
+const si = (name) => path.join(fixtures, 'served-images', name);
 const tc = (...parts) => path.join(fixtures, 'test-count', ...parts);
 const pal = (...parts) => path.join(fixtures, 'palette', ...parts);
 const sc = (...parts) => path.join(fixtures, 'same-classnames', ...parts);
@@ -522,6 +524,20 @@ const cases = [
       'components/Shell.tsx:2 legacy file is imported again: components/Footer.tsx',
       'components/Header.tsx:6 forbidden split wordmark',
     ],
+  },
+  {
+    name: 'served-images: a listed hashed WebP and strip SVG, both manifests and a clean derivative script pass',
+    guard: SERVED,
+    args: ['--root', si('good')],
+    expectExit: 0,
+    expectOutput: ['served-images: OK'],
+  },
+  {
+    name: 'served-images: a JPEG with an EXIF GPS IFD fails the metadata rule',
+    guard: SERVED,
+    args: ['--root', si('bad-exif-gps')],
+    expectExit: 1,
+    expectOutput: ['public/images/a.jpg metadata: exif'],
   },
   {
     name: 'contrast: the real app/globals.css passes all 32 pairs (28 UI-SPEC + 4 accent-strong) in table order',

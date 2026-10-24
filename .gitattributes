@@ -22,3 +22,7 @@ public/images/photos/* binary
 
 # Typed photo facts (08-08): photos:build --check byte-compares this with a fresh build.
 data/generated/photos.ts text eol=lf
+
+# Served-image guard fixtures (08-09): hashed names and planted EXIF/XMP must keep
+# their exact bytes, so no fixture file is ever EOL-normalised.
+scripts/guards/__selftest__/served-images/** -text
