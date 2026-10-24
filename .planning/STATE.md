@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 08
 current_phase_name: Data & Terrain Pipeline
 status: executing
-stopped_at: Completed 08-05-PLAN.md
-last_updated: "2026-10-24T16:14:58.609Z"
+stopped_at: Completed 08-07-PLAN.md (08-06 still paused at its Task 3 checkpoint)
+last_updated: "2026-10-24T16:42:55.473Z"
 last_activity: 2026-10-24
-last_activity_desc: Phase 08 execution started
-state_head: 33aad97459d812ea56ecf156e10cbfd3e2596ac4
+last_activity_desc: Completed 08-07; 08-06 paused at its Task 3 checkpoint
+state_head: 6fe31f397cef83ceb110bc118adc4cc9f05b4ffd
 progress:
   total_phases: 6
   completed_phases: 7
   total_plans: 40
-  completed_plans: 32
-  percent: 80
+  completed_plans: 33
+  percent: 83
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-24)
 ## Current Position
 
 Phase: 08 (Data & Terrain Pipeline) — EXECUTING
-Plan: 6 of 13
-Status: Ready to execute
-Last activity: 2026-10-24 — Phase 08 execution started
+Plan: 6 of 13 done (08-01..08-05 and 08-07); 08-06 paused at its Task 3 human-verify checkpoint
+Status: Waiting on 08-06 Task 3 (Tim reviewing the hillshade poster); Wave 4 (08-08+) starts after 08-06 closes
+Last activity: 2026-10-24 — Completed 08-07 (hashed photo derivatives, image manifest, full-res copies and prebuild removed)
 
-Progress: [████████░░] 80% (1 of 6 v2.0 phases; 27/27 planned plans done)
+Progress: [████████░░] 83% (1 of 6 v2.0 phases; 27/27 planned plans done)
 
 ## Performance Metrics
 
@@ -86,6 +86,7 @@ Progress: [████████░░] 80% (1 of 6 v2.0 phases; 27/27 planne
 | Phase 08 P03 | 19 min | 3 tasks | 9 files |
 | Phase 08 P04 | 10 min | 3 tasks | 15 files |
 | Phase 08 P05 | 44 min | 3 tasks | 21 files |
+| Phase 08 P07 | 10 min | 2 tasks | 54 files |
 
 ## Accumulated Context
 
@@ -174,6 +175,8 @@ Recent decisions affecting current work:
 - [Phase 08]: v1 frost-600 maps to new L2 token --color-accent-strong: var(--glacier-500) (option A, Tim replied "a"); pixel-identical, CI Visual Regression green on existing baselines
 - [Phase 08]: v1names palette rule now checks every scanned file; exemptions are LEGACY_DEAD_FILES while unimported and the --color-<v1>-NNN alias definition lines in app/globals.css (Phase 12 deletes both)
 - [Phase 08]: Open for Tim: command 4 (pkill -f chrome) explanation "High-risk operation" beside its CRITICAL RISK badge was not answered; data/projects.ts left unchanged
+- [Phase 08]: [08-07] Photo derivatives are generated locally by npm run photos:derive (rotate + long-edge resize + default sharp output, AVIF/WebP 640/1024/1600/2560 + 1200 JPEG, <id>-<edge>.<sha256[:10]>.<ext> in public/images/photos/) and committed; data/generated/image-manifest.ts is rebuilt from disk + sidecar and byte-checked by photos:derive -- --check inside npm run lint
+- [Phase 08]: [08-07] D-11 applied: the 8 full-res copies, optimization-manifest.json, scripts/optimize-images.mjs and the prebuild step are gone from HEAD (normal git rm); D-12 history exposure recorded in PROJECT.md Key Decisions, no history rewrite
 
 ### Pending Todos
 
@@ -208,6 +211,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-24T16:14:58.447Z
-Stopped at: Completed 08-05-PLAN.md
+Last session: 2026-10-24T16:42:55.312Z
+Stopped at: Completed 08-07-PLAN.md (08-06 still paused at its Task 3 checkpoint)
 Resume file: None
