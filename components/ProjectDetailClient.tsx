@@ -41,12 +41,12 @@ export default function ProjectDetailClient({ project }: ProjectDetailClientProp
 
       {/* Overview */}
       <section className="max-w-none">
-        <h2 className="text-2xl font-heading font-semibold text-snow-50 mb-6 text-center">
+        <h2 className="text-2xl font-display font-semibold text-ink mb-6 text-center">
           Overview
         </h2>
-        <div className="bg-alpine-800 rounded-xl p-8 border border-alpine-600">
+        <div className="bg-surface-raised rounded-xl p-8 border border-line">
           {project.longDescription.split('\n\n').map((paragraph, index) => (
-            <p key={index} className="text-snow-100 leading-relaxed mb-4 last:mb-0">
+            <p key={index} className="text-ink leading-relaxed mb-4 last:mb-0">
               {paragraph}
             </p>
           ))}

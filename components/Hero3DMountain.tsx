@@ -38,7 +38,7 @@ export default function Hero3DMountain() {
   );
 
   return (
-    <div ref={containerRef} className="relative h-[calc(100svh-var(--nav-h))] w-full overflow-hidden bg-alpine-950">
+    <div ref={containerRef} className="relative h-[calc(100svh-var(--nav-h))] w-full overflow-hidden bg-surface">
       {/* 3D Mountain Background */}
       <div className="absolute inset-0">
         <MountainTerrain3D />
@@ -59,7 +59,7 @@ export default function Hero3DMountain() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: DURATION.enter, delay: 0.5, ease: [...EASING.geological] }}
-              className="text-5xl md:text-7xl lg:text-8xl font-bold text-snow-50 mb-4 drop-shadow-2xl"
+              className="text-5xl md:text-7xl lg:text-8xl font-bold text-ink mb-4 drop-shadow-2xl"
             >
               {site.name}
             </motion.h1>
@@ -67,7 +67,7 @@ export default function Hero3DMountain() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: DURATION.enter, delay: 0.8, ease: [...EASING.geological] }}
-              className="inline-block px-6 py-2 bg-gradient-to-r from-frost-500 to-frost-600 rounded-full text-snow-50 font-semibold text-lg shadow-2xl glow-frost"
+              className="inline-block px-6 py-2 bg-gradient-to-r from-accent to-accent-strong rounded-full text-ink font-semibold text-lg shadow-2xl glow-frost"
             >
               {site.role}
             </motion.div>
@@ -79,7 +79,7 @@ export default function Hero3DMountain() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: DURATION.enter, delay: 1.2, ease: [...EASING.geological] }}
-            className="text-xl md:text-2xl text-snow-200 max-w-3xl mx-auto drop-shadow-lg"
+            className="text-xl md:text-2xl text-ink-muted max-w-3xl mx-auto drop-shadow-lg"
           >
             Capturing the majesty of the Matterhorn and crafting elegant software solutions
           </motion.p>
@@ -94,7 +94,7 @@ export default function Hero3DMountain() {
             <GeologicalButton
               effect="ripple"
               href="#home-content"
-              className="group px-8 py-4 bg-snow-50 text-alpine-950 rounded-xl hover:bg-snow-100 transition-all duration-300 font-bold text-lg shadow-lg hover:shadow-frost-500/30 hover:scale-105"
+              className="group px-8 py-4 bg-ink text-ink-inverse rounded-xl hover:bg-ink transition-all duration-300 font-bold text-lg shadow-lg hover:shadow-accent/30 hover:scale-105"
             >
               <span className="flex items-center justify-center gap-2">
                 Explore My Work
@@ -117,7 +117,7 @@ export default function Hero3DMountain() {
             <GeologicalButton
               effect="fracture"
               href="/contact"
-              className="px-8 py-4 bg-alpine-800/60 border-2 border-frost-500/30 text-snow-50 rounded-xl hover:bg-alpine-700/70 transition-all duration-300 font-bold text-lg shadow-lg hover:scale-105"
+              className="px-8 py-4 bg-surface-raised/60 border-2 border-accent/30 text-ink rounded-xl hover:bg-surface-overlay/70 transition-all duration-300 font-bold text-lg shadow-lg hover:scale-105"
             >
               Get in Touch
             </GeologicalButton>
@@ -133,7 +133,7 @@ export default function Hero3DMountain() {
           opacity: useTransform(scrollYProgress, [0, 0.2], [1, 0]),
         }}
       >
-        <div className="flex flex-col items-center text-snow-50">
+        <div className="flex flex-col items-center text-ink">
           <span className="text-sm mb-2 drop-shadow-lg">Scroll to explore</span>
           <motion.div
             animate={prefersReducedMotion ? {} : { y: [0, 10, 0] }}

@@ -17,13 +17,13 @@ export default function ProjectsPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-alpine-900">
+      <div className="min-h-screen bg-surface">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="mb-16 text-center">
-            <h1 className="text-5xl font-bold mb-6 text-snow-50 text-shadow-glow-lg">
+            <h1 className="text-5xl font-bold mb-6 text-ink text-shadow-glow-lg">
               Programming Projects
             </h1>
-            <p className="text-xl text-snow-200 max-w-3xl mx-auto">
+            <p className="text-xl text-ink-muted max-w-3xl mx-auto">
               A collection of my software development projects, ranging from AI-powered CLI tools to modern web
               applications. Each project showcases innovation, quality, and attention to detail.
             </p>
@@ -31,7 +31,7 @@ export default function ProjectsPage() {
 
           {featuredProjects.length > 0 && (
             <div className="mb-16">
-              <h2 className="text-3xl font-bold mb-8 text-snow-50 font-heading text-shadow-glow">
+              <h2 className="text-3xl font-bold mb-8 text-ink font-display text-shadow-glow">
                 Featured Projects
               </h2>
               <div ref={featuredGridRef} className="hex-grid">
@@ -44,7 +44,7 @@ export default function ProjectsPage() {
 
           {otherProjects.length > 0 && (
             <div>
-              <h2 className="text-3xl font-bold mb-8 text-snow-50 font-heading">
+              <h2 className="text-3xl font-bold mb-8 text-ink font-display">
                 Other Projects
               </h2>
               <div ref={otherGridRef} className="hex-grid">

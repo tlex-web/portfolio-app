@@ -418,6 +418,27 @@ const cases = [
     expectOutput: ['components/site/SiteNav.tsx:3 v1names frost-4'],
   },
   {
+    name: 'palette: a v1 alias name in a live (non-shell) component fails',
+    guard: PALETTE,
+    args: ['--root', pal('bad-v1names-live')],
+    expectExit: 1,
+    expectOutput: ['components/Card.tsx:1 v1names frost-500'],
+  },
+  {
+    name: 'palette: a v1 alias name in an unimported LEGACY_DEAD_FILES file passes',
+    guard: PALETTE,
+    args: ['--root', pal('v1names-dead-exempt')],
+    expectExit: 0,
+    expectOutput: ['palette: OK'],
+  },
+  {
+    name: 'palette: the --color-<v1>-NNN alias definition lines in app/globals.css pass',
+    guard: PALETTE,
+    args: ['--root', pal('v1names-alias-defs')],
+    expectExit: 0,
+    expectOutput: ['palette: OK'],
+  },
+  {
     name: 'palette: --update refuses a raise and leaves the ratchet unchanged',
     guard: PALETTE,
     args: ['--root', pal('bad-wb'), '--update'],

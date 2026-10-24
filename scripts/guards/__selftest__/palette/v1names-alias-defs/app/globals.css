@@ -1,0 +1,6 @@
+/* Fixture: the L3 alias definition lines are the one place v1 names may stay (until Phase 12) */
+@theme inline {
+  --color-alpine-950: var(--night-950); /* @deprecated v1 alias, removed in Phase 12 */
+  --color-frost-600: var(--glacier-500); /* @deprecated v1 alias, removed in Phase 12 */
+  --color-rust-400: var(--signal-400);
+}

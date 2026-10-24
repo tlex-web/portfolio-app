@@ -180,7 +180,7 @@ function Carousel({ images, onImageClick, prefersReducedMotion }: CarouselProps)
   if (!allThumbsLoaded) {
     return (
       <Html center>
-        <div className="text-snow-200 animate-pulse text-lg font-medium">
+        <div className="text-ink-muted animate-pulse text-lg font-medium">
           Loading gallery...
         </div>
       </Html>

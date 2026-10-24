@@ -177,7 +177,7 @@ export default function GeologicalButton({
               position: 'absolute',
               width: el.width,
               height: el.height,
-              backgroundColor: 'var(--color-frost-500)',
+              backgroundColor: 'var(--color-accent)',
               transformOrigin: '50% 0%',
               transform: `rotate(${el.rotation}deg)`,
               borderRadius: 1,
@@ -215,7 +215,7 @@ export default function GeologicalButton({
               position: 'absolute',
               width: el.width,
               height: el.height,
-              backgroundColor: 'var(--color-granite-400)',
+              backgroundColor: 'var(--color-ink-muted)',
               borderRadius: 1,
             }}
           />
@@ -246,7 +246,7 @@ export default function GeologicalButton({
               position: 'absolute',
               width: el.width,
               height: el.height,
-              border: '1px solid var(--color-frost-500)',
+              border: '1px solid var(--color-accent)',
               borderRadius: '50%',
             }}
           />
@@ -271,7 +271,7 @@ export default function GeologicalButton({
         animate={{ opacity: [0, 0.15, 0] }}
         transition={{ duration: 2, repeat: Infinity, ease: [...EASING.erosion] }}
         style={{
-          backgroundColor: 'var(--color-frost-500)',
+          backgroundColor: 'var(--color-accent)',
         }}
       />
     ) : null;

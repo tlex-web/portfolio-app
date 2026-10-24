@@ -16,8 +16,11 @@
  *               entry (no entry means 0); a count below the entry also fails
  *               until `--update` records it, so the ratchet only tightens
  *   - png:      any .png under <root>/e2e whose name does not end in -linux.png
- *   - v1names:  a v1 alias name (frost-500, alpine-900, ...) in the new shell
- *               files: components/site/**, components/providers/**, data/site.ts
+ *   - v1names:  a v1 alias name (frost-500, alpine-900, ...) in any scanned file
+ *               (08-05: every live use was codemodded to its v2 name), except
+ *               the --color-<v1>-NNN alias definition lines in app/globals.css
+ *               (deleted in Phase 12) and LEGACY_DEAD_FILES while
+ *               assertNoImporters() finds no importer (the emoji exemption below)
  *   - emoji:    Extended_Pictographic in .ts/.tsx/.js/.mjs files, except the
  *               copyright, registered and trademark signs, plus the check marks
  *               U+2713, U+2714, U+2717 and U+2718 (the prompt glyph U+276F is allowed).
@@ -50,7 +53,9 @@ const DARK = /(?<![\w-])dark:/g;
 const WB = new RegExp(`(?<![\\w-])(?:[\\w-]+:)*(?:${PRE})-(?:white|black)(?:\\/\\d+)?\\b`, 'g');
 
 const VARIANT = /@custom-variant\s+dark\b/g;
-const V1NAMES = /(alpine|granite|snow|frost|ember|pine|rust)-[0-9]/g;
+const V1NAMES = /(?<![A-Za-z0-9])(alpine|granite|snow|frost|ember|pine|rust)-[0-9]+/g;
+// The L3 alias definitions in app/globals.css, the one place v1 names may stay until Phase 12
+const V1_ALIAS_DEF = /^\s*--color-(alpine|granite|snow|frost|ember|pine|rust)-\d+:/;
 // Extended_Pictographic minus (c), (r) and TM, plus the check and cross marks it misses
 const EMOJI = /(?![©®™])\p{Extended_Pictographic}|[✓✔✗✘]/gu;
 
@@ -124,10 +129,6 @@ function hits(lines, regex) {
   return found;
 }
 
-function isShellFile(rel) {
-  return rel.startsWith('components/site/') || rel.startsWith('components/providers/') || rel === 'data/site.ts';
-}
-
 function readRatchet(file) {
   if (!fs.existsSync(file)) return { exists: false, counts: {} };
   const counts = JSON.parse(fs.readFileSync(file, 'utf-8'));
@@ -142,13 +143,15 @@ function main() {
   const wbCounts = {};
   const wbHits = {};
 
-  // Emoji exemption for v1 dead files holds only while nothing imports them
-  const emojiExempt = new Set();
-  if (on('emoji')) {
+  // Emoji and v1names exemption for v1 dead files holds only while nothing imports them.
+  // A revival is reported once, under emoji (or under v1names when emoji is skipped).
+  const deadExempt = new Set();
+  if (on('emoji') || on('v1names')) {
     const importers = assertNoImporters(args.root);
-    for (const { importer, line, target } of importers) report(importer, line, 'emoji', `imported legacy file ${target}`);
+    const rule = on('emoji') ? 'emoji' : 'v1names';
+    for (const { importer, line, target } of importers) report(importer, line, rule, `imported legacy file ${target}`);
     const revived = new Set(importers.map((o) => o.target));
-    for (const rel of LEGACY_DEAD_FILES) if (!revived.has(rel)) emojiExempt.add(rel);
+    for (const rel of LEGACY_DEAD_FILES) if (!revived.has(rel)) deadExempt.add(rel);
   }
 
   const files = SCAN_DIRS.flatMap((dir) => walk(path.join(args.root, dir), true))
@@ -162,8 +165,14 @@ function main() {
     if (on('dark')) for (const h of hits(lines, DARK)) report(rel, h.line, 'dark', h.match);
     if (on('stock')) for (const h of hits(lines, STOCK)) report(rel, h.line, 'stock', h.match);
     if (on('variant') && ext === '.css') for (const h of hits(lines, VARIANT)) report(rel, h.line, 'variant', h.match);
-    if (on('v1names') && isShellFile(rel)) for (const h of hits(lines, V1NAMES)) report(rel, h.line, 'v1names', h.match);
-    if (on('emoji') && SCRIPT_EXT.has(ext) && !emojiExempt.has(rel)) for (const h of hits(lines, EMOJI)) report(rel, h.line, 'emoji', h.match);
+    if (on('v1names') && !deadExempt.has(rel)) {
+      const aliasDefs = rel === 'app/globals.css';
+      for (const h of hits(lines, V1NAMES)) {
+        if (aliasDefs && V1_ALIAS_DEF.test(lines[h.line - 1])) continue;
+        report(rel, h.line, 'v1names', h.match);
+      }
+    }
+    if (on('emoji') && SCRIPT_EXT.has(ext) && !deadExempt.has(rel)) for (const h of hits(lines, EMOJI)) report(rel, h.line, 'emoji', h.match);
     const wb = hits(lines, WB);
     if (wb.length > 0) {
       wbCounts[rel] = wb.length;

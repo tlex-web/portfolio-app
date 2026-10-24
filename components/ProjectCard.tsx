@@ -21,10 +21,10 @@ export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
   const rotateY = useMotionValue(0);
 
   const statusColors: Record<Project['status'], string> = {
-    active: 'bg-pine-500/20 text-pine-400 border-pine-600/30',
-    beta: 'bg-ember-500/20 text-ember-400 border-ember-600/30',
-    complete: 'bg-frost-500/20 text-frost-400 border-frost-600/30',
-    archived: 'bg-granite-400/20 text-granite-300 border-granite-500/30',
+    active: 'bg-success/20 text-success border-success/30',
+    beta: 'bg-caution/20 text-caution border-caution/30',
+    complete: 'bg-accent/20 text-accent border-accent-strong/30',
+    archived: 'bg-ink-muted/20 text-ink-muted border-ink-muted/30',
   };
 
   const handleMouseMove = useCallback(
@@ -80,7 +80,7 @@ export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
       onMouseMove={handleMouseMove}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className="ambient-glow stratum-2 h-full focus-within:ring-2 focus-within:ring-frost-500/50 focus-within:ring-offset-2 focus-within:ring-offset-alpine-900 rounded-lg"
+      className="ambient-glow stratum-2 h-full focus-within:ring-2 focus-within:ring-accent/50 focus-within:ring-offset-2 focus-within:ring-offset-surface rounded-lg"
     >
       <Link
         href={`/projects/${project.slug}`}
@@ -89,11 +89,11 @@ export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
       >
         <div className="relative h-full p-6 sm:p-8">
           {/* Hex-clipped background layer (decorative only) */}
-          <div className="absolute inset-0 hex-clip bg-alpine-800/90 backdrop-blur-sm" aria-hidden="true" />
+          <div className="absolute inset-0 hex-clip bg-surface-raised/90 backdrop-blur-sm" aria-hidden="true" />
 
           {/* Facet reveal overlay on hover */}
           <motion.div
-            className="absolute inset-0 hex-clip bg-gradient-to-br from-frost-500/5 via-transparent to-frost-500/8 pointer-events-none"
+            className="absolute inset-0 hex-clip bg-gradient-to-br from-accent/5 via-transparent to-accent/8 pointer-events-none"
             initial={{ opacity: 0 }}
             animate={{ opacity: isHovered ? 1 : 0 }}
             transition={{ duration: DURATION.hover }}
@@ -105,11 +105,11 @@ export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
             {/* Header */}
             <div className="flex justify-between items-start mb-4">
               <div className="flex-1">
-                <h3 className="text-2xl font-bold text-snow-50 mb-2 group-hover:text-frost-400 transition-colors">
+                <h3 className="text-2xl font-bold text-ink mb-2 group-hover:text-accent transition-colors">
                   {project.name}
                 </h3>
                 {project.version && (
-                  <span className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-frost-500/15 text-frost-400 border border-frost-600/30">
+                  <span className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-accent/15 text-accent border border-accent-strong/30">
                     {project.version}
                   </span>
                 )}
@@ -122,18 +122,18 @@ export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
             </div>
 
             {/* Tagline */}
-            <p className="text-sm text-granite-400 mb-4 italic font-medium">
+            <p className="text-sm text-ink-muted mb-4 italic font-medium">
               {project.tagline}
             </p>
 
             {/* Description */}
-            <p className="text-snow-200 mb-6 line-clamp-3 leading-relaxed">
+            <p className="text-ink-muted mb-6 line-clamp-3 leading-relaxed">
               {project.shortDescription}
             </p>
 
             {/* Features Count */}
             {project.features && project.features.length > 0 && (
-              <div className="mb-4 flex items-center gap-2 text-sm text-frost-400">
+              <div className="mb-4 flex items-center gap-2 text-sm text-accent">
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path
                     fillRule="evenodd"
@@ -150,13 +150,13 @@ export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
               {project.techStack.slice(0, 4).map((tech) => (
                 <span
                   key={tech}
-                  className="px-3 py-1 text-xs font-medium bg-frost-500/10 text-frost-400 rounded-lg border border-frost-600/30"
+                  className="px-3 py-1 text-xs font-medium bg-accent/10 text-accent rounded-lg border border-accent-strong/30"
                 >
                   {tech}
                 </span>
               ))}
               {project.techStack.length > 4 && (
-                <span className="px-3 py-1 text-xs font-medium bg-alpine-700/50 text-granite-400 rounded-lg">
+                <span className="px-3 py-1 text-xs font-medium bg-surface-overlay/50 text-ink-muted rounded-lg">
                   +{project.techStack.length - 4} more
                 </span>
               )}
@@ -165,7 +165,7 @@ export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
             {/* Links */}
             <div className="flex gap-4 text-sm font-semibold">
               {project.links.github && (
-                <span className="text-frost-400 group-hover:underline flex items-center gap-1">
+                <span className="text-accent group-hover:underline flex items-center gap-1">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path
                       fillRule="evenodd"
@@ -181,7 +181,7 @@ export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
             {/* Arrow Indicator */}
             <div className="absolute bottom-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity">
               <svg
-                className="w-6 h-6 text-frost-400"
+                className="w-6 h-6 text-accent"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
