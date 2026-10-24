@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 08
 current_phase_name: Data & Terrain Pipeline
 status: executing
-stopped_at: Completed 08-06-PLAN.md (Wave 3 done; next 08-08)
-last_updated: "2026-10-24T16:46:54.677Z"
+stopped_at: Completed 08-08-PLAN.md
+last_updated: "2026-10-24T16:58:39.950Z"
 last_activity: 2026-10-24
-last_activity_desc: Completed 08-06 (poster approved, no tuning); Wave 3 done, next 08-08
-state_head: 021f0d4993aac7523f6290624b2679cbdfc72143
+last_activity_desc: Completed 08-08 (typed photo facts, lowestDemM 1617); Wave 4 done, next 08-09
+state_head: 2194f3c3040ca5d8456d5f136890928ca9f7ef1d
 progress:
   total_phases: 6
   completed_phases: 7
   total_plans: 40
-  completed_plans: 34
-  percent: 85
+  completed_plans: 35
+  percent: 88
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-24)
 ## Current Position
 
 Phase: 08 (Data & Terrain Pipeline) — EXECUTING
-Plan: 7 of 13 done (08-01..08-07); Wave 3 complete, next is 08-08 (Wave 4)
-Status: Ready to execute 08-08 (Wave 4)
-Last activity: 2026-10-24 — Completed 08-06 (Tim approved the hillshade poster without tuning; /terrain immutable delivery and SW precache)
+Plan: 8 of 13 done (08-01..08-08); Wave 4 complete, next is 08-09 (Wave 5)
+Status: Ready to execute 08-09 (Wave 5)
+Last activity: 2026-10-24 — Completed 08-08 (typed photo facts from sidecar + corrections + DEM with photos:build --check in lint; altimeter rail starts at 1,617 m)
 
-Progress: [█████████░] 85% (1 of 6 v2.0 phases; 27/27 planned plans done)
+Progress: [█████████░] 88% (1 of 6 v2.0 phases; 27/27 planned plans done)
 
 ## Performance Metrics
 
@@ -88,6 +88,7 @@ Progress: [█████████░] 85% (1 of 6 v2.0 phases; 27/27 planne
 | Phase 08 P05 | 44 min | 3 tasks | 21 files |
 | Phase 08 P07 | 10 min | 2 tasks | 54 files |
 | Phase 08 P06 | 30 min | 3 tasks | 17 files |
+| Phase 08 P08 | 8 min | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -180,6 +181,9 @@ Recent decisions affecting current work:
 - [Phase 08]: [08-07] D-11 applied: the 8 full-res copies, optimization-manifest.json, scripts/optimize-images.mjs and the prebuild step are gone from HEAD (normal git rm); D-12 history exposure recorded in PROJECT.md Key Decisions, no history rewrite
 - [Phase 08]: [08-06] Hillshade poster (D-16) approved by Tim as built ("approved"), no tuning: lights 315/45 w0.75 + 270/55 w0.25, gamma 1, AVIF q50 / WebP q75. The light tone (valley floor ~73% grey) and near-black SE faces were shown with tuning options (gamma 1.6/2.25, black floor 0.08, softer altitudes/fill weight) and declined, so they are deliberate; tune only via the HILLSHADE block in build-terrain.mjs (terrain.ts records the parameters, --check catches an un-rebuilt edit)
 - [Phase 08]: [08-06] SW precache comes only from data/generated/precache.json (content-hashed /terrain/ URLs, injected at postbuild into /*__PRECACHE_URLS__*/[]); /terrain/:path* is immutable and proxy.ts skips images/ and terrain/. A second local npm run build needs git checkout -- public/service-worker.js first (postbuild now fails instead of keeping a stale hash); CI/Vercel unaffected
+- [Phase 08]: 08-08: img-0629 DEM height is 1,668 m at the committed 4-dp coordinates (RESEARCH's 1,674.9 m was full-precision GPS); the defined sampler wins and 08-10 copy must use 1,668 m
+- [Phase 08]: 08-08: lowestDemM = 1617 (img-0605); HOME-04, ROADMAP Phase 9 SC2 and PROJECT.md now start the altimeter rail at 1,617 m
+- [Phase 08]: 08-08: photo formatters are pure with U+00A0 before every unit; meteorological seasons (Sep 2021 = autumn) pending Tim's look at 08-10
 
 ### Pending Todos
 
@@ -214,6 +218,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-24T16:46:53.796Z
-Stopped at: Completed 08-06-PLAN.md (Wave 3 done; next 08-08)
+Last session: 2026-10-24T16:58:39.791Z
+Stopped at: Completed 08-08-PLAN.md
 Resume file: None
