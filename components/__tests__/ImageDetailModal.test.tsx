@@ -7,13 +7,10 @@ import { render, screen } from '@testing-library/react';
 import ImageDetailModal from '../ImageDetailModal';
 import { LandscapeImage } from '@/data/types';
 
-// Mock Next.js Image component (same mock as GalleryGrid.test.tsx)
+// Mock Next.js Image component (as GalleryGrid.test.tsx does); only its alt matters here
 jest.mock('next/image', () => ({
   __esModule: true,
-  default: (props: { fill?: boolean; src?: string; alt?: string; [key: string]: unknown }) => {
-    const { fill, blurDataURL, placeholder, loading, sizes, priority, ...rest } = props;
-    return <img alt="" {...rest} />;
-  },
+  default: ({ alt }: { alt?: string }) => <span role="img" aria-label={alt} />,
 }));
 
 const LOCALE_DATE = /\d{1,2}\/\d{1,2}\/\d{4}/;

@@ -185,11 +185,12 @@ export default function ImageDetailModal({ image, onClose }: ImageDetailModalPro
                   </p>
                 </div>
               )}
-              {image.technicalDetails.captureDate && (
+              {/* Preformatted by lib/photo-format in the bridge: no locale date, and a year-only capture stays a year (D-03) */}
+              {image.technicalDetails.captureLabel && (
                 <div>
                   <span className="text-sm text-ink-muted">Date</span>
                   <p className="font-medium text-ink">
-                    {new Date(image.technicalDetails.captureDate).toLocaleDateString()}
+                    {image.technicalDetails.captureLabel}
                   </p>
                 </div>
               )}
