@@ -4,7 +4,7 @@
  * Signs"): the relief poster, the hero copy and the two trail signs, all
  * server components rendered from real data.
  */
-import { render, screen, within } from '@testing-library/react';
+import { getDefaultNormalizer, render, screen, within } from '@testing-library/react';
 import PosterSheet from '../PosterSheet';
 import HeroBlock from '../HeroBlock';
 import TrailSigns from '../TrailSigns';
@@ -65,7 +65,9 @@ describe('HeroBlock (HOME-01, D-11)', () => {
   it('renders the derived kicker, one h1 with site.name, the role and the thesis', () => {
     render(<HeroBlock />);
 
-    expect(screen.getByText(formatLatLon(lv95ToWgs84(terrain.summit.lv95)))).toBeInTheDocument();
+    // Keep U+00A0 intact: the default normalizer collapses it to a plain space.
+    const exact = { normalizer: getDefaultNormalizer({ collapseWhitespace: false }) };
+    expect(screen.getByText(formatLatLon(lv95ToWgs84(terrain.summit.lv95)), exact)).toBeInTheDocument();
     const headings = screen.getAllByRole('heading', { level: 1 });
     expect(headings).toHaveLength(1);
     expect(headings[0]).toHaveTextContent(site.name);

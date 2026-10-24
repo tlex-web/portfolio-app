@@ -44,6 +44,11 @@
   /* Home relief poster (09-UI-SPEC "Night-tinted relief (D-17)"): the hillshade
      over bg-surface at this opacity, no blend mode. The 3D shader reads the same value */
   --relief-opacity: 0.32;
+
+  /* Swiss trail yellow (09-UI-SPEC "Trail yellow"): outside the --color-* namespace
+     on purpose, so no text utility exists. Painted only through bg-trail below;
+     Phase 11's T1 "Low risk" reads the same primitive */
+  --trail-yellow: var(--caution-400);
 }
 
 /* Font families (DSGN-07): Schibsted Grotesk display, Inter body, JetBrains Mono data only */
@@ -274,6 +279,12 @@ html {
   &::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* The only way to paint trail yellow (09-UI-SPEC "Trail yellow"). Phase 9 uses it
+   on the decorative trail-sign tip only */
+@utility bg-trail {
+  background-color: var(--trail-yellow);
 }
 
 @layer utilities {
