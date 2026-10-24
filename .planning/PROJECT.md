@@ -151,6 +151,7 @@ UI audit (2026-10-10, before v2.0):
 | Visual baselines come only from the CI `workflow_dispatch` container; only Tim commits PNGs | Linux-rendered, reproducible baselines; a human reviews every pixel change (Phase 7) | ✓ Good |
 | R3F canvases render only through `SafeCanvas` | R3F ≥ 9.8 rethrows WebGL-creation errors through React; the error boundary keeps pages up (Phase 7) | ✓ Good |
 | Phase work lives on `gsd/phase-NN-*` branches; Tim merges to `main` | `main` is protected for executors (Phase 7) | ✓ Good |
+| Leave public git history as is (D-12): GPS-bearing originals at 287c2e9 (deleted in 347d8e1) and full-res copies at 8fa0991 stay reachable in history | Tim accepted the exposure; no history rewrite or force-push; a git filter-repo purge stays possible later as a separate step Tim runs | Accepted (Phase 8) |
 
 ## Evolution
 

@@ -4,106 +4,38 @@ This directory contains utility scripts for maintaining and optimizing the portf
 
 ## Available Scripts
 
-### `optimize-images.mjs`
+### Data pipeline (local generators, committed outputs)
 
-Image optimization script that converts and compresses images for production use.
+The generators below need inputs that CI does not have (the photo originals, the network), so their write mode runs only on Tim's machine and their outputs are committed. `npm run data:check`, the last step of `npm run lint`, re-checks every committed output in CI without those inputs:
 
-**Purpose:** Reduces image file sizes by 85-90% while maintaining visual quality, improving page load times from 500ms+ to <150ms.
-
-**Usage:**
 ```bash
-# Basic usage (optimizes all images in public/images/landscapes/)
-npm run optimize-images
-
-# Custom input directory
-node scripts/optimize-images.mjs --input ./path/to/images
-
-# Custom output directory
-node scripts/optimize-images.mjs --output ./public/images/custom
-
-# Custom quality (default: 85)
-node scripts/optimize-images.mjs --quality 80
-
-# Combine options
-node scripts/optimize-images.mjs --input ./photos --output ./optimized --quality 90
+npm run data:check   # terrain:build -- --check && photos:exif -- --check && photos:derive -- --check
 ```
 
-**What It Does:**
-1. Converts images to WebP format (30-50% smaller than JPEG)
-2. Generates multiple responsive sizes:
-   - Thumbnail: 400px width
-   - Medium: 1200px width
-   - Large: 2400px width
-   - Original: Full size, optimized
-3. Creates JPEG fallbacks for browser compatibility
-4. Preserves EXIF metadata (camera settings, dates)
-5. Generates optimization manifest with statistics
+| Script | Reads (local) | Writes (committed) |
+|--------|---------------|--------------------|
+| `photos:exif` (`photos/extract-exif.mjs`) | originals in `assets/photos-original/` (gitignored, never committed; D-09) | `data/photos/exif-sidecar.json` (EXIF facts, sha256 per original, GPS rounded to 4 decimals) |
+| `photos:derive` (`photos/build-derivatives.mjs`) | the originals and the sidecar | `public/images/photos/<id>-<edge>.<hash>.<ext>` and `data/generated/image-manifest.ts` |
+| `terrain:fetch` (`terrain/fetch-dem.mjs`) | swisstopo STAC + COG over the network (manual, never in CI) | `data/terrain/source/dem-10m.png` and `source.json` |
+| `terrain:build` (`terrain/build-terrain.mjs`) | the committed DEM source | `public/terrain/*` and `data/generated/terrain.ts` |
 
-**Output:**
-```
-public/images/optimized/
-├── IMG_0605-Enhanced-thumb.webp (150 KB)
-├── IMG_0605-Enhanced-thumb.jpg (250 KB)
-├── IMG_0605-Enhanced-medium.webp (800 KB)
-├── IMG_0605-Enhanced-medium.jpg (1.2 MB)
-├── IMG_0605-Enhanced-large.webp (2.5 MB)
-├── IMG_0605-Enhanced-large.jpg (4.0 MB)
-└── optimization-manifest.json
-```
+Nothing image-related runs at build time: there is no `prebuild` step, so a Vercel build needs neither the originals nor full-resolution copies (D-11).
 
-**Requirements:**
-- Node.js 18+
-- `sharp` package (automatically installed with `npm install`)
+**After adding or editing a photo:**
 
-**Configuration:**
-Edit the `CONFIG` object in `optimize-images.mjs`:
-```javascript
-const CONFIG = {
-  quality: {
-    webp: 85,  // WebP quality (0-100)
-    jpeg: 85,  // JPEG quality (0-100)
-  },
-  sizes: {
-    thumbnail: { width: 400, suffix: '-thumb' },
-    medium: { width: 1200, suffix: '-medium' },
-    large: { width: 2400, suffix: '-large' },
-  },
-  formats: ['webp', 'jpeg'],
-  preserveMetadata: true,
-};
-```
-
-**Performance Impact:**
-- **Before:** 51-77 MB per image
-- **After:** 2-5 MB per image (90% reduction)
-- **Page Load:** 500ms+ → <150ms (70% improvement)
-- **LCP:** 4-6s → <2.5s (60% improvement)
-
-**Troubleshooting:**
-
-*Error: Cannot find module 'sharp'*
 ```bash
-npm install
+# 1. Put the original (an sRGB JPEG) in assets/photos-original/
+npm run photos:exif     # refresh the sidecar (sha256, EXIF facts)
+npm run photos:derive   # hashed AVIF/WebP at 640/1024/1600/2560 + one 1200 JPEG, image manifest
+npm run data:check      # what CI runs
+# 2. Commit the sidecar, public/images/photos/ and data/generated/image-manifest.ts. Never commit an original.
 ```
 
-*Error: ENOENT: no such file or directory*
-```bash
-# Ensure input directory exists
-mkdir -p public/images/landscapes
-```
+**`photos:derive`** rotates each original from its EXIF orientation, resizes it on the long edge without enlarging it (at most 2560 px, D-13) and encodes it with sharp's default output, which keeps no EXIF, XMP, IPTC or ICC data. The script never calls a metadata-retaining sharp method, because those re-leak the GPS block. It refuses an original that is not sRGB (dropping the ICC profile must stay colour-neutral) and an original whose sha256 differs from the sidecar (run `photos:exif` first). Each file name carries the first 10 hex characters of the sha256 of its bytes. Lossy encoders are not byte-stable across platforms, so the committed files are authoritative. Write mode deletes stale files in `public/images/photos/` and builds the manifest from the files on disk and the sidecar.
 
-*Images look too compressed*
-```bash
-# Increase quality
-node scripts/optimize-images.mjs --quality 95
-```
+`photos:derive -- --check` needs no originals. It fails when a manifest file is missing, its name hash does not match its bytes, its format or size differs from the manifest, or it carries EXIF, XMP, IPTC, ICC or an orientation tag; when a file in `public/images/photos/` is not in the manifest; when a legacy path is missing; when a `sourceSha256` differs from the sidecar's sha256 (derivatives built from an older original); or when the manifest text differs from a rebuild from disk and the sidecar.
 
-*Need to re-optimize after changes*
-```bash
-# Delete optimized folder and re-run
-rm -rf public/images/optimized
-npm run optimize-images
-```
+The manifest (`imageManifest`) is the single source of image paths (DATA-08). The legacy `-large` / `-thumb` files in `public/images/optimized/` stay until Phase 12 and are reached through each entry's `legacy` block.
 
 ## Guards (`scripts/guards/`)
 
