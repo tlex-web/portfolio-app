@@ -83,11 +83,16 @@ export const HighlightBlock = z.discriminatedUnion('kind', [
 ]);
 export type HighlightBlock = z.infer<typeof HighlightBlock>;
 
-/** One CLI_X terminal example. */
+/**
+ * One CLI_X terminal example. `riskLevel` and `riskScore` are required (D-22):
+ * every score is the one CLI_X printed for that command, and the level is the
+ * band of `lib/trail-grade.ts` the score falls in.
+ */
 export const DemoCommandSchema = z.strictObject({
   input: z.string(),
   output: z.string(),
-  riskLevel: RiskLevel.optional(),
+  riskLevel: RiskLevel,
+  riskScore: z.number().min(0).max(1),
   warning: z.string().optional(),
   explanation: z.string().optional(),
 });
