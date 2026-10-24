@@ -73,6 +73,7 @@
   --color-line-strong: var(--night-500);
   --color-accent: var(--glacier-400);
   --color-accent-hover: var(--glacier-300);
+  --color-accent-strong: var(--glacier-500);
   --color-focus: var(--glacier-300);
   --color-danger: var(--signal-400);
   --color-caution: var(--caution-400);
@@ -405,7 +406,7 @@ html {
 
 /* Focus visibility for clipped elements (outline is clipped, use drop-shadow) */
 .hex-clip:focus-visible {
-  filter: drop-shadow(0 0 3px var(--color-frost-500));
+  filter: drop-shadow(0 0 3px var(--color-accent));
 }
 
 /* Hex grid layout (flexbox-based with mobile fallback) */

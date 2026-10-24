@@ -12,7 +12,8 @@
  *      measures `fg.contrast(bg, 'WCAG21')`
  *
  * Every `--color-*` name is classified:
- *   - SEMANTIC:   the L2 tokens from 07-UI-SPEC.md "Color"
+ *   - SEMANTIC:   the L2 tokens from 07-UI-SPEC.md "Color", plus accent-strong
+ *                 (08-05: the v2 name for v1 frost-600, gradient stops and badge fills)
  *   - ALIAS:      v1 names (alpine, granite, snow, frost, ember, pine, rust), skipped
  *   - DECORATIVE: line and contour, exempt from measurement (UI-SPEC "Exempt")
  *   Any other `--color-*` name fails as unknown. Adding a semantic token means
@@ -46,6 +47,7 @@ const SEMANTIC = [
   'line-strong',
   'accent',
   'accent-hover',
+  'accent-strong',
   'focus',
   'danger',
   'caution',
@@ -66,6 +68,8 @@ const PAIRS = [
   ...pairs(['accent', 'danger', 'caution', 'success'], SURFACES, TEXT),
   ...pairs(['ink-inverse'], ['accent', 'accent-hover'], TEXT),
   ...pairs(['focus', 'line-strong'], SURFACES, NON_TEXT),
+  ...pairs(['ink-inverse'], ['accent-strong'], TEXT),
+  ...pairs(['accent-strong'], SURFACES, NON_TEXT),
 ];
 
 const BLOCK = /(:root|@theme(?:\s+(?:inline|static))*)\s*\{([^{}]*)\}/g;
