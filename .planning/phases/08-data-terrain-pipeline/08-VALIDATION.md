@@ -42,20 +42,26 @@ Seeded from `08-RESEARCH.md` § Validation Architecture. Task IDs are filled in 
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD | TBD | A | DATA-01 | — | N/A | unit | `npx jest lib/__tests__/geo.test.ts` | ❌ W0 | ⬜ pending |
-| TBD | TBD | A | DATA-01 | — | N/A | unit | `npx jest lib/__tests__/contour-paths.test.ts` | ❌ W0 | ⬜ pending |
-| TBD | TBD | B | DATA-01 | — | Generated SVG contains no script/handlers/href | guard | `node scripts/terrain/build-terrain.mjs --check` | ❌ W0 | ⬜ pending |
-| TBD | TBD | B | DATA-01 | — | N/A | unit | `npx jest data/__tests__/terrain.test.ts` | ❌ W0 | ⬜ pending |
-| TBD | TBD | C | DATA-02 | — | N/A | guard | `node scripts/photos/build-photo-data.mjs --check` | ❌ W0 | ⬜ pending |
-| TBD | TBD | C | DATA-02, DATA-03, DATA-06 | — | GPS ≤ 4 decimals in generated data | unit | `npx jest data/__tests__/photos.test.ts` | ❌ W0 | ⬜ pending |
-| TBD | TBD | C | DATA-04 | — | N/A | unit + component | `npx jest components/site/__tests__/SiteFooter.test.tsx` | ❌ W0 | ⬜ pending |
-| TBD | TBD | B | DATA-05 | — | No tracked image carries EXIF/XMP/IPTC; served ≤ 2560 px | guard + selftest | `node scripts/guards/check-served-images.mjs && npm run guard:selftest` | ❌ W0 | ⬜ pending |
-| TBD | TBD | B | DATA-05 | — | Full-res URLs 404; `/terrain/*` immutable Cache-Control | e2e (prod) | `PW_PROD=1 npx playwright test e2e/data-privacy.spec.ts --project=chromium` | ❌ W0 | ⬜ pending |
-| TBD | TBD | C | DATA-07 | — | N/A | unit | `npx jest data/__tests__/projects.test.ts lib/__tests__/trail-grade.test.ts` | ❌ W0 | ⬜ pending |
-| TBD | TBD | B | DATA-08 | — | N/A | unit | `npx jest data/__tests__/image-manifest.test.ts` | ❌ W0 | ⬜ pending |
-| TBD | TBD | A | SHELL-04 | — | N/A | unit | `npx jest lib/__tests__/footer-format.test.ts` | ❌ W0 | ⬜ pending |
-| TBD | TBD | D | SHELL-04 | — | N/A | e2e | `npx playwright test e2e/shell.spec.ts --project=chromium` | ✅ extend | ⬜ pending |
-| TBD | TBD | D | SHELL-04 | — | N/A | visual (CI container) | `gh workflow run visual-baselines.yml --ref ci/08-NN -f suite=visual -f update_mode=changed` | ✅ | ⬜ pending |
+| 08-01-T1 | 08-01 | 1 | DATA-01 | — | N/A | unit | `npx jest lib/__tests__/geo.test.ts` | ❌ W0 (created by the task, TDD) | ⬜ pending |
+| 08-01-T2 | 08-01 | 1 | DATA-01 | T-08-02 | Serializer emits only svg/g/path | unit | `npx jest lib/__tests__/contour-paths.test.ts lib/__tests__/hillshade.test.ts lib/__tests__/dem-sample.test.ts` | ❌ W0 (TDD) | ⬜ pending |
+| 08-01-T3 | 08-01 | 1 | DATA-01 | T-08-01 | Generator libs banned outside scripts/ | guard + selftest | `node scripts/guards/selftest.mjs` | ✅ extend | ⬜ pending |
+| 08-02-T1/T2 | 08-02 | 1 | DATA-02, DATA-06 | T-08-04 | GPS ≤ 4 decimals in the sidecar | guard + unit | `npm run photos:exif -- --check && npx jest data/__tests__/exif-sidecar.test.ts` | ❌ W0 (TDD) | ⬜ pending |
+| 08-03-T1/T3 | 08-03 | 1 | DATA-07 | T-08-07 | riskScore required, from Tim | unit | `npx jest data/__tests__/projects.test.ts lib/__tests__/trail-grade.test.ts` | ❌ W0 (TDD) | ⬜ pending |
+| 08-04-T2/T3 | 08-04 | 2 | DATA-01 | T-08-11 | Generated SVG contains no script/handlers/href | guard | `npm run terrain:build -- --check` | ❌ W0 | ⬜ pending |
+| 08-04-T3 | 08-04 | 2 | DATA-01 | T-08-12 | terrain.ts client-safe | unit | `npx jest data/__tests__/terrain.test.ts` | ❌ W0 | ⬜ pending |
+| 08-05-T3 | 08-05 | 2 | DSGN-06 | T-08-13 | Codemod is pixel-neutral | visual (CI) | `node scripts/ci/check-visual-run.mjs --sha "$(git rev-parse HEAD)" --wait 30` | ✅ | ⬜ pending |
+| 08-06-T1 | 08-06 | 3 | SHELL-04, DATA-01 | T-08-15 | Immutable only for hashed /terrain/ | unit + build | `npx jest data/__tests__/precache.test.ts` | ❌ W0 | ⬜ pending |
+| 08-07-T1/T2 | 08-07 | 3 | DATA-05, DATA-08 | T-08-18 | Derivatives metadata-free, ≤ 2560 px | guard + unit | `npm run photos:derive -- --check && npx jest data/__tests__/image-manifest.test.ts` | ❌ W0 | ⬜ pending |
+| 08-08-T1 | 08-08 | 4 | DATA-02 | T-08-24 | Stale photo data fails CI | guard | `npm run photos:build -- --check` | ❌ W0 | ⬜ pending |
+| 08-08-T2 | 08-08 | 4 | DATA-02, DATA-03, DATA-04, DATA-06 | T-08-22 | GPS ≤ 4 decimals in generated data | unit | `npx jest data/__tests__/photos.test.ts lib/__tests__/photo-format.test.ts` | ❌ W0 (TDD) | ⬜ pending |
+| 08-09-T1/T2 | 08-09 | 5 | DATA-05 | T-08-25 | No tracked image carries EXIF/XMP/IPTC; served ≤ 2560 px | guard + selftest | `node scripts/guards/check-served-images.mjs && npm run guard:selftest` | ❌ W0 | ⬜ pending |
+| 08-09-T2 | 08-09 | 5 | DATA-05 | T-08-27 | Full-res URLs 404; `/terrain/*` immutable Cache-Control | e2e (prod) | `PW_PROD=1 npx playwright test e2e/data-privacy.spec.ts --project=chromium` | ❌ W0 | ⬜ pending |
+| 08-10-T1/T2 | 08-10 | 6 | DATA-03, DATA-08 | T-08-30 | Sourced facts; no image literals in the bridge | unit + component | `npx jest data/__tests__/editorial.test.ts components/__tests__/ImageDetailModal.test.tsx` | ❌ W0 | ⬜ pending |
+| 08-11-T2 | 08-11 | 7 | DATA-03 | T-08-32 | photos/* re-baseline only | visual (CI) | `node scripts/ci/check-snapshot-commit.mjs --sha HEAD --some --allow photos` | ✅ | ⬜ pending |
+| 08-12-T1 | 08-12 | 8 | DATA-04, SHELL-04 | — | Dashed tick from position.approximate | component | `npx jest components/site/__tests__/SiteFooter.test.tsx` | ❌ W0 | ⬜ pending |
+| 08-12-T2 | 08-12 | 8 | SHELL-04 | T-08-34 | Attribution constant required | unit | `npx jest lib/__tests__/footer-format.test.ts` | ❌ W0 (TDD) | ⬜ pending |
+| 08-12-T3 | 08-12 | 8 | SHELL-04 | — | N/A | e2e | `npx playwright test e2e/shell.spec.ts --project=chromium` | ✅ extend | ⬜ pending |
+| 08-13-T1 | 08-13 | 9 | SHELL-04 | T-08-37 | Footer re-baseline only, deterministic | visual (CI container) | `gh workflow run visual-baselines.yml --ref ci/08-13 -f suite=visual -f update_mode=changed` | ✅ | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 

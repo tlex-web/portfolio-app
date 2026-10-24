@@ -168,7 +168,40 @@ Plans:
   4. No full-resolution original or GPS-bearing image can be fetched from the public site. Every served image is resized, correctly rotated and metadata-free, which a CI scan enforces. Components take image paths from the pipeline manifest, not from hard-coded variant filenames.
   5. Project highlights type-check against a per-project schema, and every CLI_X risk example carries a numeric `riskScore`.
 
-**Plans**: TBD
+**Plans**: 13 plans in 9 waves
+
+Plans:
+**Wave 1**
+- [ ] 08-01-PLAN.md — Coordinate contract (lib/geo.ts), pure terrain cores, generator-library import ban
+- [ ] 08-02-PLAN.md — Originals out of /public, EXIF sidecar with 4-dp GPS (stage 1), data:check in lint
+- [ ] 08-03-PLAN.md — Typed project highlights + legacy adapter, trail grade, Tim's real riskScores (checkpoint)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 08-04-PLAN.md — Sheet decisions from Tim (checkpoint), swissALTIRegio source raster, heightmaps, contour LODs, terrain.ts
+- [ ] 08-05-PLAN.md — v1 alias codemod to v2 names (zero diff), accent-strong token, widened v1names guard
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 08-06-PLAN.md — Immutable /terrain delivery, proxy exclusion, SW precache; hillshade poster + Tim's review
+- [ ] 08-07-PLAN.md — Hashed privacy-safe derivatives + image manifest; full-res copies and prebuild removed
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 08-08-PLAN.md — Typed photo facts (EXIF dates, corrections, DEM heights, derived tags, approximate pin), altimeter wording
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 08-09-PLAN.md — Served-image CI guard, data-privacy e2e, CI and preview verification
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 08-10-PLAN.md — Editorial copy draft, legacy bridge over the manifest, modal capture label, Tim's copy decision
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 08-11-PLAN.md — Apply Tim's copy decision; photos re-baseline (Tim commits PNGs)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 08-12-PLAN.md — Footer map-sheet margin: contour band, ticks, true scale bar, attribution (SHELL-04)
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [ ] 08-13-PLAN.md — All-route footer re-baseline (Tim commits PNGs), phase-close test ratchet
+
 **UI hint**: yes
 **Scope notes**:
   - Schemas and libraries: zod schemas (photos; project highlights as a discriminated union); `lib/geo.ts` (WGS84 ↔ LV95 ↔ terrain grid) with tests; `lib/trail-grade.ts`.
@@ -329,7 +362,7 @@ Plans:
 | 5. Performance & Accessibility Polish | v1.0 | 5/5 | Complete | 2026-03-11 |
 | 6. Integration Wiring Fixes | v1.0 | 1/1 | Complete | 2026-03-12 |
 | 7. Foundation & Guardrails | v2.0 | 27/27 | Complete    | 2026-10-24 |
-| 8. Data & Terrain Pipeline | v2.0 | 0/TBD | Not started | - |
+| 8. Data & Terrain Pipeline | v2.0 | 0/13 | Planned | - |
 | 9. Home Ascent | v2.0 | 0/TBD | Not started | - |
 | 10. Photography | v2.0 | 0/TBD | Not started | - |
 | 11. Engineering & Roadmap | v2.0 | 0/TBD | Not started | - |
