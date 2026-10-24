@@ -15,7 +15,7 @@ A portfolio that is visually memorable and distinctive — not another generic T
 **Target features:**
 - Foundation & guardrails: Playwright screenshot baselines, tokens v2, zero `dark:` variants / stock Tailwind palette classes (lint-enforced), one `SiteNav` in a shared `(site)` layout, "Tim Lui" identity with real links, visible scrollbar, contact contrast fix, framer-motion 12 → 14 upgrade in isolation, React 19.2 → 19.3 / Next 16.2 → 16.4 upgrade in isolation (prerequisite for `<ViewTransition>`)
 - Data & terrain pipeline: swisstopo swissALTIRegio (10 m, cross-border) DEM → 16-bit heightmap + contour SVG (d3-contour) at build time, originals moved out of `/public`, EXIF → typed photo data (exif-reader + sharp), corrected capture dates and waterfall location, typed project highlight schemas
-- Home "ascent": real Matterhorn terrain with contour-line shader (R3F), altimeter rail 1,617 m → 4,478 m, photo waypoints placed by EXIF GPS/altitude, Swiss trail-sign routes, static fallback for reduced motion / no WebGL
+- Home "ascent": real Matterhorn terrain with contour-line shader (R3F), altimeter rail 1,617 m → 4,478 m, photo waypoints placed by EXIF GPS with DEM-sampled heights (D-17), Swiss trail-sign routes, static fallback for reduced motion / no WebGL
 - Photography: dark light table with Map / Grid / Carousel views, gallery-black lightbox with EXIF strip and hotspot callouts, View Transitions thumbnail → lightbox
 - Engineering & roadmap: project route panels (hex cards retired), case-study template, CLI_X risk bands shown as Swiss trail grades (T1 yellow / T2–T3 white-red-white / T4–T5 white-blue-white / unmarked), terminal restyled to tokens, route-log roadmap
 - Contact, edge pages & cleanup: summit-register contact page, "off the marked trail" 404/offline/error, delete `/gradient-mesh` `/particle-buttons` `/transitions`, remove dead code, axe + cross-browser verification
@@ -56,6 +56,11 @@ A portfolio that is visually memorable and distinctive — not another generic T
 - ✓ One enforced design system across every page (tokens v2, no `dark:` variants, no stock palette classes, lint-enforced) — Phase 7
 - ✓ Real identity (Tim Lui) and real contact/social links everywhere — Phase 7
 - ✓ CI regression nets: Linux visual baselines for every route in dark and light, test-count ratchet, palette/contrast/jsx-a11y guards — Phase 7
+- ✓ Build-time terrain data: swissALTIRegio source raster (May 2026 edition) → hashed 16-bit heightmaps, three contour LODs and a hillshade poster, re-derived offline by `terrain:build --check` in lint — Phase 8
+- ✓ Typed, committed photo facts from real EXIF + Tim's corrections + DEM heights (4-dp GPS, year/season tags, approximate film-scan pin), checked for staleness in CI — Phase 8
+- ✓ Privacy-safe images: originals out of the repo and site, metadata-free hashed derivatives ≤ 2560 px, served-image guard over every tracked image — Phase 8
+- ✓ Typed project highlights with real CLI_X riskScores and the trail-grade band scale — Phase 8
+- ✓ Footer map legend (contour band, waypoint ticks, true scale bar, LV95 extent, "Last surveyed", swisstopo attribution) on every route — Phase 8
 
 ### Active
 
@@ -88,7 +93,8 @@ Deployed on Vercel with Upstash Redis for rate limiting.
 Design system: "Swiss Alps" crystalline aesthetic — 30 OKLCH tokens across 8 color families (alpine, granite, snow, frost, ember, pine, rust, amber), geological depth shadows (stratum-1/2/3), hex grid layouts, scroll-linked glow intensity.
 
 Known tech debt:
-- Old image variants (-thumb/-medium/-large) still in repo — NOT unused (corrected 2026-10-10): `data/landscapes.ts` has 12 live references feeding the Home LCP image, PhotoCarousel3D and GalleryGrid; delete only after the v2.0 manifest migration
+- Old image variants (-thumb/-medium/-large, 60 files) still in repo and served — since Phase 8 `data/landscapes.ts` is a bridge that reaches them only through the image manifest (Home LCP, PhotoCarousel3D, GalleryGrid); delete in Phase 12 once Phase 10 moves the photo UI to the hashed derivatives
+- Phase 8 code review (08-REVIEW-DISPOSITION.md): 8 open warnings, latent for the current four photos (out-of-extent photo, missing GPS altitude, non-Zurich offset, 0.25–1 s shutter labels, non-atomic `photos:derive`, guard format gaps, README steps, mislabelled corrections) — fold into the first Phase 9/10 plan that adds photo data
 - ParticleButton deprecated but retained for demo pages
 - SEC-02 (CSRF) traceability was stale in REQUIREMENTS.md but implemented in Phase 2
 
@@ -136,14 +142,14 @@ UI audit (2026-10-10, before v2.0):
 | Retire hex project cards (`hex-clip`, `useHexGrid`) | Two projects don't need a grid; clip-path complicates focus and content | — Pending |
 | Upgrade framer-motion 12 → 14 first, in isolation | Avoid building new motion on an API about to change; isolate regression risk | ✓ Good — `motion` 14.1 in 73880a2; 6 home scroll-50 re-baselines ratified by Tim at Phase 7 UAT |
 | Upgrade React 19.3 / Next 16.4 in Phase 7, in isolation | `<ViewTransition>` and `addTransitionType` ship only in React 19.3; R3F 9.8 supports React <19.4; installed node_modules (19.2.4 / 16.1.6) also lag the lockfile — user approved 2026-10-10 | ✓ Good — Next 16.4.2 + React 19.3.1 in fdeb9fe (security release); 6 offline re-baselines ratified at Phase 7 UAT |
-| Build-time DEM + EXIF pipeline (d3-contour, exif-reader + sharp) | Zero client cost, same-origin assets, typed data | — Pending |
+| Build-time DEM + EXIF pipeline (d3-contour, exif-reader + sharp) | Zero client cost, same-origin assets, typed data | ✓ Good — shipped in Phase 8; generators ESLint-fenced into `scripts/`, every output byte-checked offline in lint |
 | Platform APIs over libraries (View Transitions, CSS scroll-driven animations); skip GSAP | 0 KB client cost; GSAP would duplicate Motion | — Pending |
-| swissALTIRegio (10 m) instead of swissALTI3D | swissALTI3D lacks the Italian side south of the summit (10 tiles); Regio is hole-free across the border and ample for a 512² heightmap — user decision 2026-10-10 | — Pending |
-| Film-scan photo without GPS gets a hand-placed "approx." pin | Keeps all 4 photos on the map and ascent without inventing precision | — Pending |
-| Move GPS-bearing originals (194 MB) out of `/public` | They were publicly downloadable at full resolution with GPS EXIF | — Pending |
+| swissALTIRegio (10 m) instead of swissALTI3D | swissALTI3D lacks the Italian side south of the summit (10 tiles); Regio is hole-free across the border and ample for a 512² heightmap — user decision 2026-10-10 | ✓ Good — 11 × 11 km extent (Tim: "defaults", 08-04) aligned to the COG grid, no resampling, no holes |
+| Film-scan photo without GPS gets a hand-placed "approx." pin | Keeps all 4 photos on the map and ascent without inventing precision | ✓ Good — Riffelsee north-shore pin (±100 m) approved by Tim at 08-10; dashed footer tick |
+| Move GPS-bearing originals (194 MB) out of `/public` | They were publicly downloadable at full resolution with GPS EXIF | ✓ Good — 08-02 (gitignored `assets/photos-original/`), enforced by the 08-09 served-image guard |
 | `/photos` opens on the Map view | User preference: lead with the most distinctive view; Grid and Carousel one click away | — Pending |
 | Deleted playground routes resolve to the designed 404 (no redirects) | No known inbound links | ✓ Good — Phase 7 shell 404 |
-| Coordinates rounded to ~10 m and shown in the lightbox | Useful context without exposing more precision than needed | — Pending |
+| Coordinates rounded to ~10 m and shown in the lightbox | Useful context without exposing more precision than needed | ◐ Rounding shipped in Phase 8 (4 dp at extraction, `Coord4` schema, CI-checked); lightbox display pending Phase 10 |
 | Photos "all rights reserved" | Supports licensing enquiries via Contact | — Pending |
 | Add photo deep links + full lightbox, and SEO/link previews to scope | Research gaps G1–G3, G2; users expect shareable photo URLs and per-page previews | — Pending |
 | Defer "Ask about this photo" and terminal step controls/transcript | Not needed for v2.0; the demo still gets a WCAG 2.2.2 pause control | — Pending |
@@ -151,7 +157,11 @@ UI audit (2026-10-10, before v2.0):
 | Visual baselines come only from the CI `workflow_dispatch` container; only Tim commits PNGs | Linux-rendered, reproducible baselines; a human reviews every pixel change (Phase 7) | ✓ Good |
 | R3F canvases render only through `SafeCanvas` | R3F ≥ 9.8 rethrows WebGL-creation errors through React; the error boundary keeps pages up (Phase 7) | ✓ Good |
 | Phase work lives on `gsd/phase-NN-*` branches; Tim merges to `main` | `main` is protected for executors (Phase 7) | ✓ Good |
-| Leave public git history as is (D-12): GPS-bearing originals at 287c2e9 (deleted in 347d8e1) and full-res copies at 8fa0991 stay reachable in history | Tim accepted the exposure; no history rewrite or force-push; a git filter-repo purge stays possible later as a separate step Tim runs | Accepted (Phase 8) |
+| Leave public git history as is (D-12): GPS-bearing originals at 287c2e9 (deleted in 347d8e1) and full-res copies at 8fa0991 stay reachable in history | Tim accepted the exposure; no history rewrite or force-push; a git filter-repo purge stays possible later as a separate step Tim runs | Accepted (Phase 8) — re-raised as code-review CR-01, recorded as deferred under D-12 |
+| Phase 8 branch stacked on the unmerged Phase 7 tip | `origin/main` lacked Phase 7 and the Phase 8 plans; Tim chose "Stack on HEAD" and sequential execution (2026-10-24) | ✓ Good — merge Phase 7 before Phase 8 when shipping |
+| Photo heights from the DEM, not EXIF altitude (D-17) | One consistent surface for footer, altimeter and terrain; EXIF altitude is noisy (gorge photo DEM 1,668 m vs GPS 1,715 m) | ✓ Good — `lowestDemM` 1,617 m starts the altimeter rail |
+| Meteorological seasons for photo tags; capture year only for the film scan | September photos read "autumn"; the 2020 scan date never surfaces (Tim approved at 08-10) | ✓ Good |
+| Hillshade poster: NW light 315°/45° + 270°/55°, linear gamma | Tim approved the poster as rendered (08-06) after seeing the light/mid-grey trade-off; tuning stays in the `HILLSHADE` block | ✓ Good |
 
 ## Evolution
 
@@ -171,4 +181,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-24 after Phase 7*
+*Last updated: 2026-10-24 after Phase 8*
