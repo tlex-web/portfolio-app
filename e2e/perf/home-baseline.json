@@ -1,0 +1,45 @@
+{
+  "lcpMs": 4692,
+  "jsTransferBytes": 468770,
+  "jsDecodedBytes": 1625352,
+  "runs": 5,
+  "samples": [
+    {
+      "lcpMs": 4264,
+      "jsTransferBytes": 468770,
+      "jsDecodedBytes": 1625352
+    },
+    {
+      "lcpMs": 4748,
+      "jsTransferBytes": 468770,
+      "jsDecodedBytes": 1625352
+    },
+    {
+      "lcpMs": 4692,
+      "jsTransferBytes": 468770,
+      "jsDecodedBytes": 1625352
+    },
+    {
+      "lcpMs": 4700,
+      "jsTransferBytes": 468770,
+      "jsDecodedBytes": 1625352
+    },
+    {
+      "lcpMs": 4688,
+      "jsTransferBytes": 468770,
+      "jsDecodedBytes": 1625352
+    }
+  ],
+  "profile": {
+    "device": "Pixel 7",
+    "cpuSlowdown": 4,
+    "latencyMs": 150,
+    "downloadBps": 200000,
+    "uploadBps": 93750
+  },
+  "commit": "b21dbc99a6f407545db6e5907feef95922f721bc",
+  "playwrightVersion": "1.64.0",
+  "browserVersion": "156.0.8078.4",
+  "containerTag": "mcr.microsoft.com/playwright:v1.64.0-noble",
+  "recordedAt": "2026-10-24T00:19:39.241Z"
+}
