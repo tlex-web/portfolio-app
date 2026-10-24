@@ -52,7 +52,7 @@
   4. On every page a keyboard user finds one skip link, exactly one primary navigation with a visible current-page indicator, and exactly one main landmark. On mobile the menu opens with touch targets of at least 44 px and closes on route change and on Escape.
   5. Every page shows Tim Lui's name, role line and real GitHub, LinkedIn and email links, with no placeholder text or links. `/gradient-mesh`, `/particle-buttons` and `/transitions` return a 404 inside the site shell and no page links to them. The Contact heading and form fields pass WCAG AA for light-OS and dark-OS visitors alike.
 
-**Plans**: 26/26 plans executed (sequential waves 1-26, one plan per wave; locked build order preserved)
+**Plans**: 27 plans: 26/26 executed (sequential waves 1-26, one plan per wave; locked build order preserved) + 1 gap-closure plan (07-27, wave 27)
 
 Plans:
 **Wave 1**
@@ -132,6 +132,9 @@ Plans:
 
 **Wave 26** *(blocked on Wave 25 completion)*
 - [x] 07-26-PLAN.md — Step 10: HOME-08 LCP/JS baseline; raise ratchet; restore Dependabot
+
+**Wave 27** *(gap closure, blocked on Wave 26 completion)*
+- [ ] 07-27-PLAN.md — SC4 / SHELL-01 gap: assert exactly one skip link per page (red in CI first), remove the hero's duplicate skip link, zero visual diff
 
 **Cross-cutting constraints:**
 - No v1 alias name, raw OKLCH, hex, rgba() or arbitrary colour value is introduced by the mapping
