@@ -168,12 +168,12 @@ Plans:
   4. No full-resolution original or GPS-bearing image can be fetched from the public site. Every served image is resized, correctly rotated and metadata-free, which a CI scan enforces. Components take image paths from the pipeline manifest, not from hard-coded variant filenames.
   5. Project highlights type-check against a per-project schema, and every CLI_X risk example carries a numeric `riskScore`.
 
-**Plans**: 1/13 plans executed in 9 waves
+**Plans**: 2/13 plans executed in 9 waves
 
 Plans:
 **Wave 1**
 - [x] 08-01-PLAN.md — Coordinate contract (lib/geo.ts), pure terrain cores, generator-library import ban
-- [ ] 08-02-PLAN.md — Originals out of /public, EXIF sidecar with 4-dp GPS (stage 1), data:check in lint
+- [x] 08-02-PLAN.md — Originals out of /public, EXIF sidecar with 4-dp GPS (stage 1), data:check in lint
 - [ ] 08-03-PLAN.md — Typed project highlights + legacy adapter, trail grade, Tim's real riskScores (checkpoint)
 
 **Wave 2** *(blocked on Wave 1 completion)*
@@ -362,7 +362,7 @@ Plans:
 | 5. Performance & Accessibility Polish | v1.0 | 5/5 | Complete | 2026-03-11 |
 | 6. Integration Wiring Fixes | v1.0 | 1/1 | Complete | 2026-03-12 |
 | 7. Foundation & Guardrails | v2.0 | 27/27 | Complete    | 2026-10-24 |
-| 8. Data & Terrain Pipeline | v2.0 | 1/13 | In Progress | - |
+| 8. Data & Terrain Pipeline | v2.0 | 2/13 | In Progress | - |
 | 9. Home Ascent | v2.0 | 0/TBD | Not started | - |
 | 10. Photography | v2.0 | 0/TBD | Not started | - |
 | 11. Engineering & Roadmap | v2.0 | 0/TBD | Not started | - |
