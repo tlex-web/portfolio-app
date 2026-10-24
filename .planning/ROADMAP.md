@@ -233,7 +233,7 @@ Plans:
 **Requirements**: HOME-01, HOME-02, HOME-03, HOME-04, HOME-05, HOME-06, HOME-07, HOME-08
 **Success Criteria** (what must be TRUE):
   1. The first viewport shows Tim Lui's name, role and primary call to action. They are readable before any script runs, with no animation, and without WebGL.
-  2. On a capable device the hero shows the real Matterhorn terrain with contour lines. Native scrolling (no scroll-jacking) moves the camera up the mountain while an altimeter rail climbs from 1,626 m to 4,478 m; the rail is decorative, hidden from assistive tech and hidden below 768 px. A skip link jumps past the ascent.
+  2. On a capable device the hero shows the real Matterhorn terrain with contour lines. Native scrolling (no scroll-jacking) moves the camera up the mountain while an altimeter rail climbs from 1,617 m to 4,478 m; the rail is decorative, hidden from assistive tech and hidden below 768 px. A skip link jumps past the ascent.
   3. Photo waypoints appear at their real positions and heights during the ascent, with the film-scan photo labelled approximate. An always-rendered list links to every photo. Two trail-sign links lead to Photographs and Engineering, and key stats read as a summit plaque.
   4. With reduced motion, Save-Data, no WebGL2, low device memory or a lost WebGL context, a static contour poster renders and every Home section shows its final readable state. The WebGL canvas renders on demand and pauses when scrolled off-screen.
   5. Mobile LCP and Home JavaScript size are no worse than the baseline recorded at the end of Phase 7.
