@@ -73,6 +73,8 @@ export interface Site {
     linkedin: string;
   };
   nav: readonly NavItem[];
+  /** Required: the swissALTIRegio source reference (D-15); removing it fails tsc. */
+  attribution: { terrain: string };
 }
 
 export interface ImageAnnotation {

@@ -110,7 +110,7 @@ UI audit (2026-10-10, before v2.0):
 - **Design**: Dark-only site (no light mode toggle needed) — enforced: no `dark:` variants, no OS-theme-dependent styling
 - **Design process**: All UI/UX work (specs, components, styling, layout, interaction, a11y) uses the `ui-ux-pro-max` skill — user requirement for v2.0
 - **Assets**: Elevation data, fonts and contour assets must be same-origin (committed to `/public` or generated at build) — nonce CSP in `proxy.ts`, no runtime tile fetches
-- **Attribution**: swisstopo data requires source attribution ("© swisstopo", height model swissALTIRegio — confirm exact string) in the footer
+- **Attribution**: swisstopo data requires source attribution in the footer. Shipped in 08-12 as `site.attribution.terrain` (required `string` in the `Site` type): the full verbatim swissALTIRegio "2025 and all subsequent versions" reference (Option A, Tim at 08-04), copied from the live product page on 2026-10-24, shown as "Contours derived from swissALTIRegio. " + the constant, with no "©" prefix
 - **Photo rights**: All rights reserved ("© {capture year} Tim Lui"); no download button; full-resolution originals never served publicly
 - **Location privacy**: Shipped photo coordinates rounded to 4 decimals (~10 m)
 

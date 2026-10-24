@@ -6,6 +6,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { render, screen, within } from '@testing-library/react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import SiteFooter from '../SiteFooter';
 import { terrain } from '@/data/generated/terrain';
 import { photos } from '@/data/generated/photos';
@@ -101,9 +102,7 @@ describe('SiteFooter sheet margin (D-15, D-18)', () => {
 
   it('prints the strip equidistance, the LV95 extent and the DEM edition from the terrain metadata', () => {
     const { footer } = renderFooter();
-    expect(dd(footer, 'Equidistance')).toHaveTextContent(formatEquidistance(terrain.contours.strip.intervalM), {
-      normalizeWhitespace: false,
-    });
+    expect(dd(footer, 'Equidistance').textContent).toBe(formatEquidistance(terrain.contours.strip.intervalM));
     const lines = Array.from(dd(footer, 'Extent (LV95)').children).map((line) => line.textContent);
     expect(lines).toEqual(formatExtentLines(terrain.extent.lv95));
     expect(dd(footer, 'Last surveyed')).toHaveTextContent(formatMonthYear(terrain.dem.edition));
@@ -126,8 +125,8 @@ describe('SiteFooter sheet margin (D-15, D-18)', () => {
     const variants = Array.from(dd(footer, 'Scale').children) as HTMLElement[];
     const classes = [
       ['flex', 'flex-col', 'lg:hidden'],
-      ['hidden', 'lg:flex', 'lg:flex-col', 'min-[1792px]:hidden'],
-      ['hidden', 'min-[1792px]:flex', 'min-[1792px]:flex-col'],
+      ['hidden', 'lg:flex', 'lg:flex-col', 'min-[112rem]:hidden'],
+      ['hidden', 'min-[112rem]:flex', 'min-[112rem]:flex-col'],
     ];
 
     expect(variants).toHaveLength(SCALE_TIERS.length);
@@ -136,13 +135,21 @@ describe('SiteFooter sheet margin (D-15, D-18)', () => {
       expect(variant).toHaveClass(...classes[i]);
       const bar = variant.querySelector('.h-2') as HTMLElement;
       expect(bar).toHaveClass('flex', 'border', 'border-ink-muted');
-      expect(bar.getAttribute('style')).toContain(
-        `calc(100cqw * ${scaleFraction(tier.lengthM, terrain.extent.widthM)})`
-      );
+      // jsdom folds calc(); the server markup below carries the literal expression.
+      const probe = document.createElement('div');
+      probe.style.width = `calc(100cqw * ${scaleFraction(tier.lengthM, terrain.extent.widthM)})`;
+      expect(bar.style.width).toBe(probe.style.width);
       const labels = variant.querySelector('[aria-hidden="true"]') as HTMLElement;
       expect(Array.from(labels.children).map((l) => l.textContent)).toEqual([...tier.labels]);
       expect(variant.querySelector('.sr-only')).toHaveTextContent(tier.srText);
     });
+  });
+
+  it('writes each bar width as calc(100cqw * L / extentWidthM) in the server markup', () => {
+    const markup = renderToStaticMarkup(<SiteFooter />);
+    for (const tier of SCALE_TIERS) {
+      expect(markup).toContain(`width:calc(100cqw * ${scaleFraction(tier.lengthM, terrain.extent.widthM)})`);
+    }
   });
 });
 
