@@ -52,7 +52,7 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 - [x] **DATA-05**: Full-resolution originals are no longer served publicly; served images are resized, correctly rotated and carry no GPS metadata, enforced by a CI scan
 - [x] **DATA-06**: Photo coordinates shipped to the browser are rounded to 4 decimals (~10 m)
 - [x] **DATA-07**: Project highlights use a typed schema per project instead of a generic record, and every risk example carries a numeric `riskScore`
-- [ ] **DATA-08**: The image pipeline emits a manifest that components use for image paths instead of hard-coded variant filenames
+- [x] **DATA-08**: The image pipeline emits a manifest that components use for image paths instead of hard-coded variant filenames
 
 ### Home
 
@@ -194,7 +194,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DATA-05 | Phase 8 | Complete |
 | DATA-06 | Phase 8 | Complete |
 | DATA-07 | Phase 8 | Complete |
-| DATA-08 | Phase 8 | Pending |
+| DATA-08 | Phase 8 | Complete |
 | HOME-01 | Phase 9 | Pending |
 | HOME-02 | Phase 9 | Pending |
 | HOME-03 | Phase 9 | Pending |
