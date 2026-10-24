@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 07
 current_phase_name: Foundation & Guardrails
 status: executing
-stopped_at: Completed 07-23-PLAN.md
-last_updated: "2026-10-23T23:28:03.493Z"
+stopped_at: Completed 07-24-PLAN.md
+last_updated: "2026-10-24T00:00:18.859Z"
 last_activity: 2026-10-23
 last_activity_desc: Phase 07 execution resumed (wave continue)
-state_head: b91df336db084c0c647a7fdb8ee3714f583f5ae3
+state_head: 587c6bcc09c71d95c5318474f9e8a49b686aa5bd
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 26
-  completed_plans: 23
-  percent: 88
+  completed_plans: 24
+  percent: 92
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-10)
 ## Current Position
 
 Phase: 07 (Foundation & Guardrails) — EXECUTING
-Plan: 24 of 26
+Plan: 25 of 26
 Status: Executing Phase 07
 Last activity: 2026-10-23 — Phase 07 execution resumed (wave continue)
 
-Progress: [█████████░] 88%
+Progress: [█████████░] 92%
 
 ## Performance Metrics
 
@@ -77,6 +77,7 @@ Progress: [█████████░] 88%
 | Phase 07 P21 | 9 min | 3 tasks | 9 files |
 | Phase 07 P22 | 1h 28m | 3 tasks | 47 files |
 | Phase 07 P23 | 1h 9m | 3 tasks | 15 files |
+| Phase 07 P24 | 20 min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -145,6 +146,7 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-22] e2e/shell.spec.ts (fbdbd1d, 17 tests, chromium + firefox green in CI run 40030195076): landmarks via toHaveCount(1) per route, skip link first Tab, aria-current, footer hrefs = site values, 768 header 64 px, mobile menu, reduced motion (getAnimations = 0). No-horizontal-scroll is asserted as scrollWidth <= clientWidth (07-12 stable gutter makes innerWidth wrong). SHELL-02 and DSGN-08 Complete (ready-ids); SHELL-01 waits for 07-23, SHELL-03 for 07-25
 - [Phase 07]: [07-23] 404 and error boundaries inside the shell (ecf7670 with Tim's 3-PNG not-found amend, af5434c RED, e1cbdc7 GREEN): app/not-found.tsx renders <SiteChrome><NotFoundBody /></SiteChrome> because Next 16.4.2's root not-found is wrapped only by the root layout; app/(site)/not-found.tsx renders <NotFoundBody /> for notFound() in the group; no redirects. /__no-such-page__, /gradient-mesh, /particle-buttons, /transitions and /projects/no-such-slug return 404 with no redirect and one nav/main (e2e 'Shell 404', 6 tests). ErrorBody {variant section|root, onRetry} never receives the error (T-07-31), focuses its h1 on mount; Try again calls retry() (reset unused, user-approved 2026-10-10); global-error has its own html.dark/body, globals.css and fonts, SiteChrome variant=static, no MotionProvider. CI run 40038984475 on d3ec816 green (E2E 116, 0 flaky). SHELL-01 and SHELL-05 Complete (ready-ids: both ready)
 - [Phase 07]: [07-23] Touch-target e2e measured inside an animated panel must wait until getAnimations() is empty (and assert none left) before measuring: the 07-22 mobile-menu row test read 47.99998 vs >= 48 mid-transition (flaky on Firefox and chromium; control 3/20 failed). Fixed test-only in 6a82527, threshold unchanged, 20/20 dev and PW_PROD
+- [Phase 07]: [07-24] Contact interim contrast fix (c9aac91, Tim's 3-PNG contact amend of 9e5a579): hero, form card and three info cards on solid bg-surface-raised border-line panels above the unchanged AnimatedGradientMesh (Phase 12 removes it); Phosphor Clock/EnvelopeSimple/MapPin in bg-surface-overlay tiles; Email card shows site.email (old2shatterhand@gmail.com) with wrap-anywhere and a <wbr> after '@'; FeedbackForm labels text-ink + aria-hidden text-danger asterisk, inputs bg-surface-overlay border-line-strong (border-danger when invalid), errors text-danger; required added to Name/Email/Message (noValidate keeps validation); Tim's 07-16 D1/D2 kept. e2e/a11y-contact.spec.ts (3 tests: dark, light, light with canvases hidden; empty-submit errors and mocked 500 failure box; asserts axe measured the key nodes) passes with zero color-contrast violations and no incomplete nodes. @axe-core/playwright 4.13.0 exact pin (axe-core deduped 4.11.2 -> 4.13.0 under eslint-plugin-jsx-a11y). contact/{375,768,1440} re-baselined (+46/+86/+62 px); CI run 40041886574 green (E2E 122, 0 flaky). SHELL-06 Complete (ready-ids: ready)
 
 ### Pending Todos
 
@@ -164,7 +166,7 @@ Recent decisions affecting current work:
 - [Phase 11, from 07-13] Roadmap card header overflows at narrow widths: at 375px the RoadmapTimeline "Target Release" pill and its label cross the card's right border by up to ~7px (CI render; 0.8-5.1px on 5 of 6 Medium cards without the CI gutter), after the 20px 7e icons grew the badges to 144.5x32. Tim accepted it for now (07-13 option A); the Phase 11 route-log roadmap redesign must fix the card header so the release block cannot overflow at narrow widths
 - [Phase 7, from 07-14, updated by 07-15 and 07-16; RESOLVED by 07-20: the contrast guard measures danger/surface-overlay 6.18:1 and line-strong/surface-overlay 4.17:1, and 07-19 fixed the offline items] (07-16: the FeedbackForm error text and input borders below are now text-danger and border-line-strong on bg-surface-overlay; their ratios were not re-measured, so the 07-20 contrast guard must confirm them.) Stock dark values now reach every visitor, not only dark-OS ones (since 07-15 collapsed as plain classes, e.g. text-gray-400 on bg-gray-800), and the contrast guard is not active until 07-20. Measured failures to fix in 07-16..07-20: FeedbackForm error text-red-600 on the dark card ~3.2:1 (needs 4.5:1), FeedbackForm input borders border-gray-600 on bg-gray-800 ~1.9:1 (needs 3:1 non-text), app/offline/page.tsx:61 text-gray-500 small text on the gray-900/800 gradient ~3.6:1 (offline:15 icon text-gray-600 ~2.3:1 is fine only if decorative). The FeedbackForm placeholder/autofill part is RESOLVED by 07-15: the light base classes are gone and the inputs have no placeholder class, so the browser default under color-scheme: dark applies
 - [Phase 7, from 07-15, for 07-20; RESOLVED by 07-20 (9656640): `@source not` for ../.planning, ../.claude, ../graphify-out and ../scripts; compiled CSS now has 0 dark and 0 stock selectors] Add `@source not` for `.planning` and `.claude` in app/globals.css before any compiled-CSS guard: Tailwind v4 source detection reads tracked Markdown (.planning/milestones/v1.0-phases/04-design-components/04-03-PLAN.md, 04-05-PLAN.md, 04-RESEARCH.md, .claude/skills/ui-styling/references/shadcn-theming.md), so the compiled CSS (.next/static/chunks/*.css) still has 41 phantom :where(.dark,.dark *) selectors (e.g. dark:scale-0, dark:-rotate-90, dark:group-hover:text-cyan-400) and dead stock classes (07-09's .to-amber-500) that no code uses. No visual effect, but a palette or dark: guard over the compiled CSS would count them
-- [Phase 7, from 07-16, for 07-24] app/contact/page.tsx:67/93/119 keep hue-coloured hover glows as inline motion props (whileHover boxShadow rgba(6,182,212,0.3), rgba(59,130,246,0.3), rgba(168,85,247,0.3)); they are not classes, so the stock-palette grep and a class-based palette guard miss them. Move them to tokens or drop them in the 07-24 Contact interim restyle
+- [Phase 7, from 07-16, for 07-24; RESOLVED by 07-24 (c9aac91): Contact page.tsx has no whileHover, rgba(, rotate, shadow-* or backdrop-blur left; the info cards are solid panels with no hover glow] app/contact/page.tsx:67/93/119 keep hue-coloured hover glows as inline motion props (whileHover boxShadow rgba(6,182,212,0.3), rgba(59,130,246,0.3), rgba(168,85,247,0.3)); they are not classes, so the stock-palette grep and a class-based palette guard miss them. Move them to tokens or drop them in the 07-24 Contact interim restyle
 - [Phase 9/12, from 07-18] Colours the class grep cannot see stay in the Projects group: components/HologramTerminal.tsx keeps Three.js material/light hex (L26-330) and a <style jsx global> block with rgba/hex (L368-486, incl. the .hologram-content navy panel the terminal demo text sits on), out of scope until Phase 9 (UI-SPEC v2-only rule); a class-based palette guard misses them. components/ProjectDetailClient.tsx still uses 4 v1 aliases (snow-50, alpine-800, alpine-600, snow-100; count unchanged 4 -> 4), which must move to semantic tokens before the v1 alias layer is removed in Phase 12
 - [Phase 10, from 07-19, unverified] During the local e2e/photos.spec.ts run the dev server logged three deprecation warnings and a React 'removeChild ... not a child' console error on the /photos grid/3D toggle; the tests pass. Class-string edits cannot cause a DOM removal error, so it very likely predates 07-19, but it was not checked at HEAD~1 and CI E2E logs do not capture the browser console. Reproduce and fix in the Phase 10 photos/lightbox rework. Also for Phase 10: components/ImageDetailModal.tsx L46/L60 use Tailwind v3 bg-opacity-* classes that Tailwind 4.3 does not generate, so the modal backdrop and close button render fully opaque (pre-existing); components/PhotoCarousel3D.tsx keeps Three.js inline hex (L75, L215, L264, L265, L268 fog) and the v1 alias text-snow-200 (L183)
 - [Phase 9, from 07-22] Home overflows horizontally before its v1 whileInView animations fire: a 'Programming Projects' card starts at initial x: 50, so unsettled scrollWidth is 399 at 375 px and 784 at 768 px (passes only after settling). Real for visitors who have not scrolled yet; the Phase 9 Home rebuild must not translate content past the viewport edge (or clip it)
@@ -180,6 +182,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-23T23:28:03.453Z
-Stopped at: Completed 07-23-PLAN.md
+Last session: 2026-10-24T00:00:18.823Z
+Stopped at: Completed 07-24-PLAN.md
 Resume file: None

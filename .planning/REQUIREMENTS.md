@@ -41,7 +41,7 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 - [ ] **SHELL-03**: The site shows Tim Lui's real name, role line and real GitHub, LinkedIn and email links everywhere; no placeholder text or links remain
 - [ ] **SHELL-04**: The footer is a map legend with contour art, a scale bar and swisstopo attribution
 - [x] **SHELL-05**: `/gradient-mesh`, `/particle-buttons` and `/transitions` are removed and resolve to the designed 404, and no page links to them
-- [ ] **SHELL-06**: The Contact heading and form fields meet WCAG AA contrast for every visitor (interim fix ahead of the Contact redesign)
+- [x] **SHELL-06**: The Contact heading and form fields meet WCAG AA contrast for every visitor (interim fix ahead of the Contact redesign)
 
 ### Data & Terrain
 
@@ -186,7 +186,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SHELL-03 | Phase 7 | Pending |
 | SHELL-04 | Phase 8 | Pending |
 | SHELL-05 | Phase 7 | Complete |
-| SHELL-06 | Phase 7 | Pending |
+| SHELL-06 | Phase 7 | Complete |
 | DATA-01 | Phase 8 | Pending |
 | DATA-02 | Phase 8 | Pending |
 | DATA-03 | Phase 8 | Pending |
