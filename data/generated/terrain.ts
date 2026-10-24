@@ -24,6 +24,14 @@ export const terrain = {
     "mobile": 256
   },
   "contours": {
+    "hero": {
+      "intervalM": 100,
+      "indexEvery": 5
+    },
+    "map": {
+      "intervalM": 50,
+      "indexEvery": 5
+    },
     "strip": {
       "intervalM": 100,
       "indexEvery": 5,
@@ -50,7 +58,13 @@ export const terrain = {
     }
   },
   "assets": {
+    "heightmap": {
+      "256": "/terrain/heightmap-256.f792a8921f.png",
+      "512": "/terrain/heightmap-512.548be40405.png"
+    },
     "contours": {
+      "hero": "/terrain/contours-hero.2f3a04accc.svg",
+      "map": "/terrain/contours-map.f78bc9a25c.svg",
       "strip": "/terrain/contours-strip.e1af353f82.svg"
     }
   }

@@ -7,28 +7,40 @@
  * and Vercel never touch the network (T-08-09).
  *
  * One coordinate contract (D-14): every artifact derives from the one extent in
- * source.json. The strip bbox comes from `stripBbox(extent, summit northing)`,
- * never from a second constant.
+ * source.json. The heightmaps and the hero/map LODs cover that extent exactly;
+ * the strip bbox comes from `stripBbox(extent, summit northing)`, never from a
+ * second constant.
  *
  * Pipeline:
  *   source PNG (16-bit grey, sha256 verified against source.json, T-08-10)
- *     -> metres (Float64Array, row 0 = north)
- *     -> strip: native-grid row window through the summit (5:1), 100 m contours
- *     -> summit DEM sample (bilinear at pixel centres) and UV
+ *     -> metres (Float64Array, 1100 x 1100, row 0 = north)
+ *     -> heightmap-512 / heightmap-256: resampleBilinear (our code, not sharp),
+ *        stored in the source unit (decimetres, heightScale 0.1) as grey16 PNG
+ *     -> contours-hero (512 grid, 100 m) and contours-map (512 grid, 50 m)
+ *     -> contours-strip: native-grid row window through the summit (5:1), 100 m
+ *     -> summit DEM sample (bilinear at pixel centres on the native grid) and UV
  *     -> data/generated/terrain.ts (scalars and hashed URLs only)
  *
  * Contours: d3-contour rings -> open runs (no segment along the raster border,
  * RESEARCH Pitfall 1) -> simplify-js (1 px, high quality) -> half-pixel rounding
  * -> split again, because rounding can move a point onto the border -> contourSvg.
+ * Every 5th interval is an index contour.
  *
  * File names are `<name>.<first 10 hex of sha256(bytes)>.<ext>`.
  *
+ * --check by artifact type (RESEARCH Pattern 3):
+ *   SVG and terrain.ts   regenerated in memory and compared byte for byte.
+ *   heightmap PNG        the name's hash must equal sha256 of the committed bytes,
+ *                        and the decoded pixels must equal the regenerated array
+ *                        (deflate bytes may differ across platforms, pixels may not).
+ *   source raster        sha256 equals source.json.
+ *   public/terrain/      missing or extra managed files (contours-*.svg,
+ *                        heightmap-*.png) are reported.
+ *
  * Modes:
- *   (default)  write every artifact and delete stale managed files
- *              (contours-*.svg, heightmap-*.png) in public/terrain/.
- *   --check    regenerate in memory and compare: SVG and terrain.ts bytes, the
- *              source sha256, and missing or extra managed files. One line per
- *              problem, then `terrain: OK` or `terrain: N stale` (exit 1).
+ *   (default)  write every artifact and delete stale managed files. A committed
+ *              heightmap whose hash and pixels already match is kept as is.
+ *   --check    one line per problem, then `terrain: OK` or `terrain: N stale` (exit 1).
  *
  * Usage:
  *   npm run terrain:build               (write)
@@ -44,7 +56,7 @@ import simplify from 'simplify-js';
 import sharp from 'sharp';
 import { lv95ToUv, round4, stripBbox } from '../../lib/geo.ts';
 import { contourSvg, isIndexLevel, openRuns, runToPath } from '../../lib/terrain/contour-paths.ts';
-import { sampleAtLv95 } from '../../lib/terrain/dem-sample.ts';
+import { resampleBilinear, sampleAtLv95 } from '../../lib/terrain/dem-sample.ts';
 import { TerrainMeta, TerrainSource } from '../../data/schemas/terrain.ts';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -66,11 +78,25 @@ const SUMMIT = {
   lv95: { e: 2617049, n: 1091673 },
 };
 
-/** UI-SPEC "Contour band": 100 m, every 5th line an index contour. */
+/** Heightmap grid sizes (desktop, mobile). */
+const GRIDS = { desktop: 512, mobile: 256 };
+/** Contour LODs (RESEARCH "Measured LOD sizes"; UI-SPEC "Contour band"). */
+const HERO = { intervalM: 100, indexEvery: 5 };
+const MAP = { intervalM: 50, indexEvery: 5 };
 const STRIP = { intervalM: 100, indexEvery: 5, ratio: 5 };
 
 const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex');
 const hashedName = (base, ext, bytes) => `${base}.${sha256(bytes).slice(0, 10)}.${ext}`;
+
+/** 16-bit grey PNG bytes -> Uint16Array, or null when the shape is not size x size x 1. */
+async function decodeGrey16(png, width, height) {
+  const { data, info } = await sharp(png)
+    .toColourspace('grey16')
+    .raw({ depth: 'ushort' })
+    .toBuffer({ resolveWithObject: true });
+  if (info.width !== width || info.height !== height || info.channels !== 1) return null;
+  return new Uint16Array(data.buffer.slice(data.byteOffset, data.byteOffset + data.length));
+}
 
 /** Read source.json + PNG, verify the sha256, decode to metres. */
 async function loadSource() {
@@ -84,16 +110,8 @@ async function loadSource() {
       error: `stale data/terrain/source/${source.file} (sha256 ${actual.slice(0, 10)} != source.json ${source.sha256.slice(0, 10)})`,
     };
   }
-  const { data, info } = await sharp(png)
-    .toColourspace('grey16')
-    .raw({ depth: 'ushort' })
-    .toBuffer({ resolveWithObject: true });
-  if (info.width !== source.width || info.height !== source.height || info.channels !== 1) {
-    throw new Error(
-      `source PNG is ${info.width} x ${info.height} x ${info.channels}, expected ${source.width} x ${source.height} x 1`
-    );
-  }
-  const u16 = new Uint16Array(data.buffer.slice(data.byteOffset, data.byteOffset + data.length));
+  const u16 = await decodeGrey16(png, source.width, source.height);
+  if (!u16) throw new Error(`source PNG is not ${source.width} x ${source.height} grey16`);
   const metres = Float64Array.from(u16, (v) => v * source.heightScale);
   return { source, metres };
 }
@@ -138,7 +156,7 @@ function ringPaths(ring, W, H) {
 }
 
 /** Contour SVG text for a row-major W x H metres grid. */
-function contourText(grid, W, H, intervalM, indexEvery) {
+function contourText(grid, W, H, { intervalM, indexEvery }) {
   const paths = [];
   for (const mp of contours().size([W, H]).thresholds(levelsFor(grid, intervalM))(grid)) {
     let d = '';
@@ -160,19 +178,82 @@ function rowWindow(metres, source, bbox) {
   return { grid: metres.subarray(r0 * width, r1 * width), W: width, H: r1 - r0 };
 }
 
-/** Every artifact as { rel, text|bytes } plus the terrain.ts text, all in memory. */
-function buildAll(source, metres) {
-  const { extent } = source;
-  const assets = [];
+/** Metres -> the source unit (decimetres at heightScale 0.1) as a Uint16Array. */
+function toUnit(grid, heightScale) {
+  const k = Math.round(1 / heightScale);
+  const out = new Uint16Array(grid.length);
+  for (let i = 0; i < grid.length; i++) {
+    const v = Math.round(grid[i] * k);
+    if (v < 0 || v > 65535) throw new Error(`height ${grid[i]} m does not fit 16 bits`);
+    out[i] = v;
+  }
+  return out;
+}
 
+async function encodeGrey16(u16, size) {
+  // Pass the Uint16Array itself: a Buffer with raw depth 'ushort' corrupts silently (STACK.md §4).
+  return sharp(u16, { raw: { width: size, height: size, channels: 1 } })
+    .toColourspace('grey16')
+    .png({ compressionLevel: 9, adaptiveFiltering: true })
+    .toBuffer();
+}
+
+/**
+ * The heightmap for `size`: the committed file when its name hash matches its
+ * bytes and its pixels equal `u16`, else a fresh encoding. `problems` lists each
+ * committed candidate that failed, with the reason.
+ */
+async function resolveHeightmap(size, u16) {
+  const base = `heightmap-${size}`;
+  const re = new RegExp(`^${base}\\.([0-9a-f]{10})\\.png$`);
+  const problems = [];
+  for (const f of managedFiles().filter((n) => re.test(n))) {
+    const bytes = fs.readFileSync(path.join(PUBLIC_DIR, f));
+    if (sha256(bytes).slice(0, 10) !== re.exec(f)[1]) {
+      problems.push({ file: f, reason: 'sha256 of the bytes does not match the name' });
+      continue;
+    }
+    const px = await decodeGrey16(bytes, size, size);
+    if (!px || px.length !== u16.length || px.some((v, i) => v !== u16[i])) {
+      problems.push({ file: f, reason: 'pixels differ from a fresh build' });
+      continue;
+    }
+    return { name: f, committed: true, problems };
+  }
+  const bytes = await encodeGrey16(u16, size);
+  return { name: hashedName(base, 'png', bytes), bytes, committed: false, problems };
+}
+
+/** Every artifact plus the terrain.ts text, all in memory. */
+async function buildAll(source, metres) {
+  const { extent, width: W, height: H } = source;
+  const svgs = [];
+  const pngs = [];
+
+  // Heightmaps and the 512 grid the hero/map LODs are contoured on.
+  const grid512 = Float64Array.from(resampleBilinear(metres, W, H, GRIDS.desktop, GRIDS.desktop));
+  const grid256 = Float64Array.from(resampleBilinear(metres, W, H, GRIDS.mobile, GRIDS.mobile));
+  for (const [size, grid] of [
+    [GRIDS.desktop, grid512],
+    [GRIDS.mobile, grid256],
+  ]) {
+    pngs.push({ size, ...(await resolveHeightmap(size, toUnit(grid, source.heightScale))) });
+  }
+
+  const lod = (base, text) => {
+    const name = hashedName(base, 'svg', text);
+    svgs.push({ name, text });
+    return `/terrain/${name}`;
+  };
+  const heroUrl = lod('contours-hero', contourText(grid512, GRIDS.desktop, GRIDS.desktop, HERO));
+  const mapUrl = lod('contours-map', contourText(grid512, GRIDS.desktop, GRIDS.desktop, MAP));
   const strip = stripBbox(extent, SUMMIT.lv95.n, STRIP.ratio);
   const sw = rowWindow(metres, source, strip);
-  const stripSvg = contourText(sw.grid, sw.W, sw.H, STRIP.intervalM, STRIP.indexEvery);
-  const stripName = hashedName('contours-strip', 'svg', stripSvg);
-  assets.push({ name: stripName, text: stripSvg });
+  const stripUrl = lod('contours-strip', contourText(sw.grid, sw.W, sw.H, STRIP));
 
-  const demM = Math.round(sampleAtLv95(metres, source.width, source.height, extent, SUMMIT.lv95));
+  const demM = Math.round(sampleAtLv95(metres, W, H, extent, SUMMIT.lv95));
   const uv = lv95ToUv(SUMMIT.lv95, extent);
+  const pngUrl = (size) => `/terrain/${pngs.find((p) => p.size === size).name}`;
 
   const meta = TerrainMeta.parse({
     crs: source.crs,
@@ -188,13 +269,16 @@ function buildAll(source, metres) {
       heightScale: source.heightScale,
       cellM: source.cellM,
     },
-    grids: { desktop: 512, mobile: 256 },
+    grids: GRIDS,
     contours: {
+      hero: HERO,
+      map: MAP,
       strip: { intervalM: STRIP.intervalM, indexEvery: STRIP.indexEvery, lv95: strip },
     },
     summit: { ...SUMMIT, demM, uv: { u: round4(uv.u), v: round4(uv.v) } },
     assets: {
-      contours: { strip: `/terrain/${stripName}` },
+      heightmap: { 512: pngUrl(GRIDS.desktop), 256: pngUrl(GRIDS.mobile) },
+      contours: { hero: heroUrl, map: mapUrl, strip: stripUrl },
     },
   });
 
@@ -202,7 +286,7 @@ function buildAll(source, metres) {
     '// AUTO-GENERATED by scripts/terrain/build-terrain.mjs from data/terrain/source/. Do not edit.\n' +
     '// Scalars and content-hashed URLs only: no imports, no path data (client-safe, T-08-12).\n' +
     `export const terrain = ${JSON.stringify(meta, null, 2)} as const;\n`;
-  return { assets, metaText };
+  return { svgs, pngs, metaText };
 }
 
 function managedFiles() {
@@ -216,10 +300,21 @@ function managedFiles() {
 async function write() {
   const loaded = await loadSource();
   if (loaded.error) throw new Error(`${loaded.error}; re-run npm run terrain:fetch`);
-  const { assets, metaText } = buildAll(loaded.source, loaded.metres);
+  const { svgs, pngs, metaText } = await buildAll(loaded.source, loaded.metres);
   fs.mkdirSync(PUBLIC_DIR, { recursive: true });
-  const keep = new Set(assets.map((a) => a.name));
-  for (const a of assets) fs.writeFileSync(path.join(PUBLIC_DIR, a.name), a.text, 'utf8');
+  for (const s of svgs) {
+    fs.writeFileSync(path.join(PUBLIC_DIR, s.name), s.text, 'utf8');
+    console.log(`${NAME}: wrote ${PUBLIC_REL}/${s.name} (${Buffer.byteLength(s.text)} bytes)`);
+  }
+  for (const p of pngs) {
+    if (p.committed) {
+      console.log(`${NAME}: kept ${PUBLIC_REL}/${p.name} (hash and pixels match)`);
+      continue;
+    }
+    fs.writeFileSync(path.join(PUBLIC_DIR, p.name), p.bytes);
+    console.log(`${NAME}: wrote ${PUBLIC_REL}/${p.name} (${p.bytes.length} bytes)`);
+  }
+  const keep = new Set([...svgs, ...pngs].map((a) => a.name));
   for (const f of managedFiles()) {
     if (!keep.has(f)) {
       fs.unlinkSync(path.join(PUBLIC_DIR, f));
@@ -228,8 +323,6 @@ async function write() {
   }
   fs.mkdirSync(path.dirname(META_PATH), { recursive: true });
   fs.writeFileSync(META_PATH, metaText, 'utf8');
-  for (const a of assets)
-    console.log(`${NAME}: wrote ${PUBLIC_REL}/${a.name} (${Buffer.byteLength(a.text)} bytes)`);
   console.log(`${NAME}: wrote ${META_REL} (${Buffer.byteLength(metaText)} bytes)`);
   console.log(`${NAME}: OK`);
 }
@@ -242,16 +335,25 @@ async function check() {
     console.log(`${NAME}: 1 stale`);
     process.exit(1);
   }
-  const { assets, metaText } = buildAll(loaded.source, loaded.metres);
-  const expected = new Set(assets.map((a) => a.name));
-  for (const a of assets) {
-    const p = path.join(PUBLIC_DIR, a.name);
-    if (!fs.existsSync(p)) lines.push(`${NAME}: missing ${PUBLIC_REL}/${a.name}`);
-    else if (fs.readFileSync(p, 'utf8') !== a.text)
-      lines.push(`${NAME}: stale ${PUBLIC_REL}/${a.name} (bytes differ from a fresh build)`);
+  const { svgs, pngs, metaText } = await buildAll(loaded.source, loaded.metres);
+  const expected = new Set([...svgs, ...pngs].map((a) => a.name));
+  const reported = new Set();
+  for (const s of svgs) {
+    const p = path.join(PUBLIC_DIR, s.name);
+    if (!fs.existsSync(p)) lines.push(`${NAME}: missing ${PUBLIC_REL}/${s.name}`);
+    else if (fs.readFileSync(p, 'utf8') !== s.text)
+      lines.push(`${NAME}: stale ${PUBLIC_REL}/${s.name} (bytes differ from a fresh build)`);
+  }
+  for (const p of pngs) {
+    for (const bad of p.problems) {
+      lines.push(`${NAME}: stale ${PUBLIC_REL}/${bad.file} (${bad.reason})`);
+      reported.add(bad.file);
+    }
+    if (!p.committed && p.problems.length === 0)
+      lines.push(`${NAME}: missing ${PUBLIC_REL}/${p.name}`);
   }
   for (const f of managedFiles()) {
-    if (!expected.has(f)) lines.push(`${NAME}: extra ${PUBLIC_REL}/${f}`);
+    if (!expected.has(f) && !reported.has(f)) lines.push(`${NAME}: extra ${PUBLIC_REL}/${f}`);
   }
   if (!fs.existsSync(META_PATH)) lines.push(`${NAME}: missing ${META_REL}`);
   else if (fs.readFileSync(META_PATH, 'utf8') !== metaText)

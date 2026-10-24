@@ -97,6 +97,8 @@ export const TerrainMeta = z.strictObject({
   }),
   grids: z.strictObject({ desktop: z.literal(512), mobile: z.literal(256) }),
   contours: z.strictObject({
+    hero: Lod,
+    map: Lod,
     strip: Lod.extend({ lv95: Lv95Bbox }),
   }),
   summit: z.strictObject({
@@ -110,7 +112,13 @@ export const TerrainMeta = z.strictObject({
     uv: z.strictObject({ u: z.number().min(0).max(1), v: z.number().min(0).max(1) }),
   }),
   assets: z.strictObject({
-    contours: z.strictObject({ strip: TerrainAssetUrl }),
+    /** 16-bit grey PNG in the source unit (dem.heightScale), keyed by grid size. */
+    heightmap: z.strictObject({ 512: TerrainAssetUrl, 256: TerrainAssetUrl }),
+    contours: z.strictObject({
+      hero: TerrainAssetUrl,
+      map: TerrainAssetUrl,
+      strip: TerrainAssetUrl,
+    }),
   }),
 });
 export type TerrainMeta = z.infer<typeof TerrainMeta>;
