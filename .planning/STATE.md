@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 08
 current_phase_name: Data & Terrain Pipeline
 status: executing
-stopped_at: Completed 08-12-PLAN.md
-last_updated: "2026-10-24T19:38:32.197Z"
+stopped_at: Completed 08-13-PLAN.md
+last_updated: "2026-10-24T20:03:55.173Z"
 last_activity: 2026-10-24
-last_activity_desc: Completed 08-12 (footer map-sheet margin: contour band, ticks, true scale bar, attribution; DATA-04); Wave 8 done, next 08-13
-state_head: e04ca50c2902b570784752dbe923ad1bce8a7261
+last_activity_desc: "Completed 08-13 (all-route footer re-baseline by Tim, CI deterministic on 88191d0, test-count ratchet 533; SHELL-04); all 13 Phase 8 plans summarized, awaiting phase verification"
+state_head: 61e2dd5ccaff4e88a7e2faf8e0b6b1d083db13a2
 progress:
   total_phases: 6
   completed_phases: 7
   total_plans: 40
-  completed_plans: 39
-  percent: 98
+  completed_plans: 40
+  percent: 100
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-24)
 ## Current Position
 
 Phase: 08 (Data & Terrain Pipeline) — EXECUTING
-Plan: 12 of 13 done (08-01..08-12); Wave 8 complete, next is 08-13 (Wave 9)
-Status: Ready to execute 08-13 (all-route visual re-baseline for the new footer, SHELL-04)
-Last activity: 2026-10-24 — Completed 08-12 (footer band + ticks + sheet margin with true scale bar; site.attribution.terrain verbatim from the live page; 4 commits 3a40caf..c2e42f9; DATA-04 complete, SHELL-04 waits on 08-13)
+Plan: 13 of 13 done (08-01..08-13); all Phase 8 plans summarized
+Status: Awaiting phase verification (orchestrator); phase.complete not yet run
+Last activity: 2026-10-24 — Completed 08-13 (Tim's all-route footer re-baseline 88191d0; CI green twice on that SHA, run 40127078488 attempts 1 and 2; test-count ratchet 206 -> 533 in 74653dd; SHELL-04 complete; Firefox stroke check not reported, carried to Phase 12)
 
-Progress: [█████████░] 98% (1 of 6 v2.0 phases; 27/27 planned plans done)
+Progress: [██████████] 100% (1 of 6 v2.0 phases; 27/27 planned plans done)
 
 ## Performance Metrics
 
@@ -93,6 +93,7 @@ Progress: [█████████░] 98% (1 of 6 v2.0 phases; 27/27 planne
 | Phase 08 P10 | 15 min | 3 tasks | 7 files |
 | Phase 08 P11 | 47 min | 2 tasks | 4 files |
 | Phase 08 P12 | 14 min | 3 tasks | 11 files |
+| Phase 08 P13 | 26 min | 2 tasks | 28 files |
 
 ## Accumulated Context
 
@@ -196,11 +197,14 @@ Recent decisions affecting current work:
 - [Phase 08]: 08-11: Tim committed the photos PNGs as downloaded (c0f2418, reply 'pushed'), option A by action; the GalleryGrid '1 hotspots' plural is deferred to the Phase 10 grid rebuild
 - [Phase 08]: 08-12: footer attribution is site.attribution.terrain, the verbatim swissALTIRegio 2025+ reference re-copied from the live page on 2026-10-24 (equal to the UI-SPEC transcription), Option A, no copyright sign
 - [Phase 08]: 08-12: scale-bar tier beyond lg is written min-[112rem]: (1792 px); Tailwind emits px arbitrary min-width variants before lg:, which showed two tiers at once
+- [Phase 08]: 08-13: Tim accepted the footer baselines by committing them (88191d0, literal reply: pushed); no review notes given, recorded as accepted by commit
+- [Phase 08]: 08-13: test-count ratchet raised at Phase 8 close to jest 416 / e2e 117 / total 533 (from 107/99/206), commit 88191d0
 
 ### Pending Todos
 
 - Legacy image variants (-thumb/-medium/-large) are still live in `data/landscapes.ts`. Delete them in Phase 12 (VERIFY-01), only after the Phase 8 manifest exists and Phase 10 has migrated the consumers.
 - [Phase 10, from 08-11] The /photos grid badge reads "1 hotspots": `components/GalleryGrid.tsx:60` always prints `{n} hotspots` and `components/__tests__/GalleryGrid.test.tsx:83` asserts the literal '1 hotspots'. Two photos have one hotspot since the 08-10 copy, so the photos/* baselines (c0f2418) show it. Tim committed those baselines as-is (option A by action), so fix the plural, update the test and re-baseline photos/* in the Phase 10 GalleryGrid rebuild.
+- [Phase 12, from 08-13] Firefox 1 px stroke check for the footer contour band (08-13 Task 1 step 6, RESEARCH A2) was NOT reported by Tim (his only reply was "pushed"). Open the local production build (`npm run build && npm run start`, then `git checkout -- public/service-worker.js`) in Firefox (and Safari if available) and record whether the band's lines read as 1 px strokes; carry any difference into the Phase 12 cross-browser pass.
 - [Phase 7, from 07-11] Open item for Tim: `next dev` created an untracked `AGENTS.md` at the repo root. It is left untracked; Tim decides whether to keep and commit it, gitignore it, or delete it.
 
 ### Blockers/Concerns
@@ -231,6 +235,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-24T19:38:32.015Z
-Stopped at: Completed 08-12-PLAN.md
+Last session: 2026-10-24T20:03:54.956Z
+Stopped at: Completed 08-13-PLAN.md
 Resume file: None
