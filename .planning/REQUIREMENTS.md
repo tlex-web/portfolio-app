@@ -48,7 +48,7 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 - [x] **DATA-01**: A build script turns swissALTIRegio elevation data for the Zermatt–Matterhorn area into a 16-bit heightmap (512² desktop, 256² mobile) and a contour SVG, committed with content-hashed filenames
 - [x] **DATA-02**: A build script extracts EXIF (capture date and time, camera, lens, focal length, aperture, shutter, ISO, GPS) from the originals into typed, committed photo data, and CI fails when that data is stale
 - [x] **DATA-03**: Photo content is accurate: capture dates come from EXIF (Europe/Zurich), the waterfall location is confirmed by Tim, annotation altitudes agree with GPS, year tags are fixed and near-duplicate stories are rewritten
-- [ ] **DATA-04**: The film-scan photo without GPS has a hand-placed position that is flagged as approximate wherever it is shown
+- [x] **DATA-04**: The film-scan photo without GPS has a hand-placed position that is flagged as approximate wherever it is shown
 - [x] **DATA-05**: Full-resolution originals are no longer served publicly; served images are resized, correctly rotated and carry no GPS metadata, enforced by a CI scan
 - [x] **DATA-06**: Photo coordinates shipped to the browser are rounded to 4 decimals (~10 m)
 - [x] **DATA-07**: Project highlights use a typed schema per project instead of a generic record, and every risk example carries a numeric `riskScore`
@@ -190,7 +190,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DATA-01 | Phase 8 | Complete |
 | DATA-02 | Phase 8 | Complete |
 | DATA-03 | Phase 8 | Complete |
-| DATA-04 | Phase 8 | Pending |
+| DATA-04 | Phase 8 | Complete |
 | DATA-05 | Phase 8 | Complete |
 | DATA-06 | Phase 8 | Complete |
 | DATA-07 | Phase 8 | Complete |

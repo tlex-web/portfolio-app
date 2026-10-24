@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 08
 current_phase_name: Data & Terrain Pipeline
 status: executing
-stopped_at: Completed 08-11-PLAN.md
-last_updated: "2026-10-24T19:20:10.728Z"
+stopped_at: Completed 08-12-PLAN.md
+last_updated: "2026-10-24T19:38:32.197Z"
 last_activity: 2026-10-24
-last_activity_desc: Completed 08-11 (Tim's copy approval recorded, photos baselines re-baselined by Tim, CI green; DATA-03); Wave 7 done, next 08-12
-state_head: aa1e9bcdf83de592be4650546bd6117d1fbb6db3
+last_activity_desc: Completed 08-12 (footer map-sheet margin: contour band, ticks, true scale bar, attribution; DATA-04); Wave 8 done, next 08-13
+state_head: e04ca50c2902b570784752dbe923ad1bce8a7261
 progress:
   total_phases: 6
   completed_phases: 7
   total_plans: 40
-  completed_plans: 38
-  percent: 95
+  completed_plans: 39
+  percent: 98
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-24)
 ## Current Position
 
 Phase: 08 (Data & Terrain Pipeline) — EXECUTING
-Plan: 11 of 13 done (08-01..08-11); Wave 7 complete, next is 08-12 (Wave 8)
-Status: Ready to execute 08-12 (footer map-sheet margin, SHELL-04)
-Last activity: 2026-10-24 — Completed 08-11 (Tim's 08-10 approval recorded in editorial.ts; Tim re-baselined photos/{375,768,1440} in c0f2418; CI run 40124210374 green on ci/08-11; DATA-03 complete, DATA-04 waits on a sibling plan)
+Plan: 12 of 13 done (08-01..08-12); Wave 8 complete, next is 08-13 (Wave 9)
+Status: Ready to execute 08-13 (all-route visual re-baseline for the new footer, SHELL-04)
+Last activity: 2026-10-24 — Completed 08-12 (footer band + ticks + sheet margin with true scale bar; site.attribution.terrain verbatim from the live page; 4 commits 3a40caf..c2e42f9; DATA-04 complete, SHELL-04 waits on 08-13)
 
-Progress: [█████████░] 95% (1 of 6 v2.0 phases; 27/27 planned plans done)
+Progress: [█████████░] 98% (1 of 6 v2.0 phases; 27/27 planned plans done)
 
 ## Performance Metrics
 
@@ -92,6 +92,7 @@ Progress: [█████████░] 95% (1 of 6 v2.0 phases; 27/27 planne
 | Phase 08 P09 | 1h 8m | 3 tasks | 30 files |
 | Phase 08 P10 | 15 min | 3 tasks | 7 files |
 | Phase 08 P11 | 47 min | 2 tasks | 4 files |
+| Phase 08 P12 | 14 min | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -193,6 +194,8 @@ Recent decisions affecting current work:
 - [Phase 08]: [08-10] Seasons are meteorological (Sep 2021 = autumn); Riffelsee pin 45.9837 N 7.7623 E, radius 100 m, approximate, DEM 2,760 m (north shore); data/landscapes.ts is a bridge over photos.ts + editorial.ts + imageManifest (no image-path literals) and the modal shows the preformatted captureLabel ('2019', never a locale date)
 - [Phase 08]: 08-11: Tim's 08-10 reply was 'approve', so editorial.ts only gained the decision line; no copy, slug, pin or season edits and no photos.ts regeneration
 - [Phase 08]: 08-11: Tim committed the photos PNGs as downloaded (c0f2418, reply 'pushed'), option A by action; the GalleryGrid '1 hotspots' plural is deferred to the Phase 10 grid rebuild
+- [Phase 08]: 08-12: footer attribution is site.attribution.terrain, the verbatim swissALTIRegio 2025+ reference re-copied from the live page on 2026-10-24 (equal to the UI-SPEC transcription), Option A, no copyright sign
+- [Phase 08]: 08-12: scale-bar tier beyond lg is written min-[112rem]: (1792 px); Tailwind emits px arbitrary min-width variants before lg:, which showed two tiers at once
 
 ### Pending Todos
 
@@ -228,6 +231,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-24T19:20:10.571Z
-Stopped at: Completed 08-11-PLAN.md
+Last session: 2026-10-24T19:38:32.015Z
+Stopped at: Completed 08-12-PLAN.md
 Resume file: None
