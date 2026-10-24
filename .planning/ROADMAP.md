@@ -168,7 +168,7 @@ Plans:
   4. No full-resolution original or GPS-bearing image can be fetched from the public site. Every served image is resized, correctly rotated and metadata-free, which a CI scan enforces. Components take image paths from the pipeline manifest, not from hard-coded variant filenames.
   5. Project highlights type-check against a per-project schema, and every CLI_X risk example carries a numeric `riskScore`.
 
-**Plans**: 10/13 plans executed in 9 waves
+**Plans**: 11/13 plans executed in 9 waves
 
 Plans:
 **Wave 1**
@@ -194,7 +194,7 @@ Plans:
 - [x] 08-10-PLAN.md — Editorial copy draft, legacy bridge over the manifest, modal capture label, Tim's copy decision
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 08-11-PLAN.md — Apply Tim's copy decision; photos re-baseline (Tim commits PNGs)
+- [x] 08-11-PLAN.md — Apply Tim's copy decision; photos re-baseline (Tim commits PNGs)
 
 **Wave 8** *(blocked on Wave 7 completion)*
 - [ ] 08-12-PLAN.md — Footer map-sheet margin: contour band, ticks, true scale bar, attribution (SHELL-04)
@@ -362,7 +362,7 @@ Plans:
 | 5. Performance & Accessibility Polish | v1.0 | 5/5 | Complete | 2026-03-11 |
 | 6. Integration Wiring Fixes | v1.0 | 1/1 | Complete | 2026-03-12 |
 | 7. Foundation & Guardrails | v2.0 | 27/27 | Complete    | 2026-10-24 |
-| 8. Data & Terrain Pipeline | v2.0 | 10/13 | In Progress | - |
+| 8. Data & Terrain Pipeline | v2.0 | 11/13 | In Progress | - |
 | 9. Home Ascent | v2.0 | 0/TBD | Not started | - |
 | 10. Photography | v2.0 | 0/TBD | Not started | - |
 | 11. Engineering & Roadmap | v2.0 | 0/TBD | Not started | - |

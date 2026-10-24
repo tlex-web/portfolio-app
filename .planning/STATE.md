@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 08
 current_phase_name: Data & Terrain Pipeline
 status: executing
-stopped_at: Completed 08-10-PLAN.md
-last_updated: "2026-10-24T18:28:35.088Z"
+stopped_at: Completed 08-11-PLAN.md
+last_updated: "2026-10-24T19:20:10.728Z"
 last_activity: 2026-10-24
-last_activity_desc: Completed 08-10 (photo editorial approved by Tim, legacy bridge, modal captureLabel; DATA-08); Wave 6 done, next 08-11
-state_head: 1b5d4ec4063dcf4d82d1b0a2fa982493691e4d04
+last_activity_desc: Completed 08-11 (Tim's copy approval recorded, photos baselines re-baselined by Tim, CI green; DATA-03); Wave 7 done, next 08-12
+state_head: aa1e9bcdf83de592be4650546bd6117d1fbb6db3
 progress:
   total_phases: 6
   completed_phases: 7
   total_plans: 40
-  completed_plans: 37
-  percent: 93
+  completed_plans: 38
+  percent: 95
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-24)
 ## Current Position
 
 Phase: 08 (Data & Terrain Pipeline) — EXECUTING
-Plan: 10 of 13 done (08-01..08-10); Wave 6 complete, next is 08-11 (Wave 7)
-Status: Ready to execute 08-11 (record Tim's approval, re-baseline photos)
-Last activity: 2026-10-24 — Completed 08-10 (editorial copy, slugs, tags, seasons and Riffelsee pin approved by Tim as drafted; data/landscapes.ts bridged over photos.ts + editorial.ts + imageManifest; modal shows captureLabel; DATA-08 complete, DATA-03/DATA-04 wait on sibling plans)
+Plan: 11 of 13 done (08-01..08-11); Wave 7 complete, next is 08-12 (Wave 8)
+Status: Ready to execute 08-12 (footer map-sheet margin, SHELL-04)
+Last activity: 2026-10-24 — Completed 08-11 (Tim's 08-10 approval recorded in editorial.ts; Tim re-baselined photos/{375,768,1440} in c0f2418; CI run 40124210374 green on ci/08-11; DATA-03 complete, DATA-04 waits on a sibling plan)
 
-Progress: [█████████░] 93% (1 of 6 v2.0 phases; 27/27 planned plans done)
+Progress: [█████████░] 95% (1 of 6 v2.0 phases; 27/27 planned plans done)
 
 ## Performance Metrics
 
@@ -91,6 +91,7 @@ Progress: [█████████░] 93% (1 of 6 v2.0 phases; 27/27 planne
 | Phase 08 P08 | 8 min | 2 tasks | 12 files |
 | Phase 08 P09 | 1h 8m | 3 tasks | 30 files |
 | Phase 08 P10 | 15 min | 3 tasks | 7 files |
+| Phase 08 P11 | 47 min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -190,10 +191,13 @@ Recent decisions affecting current work:
 - [Phase 08]: 08-09: DATA-05 verified on the Vercel preview by Tim (SSO protection blocks anonymous curl): old full-res URL 404, /terrain/contours-strip.e1af353f82.svg 200 with public, max-age=31536000, immutable; CSP absence on hashed assets is asserted by the CI production-server e2e
 - [Phase 08]: [08-10] Tim approved the photo copy, slugs, tags, season rule and Riffelsee pin exactly as drafted (literal reply: "approve"): slugs matterhorn-from-zermatt, gornerschlucht-waterfall, matterhorn-glacier-trail, riffelsee-reflection are the Phase 10 /photos/[slug] contract; 08-11 carries no edits and needs no photos.ts regeneration, it only records the approval and re-baselines photos
 - [Phase 08]: [08-10] Seasons are meteorological (Sep 2021 = autumn); Riffelsee pin 45.9837 N 7.7623 E, radius 100 m, approximate, DEM 2,760 m (north shore); data/landscapes.ts is a bridge over photos.ts + editorial.ts + imageManifest (no image-path literals) and the modal shows the preformatted captureLabel ('2019', never a locale date)
+- [Phase 08]: 08-11: Tim's 08-10 reply was 'approve', so editorial.ts only gained the decision line; no copy, slug, pin or season edits and no photos.ts regeneration
+- [Phase 08]: 08-11: Tim committed the photos PNGs as downloaded (c0f2418, reply 'pushed'), option A by action; the GalleryGrid '1 hotspots' plural is deferred to the Phase 10 grid rebuild
 
 ### Pending Todos
 
 - Legacy image variants (-thumb/-medium/-large) are still live in `data/landscapes.ts`. Delete them in Phase 12 (VERIFY-01), only after the Phase 8 manifest exists and Phase 10 has migrated the consumers.
+- [Phase 10, from 08-11] The /photos grid badge reads "1 hotspots": `components/GalleryGrid.tsx:60` always prints `{n} hotspots` and `components/__tests__/GalleryGrid.test.tsx:83` asserts the literal '1 hotspots'. Two photos have one hotspot since the 08-10 copy, so the photos/* baselines (c0f2418) show it. Tim committed those baselines as-is (option A by action), so fix the plural, update the test and re-baseline photos/* in the Phase 10 GalleryGrid rebuild.
 - [Phase 7, from 07-11] Open item for Tim: `next dev` created an untracked `AGENTS.md` at the repo root. It is left untracked; Tim decides whether to keep and commit it, gitignore it, or delete it.
 
 ### Blockers/Concerns
@@ -224,6 +228,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-24T18:28:34.915Z
-Stopped at: Completed 08-10-PLAN.md
+Last session: 2026-10-24T19:20:10.571Z
+Stopped at: Completed 08-11-PLAN.md
 Resume file: None
