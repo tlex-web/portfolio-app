@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Topographic Identity
-current_phase: 9
+current_phase: 09
 current_phase_name: Home Ascent
 status: executing
-stopped_at: Phase 9 UI-SPEC approved
-last_updated: "2026-10-24T23:05:21.609Z"
-last_activity: 2026-10-24
-last_activity_desc: Phase 08 complete, transitioned to Phase 9
-state_head: 0fe6741eb001569178778c6455d8bcfd93cbd234
+stopped_at: Completed 09-01-PLAN.md
+last_updated: "2026-10-24T23:28:54.352Z"
+last_activity: 2026-10-25
+last_activity_desc: Phase 09 execution started
+state_head: 56ac446f096c067c0aabcb8d7fabec7c1b1c35be
 progress:
   total_phases: 6
   completed_phases: 8
   total_plans: 54
-  completed_plans: 40
-  percent: 74
+  completed_plans: 41
+  percent: 76
 ---
 
 # Project State
@@ -25,16 +25,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-24)
 
 **Core value:** A portfolio that is visually memorable and distinctive (not another generic Tailwind site) while being stable and well-maintained under the hood.
-**Current focus:** Phase 9 — Home Ascent
+**Current focus:** Phase 09 — Home Ascent
 
 ## Current Position
 
-Phase: 9 (Home Ascent) — READY TO EXECUTE
-Plan: Not started
+Phase: 09 (Home Ascent) — EXECUTING
+Plan: 2 of 14
 Status: Ready to execute
-Last activity: 2026-10-24 — Phase 08 complete, transitioned to Phase 9
+Last activity: 2026-10-25 — Phase 09 execution started
 
-Progress: [███████░░░] 74% of v2.0 phases (2 of 6: Phases 7–8 complete); 40/40 planned plans done (Phases 9–12 not yet planned)
+Progress: [████████░░] 76% of v2.0 phases (2 of 6: Phases 7–8 complete); 40/40 planned plans done (Phases 9–12 not yet planned)
 
 ## Performance Metrics
 
@@ -95,6 +95,7 @@ Progress: [███████░░░] 74% of v2.0 phases (2 of 6: Phases 7�
 | Phase 08 P11 | 47 min | 2 tasks | 4 files |
 | Phase 08 P12 | 14 min | 3 tasks | 11 files |
 | Phase 08 P13 | 26 min | 2 tasks | 28 files |
+| Phase 09 P01 | 13 min | 2 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -200,6 +201,8 @@ Recent decisions affecting current work:
 - [Phase 08]: 08-12: scale-bar tier beyond lg is written min-[112rem]: (1792 px); Tailwind emits px arbitrary min-width variants before lg:, which showed two tiers at once
 - [Phase 08]: 08-13: Tim accepted the footer baselines by committing them (88191d0, literal reply: pushed); no review notes given, recorded as accepted by commit
 - [Phase 08]: 08-13: test-count ratchet raised at Phase 8 close to jest 416 / e2e 117 / total 533 (from 107/99/206), commit 88191d0
+- [Phase 09]: Trail-sign accessible names use an explicit aria-label built from site.nav label + countLabel ('Photographs, 4 waypoints'), not an sr-only comma: the flex plate blockifies its children and accname then reads 'Photographs , 4 waypoints'
+- [Phase 09]: Poster <img> sits inside <picture> with no eslint-disable: @next/next/no-img-element exempts img in picture
 
 ### Pending Todos
 
@@ -237,6 +240,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-24T21:10:41.653Z
-Stopped at: Phase 9 UI-SPEC approved
-Resume file: .planning/phases/09-home-ascent/09-UI-SPEC.md
+Last session: 2026-10-24T23:28:54.075Z
+Stopped at: Completed 09-01-PLAN.md
+Resume file: None
