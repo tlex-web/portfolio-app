@@ -60,12 +60,15 @@ jobs:
           FEEDBACK_RECIPIENT_EMAIL: test@example.com
           FEEDBACK_FROM_EMAIL: noreply@example.com
 
-      # The perf project arrives in plan 07-26.
+      # HOME-08 (plan 07-26): writes test-results/home-baseline.json. The
+      # container tag below must equal the job image (the parity guard checks
+      # both strings against the lockfile).
       - name: Record Home performance baseline
         if: inputs.suite == 'perf'
         run: npx playwright test --project=perf
         env:
           CI: '1'
+          PW_CONTAINER_TAG: mcr.microsoft.com/playwright:v1.64.0-noble
           RESEND_API_KEY: dummy_key_for_tests
           FEEDBACK_RECIPIENT_EMAIL: test@example.com
           FEEDBACK_FROM_EMAIL: noreply@example.com

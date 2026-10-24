@@ -8,6 +8,13 @@ import { defineConfig, devices } from '@playwright/test';
 const VISUAL = /visual\/.*\.spec\.ts$/;
 
 /**
+ * HOME-08 lab measurement (plan 07-26). On demand only: the `perf` project
+ * runs it from the "Update visual baselines" workflow (suite perf), never in
+ * the functional or visual runs.
+ */
+const PERF = /perf\/.*\.spec\.ts$/;
+
+/**
  * Snapshot path of the dark baselines, active since build step 8a (plan 07-14,
  * the `dark:` neutralise commit): `visual-light` points its
  * `expect.toHaveScreenshot.pathTemplate` here, so the light run asserts that
@@ -53,13 +60,13 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      testIgnore: VISUAL,
+      testIgnore: [VISUAL, PERF],
       use: { ...devices['Desktop Chrome'] },
     },
 
     {
       name: 'firefox',
-      testIgnore: VISUAL,
+      testIgnore: [VISUAL, PERF],
       grepInvert: /@chromium-only/,
       use: { ...devices['Desktop Firefox'] },
     },
@@ -69,7 +76,7 @@ export default defineConfig({
     // Run locally on macOS for real Safari coverage.
     ...(!process.env.CI ? [{
       name: 'webkit',
-      testIgnore: VISUAL,
+      testIgnore: [VISUAL, PERF],
       use: { ...devices['Desktop Safari'] },
     }] : []),
 
@@ -88,6 +95,16 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], colorScheme: 'light', serviceWorkers: 'block' },
       // Light must equal dark (DSGN-05): compare against the visual-dark PNGs.
       expect: { toHaveScreenshot: { ...SCREENSHOT, pathTemplate: DARK_PATH } },
+    },
+
+    // HOME-08 baseline (plan 07-26). The spec opens its own Pixel 7 contexts
+    // with CPU and network throttling; record it only in the Playwright
+    // container (e2e/perf/home-baseline.json is committed by hand).
+    {
+      name: 'perf',
+      testMatch: PERF,
+      retries: 0,
+      use: { ...devices['Desktop Chrome'], serviceWorkers: 'block' },
     },
   ],
 
