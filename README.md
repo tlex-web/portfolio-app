@@ -185,19 +185,16 @@ portfolio-app/
 │   │   ├── FeedbackForm.test.tsx
 │   │   └── ProjectCard.test.tsx
 │   ├── AnimatedGradientMesh.tsx  # GPU-accelerated gradient backgrounds
-│   ├── DualParticleSystem.tsx    # WebGL particle effects
 │   ├── FeatureShowcase.tsx       # Animated feature cards
 │   ├── FeedbackForm.tsx          # Contact form with validation
 │   ├── Footer.tsx                # Site footer
 │   ├── GalleryGrid.tsx           # Photo grid with filtering
 │   ├── GlassmorphismNav.tsx      # Glassmorphic navigation
 │   ├── Header.tsx                # Site header/navigation
-│   ├── Hero3DMountain.tsx        # 3D mountain scene for hero
 │   ├── HologramTerminal.tsx      # 3D holographic terminal
 │   ├── HologramTerminalDemo.tsx  # Terminal demo with typing effect
 │   ├── ImageDetailModal.tsx      # Full-screen image viewer
 │   ├── InteractiveHotspot.tsx    # Image annotation hotspots
-│   ├── MountainTerrain3D.tsx     # 3D terrain generation
 │   ├── PhotoCarousel3D.tsx       # 3D carousel for photos
 │   ├── ProjectCard.tsx           # Project preview cards
 │   ├── ProjectHighlights.tsx     # Project metrics display
