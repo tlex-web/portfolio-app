@@ -53,7 +53,7 @@ findings:
     title: "The G3 test comment describes the deleted v1 Header"
   - id: IN-04
     severity: info
-    disposition: open
+    disposition: fixed
     title: "Home renders a second \"Skip to content\" link after the shell's skip link"
   - id: IN-05
     severity: info
@@ -124,7 +124,7 @@ recorded: 2026-10-24T09:59:51.803Z
 | IN-01 | info | open | - |
 | IN-02 | info | open | - |
 | IN-03 | info | open | - |
-| IN-04 | info | open | - |
+| IN-04 | info | fixed | 07-27 460b3a4 |
 | IN-05 | info | open | - |
 | IN-06 | info | open | - |
 | IN-07 | info | open | - |
