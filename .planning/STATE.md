@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 08
 current_phase_name: Data & Terrain Pipeline
 status: executing
-stopped_at: Completed 08-02-PLAN.md
-last_updated: "2026-10-24T14:29:53.509Z"
+stopped_at: Completed 08-03-PLAN.md
+last_updated: "2026-10-24T14:53:44.110Z"
 last_activity: 2026-10-24
 last_activity_desc: Phase 08 execution started
-state_head: 346029a31a97bafcf48fade66c3f0a8f210d8a99
+state_head: 61a5ad154003066747ae3532e704004a22bc4ebd
 progress:
   total_phases: 6
   completed_phases: 7
   total_plans: 40
-  completed_plans: 29
-  percent: 73
+  completed_plans: 30
+  percent: 75
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-24)
 ## Current Position
 
 Phase: 08 (Data & Terrain Pipeline) — EXECUTING
-Plan: 3 of 13
+Plan: 4 of 13
 Status: Ready to execute
 Last activity: 2026-10-24 — Phase 08 execution started
 
-Progress: [███████░░░] 73% (1 of 6 v2.0 phases; 27/27 planned plans done)
+Progress: [████████░░] 75% (1 of 6 v2.0 phases; 27/27 planned plans done)
 
 ## Performance Metrics
 
@@ -83,6 +83,7 @@ Progress: [███████░░░] 73% (1 of 6 v2.0 phases; 27/27 planne
 | Phase 07 P27 | 17 min | 2 tasks | 3 files |
 | Phase 08 P01 | 9 min | 3 tasks | 10 files |
 | Phase 08 P02 | 7 min | 2 tasks | 8 files |
+| Phase 08 P03 | 19 min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -163,6 +164,8 @@ Recent decisions affecting current work:
 - [Phase 08]: [08-01] ESLint bans d3-contour, geotiff, simplify-js, exif-reader and sharp outside scripts/**/*.mjs; the scripts block and the global block share BANNED_PATHS/BANNED_PATTERNS so the framer-motion, Canvas and phosphor bans cannot drift (selftest 55 -> 59)
 - [Phase 08]: 08-02: sidecar GPS is rounded to 4 dp at extraction; img-0662 lon is 7.7103 under the specified half-up rule (CONTEXT's 7.7104 was approximate), so stage 2 samples the DEM at sidecar values
 - [Phase 08]: 08-02: .gitattributes pins byte-compared generated files to LF (core.autocrlf=true on Tim's machine would make a checkout fail --check)
+- [Phase 08]: 08-03: CLI_X riskScores are Tim's verbatim (0.05, 0.15, 0.29, 0.87); levels derived from his confirmed band rule (low [0,0.3), medium [0.3,0.6), high [0.6,0.8), critical [0.8,1.0]), so pkill -f chrome moves high -> critical (badge text change, review at 08-05)
+- [Phase 08]: 08-03: trail-grade mapping confirmed by Tim: low T1 yellow, medium T2-T3 white-red-white, high T4-T5 white-blue-white, critical T6 unmarked (lib/trail-grade.ts RISK_BANDS)
 
 ### Pending Todos
 
@@ -197,6 +200,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-24T14:29:53.365Z
-Stopped at: Completed 08-02-PLAN.md
+Last session: 2026-10-24T14:53:43.829Z
+Stopped at: Completed 08-03-PLAN.md
 Resume file: None

@@ -51,7 +51,7 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 - [ ] **DATA-04**: The film-scan photo without GPS has a hand-placed position that is flagged as approximate wherever it is shown
 - [ ] **DATA-05**: Full-resolution originals are no longer served publicly; served images are resized, correctly rotated and carry no GPS metadata, enforced by a CI scan
 - [ ] **DATA-06**: Photo coordinates shipped to the browser are rounded to 4 decimals (~10 m)
-- [ ] **DATA-07**: Project highlights use a typed schema per project instead of a generic record, and every risk example carries a numeric `riskScore`
+- [x] **DATA-07**: Project highlights use a typed schema per project instead of a generic record, and every risk example carries a numeric `riskScore`
 - [ ] **DATA-08**: The image pipeline emits a manifest that components use for image paths instead of hard-coded variant filenames
 
 ### Home
@@ -193,7 +193,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DATA-04 | Phase 8 | Pending |
 | DATA-05 | Phase 8 | Pending |
 | DATA-06 | Phase 8 | Pending |
-| DATA-07 | Phase 8 | Pending |
+| DATA-07 | Phase 8 | Complete |
 | DATA-08 | Phase 8 | Pending |
 | HOME-01 | Phase 9 | Pending |
 | HOME-02 | Phase 9 | Pending |
