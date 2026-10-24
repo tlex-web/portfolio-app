@@ -4,18 +4,18 @@ milestone: v2.0
 milestone_name: Topographic Identity
 current_phase: 07
 current_phase_name: Foundation & Guardrails
-status: executing
-stopped_at: Session resumed, proceeding to Phase 07 verification (/gsd-execute-phase 07)
-last_updated: "2026-10-24T10:25:18.193Z"
+status: verifying
+stopped_at: Completed 07-27-PLAN.md
+last_updated: "2026-10-24T10:50:04.924Z"
 last_activity: 2026-10-24
-last_activity_desc: Phase 07 execution resumed (wave continue)
-state_head: a194f149c6c24d4bf39fc8cb88cd768dd7e3a5ab
+last_activity_desc: Phase 07 execution started
+state_head: 4e0e41946f26638dea19ecf0c8b77f0c7e04355a
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 27
-  completed_plans: 26
-  percent: 96
+  completed_plans: 27
+  percent: 100
 ---
 
 # Project State
@@ -29,12 +29,12 @@ See: .planning/PROJECT.md (updated 2026-10-10)
 
 ## Current Position
 
-Phase: 07 (Foundation & Guardrails) — READY TO EXECUTE
-Plan: 26 of 26
-Status: Ready to execute
-Last activity: 2026-10-24 — Phase 07 execution resumed (wave continue)
+Phase: 07 (Foundation & Guardrails) — EXECUTING
+Plan: 27 of 27
+Status: Phase complete — ready for verification
+Last activity: 2026-10-24 — Phase 07 execution started
 
-Progress: [█████████░] 96%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -80,6 +80,7 @@ Progress: [█████████░] 96%
 | Phase 07 P24 | 20 min | 2 tasks | 8 files |
 | Phase 07 P25 | 6 min | 2 tasks | 36 files |
 | Phase 07 P26 | 20 min | 3 tasks | 6 files |
+| Phase 07 P27 | 17 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -153,6 +154,7 @@ Recent decisions affecting current work:
 - [Phase 07]: 07-25: CI verification of 168f176 and 44612f3 is pending (no pixel changes, no baseline checkpoint); the orchestrator pushes next and 07-26's CI check covers these commits
 - [Phase 07]: [07-26] HOME-08 baseline for Phase 9 (e2e/perf/home-baseline.json, 38b9704): Home on Pixel 7, 4x CPU, 150 ms, 200000/93750 B/s, 5 runs, medians, recorded in mcr.microsoft.com/playwright:v1.64.0-noble (Playwright 1.64.0, Chromium 156.0.8078.4) at b21dbc9: LCP 4692 ms (samples 4264/4748/4692/4700/4688), script transfer 468770 B, decoded 1625352 B. Phase 9 re-measures with --project=perf in the same container and must not exceed these
 - [Phase 07]: [07-26] Phase close (8eddb50): test-count ratchet 91 -> 206 (jest 107 + e2e 99); Phase 8 ratchets from 206. dependabot.yml restored byte-identical to pre-07-01 (next/react/react-dom semver-major-only ignores; the eight temporary holds removed)
+- [Phase 07]: [07-27] SHELL-01 gap closed: the v1 hero's own 'Skip to content' anchor (#home-content) was deleted, so the shell SkipLink is the only skip link; e2e/shell.spec.ts asserts getByRole('link', { name: /skip to/i }) toHaveCount(1) on 7 routes + 5 404 paths. RED 5f403af failed CI E2E only on / (Expected 1 Received 2, run 40086334529); GREEN 460b3a4 passed all five jobs, zero visual diff (run 40086883766). IN-04 fixed. A Phase 9 hero skip link must not reintroduce a second 'Skip to ...' link
 
 ### Pending Todos
 
@@ -188,6 +190,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-24T09:34:50.137Z
-Stopped at: Session resumed, proceeding to Phase 07 verification (/gsd-execute-phase 07)
-Resume file: .planning/phases/07-foundation-guardrails/.continue-here.md
+Last session: 2026-10-24T10:50:04.865Z
+Stopped at: Completed 07-27-PLAN.md
+Resume file: None
