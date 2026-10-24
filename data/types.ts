@@ -1,5 +1,8 @@
 // Data types for the portfolio application
 
+import type { z } from 'zod';
+import type { DemoCommandSchema, ProjectSchema } from './schemas/project';
+
 /** Primitive value types that can appear in project highlights. */
 type HighlightPrimitive = string | number | boolean;
 
@@ -28,35 +31,15 @@ export interface LandscapeImage {
   annotations?: ImageAnnotation[]; // Optional interactive hotspots
 }
 
-export interface Project {
-  slug: string; // URL-friendly identifier
-  name: string; // Display name
-  tagline: string; // Short one-liner
-  shortDescription: string; // 1-2 sentences for cards/previews
-  longDescription: string; // Full description (plain text or Markdown)
-  techStack: string[]; // Technologies used
-  links: {
-    github?: string;
-    demo?: string;
-    docs?: string;
-  };
-  status: 'active' | 'beta' | 'complete' | 'archived';
-  featured: boolean; // Pin to top of projects list
-  thumbnailImage?: string; // Optional project screenshot/logo
-  roadmapItems?: string[]; // IDs of related RoadmapItems
-  version?: string; // Current version
-  features?: string[]; // Key features list
-  highlights?: Record<string, HighlightValue>; // Performance metrics, stats, etc.
-  demoCommands?: DemoCommand[]; // For CLI tools - example commands
-}
+/**
+ * A portfolio project, inferred from the zod contract (DATA-07): a discriminated
+ * union on `slug` whose `highlights` are typed block tuples. Type-only imports
+ * keep zod out of client bundles.
+ */
+export type Project = z.infer<typeof ProjectSchema>;
 
-export interface DemoCommand {
-  input: string; // Natural language input
-  output: string; // Generated command
-  riskLevel?: 'low' | 'medium' | 'high' | 'critical';
-  warning?: string; // Optional warning message
-  explanation?: string; // Optional explanation
-}
+/** One CLI_X terminal example (natural-language input -> generated command). */
+export type DemoCommand = z.infer<typeof DemoCommandSchema>;
 
 export interface RoadmapItem {
   id: string; // Unique identifier

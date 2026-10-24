@@ -5,6 +5,7 @@ import TechStackDisplay from '@/components/TechStackDisplay';
 import ProjectHighlights from '@/components/ProjectHighlights';
 import ProjectDetailClient from '@/components/ProjectDetailClient';
 import { projects } from '@/data/projects';
+import { toLegacyHighlights } from '@/lib/legacy-highlights';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -126,7 +127,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
           {/* Highlights/Metrics */}
           {project.highlights && Object.keys(project.highlights).length > 0 && (
             <section>
-              <ProjectHighlights highlights={project.highlights} />
+              <ProjectHighlights highlights={toLegacyHighlights(project.highlights)} />
             </section>
           )}
 

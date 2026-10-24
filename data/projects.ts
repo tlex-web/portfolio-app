@@ -43,36 +43,61 @@ export const projects: Project[] = [
       'Async context loading (<100ms startup)',
       'Comprehensive audit logging and command history',
     ],
-    highlights: {
-      performance: {
-        startupTime: '~90ms (40% faster)',
-        memoryUsage: '~36MB typical',
-        binarySize: '4-6MB stripped',
-        cacheSpeed: '~1.5ms lookup',
-        intelligenceOverhead: '~28ms',
+    highlights: [
+      {
+        kind: 'metrics',
+        key: 'performance',
+        title: 'Performance',
+        metrics: [
+          { key: 'startupTime', label: 'Startup time', value: '~90ms (40% faster)' },
+          { key: 'memoryUsage', label: 'Memory usage', value: '~36MB typical' },
+          { key: 'binarySize', label: 'Binary size', value: '4-6MB stripped' },
+          { key: 'cacheSpeed', label: 'Cache speed', value: '~1.5ms lookup' },
+          { key: 'intelligenceOverhead', label: 'Intelligence overhead', value: '~28ms' },
+        ],
       },
-      testing: {
-        totalTests: '850+',
-        passRate: '100%',
-        newTests: '+90 from v2.3.0',
-        documentation: '6,700+ lines',
-        newDocs: '3,200+ for v2.4.0',
+      {
+        kind: 'metrics',
+        key: 'testing',
+        title: 'Testing',
+        metrics: [
+          { key: 'totalTests', label: 'Total tests', value: '850+' },
+          { key: 'passRate', label: 'Pass rate', value: '100%' },
+          { key: 'newTests', label: 'New tests', value: '+90 from v2.3.0' },
+          { key: 'documentation', label: 'Documentation', value: '6,700+ lines' },
+          { key: 'newDocs', label: 'New docs', value: '3,200+ for v2.4.0' },
+        ],
       },
-      safety: {
+      {
+        kind: 'risk-scale',
+        key: 'safety',
+        title: 'Safety',
         rules: 11,
-        riskLevels: ['Low (0.0-0.3)', 'Medium (0.3-0.6)', 'High (0.6-0.8)', 'Critical (0.8-1.0)'],
-        contextAware: true,
-        impactAnalysis: true,
-        alternatives: true,
+        bands: [
+          { level: 'low', min: 0.0, max: 0.3 },
+          { level: 'medium', min: 0.3, max: 0.6 },
+          { level: 'high', min: 0.6, max: 0.8 },
+          { level: 'critical', min: 0.8, max: 1.0 },
+        ],
+        flags: [
+          { key: 'contextAware', label: 'Context aware', value: true },
+          { key: 'impactAnalysis', label: 'Impact analysis', value: true },
+          { key: 'alternatives', label: 'Alternatives', value: true },
+        ],
       },
-      features: {
-        providers: 4,
-        templates: '60+',
-        commands: '40+',
-        intentTypes: 17,
-        contextSources: 5,
+      {
+        kind: 'metrics',
+        key: 'features',
+        title: 'Features',
+        metrics: [
+          { key: 'providers', label: 'Providers', value: 4 },
+          { key: 'templates', label: 'Templates', value: '60+' },
+          { key: 'commands', label: 'Commands', value: '40+' },
+          { key: 'intentTypes', label: 'Intent types', value: 17 },
+          { key: 'contextSources', label: 'Context sources', value: 5 },
+        ],
       },
-    },
+    ],
     demoCommands: [
       {
         input: 'show me all Python files larger than 1MB',
@@ -147,41 +172,61 @@ export const projects: Project[] = [
       'SEO optimized with meta tags and sitemaps',
       'Accessibility compliant (WCAG 2.1)',
     ],
-    highlights: {
-      pricingTiers: {
-        free: {
-          price: 'Free',
-          commands: '10/day',
-          models: 'Basic',
-          features: ['BYOK (Bring Your Own Keys)', 'Local history', 'Community support'],
-        },
-        pro: {
-          price: '$9.99/mo or $99/yr',
-          commands: 'Unlimited',
-          models: 'Premium (GPT-4, Claude)',
-          features: [
-            'Pre-configured API keys',
-            'Cloud sync',
-            'Priority support',
-            'Advanced analytics',
-            'Early access',
-          ],
-        },
+    highlights: [
+      {
+        kind: 'pricing',
+        key: 'pricingTiers',
+        title: 'Pricing tiers',
+        tiers: [
+          {
+            key: 'free',
+            price: 'Free',
+            commands: '10/day',
+            models: 'Basic',
+            features: ['BYOK (Bring Your Own Keys)', 'Local history', 'Community support'],
+          },
+          {
+            key: 'pro',
+            price: '$9.99/mo or $99/yr',
+            commands: 'Unlimited',
+            models: 'Premium (GPT-4, Claude)',
+            features: [
+              'Pre-configured API keys',
+              'Cloud sync',
+              'Priority support',
+              'Advanced analytics',
+              'Early access',
+            ],
+          },
+        ],
       },
-      security: [
-        'Bcrypt password hashing',
-        'Cryptographically signed licenses',
-        'PCI-compliant payments',
-        'Input sanitization',
-        'Rate limiting',
-        'HTTPS/TLS 1.3',
-      ],
-      techStack: {
-        frontend: ['Next.js 14', 'React 18', 'TypeScript', 'Tailwind CSS', 'shadcn/ui'],
-        backend: ['Next.js API Routes', 'NextAuth.js', 'Prisma', 'PostgreSQL', 'Stripe'],
-        deployment: ['Vercel', 'Edge Network', 'Serverless Functions'],
+      {
+        kind: 'list',
+        key: 'security',
+        title: 'Security',
+        items: [
+          'Bcrypt password hashing',
+          'Cryptographically signed licenses',
+          'PCI-compliant payments',
+          'Input sanitization',
+          'Rate limiting',
+          'HTTPS/TLS 1.3',
+        ],
       },
-    },
+      {
+        kind: 'stack',
+        key: 'techStack',
+        title: 'Tech stack',
+        groups: [
+          { key: 'frontend', items: ['Next.js 14', 'React 18', 'TypeScript', 'Tailwind CSS', 'shadcn/ui'] },
+          {
+            key: 'backend',
+            items: ['Next.js API Routes', 'NextAuth.js', 'Prisma', 'PostgreSQL', 'Stripe'],
+          },
+          { key: 'deployment', items: ['Vercel', 'Edge Network', 'Serverless Functions'] },
+        ],
+      },
+    ],
     roadmapItems: ['webshop-team-management', 'webshop-analytics', 'webshop-api-marketplace'],
   },
 ];
