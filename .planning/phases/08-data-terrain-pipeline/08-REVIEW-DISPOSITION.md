@@ -5,7 +5,7 @@ titles: json
 findings:
   - id: CR-01
     severity: critical
-    disposition: open
+    disposition: deferred
     title: "The full-resolution originals with complete GPS EXIF are in the public repository's git history"
   - id: WR-01
     severity: warning
@@ -84,7 +84,7 @@ recorded: 2026-10-24T20:22:34.612Z
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| CR-01 | critical | open | - |
+| CR-01 | critical | deferred | Accepted risk D-12 (Tim, 08-CONTEXT): history exposure at 287c2e9/347d8e1/8fa0991 accepted, no rewrite or force-push; filter-repo purge remains a separate step Tim may run. Follow-up: "never committed" wording in code/tests overstates D-09 — reword when touched. |
 | WR-01 | warning | open | - |
 | WR-02 | warning | open | - |
 | WR-03 | warning | open | - |
