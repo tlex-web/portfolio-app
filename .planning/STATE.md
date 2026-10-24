@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 08
 current_phase_name: Data & Terrain Pipeline
 status: executing
-stopped_at: Completed 08-08-PLAN.md
-last_updated: "2026-10-24T16:58:39.950Z"
+stopped_at: Completed 08-09-PLAN.md
+last_updated: "2026-10-24T18:11:12.762Z"
 last_activity: 2026-10-24
-last_activity_desc: Completed 08-08 (typed photo facts, lowestDemM 1617); Wave 4 done, next 08-09
-state_head: 2194f3c3040ca5d8456d5f136890928ca9f7ef1d
+last_activity_desc: Completed 08-09 (served-image guard, DATA-05); Wave 5 done, next 08-10
+state_head: 5209ac0775edc75b402918c754fb7741699482b7
 progress:
   total_phases: 6
   completed_phases: 7
   total_plans: 40
-  completed_plans: 35
-  percent: 88
+  completed_plans: 36
+  percent: 90
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-24)
 ## Current Position
 
 Phase: 08 (Data & Terrain Pipeline) — EXECUTING
-Plan: 8 of 13 done (08-01..08-08); Wave 4 complete, next is 08-09 (Wave 5)
-Status: Ready to execute 08-09 (Wave 5)
-Last activity: 2026-10-24 — Completed 08-08 (typed photo facts from sidecar + corrections + DEM with photos:build --check in lint; altimeter rail starts at 1,617 m)
+Plan: 9 of 13 done (08-01..08-09); Wave 5 complete, next is 08-10 (Wave 6)
+Status: Ready to execute 08-10 (Wave 6)
+Last activity: 2026-10-24 — Completed 08-09 (served-image guard in lint, data-privacy e2e; CI green on ci/08-09, preview 404 + immutable confirmed by Tim; DATA-05 complete)
 
-Progress: [█████████░] 88% (1 of 6 v2.0 phases; 27/27 planned plans done)
+Progress: [█████████░] 90% (1 of 6 v2.0 phases; 27/27 planned plans done)
 
 ## Performance Metrics
 
@@ -89,6 +89,7 @@ Progress: [█████████░] 88% (1 of 6 v2.0 phases; 27/27 planne
 | Phase 08 P07 | 10 min | 2 tasks | 54 files |
 | Phase 08 P06 | 30 min | 3 tasks | 17 files |
 | Phase 08 P08 | 8 min | 2 tasks | 12 files |
+| Phase 08 P09 | 1h 8m | 3 tasks | 30 files |
 
 ## Accumulated Context
 
@@ -184,6 +185,8 @@ Recent decisions affecting current work:
 - [Phase 08]: 08-08: img-0629 DEM height is 1,668 m at the committed 4-dp coordinates (RESEARCH's 1,674.9 m was full-precision GPS); the defined sampler wins and 08-10 copy must use 1,668 m
 - [Phase 08]: 08-08: lowestDemM = 1617 (img-0605); HOME-04, ROADMAP Phase 9 SC2 and PROJECT.md now start the altimeter rail at 1,617 m
 - [Phase 08]: 08-08: photo formatters are pure with U+00A0 before every unit; meteorological seasons (Sep 2021 = autumn) pending Tim's look at 08-10
+- [Phase 08]: 08-09: served-image guard (guard:images in lint) scans every git-tracked image: EXIF/XMP/IPTC anywhere (sharp metadata() plus a marker byte scan; unreadable fails), oversize >2560 / orientation in public/, hash-name + orphan/missing against the generated manifests (URLs matched only in quoted strings), unsafe SVG, metadata-keeping sharp calls in scripts/photos|terrain (ICC exempt)
+- [Phase 08]: 08-09: DATA-05 verified on the Vercel preview by Tim (SSO protection blocks anonymous curl): old full-res URL 404, /terrain/contours-strip.e1af353f82.svg 200 with public, max-age=31536000, immutable; CSP absence on hashed assets is asserted by the CI production-server e2e
 
 ### Pending Todos
 
@@ -218,6 +221,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-24T16:58:39.791Z
-Stopped at: Completed 08-08-PLAN.md
+Last session: 2026-10-24T18:11:12.609Z
+Stopped at: Completed 08-09-PLAN.md
 Resume file: None
