@@ -1,7 +1,8 @@
 ---
 phase: "9"
 slug: "home-ascent"
-status: draft
+status: approved
+reviewed_at: "2026-10-24"
 shadcn_initialized: false
 preset: none
 created: "2026-10-24"
@@ -491,18 +492,73 @@ Every link keeps `min-h-11` or more and at least 8 px from its neighbour [UUPM `
 
 ## UI Considerations
 
-> Populated by the ui-phase UI-consideration probe (Step 9.5) after checker approval and lifted by plan-phase's `## UI Considerations` rule (same rule as SPEC `## Edge Coverage`). Copy lives in `## Copywriting Contract` and is referenced from here, not restated. Rows are replaced on a probe re-run.
->
-> **Elements proposed for the probe** (kinds to confirm with Tim): E1 Relief poster and sheet box = `media`. E2 Terrain canvas = `media`, `interactive-control` (over-detection expected: it is not interactive). E3 Hero copy = `static-content`. E4 Trail signs = `nav`, `list-collection`. E5 Cue links = `nav`. E6 Waypoint card list = `list-collection`, `media`, `nav`. E7 Pins = `list-collection`, `media`. E8 Altimeter rail = `static-content`. E9 Summit plaque = `static-content`, `list-collection`. E10 About and contact = `static-content`.
+> Populated by the ui-phase UI-consideration probe (Step 9.5) after checker approval, and lifted by plan-phase's `## UI Considerations` rule (the same rule as SPEC `## Edge Coverage`). Shape-rooted UI *state* coverage (empty / loading / error / populated / partial / overflow / zero-one-many / long-text). Empty-state and error-state COPY live in `## Copywriting Contract` above; this section covers state coverage and references those rows instead of restating the copy. Rows are replaced, not appended, on a probe re-run.
 
-Applicable state considerations resolved: pending the Step 9.5 probe. Backstops the researcher already requires:
+**Element kinds (confirmed with Tim, 2026-10-24):** E1 Relief poster = media. E2 Terrain canvas = media. E3 Hero copy = static-content. E4 Trail signs = list-collection, nav. E5 Cue links = nav, static-content. E6 Waypoint card list = list-collection, media, static-content. E7 Pins = media, static-content, list-collection. E8 Altimeter rail = static-content. E9 Summit plaque = list-collection, static-content. E10 About and contact = static-content. Overrides: E1 dropped a false `form` match, E2 was unclassified and set to `media`, E7 added `list-collection`.
+
+Applicable state considerations resolved: 50 applicable, 33 covered, 6 backstop, 11 dismissed (with reasons), 0 unresolved.
 
 | Category | Element(s) | Status | Resolution / Reason |
 |----------|------------|--------|---------------------|
-| populated | E3 Hero copy | 🧪 backstop | `{ statement: "At 375, 768 and 1440 px, at p = 0 in static-capability mode (canvas hidden), an e2e test samples the rendered pixels behind each hero text element's bounding box and asserts the worst-case contrast of its colour against them is >= 4.5:1; axe color-contrast reports no violation on /", verification: backstop }` |
-| populated | E8 Altimeter rail | 🧪 backstop | `{ statement: "At 768 and 1440 px, at the summit position, sampled pixels behind every rail tick label give >= 4.5:1 for ink-muted", verification: backstop }` |
-| loading | E2 Terrain canvas | 🧪 backstop | `{ statement: "Layout-shift sum < 0.1 on / from load through the canvas reveal, measured with a PerformanceObserver; the content track's height is identical before and after the canvas mounts", verification: backstop }` |
-| overflow | E6 Waypoint card list | ✅ covered | At 375 px no card, panel or pin overflows: `scrollWidth <= clientWidth` at every baseline scroll position and in reduced motion |
+| empty | E1 Relief poster | ➖ dismissed | The hillshade is a committed, content-hashed build asset referenced from terrain.assets; a missing file fails `npm run terrain:build -- --check` in lint, so no empty state exists at runtime |
+| loading | E1 Relief poster | ✅ covered | Until the relief image decodes, the stage shows the bg-surface ground; the hero copy and its scrim are already readable; no spinner, skeleton or placeholder copy is rendered |
+| error | E1 Relief poster | ✅ covered | If the relief image fails to load, the stage stays bg-surface with the contour field and poster pins; alt="" means no broken-image glyph or text appears, and the hero copy is unchanged (see Copywriting Contract "Error state") |
+| populated | E1 Relief poster | 🧪 backstop | `{ statement: "posterFrame() at 375 × 603, 768 × 960 and 1440 × 836 returns a UV window that contains every photo anchor (and the summit on landscape), and the p = 0 Home visual baselines show the tinted relief with contours and all pins", verification: backstop }` |
+| empty | E2 Terrain canvas | ➖ dismissed | The mesh is built from the committed heightmap; a missing or unreadable heightmap is a load failure, covered by the E2 error row |
+| loading | E2 Terrain canvas | 🧪 backstop | `{ statement: "Layout-shift sum < 0.1 on / from load through the canvas reveal (PerformanceObserver); the content track height is identical before and after the canvas mounts; no spinner, skeleton or \"loading 3D\" copy is ever in the DOM; the canvas stays at opacity 0 until its first frame at the current scroll position, then fades in over --duration-settle", verification: backstop }` |
+| error | E2 Terrain canvas | 🧪 backstop | `{ statement: "With WebGL2 unavailable, and after a forced WEBGL_lose_context, Home shows the poster and poster pins, no canvas element remains, no error message renders, and the hero, all waypoint cards, the plaque and About are present", verification: backstop }` |
+| populated | E2 Terrain canvas | 🧪 backstop | `{ statement: "SwiftShader canvas smoke test at 3 ascent positions: pixels are not blank, contour lines are present, and the camera view changes between positions [D-22]", verification: backstop }` |
+| overflow | E3 Hero copy | ✅ covered | At 375 px the hero content (≈ 530 px) fits the 603 px stage; on shorter viewports the block grows (min-h) instead of clipping, the measured arrival points absorb the extra height, and nothing overflows horizontally |
+| long-text | E3 Hero copy | ✅ covered | The thesis wraps to two lines at 375 px inside the 576 px max-w-xl column; "Tim Lui" at text-hero stays on one line (≈ 250 of 343 px); nothing in the hero truncates or uses an ellipsis |
+| empty | E4 Trail signs | ✅ covered | A sign whose count is zero shows its destination only (no "0 routes"); both signs always render because their destinations are static routes |
+| loading | E4 Trail signs | ➖ dismissed | Server-rendered links with build-time counts; nothing loads at runtime |
+| error | E4 Trail signs | ➖ dismissed | No runtime fetch; both destinations (/photos, /projects) are existing app routes |
+| populated | E4 Trail signs | ✅ covered | Two 56 px signs stacked in a 320 px column: destination left (16 px 600 ink), Mono count right (14 px ink-muted), 24 px yellow tip; accessible names "Photographs, 4 waypoints" and "Engineering, 2 routes" |
+| partial | E4 Trail signs | ➖ dismissed | Both fields of each sign (destination, count) derive from typed data and are always present |
+| overflow | E4 Trail signs | ✅ covered | Signs are w-full max-w-80 and fit the 343 px content width at 375 px; nothing overflows horizontally |
+| zero-one-many | E4 Trail signs | ✅ covered | countLabel prints "1 waypoint" / "4 waypoints" and "1 route" / "2 routes"; zero prints the destination only; the number of signs is fixed at two |
+| long-text | E4 Trail signs | ✅ covered | Labels are the fixed nav names plus a count; both fit on one line in the 296 px plate (320 px minus the tip); nothing truncates |
+| loading | E5 Cue links | ➖ dismissed | Plain in-page anchor links; nothing loads |
+| error | E5 Cue links | 🧪 backstop | `{ statement: "In every mode, each cue link href fragment (#waypoint-{first slug}, #summit) resolves to an element on /, and activating \"Skip to the summit\" moves focus to #summit", verification: backstop }` |
+| overflow | E5 Cue links | ✅ covered | The cue row is flex-wrap with gap-x-6 gap-y-2; at 375 px the two links wrap onto separate lines instead of overflowing |
+| long-text | E5 Cue links | ➖ dismissed | Fixed short copy ("Start the ascent", "Skip to the summit"); no dynamic text |
+| empty | E6 Waypoint card list | ✅ covered | Zero photos fails the build (lowestDemM is required), so the waypoint list is never empty at runtime |
+| loading | E6 Waypoint card list | ✅ covered | Card photos are lazy and sit in a bg-surface-overlay box at the photo's true aspect ratio, so text and layout are final before the image arrives; no skeleton or spinner |
+| error | E6 Waypoint card list | ✅ covered | A card photo that fails to load keeps its surface-overlay box at the true ratio with the browser alt text; the rest of the card and its View photo link still work (see Copywriting Contract "Error state") |
+| populated | E6 Waypoint card list | 🧪 backstop | `{ statement: "Home visual baselines at p_2 (Gornerschlucht centred) at 375 and 1440 px, plus the reduced-motion full-page baseline, show every card field in its specified layout", verification: backstop }` |
+| partial | E6 Waypoint card list | ✅ covered | Every card field is required in the typed photo data (Phase 8 invariants); the two partial-data cases are defined: an approximate position prints "approx." after the altitude, and a year-only capture prints the year (e.g. "Riffelsee, Zermatt · 2019") |
+| overflow | E6 Waypoint card list | ✅ covered | At ≥ 768 px the card (≈ 600 px) fits a ≥ 656 px stage; below 768 px the docked panel omits the story (≈ 190 px); in reduced motion cards stack at natural height; scrollWidth <= clientWidth at 375 px at every baseline scroll position and in reduced motion |
+| zero-one-many | E6 Waypoint card list | ✅ covered | With n photos there are n stage blocks and n equal legs; the kicker reads "Waypoint k of n"; n = 1 prints "Waypoint 1 of 1" and the sign "1 waypoint"; zero fails the build |
+| long-text | E6 Waypoint card list | ✅ covered | Titles wrap and never truncate (inside the 400 px card content at ≥ 768 px, beside the 128 px thumbnail in the docked panel); the story appears only where height allows (≥ 768 px and reduced motion), within max-w-prose |
+| empty | E7 Pins | ➖ dismissed | Zero photos fails the build, so there is always at least one pin |
+| loading | E7 Pins | ✅ covered | Poster pins are server HTML and visible at first paint; 3D pins replace them in the same frame as the canvas reveal, so no frame shows zero pins or both sets |
+| error | E7 Pins | ✅ covered | When the WebGL context is lost or the canvas fails to load, the 3D pins are removed with the canvas and the poster pins show again in the same frame |
+| populated | E7 Pins | ✅ covered | All n pins show from the start, numbered 1..n by ascending altitude; the active pin has an accent head and a label; the summit view shows numerals only, none lit |
+| partial | E7 Pins | ✅ covered | An approximate position draws a 2 px dashed head border and a dashed stem, and its label adds "approx."; this is the only partial-data case |
+| overflow | E7 Pins | ✅ covered | The active label flips to the left of its head when the head is within 240 px of the stage's right edge; anything outside the visible sheet window is clipped by the stage's overflow-hidden, and posterFrame keeps every current photo inside it |
+| zero-one-many | E7 Pins | ✅ covered | Overlapping pins (the two Zermatt pins ≈ 225 m apart) draw the active one on top (z-order active > inactive); the same rule applies to any count; there is no clustering |
+| long-text | E7 Pins | ✅ covered | The pin label is whitespace-nowrap: short place plus altitude; the longest today is "Matterhorn Glacier Trail · 2,585 m", and the 240 px flip rule keeps it inside the stage |
+| overflow | E8 Altimeter rail | ✅ covered | The rail lives in a 160 px box (right-8 top-12 bottom-12) at ≥ 768 px only; tick labels are right-aligned inside it, and the readout plate covers any tick label it passes |
+| long-text | E8 Altimeter rail | ✅ covered | The longest tick label, "2,760 m approx." (≈ 126 px in Mono 14), plus the 16 px tick fits the 160 px box |
+| empty | E9 Summit plaque | ➖ dismissed | All four stats derive from required data; zero photos fails the build |
+| loading | E9 Summit plaque | ➖ dismissed | Server-rendered static values with no count-up |
+| error | E9 Summit plaque | ➖ dismissed | No runtime data; every value is computed at build time |
+| populated | E9 Summit plaque | ✅ covered | A two-column dl of four stats with Mono values; "Highest photograph" and "Distance from Zermatt" carry a second muted line |
+| partial | E9 Summit plaque | ✅ covered | If the highest photograph is not approximate, its second line shows the short place without "approx."; a single capture year prints once (formatYearRange) |
+| overflow | E9 Summit plaque | ✅ covered | At 375 px each plaque column is ≈ 135 px: "Distance from Zermatt" wraps to two lines, values never wrap, and nothing overflows horizontally |
+| zero-one-many | E9 Summit plaque | ✅ covered | The stat list is fixed at four items; "Photographed" prints a single year when all captures share one |
+| long-text | E9 Summit plaque | ✅ covered | dt labels and the h2 (from terrain.summit.name) wrap and never truncate |
+| overflow | E10 About and contact | ✅ covered | Prose sits in max-w-prose with py-16 and wraps; nothing overflows at 375 px |
+| long-text | E10 About and contact | ✅ covered | Copy lives in data/home.ts and wraps at any length within max-w-prose; the About and contact copy is DRAFT pending Tim's copy review (see Copywriting Contract) |
+
+### Additional backstops (outside the probe taxonomy)
+
+The researcher's composed-contrast checks for text over the tinted relief. `static-content` raises no populated/contrast category, so they are listed here and lift into `must_haves.truths` the same way.
+
+| Check | Element(s) | Status | Resolution |
+|-------|------------|--------|------------|
+| composed contrast | E3 Hero copy | 🧪 backstop | `{ statement: "At 375, 768 and 1440 px, at p = 0 in static-capability mode (canvas hidden), an e2e test samples the rendered pixels behind each hero text element's bounding box and asserts the worst-case contrast of its colour against them is >= 4.5:1; axe color-contrast reports no violation on /", verification: backstop }` |
+| composed contrast | E8 Altimeter rail | 🧪 backstop | `{ statement: "At 768 and 1440 px, at the summit position, sampled pixels behind every rail tick label give >= 4.5:1 for ink-muted", verification: backstop }` |
 
 ---
 
@@ -556,12 +612,12 @@ Quick-reference rules applied: `color-contrast`, `color-not-only`, `heading-hier
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
-- [ ] Dimension 7 Inventory Provenance: PASS
+- [x] Dimension 1 Copywriting: FLAG (non-blocking: trail-sign labels are nouns with no verb, kept on purpose for the signpost metaphor; their accessible names are specific)
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: PASS (recommendation: the "≥ 0.7" hero-scrim claim reads ≈ 0.58 at the 576 px column edge at 1440 px, which still clears the 0.5 floor; fix the stops or the wording at plan time)
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS (recommendation: list w-40, w-56, max-w-80 and min-h-14 under the size exceptions)
+- [x] Dimension 6 Registry Safety: PASS
+- [x] Dimension 7 Inventory Provenance: PASS
 
-**Approval:** pending
+**Approval:** approved 2026-10-24 by gsd-ui-checker (0 BLOCK, 3 FLAG non-blocking). The 15 "Defaults to Confirm" and the DRAFT About and contact copy remain open for plan review.
