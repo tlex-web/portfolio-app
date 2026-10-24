@@ -64,6 +64,7 @@ export const landscapes: LandscapeImage[] = photos.map((photo) => {
   const legacy = imageManifest[photo.id].legacy;
   return {
     id: photo.id,
+    slug: copy.slug,
     src: legacy.largeWebp,
     fallbackSrc: legacy.largeJpg,
     thumbnailSrc: legacy.thumbWebp,

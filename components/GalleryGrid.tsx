@@ -33,6 +33,7 @@ export default function GalleryGrid({ images, itemsPerPage = 12 }: GalleryGridPr
         {currentImages.map((image) => (
           <button
             key={image.id}
+            id={image.slug}
             onClick={() => setSelectedImage(image)}
             className="group relative aspect-[4/3] overflow-hidden rounded-lg bg-surface-raised hover:scale-105 transition-transform duration-300"
             aria-label={`View details for ${image.title}`}

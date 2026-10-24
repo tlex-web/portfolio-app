@@ -11,6 +11,8 @@ export type HighlightValue = HighlightPrimitive | HighlightValue[] | { [key: str
 
 export interface LandscapeImage {
   id: string; // Unique identifier
+  /** Editorial slug, set by data/landscapes.ts; /photos#{slug} target until Phase 10 ships /photos/[slug]. */
+  slug?: string;
   src: string; // Path to image file
   thumbnail?: string; // Optional optimized thumbnail
   fallbackSrc?: string; // JPEG fallback for WebP
