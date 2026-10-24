@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "photos": {
+    "img-0629": {
+      "locationOverride": {
+        "name": "Gornerschlucht",
+        "reason": "EXIF GPS + confirmed by Tim",
+        "source": "Tim"
+      }
+    },
+    "r004-011": {
+      "medium": "film-scan",
+      "captureOverride": {
+        "precision": "year",
+        "year": 2019,
+        "source": "Tim",
+        "reason": "Film shot in 2019; the EXIF DateTimeOriginal is the 2020 scan date (D-03)"
+      },
+      "position": {
+        "lat": 45.9837,
+        "lon": 7.7623,
+        "source": "hand-placed",
+        "approximate": true,
+        "reason": "Film scan without GPS; Riffelsee identified by Tim; pin hand-placed on the north shore",
+        "radiusM": 100
+      },
+      "locationOverride": {
+        "name": "Riffelsee",
+        "reason": "Identified by Tim (D-02)",
+        "source": "Tim"
+      }
+    }
+  }
+}

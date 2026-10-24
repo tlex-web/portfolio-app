@@ -1,5 +1,7 @@
 /**
- * Photo data contract, stage 1 (D-10): the committed EXIF sidecar.
+ * Photo data contract (D-10). Stage 1: the committed EXIF sidecar. Stage 2
+ * (bottom of this file): Tim's corrections and the typed photo facts that
+ * `scripts/photos/build-photo-data.mjs` writes to data/generated/photos.ts.
  *
  * `scripts/photos/extract-exif.mjs` reads the gitignored originals
  * (assets/photos-original/, D-09) and writes data/photos/exif-sidecar.json.
@@ -80,3 +82,131 @@ export const ExifSidecar = z
     path: ['photos'],
   });
 export type ExifSidecar = z.infer<typeof ExifSidecar>;
+
+// ---------------------------------------------------------------------------
+// Stage 2 (D-10, 08-08): sidecar + corrections + DEM -> data/generated/photos.ts
+// ---------------------------------------------------------------------------
+
+/** Internal photo key shared by the sidecar, the corrections and the derivatives. */
+const PhotoId = z.string().regex(/^(img-\d{4}|r\d{3}-\d{3})$/);
+
+/**
+ * When a photo was taken (D-03, D-04).
+ *
+ * - `second`: the camera's naive local wall time from EXIF, with the
+ *   Europe/Zurich offset computed at build time, so runtime code never needs
+ *   time-zone data.
+ * - `year`: a year Tim supplied (the film scan). Strict, so no month or day can
+ *   ride along (RESEARCH Pitfall 5): a year-only capture never invents a date.
+ */
+export const Capture = z.discriminatedUnion('precision', [
+  z.strictObject({
+    precision: z.literal('second'),
+    local: NaiveLocal,
+    timeZone: z.literal('Europe/Zurich'),
+    offset: z.enum(['+01:00', '+02:00']),
+    source: z.literal('exif'),
+  }),
+  z.strictObject({
+    precision: z.literal('year'),
+    year: z.number().int().min(1950).max(2100),
+    source: z.literal('Tim'),
+  }),
+]);
+export type Capture = z.infer<typeof Capture>;
+
+/**
+ * Where a photo was taken, at most 4 decimals (DATA-06). A position without GPS
+ * is hand-placed and must say so: `approximate: true` with a reason and a
+ * radius, which every consumer can show (DATA-04).
+ */
+export const Position = z
+  .strictObject({
+    lat: Coord4,
+    lon: Coord4,
+    source: z.enum(['exif', 'hand-placed']),
+    approximate: z.boolean(),
+    reason: z.string().min(1).optional(),
+    radiusM: z.number().positive().optional(),
+  })
+  .refine(
+    (p) => !p.approximate || (p.reason !== undefined && p.radiusM !== undefined),
+    'approximate positions need reason + radiusM (DATA-04)'
+  )
+  .refine(
+    (p) => p.source === 'exif' || p.approximate,
+    'hand-placed positions are approximate (DATA-04)'
+  );
+export type Position = z.infer<typeof Position>;
+
+/**
+ * Height of a photo position (D-17). `dem`: bilinear at pixel centres of the
+ * native 10 m source raster at the 4-decimal coordinates, rounded to whole
+ * metres (RESEARCH Pitfall 2). Derived, never hand-typed.
+ */
+export const Elevation = z.discriminatedUnion('source', [
+  z.strictObject({ source: z.literal('dem'), m: z.number().int() }),
+]);
+export type Elevation = z.infer<typeof Elevation>;
+
+/** Camera exposure facts for a digital photo (null for a film scan). */
+export const Exposure = z.strictObject({
+  camera: z.string(),
+  lens: z.string(),
+  focalLengthMm: z.number(),
+  fNumber: z.number(),
+  exposureTimeS: z.number(),
+  iso: z.number().int(),
+});
+export type Exposure = z.infer<typeof Exposure>;
+
+/** A place name Tim confirmed or supplied, with the reason (D-01, D-02). */
+export const LocationOverride = z.strictObject({
+  name: z.string().min(1),
+  reason: z.string().min(1),
+  source: z.literal('Tim'),
+});
+export type LocationOverride = z.infer<typeof LocationOverride>;
+
+/** data/photos/corrections.json: Tim's reasoned overrides, keyed by photo id. */
+export const Corrections = z.strictObject({
+  schemaVersion: z.literal(1),
+  photos: z.record(
+    PhotoId,
+    z.strictObject({
+      medium: z.enum(['digital', 'film-scan']).optional(),
+      captureOverride: z
+        .strictObject({
+          precision: z.literal('year'),
+          year: z.number().int(),
+          source: z.literal('Tim'),
+          reason: z.string().min(1),
+        })
+        .optional(),
+      position: Position.optional(),
+      locationOverride: LocationOverride.optional(),
+    })
+  ),
+});
+export type Corrections = z.infer<typeof Corrections>;
+
+/**
+ * One photo's typed facts in data/generated/photos.ts. `tags.year` and
+ * `tags.season` are derived from `capture` (D-08); a year-only capture has no
+ * season. `uv` is the terrain UV (DATA-01) of `position`, rounded to 4 decimals.
+ */
+export const PhotoFacts = z.strictObject({
+  id: PhotoId,
+  medium: z.enum(['digital', 'film-scan']),
+  capture: Capture,
+  position: Position.nullable(),
+  uv: z.strictObject({ u: z.number(), v: z.number() }).nullable(),
+  elevation: Elevation.nullable(),
+  exif: Exposure.nullable(),
+  tags: z.strictObject({
+    year: z.string().regex(/^\d{4}$/),
+    season: z.enum(['winter', 'spring', 'summer', 'autumn']).nullable(),
+  }),
+  locationOverride: LocationOverride.nullable(),
+});
+export type PhotoFacts = z.infer<typeof PhotoFacts>;

@@ -19,3 +19,6 @@ public/terrain/*.webp binary
 # the lossy derivatives are hashed by their bytes, never normalised.
 data/generated/image-manifest.ts text eol=lf
 public/images/photos/* binary
+
+# Typed photo facts (08-08): photos:build --check byte-compares this with a fresh build.
+data/generated/photos.ts text eol=lf
