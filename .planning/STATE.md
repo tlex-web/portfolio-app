@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 08
 current_phase_name: Data & Terrain Pipeline
 status: executing
-stopped_at: Phase 8 UI-SPEC approved
-last_updated: "2026-10-24T14:02:51.310Z"
+stopped_at: Completed 08-01-PLAN.md
+last_updated: "2026-10-24T14:19:42.030Z"
 last_activity: 2026-10-24
-last_activity_desc: Phase 07 complete, transitioned to Phase 8
-state_head: 8a424fdbb93db609da04a3795a437f31d89b1bc5
+last_activity_desc: Phase 08 execution started
+state_head: 435af43715c15c702a88a2e81e936483ade258cc
 progress:
   total_phases: 6
   completed_phases: 7
   total_plans: 40
-  completed_plans: 27
-  percent: 68
+  completed_plans: 28
+  percent: 70
 ---
 
 # Project State
@@ -25,16 +25,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-24)
 
 **Core value:** A portfolio that is visually memorable and distinctive (not another generic Tailwind site) while being stable and well-maintained under the hood.
-**Current focus:** Phase 8 — Data & Terrain Pipeline
+**Current focus:** Phase 08 — Data & Terrain Pipeline
 
 ## Current Position
 
-Phase: 08 (Data & Terrain Pipeline) — READY TO EXECUTE
-Plan: Not started
+Phase: 08 (Data & Terrain Pipeline) — EXECUTING
+Plan: 2 of 13
 Status: Ready to execute
-Last activity: 2026-10-24 — Phase 07 complete, transitioned to Phase 8
+Last activity: 2026-10-24 — Phase 08 execution started
 
-Progress: [███████░░░] 68% (1 of 6 v2.0 phases; 27/27 planned plans done)
+Progress: [███████░░░] 70% (1 of 6 v2.0 phases; 27/27 planned plans done)
 
 ## Performance Metrics
 
@@ -81,6 +81,7 @@ Progress: [███████░░░] 68% (1 of 6 v2.0 phases; 27/27 planne
 | Phase 07 P25 | 6 min | 2 tasks | 36 files |
 | Phase 07 P26 | 20 min | 3 tasks | 6 files |
 | Phase 07 P27 | 17 min | 2 tasks | 3 files |
+| Phase 08 P01 | 9 min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -156,6 +157,9 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-26] Phase close (8eddb50): test-count ratchet 91 -> 206 (jest 107 + e2e 99); Phase 8 ratchets from 206. dependabot.yml restored byte-identical to pre-07-01 (next/react/react-dom semver-major-only ignores; the eight temporary holds removed)
 - [Phase 07]: [07-27] SHELL-01 gap closed: the v1 hero's own 'Skip to content' anchor (#home-content) was deleted, so the shell SkipLink is the only skip link; e2e/shell.spec.ts asserts getByRole('link', { name: /skip to/i }) toHaveCount(1) on 7 routes + 5 404 paths. RED 5f403af failed CI E2E only on / (Expected 1 Received 2, run 40086334529); GREEN 460b3a4 passed all five jobs, zero visual diff (run 40086883766). IN-04 fixed. A Phase 9 hero skip link must not reintroduce a second 'Skip to ...' link
 - [Phase 07]: UAT 2026-10-24 (07-UAT.md, 5/5 pass): Vercel builds on Node 24.x with npm ci (GUARD-01 confirmed); Visual Regression, Lint and Type Check and Unit Tests are required checks on main; Tim ratified the three SC2 zero-diff re-baselines ("all three exceptions are acceptable, add the overrides"), recorded as an override in 07-VERIFICATION.md; Firefox/WebKit keyboard pass and real-device visual sign-off passed
+- [Phase 08]: [08-01] lib/geo.ts is the one coordinate contract (swisstopo approx. WGS84<->LV95 within 1 m of REFRAME; UV u east / v south, row 0 = north); lib/terrain/{contour-paths,hillshade,dem-sample}.ts are import-free erasable TS that scripts/*.mjs import with explicit .ts under node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON
+- [Phase 08]: [08-01] contourSvg rejects path data outside M/L/Z + numbers (TypeError) and non-positive canvases (RangeError), enforcing T-08-02; stripBbox throws RangeError when the strip cannot fit the extent
+- [Phase 08]: [08-01] ESLint bans d3-contour, geotiff, simplify-js, exif-reader and sharp outside scripts/**/*.mjs; the scripts block and the global block share BANNED_PATHS/BANNED_PATTERNS so the framer-motion, Canvas and phosphor bans cannot drift (selftest 55 -> 59)
 
 ### Pending Todos
 
@@ -190,6 +194,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-24T12:26:47.386Z
-Stopped at: Phase 8 UI-SPEC approved
-Resume file: .planning/phases/08-data-terrain-pipeline/08-UI-SPEC.md
+Last session: 2026-10-24T14:19:41.884Z
+Stopped at: Completed 08-01-PLAN.md
+Resume file: None
