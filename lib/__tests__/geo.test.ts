@@ -12,7 +12,11 @@ const EXTENT: Bbox = { west: 2616000, south: 1088000, east: 2627000, north: 1099
 /** Recorded from geodesy.geo.admin.ch/reframe/wgs84tolv95. */
 const ORACLES: [string, { lat: number; lon: number }, Lv95][] = [
   ['Matterhorn summit', { lat: 45.9763, lon: 7.6586 }, { e: 2617047.955, n: 1091660.413 }],
-  ['Riffelsee label', { lat: 45.983375549316406, lon: 7.762086868286133 }, { e: 2625065.748, n: 1092474.685 }],
+  [
+    'Riffelsee label',
+    { lat: 45.983375549316406, lon: 7.762086868286133 },
+    { e: 2625065.748, n: 1092474.685 },
+  ],
   ['img-0605', { lat: 46.01502, lon: 7.74144 }, { e: 2623452.121, n: 1095986.121 }],
 ];
 
@@ -63,7 +67,12 @@ describe('round4', () => {
 
 describe('stripBbox (5:1, summit-centred, snapped to 100 m)', () => {
   test('default extent and summit northing give the UI-SPEC strip', () => {
-    expect(stripBbox(EXTENT, 1091673)).toEqual({ west: 2616000, south: 1090600, east: 2627000, north: 1092800 });
+    expect(stripBbox(EXTENT, 1091673)).toEqual({
+      west: 2616000,
+      south: 1090600,
+      east: 2627000,
+      north: 1092800,
+    });
   });
 
   test('a summit 500 m from the north edge shifts the strip inside the extent', () => {
@@ -81,7 +90,12 @@ describe('stripBbox (5:1, summit-centred, snapped to 100 m)', () => {
   });
 
   test('ratio and snap are parameters', () => {
-    expect(stripBbox(EXTENT, 1091673, 10, 50)).toEqual({ west: 2616000, south: 1091100, east: 2627000, north: 1092200 });
+    expect(stripBbox(EXTENT, 1091673, 10, 50)).toEqual({
+      west: 2616000,
+      south: 1091100,
+      east: 2627000,
+      north: 1092200,
+    });
   });
 
   test('an extent too short for the strip throws instead of returning a bbox outside it', () => {
