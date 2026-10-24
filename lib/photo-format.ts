@@ -37,19 +37,69 @@ export function yearTag(capture: CaptureLike): string {
   return capture.precision === 'year' ? String(capture.year) : capture.local.slice(0, 4);
 }
 
-// RED interface stubs (08-08 Task 2): signatures only, implemented in the GREEN commit.
+// ---------------------------------------------------------------------------
+// Display formatters. Pure on purpose: no locale APIs (08-UI-SPEC Typography),
+// so Node and every browser print the same string and hydration never
+// mismatches. Units follow U+00A0 so a value never wraps away from its unit.
+// ---------------------------------------------------------------------------
+
+const NBSP = ' ';
+const MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+] as const;
+
+/** Inserts a comma every three digits of a non-negative integer string: '12345' -> '12,345'. */
+function groupThousands(digits: string): string {
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+/** One decimal at most, without a trailing `.0`: 5.6 -> '5.6', 8 -> '8'. */
+function oneDecimal(v: number): string {
+  return String(Math.round(v * 10) / 10);
+}
+
+/**
+ * The capture as a reader sees it (D-03, D-04): '6 September 2021, 10:48' for
+ * an EXIF capture (the stored local wall time, no conversion), '2019' for a
+ * year-only capture, which never gains an invented day or month.
+ */
 export function formatCaptureLabel(capture: CaptureLike): string {
-  return capture ? '' : '';
+  if (capture.precision === 'year') return String(capture.year);
+  const [date, time] = capture.local.split('T');
+  const [year, month, day] = date.split('-');
+  return `${Number(day)} ${MONTHS[Number(month) - 1]} ${year}, ${time.slice(0, 5)}`;
 }
+
+/** Shutter time: below one second as '1/500 s', otherwise '2 s' or '1.5 s'. */
 export function formatExposureTime(s: number): string {
-  return s ? '' : '';
+  if (s >= 1) return `${oneDecimal(s)}${NBSP}s`;
+  return `1/${Math.round(1 / s)}${NBSP}s`;
 }
+
+/** Aperture: 'f/8', 'f/5.6'. */
 export function formatAperture(f: number): string {
-  return f ? '' : '';
+  return `f/${oneDecimal(f)}`;
 }
+
+/** Focal length in whole millimetres: '24 mm'. */
 export function formatFocalLength(mm: number): string {
-  return mm ? '' : '';
+  return `${Math.round(mm)}${NBSP}mm`;
 }
+
+/** Height in whole metres with comma grouping: 1617 -> '1,617 m' (D-17). */
 export function formatMetres(m: number): string {
-  return m ? '' : '';
+  const whole = Math.round(m);
+  const sign = whole < 0 ? '-' : '';
+  return `${sign}${groupThousands(String(Math.abs(whole)))}${NBSP}m`;
 }

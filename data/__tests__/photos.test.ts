@@ -76,9 +76,9 @@ describe('captures (D-03, D-04)', () => {
     expect(
       Capture.safeParse({ precision: 'year', year: 2019, month: 5, source: 'Tim' }).success
     ).toBe(false);
-    expect(Capture.safeParse({ precision: 'year', year: 2019, day: 1, source: 'Tim' }).success).toBe(
-      false
-    );
+    expect(
+      Capture.safeParse({ precision: 'year', year: 2019, day: 1, source: 'Tim' }).success
+    ).toBe(false);
   });
 });
 
