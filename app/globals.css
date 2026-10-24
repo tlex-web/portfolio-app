@@ -292,6 +292,26 @@ html {
     text-wrap: balance;
   }
 
+  /* Waypoint card fade (09-UI-SPEC "Motion"): decoration only, from 768 px, with
+     motion allowed and native scroll timelines. Fades in over the first 40 % of
+     the card's entry and out over the last 40 % of its exit; in between, and
+     wherever scroll timelines are missing (Firefox), the card is fully opaque.
+     The out animation fills forwards only: a backwards fill would hold its
+     opacity-1 start keyframe before the exit range and override the fade-in. */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) and (min-width: 48rem) {
+      .ascent-card-fade {
+        animation:
+          ascent-card-in linear both,
+          ascent-card-out linear forwards;
+        animation-timeline: view(), view();
+        animation-range:
+          entry 0% entry 40%,
+          exit 60% exit 100%;
+      }
+    }
+  }
+
   /* sr-only / not-sr-only come from Tailwind v4 itself. A hand-written v1 .sr-only
      here added `clip: rect(0, 0, 0, 0)`, which focus:not-sr-only does not reset,
      so a focused skip link stayed clipped to nothing (07-21). */
@@ -309,6 +329,25 @@ html {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Keyframes for .ascent-card-fade (waypoint cards, Home) */
+@keyframes ascent-card-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes ascent-card-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }
 

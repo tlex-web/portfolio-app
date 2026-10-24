@@ -37,7 +37,10 @@ export default function AscentHero() {
       </div>
       <div data-ascent-track className="relative col-start-1 row-start-1">
         <HeroBlock />
-        <ol aria-label="Waypoints, lowest first">
+        <ol
+          aria-label="Waypoints, lowest first"
+          className="motion-reduce:flex motion-reduce:flex-col motion-reduce:gap-12 motion-reduce:py-12"
+        >
           {waypoints.map((waypoint) => (
             <li
               key={waypoint.id}
