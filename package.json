@@ -7,7 +7,7 @@
     "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint . && npm run guard:parity && npm run guard:palette && npm run guard:contrast && npm run guard:identity && npm run guard:selftest",
+    "lint": "eslint . && npm run guard:parity && npm run guard:palette && npm run guard:contrast && npm run guard:identity && npm run guard:selftest && npm run data:check",
     "format": "prettier --write .",
     "type-check": "tsc --noEmit",
     "test": "jest",
@@ -24,7 +24,9 @@
     "guard:contrast": "node scripts/guards/check-contrast.mjs",
     "guard:identity": "node scripts/guards/check-identity.mjs",
     "guard:selftest": "node scripts/guards/selftest.mjs",
-    "guard:tests": "node scripts/guards/test-count.mjs --jest jest-results.json"
+    "guard:tests": "node scripts/guards/test-count.mjs --jest jest-results.json",
+    "photos:exif": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/photos/extract-exif.mjs",
+    "data:check": "npm run photos:exif -- --check"
   },
   "engines": {
     "node": "24.x"
@@ -87,6 +89,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-compat": "^7.0.2",
     "eslint-plugin-jsx-a11y": "6.10.2",
+    "exif-reader": "2.0.3",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
     "postcss": "^8.5.14",

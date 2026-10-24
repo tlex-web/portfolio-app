@@ -54,9 +54,8 @@ lerna-debug.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Original unoptimized images (keep locally, not in Git)
-# Optimized images in public/images/optimized/ are committed
-public/images/landscapes/
+# Original photos with GPS EXIF (D-09): local only, never committed, not even with LFS (public repo)
+assets/photos-original/
 
 # IDEs
 .vscode/

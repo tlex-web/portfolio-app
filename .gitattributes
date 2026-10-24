@@ -1,0 +1,4 @@
+# Generated data that a --check compares byte for byte (D-10). Keep LF in every
+# working tree, also under core.autocrlf=true on Windows, or a plain checkout
+# would make the committed file differ from a fresh extraction.
+data/photos/exif-sidecar.json text eol=lf
