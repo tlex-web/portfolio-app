@@ -40,7 +40,7 @@ validated: "2026-10-24"
 
 ## Per-Task Verification Map
 
-Evidence for every ✅ row: the quick command green locally on 2026-10-24 at `1cfffe7` (lint + 5 guards, guard self-test 55/55, type-check, Jest 13 suites / 107 tests, test-count 206 = baseline 206), and CI run 40045453857 on `ci/07-26` at `4969072` green for Visual Regression, Unit Tests, E2E Tests, Lint and Type Check, Security Audit and Build Application.
+Evidence for every ✅ row: the quick command green locally on 2026-10-24 at `1cfffe7` (lint + 5 guards, guard self-test 55/55, type-check, Jest 13 suites / 107 tests, test-count 206 = baseline 206), and CI run 40045453857 on `ci/07-26` at `4969072` green for Visual Regression, Unit Tests, E2E Tests, Lint and Type Check, Security Audit and Build Application. Re-audited after gap-closure plan 07-27: CI run 40086883766 on `ci/07-27` at `460b3a4` green for the same six jobs (E2E 122 passed, 0 flaky; Visual Regression 72 passed, 0 PNGs changed), and `npm run build` + Jest 13 suites / 107 tests green locally at `a801639`.
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
@@ -59,7 +59,7 @@ Evidence for every ✅ row: the quick command green locally on 2026-10-24 at `1c
 | 07-09-T1, 07-22-T3 | 07-09, 07-22 | 9, 22 | DSGN-08 | T-07-15, T-07-30 | N/A | unit + e2e | `npx jest lib/__tests__/motion-tokens.test.ts` (CSS/JS parity) + `shell.spec.ts` "Shell reduced motion" | ✅ | ✅ green |
 | 07-12-T1 | 07-12 | 12 | DSGN-09 | T-07-18 | N/A | e2e computed style | `design-system.spec.ts` stable gutter, thin width, scroll lock keeps the header box | ✅ | ✅ green |
 | 07-13-T1, 07-25-T2 | 07-13, 07-25 | 13, 25 | DSGN-10 | T-07-19, T-07-32 | N/A | static + unit | palette guard `emoji` rule (in lint since 07-25); one icon dependency (`@phosphor-icons/react`); rewritten `RoadmapFilters.test` / `RoadmapTimeline.test` | ✅ | ✅ green |
-| 07-21-T2, 07-22-T3, 07-23-T1 | 07-21, 07-22, 07-23 | 21–23 | SHELL-01 | T-07-28, T-07-30, T-07-31 | N/A | unit + e2e | `npx jest components/site/__tests__/SiteChrome.test.tsx` + `npx playwright test e2e/shell.spec.ts` "Shell landmarks" (chromium + firefox) | ✅ | ✅ green |
+| 07-21-T2, 07-22-T3, 07-23-T1, 07-27-T1, 07-27-T2 | 07-21, 07-22, 07-23, 07-27 | 21–23, 27 | SHELL-01 | T-07-28, T-07-30, T-07-31, T-07-36, T-07-37 | N/A | unit + e2e | `npx jest components/site/__tests__/SiteChrome.test.tsx` + `npx playwright test e2e/shell.spec.ts` "Shell landmarks" and "Shell 404" (chromium + firefox), including `skipLinks(page)` `toHaveCount(1)` on 7 routes + 5 404 paths (07-27: red on 5f403af, green on 460b3a4) | ✅ | ✅ green |
 | 07-21-T3, 07-22-T3 | 07-21, 07-22 | 21, 22 | SHELL-02 | T-07-29, T-07-30 | N/A | unit + e2e (375 px) | `npx jest components/site/__tests__/SiteNav.test.tsx` + `shell.spec.ts` "Shell mobile menu" (44/48 px targets, Escape, route change) | ✅ | ✅ green |
 | 07-21-T2, 07-25-T1 | 07-21, 07-25 | 21, 25 | SHELL-03 | T-07-28, T-07-29, T-07-32 | No placeholder or invented contact identity | static + unit + e2e + tsc | `npm run guard:identity` + `SiteChrome.test.tsx` footer (role line, links) + `homepage.spec.ts` title + `npm run type-check` | ✅ | ✅ green |
 | 07-04-T2, 07-23-T1 | 07-04, 07-23 | 4, 23 | SHELL-05 | T-07-08, T-07-09, T-07-31 | N/A | e2e + static | `shell.spec.ts` "Shell 404" (HTTP 404, no redirect, designed body) + no-links grep over `app components data lib` | ✅ | ✅ green |
@@ -105,7 +105,7 @@ Checkpoint tasks (`checkpoint:human-action` / `human-verify` / `human-input`) ca
 - [x] Feedback latency < 60s
 - [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** validated 2026-10-24 (`/gsd-validate-phase 07`); two manual-only items above remain with Tim
+**Approval:** validated 2026-10-24 (`/gsd-validate-phase 07`), re-audited the same day after 07-27 (0 gaps); two manual-only items above remain with Tim
 
 ## Validation Audit 2026-10-24
 
