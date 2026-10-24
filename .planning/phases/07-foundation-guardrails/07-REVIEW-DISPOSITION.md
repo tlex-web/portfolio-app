@@ -39,6 +39,10 @@ findings:
     severity: warning
     disposition: open
     title: "HologramTerminalDemo keeps typing and advancing after Pause (timers are not cleaned up)"
+  - id: WR-09
+    severity: warning
+    disposition: open
+    title: "The skip-link guard only catches links named \"Skip to ...\", but the comment says it catches any second skip link (and the 07-27 handoff advises naming around it)"
   - id: IN-01
     severity: info
     disposition: open
@@ -103,9 +107,13 @@ findings:
     severity: info
     disposition: open
     title: "`notFound()` under `/projects/[slug]` has no server-rendered 404 body (known, deferred to Phase 12 / EDGE-01, STATE.md)"
-open: 25
-total: 25
-recorded: 2026-10-24T09:59:51.803Z
+  - id: IN-17
+    severity: info
+    disposition: open
+    title: "The skip-link count passes as soon as it first reads 1, so a link added after hydration is not counted"
+open: 26
+total: 27
+recorded: 2026-10-24T11:04:00.678Z
 ---
 
 # Phase 07: Code Review Disposition
@@ -121,6 +129,7 @@ recorded: 2026-10-24T09:59:51.803Z
 | WR-06 | warning | open | - |
 | WR-07 | warning | open | - |
 | WR-08 | warning | open | - |
+| WR-09 | warning | open | - |
 | IN-01 | info | open | - |
 | IN-02 | info | open | - |
 | IN-03 | info | open | - |
@@ -137,6 +146,7 @@ recorded: 2026-10-24T09:59:51.803Z
 | IN-14 | info | open | - |
 | IN-15 | info | open | - |
 | IN-16 | info | open | - |
+| IN-17 | info | open | - |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
