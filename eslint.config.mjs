@@ -7,11 +7,8 @@ import prettier from 'eslint-config-prettier/flat';
 // Legacy v1 files replaced or deleted in Phases 9-12: the React Compiler rules
 // only warn here. The list shrinks to zero by Phase 12; never add a new file.
 const LEGACY_COMPILER_FILES = [
-  'components/DualParticleSystem.tsx',
   'components/HologramTerminal.tsx',
   'components/HologramTerminalDemo.tsx',
-  'components/MountainTerrain3D.tsx',
-  'components/GeologicalButton.tsx',
   'components/AnimatedGradientMesh.tsx',
   'components/GlassmorphismNav.tsx',
   'lib/useProgressiveTextures.ts',

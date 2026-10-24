@@ -3,7 +3,6 @@
   "components/Header.tsx": 1,
   "components/ImageDetailModal.tsx": 2,
   "components/InteractiveHotspot.tsx": 1,
-  "components/MountainTerrain3D.tsx": 1,
   "components/PhotoCarousel3D.tsx": 4,
   "components/PhotosPageClient.tsx": 2
 }
