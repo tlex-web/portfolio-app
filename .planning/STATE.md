@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Topographic Identity
-current_phase: 08
-current_phase_name: Data & Terrain Pipeline
-status: executing
-stopped_at: Completed 08-13-PLAN.md
-last_updated: "2026-10-24T20:03:55.173Z"
+current_phase: 9
+current_phase_name: Home Ascent
+status: planning
+stopped_at: Phase 08 complete, ready to plan Phase 9
+last_updated: "2026-10-24T20:29:08.026Z"
 last_activity: 2026-10-24
-last_activity_desc: "Completed 08-13 (all-route footer re-baseline by Tim, CI deterministic on 88191d0, test-count ratchet 533; SHELL-04); all 13 Phase 8 plans summarized, awaiting phase verification"
-state_head: 61e2dd5ccaff4e88a7e2faf8e0b6b1d083db13a2
+last_activity_desc: Phase 08 complete, transitioned to Phase 9
+state_head: cee5cb7bd4082417dba1a024219eabe54ded05c3
 progress:
   total_phases: 6
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 40
   completed_plans: 40
-  percent: 100
+  percent: 67
 ---
 
 # Project State
@@ -29,17 +29,17 @@ See: .planning/PROJECT.md (updated 2026-10-24)
 
 ## Current Position
 
-Phase: 08 (Data & Terrain Pipeline) — EXECUTING
-Plan: 13 of 13 done (08-01..08-13); all Phase 8 plans summarized
-Status: Awaiting phase verification (orchestrator); phase.complete not yet run
-Last activity: 2026-10-24 — Completed 08-13 (Tim's all-route footer re-baseline 88191d0; CI green twice on that SHA, run 40127078488 attempts 1 and 2; test-count ratchet 206 -> 533 in 74653dd; SHELL-04 complete; Firefox stroke check not reported, carried to Phase 12)
+Phase: 9 — Home Ascent
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-10-24 — Phase 08 complete, transitioned to Phase 9
 
-Progress: [██████████] 100% (1 of 6 v2.0 phases; 27/27 planned plans done)
+Progress: [███████░░░] 67% (1 of 6 v2.0 phases; 27/27 planned plans done)
 
 ## Performance Metrics
 
 **Velocity (v2.0):**
-- Total plans completed: 27
+- Total plans completed: 40
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -48,6 +48,7 @@ Progress: [██████████] 100% (1 of 6 v2.0 phases; 27/27 plann
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 07 | 27 | - | - |
+| 08 | 13 | - | - |
 
 *Updated after each plan completion. v1.0 history: 24 plans across Phases 1-6 (see MILESTONES.md).*
 **Per-Plan Metrics:**
@@ -236,5 +237,5 @@ Items acknowledged and deferred at milestone close, most recent first:
 ## Session Continuity
 
 Last session: 2026-10-24T20:03:54.956Z
-Stopped at: Completed 08-13-PLAN.md
+Stopped at: Phase 08 complete, ready to plan Phase 9
 Resume file: None

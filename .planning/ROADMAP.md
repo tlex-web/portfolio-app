@@ -32,7 +32,7 @@
 **Execution order:** 7 → 8 → 9 → 10 ∥ 11 → 12. Phase 8 blocks everything after it. Phases 10 and 11 each depend only on Phase 8 (plus the Phase 7 shell) and not on each other, so they can run in parallel. Phase 9 also depends only on Phase 8 and keeps its numeric slot before 10. Phase 12 needs 9, 10 and 11.
 
 - [x] **Phase 7: Foundation & Guardrails** - Regression nets, isolated dependency upgrades, tokens v2 and one site shell with Tim Lui's real identity (completed 2026-10-24)
-- [ ] **Phase 8: Data & Terrain Pipeline** - Build-time swissALTIRegio terrain and EXIF photo data, privacy-safe images, typed highlights, and the footer map legend
+- [x] **Phase 8: Data & Terrain Pipeline** - Build-time swissALTIRegio terrain and EXIF photo data, privacy-safe images, typed highlights, and the footer map legend (completed 2026-10-24)
 - [ ] **Phase 9: Home Ascent** - Real Matterhorn hero with a native-scroll ascent, altimeter rail and photo waypoints, plus a static fallback
 - [ ] **Phase 10: Photography** - Map / Grid / Carousel light table and a deep-linkable gallery-black lightbox with EXIF and hotspots
 - [ ] **Phase 11: Engineering & Roadmap** - Route-panel projects, case studies, trail-grade risk scale, tokenized terminal, and a route-log roadmap
@@ -168,7 +168,7 @@ Plans:
   4. No full-resolution original or GPS-bearing image can be fetched from the public site. Every served image is resized, correctly rotated and metadata-free, which a CI scan enforces. Components take image paths from the pipeline manifest, not from hard-coded variant filenames.
   5. Project highlights type-check against a per-project schema, and every CLI_X risk example carries a numeric `riskScore`.
 
-**Plans**: 13/13 plans executed in 9 waves
+**Plans**: 13/13 plans complete in 9 waves
 
 Plans:
 **Wave 1**
@@ -362,7 +362,7 @@ Plans:
 | 5. Performance & Accessibility Polish | v1.0 | 5/5 | Complete | 2026-03-11 |
 | 6. Integration Wiring Fixes | v1.0 | 1/1 | Complete | 2026-03-12 |
 | 7. Foundation & Guardrails | v2.0 | 27/27 | Complete    | 2026-10-24 |
-| 8. Data & Terrain Pipeline | v2.0 | 13/13 | In Progress | - |
+| 8. Data & Terrain Pipeline | v2.0 | 13/13 | Complete    | 2026-10-24 |
 | 9. Home Ascent | v2.0 | 0/TBD | Not started | - |
 | 10. Photography | v2.0 | 0/TBD | Not started | - |
 | 11. Engineering & Roadmap | v2.0 | 0/TBD | Not started | - |
