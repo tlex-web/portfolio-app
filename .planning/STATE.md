@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 08
 current_phase_name: Data & Terrain Pipeline
 status: executing
-stopped_at: Completed 08-04-PLAN.md
-last_updated: "2026-10-24T15:26:34.741Z"
+stopped_at: Completed 08-05-PLAN.md
+last_updated: "2026-10-24T16:14:58.609Z"
 last_activity: 2026-10-24
 last_activity_desc: Phase 08 execution started
-state_head: 6dd3d67c4183b344d4783ec722ab83776202362f
+state_head: 33aad97459d812ea56ecf156e10cbfd3e2596ac4
 progress:
   total_phases: 6
   completed_phases: 7
   total_plans: 40
-  completed_plans: 31
-  percent: 78
+  completed_plans: 32
+  percent: 80
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-24)
 ## Current Position
 
 Phase: 08 (Data & Terrain Pipeline) — EXECUTING
-Plan: 5 of 13
+Plan: 6 of 13
 Status: Ready to execute
 Last activity: 2026-10-24 — Phase 08 execution started
 
-Progress: [████████░░] 78% (1 of 6 v2.0 phases; 27/27 planned plans done)
+Progress: [████████░░] 80% (1 of 6 v2.0 phases; 27/27 planned plans done)
 
 ## Performance Metrics
 
@@ -85,6 +85,7 @@ Progress: [████████░░] 78% (1 of 6 v2.0 phases; 27/27 planne
 | Phase 08 P02 | 7 min | 2 tasks | 8 files |
 | Phase 08 P03 | 19 min | 3 tasks | 9 files |
 | Phase 08 P04 | 10 min | 3 tasks | 15 files |
+| Phase 08 P05 | 44 min | 3 tasks | 21 files |
 
 ## Accumulated Context
 
@@ -170,6 +171,9 @@ Recent decisions affecting current work:
 - [Phase 08]: Terrain extent LV95 [2616000, 1088000, 2627000, 1099000] confirmed by Tim ("defaults"); heightmaps in decimetres (heightScale 0.1); edition 2026-05 from the STAC datetime, footer reads May 2026
 - [Phase 08]: Attribution Option A (verbatim 2025+ swissALTIRegio string, ships in 08-12), no (c) prefix; e2e asserts site.attribution.terrain
 - [Phase 08]: terrain --check: SVG/terrain.ts byte-compared; heightmap PNGs checked by name hash == sha256(bytes) and decoded pixels; source raster by sha256 in source.json
+- [Phase 08]: v1 frost-600 maps to new L2 token --color-accent-strong: var(--glacier-500) (option A, Tim replied "a"); pixel-identical, CI Visual Regression green on existing baselines
+- [Phase 08]: v1names palette rule now checks every scanned file; exemptions are LEGACY_DEAD_FILES while unimported and the --color-<v1>-NNN alias definition lines in app/globals.css (Phase 12 deletes both)
+- [Phase 08]: Open for Tim: command 4 (pkill -f chrome) explanation "High-risk operation" beside its CRITICAL RISK badge was not answered; data/projects.ts left unchanged
 
 ### Pending Todos
 
@@ -204,6 +208,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-24T15:26:34.589Z
-Stopped at: Completed 08-04-PLAN.md
+Last session: 2026-10-24T16:14:58.447Z
+Stopped at: Completed 08-05-PLAN.md
 Resume file: None
