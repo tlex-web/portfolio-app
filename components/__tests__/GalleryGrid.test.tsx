@@ -141,6 +141,14 @@ describe('GalleryGrid', () => {
     expect(screen.getByText('Lake Geneva')).toBeInTheDocument();
   });
 
+  it('gives each item its image slug as the id, the /photos#{slug} target (HOME-05)', () => {
+    const withSlugs = mockImages.map((image, i) => ({ ...image, slug: `test-slug-${i + 1}` }));
+    const { container } = render(<GalleryGrid images={withSlugs} />);
+
+    expect(container.querySelector('#test-slug-1')).toBe(screen.getByLabelText('View details for Mountain View'));
+    expect(container.querySelector('#test-slug-2')).toBe(screen.getByLabelText('View details for Lake Sunset'));
+  });
+
   it('shows interactive annotation hint on hover target', () => {
     render(<GalleryGrid images={mockImages} />);
 
