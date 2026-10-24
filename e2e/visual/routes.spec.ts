@@ -61,6 +61,17 @@ async function settle(page: Page) {
       .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
       .every((a) => a.playState !== 'running'),
   );
+  // The footer's contour band is a CSS mask image, which does not hold up the
+  // load event: wait for the hashed strip SVG, then two frames for the paint,
+  // so a baseline can never capture an empty band (08-UI-SPEC "Mask image timing").
+  await page.waitForFunction(() =>
+    performance
+      .getEntriesByType('resource')
+      .some((entry) => /\/terrain\/contours-strip\.[0-9a-f]{10}\.svg$/.test(entry.name)),
+  );
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+  );
 }
 
 /**

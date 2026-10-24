@@ -1,5 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { site } from '@/data/site';
+import { terrain } from '@/data/generated/terrain';
+import { photos } from '@/data/generated/photos';
 
 /**
  * Shell contract (SHELL-01, SHELL-02, DSGN-08 shell; UI-SPEC "Guardrail
@@ -304,5 +306,94 @@ test.describe('Shell reduced motion', () => {
         ),
     );
     expect(running).toBe(0);
+  });
+});
+
+/**
+ * SHELL-04 footer map legend (08-UI-SPEC "Footer Map-Sheet Margin Contract";
+ * UI Considerations E1 and E4 backstops): the band keeps its aspect ratio, the
+ * one visible scale bar is true to the extent width, the ticks follow the photo
+ * data, the footer still has exactly three tab stops, and every route credits
+ * the swissALTIRegio source with the site.attribution.terrain constant.
+ */
+const LEGEND_VIEWPORTS = [
+  // [width, height, band aspect, scale length in metres]
+  [375, 812, 5, 2000],
+  [768, 900, 8, 2000],
+  [1440, 900, 12, 1000],
+  // The 500 m tier: guards the lg: / min-[112rem]: variant order (two tiers visible at once).
+  [1920, 1080, 12, 500],
+] as const;
+
+const FOOTER_FOCUSABLE = 'a[href], button, [tabindex]:not([tabindex="-1"])';
+const positionedPhotos = photos.filter((p) => p.position !== null);
+
+test.describe('Footer map legend (SHELL-04)', () => {
+  for (const [width, height, aspect, lengthM] of LEGEND_VIEWPORTS) {
+    test(`@${width}: band ${aspect}:1, true ${lengthM} m scale bar, ticks, 3 tab stops`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await page.goto('/');
+
+      const footer = page.getByRole('contentinfo');
+      await footer.scrollIntoViewIfNeeded();
+
+      // E1: the band (the footer's first child) is full width at its aspect ratio.
+      const band = await footer.locator(':scope > div').first().boundingBox();
+      const footerBox = await footer.boundingBox();
+      expect(band).not.toBeNull();
+      expect(footerBox).not.toBeNull();
+      expect(Math.abs(band!.width - footerBox!.width)).toBeLessThanOrEqual(1);
+      expect(Math.abs(band!.height - band!.width / aspect)).toBeLessThanOrEqual(1);
+
+      // E4: exactly one tier is rendered, and its bar is L / extentWidthM of the band.
+      const bars = footer.locator('dd [class~="h-2"]').filter({ visible: true });
+      await expect(bars).toHaveCount(1);
+      const bar = await bars.boundingBox();
+      expect(Math.abs(bar!.width - (band!.width * lengthM) / terrain.extent.widthM)).toBeLessThanOrEqual(1);
+      const names = footer.getByText(/^Scale bar, /).filter({ visible: true });
+      await expect(names).toHaveCount(1);
+      await expect(names).toHaveText(`Scale bar, ${lengthM >= 1000 ? `${lengthM / 1000} km` : `${lengthM} m`}`);
+
+      // D-20 / DATA-04: one tick per positioned photo, exactly the approximate one dashed.
+      await expect(footer.locator('[data-tick]')).toHaveCount(positionedPhotos.length);
+      await expect(footer.locator('[data-tick="approximate"]')).toHaveCount(
+        positionedPhotos.filter((p) => p.position.approximate).length,
+      );
+      await expect(footer.locator('[data-tick="approximate"]')).toHaveCount(1);
+
+      // The margin adds no tab stop: GitHub, LinkedIn and Email only.
+      expect(await footer.evaluate((el, sel) => el.querySelectorAll(sel).length, FOOTER_FOCUSABLE)).toBe(3);
+
+      if (width === 375) {
+        // E3/E5: nothing in the footer (Extent lines, attribution, scale labels) runs
+        // past the viewport. Scoped to the footer because Home's legacy v1 cards
+        // overflow at 375 on their own (pre-existing; Home is rebuilt in Phase 9).
+        const overflow = await footer.evaluate((el) => {
+          const clientWidth = document.documentElement.clientWidth;
+          const right = Math.max(...Array.from(el.querySelectorAll('*'), (n) => n.getBoundingClientRect().right));
+          return { right, clientWidth, scrollWidth: el.scrollWidth, footerWidth: el.clientWidth };
+        });
+        expect(overflow.right).toBeLessThanOrEqual(overflow.clientWidth);
+        expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.footerWidth);
+      }
+    });
+  }
+
+  test('@375: no horizontal scroll on a route with the full footer', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/roadmap');
+    await page.getByRole('contentinfo').scrollIntoViewIfNeeded();
+    const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    }));
+    expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+  });
+
+  test('every route credits the source with site.attribution.terrain', async ({ page }) => {
+    for (const [path] of ROUTES) {
+      await page.goto(path);
+      await expect(page.getByRole('contentinfo')).toContainText(site.attribution.terrain);
+    }
   });
 });
