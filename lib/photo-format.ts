@@ -36,3 +36,20 @@ export function seasonOf(month: number): Season {
 export function yearTag(capture: CaptureLike): string {
   return capture.precision === 'year' ? String(capture.year) : capture.local.slice(0, 4);
 }
+
+// RED interface stubs (08-08 Task 2): signatures only, implemented in the GREEN commit.
+export function formatCaptureLabel(capture: CaptureLike): string {
+  return capture ? '' : '';
+}
+export function formatExposureTime(s: number): string {
+  return s ? '' : '';
+}
+export function formatAperture(f: number): string {
+  return f ? '' : '';
+}
+export function formatFocalLength(mm: number): string {
+  return mm ? '' : '';
+}
+export function formatMetres(m: number): string {
+  return m ? '' : '';
+}
