@@ -13,7 +13,7 @@ created: "2026-10-24"
 # Phase 7 — Security
 
 > Per-phase security contract: threat register, accepted risks, and audit trail.
-> Built by `/gsd-secure-phase 07` from the `<threat_model>` blocks of all 26 plans (07-01 … 07-26) and the `## Threat Flags` sections of their SUMMARYs. ASVS level 1: each mitigation was checked at grep depth against the tree at `d6594a5` (code identical to `4969072`, CI run 40045453857 green).
+> Built by `/gsd-secure-phase 07` from the `<threat_model>` blocks of all 26 plans (07-01 … 07-26) and the `## Threat Flags` sections of their SUMMARYs. ASVS level 1: each mitigation was checked at grep depth against the tree at `d6594a5` (code identical to `4969072`, CI run 40045453857 green). Re-audited after gap-closure plan 07-27 (T-07-36 … T-07-38 added) against `8a46bb5` (code identical to `460b3a4`, CI run 40086883766 green).
 
 ---
 
@@ -36,6 +36,8 @@ created: "2026-10-24"
 | Request routing → `app/api` | Moving routes into `app/(site)` must not change API or proxy matching (07-22) | Request paths, CSP nonce matcher |
 | Server/runtime error → rendered page | Exception detail could reach the visitor (07-23) | Error message, digest |
 | Browser form → `/api/feedback` | Untrusted input crosses here: zod validation, CSRF origin check, Upstash rate limit (07-24) | Visitor-supplied form fields |
+| Keyboard / assistive-tech user → rendered page | Focus order and the landmark set are the interface; a duplicate skip link misdirects focus (07-27) | Focus and accessibility tree |
+| Local phase branch → `ci/07-NN` scratch branch | Plan commits leave the machine only through a plain push to a scratch branch that runs CI (07-27) | Plan commits |
 
 Plans 07-09, 07-10, 07-12 and 07-15 … 07-19 declared no new boundary (CSS and client config only).
 
@@ -80,7 +82,10 @@ Plans 07-09, 07-10, 07-12 and 07-15 … 07-19 declared no new boundary (CSS and 
 | T-07-33 | Tampering | FeedbackForm restyle vs `/api/feedback` CSRF + rate limit + validation | high | mitigate | `app/api` untouched; `contact-form.spec.ts` and `app/api/__tests__/feedback.test.ts` unchanged and green | closed |
 | T-07-34 | Tampering | `scripts/guards/test-count.baseline.json` | medium | mitigate | `test-count.mjs --update` refuses a lower total; baseline raised 91 → 206 in 07-26 | closed |
 | T-07-35 | Tampering | resumed Dependabot PRs (incl. `@playwright/test` without the container tag) | low | mitigate | Parity guard fails a `@playwright/test` bump without the matching container tag; version floors block downgrades | closed |
-| T-07-SC | Tampering | npm installs (every plan) | high | mitigate | `npm ci` in every CI job and on Vercel (no `npm install` in workflows, parity-guarded); lockfile integrity for every package; legitimacy gate before each new or too-new package (07-02, 07-05 … 07-08, 07-13, 07-20, 07-24); no new package has an install script; plans without installs added none | closed |
+| T-07-36 | Tampering | `e2e/shell.spec.ts` skip-link guard | low | mitigate | `skipLinks` is exactly `getByRole('link', { name: /skip to/i })` with no `.first()`, `nth()`, `:visible` or `includeHidden` (e2e/shell.spec.ts:30); `toHaveCount(1)` twice; went red in CI first (run 40086334529 at `5f403af`: `/` chromium + firefox, expected 1, received 2), then green (run 40086883766 at `460b3a4`) | closed |
+| T-07-37 | Tampering | committed visual baselines (`e2e/visual/routes.spec.ts-snapshots`) | low | mitigate | `check-snapshot-commit --none` OK (0 changed) on `5f403af` and `460b3a4`; `git diff --name-only 4969072 HEAD -- '*.png'` empty; Visual Regression green on unchanged PNGs; no baseline dispatched | closed |
+| T-07-38 | Elevation of Privilege | push to remote | low | mitigate | Remote holds only `ci/07-27` at `460b3a4`, a fast-forward of `5f403af` (plain pushes); the phase branch is not on origin and `main` is unchanged at `2c4e106` | closed |
+| T-07-SC | Tampering | npm installs (every plan) | high | mitigate | `npm ci` in every CI job and on Vercel (no `npm install` in workflows, parity-guarded); lockfile integrity for every package; legitimacy gate before each new or too-new package (07-02, 07-05 … 07-08, 07-13, 07-20, 07-24); no new package has an install script; plans without installs added none (07-27: `package.json` and `package-lock.json` unchanged since `4969072`) | closed |
 
 *Status: open · closed · open — below high threshold (non-blocking)*
 *Severity: critical > high > medium > low — only open threats at or above workflow.security_block_on count toward threats_open*
@@ -107,6 +112,7 @@ Plans 07-09, 07-10, 07-12 and 07-15 … 07-19 declared no new boundary (CSS and 
 | Audit Date | Threats Total | Closed | Open | Run By |
 |------------|---------------|--------|------|--------|
 | 2026-10-24 | 36 | 36 | 0 | `/gsd-secure-phase 07` (orchestrator, ASVS L1 grep depth; auditor skipped by the short-circuit rule) |
+| 2026-10-24 | 39 | 39 | 0 | `/gsd-secure-phase 07` re-audit after gap-closure plan 07-27 (orchestrator, ASVS L1 grep depth; auditor skipped by the short-circuit rule) |
 
 ---
 
@@ -118,3 +124,11 @@ Plans 07-09, 07-10, 07-12 and 07-15 … 07-19 declared no new boundary (CSS and 
 - [x] `status: verified` set in frontmatter
 
 **Approval:** verified 2026-10-24
+
+## Security Audit 2026-10-24
+
+| Metric | Count |
+|---|---|
+| Threats found | 39 |
+| Closed | 39 |
+| Open | 0 |
