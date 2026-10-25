@@ -163,3 +163,12 @@ blocked: 0
     - "Decide IN-05: reset `downgraded` per Home mount, or document the session-wide stickiness"
     - "Regression test with a helper that truly holds rAF while hidden (wrap requestAnimationFrame to hold all callbacks, including already-requested ones; fake visibilityState/hidden and dispatch visibilitychange; on show dispatch visibilitychange first, then run the held callbacks in one real rAF). Hide after >= 1 burst draw (assert zero ascent-frame-budget marks at hide time), stay hidden 2 s; with budgetMeasureOnly assert no verdict while hidden, that the first verdict after show comes from a fresh burst (>= minSamples draws or >= burstWindowMs after show), and that data-ascent-mode is '3d'. Tag @chromium-only, never test.skip; classify it in lib/__tests__/frame-budget-policy.test.ts; optional dsf 2 run; optionally move 'pauses while the tab is hidden' onto the new helper"
   debug_session: ".planning/debug/hidden-tab-burst-decline.md"
+
+## Gap Plan Decisions
+
+Tim's answers on 2026-10-25, after diagnosis and before gap planning:
+
+- G-09-2 approach: "Compact plaque + measured 3D". Collapse or relocate the plaque on short (< ~745 px), portrait-tablet and 768-1069 px stages, keeping the trail signs, so the static poster is fixed too. Also make the 3D summit framing read the plaque's measured box, add a vertical offset on wide portrait stages, and switch narrow/wide on the same width source as the CSS breakpoint.
+- G-09-4 N1 fix: "B: rail in own layer". Move the rail box (not its scrim) into its own sticky aria-hidden layer after the track. Amend the UI-SPEC z-order row and tree, and rewrite the rail containment assertion.
+- IN-05: "Keep sticky, document". No behaviour change to the module-level `downgraded` / `dprSteppedDown`; correct the JSDoc to say the downgrade lasts the session (until a full reload).
+- WR-02: "Include". Add `budgetMeasureOnly` to the context-loss test in the same gap plan.
