@@ -10,7 +10,8 @@ import { expect, type Page } from '@playwright/test';
  * `spoofSaveData` and `spoofDeviceMemory` (09-07) trigger the other two static
  * modes of the capability gate. `countDraws` and `readDraws` (09-11) count
  * WebGL2 draw calls, the proof that the canvas renders on demand and pauses
- * off-screen (HOME-07).
+ * off-screen (HOME-07). `budgetMeasureOnly` (09-11) keeps a frame-budget
+ * decline from acting, for the desktop-size 3D tests.
  */
 
 /** Switches WebGL off for every page load in this page's context. */
@@ -107,6 +108,21 @@ export async function countDraws(page: Page) {
         return original.apply(this, args);
       };
     }
+  });
+}
+
+/**
+ * Puts the frame budget in measure-only mode for every page load in this
+ * page's context (Tim's 09-11 option A): CameraRig still runs the reveal burst
+ * and marks every 'ascent-frame-budget' verdict, but a decline changes nothing,
+ * so the canvas stays in '3d'. Only for tests that need 3D at a desktop size,
+ * where local SwiftShader's 512² frames run above the 50 ms budget; every other
+ * test keeps the real budget, and 'a slow device declines to the poster' proves
+ * the real decline path.
+ */
+export async function budgetMeasureOnly(page: Page) {
+  await page.addInitScript(() => {
+    (window as Window & { __ascentBudgetMeasureOnly?: boolean }).__ascentBudgetMeasureOnly = true;
   });
 }
 

@@ -6,13 +6,20 @@ import { Vector3 } from 'three';
 import { routeCurvesFor } from '@/components/home/terrain/route-curve';
 import { lowestDemM } from '@/data/generated/photos';
 import { terrain } from '@/data/generated/terrain';
+import { FRAME_BUDGET_DEFAULTS } from '@/lib/ascent/frame-budget';
 import { arrivalsFromBlocks } from '@/lib/ascent/progress';
 import { RELIEF_EXAGGERATION, curveParamAt } from '@/lib/ascent/route';
 import { buildWaypoints } from '@/lib/ascent/waypoints';
 import { formatMetres } from '@/lib/photo-format';
 import { meshHeightAtUv, toMetres } from '@/lib/terrain/heightmap';
 import { readout, scrollBlockToCentre } from './helpers/ascent';
-import { countDraws, expectNoErrorPage, nextFrames, readDraws } from './helpers/webgl';
+import {
+  budgetMeasureOnly,
+  countDraws,
+  expectNoErrorPage,
+  nextFrames,
+  readDraws,
+} from './helpers/webgl';
 
 /**
  * The live terrain canvas in a browser (HOME-02; D-16, D-17, D-18, D-22;
@@ -48,6 +55,14 @@ import { countDraws, expectNoErrorPage, nextFrames, readDraws } from './helpers/
  * draw tests run at 412 x 839 (the 256 mesh): SwiftShader holds the frame
  * budget there, and they first assert that it did, so a declined device can
  * never pass them by having no canvas.
+ *
+ * Measure-only frame budget (Tim's 09-11 option A): local SwiftShader runs the
+ * 512² mesh (stages from 768 px, so the default 1280 x 720 viewport and
+ * 1440 x 900) above the 50 ms budget, so the desktop-size tests that need '3d'
+ * call budgetMeasureOnly: the verdict is still measured and marked, but a
+ * decline changes nothing. Every other test keeps the real budget, and
+ * 'a slow device declines to the poster' runs the real decline at 1440 x 900
+ * on frames held to 60 ms, so it declines on every machine.
  */
 
 const stage = (page: Page) => page.locator('[data-ascent-stage]');
@@ -149,6 +164,7 @@ async function arrivalOf(page: Page, k: number): Promise<number> {
 test.describe('Home terrain canvas (HOME-02)', () => {
   test('canvas fades in over the poster at p = 0 @chromium-only', async ({ page }) => {
     test.setTimeout(60000);
+    await budgetMeasureOnly(page); // 1440 x 900: the 512² mesh
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
     await waitForRevealed(page);
@@ -208,6 +224,7 @@ test.describe('Home terrain canvas (HOME-02)', () => {
 
   test('no worker and no CSP violation @chromium-only', async ({ page }) => {
     test.setTimeout(60000);
+    await budgetMeasureOnly(page); // the default 1280 x 720 viewport: the 512² mesh
     await page.addInitScript(() => {
       const w = window as unknown as { __workers: number; Worker: typeof Worker };
       w.__workers = 0;
@@ -237,6 +254,7 @@ test.describe('Home terrain canvas (HOME-02)', () => {
 
   test('reveal keeps the layout @chromium-only', async ({ page }) => {
     test.setTimeout(60000);
+    await budgetMeasureOnly(page); // 1280 x 720
     await page.addInitScript(() => {
       const w = window as unknown as { __cls: number };
       w.__cls = 0;
@@ -300,6 +318,7 @@ test.describe('Home terrain canvas (HOME-02)', () => {
 
   test('a late canvas reveals at the current progress @chromium-only', async ({ page }) => {
     test.setTimeout(60000);
+    await budgetMeasureOnly(page); // 1280 x 720
     await delayHeightmap(page, 3000);
     await page.goto('/');
     const requested = page.waitForRequest(HEIGHTMAP, { timeout: 15000 });
@@ -428,6 +447,7 @@ test.describe('Home terrain route and 3D pins (HOME-02, HOME-03, HOME-05)', () =
 
   test('pins hand over at the reveal @chromium-only', async ({ page }) => {
     test.setTimeout(60000);
+    await budgetMeasureOnly(page); // 1280 x 720
     await delayHeightmap(page, 2000);
     await page.goto('/');
     // No scroll: the idle callback arms the stage, so the reveal happens at p = 0 (the plan view).
@@ -495,12 +515,13 @@ test.describe('Home terrain route and 3D pins (HOME-02, HOME-03, HOME-05)', () =
   });
 
   test.describe('summit frame shows every waypoint', () => {
-    for (const { width, height } of [
-      { width: 1440, height: 900 },
-      { width: 412, height: 839 },
+    for (const { width, height, measureOnly } of [
+      { width: 1440, height: 900, measureOnly: true }, // the 512² mesh
+      { width: 412, height: 839, measureOnly: false },
     ]) {
       test(`at ${width} x ${height} @chromium-only`, async ({ page }) => {
         test.setTimeout(60000);
+        if (measureOnly) await budgetMeasureOnly(page);
         await page.setViewportSize({ width, height });
         await page.goto('/');
         await scrollOnce(page);
@@ -572,6 +593,7 @@ test.describe('Home terrain route and 3D pins (HOME-02, HOME-03, HOME-05)', () =
 });
 
 const PHONE = { width: 412, height: 839 };
+const DESKTOP = { width: 1440, height: 900 };
 
 type BudgetMark = { medianMs: number | null; samples: number; verdict: string; dpr: number };
 
@@ -592,6 +614,25 @@ async function expectBudgetOk(page: Page) {
       { timeout: 5000, message: 'the frame budget passes (verdicts, median ms)' }
     )
     .toMatch(/(^|, )ok [\d.]+$/);
+}
+
+/**
+ * Holds every animation frame for at least `ms` (a busy wait before each
+ * requestAnimationFrame callback), for every page load in this page's context:
+ * a device too slow for the frame budget, whatever this machine's GPU does.
+ */
+async function slowFrames(page: Page, ms: number) {
+  await page.addInitScript((hold) => {
+    const raf = window.requestAnimationFrame.bind(window);
+    window.requestAnimationFrame = (callback) =>
+      raf((time) => {
+        const until = performance.now() + hold;
+        while (performance.now() < until) {
+          // A struggling device: the main thread is busy for the whole frame.
+        }
+        callback(time);
+      });
+  }, ms);
 }
 
 /** Sets document.visibilityState as a background tab would, and dispatches visibilitychange. */
@@ -766,7 +807,73 @@ test.describe('Home canvas resilience (HOME-02, HOME-07)', () => {
     expect(errors).toEqual([]);
   });
 
-  for (const { width, height } of [PHONE, { width: 1440, height: 900 }]) {
+  // The real decline path at 1440 x 900, with no measure-only flag (Tim's 09-11
+  // option A). Every frame is held to at least 60 ms, so the device is too slow
+  // for the budget on any machine: the test cannot pass without a real decline,
+  // and it never depends on how fast this machine's SwiftShader happens to be
+  // (the guard forbids skipping). The unslowed verdict at this size is the
+  // frame-budget line below.
+  test('a slow device declines to the poster @chromium-only', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.setViewportSize(DESKTOP);
+    await slowFrames(page, 60);
+    const errors = pageErrors(page);
+    await page.goto('/');
+    await scrollOnce(page);
+    // The canvas reached '3d' (the burst only starts after the reveal).
+    await expect(stage(page)).toHaveAttribute('data-ascent-mode', '3d', { timeout: 20000 });
+
+    // A final verdict: 'ok', or a 'decline' at pixel ratio 1 (one above 1 re-measures first).
+    await expect
+      .poll(
+        async () => {
+          const last = (await budgetMarks(page)).at(-1);
+          return last && (last.verdict === 'ok' || last.dpr <= 1) ? last.verdict : 'pending';
+        },
+        { timeout: 10000, message: 'a final frame-budget verdict' }
+      )
+      .not.toBe('pending');
+    const marks = await budgetMarks(page);
+    const final = marks[marks.length - 1];
+    const measured = marks
+      .map(
+        (m) =>
+          `${m.verdict} at dpr ${m.dpr}: median ${m.medianMs?.toFixed(1) ?? 'n/a'} ms over ${m.samples} samples`
+      )
+      .join('; ');
+    test.info().annotations.push({ type: 'frame-budget decline path', description: measured });
+
+    // Every verdict declined, for a reason the budget names: a slow median or too few frames.
+    expect(marks.map((m) => m.verdict)).toEqual(marks.map(() => 'decline'));
+    expect(
+      final.samples < FRAME_BUDGET_DEFAULTS.minSamples ||
+        (final.medianMs ?? 0) > FRAME_BUDGET_DEFAULTS.maxMedianMs,
+      'the final decline is below the sample floor or above the median budget'
+    ).toBe(true);
+    // Home ends static: the canvas and the 3D pins are gone, the poster and its pins show.
+    await expect(stage(page)).toHaveAttribute('data-ascent-mode', 'static');
+    await expect(page.locator('canvas')).toHaveCount(0);
+    await expect(page.locator('[data-pin-layer="3d"]')).toHaveCount(0);
+    expect(
+      await page
+        .locator('[data-pin-layer="poster"]')
+        .evaluate((el) => getComputedStyle(el).visibility)
+    ).toBe('visible');
+    const downgrade = await page.evaluate(() =>
+      performance
+        .getEntriesByName('ascent-downgrade')
+        .map((mark) => ((mark as PerformanceMark).detail as { reason: string }).reason)
+    );
+    expect(downgrade).toEqual(['frame-budget']);
+    // A full Home, never an error (D-21).
+    await expectNoErrorPage(page);
+    await expect(page.locator('li[data-ascent-block="waypoint"] section')).toHaveCount(
+      waypoints.length
+    );
+    expect(errors).toEqual([]);
+  });
+
+  for (const { width, height } of [PHONE, DESKTOP]) {
     test(`records the frame-budget verdict at ${width} x ${height} @chromium-only`, async ({
       page,
     }) => {

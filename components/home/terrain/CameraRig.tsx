@@ -100,6 +100,18 @@ const W = terrain.extent.widthM;
 /** The shortest reveal burst: the canvas fade (DURATION.settle), in ms. */
 const BURST_MIN_MS = DURATION.settle * 1000;
 
+/**
+ * Test-only measure-only switch (Tim's 09-11 option A). A Playwright init script
+ * (e2e/helpers/webgl.ts budgetMeasureOnly) sets it for the desktop-size tests
+ * that need '3d' under SwiftShader: the burst still runs and every verdict is
+ * still marked, but a decline neither steps the pixel ratio down nor turns
+ * Home static. Unset for every visitor, so this is one property read per
+ * verdict and the budget acts exactly as described above.
+ */
+type BudgetTestHook = { __ascentBudgetMeasureOnly?: boolean };
+const budgetMeasureOnly = () =>
+  (window as Window & BudgetTestHook).__ascentBudgetMeasureOnly === true;
+
 /** Records a frame-budget verdict as a local performance mark (nothing leaves the page). */
 function markBudget(
   verdict: FrameBudgetVerdict,
@@ -330,7 +342,9 @@ export default function CameraRig({
       if (verdict !== 'pending') {
         markBudget(verdict, running, dpr);
         budget.current = null;
-        if (verdict === 'decline' && dpr > 1) {
+        if (verdict === 'decline' && budgetMeasureOnly()) {
+          // Measure-only (e2e): the verdict is recorded, nothing acts on it.
+        } else if (verdict === 'decline' && dpr > 1) {
           // One step down before the static fallback: measure again at pixel ratio 1.
           setDpr(1);
           onDprStepDown?.();
