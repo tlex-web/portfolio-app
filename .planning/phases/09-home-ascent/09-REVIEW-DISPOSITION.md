@@ -5,24 +5,24 @@ titles: json
 findings:
   - id: WR-01
     severity: warning
-    disposition: fixed
-    title: "A tab hidden during the reveal burst can decline a capable device (stale budget, no frame runs while hidden)"
+    disposition: open
+    title: "The compact summit plaque covers poster pin 3 on landscape phones; the sweep that should catch it filters those sizes out"
+  - id: IN-01
+    severity: info
+    disposition: open
+    title: "`measurePlaque` assumes the summit block is centred at its arrival, which fails when the block is taller than the stage"
+  - id: IN-02
+    severity: info
+    disposition: open
+    title: "Narrow-versus-wide is now decided by two different width sources in the same canvas"
+  - id: IN-03
+    severity: info
+    disposition: open
+    title: "The three summit-layout magic numbers are a hand-measured model of rendered content"
   - id: WR-02
     severity: warning
     disposition: fixed
     title: "The context-loss e2e races the real frame budget at the size where CI's verdict is noise"
-  - id: IN-01
-    severity: info
-    disposition: open
-    title: "The same layout constants are repeated in modules that must agree"
-  - id: IN-02
-    severity: info
-    disposition: open
-    title: "`ascent-canvas-ready` mark is not guarded, unlike the other two marks"
-  - id: IN-03
-    severity: info
-    disposition: open
-    title: "`summitPlaque(waypoints)` ignores its input for \"Height gained\""
   - id: IN-04
     severity: info
     disposition: open
@@ -39,24 +39,24 @@ findings:
     severity: info
     disposition: open
     title: "The server-HTML assertion escapes only the first `&`"
-open: 6
+open: 7
 total: 9
-recorded: 2026-10-25T13:29:40.715Z
+recorded: 2026-10-25T21:42:43.118Z
 ---
 
 # Phase 09: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | fixed | 09-15 9f35845 |
-| WR-02 | warning | fixed | 09-15 49a3dac |
+| WR-01 | warning | open | - |
 | IN-01 | info | open | - |
 | IN-02 | info | open | - |
 | IN-03 | info | open | - |
-| IN-04 | info | open | - |
-| IN-05 | info | fixed | 09-15 49a3dac |
-| IN-06 | info | open | - |
-| IN-07 | info | open | - |
+| WR-02 | warning | fixed | 09-15 49a3dac (not in the current review) |
+| IN-04 | info | open | - (not in the current review) |
+| IN-05 | info | fixed | 09-15 49a3dac (not in the current review) |
+| IN-06 | info | open | - (not in the current review) |
+| IN-07 | info | open | - (not in the current review) |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
