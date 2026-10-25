@@ -32,3 +32,21 @@
   **What:** 09-07's B8 backstop passes every tick (4.5 floor), but the Riffelsee label at 768 px is the closest to the floor (5.42:1 at 1440 px; the other ticks are 6.8 or better). The rail scrim is narrower than the label run at that width.
   **Found by:** 09-07 Task 3.
   **Owner:** 09-14 visual review; recheck after 09-08 puts the live canvas behind the rail (B8 samples the poster today).
+
+- `fflate` 0.8.2 carries a moderate advisory (unzipSync infinite loop on malformed ZIP64), and fast-png now ships it in the canvas chunk
+  status: open
+  **What:** `npm audit` lists fflate 0.6.0-0.6.10 and 0.8.0-0.8.2 ("unzipSync can enter an infinite loop when parsing malformed ZIP64 archives", fixed in 0.8.3). 0.8.2 was already in the tree through `@types/three` (deduped); fast-png 8.0.0 (`"fflate": "^0.8.2"`) reuses it and imports only `Unzlib`, `unzlibSync` and `zlibSync`, never `unzipSync`, so the vulnerable path is unreachable from the heightmap decode. `three-stdlib` (drei) pins its own 0.6.10. A lockfile bump to fflate 0.8.3 needs `npm audit fix` or an override, which is a dependency decision outside 09-08's scope (07-07 rule: a version floor only when an advisory requires one).
+  **Found by:** 09-08 Task 1 (`npm install fast-png@8.0.0 --save-exact`).
+  **Owner:** Tim / the next dependency pass (Phase 12), or 09-13 if the bundle audit wants it.
+
+- `e2e/no-webgl.spec.ts` "contact keeps the form" and "project detail keeps its content" timed out once under a 74-test parallel dev-server run
+  status: open
+  **What:** In a combined Chromium + Firefox run of home-ascent, no-webgl, homepage and design-system, both tests waited the full 15 s for three's "Error creating WebGL context" console message while `/contact` and `/projects/clix-cli` compiled for the first time. `e2e/no-webgl.spec.ts` alone passed 8/8 right after. 09-08 touches neither route (its code loads only in Home's lazy canvas chunk).
+  **Found by:** 09-08 plan verification.
+  **Owner:** CI runs on a production build, where there is no first-compile delay; revisit only if it reproduces there.
+
+- R3F 9 logs "THREE.Clock: This module has been deprecated. Please use THREE.Timer instead." on every canvas mount
+  status: open
+  **What:** `@react-three/fiber` creates `new THREE.Clock()` in its store (events-9ce18a08.esm.js:1054), and three 0.184 deprecates Clock. The warning appears in the dev-server browser log for every canvas, including the Home terrain canvas since 09-08. It is a library warning, not an error, and comes from no project file.
+  **Found by:** 09-08 Task 3 run.
+  **Owner:** the next R3F upgrade (watch for a release that switches to THREE.Timer).
