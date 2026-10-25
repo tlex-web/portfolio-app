@@ -5,11 +5,11 @@ titles: json
 findings:
   - id: WR-01
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "A tab hidden during the reveal burst can decline a capable device (stale budget, no frame runs while hidden)"
   - id: WR-02
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "The context-loss e2e races the real frame budget at the size where CI's verdict is noise"
   - id: IN-01
     severity: info
@@ -29,7 +29,7 @@ findings:
     title: "`fourDecimals` is not \"round half up\" for every input"
   - id: IN-05
     severity: info
-    disposition: open
+    disposition: fixed
     title: "A downgrade lasts the whole client-side session, not only the page view"
   - id: IN-06
     severity: info
@@ -39,7 +39,7 @@ findings:
     severity: info
     disposition: open
     title: "The server-HTML assertion escapes only the first `&`"
-open: 9
+open: 6
 total: 9
 recorded: 2026-10-25T13:29:40.715Z
 ---
@@ -48,13 +48,13 @@ recorded: 2026-10-25T13:29:40.715Z
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | open | - |
-| WR-02 | warning | open | - |
+| WR-01 | warning | fixed | 09-15 9f35845 |
+| WR-02 | warning | fixed | 09-15 49a3dac |
 | IN-01 | info | open | - |
 | IN-02 | info | open | - |
 | IN-03 | info | open | - |
 | IN-04 | info | open | - |
-| IN-05 | info | open | - |
+| IN-05 | info | fixed | 09-15 49a3dac |
 | IN-06 | info | open | - |
 | IN-07 | info | open | - |
 

@@ -97,3 +97,9 @@
   **Found by:** 09-14 Task 2 review checklist (visual dispatch 40193370705).
   **Owner:** Gap plan after 09-14, bundled with the summit-plaque overlap entry above; one more Home re-baseline covers both.
   **Decision (2026-10-25, 09-14 Task 2):** same question and reply as the 768 label entry above: "Add to the gap plan (Recommended)".
+
+- `e2e/home-canvas.spec.ts` and `lib/useAscentMode.ts` fail `prettier --check` on lines no 09-15 change touches
+  status: open
+  **What:** At `1826e6d` both files already differ from the repo's Prettier output (`intersects()`, `settledPinBoxes()` and several `expect(...)` wraps in the spec; the `decideAscentMode({...})` call at `lib/useAscentMode.ts:76`). `npm run lint` passes (it does not run Prettier). 09-15 kept its own additions formatted and did not reformat the rest, so its diff stays reviewable.
+  **Found by:** 09-15 Task 1 (pre-commit format check).
+  **Owner:** Any later formatting pass (one `prettier --write` commit of its own). Out of scope for 09-15 (scope boundary).
