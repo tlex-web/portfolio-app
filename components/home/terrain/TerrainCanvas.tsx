@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, type ReactNode } from 'react';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
 import type { ShaderMaterial } from 'three';
 import SafeCanvas from '@/components/SafeCanvas';
 import { tokens } from '@/data/generated/tokens';
@@ -18,7 +18,8 @@ import TerrainMesh from './TerrainMesh';
  * or the first-load bundle.
  *
  * The canvas renders through SafeCanvas (Phase 7 rule) with a demand frameloop
- * (a frame only when the camera spring moves), dpr [1, 1.5], `resize.scroll`
+ * (a frame only when the camera spring moves), dpr [1, 1.5] (1 once the frame
+ * budget stepped it down, see below), `resize.scroll`
  * off (R3F would otherwise re-measure on every page scroll), a flat opaque
  * context and no pointer events, so native scroll is never intercepted.
  *
@@ -51,7 +52,17 @@ import TerrainMesh from './TerrainMesh';
  * child: the rig projects the anchors and moves the marks through `pinsRef`.
  * It mounts and unmounts with the canvas, so a downgrade removes both and the
  * poster pins show again in the same frame.
+ *
+ * Pixel ratio (09-11, D-18): CameraRig's frame budget may drop the ratio to 1
+ * (R3F setDpr). R3F re-applies the `dpr` prop on every Canvas render (a stage
+ * resize, the metres arriving), which would restore 1.5, so the prop is state
+ * here and the rig's onDprStepDown sets it to 1. The step-down holds for the
+ * page view: a remount (reduced motion off again) starts at 1.
  */
+
+/** The frame budget stepped the pixel ratio down once in this page view. */
+let dprSteppedDown = false;
+
 export default function TerrainCanvas({
   gridSize,
   pins,
@@ -65,6 +76,11 @@ export default function TerrainCanvas({
   const [metres, setMetres] = useState<Float32Array | null>(null);
   const shaderRef = useRef<ShaderMaterial | null>(null);
   const pinsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const [dpr, setDpr] = useState<number | [number, number]>(() => (dprSteppedDown ? 1 : [1, 1.5]));
+  const stepDown = useCallback(() => {
+    dprSteppedDown = true;
+    setDpr(1);
+  }, []);
   return (
     <>
       <SafeCanvas
@@ -73,7 +89,7 @@ export default function TerrainCanvas({
         frameloop="demand"
         camera={{ fov: 40, near: 10, far: 100000 }}
         onCreated={({ gl }) => gl.setClearColor(tokens.hex.night950)}
-        dpr={[1, 1.5]}
+        dpr={dpr}
         resize={{ scroll: false }}
         flat
         gl={{ alpha: false, antialias: true, powerPreference: 'high-performance' }}
@@ -89,6 +105,7 @@ export default function TerrainCanvas({
           gridSize={gridSize}
           shaderRef={shaderRef}
           pinsRef={pinsRef}
+          onDprStepDown={stepDown}
         />
         {children}
       </SafeCanvas>

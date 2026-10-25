@@ -6,6 +6,8 @@ import { useMotionValueEvent } from 'motion/react';
 import { Vector3, type PerspectiveCamera, type ShaderMaterial } from 'three';
 import { useAscent } from '@/components/home/AscentController';
 import { terrain } from '@/data/generated/terrain';
+import { DURATION } from '@/lib/animations';
+import { createFrameBudget, type FrameBudgetVerdict } from '@/lib/ascent/frame-budget';
 import { posterFrame } from '@/lib/ascent/poster-frame';
 import {
   CAMERA_FOV_DEG,
@@ -21,6 +23,7 @@ import {
   type PinAnchor,
   type Pose,
 } from '@/lib/ascent/route';
+import { downgradeAscent } from '@/lib/useAscentMode';
 import { anchorAt, poseAt, routeCurvesFor } from './route-curve';
 
 /**
@@ -62,6 +65,18 @@ import { anchorAt, poseAt, routeCurvesFor } from './route-curve';
  * and useFrame (priority 0, never positive: a positive priority takes over
  * rendering) keeps invalidating while the progress moved since the last
  * applied frame by more than EPS (the D-06 rule), then stops.
+ *
+ * Frame budget (D-18, correction C4; 09-RESEARCH Pattern 10): drei's
+ * PerformanceMonitor reads demand-mode idle time as low FPS, so the rig
+ * measures the reveal itself. Once the stage is revealed and the route is
+ * built, it invalidates every frame (the reveal burst, at least
+ * DURATION.settle and until a verdict) and feeds each frame to
+ * lib/ascent/frame-budget, `continuous` when the previous frame asked for this
+ * one. 'ok' ends the burst. The first 'decline' at a pixel ratio above 1 drops
+ * it to 1 (setDpr, and onDprStepDown so TerrainCanvas keeps 1 across
+ * re-renders) and measures a fresh burst; a decline at 1 turns Home static
+ * (downgradeAscent('frame-budget')). Every verdict leaves the performance mark
+ * 'ascent-frame-budget' with { medianMs, samples, verdict, dpr }.
  */
 
 /** Progress change below which no further frame is needed (D-06). */
@@ -73,6 +88,23 @@ const FLIP_PX = 240;
 /** A pin whose anchor is further outside the stage than this share of its size is hidden. */
 const OFFSTAGE_SHARE = 0.1;
 const W = terrain.extent.widthM;
+/** The shortest reveal burst: the canvas fade (DURATION.settle), in ms. */
+const BURST_MIN_MS = DURATION.settle * 1000;
+
+/** Records a frame-budget verdict as a local performance mark (nothing leaves the page). */
+function markBudget(
+  verdict: FrameBudgetVerdict,
+  budget: ReturnType<typeof createFrameBudget>,
+  dpr: number
+) {
+  try {
+    performance.mark('ascent-frame-budget', {
+      detail: { medianMs: budget.medianMs(), samples: budget.samples(), verdict, dpr },
+    });
+  } catch {
+    // performance.mark with options is unavailable: the verdict still applies.
+  }
+}
 
 // Scratch objects for the frame loop (one canvas per page).
 const scratch = { position: new Vector3(), target: new Vector3() };
@@ -134,6 +166,7 @@ export default function CameraRig({
   gridSize,
   shaderRef,
   pinsRef,
+  onDprStepDown,
 }: {
   /** The waypoint anchors, in ascent order. */
   pins: readonly PinAnchor[];
@@ -144,14 +177,25 @@ export default function CameraRig({
   shaderRef: RefObject<ShaderMaterial | null>;
   /** The PinLayer3D marks: waypoints in ascent order, then the summit. */
   pinsRef: RefObject<(HTMLDivElement | null)[]>;
+  /** Called when the frame budget drops the pixel ratio to 1, so the canvas keeps it there. */
+  onDprStepDown?: () => void;
 }) {
-  const { progress, layout, stageRef } = useAscent();
+  const { progress, layout, stageRef, revealed } = useAscent();
   const invalidate = useThree((s) => s.invalidate);
+  const setDpr = useThree((s) => s.setDpr);
   const width = useThree((s) => s.size.width);
   const height = useThree((s) => s.size.height);
   const applied = useRef(Number.NaN);
   /** Width of the rail scrim (0 below 768 px, where the rail is hidden), measured per stage size. */
   const railZone = useRef(0);
+  /** True when the last frame asked for another one (state.invalidate in useFrame). */
+  const requested = useRef(false);
+  /** The running reveal-burst budget, or null when no burst runs. */
+  const budget = useRef<ReturnType<typeof createFrameBudget> | null>(null);
+  /** When the current burst's first frame ran (performance.now()), or -1 before it. */
+  const burstStart = useRef(-1);
+  /** The burst has started for this canvas (it runs once, plus one re-measure at pixel ratio 1). */
+  const measured = useRef(false);
 
   useEffect(() => {
     const scrim = stageRef.current?.querySelector<HTMLElement>('[data-ascent-rail-scrim]');
@@ -165,6 +209,16 @@ export default function CameraRig({
   }, [metres, gridSize, pins, width, height]);
 
   useEffect(() => invalidate(), [curves, invalidate]);
+
+  // The reveal burst: once per canvas, when the mesh is on screen and the route is built.
+  const ready = revealed && curves !== null;
+  useEffect(() => {
+    if (!ready || measured.current) return;
+    measured.current = true;
+    budget.current = createFrameBudget();
+    burstStart.current = -1;
+    invalidate();
+  }, [ready, invalidate]);
   useMotionValueEvent(progress, 'change', () => invalidate());
 
   useFrame((state) => {
@@ -205,9 +259,39 @@ export default function CameraRig({
       placePins(camera, pinsRef.current, pins, metres, gridSize, tilt, w, h, w - railZone.current);
     }
 
+    const continuous = requested.current;
+    requested.current = false;
+    let burst = false;
+    const running = budget.current;
+    if (running) {
+      const now = performance.now();
+      if (burstStart.current < 0) burstStart.current = now;
+      const verdict = running.sample(now, continuous);
+      const dpr = state.viewport.dpr;
+      if (verdict !== 'pending') {
+        markBudget(verdict, running, dpr);
+        budget.current = null;
+        if (verdict === 'decline' && dpr > 1) {
+          // One step down before the static fallback: measure again at pixel ratio 1.
+          setDpr(1);
+          onDprStepDown?.();
+          budget.current = createFrameBudget();
+          burstStart.current = -1;
+        } else if (verdict === 'decline') {
+          downgradeAscent('frame-budget');
+        }
+      }
+      burst = budget.current !== null || now - burstStart.current < BURST_MIN_MS;
+    } else if (burstStart.current >= 0) {
+      burst = performance.now() - burstStart.current < BURST_MIN_MS;
+    }
+
     const moved = !(Math.abs(p - applied.current) <= EPS);
     applied.current = p;
-    if (moved) state.invalidate();
+    if (moved || burst) {
+      requested.current = true;
+      state.invalidate();
+    }
   });
 
   return null;
