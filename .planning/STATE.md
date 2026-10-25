@@ -4,18 +4,18 @@ milestone: v2.0
 milestone_name: Topographic Identity
 current_phase: 09
 current_phase_name: Home Ascent
-status: executing
-stopped_at: Completed 09-21-PLAN.md
-last_updated: "2026-10-25T17:59:06.506Z"
+status: verifying
+stopped_at: Completed 09-22-PLAN.md
+last_updated: "2026-10-25T21:19:35.968Z"
 last_activity: 2026-10-25
 last_activity_desc: Phase 09 execution started
-state_head: 4f70e65fcf8a9a2eaeecb91c24406c117082e093
+state_head: 2d9f9c0f9b7491f68522b25f21b9afc80acf179d
 progress:
   total_phases: 6
   completed_phases: 8
   total_plans: 62
-  completed_plans: 61
-  percent: 98
+  completed_plans: 62
+  percent: 100
 ---
 
 # Project State
@@ -31,10 +31,10 @@ See: .planning/PROJECT.md (updated 2026-10-24)
 
 Phase: 09 (Home Ascent) — EXECUTING
 Plan: 22 of 22
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-10-25 — Phase 09 execution started
 
-Progress: [█████████░] 98%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -116,6 +116,7 @@ Progress: [█████████░] 98%
 | Phase 09 P19 | 17 min | 3 tasks | 13 files |
 | Phase 09 P20 | 17 min | 3 tasks | 9 files |
 | Phase 09 P21 | 12 min | 2 tasks | 6 files |
+| Phase 09 P22 | 3h 20m | 3 tasks | 17 files |
 
 ## Accumulated Context
 
@@ -273,6 +274,8 @@ Recent decisions affecting current work:
 - [Phase 09]: CameraRig decides narrow/wide with matchMedia('(min-width: 48rem)'), the CSS md width source (09-20)
 - [Phase 09]: 09-21: md stages take a measured view offset per waypoint (waypointTarget: natural, beside, above, below the card), applied as natural - target on the 09-20 key track; the lit 3D label uses placePinLabel like the poster
 - [Phase 09]: 09-21: measured, 768-900 px stages (and 768 x 1024) put the lit pin 8 px beside the card, 1023 px and up keep the natural position; no row needed above or below
+- [Phase 09]: 09-22: Home re-baselined once for the gap closure by Tim (e9ebee7, 12 home PNGs, 'pushed'; checklist S1-S4, W1-W2, T1, R1-R2 not commented); ratchet jest 646 -> 725, e2e 186 -> 241, total 832 -> 966; CI green twice on 05a5e8c (run 40232792001 attempts 1 and 2, same PNG tree)
+- [Phase 09]: 09-22: the production service worker (skipWaiting, clients.claim, cache-first /terrain/) answers the heightmap, so page.route never sees it; an e2e that holds or delays a /terrain/ request must run with serviceWorkers: 'block' (05a5e8c, 'pins hand over at the reveal' + holdHeightmap, Tim's 'b'); the four other delayHeightmap users share the bypass and are open in deferred-items
 
 ### Pending Todos
 
@@ -310,6 +313,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-25T17:59:06.153Z
-Stopped at: Completed 09-21-PLAN.md
+Last session: 2026-10-25T21:19:35.555Z
+Stopped at: Completed 09-22-PLAN.md
 Resume file: None
