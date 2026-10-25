@@ -7,8 +7,9 @@
  * went 'ok' at 41.1 ms in one 09-13 run and 'decline' at 80.7 ms in the next),
  * so a test that needs the canvas in '3d' opts into the measure-only flag
  * (e2e/helpers/webgl.ts budgetMeasureOnly): the verdict is still measured and
- * marked, a decline acts on nothing. Only the tests that are about the budget
- * keep it real: both 'records the frame-budget verdict' tests and 'a slow
+ * marked, a decline acts on nothing (since 09-15 also the context-loss and
+ * hidden-tab burst tests, WR-02 and WR-01). Only the tests that are about the
+ * budget keep it real: both 'records the frame-budget verdict' tests and 'a slow
  * device declines to the poster'. The HOME-08 perf contexts opt in, so their
  * mode '3d' means the stage stayed 3D. Real visitors never set the flag, and
  * FRAME_BUDGET_DEFAULTS stays at 50 ms (lib/__tests__/frame-budget.test.ts).
@@ -49,13 +50,19 @@ const canvasTests = classify(read('e2e/home-canvas.spec.ts'));
 const flagOf = (title: string) =>
   canvasTests.filter((t) => t.title === title).map((t) => t.measureOnly);
 
-/** The ten 412 x 839 3D tests that CI run 40190531971 declined to the poster (09-13). */
+/**
+ * The 412 x 839 3D tests that opt into measure-only: those CI run 40190531971
+ * declined to the poster (09-13), the context-loss test (WR-02, 09-15: a
+ * decline would race its loseContext()) and the hidden-tab burst test (WR-01,
+ * 09-15: its marks are the proof, a decline must not act).
+ */
 const PHONE_3D = [
   'contour lines are drawn',
   'smoke at three ascent positions',
   'waypoint 2 lights its 3D pin',
   'at ${width} x ${height}', // summit frame shows every waypoint, and summit pins clear the plaque
   'a canvas revealed while stationary lights its 3D pin',
+  'context loss falls back to the poster',
   'draws nothing at rest',
   'draws nothing off-screen',
   'pauses while the tab is hidden',
@@ -96,7 +103,7 @@ describe('frame-budget policy under automation (B1)', () => {
       { title: 'at ${width} x ${height}', measureOnly: true }, // summit pins clear the plaque
       { title: 'route clears the terrain', measureOnly: false },
       { title: 'a canvas revealed while stationary lights its 3D pin', measureOnly: true },
-      { title: 'context loss falls back to the poster', measureOnly: false },
+      { title: 'context loss falls back to the poster', measureOnly: true },
       { title: 'draws nothing at rest', measureOnly: true },
       { title: 'draws nothing off-screen', measureOnly: true },
       { title: 'pauses while the tab is hidden', measureOnly: true },

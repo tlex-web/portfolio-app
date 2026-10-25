@@ -119,6 +119,8 @@ export async function countDraws(page: Page) {
  * so the canvas stays in '3d'. For every test that needs 3D (Tim's 09-13 B1
  * extended it from the desktop sizes, where local SwiftShader's 512² frames run
  * above the 50 ms budget, to 412 x 839, where CI's verdict is noise around it).
+ * Since 09-15 that includes 'context loss falls back to the poster' (WR-02: a
+ * decline would race its loseContext()) and the hidden-tab burst test (WR-01).
  * Only the tests about the budget keep the real one: 'records the frame-budget
  * verdict' and 'a slow device declines to the poster', which proves the real
  * decline path (lib/__tests__/frame-budget-policy.test.ts).

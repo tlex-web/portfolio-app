@@ -18,10 +18,12 @@ import { decideAscentMode, type AscentMode } from '@/lib/ascent/capability';
  *   keeps 3D). Nothing leaves module memory (T-09-09).
  * - Reduced motion is read live on every snapshot and its `change` event
  *   notifies subscribers, so turning it on mid-visit unmounts the canvas.
- * - downgradeAscent(reason) is sticky for the page view: a frame-budget
- *   decline, a lost context or a canvas that failed to load turns 'eligible'
- *   into 'static' (reduced motion still reads 'static-reduced'). It leaves one
- *   local performance mark, 'ascent-downgrade', with the reason.
+ * - downgradeAscent(reason) lasts the session: a frame-budget decline, a lost
+ *   context or a canvas that failed to load turns 'eligible' into 'static'
+ *   (reduced motion still reads 'static-reduced'). `downgraded` is module
+ *   state, so it survives client-side navigation and holds until a full
+ *   reload (IN-05, Tim: "Keep sticky, document"). It leaves one local
+ *   performance mark, 'ascent-downgrade', with the reason.
  */
 
 export type AscentDowngradeReason = 'frame-budget' | 'context-lost' | 'load-error';
@@ -97,7 +99,11 @@ export function useAscentMode(): AscentMode | 'pending' {
   return useSyncExternalStore<AscentMode | 'pending'>(subscribe, getSnapshot, getServerSnapshot);
 }
 
-/** Turns Home static for the rest of the page view. Later calls change nothing. */
+/**
+ * Turns Home static for the rest of the session. `downgraded` is module state,
+ * so the downgrade survives client-side navigation (a later visit to Home stays
+ * static) and holds until a full reload (IN-05). Later calls change nothing.
+ */
 export function downgradeAscent(reason: AscentDowngradeReason): void {
   if (downgraded) return;
   downgraded = true;

@@ -32,7 +32,8 @@ import TerrainMesh from './TerrainMesh';
  *
  * A canvas that throws (no context after all, a failed mesh load) is caught by
  * SafeCanvas, whose onCanvasError downgrades Home to static for the rest of the
- * page view: the canvas unmounts and the poster stays (D-18, D-21). A lost
+ * session (until a full reload, lib/useAscentMode.ts): the canvas unmounts and
+ * the poster stays (D-18, D-21). A lost
  * WebGL context does the same through ContextLossGuard (09-11), which ignores
  * the loss R3F inflicts on its own canvas when it unmounts.
  *
@@ -56,11 +57,13 @@ import TerrainMesh from './TerrainMesh';
  * Pixel ratio (09-11, D-18): CameraRig's frame budget may drop the ratio to 1
  * (R3F setDpr). R3F re-applies the `dpr` prop on every Canvas render (a stage
  * resize, the metres arriving), which would restore 1.5, so the prop is state
- * here and the rig's onDprStepDown sets it to 1. The step-down holds for the
- * page view: a remount (reduced motion off again) starts at 1.
+ * here and the rig's onDprStepDown sets it to 1. The step-down lasts the
+ * session: `dprSteppedDown` is module state, so a remount (reduced motion off
+ * again) or a later visit to Home after client-side navigation starts at 1,
+ * until a full reload (IN-05, Tim: "Keep sticky, document").
  */
 
-/** The frame budget stepped the pixel ratio down once in this page view. */
+/** The frame budget stepped the pixel ratio down once in this session (module state: until a full reload). */
 let dprSteppedDown = false;
 
 export default function TerrainCanvas({

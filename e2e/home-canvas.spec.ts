@@ -762,6 +762,10 @@ async function setVisibility(page: Page, state: 'hidden' | 'visible') {
 test.describe('Home canvas resilience (HOME-02, HOME-07)', () => {
   test('context loss falls back to the poster @chromium-only', async ({ page }) => {
     test.setTimeout(60000);
+    // A frame-budget decline is not what this test is about, and CI's 412 x 839
+    // verdict is noise: a real decline before loseContext() would remove the
+    // canvas or read 'frame-budget' as the downgrade reason (WR-02, Tim: "Include").
+    await budgetMeasureOnly(page);
     await page.setViewportSize({ width: 412, height: 839 });
     const errors = pageErrors(page);
     await page.goto('/');
