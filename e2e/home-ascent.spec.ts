@@ -6,6 +6,7 @@ import { projects } from '@/data/projects';
 import { home } from '@/data/home';
 import { site } from '@/data/site';
 import { summitPlaque } from '@/lib/ascent/summit';
+import { summitLayoutAt } from '@/lib/ascent/summit-layout';
 import { buildWaypoints, waypointKicker } from '@/lib/ascent/waypoints';
 import { countLabel } from '@/lib/home-format';
 import { formatMetres } from '@/lib/photo-format';
@@ -514,11 +515,24 @@ function boxGap(a: Box, b: Box): number {
 test.describe('Summit plaque clears the poster pins (G-09-2, static)', () => {
   const plaque = summitPlaque();
   const CLEARANCE = 8;
-  const ROWS: ReadonlyArray<{ width: number; height: number; layout: 'compact' | 'full' }> = [
-    { width: 375, height: 667, layout: 'compact' },
+  // The UAT and debug sizes (phones incl. a Safari-like 375 x 553 svh, the
+  // 768/778 iPad pair either side of the scrollbar gutter, tablets, desktops).
+  const SIZES: ReadonlyArray<readonly [number, number]> = [
+    [360, 640],
+    [375, 667],
+    [375, 553],
+    [390, 844],
+    [412, 839],
+    [768, 1024],
+    [778, 1024],
+    [820, 1180],
+    [1024, 768],
+    [1280, 720],
+    [1440, 900],
   ];
 
-  for (const { width, height, layout } of ROWS) {
+  for (const [width, height] of SIZES) {
+    const layout = summitLayoutAt(width, height);
     test(`${layout} summit clears every poster pin at ${width} x ${height}`, async ({ page }) => {
       await page.setViewportSize({ width, height });
       await disableWebGL(page);
@@ -527,9 +541,11 @@ test.describe('Summit plaque clears the poster pins (G-09-2, static)', () => {
       const { plaque: column, pins } = await summitBoxes(page);
       expect(pins).toHaveLength(waypoints.length);
       for (const pin of pins) {
-        expect
-          .soft(boxGap(column, pin), `pin ${pin.k} gap to the plaque column`)
-          .toBeGreaterThanOrEqual(CLEARANCE);
+        const gap = boxGap(column, pin);
+        test
+          .info()
+          .annotations.push({ type: 'pin gap', description: `pin ${pin.k}: ${gap.toFixed(1)} px` });
+        expect.soft(gap, `pin ${pin.k} gap to the plaque column`).toBeGreaterThanOrEqual(CLEARANCE);
       }
 
       const section = page.locator('#summit');
@@ -551,6 +567,41 @@ test.describe('Summit plaque clears the poster pins (G-09-2, static)', () => {
       }
     });
   }
+
+  // Reduced motion is the stacked layout with no fixed summit frame (UI-SPEC
+  // "Modes"), so there is no clearance contract to gate: the gaps are recorded,
+  // not asserted.
+  test('reduced motion keeps the full plaque with its stats at 375 x 667', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await disableWebGL(page);
+    await page.goto('/');
+
+    const { plaque: column, pins } = await summitBoxes(page);
+    for (const pin of pins) {
+      test.info().annotations.push({
+        type: 'reduced-motion pin',
+        description: `pin ${pin.k}: box ${pin.x.toFixed(1)},${pin.y.toFixed(1)} ${pin.width}x${pin.height}; gap to the plaque column ${boxGap(column, pin).toFixed(1)} px`,
+      });
+    }
+
+    const section = page.locator('#summit');
+    await expect(section.getByText(plaque.kicker, { exact: true })).toBeVisible();
+    await expect(section.getByText(plaque.height, { exact: true })).toBeVisible();
+    await expect(section.locator('dl > div')).toHaveCount(plaque.stats.length);
+    for (const item of await section.locator('dl > div').all()) await expect(item).toBeVisible();
+    await expect(page.locator('[data-summit-details]')).toBeHidden();
+  });
+
+  test('the compact stats are a group named by the summit h2 at 375 x 667', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto('/');
+
+    const group = page.getByRole('group', { name: plaque.title, exact: true });
+    await expect(group).toHaveCount(1);
+    await expect(group).toHaveAttribute('data-summit-details');
+    await expect(group.getByText(plaque.kicker, { exact: true })).toBeVisible();
+  });
 });
 
 /**

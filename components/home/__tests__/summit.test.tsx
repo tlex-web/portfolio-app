@@ -8,6 +8,7 @@
 import { getDefaultNormalizer, render, screen, within } from '@testing-library/react';
 import AboutSection from '../AboutSection';
 import HeroBlock from '../HeroBlock';
+import SummitDetails from '../SummitDetails';
 import SummitPlaque from '../SummitPlaque';
 import { home } from '@/data/home';
 import { summitPlaque } from '@/lib/ascent/summit';
@@ -60,6 +61,45 @@ describe('SummitPlaque (HOME-06, D-03, D-13)', () => {
     render(<SummitPlaque />);
 
     expect(screen.getAllByRole('list', { name: 'Trail signs' })).toHaveLength(1);
+  });
+
+  it('collapses to the compact plate under summit-compact, with no block scrim (G-09-2, 09-18)', () => {
+    const { container } = render(<SummitPlaque />);
+
+    expect(screen.getByText(plaque.kicker, keepSpaces)).toHaveClass('summit-compact:motion-safe:hidden');
+    expect(container.querySelector('dl')).toHaveClass('summit-compact:motion-safe:hidden');
+    expect(container.querySelector('[data-summit-plaque]')).toHaveClass('summit-compact:motion-safe:max-w-80');
+    const gradients = [...container.querySelectorAll('*')].filter((el) =>
+      /(^|\s)(\S+:)*bg-(linear|radial|conic|gradient)-/.test(el.getAttribute('class') ?? ''),
+    );
+    expect(gradients).toEqual([]);
+  });
+});
+
+describe('SummitDetails (HOME-06; G-09-2, 09-18)', () => {
+  const plaque = summitPlaque();
+
+  it('renders the kicker and the four stats in order', () => {
+    const { container } = render(<SummitDetails />);
+
+    expect(screen.getByText(plaque.kicker, keepSpaces)).toBeInTheDocument();
+    const terms = [...container.querySelectorAll('dl > div > dt')];
+    expect(terms.map((dt) => dt.textContent)).toEqual(plaque.stats.map((s) => s.label));
+    expect(container.querySelectorAll('h1, h2, h3, h4, h5, h6')).toHaveLength(0);
+  });
+
+  it('is a group labelled by the summit h2, shown only in the compact layout', () => {
+    render(
+      <>
+        <SummitPlaque />
+        <SummitDetails />
+      </>,
+    );
+    const group = screen.getByRole('group', { name: plaque.title });
+
+    expect(group).toHaveAttribute('data-summit-details');
+    expect(group).toHaveAttribute('aria-labelledby', 'summit-title');
+    expect(group).toHaveClass('hidden', 'summit-compact:motion-safe:block');
   });
 });
 
