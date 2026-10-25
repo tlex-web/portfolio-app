@@ -34,6 +34,55 @@ describe('PinMark (D-09)', () => {
     expect(pin.querySelector('[data-pin-label]')).toHaveTextContent('Gornerschlucht · 1,668 m');
     expect(pin.querySelector('[data-pin-label]')).toHaveClass('whitespace-nowrap');
     expect(pin).not.toHaveAttribute('data-active');
+    expect(pin).not.toHaveAttribute('data-label');
+  });
+
+  it('places the label by data-label: right by default, left, above, below or none (G-09-3 a)', () => {
+    const { container } = render(<PinMark k={2} label="Gornerschlucht" approximate={false} />);
+    const label = container.querySelector('[data-pin-label]') as HTMLElement;
+
+    // Right of the head (no data-label, or 'right'), vertically centred on it.
+    expect(label).toHaveClass('left-full', 'ml-2', 'top-3', '-translate-y-1/2', 'hidden');
+    expect(label).toHaveClass('group-data-[active]/pin:block');
+    expect(label).toHaveClass(
+      'group-data-[label=left]/pin:right-full',
+      'group-data-[label=left]/pin:left-auto',
+      'group-data-[label=left]/pin:mr-2',
+      'group-data-[label=left]/pin:ml-0'
+    );
+    expect(label).toHaveClass(
+      'group-data-[label=above]/pin:top-auto',
+      'group-data-[label=above]/pin:bottom-full',
+      'group-data-[label=above]/pin:mb-1',
+      'group-data-[label=above]/pin:ml-0',
+      'group-data-[label=above]/pin:translate-y-0',
+      'group-data-[label=above]/pin:left-(--pin-label-dx)'
+    );
+    expect(label).toHaveClass(
+      'group-data-[label=below]/pin:top-full',
+      'group-data-[label=below]/pin:mt-1',
+      'group-data-[label=below]/pin:ml-0',
+      'group-data-[label=below]/pin:translate-y-0',
+      'group-data-[label=below]/pin:left-(--pin-label-dx)'
+    );
+    // 'none' hides it with visibility only: never 'visible', which would override
+    // the 3D layer's inherited visibility.
+    expect(label).toHaveClass('group-data-[label=none]/pin:invisible');
+    expect(label.className).not.toMatch(/(^|\s)(\S+:)?visible(\s|$)/);
+  });
+
+  it('renders data-u and data-v when given, and neither otherwise', () => {
+    const { container: poster } = render(
+      <PinMark k={1} label="Zermatt" approximate={false} u={0.25} v={0.5} />
+    );
+    const pin = poster.querySelector('[data-pin]') as HTMLElement;
+    expect(pin).toHaveAttribute('data-u', '0.25');
+    expect(pin).toHaveAttribute('data-v', '0.5');
+
+    const { container: bare } = render(<PinMark k={1} label="Zermatt" approximate={false} />);
+    const plainPin = bare.querySelector('[data-pin]') as HTMLElement;
+    expect(plainPin).not.toHaveAttribute('data-u');
+    expect(plainPin).not.toHaveAttribute('data-v');
   });
 
   it('draws an approximate position with a 2 px dashed head border and a dashed stem', () => {
@@ -61,12 +110,16 @@ describe('Poster pins (HOME-05, D-09)', () => {
     const layer = container.querySelector('[data-pin-layer="poster"]') as HTMLElement;
     expect(layer).not.toBeNull();
     expect(layer).toHaveClass('pointer-events-none');
+    // Above the rail scrim inside the stage (G-09-3 a, 09-19).
+    expect(layer).toHaveClass('z-10');
 
     const pins = Array.from(layer.querySelectorAll<HTMLElement>('[data-pin]'));
     expect(pins.map((p) => p.dataset.pin)).toEqual(waypoints.map((w) => String(w.k)));
     pins.forEach((pin, i) => {
       expect(pin.style.left).toBe(`${waypoints[i].uv.u * 100}%`);
       expect(pin.style.top).toBe(`${waypoints[i].uv.v * 100}%`);
+      expect(pin).toHaveAttribute('data-u', String(waypoints[i].uv.u));
+      expect(pin).toHaveAttribute('data-v', String(waypoints[i].uv.v));
     });
   });
 
@@ -135,7 +188,7 @@ describe('AltimeterRail (HOME-04, D-01, D-05)', () => {
     const track = container.querySelector('[data-ascent-track]') as HTMLElement;
 
     // G-09-4 N1, Tim's option B (09-17): the rail paints above the hero scrim;
-    // its own scrim stays in the stage for the pin label flip and the camera.
+    // its own scrim stays in the stage for the camera, under the pin layers (09-19).
     expect(layer).toHaveAttribute('aria-hidden', 'true');
     expect(layer).toHaveClass('pointer-events-none', 'sticky', 'col-start-1', 'row-start-1');
     expect(rail.closest('[data-ascent-stage]')).toBeNull();

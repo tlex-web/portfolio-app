@@ -59,8 +59,9 @@ describe('PinLayer3D (D-09, C3)', () => {
     );
     expect(marks[3].querySelector('[data-pin-head]')).toHaveClass('border-dashed');
     expect(container.querySelectorAll('[data-summit-mark]')).toHaveLength(1);
-    // Poster-only flip input: the 3D pins are flipped by the camera rig instead.
+    // Poster-only placement input: the camera rig places the 3D labels instead.
     marks.forEach((m) => expect(m).not.toHaveAttribute('data-u'));
+    marks.forEach((m) => expect(m).not.toHaveAttribute('data-v'));
   });
 
   it('hands every mark to the camera rig through the refs array (pins, then the summit)', () => {

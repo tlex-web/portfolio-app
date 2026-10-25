@@ -12,7 +12,9 @@ import type { PinAnchor } from '@/lib/ascent/route';
  * DEM height) and the dashed approximate state are identical. No drei Html and
  * no portal per pin: CameraRig projects each anchor (the decoded mesh height,
  * not the DEM value) every rendered frame and writes the mark's transform,
- * visibility and data-flip through the refs this layer hands it.
+ * visibility and data-label through the refs this layer hands it. The layer
+ * is z-10, like the poster pin layer, so the pins paint above the rail scrim
+ * (G-09-3 a, 09-19); the rail box layer still paints above the whole stage.
  *
  * Every mark starts hidden at the stage origin until the rig places it. The
  * layer is invisible until the stage reads '3d', and the poster pin layer is
@@ -53,7 +55,7 @@ export default function PinLayer3D({
     <div
       data-pin-layer="3d"
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 invisible group-data-[ascent-mode=3d]/stage:visible"
+      className="pointer-events-none absolute inset-0 z-10 invisible group-data-[ascent-mode=3d]/stage:visible"
     >
       {pins.map((pin, i) => (
         <PinMark
