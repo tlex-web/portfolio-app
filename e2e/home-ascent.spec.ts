@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
-import { photos } from '@/data/generated/photos';
+import { lowestDemM, photos } from '@/data/generated/photos';
+import { terrain } from '@/data/generated/terrain';
 import { editorial } from '@/data/photos/editorial';
 import { projects } from '@/data/projects';
 import { home } from '@/data/home';
@@ -7,6 +8,9 @@ import { site } from '@/data/site';
 import { summitPlaque } from '@/lib/ascent/summit';
 import { buildWaypoints, waypointKicker } from '@/lib/ascent/waypoints';
 import { countLabel } from '@/lib/home-format';
+import { formatMetres } from '@/lib/photo-format';
+import { readout, scrollBlockToCentre } from './helpers/ascent';
+import { disableWebGL, nextFrames } from './helpers/webgl';
 
 /**
  * Home's waypoint list in a browser (HOME-05; D-08, D-20, D-21; 09-UI-SPEC
@@ -21,7 +25,7 @@ import { countLabel } from '@/lib/home-format';
  */
 
 const ascending = [...photos].sort(
-  (a, b) => a.elevation.m - b.elevation.m || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
+  (a, b) => a.elevation.m - b.elevation.m || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
 );
 const slugs = ascending.map((photo) => editorial[photo.id].slug);
 const waypoints = buildWaypoints();
@@ -51,7 +55,7 @@ test.describe('Waypoint cards (HOME-05)', () => {
     await page.goto('/');
 
     await expect(waypointList(page).getByRole('heading', { level: 2 })).toHaveText(
-      waypoints.map((w) => w.title),
+      waypoints.map((w) => w.title)
     );
     expect(waypoints.map((w) => w.slug)).toEqual(slugs);
     for (const w of waypoints) {
@@ -74,7 +78,9 @@ test.describe('Waypoint cards (HOME-05)', () => {
     const urls = await list.evaluate((ol) => [
       ...[...ol.querySelectorAll('img')].map((img) => img.getAttribute('src') ?? ''),
       ...[...ol.querySelectorAll('source')].flatMap((source) =>
-        (source.getAttribute('srcset') ?? '').split(',').map((entry) => entry.trim().split(/\s+/)[0]),
+        (source.getAttribute('srcset') ?? '')
+          .split(',')
+          .map((entry) => entry.trim().split(/\s+/)[0])
       ),
     ]);
     // One img and two sources of two widths per card.
@@ -127,7 +133,7 @@ test.describe('Waypoint cards (HOME-05)', () => {
         sections.map((s) => {
           const r = s.getBoundingClientRect();
           return { top: r.top, bottom: r.bottom };
-        }),
+        })
       );
     expect(boxes).toHaveLength(waypoints.length);
     for (let i = 1; i < boxes.length; i++) {
@@ -167,7 +173,9 @@ test.describe('Summit, trail signs and About (HOME-03, HOME-06)', () => {
     await section.scrollIntoViewIfNeeded();
 
     await expect(section.getByText(plaque.kicker, { exact: true })).toBeVisible();
-    await expect(section.getByRole('heading', { level: 2, name: plaque.title, exact: true })).toBeVisible();
+    await expect(
+      section.getByRole('heading', { level: 2, name: plaque.title, exact: true })
+    ).toBeVisible();
     await expect(section.getByText(plaque.height, { exact: true })).toBeVisible();
 
     const items = section.locator('dl > div');
@@ -187,8 +195,14 @@ test.describe('Summit, trail signs and About (HOME-03, HOME-06)', () => {
     const groups = page.locator('ul[aria-label="Trail signs"]');
     await expect(groups).toHaveCount(2);
     const signs = [
-      { name: signName('/photos', countLabel(photos.length, 'waypoint', 'waypoints')), href: '/photos' },
-      { name: signName('/projects', countLabel(projects.length, 'route', 'routes')), href: '/projects' },
+      {
+        name: signName('/photos', countLabel(photos.length, 'waypoint', 'waypoints')),
+        href: '/photos',
+      },
+      {
+        name: signName('/projects', countLabel(projects.length, 'route', 'routes')),
+        href: '/projects',
+      },
     ];
     for (const group of [groups.nth(0), groups.nth(1)]) {
       await expect(group.getByRole('link')).toHaveCount(signs.length);
@@ -196,7 +210,9 @@ test.describe('Summit, trail signs and About (HOME-03, HOME-06)', () => {
         await expect(group.getByRole('link', { name, exact: true })).toHaveAttribute('href', href);
       }
     }
-    await expect(page.locator('[data-ascent-block="hero"] ul[aria-label="Trail signs"]')).toHaveCount(1);
+    await expect(
+      page.locator('[data-ascent-block="hero"] ul[aria-label="Trail signs"]')
+    ).toHaveCount(1);
     await expect(summit(page).locator('ul[aria-label="Trail signs"]')).toHaveCount(1);
   });
 
@@ -241,15 +257,17 @@ test.describe('Summit, trail signs and About (HOME-03, HOME-06)', () => {
     const about = page.getByRole('region', { name: 'About' });
     const { contactLink, roadmapLink } = home.about.contact;
 
-    await expect(about.getByRole('heading', { level: 2, name: 'About', exact: true })).toBeVisible();
+    await expect(
+      about.getByRole('heading', { level: 2, name: 'About', exact: true })
+    ).toBeVisible();
     await expect(about.getByText(home.about.body, { exact: true })).toBeVisible();
     await expect(about.getByRole('link', { name: contactLink.label, exact: true })).toHaveAttribute(
       'href',
-      contactLink.href,
+      contactLink.href
     );
     await expect(about.getByRole('link', { name: roadmapLink.label, exact: true })).toHaveAttribute(
       'href',
-      roadmapLink.href,
+      roadmapLink.href
     );
     expect([contactLink.href, roadmapLink.href]).toEqual(['/contact', '/roadmap']);
   });
@@ -278,12 +296,185 @@ test.describe('Summit, trail signs and About (HOME-03, HOME-06)', () => {
           const r = s.getBoundingClientRect();
           const col = s.closest('div')!.getBoundingClientRect();
           return { height: r.height, right: r.right, colRight: col.right };
-        }),
+        })
       );
     expect(values).toHaveLength(plaque.stats.length);
     for (const v of values) {
       expect(v.height).toBeLessThan(30);
       expect(v.right).toBeLessThanOrEqual(v.colRight + 0.5);
     }
+  });
+});
+
+/**
+ * The one damped progress value in a browser (HOME-03, HOME-04, HOME-05; D-01,
+ * D-05, D-06, D-08, D-09; 09-UI-SPEC "Ascent Mapping", "Pins", "Altimeter
+ * Rail" and "Focus contract"). Every test switches WebGL off, so Chromium stays
+ * on the poster path (poster pins, live rail) once the canvas lands in 09-07
+ * and 09-08. Positions are reached by centring a block, which lands inside
+ * its arrival plateau; expected heights and labels come from the data.
+ */
+test.describe('Ascent progress (HOME-03, HOME-04, HOME-05)', () => {
+  const second = waypoints[1];
+  const approximate = waypoints.find((w) => w.approximate);
+  const rail = (page: Page) => page.locator('[data-ascent-rail]');
+  const stage = (page: Page) => page.locator('[data-ascent-stage]');
+  const posterPins = (page: Page) => page.locator('[data-pin-layer="poster"] [data-pin]');
+
+  test.beforeEach(async ({ page }) => {
+    await disableWebGL(page);
+  });
+
+  test('the rail is decorative and hidden below 768 px', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/');
+    await expect(rail(page)).toBeHidden();
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect(rail(page)).toBeVisible();
+    await expect(stage(page)).toHaveAttribute('aria-hidden', 'true');
+    await expect(stage(page).locator('[data-ascent-rail]')).toHaveCount(1);
+    await expect(rail(page)).toHaveCSS('pointer-events', 'none');
+    await expect(stage(page).locator('[aria-live]')).toHaveCount(0);
+    await expect(
+      stage(page).locator(
+        'a[href], button, input, select, textarea, [contenteditable], [tabindex]:not([tabindex="-1"])'
+      )
+    ).toHaveCount(0);
+  });
+
+  test('the readout climbs from the first waypoint to the summit', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    await expect(readout(page)).toHaveText(formatMetres(lowestDemM));
+
+    await scrollBlockToCentre(page, `li[data-k="${second.k}"]`);
+    await expect(readout(page)).toHaveText(formatMetres(second.altitudeM));
+
+    await scrollBlockToCentre(page, '#summit');
+    await expect(readout(page)).toHaveText(formatMetres(terrain.summit.officialM));
+  });
+
+  test('the rail ticks are evenly spaced', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+
+    const centres = await rail(page)
+      .locator('[data-tick-label]')
+      .evaluateAll((labels) =>
+        labels.map((l) => {
+          const r = l.getBoundingClientRect();
+          return r.top + r.height / 2;
+        })
+      );
+    expect(centres).toHaveLength(waypoints.length + 1);
+    const step = (centres[centres.length - 1] - centres[0]) / (centres.length - 1);
+    expect(step).toBeLessThan(0);
+    centres.forEach((c, k) => expect(Math.abs(c - (centres[0] + k * step))).toBeLessThanOrEqual(1));
+  });
+
+  test('poster pins sit at their UV and light with the active stage', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+
+    await expect(posterPins(page).locator('[data-pin-head]')).toHaveText(
+      waypoints.map((w) => String(w.k))
+    );
+    expect(approximate).toBeDefined();
+    await expect(
+      page.locator(`[data-pin-layer="poster"] [data-pin="${approximate!.k}"] [data-pin-head]`)
+    ).toHaveCSS('border-top-style', 'dashed');
+
+    const sheet = await page.locator('[data-sheet-box]').evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return { left: r.left, top: r.top, side: r.width };
+    });
+    const anchors = await posterPins(page).evaluateAll((pins) =>
+      pins.map((p) => {
+        const r = p.getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.bottom };
+      })
+    );
+    anchors.forEach((a, i) => {
+      expect(Math.abs(a.x - (sheet.left + waypoints[i].uv.u * sheet.side))).toBeLessThanOrEqual(1);
+      expect(Math.abs(a.y - (sheet.top + waypoints[i].uv.v * sheet.side))).toBeLessThanOrEqual(1);
+    });
+
+    await scrollBlockToCentre(page, `li[data-k="${second.k}"]`);
+    const lit = page.locator(`[data-pin-layer="poster"] [data-pin="${second.k}"]`);
+    await expect(lit).toHaveAttribute('data-active', '');
+    await expect(page.locator('[data-pin-layer="poster"] [data-pin][data-active]')).toHaveCount(1);
+    await expect(lit.locator('[data-pin-label]')).toBeVisible();
+    await expect(lit.locator('[data-pin-label]')).toHaveText(
+      `${second.shortPlace} · ${formatMetres(second.altitudeM)}`
+    );
+
+    await scrollBlockToCentre(page, '#summit');
+    await expect(page.locator('[data-pin][data-active]')).toHaveCount(0);
+  });
+
+  test('keyboard focus on a card brings its stage to the centre', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+
+    const link = page.getByRole('link', { name: `View photo: ${second.title}`, exact: true });
+    let focused = false;
+    for (let i = 0; i < 30 && !focused; i++) {
+      await page.keyboard.press('Tab');
+      focused = await link.evaluate((el) => el === document.activeElement);
+    }
+    expect(focused).toBe(true);
+    await expect(readout(page)).toHaveText(formatMetres(second.altitudeM));
+  });
+
+  test('native scroll: no wheel or touch interception, no snapping', async ({ page }) => {
+    await page.addInitScript(() => {
+      const w = window as unknown as { __prevented: number };
+      w.__prevented = 0;
+      const preventDefault = Event.prototype.preventDefault;
+      Event.prototype.preventDefault = function (this: Event) {
+        if (['wheel', 'touchstart', 'touchmove'].includes(this.type)) w.__prevented += 1;
+        return preventDefault.call(this);
+      };
+    });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+
+    const before = await page.evaluate(() => window.scrollY);
+    await page.mouse.move(720, 450);
+    await page.mouse.wheel(0, 600);
+    await expect
+      .poll(() => page.evaluate(() => window.scrollY))
+      .toBeGreaterThanOrEqual(before + 598);
+    await nextFrames(page);
+    const after = await page.evaluate(() => window.scrollY);
+    expect(Math.abs(after - before - 600)).toBeLessThanOrEqual(2);
+
+    const styles = await page.evaluate(() => {
+      const track = document.querySelector('[data-ascent-track]')!;
+      return {
+        prevented: (window as unknown as { __prevented: number }).__prevented,
+        snap: [document.documentElement, document.body, track].map(
+          (el) => getComputedStyle(el).scrollSnapType
+        ),
+        behavior: getComputedStyle(document.documentElement).scrollBehavior,
+      };
+    });
+    expect(styles.prevented).toBe(0);
+    expect(styles.snap).toEqual(['none', 'none', 'none']);
+    expect(styles.behavior).toBe('auto');
+  });
+
+  test('reduced motion shows a static rail and lights no pin', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+
+    await scrollBlockToCentre(page, `li[data-k="${second.k}"]`);
+    await expect(rail(page)).toBeVisible();
+    await expect(rail(page).locator('[data-tick-label]')).toHaveCount(waypoints.length + 1);
+    await expect(page.locator('[data-ascent-marker]')).toBeHidden();
+    await expect(readout(page)).toBeHidden();
+    await expect(page.locator('[data-pin][data-active]')).toHaveCount(0);
   });
 });
