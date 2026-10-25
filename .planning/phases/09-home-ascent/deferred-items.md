@@ -13,3 +13,9 @@
   **What:** In a combined run of home-ascent, photos, homepage, shell and design-system on chromium, the 3D carousel canvas never attached within 15 s and the browser logged the known React `removeChild ... not a child` error from the /photos grid/3D toggle (STATE, Phase 10 item from 07-19). `e2e/photos.spec.ts` alone passed 18/18 with `--repeat-each=3`, and 7/7 in the 09-03 Task 1 run. 09-03 only adds `id={image.slug}` to the grid buttons, which cannot remove a DOM node.
   **Found by:** 09-03 plan verification.
   **Owner:** Phase 10 (photos/lightbox rework, with the existing removeChild item). Out of scope for 09-03.
+
+- `e2e/no-webgl.spec.ts` "home keeps its content" times out waiting for "Error creating WebGL context"
+  status: open
+  **What:** Since 09-01 made Home a Server Component, `/` mounts no canvas, so the console error the test awaits never fires and it fails after 15 s (09-RESEARCH Pitfall 1). Reproduced in the 09-06 Task 3 run; the other three tests in the spec pass with the helpers moved to `e2e/helpers/webgl.ts`. 09-06 adds no canvas (its pre-plan commit `bd16add` has none either) and keeps the test unchanged, as the plan requires.
+  **Found by:** 09-06 Task 3.
+  **Owner:** 09-07, which rewrites this test to assert static mode (`data-ascent-mode`) instead of a WebGL failure.
