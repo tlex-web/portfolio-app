@@ -1,14 +1,11 @@
-# Phase 9 — UI Review (revised)
+# Phase 9 — UI Review (re-audit after gap closure 09-15 to 09-22)
 
-**Audited:** 2026-10-25 (revised after reading 09-CONTEXT, the 09-07/10/11/12/13/14 SUMMARYs and the ui-ux-pro-max checklists)
-**Baseline:** 09-UI-SPEC.md (approved 2026-10-24)
-**Screenshots:** No fresh captures (no dev server started). Evidence used:
-- The committed CI baselines `e2e/visual/routes.spec.ts-snapshots/home/{375,768,1440}-*`. These are static-poster renders. 09-11 and 09-14 explain why: the frame-budget gate declines SwiftShader at desktop size, so CI falls back to the poster.
-- The 09-12 live 3D renders in the scratchpad `09-12/` directory: `summit-fixed-1440.png`, `summit-fixed-1280.png`, `summit-fixed-412.png`, `shots/3d-ex1.00-pb450-wp2-1440.png`.
-**Interaction captures:** off (workflow.ui_interaction_capture is false). Interaction findings are code-derived.
-**ui-ux-pro-max:** SKILL.md loaded. Checklists applied: Accessibility (`color-contrast`, `alt-text`, `keyboard-nav`, `focus-not-obscured`, `reduced-motion`, `heading-hierarchy`, `color-not-only`), Touch (`touch-target-size`, `touch-spacing`), Performance (`image-dimension`, `content-jumping`), Layout (no horizontal scroll), Typography and Color (`semantic tokens`, no raw hex, 16 px base). The skill's one-primary-CTA rule is met with zero primaries, as the spec states.
-
-Tag key: **KNOWN** = in `deferred-items.md`, already routed to the gap plan after 09-14. **NEW** = found here. **Gap-plan candidate** = Y / N / Maybe.
+**Audited:** 2026-10-25
+**Baseline:** 09-UI-SPEC.md (with the 09-17 to 09-21 amendments) and the accepted D-09 amendment
+**Screenshots:** Not captured fresh (no dev server started). Evidence: the new committed CI baselines (Tim's commit e9ebee7) in `e2e/visual/routes.spec.ts-snapshots/home/`, read as images. Viewed: 375 start, waypoint-2, summit and reduced; 768 start, waypoint-2 and summit; 1440 start and summit. I did not open the 1440 waypoint-2, 1440 reduced or 768 reduced shots. These are static-poster renders, so live 3D framing (09-20, 09-21) is judged from the summaries and tests only.
+**Interaction captures:** off (workflow.ui_interaction_capture is false). Interaction findings are code- and summary-derived.
+**ui-ux-pro-max:** SKILL.md loaded. Checklists applied: accessibility (contrast, focus, reduced motion, heading order), touch (44 px targets, 8 px spacing), layout (no horizontal cut-off, safe area), typography and colour (semantic tokens, 4.5:1).
+**Not signed off by Tim:** review items S1-S4, W1-W2, T1, R1-R2 (09-22-SUMMARY) and the planner's three design choices. Nothing below is described as approved except the D-09 pin 3 amendment.
 
 ---
 
@@ -16,98 +13,92 @@ Tag key: **KNOWN** = in `deferred-items.md`, already routed to the gap plan afte
 
 | Pillar | Score | Key Finding |
 |--------|-------|-------------|
-| 1. Copywriting | 3/4 | Matches the contract and About copy is approved; docked-card kicker orphans the "4" (KNOWN) and the place line wraps to start with a dangling "·" (NEW) |
-| 2. Visuals | 3/4 | The live 3D stage is strong at 1280, 1440 and 412. KNOWN plaque and pin overlaps below 1280; NEW pin 3 under hero copy at 375 and 768 |
-| 3. Color | 3/4 | Accent only on the two new uses; no hex or white/black; the hero scrim dims the rail labels at 768 to 1023 (NEW) |
-| 4. Typography | 3/4 | Exactly four sizes and two weights; docked-card line breaks are the only defects |
-| 5. Spacing | 3/4 | On the scale; arbitrary values are only the geometric ones the spec lists |
-| 6. Experience Design | 3/4 | Three modes all complete; known overlaps remain; B8 contrast covers the summit only, not the start |
+| 1. Copywriting | 4/4 | Copy matches the contract. The kicker "4" orphan and the leading "·" are gone in the 375 waypoint-2 shot. |
+| 2. Visuals | 3/4 | Rail, plaque and pin 2 label fixed. Open: S3 (pin 4 and summit triangle cut off on phones), pin 3 sits on hero text at 375 and 768, reduced-motion plaque covers pins. |
+| 3. Color | 3/4 | Accent use unchanged and token-only. Rail labels are readable at 768 now. The hero scrim still switches at `lg:` (open deferred item, not re-measured). |
+| 4. Typography | 4/4 | Four sizes, two weights. Card breaks fixed. |
+| 5. Spacing | 3/4 | No raw pixel or hex values. The phone summit frame clips pin 4 and the triangle. The 375 hero keeps a large empty band below the cue links. |
+| 6. Experience Design | 3/4 | Compact plate stops the summit overlap at every guarded size. Open: reduced-motion overlap, 4 `delayHeightmap` tests that can flake, checklist unsigned. |
 
-**Overall: 18/24** (was 17/24: Visuals raised from 2 to 3 after judging the live 3D renders; two earlier NEW findings withdrawn, see Corrections)
-
----
-
-## Corrections to the first pass
-
-| First-pass claim | Verdict | Evidence |
-|------------------|---------|----------|
-| About and contact copy is DRAFT | **Wrong, withdrawn.** Tim approved it verbatim ("approve") at the 09-12 copy checkpoint. `data/home.ts:20` has `status: 'approved'` (09-12-SUMMARY, commit ae50279). No score impact. | `09-12-SUMMARY.md` lines 48, 127-128, 166 |
-| Year range prints a hyphen, not an en dash | **Wrong, withdrawn.** `lib/home-format.ts:20` defines `EN_DASH = '–'` and `lib/home-format.ts:78` returns `` `${min}${EN_DASH}${max}` ``. `lib/ascent/summit.ts:58` feeds it the "Photographed" value. The baseline's JetBrains Mono renders U+2013 like a short hyphen at 14 px. | Code |
-| 1440 reduced-motion drops the terrain after the hero | **Withdrawn as a defect; most likely a full-page capture artifact.** UI-SPEC "Modes" says static-reduced is "Poster only, sticky behind the content" (UI-SPEC line 214). In code the stage is `sticky top-(--nav-h) col-start-1 row-start-1` (`AscentController.tsx:280`) in the same grid cell as the track (`AscentHero.tsx:72`). A Playwright full-page capture never scrolls, so a sticky stage shows only once at the top. I did not confirm the live reduced layout, so the poster staying behind the stacked cards is unverified. The sparse right-hand side of the stacked column is the design (left-aligned cards, D-07). | Spec and code |
-| Hero scrim flips at `lg:`, not 768 | **Confirmed, but KNOWN.** `HeroBlock.tsx` `SCRIM` uses `lg:bg-linear-to-r`. The spec (Hero Block) says 768. It is logged open in `deferred-items.md` ("Hero scrim switches to the horizontal gradient at `lg:`") and in 09-07-SUMMARY line 235, owner 09-14. The code comment says Tim accepted correction C6 on 2026-10-25. Not new. | Cited |
+**Overall: 20/24** (was 18/24: Copywriting 3 to 4, Typography 3 to 4; Visuals, Color, Spacing and Experience Design stay at 3 because of the open items below)
 
 ---
 
-## Top Fixes
+## Changes since the 18/24 review
 
-1. **KNOWN, routed to the gap plan: summit plaque covers pins below 1280.** Measured in 09-12 at 375x667 (all four 3D pins), 768x1024 (pin 3), 820x1180 (pins 1-3) and 1024x768 (pin 1 touches, pin 4 under the rail scrim). The static poster pins sit under the plaque: 3 at 375, 2 at 412, 1 each at 768 and 1024. Fix: a compact plaque on short or portrait stages, or framing that puts the pins above it. The 3D renders at 1280, 1440 and 412 x 839 are clear.
-2. **NEW, gap-plan candidate (Y): the hero scrim overlays and dims the altimeter rail at 768 to 1023.** The track (and the hero scrim inside it) paints above the stage (`AscentHero.tsx:72`, later DOM order), so at `md` through `lg-1` the vertical scrim (from-surface/90 to /50) sits over the rail labels. In `768-ascent-start` the labels are barely readable. Not measured, since I had no image tool for pixel values. B7 samples only hero text; B8 samples only the summit position (`e2e/home-modes.spec.ts` B8, 09-07-SUMMARY line 144). Fix: limit the scrim box to the copy column, or lift the rail above the track, then add a B8 case at p = 0 and 768.
-3. **NEW, gap-plan candidate (Y, low): the docked card's place line wraps with a leading "·" at 375, and its kicker orphans the "4" (KNOWN).** Fix both together with `whitespace-nowrap` on the segments, or move the date to its own line (`WaypointCard.tsx` kicker and place line in the 128 px column).
-4. **NEW, gap-plan candidate (Maybe): pin 3 renders behind hero copy at p = 0 at 375 and 768.** See Visuals.
+| Earlier finding | Status | Evidence |
+|-----------------|--------|----------|
+| KNOWN: docked card kicker orphans the "4" | **Fixed** | `375-ascent-waypoint-2`: "1,668 m ·" / "Waypoint 2 of 4" on two lines (09-16). The separator trails line 1, which is acceptable. |
+| N2: place line wraps with a leading "·" | **Fixed** | Same shot: "Gornerschlucht, Zermatt" / "Sep 2021". |
+| N1: hero scrim dims the rail at 768 to 1023 | **Fixed** | `768-ascent-start`: all rail labels and the 1,617 m readout read clearly (09-17, rail in its own layer). Not pixel-measured by me. The 09-22 summary reports the `lg:` tail no longer touches "2,760 m approx." at 1440. |
+| KNOWN: 768 waypoint-2 pin label hides behind the card | **Fixed** | `768-ascent-waypoint-2`: the label "Gornerschlucht · 1,668 m" sits below the lit pin, clear of the card (09-19). |
+| KNOWN: summit plaque covers poster pins below 1280 | **Mostly fixed** | `375-ascent-summit` and `768-ascent-summit` show the compact one-line plate with the signs, and pins 1 to 3 are clear. 1440 shows the full plaque with all four pins clear. Two cases remain open: S3 and reduced motion (below). |
+| Pin 3 label hidden at 768 to 1024 | **Accepted** (D-09 amendment, Tim: "Accept, amend D-09") | Code comment and UI-SPEC Pins row; scored neutrally. |
+| N3: pin 3 collides with hero copy at p = 0 | **Open** | `375-ascent-start`: the pin 3 head sits directly under "Tim Lui" and left of "Developer & photographer". `768-ascent-start`: it sits just under the thesis line and above the "Photographs" sign. `1440-ascent-start`: clear. |
+| N4: summit triangle low contrast on dark ridge | **Open, optional** | `1440-ascent-summit`: the small triangle at (136, 713) is faint but readable. |
+| N5: cue links stack at 375, leaving an empty band | **Open, minor** | `375-ascent-start`: about 70 px of empty hero below "Skip to the summit". |
+| Dark wedge at the 1440 summit | **Benign, still logged open** | `1440-ascent-summit` shows terrain shading only. Recommend closing it. |
+| Hero scrim `lg:` vs 768 spec row | **Open** | deferred-items.md. The decision (align the code or amend the spec) is still not made. |
+| "2,760 m approx." at 4.81:1 at 768 | **Unverified** | It reads clearly in `768-ascent-start`. I have no new measurement, so the entry should be re-measured by the B8 test rather than closed here. |
+
+---
+
+## Top 3 Priority Fixes
+
+1. **S3 (open, WARNING): the phone summit frame cuts off pin 4 and the summit triangle.** In `375-ascent-summit` only pins 1 to 3 show. Pin 4 is past the right edge (x 377 to 401 at 375 x 900, and 403 to 427 at 412 x 915), and the triangle is off the left edge at every phone size. Phone users never see the summit marker or the fourth waypoint, while D-09 requires all four pins to be visible. Fix: reframe the poster crop on narrow stages so the pin box fits inside the stage, or add the two pins to the narrow-stage containment test, as the 11-size guard does for plaque overlap. Tim must triage this one.
+2. **Reduced motion keeps the full plaque, which covers all four poster pins at 375 x 667 (open, WARNING).** The overlap is 15 to 127 px in Chromium and Firefox. Fix: apply the compact layout under reduced motion too, or move the pin layer above the stacked column. The stacked layout has no fixed summit frame, so there are no pins to hide there. The simplest fix is to hide the poster behind the full plaque deliberately. This needs Tim's decision.
+3. **Pin 3 renders on hero copy at 375 and 768 (open, WARNING).** At 375 the head touches the "Tim Lui" and role text, and at 768 it sits tight against the thesis line. D-09 wants every pin visible from the start, so only the Zermatt pins may overlap. Fix: nudge the poster x-share or hide pin 3 under the hero text with a hero-box check, as 09-19 does for card-aware labels.
+
+Smaller items (not in the top 3): decide the hero scrim breakpoint (`lg:` vs 768) and amend the spec if the code stays; add `serviceWorkers: 'block'` to the four other `delayHeightmap` tests; re-measure "2,760 m approx." at 768 with B8 at p = 0 and p = 1.
 
 ---
 
 ## Detailed Findings
 
-### Pillar 1: Copywriting (3/4)
-- Rendered copy matches the contract: kicker `45.9764 N · 7.6586 E`, `Tim Lui`, role, thesis, both cue links, `Photographs · 4 waypoints`, `Engineering · 2 routes`, `Waypoint 2 of 4`, `View photo`, `Matterhorn summit`, `4,478 m`, four plaque stats with their second lines, `2,760 m approx.` on the rail, and the approved About copy.
-- `WaypointCard.tsx` names the link with `aria-label="View photo: {title}"` instead of the spec's visible text plus sr-only span. The name is equivalent and each link stays distinguishable (`aria-labels`, WCAG 2.4.4). Method deviation only, and the code comment explains it.
-- WARNING, KNOWN, routed to the gap plan: at 375 the docked kicker orphans the "4" (`375-ascent-waypoint-2`).
-- WARNING, NEW, gap-plan candidate Y: in the same render the place line wraps as `Gornerschlucht, Zermatt` / `· Sep 2021`, a separator at the start of a line.
-- Trail-sign labels are nouns by design (the spec checker's non-blocking FLAG).
+### Pillar 1: Copywriting (4/4)
+- Rendered copy matches the contract in every shot viewed: kicker `45.9764 N · 7.6586 E`, `Tim Lui`, "Developer & photographer", thesis, both cue links, "Photographs / 4 waypoints", "Engineering / 2 routes", "Matterhorn summit / 4,478 m", plaque stat labels with second lines ("Riffelsee, approx.", "straight line"), and `View photo`.
+- The kicker in `375-ascent-waypoint-2` now reads "1,668 m ·" over "Waypoint 2 of 4", and the place line "Gornerschlucht, Zermatt" over "Sep 2021". Both former breaks are gone.
+- Minor: "2019-2021" in the plaque renders an en dash in JetBrains Mono at 14 px that looks like a hyphen. Code uses `EN_DASH`, so this is not a defect.
+- Minor: the kicker's trailing "·" ends line 1. Acceptable, and a nowrap pair is the intended behaviour.
 
 ### Pillar 2: Visuals (3/4)
-- Live 3D judged from the 09-12 renders. At 1440 and 1280 the summit look-back puts all four pins to the right of the plaque with the summit triangle at the foot; at 412 the plaque is docked and pins 1-3 and the dashed 4 sit above it, small but clear. The Gornerschlucht 1440 frame (`3d-ex1.00-pb450-wp2-1440.png`) shows the card on the left, the lit pin with its label, and the readout on 1,668 m. This clears the 09-10 "pins behind plaque at 1440" item, which is resolved.
-- **Dark wedge at the 1440 summit (deferred item, open): judged benign.** In `summit-fixed-1440.png` the dark mass at about x 560-660, y 740-900 is the shaded near ridge of the peak, with the summit triangle floating on it at x 561, y 802. It reads as terrain, not a render artefact, and it has no text on it. I would close the item. The summit triangle sits on a near-black face and is low contrast. A small lift of `SUMMIT_LIFT_M` would help; this is optional polish.
-- WARNING, KNOWN, routed to the gap plan: the plaque overlaps pins at 375x667, 768x1024, 820x1180 and 1024x768, and the static poster pins sit under the plaque below 1280 (`375-ascent-summit`: pins 1 and 2 only; `768-ascent-summit`: pin 3 hidden).
-- WARNING, KNOWN, routed to the gap plan: at 768 the waypoint-2 pin label hides behind the card.
-- WARNING, NEW, gap-plan candidate Maybe: pin 3 sits behind hero copy at p = 0. Evidence: `375-ascent-start` (pin 3 head beside "Developer & photographer"), `768-ascent-start` (between the thesis and the "Photographs" sign), `1440-ascent-start` (just above that sign, not touching text). The spec does require all four pins visible from the start (D-09, "All pins visible", and the Pins "Visibility" row). It accepts only an overlap between the two Zermatt pins, not pin versus copy. So this is not a spec violation, but the collision is unplanned. Cheap fix: nudge the poster crop (`0.64` x-share) or accept it as decorative.
-- Hierarchy is strong: the 64 px h1, the signpost pair with the yellow tips, a flat panel system, and the rail marker kept in step with the lit pin.
+- Hierarchy is strong: the 64 px h1, the signpost pair with the yellow tips, the lit cyan pin with its label, and the rail marker kept in step with the pin.
+- Fixed: the compact summit plate at 375 and 768 leaves the pins clear. The 768 waypoint-2 label sits clear of the card. The 1440 plaque no longer covers any pin, and the rail is above the scrim.
+- WARNING (S3, open): pin 4 and the triangle are cut off on phones; see Top Fixes 1.
+- WARNING (open): reduced-motion plaque covers pins at 375 x 667; see Top Fixes 2.
+- WARNING (open): pin 3 on hero copy; see Top Fixes 3.
+- Accepted: pin 3's poster label is hidden while its head lies under the card at about 768 to 1090 px (D-09 amendment). In `768-ascent-start` the pin 4 dashed head sits close to the rail labels but clear of them.
+- Optional polish: the summit triangle at 1440 is small and low contrast.
 
 ### Pillar 3: Color (3/4)
-- `bg-accent` and `text-ink-inverse` appear only in `PinMark.tsx` (the active head) and `AltimeterRail.tsx:112` (the marker): the two new "you are here" uses. No hex, `rgb(`, white or black in `components/home` or `app/(site)/page.tsx`. Trail yellow only through `bg-trail` on the sign tips. Semantic tokens only (the skill's raw-hex rule).
-- WARNING, KNOWN, routed to the gap plan: the hero scrim switches at `lg:` rather than 768. B7 still measures 6.84:1 or better on every hero text line.
-- WARNING, NEW, gap-plan candidate Y: the hero scrim reaches the rail at 768 to 1023 (see Top Fixes #2). It is a layering defect, not a token one. It also makes the deferred "2,760 m approx. at 4.81:1" number understate the problem at the start position, because that number was measured at the summit only. 09-14-SUMMARY line 214 saw the faint readout at 768 and tied it to the scrim item. I add the mechanism.
-- 60/30/10 holds: dark surface dominates, raised panels hold the cards and plaque, accent is minimal.
+- `bg-accent` x2 and `text-ink-inverse` x1 (the pin head and rail marker) are the only accent uses. No hex or `rgb(` in `components/home` or `app/(site)/page.tsx`. Trail yellow appears only on the sign tips. 60/30/10 holds.
+- The rail labels at 768 are readable in `768-ascent-start`, which is the main improvement since the last review.
+- WARNING (open): the hero scrim still flips at `lg:` rather than at 768, against the spec row. Three of four hero text lines were measured at 6.84:1 or better at 768 before the gap plans; I did not re-measure.
+- The "2,760 m approx." at 4.81:1 entry is not re-measured. The label looks clear in the 768 shot.
 
-### Pillar 4: Typography (3/4)
-- `text-sm` x11, `text-base` x10, `text-heading` x4, `text-hero` x1 (on the h1 only); weights `font-semibold` x6 and `font-normal` x1. Exactly the contract's four sizes and two weights. Mono is used for coordinates, altitudes and counts, with `tabular-nums`; the thesis is Inter; h1 and h2 are Schibsted.
-- Base text is 16 px with line-height 1.5 (the skill's base rule). Smallest text is 14 px data (kicker, pin labels, tick labels), which is the contract's label size.
-- "Tim Lui" fits one line at 375. The thesis wraps to two lines as specified.
-- WARNING: the docked-card breaks at 375 (Copywriting).
+### Pillar 4: Typography (4/4)
+- Sizes in `components/home`: `text-base` x12, `text-sm` x12, `text-heading` x4, `text-hero` x1 (the h1 only). Weights: `font-semibold` x6, `font-normal` x1. That is exactly the contract's four sizes and two weights.
+- Mono keeps tabular figures for coordinates, altitudes and counts. The 375 h1 fits one line. The docked card heading wraps on a word boundary ("Waterfall in / the Gornerschlucht").
+- No findings against the contract.
 
 ### Pillar 5: Spacing (3/4)
-- Arbitrary values are all geometric: `h-[calc(100svh-var(--nav-h))]`, `grid-cols-[128px_1fr]`, `pb-[max(16px,env(safe-area-inset-bottom))]`, the pin clip-path. Spacing classes follow the scale (`py-12`, `mt-8`, `mt-6`, `gap-x-6`, `p-6`, `p-4`, `gap-4`, `px-2 py-1`).
-- Touch: cue links `min-h-11`, card link `min-h-11`, signs 56 px, `gap-2` between signs and `gap-y-2` between cue links (the 8 px spacing rule).
-- No horizontal overflow visible at 375 in any baseline (a thin right-hand gutter in the 375 baselines is the scrollbar).
-- Minor, NEW, gap-plan N: at 375 the cue links stack, leaving a large empty band under them in the hero. Not a contract violation.
+- No arbitrary pixel values in the `[Npx]` form; geometric calc values remain. Spacing follows the scale. Touch targets keep `min-h-11` and 8 px gaps, and the docked panel uses safe-area padding.
+- WARNING (S3): on phones the framing clips pin 4 and the triangle; the 375 summit shot also has the pins close to the right edge.
+- Minor (N5): at 375 the stacked cue links leave an empty band under the hero.
+- No horizontal overflow in any shot viewed. The thin right gutter in the 375 baselines is the scrollbar.
 
 ### Pillar 6: Experience Design (3/4)
-- Three modes are complete pages (the baselines and 09-11/09-14 fall back to the poster with no error copy, per D-21). `motion-reduce:` variants are throughout. The docked panel uses safe-area padding. Heading hierarchy is h1, then four h2 cards, then the summit h2 and About h2. No spinner or "loading 3D" copy.
-- WARNING, KNOWN, routed to the gap plan: summit pin overlaps (Visuals).
-- WARNING, NEW, gap-plan candidate Y: the composed-contrast backstops do not cover the rail at the start position (B8 is summit-only; 09-07-SUMMARY line 262 says to recheck once a live canvas sits behind the rail, and 09-13/14 did not add a start-position case).
-- Open, owner 09-14, not in the gap plan: the hero scrim breakpoint decision (align to 768, or amend the spec to `lg:`). I recommend amending the spec if Tim accepted C6, so the spec and code agree.
-- Not verified: the reduced-motion live layout (poster sticky behind stacked cards), and live camera snap or reveal behaviour (covered by e2e per the summaries).
+- Three modes remain complete pages. The docked panel, compact plate and card-aware label placement are guarded by e2e at eleven sizes in Chromium and Firefox, per the 09-18 to 09-21 summaries. CI was green twice on 05a5e8c.
+- WARNING (open): reduced-motion overlap; see Top Fixes 2.
+- WARNING (open): four `delayHeightmap` tests share the service-worker bypass and pass only because their checks finish before the mesh is built. "A load abandoned for reduced motion reveals nothing" is the most exposed.
+- WARNING (open): `lib/useAscentMode.ts` fails `prettier --check` (minor, not UI).
+- Process note: the visual checklist is not signed off, and the three planner design choices are unaddressed. The hand-over test failure on re-run was a harness race, fixed in `05a5e8c`, not a product regression.
+- Not verified: live 3D framing at the md sizes (09-20, 09-21) and reduced-motion layout behaviour. Both are summary-derived.
 - Registry audit: not applicable (no shadcn).
 
 ---
 
-## NEW findings (evidence and gap-plan status)
-
-| # | Finding | Evidence | Gap-plan candidate |
-|---|---------|----------|--------------------|
-| N1 | Hero scrim paints over the altimeter rail at 768 to 1023, dimming labels and readout | `768-ascent-start-visual-dark-linux.png` (faint rail); `AscentHero.tsx:72` (track after stage); `HeroBlock.tsx` `SCRIM` (vertical below `lg:`); 09-07-SUMMARY line 144 (B8 summit only); not pixel-measured | Y |
-| N2 | Docked card place line wraps with a leading "·" | `375-ascent-waypoint-2-visual-dark-linux.png` ("Gornerschlucht, Zermatt" / "· Sep 2021"); `WaypointCard.tsx` place line | Y (bundle with the "4" orphan) |
-| N3 | Pin 3 collides with hero copy at p = 0 at 375 and 768 (near, not touching, at 1440) | `375-ascent-start`, `768-ascent-start`, `1440-ascent-start` baselines; D-09 and Pins "Visibility" row (all pins visible; only the Zermatt overlap is accepted) | Maybe |
-| N4 | The 3D summit marker triangle floats on a near-black ridge, low contrast, at 1440 and 1280 | `summit-fixed-1440.png` (x 561, y 802), `summit-fixed-1280.png` (x 498, y 676) | N (optional polish; closes the dark-wedge item as benign) |
-| N5 | Cue links stack at 375, leaving a large empty band under the hero | `375-ascent-start` | N |
-
-Withdrawn from the first pass: About draft finding, en dash, reduced-motion terrain drop (see Corrections).
-
----
-
 ## Files Audited
-- `.planning/phases/09-home-ascent/09-UI-SPEC.md`, `09-CONTEXT.md`, `deferred-items.md`, `09-07/10/11/12/13/14-SUMMARY.md` (targeted sections)
-- `components/home/PinMark.tsx`, `WaypointCard.tsx`, `HeroBlock.tsx`, `AscentHero.tsx`, `AscentController.tsx` (grep), `lib/home-format.ts`, `lib/ascent/summit.ts`, `data/home.ts` (grep)
-- Baselines in `e2e/visual/routes.spec.ts-snapshots/home/` and the 09-12 scratchpad renders
-- `.claude/skills/ui-ux-pro-max/SKILL.md`
+- `.planning/phases/09-home-ascent/09-UI-REVIEW.md` (previous), `deferred-items.md`, `09-UAT.md`, `09-22-SUMMARY.md`
+- `components/home/*` and `app/(site)/page.tsx` (class counts by grep)
+- Baselines in `e2e/visual/routes.spec.ts-snapshots/home/` (nine viewed as images; 768-reduced, 1440-reduced and 1440-waypoint-2 not opened)
