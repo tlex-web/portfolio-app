@@ -6,6 +6,7 @@ import {
   useEffect,
   useEffectEvent,
   useRef,
+  useState,
   type ReactNode,
   type RefObject,
 } from 'react';
@@ -19,6 +20,8 @@ import {
   shouldSnap,
   type AscentLayout,
 } from '@/lib/ascent/progress';
+import type { AscentMode } from '@/lib/ascent/capability';
+import { useAscentMode } from '@/lib/useAscentMode';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 
 /**
@@ -55,6 +58,14 @@ import { useReducedMotion } from '@/lib/useReducedMotion';
  * waypoint or summit block, the block is scrolled to the centre with
  * scrollIntoView({ block: 'center', behavior: 'auto' }); the spring snaps if
  * that is more than one leg. Skipped under reduced motion (natural layout).
+ *
+ * Mode (HOME-02, D-18, D-19, D-21; 09-UI-SPEC "Modes"): the capability gate's
+ * mode (lib/useAscentMode.ts) and a `revealed` flag the terrain mesh sets after
+ * its first drawn frame (markRevealed) are shared through the context.
+ * AscentStageFrame writes them to the stage as `data-ascent-mode`: 'pending'
+ * in server HTML, then 'static-reduced', 'static', 'eligible', or '3d' once an
+ * eligible canvas has revealed. The geometry never depends on it: only the
+ * reduced-motion media query (known at first paint) compacts the layout.
  */
 
 type AscentContextValue = {
@@ -69,6 +80,14 @@ type AscentContextValue = {
   rootRef: RefObject<HTMLDivElement | null>;
   /** Applies the current active pin (or none) to every `[data-pin]` under the root. */
   syncPins: () => void;
+  /** The capability gate's mode; 'pending' until hydration. */
+  mode: AscentMode | 'pending';
+  /** True once the canvas has drawn its first frame (09-08 sets it). */
+  revealed: boolean;
+  /** Called by the terrain mesh after its first drawn frame: the stage becomes '3d'. */
+  markRevealed: () => void;
+  /** The stage element (AscentStageFrame). */
+  stageRef: RefObject<HTMLDivElement | null>;
 };
 
 const AscentContext = createContext<AscentContextValue | null>(null);
@@ -140,6 +159,10 @@ export default function AscentController({
   heights: readonly number[];
 }) {
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const mode = useAscentMode();
+  const [revealed, setRevealed] = useState(false);
+  const markRevealed = () => setRevealed(true);
   const layout = useRef<AscentLayout | null>(null);
   const { scrollY } = useScroll();
   const progress = useSpring(0, { visualDuration: DURATION.panel, bounce: 0 });
@@ -223,10 +246,34 @@ export default function AscentController({
   }, []);
 
   return (
-    <AscentContext.Provider value={{ progress, layout, n, heights, rootRef, syncPins }}>
+    <AscentContext.Provider
+      value={{ progress, layout, n, heights, rootRef, syncPins, mode, revealed, markRevealed, stageRef }}
+    >
       <div ref={rootRef} data-ascent-root>
         {children}
       </div>
     </AscentContext.Provider>
+  );
+}
+
+/**
+ * The sticky stage (09-UI-SPEC "Stage: Poster, Sheet Box and Canvas"):
+ * decorative and aria-hidden, one stage tall under the nav, a size container
+ * for the poster sheet box, and the `group/stage` the poster pins and the
+ * canvas read `data-ascent-mode` from. Server children (PosterSheet, the rail)
+ * pass straight through.
+ */
+export function AscentStageFrame({ children }: { children: ReactNode }) {
+  const { mode, revealed, stageRef } = useAscent();
+  return (
+    <div
+      ref={stageRef}
+      data-ascent-stage
+      data-ascent-mode={revealed && mode === 'eligible' ? '3d' : mode}
+      aria-hidden="true"
+      className="group/stage sticky top-(--nav-h) col-start-1 row-start-1 h-[calc(100svh-var(--nav-h))] self-start overflow-hidden bg-surface [container-type:size]"
+    >
+      {children}
+    </div>
   );
 }

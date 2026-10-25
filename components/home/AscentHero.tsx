@@ -1,8 +1,9 @@
 import AltimeterRail from '@/components/home/AltimeterRail';
-import AscentController from '@/components/home/AscentController';
+import AscentController, { AscentStageFrame } from '@/components/home/AscentController';
 import HeroBlock from '@/components/home/HeroBlock';
 import PosterSheet from '@/components/home/PosterSheet';
 import SummitPlaque from '@/components/home/SummitPlaque';
+import TerrainStage from '@/components/home/TerrainStage';
 import WaypointCard from '@/components/home/WaypointCard';
 import { terrain } from '@/data/generated/terrain';
 import { buildWaypoints } from '@/lib/ascent/waypoints';
@@ -18,8 +19,10 @@ import { formatMetres } from '@/lib/photo-format';
  * tokens or negative margins. The stage is a size container so the poster sheet
  * box can size itself in cqw/cqh.
  *
- * Hooks for later plans: `data-ascent-stage` (with `data-ascent-mode`, set by
- * the client capability gate in 09-07) and `data-ascent-track`.
+ * Hooks for later plans: `data-ascent-stage` (with `data-ascent-mode`, written
+ * by the client AscentStageFrame from the capability gate, 09-07) and
+ * `data-ascent-track`. Inside the stage, in paint order: the poster, the lazy
+ * canvas (TerrainStage, eligible devices only) and the rail.
  *
  * After the hero, the track holds the waypoint list (HOME-05, D-08): one stage
  * block per photo in ascending DEM height, each `li#waypoint-{slug}` with
@@ -51,15 +54,11 @@ export default function AscentHero() {
   return (
     <AscentController n={waypoints.length} heights={heights}>
       <div className="grid">
-        <div
-          data-ascent-stage
-          data-ascent-mode="pending"
-          aria-hidden="true"
-          className="group/stage sticky top-(--nav-h) col-start-1 row-start-1 h-[calc(100svh-var(--nav-h))] self-start overflow-hidden bg-surface [container-type:size]"
-        >
+        <AscentStageFrame>
           <PosterSheet />
+          <TerrainStage />
           <AltimeterRail ticks={ticks} />
-        </div>
+        </AscentStageFrame>
         <div data-ascent-track className="relative col-start-1 row-start-1">
           <HeroBlock />
           <ol
