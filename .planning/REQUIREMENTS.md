@@ -56,14 +56,14 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 
 ### Home
 
-- [ ] **HOME-01**: A visitor sees Tim Lui's name, role and primary call to action in the first viewport, readable without any animation or WebGL
-- [ ] **HOME-02**: On capable devices the hero renders the real Matterhorn terrain with contour lines; otherwise (reduced motion, no WebGL2, Save-Data, low memory, lost context) a static contour poster renders
+- [x] **HOME-01**: A visitor sees Tim Lui's name, role and primary call to action in the first viewport, readable without any animation or WebGL
+- [x] **HOME-02**: On capable devices the hero renders the real Matterhorn terrain with contour lines; otherwise (reduced motion, no WebGL2, Save-Data, low memory, lost context) a static contour poster renders
 - [x] **HOME-03**: Scrolling moves the camera up the terrain using native scroll with no scroll-jacking, and a skip link jumps past the ascent
 - [x] **HOME-04**: An altimeter rail shows ascent progress from 1,617 m (the lowest photo's DEM height) to 4,478 m (decorative, hidden from assistive tech, hidden below 768 px)
-- [ ] **HOME-05**: Photo waypoints appear at their real positions and heights during the ascent, and an always-rendered list links to each photo
+- [x] **HOME-05**: Photo waypoints appear at their real positions and heights during the ascent, and an always-rendered list links to each photo
 - [x] **HOME-06**: Two trail-sign links lead to Photographs and Engineering, and key stats appear as a summit-plaque readout
 - [x] **HOME-07**: Under reduced motion every Home section renders in its final readable state; the WebGL canvas renders on demand and pauses when off-screen
-- [ ] **HOME-08**: Mobile LCP and JavaScript size on Home are no worse than the Phase 7 baseline
+- [x] **HOME-08**: Mobile LCP and JavaScript size on Home are no worse than the Phase 7 baseline
 
 ### Photos
 
@@ -195,14 +195,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DATA-06 | Phase 8 | Complete |
 | DATA-07 | Phase 8 | Complete |
 | DATA-08 | Phase 8 | Complete |
-| HOME-01 | Phase 9 | Pending |
-| HOME-02 | Phase 9 | Pending |
+| HOME-01 | Phase 9 | Complete |
+| HOME-02 | Phase 9 | Complete |
 | HOME-03 | Phase 9 | Complete |
 | HOME-04 | Phase 9 | Complete |
-| HOME-05 | Phase 9 | Pending |
+| HOME-05 | Phase 9 | Complete |
 | HOME-06 | Phase 9 | Complete |
 | HOME-07 | Phase 9 | Complete |
-| HOME-08 | Phase 9 | Pending |
+| HOME-08 | Phase 9 | Complete |
 | PHOTO-01 | Phase 10 | Pending |
 | PHOTO-02 | Phase 10 | Pending |
 | PHOTO-03 | Phase 10 | Pending |

@@ -4,18 +4,18 @@ milestone: v2.0
 milestone_name: Topographic Identity
 current_phase: 09
 current_phase_name: Home Ascent
-status: executing
-stopped_at: Completed 09-13-PLAN.md
-last_updated: "2026-10-25T12:12:38.716Z"
+status: verifying
+stopped_at: Completed 09-14-PLAN.md
+last_updated: "2026-10-25T12:56:36.389Z"
 last_activity: 2026-10-25
-last_activity_desc: 09-13 complete (HOME-08 met under total-keep; B1 for 09-14)
-state_head: ec1cf0c45897166ca7c342fe81c4f22da8ade5b7
+last_activity_desc: 09-14 complete (B1 applied; Home re-baselined by Tim, CI green twice; ratchet 832)
+state_head: 88b9643dbd6a6eb368065e87b2e47ed9d12f7c75
 progress:
   total_phases: 6
   completed_phases: 8
   total_plans: 54
-  completed_plans: 53
-  percent: 98
+  completed_plans: 54
+  percent: 100
 ---
 
 # Project State
@@ -31,10 +31,10 @@ See: .planning/PROJECT.md (updated 2026-10-24)
 
 Phase: 09 (Home Ascent) — EXECUTING
 Plan: 14 of 14
-Status: Ready to execute
-Last activity: 2026-10-25 — 09-13 complete: HOME-08 met under Tim's total-keep gate (CI perf: LCP 3,112 ms, total JS 444,761 B); B1 frame-budget policy for 09-14
+Status: Phase complete — ready for verification
+Last activity: 2026-10-25 — 09-14 complete: B1 frame-budget policy applied; Tim re-baselined Home (284f433), CI 40193992531 green on attempts 1 and 2; ratchet 533 -> 832; gap plan agreed (plaque overlaps, 768 waypoint-2 label, 375 kicker)
 
-Progress: [█████████░] 98% of v2.0 phases (2 of 6: Phases 7–8 complete); 40/40 planned plans done (Phases 9–12 not yet planned)
+Progress: [██████████] 54/54 planned plans done; Phases 7–8 complete, Phase 9 awaiting verification (Phases 10–12 not yet planned)
 
 ## Performance Metrics
 
@@ -108,6 +108,7 @@ Progress: [█████████░] 98% of v2.0 phases (2 of 6: Phases 7�
 | Phase 09 P11 | 45 min | 3 tasks | 8 files |
 | Phase 09 P12 | 17 min | 3 tasks | 7 files |
 | Phase 09 P13 | 33 min | 3 tasks | 2 files |
+| Phase 09 P14 | 40min | 3 tasks | 28 files |
 
 ## Accumulated Context
 
@@ -248,6 +249,9 @@ Recent decisions affecting current work:
 - [Phase 09]: 09-13: HOME-08 gate is total-keep (Tim: "total-keep (Recommended)"): total JS after canvas ready plus LCP; initial and legacy bytes recorded beside it. CI perf run 40189690406 (v1.64.0-noble): totalJsTransferBytes 444,761 <= 468,770 B PASS, LCP 3,112 <= 4,692 ms PASS, so HOME-08 is met by the measurement (initial 180,578 B, legacy 444,761 B; perf mode cannot prove "stayed 3D", resolved by B1)
 - [Phase 09]: 09-13: phone-size frame budget under automation is B1 (Tim: "B1: extend option A (Recommended)"), applied in 09-14: budgetMeasureOnly on the 10 phone-size 3D tests in e2e/home-canvas.spec.ts and window.__ascentBudgetMeasureOnly on the perf contexts; both "records the frame-budget verdict" tests and "a slow device declines to the poster" keep the real budget; FRAME_BUDGET_DEFAULTS.maxMedianMs stays 50; real visitors unchanged
 - [Phase 09]: 09-13: CSP e2e (cspMessages) ignores exactly the off-Vercel /_vercel/insights and /_vercel/speed-insights 404 MIME refusals (b82c57f); every other Refused-to message still fails
+- [Phase 09]: 09-14: B1 applied in the e2e layer (budgetMeasureOnly on the ten 412 x 839 3D tests and the perf contexts; verdict and forced-decline tests keep the real 50 ms budget), guarded by lib/__tests__/frame-budget-policy.test.ts; HOME-08 met under total-keep (444,761 <= 468,770 B, LCP 3,112 <= 4,692 ms)
+- [Phase 09]: 09-14: Home baselines committed as-is by Tim (284f433, "pushed"); the 768 waypoint-2 label and the 375 kicker orphan join the plaque overlaps in the gap plan after 09-14 (Tim: "Add to the gap plan (Recommended)"); 768 rail readout and pin-4 approx ring unconfirmed
+- [Phase 09]: 09-14: test-count ratchet raised at Phase 9 close: jest 416 -> 646, e2e 117 -> 186, total 533 -> 832
 
 ### Pending Todos
 
@@ -285,6 +289,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-25T12:12:38.469Z
-Stopped at: Completed 09-13-PLAN.md
+Last session: 2026-10-25T12:56:26.874Z
+Stopped at: Completed 09-14-PLAN.md
 Resume file: None
