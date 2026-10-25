@@ -47,9 +47,15 @@ import {
  *
  * Any failure (fetch, decode, format, texture) turns Home static for the rest
  * of the page view through downgradeAscent('load-error'). An unmount (a
- * downgrade, reduced motion turned on, leaving the page) aborts the load: no
- * state update, no log, no reveal, and every GPU resource made so far is
- * disposed.
+ * downgrade, reduced motion turned on, leaving the page) aborts the load: the
+ * fetch is cancelled, every later step checks the signal before it touches
+ * state, the AbortError is swallowed (no log, no downgrade), a pending reveal
+ * frame is cancelled (markRevealed is never called), and every GPU resource
+ * made so far is disposed: geometry, material and texture in the cleanup, and a
+ * texture that finishes after the cleanup on the spot.
+ *
+ * Frustum culling stays on with a bounding sphere that covers every relief
+ * from 0 (flat) to 1; 09-10 must widen it if uExaggeration goes above 1.
  */
 
 const W = terrain.extent.widthM;
@@ -126,10 +132,15 @@ export default function TerrainMesh({
   const { stageRef, markRevealed, progress } = useAscent();
   const gl = useThree((s) => s.gl);
   const invalidate = useThree((s) => s.invalidate);
+  const dpr = useThree((s) => s.viewport.dpr);
   const [built, setBuilt] = useState<{ geometry: PlaneGeometry; material: ShaderMaterial } | null>(
     null
   );
   const revealFrame = useRef<number | null>(null);
+  /** The live material, for uniform updates from effects (state values are not mutated). */
+  const materialRef = useRef<ShaderMaterial | null>(null);
+  /** The renderer pixel ratio the material should use when it is created. */
+  const dprRef = useRef(dpr);
 
   const deliverMetres = useEffectEvent((metres: Float32Array) => onMetres?.(metres));
 
@@ -163,11 +174,12 @@ export default function TerrainMesh({
       texture.anisotropy = Math.min(8, gl.capabilities.getMaxAnisotropy());
 
       material = new ShaderMaterial({
-        uniforms: createTerrainUniforms({ hill: texture, dpr: gl.getPixelRatio() }),
+        uniforms: createTerrainUniforms({ hill: texture, dpr: dprRef.current }),
         vertexShader: terrainVertexShader,
         fragmentShader: terrainFragmentShader,
         toneMapped: false,
       });
+      materialRef.current = material;
       deliverMetres(metres);
       setBuilt({ geometry, material });
       invalidate();
@@ -179,12 +191,22 @@ export default function TerrainMesh({
       controller.abort();
       if (revealFrame.current !== null) cancelAnimationFrame(revealFrame.current);
       revealFrame.current = null;
+      materialRef.current = null;
       geometry?.dispose();
       material?.dispose();
       // A uniform texture is not freed by material.dispose() (A4); the poster img stays.
       texture?.dispose();
     };
   }, [gridSize, gl, invalidate, stageRef]);
+
+  // Contour lines stay 1 CSS px wide when the pixel ratio changes (zoom, another screen).
+  useEffect(() => {
+    dprRef.current = dpr;
+    const material = materialRef.current;
+    if (!material) return;
+    material.uniforms.uWidthPx.value = dpr;
+    invalidate();
+  }, [dpr, invalidate]);
 
   useFrame(() => {
     if (!built || revealFrame.current !== null) return;
