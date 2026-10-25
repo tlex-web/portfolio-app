@@ -8,7 +8,9 @@ import { expect, type Page } from '@playwright/test';
  * script, so a check behaves the same in every browser and Home stays on its
  * poster path (static-capability mode) in progress and visual specs.
  * `spoofSaveData` and `spoofDeviceMemory` (09-07) trigger the other two static
- * modes of the capability gate.
+ * modes of the capability gate. `countDraws` and `readDraws` (09-11) count
+ * WebGL2 draw calls, the proof that the canvas renders on demand and pauses
+ * off-screen (HOME-07).
  */
 
 /** Switches WebGL off for every page load in this page's context. */
@@ -82,4 +84,33 @@ export async function nextFrames(page: Page, count = 2) {
 /** Asserts the route did not fall back to app/(site)/error.tsx. */
 export async function expectNoErrorPage(page: Page) {
   await expect(page.getByRole('heading', { name: /Something went wrong/i })).toHaveCount(0);
+}
+
+/**
+ * Counts every WebGL2 draw call (drawElements and drawArrays) into
+ * `window.__draws`, for every page load in this page's context. One rendered
+ * terrain frame is one draw or more; a canvas at rest adds none.
+ */
+export async function countDraws(page: Page) {
+  await page.addInitScript(() => {
+    const w = window as unknown as { __draws: number };
+    w.__draws = 0;
+    if (typeof WebGL2RenderingContext !== 'function') return;
+    const proto = WebGL2RenderingContext.prototype as unknown as Record<
+      'drawElements' | 'drawArrays',
+      (...args: unknown[]) => void
+    >;
+    for (const name of ['drawElements', 'drawArrays'] as const) {
+      const original = proto[name];
+      proto[name] = function (this: WebGL2RenderingContext, ...args: unknown[]) {
+        w.__draws++;
+        return original.apply(this, args);
+      };
+    }
+  });
+}
+
+/** The number of WebGL2 draw calls since the page loaded (needs countDraws). */
+export function readDraws(page: Page): Promise<number> {
+  return page.evaluate(() => (window as unknown as { __draws: number }).__draws);
 }

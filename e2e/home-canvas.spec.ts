@@ -12,7 +12,7 @@ import { buildWaypoints } from '@/lib/ascent/waypoints';
 import { formatMetres } from '@/lib/photo-format';
 import { meshHeightAtUv, toMetres } from '@/lib/terrain/heightmap';
 import { readout, scrollBlockToCentre } from './helpers/ascent';
-import { expectNoErrorPage, nextFrames } from './helpers/webgl';
+import { countDraws, expectNoErrorPage, nextFrames, readDraws } from './helpers/webgl';
 
 /**
  * The live terrain canvas in a browser (HOME-02; D-16, D-17, D-18, D-22;
@@ -40,7 +40,14 @@ import { expectNoErrorPage, nextFrames } from './helpers/webgl';
  *
  * Resilience (09-11; D-18, D-21; HOME-07): a lost WebGL context turns Home into
  * the full static poster for the rest of the page view, with no error and no
- * retry.
+ * retry. A draw counter proves the canvas renders on demand: nothing at rest,
+ * nothing with the stage off-screen or the tab hidden, and the first change
+ * after the tab shows again draws. Turning reduced motion on and off remounts
+ * the canvas without the self-inflicted context loss marking the device
+ * static. The frame-budget test logs each verdict as one CI line (09-13). The
+ * draw tests run at 412 x 839 (the 256 mesh): SwiftShader holds the frame
+ * budget there, and they first assert that it did, so a declined device can
+ * never pass them by having no canvas.
  */
 
 const stage = (page: Page) => page.locator('[data-ascent-stage]');
@@ -564,6 +571,41 @@ test.describe('Home terrain route and 3D pins (HOME-02, HOME-03, HOME-05)', () =
   });
 });
 
+const PHONE = { width: 412, height: 839 };
+
+type BudgetMark = { medianMs: number | null; samples: number; verdict: string; dpr: number };
+
+/** Every frame-budget verdict the canvas recorded, in order. */
+function budgetMarks(page: Page): Promise<BudgetMark[]> {
+  return page.evaluate(() =>
+    performance
+      .getEntriesByName('ascent-frame-budget')
+      .map((mark) => (mark as PerformanceMark).detail as BudgetMark)
+  );
+}
+
+/** Waits until the frame budget passed (its last verdict is 'ok'). */
+async function expectBudgetOk(page: Page) {
+  await expect
+    .poll(
+      async () => (await budgetMarks(page)).map((m) => `${m.verdict} ${m.medianMs}`).join(', '),
+      { timeout: 5000, message: 'the frame budget passes (verdicts, median ms)' }
+    )
+    .toMatch(/(^|, )ok [\d.]+$/);
+}
+
+/** Sets document.visibilityState as a background tab would, and dispatches visibilitychange. */
+async function setVisibility(page: Page, state: 'hidden' | 'visible') {
+  await page.evaluate((value) => {
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => value });
+    Object.defineProperty(document, 'hidden', {
+      configurable: true,
+      get: () => value === 'hidden',
+    });
+    document.dispatchEvent(new Event('visibilitychange'));
+  }, state);
+}
+
 test.describe('Home canvas resilience (HOME-02, HOME-07)', () => {
   test('context loss falls back to the poster @chromium-only', async ({ page }) => {
     test.setTimeout(60000);
@@ -597,7 +639,9 @@ test.describe('Home canvas resilience (HOME-02, HOME-07)', () => {
       waypoints.length
     );
     await expect(page.locator('#summit')).toHaveCount(1);
-    await expect(page.getByRole('heading', { level: 2, name: 'About', exact: true })).toHaveCount(1);
+    await expect(page.getByRole('heading', { level: 2, name: 'About', exact: true })).toHaveCount(
+      1
+    );
     const downgrade = await page.evaluate(() =>
       performance
         .getEntriesByName('ascent-downgrade')
@@ -612,4 +656,140 @@ test.describe('Home canvas resilience (HOME-02, HOME-07)', () => {
     await expect(page.locator('canvas')).toHaveCount(0);
     expect(errors).toEqual([]);
   });
+
+  test('draws nothing at rest @chromium-only', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.setViewportSize(PHONE);
+    await countDraws(page);
+    await page.goto('/');
+    await scrollOnce(page);
+    await waitForRevealed(page);
+    await expectBudgetOk(page);
+
+    await page.waitForTimeout(1500);
+    const before = await readDraws(page);
+    expect(before, 'the canvas has drawn').toBeGreaterThan(0);
+    await page.waitForTimeout(1000);
+    expect(await readDraws(page), 'draws in 1 s at rest').toBe(before);
+    await expect(stage(page).locator('canvas')).toHaveCount(1);
+  });
+
+  test('draws nothing off-screen @chromium-only', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.setViewportSize(PHONE);
+    await countDraws(page);
+    await page.goto('/');
+    await scrollOnce(page);
+    await waitForRevealed(page);
+    await expectBudgetOk(page);
+
+    // About into view, then just far enough that the last pixels of the stage leave the viewport.
+    await page.evaluate(() => {
+      const heading = document.getElementById('about-title') as HTMLElement;
+      heading.scrollIntoView({ block: 'start' });
+      const bottom = (
+        document.querySelector('[data-ascent-stage]') as HTMLElement
+      ).getBoundingClientRect().bottom;
+      if (bottom > 0) window.scrollBy(0, Math.ceil(bottom) + 8);
+    });
+    const about = page
+      .getByRole('heading', { level: 2, name: 'About', exact: true })
+      .locator('xpath=ancestor::section[1]');
+    await expect(about).toBeInViewport();
+    await page.waitForTimeout(800);
+    const box = await stage(page).boundingBox();
+    expect(box && box.y + box.height <= 0, 'the stage is above the viewport').toBe(true);
+    const before = await readDraws(page);
+    await page.waitForTimeout(1000);
+    expect(await readDraws(page), 'draws in 1 s off-screen').toBe(before);
+    await expect(stage(page)).toHaveAttribute('data-ascent-mode', '3d');
+  });
+
+  test('pauses while the tab is hidden @chromium-only', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.setViewportSize(PHONE);
+    await countDraws(page);
+    await page.goto('/');
+    await scrollOnce(page);
+    await waitForRevealed(page);
+    await expectBudgetOk(page);
+    await scrollBlockToCentre(page, waypoint(2));
+    await page.waitForTimeout(800);
+
+    await setVisibility(page, 'hidden');
+    const before = await readDraws(page);
+    // The progress moves a whole leg: in a visible tab that is dozens of frames.
+    await scrollBlockToCentre(page, waypoint(3));
+    await page.waitForTimeout(800);
+    expect(await readDraws(page), 'draws while hidden').toBe(before);
+
+    await setVisibility(page, 'visible');
+    await expect
+      .poll(() => readDraws(page), { timeout: 1000, message: 'draws once the tab shows again' })
+      .toBeGreaterThan(before);
+  });
+
+  test('a remount returns to 3D @chromium-only', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.setViewportSize(PHONE);
+    const errors = pageErrors(page);
+    await page.goto('/');
+    await scrollOnce(page);
+    await waitForRevealed(page);
+
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await expect(stage(page)).toHaveAttribute('data-ascent-mode', 'static-reduced');
+    await expect(page.locator('canvas')).toHaveCount(0);
+
+    // From here on, every mode the stage reads.
+    await page.evaluate(() => {
+      const el = document.querySelector('[data-ascent-stage]') as HTMLElement;
+      const w = window as unknown as { __modes: string[] };
+      w.__modes = [];
+      new MutationObserver(() => w.__modes.push(el.dataset.ascentMode ?? '')).observe(el, {
+        attributes: true,
+        attributeFilter: ['data-ascent-mode'],
+      });
+    });
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await scrollOnce(page);
+    await waitForRevealed(page);
+    await expect(stage(page).locator('canvas')).toHaveCount(1);
+
+    const modes = await page.evaluate(() => (window as unknown as { __modes: string[] }).__modes);
+    // The new canvas loads under the poster and fades in again, as on the first visit.
+    expect(modes, 'modes after reduced motion is off again').toEqual(['eligible', '3d']);
+    const downgrades = await page.evaluate(
+      () => performance.getEntriesByName('ascent-downgrade').length
+    );
+    expect(downgrades, 'the canvas teardown never downgrades').toBe(0);
+    expect(errors).toEqual([]);
+  });
+
+  for (const { width, height } of [PHONE, { width: 1440, height: 900 }]) {
+    test(`records the frame-budget verdict at ${width} x ${height} @chromium-only`, async ({
+      page,
+    }) => {
+      test.setTimeout(60000);
+      await page.setViewportSize({ width, height });
+      await page.goto('/');
+      await scrollOnce(page);
+      await expect(stage(page)).toHaveAttribute('data-ascent-mode', '3d', { timeout: 20000 });
+      await page.waitForTimeout(1500);
+
+      const marks = await budgetMarks(page);
+      for (const m of marks) {
+        const line = `ascent frame budget: median ${m.medianMs?.toFixed(1)} ms, samples ${m.samples}, verdict ${m.verdict}, dpr ${m.dpr}`;
+        console.log(`${line} (${width} x ${height})`);
+        test
+          .info()
+          .annotations.push({ type: `frame budget ${width} x ${height}`, description: line });
+      }
+      expect(marks.length, 'frame-budget verdicts').toBeGreaterThan(0);
+      for (const m of marks) {
+        expect(['ok', 'decline']).toContain(m.verdict);
+        expect(typeof m.medianMs).toBe('number');
+      }
+    });
+  }
 });

@@ -66,6 +66,10 @@ import { useReducedMotion } from '@/lib/useReducedMotion';
  * in server HTML, then 'static-reduced', 'static', 'eligible', or '3d' once an
  * eligible canvas has revealed. The geometry never depends on it: only the
  * reduced-motion media query (known at first paint) compacts the layout.
+ * `revealed` belongs to one mounted canvas: it resets whenever the mode leaves
+ * 'eligible' (the canvas unmounts), so a canvas mounted again after reduced
+ * motion is turned off loads under the poster and fades in again instead of
+ * showing an undrawn canvas at once (09-11).
  */
 
 type AscentContextValue = {
@@ -163,6 +167,8 @@ export default function AscentController({
   const mode = useAscentMode();
   const [revealed, setRevealed] = useState(false);
   const markRevealed = () => setRevealed(true);
+  // The canvas unmounts whenever the mode leaves 'eligible'; its reveal goes with it.
+  if (revealed && mode !== 'eligible') setRevealed(false);
   const layout = useRef<AscentLayout | null>(null);
   const { scrollY } = useScroll();
   const progress = useSpring(0, { visualDuration: DURATION.panel, bounce: 0 });

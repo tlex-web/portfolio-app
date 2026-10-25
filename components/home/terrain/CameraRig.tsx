@@ -77,6 +77,15 @@ import { anchorAt, poseAt, routeCurvesFor } from './route-curve';
  * re-renders) and measures a fresh burst; a decline at 1 turns Home static
  * (downgradeAscent('frame-budget')). Every verdict leaves the performance mark
  * 'ascent-frame-budget' with { medianMs, samples, verdict, dpr }.
+ *
+ * Off-screen and hidden-tab pause (HOME-07; 09-RESEARCH Pattern 5): an
+ * IntersectionObserver on the stage and a `visibilitychange` listener keep two
+ * flags. Progress changes, the D-06 follow-up frames and the reveal burst
+ * invalidate only while the stage is on screen and the tab visible, so nothing
+ * is drawn behind About or in a background tab. When both are true again the
+ * rig invalidates once, so the camera catches up with the progress. A burst
+ * cut short by a pause starts over with a fresh budget when the canvas shows
+ * again (an interrupted burst would read the pause as slow frames).
  */
 
 /** Progress change below which no further frame is needed (D-06). */
@@ -196,6 +205,12 @@ export default function CameraRig({
   const burstStart = useRef(-1);
   /** The burst has started for this canvas (it runs once, plus one re-measure at pixel ratio 1). */
   const measured = useRef(false);
+  /** A burst was cut short by a pause and starts over when the canvas shows again. */
+  const burstPaused = useRef(false);
+  /** The stage intersects the viewport (IntersectionObserver). */
+  const onScreen = useRef(true);
+  /** The tab is visible (document.visibilityState). */
+  const visible = useRef(true);
 
   useEffect(() => {
     const scrim = stageRef.current?.querySelector<HTMLElement>('[data-ascent-rail-scrim]');
@@ -219,7 +234,45 @@ export default function CameraRig({
     burstStart.current = -1;
     invalidate();
   }, [ready, invalidate]);
-  useMotionValueEvent(progress, 'change', () => invalidate());
+  useMotionValueEvent(progress, 'change', () => {
+    if (onScreen.current && visible.current) invalidate();
+  });
+
+  // Pause while the stage is off-screen or the tab is hidden (HOME-07).
+  useEffect(() => {
+    const shown = () => onScreen.current && visible.current;
+    /** Applies a flag change; on the way back to shown, catch up (and restart a cut burst). */
+    const update = (change: () => void) => {
+      const was = shown();
+      change();
+      if (was || !shown()) return;
+      if (burstPaused.current) {
+        burstPaused.current = false;
+        budget.current = createFrameBudget();
+        burstStart.current = -1;
+      }
+      invalidate();
+    };
+    const readVisibility = () => {
+      visible.current = document.visibilityState !== 'hidden';
+    };
+    const onVisibility = () => update(readVisibility);
+    update(readVisibility);
+    document.addEventListener('visibilitychange', onVisibility);
+    const stage = stageRef.current;
+    const observer =
+      stage && typeof IntersectionObserver === 'function'
+        ? new IntersectionObserver((entries) => {
+            const entry = entries[entries.length - 1];
+            if (entry) update(() => (onScreen.current = entry.isIntersecting));
+          })
+        : null;
+    if (stage) observer?.observe(stage);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      observer?.disconnect();
+    };
+  }, [stageRef, invalidate]);
 
   useFrame((state) => {
     const camera = state.camera as PerspectiveCamera;
@@ -261,9 +314,15 @@ export default function CameraRig({
 
     const continuous = requested.current;
     requested.current = false;
+    const shown = onScreen.current && visible.current;
     let burst = false;
     const running = budget.current;
-    if (running) {
+    if (running && !shown) {
+      // Paused mid-burst: drop the samples and measure again once the canvas shows.
+      budget.current = null;
+      burstStart.current = -1;
+      burstPaused.current = true;
+    } else if (running) {
       const now = performance.now();
       if (burstStart.current < 0) burstStart.current = now;
       const verdict = running.sample(now, continuous);
@@ -288,7 +347,7 @@ export default function CameraRig({
 
     const moved = !(Math.abs(p - applied.current) <= EPS);
     applied.current = p;
-    if (moved || burst) {
+    if (shown && (moved || burst)) {
       requested.current = true;
       state.invalidate();
     }
