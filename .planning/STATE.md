@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 09
 current_phase_name: Home Ascent
 status: executing
-stopped_at: Completed 09-19-PLAN.md
-last_updated: "2026-10-25T17:20:21.560Z"
+stopped_at: Completed 09-20-PLAN.md
+last_updated: "2026-10-25T17:42:37.624Z"
 last_activity: 2026-10-25
 last_activity_desc: Phase 09 execution started
-state_head: f28fd394870316dc2595af5da72690be9259b4c6
+state_head: c03bb99349021728665bd00e7a7b210c264b3ff2
 progress:
   total_phases: 6
   completed_phases: 8
   total_plans: 62
-  completed_plans: 59
-  percent: 95
+  completed_plans: 60
+  percent: 97
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-24)
 ## Current Position
 
 Phase: 09 (Home Ascent) — EXECUTING
-Plan: 20 of 22
+Plan: 21 of 22
 Status: Ready to execute
 Last activity: 2026-10-25 — Phase 09 execution started
 
-Progress: [█████████░] 95%
+Progress: [█████████░] 97%
 
 ## Performance Metrics
 
@@ -114,6 +114,7 @@ Progress: [█████████░] 95%
 | Phase 09 P17 | 8 min | 2 tasks | 6 files |
 | Phase 09 P18 | 14 min | 3 tasks | 9 files |
 | Phase 09 P19 | 17 min | 3 tasks | 13 files |
+| Phase 09 P20 | 17 min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -266,6 +267,9 @@ Recent decisions affecting current work:
 - [Phase 09]: 09-18: Compact summit stats move after the ascent into [data-summit-details], a group named by the summit h2 (no disclosure, no new heading); the summit block scrim is removed
 - [Phase 09]: 09-19: placePinLabel (lib/ascent/framing.ts) places the lit poster label right, left, above or below the head, 4 px clear of the stage edge, the active card and the rail marks; above/below also slide along the head when no fixed alignment is clear (pin 4 at 768-778 px)
 - [Phase 09]: 09-19: poster and 3D pin layers are z-10 inside the stage (above the rail scrim, under the rail box layer); stage geometry is shared as useAscent().geometry for 09-20/09-21
+- [Phase 09]: Summit framing is measured: fitCluster over summitClearRects (16 px inside the stage, clear of the plaque column and rail zone), capped at the 60/75 degree summit zoom (09-20)
+- [Phase 09]: View offset and FOV follow one key track (stageViewKeys, viewTrackAt); route.ts lost the seven share-based helpers (09-20)
+- [Phase 09]: CameraRig decides narrow/wide with matchMedia('(min-width: 48rem)'), the CSS md width source (09-20)
 
 ### Pending Todos
 
@@ -303,6 +307,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-25T17:20:21.245Z
-Stopped at: Completed 09-19-PLAN.md
+Last session: 2026-10-25T17:42:37.300Z
+Stopped at: Completed 09-20-PLAN.md
 Resume file: None
