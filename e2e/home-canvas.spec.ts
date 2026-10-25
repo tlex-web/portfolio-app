@@ -622,16 +622,27 @@ test.describe('Home terrain route and 3D pins (HOME-02, HOME-03, HOME-05)', () =
     // rectangle above or right of the measured plaque, so every settled pin box
     // must be inside the stage, end left of the rail scrim (0 px wide below
     // 768 px) and keep PLAQUE_CLEARANCE_PX from the plaque column.
-    // 1024 x 768 had pin 4 under the scrim before 09-20. 1440 x 900, 1280 x 720
-    // and 1024 x 768 run the 512² mesh; CI's 412 x 839 verdict is noise (B1).
-    for (const { width, height } of [
-      { width: 1024, height: 768 },
-      { width: 1440, height: 900 },
-      { width: 1280, height: 720 },
+    // The eleven UAT sizes (09-UAT test 2); 1024 x 768 had pin 4 under the scrim
+    // before 09-20. Each row records the clear rectangle the rig chose (above or
+    // right of the plaque, read from the pin boxes). On the portrait md stages
+    // (`above`) every pin must also end above the plaque's top: the summit frame
+    // gets its vertical offset there. Stages from 768 px run the 512² mesh; CI's
+    // phone verdicts are noise (B1), so every row is measure-only.
+    for (const { width, height, above } of [
+      { width: 360, height: 640 },
+      { width: 375, height: 667 },
+      { width: 375, height: 553 },
+      { width: 390, height: 844 },
       { width: 412, height: 839 },
+      { width: 768, height: 1024, above: true },
+      { width: 778, height: 1024 },
+      { width: 820, height: 1180, above: true },
+      { width: 1024, height: 768 },
+      { width: 1280, height: 720 },
+      { width: 1440, height: 900 },
     ]) {
       test(`at ${width} x ${height} @chromium-only`, async ({ page }) => {
-        test.setTimeout(60000);
+        test.setTimeout(90000);
         await budgetMeasureOnly(page);
         await page.setViewportSize({ width, height });
         await page.goto('/');
@@ -665,7 +676,18 @@ test.describe('Home terrain route and 3D pins (HOME-02, HOME-03, HOME-05)', () =
           expect
             .soft(gap, `3D pin ${w.k} gap to the plaque column`)
             .toBeGreaterThanOrEqual(PLAQUE_CLEARANCE_PX);
+          if (above) {
+            expect
+              .soft(box.y + box.height, `3D pin ${w.k} ends above the plaque`)
+              .toBeLessThanOrEqual(plaque!.y);
+          }
         }
+        const allAbove = boxes.every((b) => b.y + b.height <= plaque!.y);
+        const allRight = boxes.every((b) => b.x >= plaque!.x + plaque!.width);
+        test.info().annotations.push({
+          type: 'clear rectangle',
+          description: allAbove ? 'above' : allRight ? 'right' : 'mixed',
+        });
       });
     }
   });

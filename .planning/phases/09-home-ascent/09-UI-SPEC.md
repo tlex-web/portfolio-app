@@ -265,7 +265,7 @@ Progress `p` = scroll offset inside the track ÷ sticky distance `D` (= track he
 | Large jumps | If the target moves more than one leg at once (`|Δp| > 1/(n + 1)`, e.g. "Skip to the summit", a card link focused from the keyboard, Home/End), the camera and rail **snap** with no damping, so the visitor never watches a fast fly-through [UUPM `motion-sensitivity`] |
 | Readout format | `formatMetres` of the rounded value (`2,104 m`), `tabular-nums` so digits never shift |
 
-Camera route, FOV, look-at targets and the summit turn-back (NE, all four pins in view, D-03) are research items (Discretion).
+Camera route, FOV, look-at targets and the summit turn-back (NE, all four pins in view, D-03) are research items (Discretion). **3D framing (G-09-2, measured, 09-20):** the summit turn-back fits the four pins into the clear rectangle above or right of the measured plaque column (16 px margin, the rail zone excluded) at no more than the 60° (narrow) / 75° (wide) summit zoom; view offset and FOV follow one key track (plan view, stages, summit), so p = 0 keeps poster parity (D-16) and narrow stages keep the D-20 offsets; narrow versus wide follows the md media query (`(min-width: 48rem)`), not the canvas width.
 
 ---
 
@@ -388,8 +388,9 @@ Pins are HTML overlay marks, `aria-hidden` (inside the stage), `pointer-events: 
 | Summit height | `<p class="mt-2 font-mono text-heading font-semibold text-ink tabular-nums">` `formatMetres(terrain.summit.officialM)` → `4,478 m` |
 | Stats | `<dl class="mt-6 grid grid-cols-2 gap-x-6 gap-y-4">`, each item `<div><dt class="text-sm text-ink-muted">…</dt><dd class="mt-1 font-mono text-base text-ink tabular-nums">…</dd></div>`. Static values, **no count-up** [FEAT anti-feature] |
 | Signs | `mt-6` (`summit-compact:motion-safe:mt-2`), the same `TrailSigns` group as the hero |
+| 3D framing (G-09-2, measured, 09-20) | The live summit frame reads the plaque column's box at the summit arrival (`[data-summit-plaque]`, measured with the layout). Of the clear rectangles above the column (full width less the rail zone) and right of it (to the rail zone, full height), each 16 px inside the stage and clear of the column, the rig takes the one that holds the four pins largest, never zooms in past the 60° (narrow) / 75° (wide) summit horizontal FOV, and centres the pin boxes in it. Compact layouts (phones, portrait tablets, 1024 x 768) take the rectangle above the column, so portrait md stages get a vertical offset; the full layout takes the band right of it. Narrow versus wide follows the md media query. e2e "summit pins clear the plaque": every 3D pin inside the stage, left of the rail scrim and at least 8 px from the column at the eleven UAT sizes (Tim: Compact plaque + measured 3D) |
 
-The static poster's pins clear the plaque column by at least 8 px at the eleven UAT sizes in Chromium and Firefox (e2e "Summit plaque clears the poster pins"), and a Jest sweep of `posterFrame` against the modelled columns keeps them 4 px clear across 12,092 phone, tablet and desktop sizes. 09-20 adds the measured 3D framing (the 3D half of G-09-2).
+The static poster's pins clear the plaque column by at least 8 px at the eleven UAT sizes in Chromium and Firefox (e2e "Summit plaque clears the poster pins"), and a Jest sweep of `posterFrame` against the modelled columns keeps them 4 px clear across 12,092 phone, tablet and desktop sizes. The 3D half of G-09-2 is the measured framing row above (09-20).
 
 ### Summit-plaque stats (chosen here, per ROADMAP; all derived)
 
