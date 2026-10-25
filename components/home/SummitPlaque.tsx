@@ -22,7 +22,7 @@ const SCRIM =
  * climb ends on the same two destinations it started with.
  *
  * One stage tall in tall modes (bottom-docked below 768 px, centred from md);
- * natural height under reduced motion.
+ * natural height when reduced motion is requested (stacked).
  */
 export default function SummitPlaque() {
   const { kicker, title, height, stats } = summitPlaque();

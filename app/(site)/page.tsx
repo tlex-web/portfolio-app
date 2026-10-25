@@ -1,3 +1,4 @@
+import AboutSection from '@/components/home/AboutSection';
 import AscentHero from '@/components/home/AscentHero';
 
 /**
@@ -6,7 +7,13 @@ import AscentHero from '@/components/home/AscentHero';
  * trail signs) is complete server HTML with no animation and no WebGL. Nothing
  * from three, @react-three/*, motion/react or lib/animations may be imported
  * here; client islands join later as Client Components inside AscentHero.
+ * The About and contact block follows the ascent, outside the sticky stage.
  */
 export default function HomePage() {
-  return <AscentHero />;
+  return (
+    <>
+      <AscentHero />
+      <AboutSection />
+    </>
+  );
 }
