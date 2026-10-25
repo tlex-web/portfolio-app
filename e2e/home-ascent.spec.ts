@@ -149,6 +149,119 @@ test.describe('Waypoint cards (HOME-05)', () => {
   });
 });
 
+/** The line-break facts of one card's kicker and place line, read in the page. */
+type CardBreaks = {
+  /** Line boxes of the '{altitude} ·' and 'Waypoint k of n' kicker parts. */
+  kickerLines: [number, number];
+  /** Line boxes of the separator-and-date tail and of the date text. */
+  tailLines: number;
+  dateLines: number;
+  sepDisplay: string;
+  placeText: string;
+  /** The tail's first non-empty fragment left minus the place paragraph's left. */
+  tailLeft: number;
+  /** The widest right edge of the parts minus their paragraph's right (content) edge. */
+  overflow: number;
+};
+
+/**
+ * Reads card k's break points (G-09-3 b, G-09-4 N2): how many lines each
+ * unbreakable part occupies, counted from client rects. Inline parts give one
+ * rect per line fragment; the date is a block in the docked panel, so its
+ * lines are counted on a Range over its text, where a block still returns one
+ * rect per line. The font is loaded first: the break depends on the mono advance.
+ */
+async function cardBreaks(page: Page, k: number): Promise<CardBreaks> {
+  return page.locator(`li[data-k="${k}"] section`).evaluate(async (section) => {
+    const q = (selector: string) => {
+      const el = section.querySelector<HTMLElement>(selector);
+      if (!el) throw new Error(`card has no ${selector}`);
+      return el;
+    };
+    const altitude = q('[data-kicker-part="altitude"]');
+    const waypoint = q('[data-kicker-part="waypoint"]');
+    const tail = q('[data-place-tail]');
+    const sep = q('[data-place-sep]');
+    const date = q('[data-place-date]');
+    const place = tail.parentElement!;
+    // The computed `font` shorthand can be empty, so build it from the longhands.
+    const cs = getComputedStyle(altitude);
+    await document.fonts.load(`${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`);
+    await document.fonts.ready;
+
+    const lines = (rects: DOMRectList | DOMRect[]) =>
+      new Set([...rects].filter((r) => r.width > 0).map((r) => Math.round(r.top))).size;
+    const textRects = (el: HTMLElement) => {
+      const range = document.createRange();
+      range.selectNodeContents(el.firstChild!);
+      return range.getClientRects();
+    };
+    const right = (rects: DOMRectList) =>
+      Math.max(...[...rects].filter((r) => r.width > 0).map((r) => r.right));
+    const contentRight = (p: HTMLElement) =>
+      p.getBoundingClientRect().right - parseFloat(getComputedStyle(p).paddingRight);
+    const kicker = altitude.parentElement!;
+
+    return {
+      kickerLines: [lines(altitude.getClientRects()), lines(waypoint.getClientRects())],
+      tailLines: lines(tail.getClientRects()),
+      dateLines: lines(textRects(date)),
+      sepDisplay: getComputedStyle(sep).display,
+      placeText: place.innerText,
+      tailLeft:
+        [...tail.getClientRects()].find((r) => r.width > 0)!.left -
+        place.getBoundingClientRect().left,
+      overflow: Math.max(
+        right(altitude.getClientRects()) - contentRight(kicker),
+        right(waypoint.getClientRects()) - contentRight(kicker),
+        right(textRects(date)) - contentRight(place)
+      ),
+    } satisfies CardBreaks;
+  });
+}
+
+/** Docked panel: the kicker wraps only between its parts, the date is its own line, no '·'. */
+function expectDocked(b: CardBreaks, label: string) {
+  expect(b.kickerLines, `${label}: each kicker part on one line`).toEqual([1, 1]);
+  expect(b.dateLines, `${label}: the date on one line`).toBe(1);
+  expect(b.sepDisplay, `${label}: separator hidden`).toBe('none');
+  expect(b.placeText, `${label}: no '·' in the place line`).not.toContain('·');
+  expect(b.overflow, `${label}: nothing past the column edge`).toBeLessThanOrEqual(0.5);
+}
+
+/**
+ * Card line breaks (G-09-3 b, G-09-4 N2; D-10, D-20; 09-UI-SPEC "Waypoint
+ * Cards" rows 1 and 4). The kicker and place line used to be plain-space
+ * strings, so in the 189-199 px docked column the line breaker orphaned '4'
+ * and started a line with '·', at a width that moved with the scrollbar gutter
+ * and the platform glyph advance. The card now renders explicit break points;
+ * these rows read them structurally for every waypoint.
+ */
+test.describe('Card line breaks (G-09-3 b, G-09-4 N2)', () => {
+  test('docked kicker and place line break cleanly at 375 x 667 on a phone @chromium-only', async ({
+    browser,
+    baseURL,
+  }) => {
+    // Mobile emulation (overlay scrollbars, no gutter) gives the 199 px column
+    // where a real 375 px phone showed the lone '4'. Firefox has no isMobile.
+    const context = await browser.newContext({
+      baseURL,
+      viewport: { width: 375, height: 667 },
+      isMobile: true,
+      hasTouch: true,
+      deviceScaleFactor: 2,
+    });
+    try {
+      const page = await context.newPage();
+      await disableWebGL(page);
+      await page.goto('/');
+      for (const w of waypoints) expectDocked(await cardBreaks(page, w.k), `waypoint ${w.k}`);
+    } finally {
+      await context.close();
+    }
+  });
+});
+
 /** The accessible name TrailSigns builds: the site.nav label, then the count. */
 function signName(href: string, count: string): string {
   const entry = site.nav.find((item) => item.href === href);

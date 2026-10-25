@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ArrowRightIcon } from '@phosphor-icons/react/dist/ssr';
-import { waypointKicker, type Waypoint } from '@/lib/ascent/waypoints';
+import { waypointKickerParts, type Waypoint } from '@/lib/ascent/waypoints';
 
 /**
  * Three layouts from one markup (D-20, D-21; 09-UI-SPEC "Layout by breakpoint
@@ -34,7 +34,19 @@ const LINK =
  * Home's waypoint list, the focus target and the e2e/axe anchor.
  *
  * DOM order is the reading order: kicker, h2, photo, place and date, story,
- * View photo. The photo comes only from the content-hashed manifest variants,
+ * View photo.
+ *
+ * The kicker and the place line carry explicit break points (G-09-3 b,
+ * G-09-4 N2), because the docked column is narrower than either string on
+ * every phone and a plain space would let the line breaker orphan '4' or start
+ * a line with '·' at a width that moves with the scrollbar gutter and the
+ * platform glyph advance. The kicker is two nowrap parts, '{altitude} ·' and
+ * 'Waypoint k of n', so it wraps only between them. The place text is followed,
+ * with no space, by a nowrap tail holding the separator and the date: in the
+ * docked panel the separator is hidden and the date is a block, its own line;
+ * from md and in reduced motion both are inline and glued to the last word of
+ * the place, so a wrap can fall only at a space inside the place. textContent
+ * stays `waypointKicker(w)` and `w.placeDate`. The photo comes only from the content-hashed manifest variants,
  * lazy, pre-sized at its true ratio on a surface-overlay box, so the layout is
  * final before it arrives and a failed load leaves the box and the alt text.
  * "View photo" opens the gallery at this photo (/photos#{slug}) until Phase 10
@@ -44,7 +56,8 @@ const LINK =
  * space before an sr-only ': ' separator.
  */
 export default function WaypointCard({ waypoint }: { waypoint: Waypoint }) {
-  const { slug, title, alt, story, placeDate, image } = waypoint;
+  const { slug, title, alt, story, place, captureMonth, image } = waypoint;
+  const [altitudePart, waypointPart] = waypointKickerParts(waypoint);
   const titleId = `waypoint-${slug}-title`;
 
   return (
@@ -52,7 +65,12 @@ export default function WaypointCard({ waypoint }: { waypoint: Waypoint }) {
       <div aria-hidden="true" className={PANEL_FADE} />
       <div className="grid grid-cols-[128px_1fr] gap-4 md:block motion-reduce:block">
         <p className="col-start-2 font-mono text-sm text-ink-muted tabular-nums">
-          {waypointKicker(waypoint)}
+          <span data-kicker-part="altitude" className="whitespace-nowrap">
+            {altitudePart}
+          </span>{' '}
+          <span data-kicker-part="waypoint" className="whitespace-nowrap">
+            {waypointPart}
+          </span>
         </p>
         <h2
           id={titleId}
@@ -75,7 +93,17 @@ export default function WaypointCard({ waypoint }: { waypoint: Waypoint }) {
             className="block h-auto w-full rounded-sm bg-surface-overlay"
           />
         </picture>
-        <p className="col-start-2 font-mono text-sm text-ink-muted md:mt-4 motion-reduce:mt-4">{placeDate}</p>
+        <p className="col-start-2 font-mono text-sm text-ink-muted md:mt-4 motion-reduce:mt-4">
+          {place}
+          <span data-place-tail="" className="whitespace-nowrap">
+            <span data-place-sep="" className="hidden md:inline motion-reduce:inline">
+              {' · '}
+            </span>
+            <span data-place-date="" className="block md:inline motion-reduce:inline">
+              {captureMonth}
+            </span>
+          </span>
+        </p>
       </div>
       <p className="mt-2 hidden max-w-prose text-base text-ink-muted md:block motion-reduce:block">{story}</p>
       <Link href={`/photos#${slug}`} aria-label={`View photo: ${title}`} className={LINK}>

@@ -35,6 +35,9 @@ export type Waypoint = {
   approximate: boolean;
   uv: { u: number; v: number };
   position: { lat: number; lon: number };
+  /** The capture month ('Sep 2021'), or the year alone for a year-precision scan ('2019'). */
+  captureMonth: string;
+  /** `${place} · ${captureMonth}`: the place and date line's text. */
   placeDate: string;
   years: number;
   image: { width: number; height: number; srcSetAvif: string; srcSetWebp: string; src: string };
@@ -113,33 +116,50 @@ export function buildWaypoints(
   );
   const n = ordered.length;
 
-  return ordered.map(({ photo, copy, position, uv, altitudeM, small, large }, i) => ({
-    k: i + 1,
-    n,
-    id: photo.id,
-    slug: copy.slug,
-    title: copy.title,
-    alt: copy.alt,
-    story: copy.story,
-    place: copy.location,
-    shortPlace: shortPlace(copy.location, photo.locationOverride?.name),
-    altitudeM,
-    approximate: position.approximate,
-    uv: { u: uv.u, v: uv.v },
-    position: { lat: position.lat, lon: position.lon },
-    placeDate: `${copy.location} · ${formatCaptureMonth(photo.capture)}`,
-    years: captureYear(photo.capture),
-    image: {
-      width: small.width,
-      height: small.height,
-      srcSetAvif: `${small.avif} 640w, ${large.avif} 1024w`,
-      srcSetWebp: `${small.webp} 640w, ${large.webp} 1024w`,
-      src: small.webp,
-    },
-  }));
+  return ordered.map(({ photo, copy, position, uv, altitudeM, small, large }, i) => {
+    const captureMonth = formatCaptureMonth(photo.capture);
+    return {
+      k: i + 1,
+      n,
+      id: photo.id,
+      slug: copy.slug,
+      title: copy.title,
+      alt: copy.alt,
+      story: copy.story,
+      place: copy.location,
+      shortPlace: shortPlace(copy.location, photo.locationOverride?.name),
+      altitudeM,
+      approximate: position.approximate,
+      uv: { u: uv.u, v: uv.v },
+      position: { lat: position.lat, lon: position.lon },
+      captureMonth,
+      placeDate: `${copy.location} · ${captureMonth}`,
+      years: captureYear(photo.capture),
+      image: {
+        width: small.width,
+        height: small.height,
+        srcSetAvif: `${small.avif} 640w, ${large.avif} 1024w`,
+        srcSetWebp: `${small.webp} 640w, ${large.webp} 1024w`,
+        src: small.webp,
+      },
+    };
+  });
+}
+
+/**
+ * The card kicker as its two unbreakable parts (G-09-3 b, D-20): the altitude
+ * with its separator, ['1,668 m ·', 'Waypoint 2 of 4'], or
+ * ['2,760 m approx. ·', 'Waypoint 4 of 4']. The card renders each part
+ * whitespace-nowrap, so the kicker can wrap only between them.
+ */
+export function waypointKickerParts(w: Waypoint): readonly [altitude: string, waypoint: string] {
+  return [
+    `${formatMetres(w.altitudeM)}${w.approximate ? ' approx.' : ''} ·`,
+    `Waypoint ${w.k} of ${w.n}`,
+  ];
 }
 
 /** The card kicker: '1,668 m · Waypoint 2 of 4', or '2,760 m approx. · Waypoint 4 of 4'. */
 export function waypointKicker(w: Waypoint): string {
-  return `${formatMetres(w.altitudeM)}${w.approximate ? ' approx.' : ''} · Waypoint ${w.k} of ${w.n}`;
+  return waypointKickerParts(w).join(' ');
 }

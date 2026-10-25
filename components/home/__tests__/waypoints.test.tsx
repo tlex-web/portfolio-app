@@ -24,11 +24,16 @@ describe('WaypointCard (HOME-05, D-07, D-10)', () => {
   it('renders kicker, h2, picture, place and date, story and link in DOM order', () => {
     const { container } = render(<WaypointCard waypoint={second} />);
     const section = container.querySelector('section')!;
+    // The kicker and the place line span child elements (their break points,
+    // G-09-3 b, G-09-4 N2), and ByText matches an element's own text nodes
+    // only, so match the paragraph whose whole textContent is the string.
+    const paragraphWithText = (text: string) =>
+      screen.getByText((_, el) => el?.tagName === 'P' && el.textContent === text);
     const order = [
-      screen.getByText(waypointKicker(second), { normalizer: (s) => s }),
+      paragraphWithText(waypointKicker(second)),
       screen.getByRole('heading', { level: 2 }),
       section.querySelector('picture')!,
-      screen.getByText(second.placeDate),
+      paragraphWithText(second.placeDate),
       screen.getByText(second.story),
       screen.getByRole('link', { name: `View photo: ${second.title}` }),
     ];
