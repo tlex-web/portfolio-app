@@ -1,9 +1,9 @@
 ---
-status: diagnosed
+status: complete
 phase: 09-home-ascent
 source: [09-VERIFICATION.md]
 started: 2026-10-25T15:05:00Z
-updated: 2026-10-25T14:57:19Z
+updated: 2026-10-25T22:12:45.902Z
 ---
 
 ## Current Test
@@ -55,7 +55,9 @@ blocked: 0
 
 - gap_id: G-09-2
   truth: "At 375x667, 768x1024, 820x1180 and 1024x768 the four 3D pins at #summit are not hidden behind the plaque, and below 1280 px the static poster pins are not under the plaque (D-03)"
-  status: failed
+  status: resolved
+  resolved_by: 09-22-PLAN.md
+  resolved_at: 2026-10-25
   reason: "User reported: gap plan — pins still hidden behind the plaque"
   severity: major
   test: 2
@@ -81,7 +83,9 @@ blocked: 0
 
 - gap_id: G-09-3
   truth: "At 768 px the waypoint-2 pin label on the static poster is legible beside its card, and at 375 px the docked kicker wraps without a lone \"4\""
-  status: failed
+  status: resolved
+  resolved_by: 09-22-PLAN.md
+  resolved_at: 2026-10-25
   reason: "User reported: gap plan — both still there"
   severity: major
   test: 3
@@ -111,7 +115,9 @@ blocked: 0
 
 - gap_id: G-09-4
   truth: "At 768-1023 px the hero scrim does not dim the altimeter rail labels and readout (UI-REVIEW N1), and at 375 px the docked card's place line never starts a line with the \"·\" separator (UI-REVIEW N2). N3 (pin 3 vs hero copy at p=0) accepted, out of scope."
-  status: failed
+  status: resolved
+  resolved_by: 09-22-PLAN.md
+  resolved_at: 2026-10-25
   reason: "User reported: N1 gap, N2 gap, N3 accept"
   severity: major
   test: 4
@@ -140,7 +146,9 @@ blocked: 0
 
 - gap_id: G-09-5
   truth: "A reveal burst interrupted by a hidden tab (rAF suspended) restarts on return instead of declining: at pixel ratio 1 the 'ascent-frame-budget' verdict is 'ok' and data-ascent-mode stays '3d' (09-REVIEW WR-01, HOME-07 pause contract)"
-  status: failed
+  status: resolved
+  resolved_by: 09-15-PLAN.md
+  resolved_at: 2026-10-25
   reason: "User reported: i dont see a fallback to the poster (manual run could not reliably hit the ~350 ms trigger window; code trace in 09-REVIEW WR-01 says the burst is not dropped while hidden; Tim routed to the gap plan)"
   severity: major
   test: 5
