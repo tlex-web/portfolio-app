@@ -238,7 +238,7 @@ Plans:
   4. With reduced motion, Save-Data, no WebGL2, low device memory or a lost WebGL context, a static contour poster renders and every Home section shows its final readable state. The WebGL canvas renders on demand and pauses when scrolled off-screen.
   5. Mobile LCP and Home JavaScript size are no worse than the baseline recorded at the end of Phase 7.
 
-**Plans**: 8/14 plans executed in 11 waves
+**Plans**: 9/14 plans executed in 11 waves
 
 Plans:
 **Wave 1**
@@ -262,7 +262,7 @@ Plans:
 - [x] 09-08-PLAN.md — fast-png terrain mesh, CSS-parity contour shader, plan-view reveal over the poster
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 09-09-PLAN.md — Visual shots at fixed ascent positions; HOME-08 perf spec counts the lazy chunk; early local byte check
+- [x] 09-09-PLAN.md — Visual shots at fixed ascent positions; HOME-08 perf spec counts the lazy chunk; early local byte check
 - [ ] 09-10-PLAN.md — Camera route (tilt-in, legs, summit look-back), mobile view offset, 3D pins
 
 **Wave 8** *(blocked on Wave 7 completion)*
@@ -401,7 +401,7 @@ Plans:
 | 6. Integration Wiring Fixes | v1.0 | 1/1 | Complete | 2026-03-12 |
 | 7. Foundation & Guardrails | v2.0 | 27/27 | Complete    | 2026-10-24 |
 | 8. Data & Terrain Pipeline | v2.0 | 13/13 | Complete    | 2026-10-24 |
-| 9. Home Ascent | v2.0 | 8/14 | In Progress | - |
+| 9. Home Ascent | v2.0 | 9/14 | In Progress | - |
 | 10. Photography | v2.0 | 0/TBD | Not started | - |
 | 11. Engineering & Roadmap | v2.0 | 0/TBD | Not started | - |
 | 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 0/TBD | Not started | - |

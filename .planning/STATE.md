@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 09
 current_phase_name: Home Ascent
 status: executing
-stopped_at: Completed 09-08-PLAN.md
-last_updated: "2026-10-25T01:32:15.488Z"
+stopped_at: Completed 09-09-PLAN.md
+last_updated: "2026-10-25T01:42:46.104Z"
 last_activity: 2026-10-25
 last_activity_desc: Phase 09 execution started
-state_head: a2f8d646ae1b30516a65dd6cb452e3657d16960b
+state_head: 5c1bcd4f8766047761e441fc0b5783bb19b53df6
 progress:
   total_phases: 6
   completed_phases: 8
   total_plans: 54
-  completed_plans: 48
-  percent: 89
+  completed_plans: 49
+  percent: 91
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-24)
 ## Current Position
 
 Phase: 09 (Home Ascent) — EXECUTING
-Plan: 9 of 14
+Plan: 10 of 14
 Status: Ready to execute
 Last activity: 2026-10-25 — Phase 09 execution started
 
-Progress: [█████████░] 89% of v2.0 phases (2 of 6: Phases 7–8 complete); 40/40 planned plans done (Phases 9–12 not yet planned)
+Progress: [█████████░] 91% of v2.0 phases (2 of 6: Phases 7–8 complete); 40/40 planned plans done (Phases 9–12 not yet planned)
 
 ## Performance Metrics
 
@@ -103,6 +103,7 @@ Progress: [█████████░] 89% of v2.0 phases (2 of 6: Phases 7�
 | Phase 09 P06 | 17 min | 3 tasks | 12 files |
 | Phase 09 P07 | 14 min | 3 tasks | 13 files |
 | Phase 09 P08 | 18 min | 3 tasks | 9 files |
+| Phase 09 P09 | 7min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -229,6 +230,9 @@ Recent decisions affecting current work:
 - [Phase 09]: 09-08: the terrain texture is a detached copy of the poster image's currentSrc, not the rendered <img> (three sizes texture storage from image.width, the layout width); no second download
 - [Phase 09]: 09-08: the terrain bounding sphere covers relief 0..1 so frustum culling stays on; 09-10 must widen it if uExaggeration > 1
 - [Phase 09]: 09-08: contour width uWidthPx follows R3F viewport.dpr through a material ref; CameraRig keeps invalidating while p moved > 1e-4 since the last frame (D-06)
+- [Phase 09]: 09-09: HOME-08 early signal: total script bytes with the lazy chunk 441170 B (mode 3d), 27600 B under 468770 B; no trim needed
+- [Phase 09]: 09-09: On the HOME-08 profile the stage arms before the load event, so initialJsTransferBytes equals total; perf JSON adds loadEventStartMs and scriptTimeline; gate choice at 09-13 must account for it
+- [Phase 09]: 09-09: Home motion baselines are home/{w}-ascent-{start,waypoint-2,summit}.png on the forced static poster path; 09-14 deletes the 9 home/*-scroll-* PNGs
 
 ### Pending Todos
 
@@ -266,6 +270,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-25T01:32:15.239Z
-Stopped at: Completed 09-08-PLAN.md
+Last session: 2026-10-25T01:42:45.889Z
+Stopped at: Completed 09-09-PLAN.md
 Resume file: None
