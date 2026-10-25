@@ -1,199 +1,173 @@
 ---
 phase: 09-home-ascent
-reviewed: 2026-10-25T13:28:20Z
+reviewed: 2026-10-25T21:41:08Z
 depth: standard
-files_reviewed: 77
+scope: incremental (gap closure 09-15 to 09-22, diff 4abf064..HEAD)
+files_reviewed: 32
 files_reviewed_list:
-  - .gitattributes
-  - AGENTS.md
-  - README.md
-  - app/(site)/page.tsx
   - app/globals.css
-  - components/GalleryGrid.tsx
-  - components/SafeCanvas.tsx
-  - components/__tests__/GalleryGrid.test.tsx
-  - components/__tests__/SafeCanvas.test.tsx
-  - components/home/AboutSection.tsx
   - components/home/AltimeterRail.tsx
   - components/home/AscentController.tsx
   - components/home/AscentHero.tsx
-  - components/home/HeroBlock.tsx
   - components/home/PinMark.tsx
   - components/home/PosterSheet.tsx
+  - components/home/SummitDetails.tsx
   - components/home/SummitPlaque.tsx
-  - components/home/TerrainStage.tsx
-  - components/home/TrailSigns.tsx
   - components/home/WaypointCard.tsx
-  - components/home/__tests__/boundary.test.ts
-  - components/home/__tests__/hero.test.tsx
   - components/home/__tests__/pin-layer-3d.test.tsx
   - components/home/__tests__/rail.test.tsx
   - components/home/__tests__/summit.test.tsx
   - components/home/__tests__/waypoints.test.tsx
   - components/home/terrain/CameraRig.tsx
-  - components/home/terrain/ContextLossGuard.tsx
   - components/home/terrain/PinLayer3D.tsx
   - components/home/terrain/TerrainCanvas.tsx
-  - components/home/terrain/TerrainMesh.tsx
   - components/home/terrain/route-curve.ts
-  - components/home/terrain/terrain-shader.ts
-  - data/__tests__/tokens.test.ts
-  - data/generated/tokens.ts
-  - data/home.ts
-  - data/landscapes.ts
-  - data/types.ts
-  - e2e/helpers/ascent.ts
   - e2e/helpers/webgl.ts
   - e2e/home-ascent.spec.ts
   - e2e/home-canvas.spec.ts
   - e2e/home-modes.spec.ts
-  - e2e/homepage.spec.ts
-  - e2e/no-webgl.spec.ts
-  - e2e/perf/home-baseline.spec.ts
-  - e2e/shell.spec.ts
-  - e2e/visual/README.md
-  - e2e/visual/hide-canvas.css
-  - e2e/visual/routes.spec.ts
-  - eslint.config.mjs
-  - lib/__tests__/ascent-capability.test.ts
-  - lib/__tests__/ascent-progress.test.ts
   - lib/__tests__/ascent-route.test.ts
-  - lib/__tests__/ascent-summit.test.ts
   - lib/__tests__/ascent-waypoints.test.ts
   - lib/__tests__/frame-budget-policy.test.ts
-  - lib/__tests__/frame-budget.test.ts
-  - lib/__tests__/heightmap.test.ts
-  - lib/__tests__/home-format.test.ts
-  - lib/__tests__/poster-frame.test.ts
-  - lib/__tests__/useAscentMode.test.tsx
-  - lib/ascent/capability.ts
-  - lib/ascent/frame-budget.ts
-  - lib/ascent/poster-frame.ts
-  - lib/ascent/progress.ts
+  - lib/__tests__/framing.test.ts
+  - lib/__tests__/summit-layout.test.ts
+  - lib/ascent/framing.ts
   - lib/ascent/route.ts
-  - lib/ascent/summit.ts
+  - lib/ascent/summit-layout.ts
   - lib/ascent/waypoints.ts
-  - lib/home-format.ts
-  - lib/terrain/heightmap.ts
   - lib/useAscentMode.ts
-  - package-lock.json
-  - package.json
-  - scripts/guards/palette-ratchet.json
   - scripts/guards/test-count.baseline.json
-  - scripts/tokens/build-tokens.mjs
 findings:
   critical: 0
-  warning: 2
-  info: 7
-  total: 9
+  warning: 1
+  info: 3
+  total: 4
 status: issues_found
 ---
 
 # Phase 09: Code Review Report
 
-**Reviewed:** 2026-10-25T13:28:20Z
+**Reviewed:** 2026-10-25T21:41:08Z
 **Depth:** standard
-**Files Reviewed:** 77
+**Files Reviewed:** 32
 **Status:** issues_found
-
-## Narrative Findings (AI reviewer)
 
 ## Summary
 
-I reviewed the Home ascent at standard depth. That covers the server and client components, the lazy terrain chunk, the pure `lib/ascent` modules, the token generator and the new or changed specs. I checked the key code paths against the libraries they call: R3F 9's `invalidate` and its unmount and dispose order in `node_modules/@react-three/fiber`, and `sampleBilinear` in `lib/terrain/dem-sample.ts`.
+This is an incremental review of the Phase 09 gap-closure work, plans 09-15 to 09-22 (`git diff 4abf064..HEAD`). It replaces the pre-gap review. The changes covered are:
 
-The pure maths holds up when traced by hand. That covers the progress mapping, plateau location, curve parameter, poster frame, mesh registration (PlaneGeometry row order after `rotateX(-PI/2)`, pixel-centre UVs, `meshHeightAtUv` against `sampleBilinear`) and the arrival formula against the sticky geometry. The ContextLossGuard teardown claim also holds: R3F flushes effect cleanups before `disposeRenderer` and `forceContextLoss`. I found no security problems. All fetches are same-origin and content-hashed, the heightmap is checked before it becomes geometry, nothing is injected into HTML, and the `__ascentBudgetMeasureOnly` hook is the intentional, already-analysed test hook (T-09-16), so it is not filed.
+- the WR-01 and WR-02 frame-budget fixes;
+- the rail layer moved out of the stage;
+- the compact and full summit layouts;
+- `placePinLabel` and `waypointTarget`;
+- the measured summit framing (`summitClearRects`, `fitCluster`, `stageViewKeys`, `viewTrackAt`);
+- the kicker and place-line break points;
+- the new e2e harnesses (`holdFramesWhileHidden`, `holdHeightmap`, `composedContrast`).
 
-The main defect is in the frame-budget burst. A tab hidden during the first frames of the burst is not treated as a pause, because hidden tabs run no animation frames. The stale budget then declines a capable device when the tab returns. The existing "pauses while the tab is hidden" e2e cannot catch this, because it fakes `visibilityState` and animation frames keep running. The second warning is a race in the context-loss e2e against the real frame budget.
+What was traced:
 
-The known gap-plan items (summit plaque and pin overlaps at 375x667, 768x1024, 820x1180 and 1024x768, the hidden 768 waypoint-2 label, the 375 kicker orphan) and the open deferred items (fflate advisory, arm-before-load, hero scrim breakpoint, rail tick contrast) are not filed again.
+- **Pinhole and view-offset algebra.** `fitCluster` offsets against three's `setViewOffset` convention, and `natural - target` in `wideStageOffsets`.
+- **Key track.** Key `i` sits at `t = i/(n+1)`, which agrees with `curveParamAt`.
+- **Frame budget.** The pause and restart logic in CameraRig after the WR-01 fix, on every path: hidden at mount, off-screen at reveal, hidden during the second burst at pixel ratio 1.
+- **Layering.** The poster pin layer and the 3D pin layer each sit, with z-10, in the stage's stacking context. The sheet box has no stacking context, and PinLayer3D is a sibling of the canvas, not inside its opacity layer.
+- **PinMark placement classes.** Each one checked against the `placePinLabel` box model.
+- **The `summit-compact` media query.** In MQ4, `not all and A and B` negates the whole query.
+- **Unsupported browsers.** If the range syntax is unsupported, neither variant matches, and the default full plaque shows.
+- **The hidden-tab test.** Its discriminator tells a stale budget (fewer than 20 samples, under 1 s after the show) from a fresh one.
+
+No crash, security or data-loss defect was found. The one WARNING is a gap in the static summit contract (G-09-2): the 2000-size sweep drops every stage shorter than 480 px, so landscape phones were never checked. On those phones the compact plaque covers poster pin 3. I computed this with the repo's own `summitColumnBox`, `posterFrame` and the committed waypoint UVs.
+
+## Narrative Findings (AI reviewer)
 
 ## Warnings
 
-### WR-01: A tab hidden during the reveal burst can decline a capable device (stale budget, no frame runs while hidden)
+### WR-01: The compact summit plaque covers poster pin 3 on landscape phones; the sweep that should catch it filters those sizes out
 
-**File:** `components/home/terrain/CameraRig.tsx:259-293` and `:337-362`; `lib/ascent/frame-budget.ts:54`
-**Issue:** The pause logic only throws away the running burst when a frame runs while `!shown`, in the `running && !shown` branch at line 338. That works for off-screen, because animation frames keep firing while the stage is off-screen. It does not work for a hidden tab: browsers suspend `requestAnimationFrame` in hidden tabs, so R3F's demand loop runs no frame while the tab is hidden. `burstPaused` stays `false`, and `update()` (lines 263-273) keeps the old `budget.current` when the tab comes back. The pending frame then runs with `shown === true`, and `running.sample(now, continuous)` reaches `now - start >= burstWindowMs && frames < minSamples` (frame-budget.ts:54), so the verdict is `'decline'`.
+**File:** `lib/ascent/summit-layout.ts:50-88`, `lib/__tests__/summit-layout.test.ts:32,57`, `e2e/home-ascent.spec.ts` (`Summit plaque clears the poster pins` SIZES)
+**Issue:** `summitLayoutAt` picks `compact` for every viewport narrower than 1100 px, landscape phones included. On a landscape stage the poster sheet is cropped vertically (`side = W`), so pin 3 (u 0.459, v 0.5195) lands inside the 320 px column docked at the bottom.
 
-The window is the time the burst needs to collect 20 frames: about 350 ms after the reveal at 60 Hz, and about 0.8 s on a device running at around 25 fps, which still passes the budget. If the visitor switches tabs in that window:
-- at pixel ratio above 1, the canvas drops to 1 for the rest of the page view (`dprSteppedDown` is module-level), and the fresh burst usually passes;
-- at pixel ratio 1 (most desktop monitors), `downgradeAscent('frame-budget')` turns Home static for the rest of the page view on a device that can run the 3D view.
+The modelled column is `summitColumnBox(w, h, 0)`, since phones have overlay scrollbars. The table gives its gap to each poster pin box (24 x 40 px above the anchor):
 
-The comment at lines 91-93 says a burst cut short by a pause starts over, but that only happens when a frame is drawn during the pause. The e2e `pauses while the tab is hidden` (e2e/home-canvas.spec.ts:862-884) cannot catch this. Its `setVisibility` helper (line 749) overrides `document.visibilityState` but leaves animation frames running, so the test always takes the `running && !shown` path. It also runs only after `expect3dAfterVerdict`, when the burst is already over.
+| Viewport | Column (stage px) | Pin 1 | Pin 2 | Pin 3 | Pin 4 |
+|---|---|---|---|---|---|
+| 667 x 375 | x 24-344, y 125-295 | 120 | 82 | **-44** | 195 |
+| 740 x 360 | x 24-344, y 110-280 | 145 | 130 | **-16** | 255 |
+| 844 x 390 | x 24-344, y 140-310 | 216 | 199 | 31 | 341 |
 
-**Fix:** Drop the burst when the stage stops being shown, in the flag handler, so that no frame is needed:
-```tsx
-const update = (change: () => void) => {
-  const was = shown();
-  change();
-  if (was && !shown()) {
-    if (budget.current) {
-      // No frame may run while hidden (rAF is suspended): drop the burst here, not in useFrame.
-      budget.current = null;
-      burstStart.current = -1;
-      burstPaused.current = true;
-    }
-    return;
-  }
-  if (was || !shown()) return;
-  if (burstPaused.current) { /* ...unchanged restart... */ }
-  invalidate();
-};
+At 667 x 375, pin 3's box (x 294-318, y 128-168) lies under the one-line plate (y 125-167). Real phones show it worse: `100svh` makes the stage shorter than these emulated sizes.
+
+Neither guard sees this:
+- The unit sweep keeps only sizes with `h - NAV_H >= MIN_STAGE_H` (480), so every viewport under 544 px tall is dropped. Its header still claims coverage of "portrait phones, tablets and desktops".
+- The e2e SIZES list has no landscape phone.
+
+The same filter hides a second edge in the full layout. On a landscape window 1100-1943 px wide and under about 542 px tall, the 478 px full column plus `pb-4` is taller than the stage, so it cannot fit the summit frame. The plaque runs under the nav at p = 1 (see IN-01).
+
+**Fix:** First add the missing domain to the sweep, so the gap is visible. For example:
+```ts
+{ name: 'landscape phones', widths: range(568, 932, 8), heights: range(320, 430, 10) },
 ```
-Option, as a second guard: in `createFrameBudget().sample`, treat a gap far above `maxMedianMs` (for example over `burstWindowMs`) as a restart instead of a slow frame. For a regression test, run a real burst and hide the page with CDP `Page.setWebLifecycleState({ state: 'frozen' })` or a second tab via `context.newPage()` + `bringToFront()`, so animation frames actually stop.
+Then scope the stage-height filter per domain, or drop it. Add `[667, 375]` and `[740, 360]` to the e2e SIZES.
 
-### WR-02: The context-loss e2e races the real frame budget at the size where CI's verdict is noise
+Then choose a layout rule for short landscape stages. Options:
+- add `(min-height: …)` to the compact condition;
+- move the compact column right of pin 3 when `orientation: landscape` and the width is below 1100 px;
+- record it as accepted, as was done for the D-09 head-under-card case.
 
-**File:** `e2e/home-canvas.spec.ts:761-810` (and `lib/__tests__/frame-budget-policy.test.ts:98`, which pins it as `measureOnly: false`)
-**Issue:** `context loss falls back to the poster` runs at 412 x 839 with the real budget. The policy test's own header says that at this size "CI's SwiftShader measures the 50 ms budget as noise", with 'decline' at 80.7 ms in run 40190531971. The test calls `loseContext()` right after `waitForRevealed`, which is the 500 ms `--duration-settle` fade plus polling. At that point the burst is still running: 20 intervals at 50 ms or more take at least 1 s. If CI is slow enough that the poll returns after a decline, `downgradeAscent('frame-budget')` has already unmounted the canvas at pixel ratio 1. Then `lost` is `false` (no canvas) and the test fails, or the downgrade reasons read `['frame-budget']` and the `toEqual(['context-lost'])` assertion fails. The test does not budget-gate its context loss, so its result depends on runner speed.
-**Fix:** Either call `await budgetMeasureOnly(page)` before `goto`, because a decline is not what this test is about (update `frame-budget-policy.test.ts` line 98 to `measureOnly: true`), or wait for the verdict first with `await expect3dAfterVerdict(page)` before `loseContext()`. If the verdict can decline here, the first option is the deterministic one.
+This is a layout decision for Tim. It is not covered by the S3 entry in deferred-items.md (pin 4 cut off on portrait phones).
 
 ## Info
 
-### IN-01: The same layout constants are repeated in modules that must agree
+### IN-01: `measurePlaque` assumes the summit block is centred at its arrival, which fails when the block is taller than the stage
 
-**File:** `components/home/AscentController.tsx:109`, `components/home/terrain/CameraRig.tsx:99-101`, `components/home/TerrainStage.tsx:34`, `components/home/terrain/TerrainCanvas.tsx:90`
-**Issue:** `FLIP_PX = 240` is declared twice (poster and 3D label flip). `768` is declared twice (`NARROW_STAGE_PX` and `MOBILE_STAGE_PX`), next to Tailwind's `md` used by the rail scrim and the docked card. `camera={{ fov: 40 }}` repeats `CAMERA_FOV_DEG`. The poster and 3D pins are meant to flip at the same edge, and the camera rig is meant to match the CSS layout, so a change to one copy silently splits them. The 768 stage-width vs viewport-width difference is already behind the known 768 x 1024 overlap.
-**Fix:** Export the constants once (for example `FLIP_PX` and `NARROW_STAGE_PX` from `lib/ascent/route.ts`, which is import-free), import them in all four places, and pass `fov: CAMERA_FOV_DEG`.
+**File:** `components/home/AscentController.tsx:264-280`
+**Issue:** The plaque box is modelled as `r.top - summitRect.top - (summitRect.height - stageRect.height) / 2`, which puts the block's centre at the stage centre. But the summit is the last track child. When the block is taller than the stage, `arrivalsFromBlocks` clamps its arrival to 1, and at p = 1 the block's bottom sits on the stage bottom, not centred. The modelled `y0` is then too low by `(blockH - stageH) / 2`, and the 3D summit fit (`summitClearRects` over `geometry.plaque`) frames against the wrong box.
 
-### IN-02: `ascent-canvas-ready` mark is not guarded, unlike the other two marks
+Today the compact block is always one stage tall. Only the full layout on a short landscape window (viewport height under about 542 px, 1100-1943 px wide) reaches this case, the same domain WR-01 notes is untested.
+**Fix:** Derive the offset from the clamped arrival instead of assuming centring. The top of the summit block at the summit arrival, in stage px, is `offset - arrival * distance`, using the same `offset`/`distance` `measureLayout` already computes. Or clamp:
+```ts
+const centred = (stageRect.height - summitRect.height) / 2;
+const top = Math.max(centred, stageRect.height - summitRect.height); // last block: bottom-aligned at p = 1
+const y0 = top + (r.top - summitRect.top);
+```
 
-**File:** `components/home/terrain/TerrainMesh.tsx:231`
-**Issue:** `performance.mark(name, { detail })` is wrapped in try/catch in `useAscentMode.ts:104-108` and `CameraRig.tsx:127-133`, because "performance.mark with options is unavailable". The same call in the reveal frame callback is not wrapped. It runs after `markRevealed()`, so a throw would only log an uncaught error, but the handling is inconsistent.
-**Fix:** Wrap it the same way, or drop the try/catch in all three places if the supported browsers make it unnecessary.
+### IN-02: Narrow-versus-wide is now decided by two different width sources in the same canvas
 
-### IN-03: `summitPlaque(waypoints)` ignores its input for "Height gained"
+**File:** `components/home/terrain/CameraRig.tsx:136,519`, `components/home/TerrainStage.tsx:34,56`
+**Issue:** 09-20 moved the rig's narrow/wide switch to `matchMedia('(min-width: 48rem)')`, so it agrees with the CSS md breakpoint. That fixed the 768-777 px mismatch. TerrainStage still picks the mesh grid from the stage width (`width < MOBILE_STAGE_PX`), and the rig's pre-read fallback is the canvas width (`w >= 768`). At a 768-777 px viewport the stage is 758-767 px wide, so the rig frames as wide (75° summit cap, measured md offsets) over the 256² mobile mesh. Nothing breaks, but it is the same two-source split that caused the 768 x 1024 bug, and it extends the earlier IN-01 (repeated layout constants).
+**Fix:** Export one `WIDE_MEDIA` (or `MD_MIN_PX`) from an import-free module. Use `matchMedia` in TerrainStage too, or document that the mesh choice deliberately follows the stage width.
 
-**File:** `lib/ascent/summit.ts:52`
-**Issue:** The function takes `waypoints` "for unit tests", but "Height gained" always reads the global `lowestDemM`. With injected waypoints, that stat disagrees with the other three stats and with `waypoints[0].altitudeM`, the rail start that the doc comment says it equals.
-**Fix:** `value: formatMetres(summit.officialM - start.altitudeM)`. `start` is the lowest waypoint, so in production this equals `lowestDemM` (build-photo-data.mjs:227), and the parameter becomes honest.
+### IN-03: The three summit-layout magic numbers are a hand-measured model of rendered content
 
-### IN-04: `fourDecimals` is not "round half up" for every input
+**File:** `lib/ascent/summit-layout.ts:40-43`
+**Issue:** `COMPACT_H = 170` (plate 42 + gap 8 + signs 120) and `FULL_H = 478` ("measured at 1440 x 900") are rendered heights that depend on font metrics, the copy and TrailSigns' layout. The 2000-size unit sweep's "clears every pin" guarantee holds only while they are true. A copy edit that wraps a sign label, or a font swap, silently invalidates the sweep. The e2e rows check 11 real sizes, which is the only browser-truth link.
+**Fix:** Have one e2e row assert that the measured `[data-summit-plaque]` height at 375 x 667 and at 1440 x 900 matches `COMPACT_H` and `FULL_H` within a few px. Then a drift fails next to the constant it invalidates.
 
-**File:** `lib/home-format.ts:36-39`
-**Issue:** `Math.round(Math.abs(v) * 1e4)` works on the binary value. `45.97635 * 1e4` is `459763.49999999994`, so `45.97635` prints `45.9763`, not the documented half-up `45.9764`. The committed summit coordinate is not affected today, but the contract in the doc comment (and the "rounds half up" test name) promises more than the code delivers.
-**Fix:** Either soften the doc to "rounded to four decimals (binary value)", or round from the decimal string, for example `Number(Math.abs(v).toFixed(10))` before scaling, with a test for `45.97635`.
+## Earlier findings
 
-### IN-05: A downgrade lasts the whole client-side session, not only the page view
+Status of the six findings left open in `09-REVIEW-DISPOSITION.md`, plus the three marked fixed:
 
-**File:** `lib/useAscentMode.ts:43`, `:101-110`; `components/home/terrain/TerrainCanvas.tsx:64`
-**Issue:** `downgraded` and `dprSteppedDown` are module-level, so they survive App Router navigation. One context loss (a GPU reset) or one bad burst (see WR-01) keeps Home static, or at pixel ratio 1, for every later visit to Home until a full reload. The JSDoc says "for the rest of the page view". If "page view" means one document, the behaviour matches. If it means one visit to Home, it does not.
-**Fix:** Decide which is intended and document it. If a later visit to Home should get the 3D view again, reset `downgraded` when AscentController mounts (or key the state by a mount id). Leave `dprSteppedDown` sticky if that is preferred.
+| ID | Status after 09-15..09-22 | Note |
+|----|---------------------------|------|
+| WR-01 | Fixed (confirmed) | `update()` in CameraRig drops a running burst on the shown-to-hidden flag change and restarts it with a fresh budget on the way back. The `useFrame` fallback covers a frame that runs off-screen. The new e2e (`holdFramesWhileHidden`) can tell a stale budget from a fresh one. |
+| WR-02 | Fixed (confirmed) | The context-loss test opts into `budgetMeasureOnly`. The B1 policy test lists it. |
+| IN-01 | Still open, partly addressed | `FLIP_PX` is gone (replaced by `placePinLabel`). New copies were added (`STAGE_FOV_DEG`, `NARROW_VIEW_OFFSET_X/Y_SHARE`), but `ascent-route.test` asserts they match `route.ts`. Still unguarded: `camera={{ fov: 40 }}` in `TerrainCanvas.tsx:93`, `MOBILE_STAGE_PX = 768` in TerrainStage, and the `w >= 768` fallback in CameraRig (see IN-02 above). |
+| IN-02 | Still open | `performance.mark('ascent-canvas-ready', …)` in `TerrainMesh.tsx:231` is still unwrapped. Gap work did not touch it. |
+| IN-03 | Still open | `lib/ascent/summit.ts:52` still reads the global `lowestDemM`. `SummitDetails` and `SummitStats` now render it twice, so it shows in two places. |
+| IN-04 | Still open | `lib/home-format.ts:38` is unchanged. |
+| IN-05 | Fixed (confirmed, docs) | `useAscentMode.ts` and `TerrainCanvas.tsx` now say the downgrade and the pixel-ratio step-down last the session, until a full reload. |
+| IN-06 | Still open | GalleryGrid still pages at 12. Not in this diff. |
+| IN-07 | Still open | `e2e/homepage.spec.ts:56` still has `site.role.replace('&', '&amp;')`. Not in this diff. |
 
-### IN-06: The `/photos#slug` target only exists on the current gallery page
+Already known and not re-reported:
+- the `delayHeightmap` service-worker bypass in four home-canvas tests;
+- S3, the portrait-phone summit pin 4 cut-off;
+- the reduced-motion full plaque over the pins at 375 x 667;
+- the `useAscentMode.ts` Prettier drift.
 
-**File:** `components/GalleryGrid.tsx:36` (`id={image.slug}`), `components/home/WaypointCard.tsx:81`
-**Issue:** GalleryGrid renders only the `itemsPerPage = 12` images of the current page, and only in the default grid view. A waypoint photo past position 12 would have no element with its id, so "View photo" would land at the top of /photos. Today there are 4 photos, and Phase 10 replaces the target with `/photos/{slug}`.
-**Fix:** None needed before Phase 10. If the photo set grows first, open the page that holds the hashed slug on mount.
-
-### IN-07: The server-HTML assertion escapes only the first `&`
-
-**File:** `e2e/homepage.spec.ts` (the `server HTML shows the name, role and relief poster` test)
-**Issue:** `site.role.replace('&', '&amp;')` replaces only the first ampersand. A role string with two `&`, or with `<` or `"`, would fail the test even though the page is correct.
-**Fix:** `site.role.replaceAll('&', '&amp;')`, or assert on the hydrated DOM text, which the same test already reaches through `page.goto('/')`.
+WR-01 above is a separate case: landscape stages and pin 3.
 
 ---
 
-_Reviewed: 2026-10-25T13:28:20Z_
+_Reviewed: 2026-10-25T21:41:08Z_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
