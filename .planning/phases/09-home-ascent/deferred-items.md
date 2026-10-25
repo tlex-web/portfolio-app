@@ -50,3 +50,9 @@
   **What:** `@react-three/fiber` creates `new THREE.Clock()` in its store (events-9ce18a08.esm.js:1054), and three 0.184 deprecates Clock. The warning appears in the dev-server browser log for every canvas, including the Home terrain canvas since 09-08. It is a library warning, not an error, and comes from no project file.
   **Found by:** 09-08 Task 3 run.
   **Owner:** the next R3F upgrade (watch for a release that switches to THREE.Timer).
+
+- The canvas chunk arms before the load event on the HOME-08 profile and holds that event back by about 1.5 s
+  status: open
+  **What:** In the 09-09 local production probe (Pixel 7, 4x CPU, 150 ms, 200000 B/s), `requestIdleCallback` arms the stage at about 3.1 s, while the hillshade AVIF is still downloading. The dynamically inserted chunk scripts (`three`/R3F 241,953 B, mesh/shader/fast-png 17,583 B, a 474 B stub) then hold the `load` event until they finish: loadEventStart was 4856 ms, and the three/R3F chunk's responseEnd was 4684 ms. LCP is unaffected (3084 ms locally, because canvases are never LCP candidates), and HOME-08 judges LCP and script bytes, not the load event. One consequence: by the plan's boundary (startTime before loadEventStart) the lazy chunk counts as "initial", so `initialJsTransferBytes` equals `totalJsTransferBytes` and `lateScripts` is empty. The perf JSON's `scriptTimeline` and per-sample `loadEventStartMs` still show the chunk.
+  **Found by:** 09-09 Task 2 early HOME-08 signal.
+  **Owner:** Tim at the 09-13 Task 3 gate choice: "gate on initial bytes" measures the same as total under this boundary. Moving the arm after `load` (TerrainStage) or adding an arm mark would make the split meaningful; either is a behaviour or product-code change outside 09-09.
