@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 09
 current_phase_name: Home Ascent
 status: executing
-stopped_at: Completed 09-12-PLAN.md
-last_updated: "2026-10-25T10:59:20.214Z"
+stopped_at: Completed 09-13-PLAN.md
+last_updated: "2026-10-25T12:12:38.716Z"
 last_activity: 2026-10-25
-last_activity_desc: Phase 09 execution started
-state_head: d3d0480fbbeb696579faf56d74180e07a4489ebe
+last_activity_desc: 09-13 complete (HOME-08 met under total-keep; B1 for 09-14)
+state_head: ec1cf0c45897166ca7c342fe81c4f22da8ade5b7
 progress:
   total_phases: 6
   completed_phases: 8
   total_plans: 54
-  completed_plans: 52
-  percent: 96
+  completed_plans: 53
+  percent: 98
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-24)
 ## Current Position
 
 Phase: 09 (Home Ascent) — EXECUTING
-Plan: 13 of 14
+Plan: 14 of 14
 Status: Ready to execute
-Last activity: 2026-10-25 — Phase 09 execution started
+Last activity: 2026-10-25 — 09-13 complete: HOME-08 met under Tim's total-keep gate (CI perf: LCP 3,112 ms, total JS 444,761 B); B1 frame-budget policy for 09-14
 
-Progress: [█████████░] 96% of v2.0 phases (2 of 6: Phases 7–8 complete); 40/40 planned plans done (Phases 9–12 not yet planned)
+Progress: [█████████░] 98% of v2.0 phases (2 of 6: Phases 7–8 complete); 40/40 planned plans done (Phases 9–12 not yet planned)
 
 ## Performance Metrics
 
@@ -107,6 +107,7 @@ Progress: [█████████░] 96% of v2.0 phases (2 of 6: Phases 7�
 | Phase 09 P10 | 28 min | 3 tasks | 11 files |
 | Phase 09 P11 | 45 min | 3 tasks | 8 files |
 | Phase 09 P12 | 17 min | 3 tasks | 7 files |
+| Phase 09 P13 | 33 min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -244,18 +245,21 @@ Recent decisions affecting current work:
 - [Phase 09]: 09-12: Tim approved the drafted About/contact copy ("approve"); about.status is 'approved'
 - [Phase 09]: 09-12: terrain tuning stays at the defaults ("defaults (Recommended)"): exaggeration 1.0, pull-back 450 m, relief opacity 0.32
 - [Phase 09]: 09-12: summit plaque occlusion fixed through the projection ("Fix in 09-12 (Recommended)"): wide summit HFOV 75 and a right shift of 0.095 x width; the narrow summit lift of 0.08 x height is flagged for Tim
+- [Phase 09]: 09-13: HOME-08 gate is total-keep (Tim: "total-keep (Recommended)"): total JS after canvas ready plus LCP; initial and legacy bytes recorded beside it. CI perf run 40189690406 (v1.64.0-noble): totalJsTransferBytes 444,761 <= 468,770 B PASS, LCP 3,112 <= 4,692 ms PASS, so HOME-08 is met by the measurement (initial 180,578 B, legacy 444,761 B; perf mode cannot prove "stayed 3D", resolved by B1)
+- [Phase 09]: 09-13: phone-size frame budget under automation is B1 (Tim: "B1: extend option A (Recommended)"), applied in 09-14: budgetMeasureOnly on the 10 phone-size 3D tests in e2e/home-canvas.spec.ts and window.__ascentBudgetMeasureOnly on the perf contexts; both "records the frame-budget verdict" tests and "a slow device declines to the poster" keep the real budget; FRAME_BUDGET_DEFAULTS.maxMedianMs stays 50; real visitors unchanged
+- [Phase 09]: 09-13: CSP e2e (cspMessages) ignores exactly the off-Vercel /_vercel/insights and /_vercel/speed-insights 404 MIME refusals (b82c57f); every other Refused-to message still fails
 
 ### Pending Todos
 
 - Legacy image variants (-thumb/-medium/-large, 60 files) are still served; since 08-10 `data/landscapes.ts` reaches them only through the image manifest. Delete them in Phase 12 (VERIFY-01) after Phase 10 migrates the consumers to the hashed derivatives (code review IN-08).
 - [Phase 10, from 08-11] The /photos grid badge reads "1 hotspots": `components/GalleryGrid.tsx:60` always prints `{n} hotspots` and `components/__tests__/GalleryGrid.test.tsx:83` asserts the literal '1 hotspots'. Two photos have one hotspot since the 08-10 copy, so the photos/* baselines (c0f2418) show it. Tim committed those baselines as-is (option A by action), so fix the plural, update the test and re-baseline photos/* in the Phase 10 GalleryGrid rebuild.
 - [Phase 12, from 08-13] Firefox 1 px stroke check for the footer contour band (08-13 Task 1 step 6, RESEARCH A2) was NOT reported by Tim (his only reply was "pushed"). Open the local production build (`npm run build && npm run start`, then `git checkout -- public/service-worker.js`) in Firefox (and Safari if available) and record whether the band's lines read as 1 px strokes; carry any difference into the Phase 12 cross-browser pass.
-- [Phase 7, from 07-11] Open item for Tim: `next dev` created an untracked `AGENTS.md` at the repo root. It is left untracked; Tim decides whether to keep and commit it, gitignore it, or delete it.
+- [Phase 7, from 07-11; RESOLVED 2026-10-25 at 09-13: Tim answered "Commit it" ("Track it, so the tree stays clean and agents get the Next.js warning."); AGENTS.md tracked unedited in c4d00d0] Open item for Tim: `next dev` created an untracked `AGENTS.md` at the repo root. It is left untracked; Tim decides whether to keep and commit it, gitignore it, or delete it.
 
 ### Blockers/Concerns
 
 - [Phase 11] Needs from Tim: CLI_X per-grade content and Medium/Critical demo commands with `riskScore` (not supplied at 08-03, where they were optional), metric sources, roadmap order and dates.
-- [Open with Tim, from 08-03] Demo command 4 (`pkill -f chrome`) is now riskLevel `critical` (score 0.87) and shows a CRITICAL RISK badge, but its explanation in `data/projects.ts` still reads "High-risk operation - requires explicit confirmation". Tim has not answered whether to change it (offered at 08-03/08-05 and later checkpoints); leave unchanged until he does (code review IN-07).
+- [Phase 11, from 08-03; answered by Tim 2026-10-25 at 09-13: "Leave for Phase 11" ("Keep it open; the Phase 11 Engineering/CLI_X rework rewrites demo content anyway.")] Demo command 4 (`pkill -f chrome`) is riskLevel `critical` (score 0.87) and shows a CRITICAL RISK badge, but its explanation in `data/projects.ts` still reads "High-risk operation - requires explicit confirmation". The fix moves to the Phase 11 Engineering/CLI_X rework; it is no longer an open question. data/projects.ts stays unchanged until then (code review IN-07).
 - [Phase 9/10, from 08 code review] 08-REVIEW-DISPOSITION.md has 8 open warnings, latent for the current four photos: WR-01 out-of-extent photo gets clamped height and UV outside 0–1; WR-02 `gpsOf` drops lat/lon when GPSAltitude is missing; WR-03 offsetTimeOriginal ignored (Europe/Zurich assumed); WR-04 `formatExposureTime` wrong for 0.25–1 s and 0; WR-05 `photos:derive` write mode not atomic; WR-06 guard skips HEIF/raw formats and `.gitignore` lost the `public/images/landscapes/` line; WR-07 scripts/README.md omits `photos:build`; WR-08 corrections can claim `source: exif` for a hand-typed position. Fold into the first Phase 9/10 plan that adds photo data or surfaces (or run `/gsd-code-review 08 --fix`). Also IN-02: the legacy bridge drops `position.approximate` (footer unaffected; Phase 10 must carry it).
 - [Phase 7; RESOLVED at Phase 07 UAT 2026-10-24, test 3: Tim confirmed the three jobs are Required on main] Required status checks (Visual Regression, Lint and Type Check, Unit Tests) on main are not set yet; until Tim sets them a red visual job does not block merges (07-USER-SETUP.md)
 - [Phase 7] main (Vercel production) lacks the Next 16.4.2 / sharp 0.35.5 security patch until Tim merges gsd/phase-07-foundation-guardrails; GitHub reported 84 Dependabot alerts on the default branch (9 critical). Merge recommended soon. Phase 8 lives on gsd/phase-08-data-terrain-pipeline, stacked on the unmerged Phase 7 tip (39836df) by Tim's choice, so merge Phase 7 first; until Phase 7 is on origin/main, worktree base-check degrades every phase to sequential execution.
@@ -281,6 +285,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-25T10:59:19.983Z
-Stopped at: Completed 09-12-PLAN.md
+Last session: 2026-10-25T12:12:38.469Z
+Stopped at: Completed 09-13-PLAN.md
 Resume file: None

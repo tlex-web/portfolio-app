@@ -289,3 +289,7 @@ None. No external service configuration is required.
 ---
 *Phase: 09-home-ascent*
 *Completed: 2026-10-25*
+
+## Self-Check: PASSED
+
+AGENTS.md, e2e/home-canvas.spec.ts and this SUMMARY exist. b82c57f, c4d00d0 and ec1cf0c are ancestors of HEAD. All five of Tim's replies are quoted verbatim.
