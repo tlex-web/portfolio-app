@@ -83,3 +83,17 @@
   **Found by:** 09-12 plaque fix, size sweep.
   **Owner:** Tim. Fixing these needs a plaque layout decision, for example a compact summit plaque on short or portrait stages, or a framing that fits the pins above a centred plaque. It is outside the 09-12 camera-only scope.
   **Decision (2026-10-25, after 09-12):** Tim answered "Gap plan after 09-14". Close Phase 9 as planned, then fix this through `/gsd-plan-phase 09 --gaps` if UAT flags it. The Home baselines may need one more re-baseline afterwards.
+
+- At 768 px the waypoint-2 pin label hides behind the Gornerschlucht card in the static poster
+  status: open
+  **What:** In the 09-14 CI baseline `home/768-ascent-waypoint-2-visual-dark-linux.png` (static poster at 768 x 900), pin 2 is lit but its label flips to the side under the card, so only a sliver of it shows at the card's right edge.
+  **Found by:** 09-14 Task 2 review checklist (visual dispatch 40193370705).
+  **Owner:** Gap plan after 09-14, bundled with the summit-plaque overlap entry above; one more Home re-baseline covers both.
+  **Decision (2026-10-25, 09-14 Task 2):** Tim was asked "At 768 px the waypoint-2 pin label hides behind the card (and at 375 the kicker orphans the "4"). How should these be handled?" and answered "Add to the gap plan (Recommended)" ("Bundle with the plaque overlaps in the gap plan after 09-14; one more Home re-baseline covers all of them. Commit these baselines now as-is.").
+
+- At 375 px the docked waypoint-2 card's kicker orphans the "4"
+  status: open
+  **What:** In the 09-14 CI baseline `home/375-ascent-waypoint-2-visual-dark-linux.png`, the docked card's kicker wraps so that its trailing "4" sits alone on the second line.
+  **Found by:** 09-14 Task 2 review checklist (visual dispatch 40193370705).
+  **Owner:** Gap plan after 09-14, bundled with the summit-plaque overlap entry above; one more Home re-baseline covers both.
+  **Decision (2026-10-25, 09-14 Task 2):** same question and reply as the 768 label entry above: "Add to the gap plan (Recommended)".
