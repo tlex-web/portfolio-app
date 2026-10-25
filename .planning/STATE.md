@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 09
 current_phase_name: Home Ascent
 status: executing
-stopped_at: Completed 09-05-PLAN.md
-last_updated: "2026-10-25T00:30:44.763Z"
+stopped_at: Completed 09-06-PLAN.md
+last_updated: "2026-10-25T00:52:17.961Z"
 last_activity: 2026-10-25
 last_activity_desc: Phase 09 execution started
-state_head: 23f45a5a9330b0122841ce119e499f8dfe59f8ea
+state_head: a186326e919c4c5a0179c315fbaed1c27785129d
 progress:
   total_phases: 6
   completed_phases: 8
   total_plans: 54
-  completed_plans: 45
-  percent: 83
+  completed_plans: 46
+  percent: 85
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-24)
 ## Current Position
 
 Phase: 09 (Home Ascent) — EXECUTING
-Plan: 6 of 14
+Plan: 7 of 14
 Status: Ready to execute
 Last activity: 2026-10-25 — Phase 09 execution started
 
-Progress: [████████░░] 83% of v2.0 phases (2 of 6: Phases 7–8 complete); 40/40 planned plans done (Phases 9–12 not yet planned)
+Progress: [█████████░] 85% of v2.0 phases (2 of 6: Phases 7–8 complete); 40/40 planned plans done (Phases 9–12 not yet planned)
 
 ## Performance Metrics
 
@@ -100,6 +100,7 @@ Progress: [████████░░] 83% of v2.0 phases (2 of 6: Phases 7�
 | Phase 09 P03 | 20 min | 3 tasks | 11 files |
 | Phase 09 P04 | 5 min | 2 tasks | 5 files |
 | Phase 09 P05 | 15 min | 3 tasks | 11 files |
+| Phase 09 P06 | 17 min | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -216,6 +217,10 @@ Recent decisions affecting current work:
 - [Phase 09]: 09-05: summitPlaque() in lib/ascent/summit.ts derives every summit-plaque value (height gained, highest photograph with approx. note, year span, LV95 distance from the first waypoint); altitude ties keep the earlier waypoint
 - [Phase 09]: 09-05: e2e/shell.spec.ts counts the global skip link by exact name 'Skip to main content'; 'Skip to the summit' on / is the only other /skip to/i link allowed (2 on /, 1 elsewhere and on 404s)
 - [Phase 09]: 09-05: the summit repeats the hero kicker and trail signs (D-13), so Home-wide e2e checks for those must scope to [data-ascent-block=hero] or #summit
+- [Phase 09]: 09-06: one page useScroll() -> mapProgress over a measured layout -> one useSpring (DURATION.panel, no bounce), jump past one leg; rail, pins and the 3D camera read that spring
+- [Phase 09]: 09-06: altitude and rail position interpolate between plateau edges, so the readout never jumps at a plateau
+- [Phase 09]: 09-06: pin label flip measures 240 px from the clear stage edge (stage minus rail scrim from 768 px); refines UI-SPEC E7, flagged for Tim
+- [Phase 09]: 09-06: later pin layers render PinMark under data-ascent-root and call useAscent().syncPins() on mount
 
 ### Pending Todos
 
@@ -253,6 +258,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-25T00:30:44.374Z
-Stopped at: Completed 09-05-PLAN.md
+Last session: 2026-10-25T00:52:17.718Z
+Stopped at: Completed 09-06-PLAN.md
 Resume file: None
