@@ -230,6 +230,37 @@ function expectDocked(b: CardBreaks, label: string) {
 }
 
 /**
+ * Full card (md, and every width under reduced motion): ' · date' is one
+ * unbreakable tail after the last word of the place, so no line starts with '·'.
+ */
+function expectFull(b: CardBreaks, label: string) {
+  expect(b.kickerLines, `${label}: each kicker part on one line`).toEqual([1, 1]);
+  expect(b.sepDisplay, `${label}: separator shown`).toBe('inline');
+  expect(b.tailLines, `${label}: separator and date on one line`).toBe(1);
+  expect(b.tailLeft, `${label}: the tail never starts a line`).toBeGreaterThan(0);
+  expect(b.placeText, `${label}: the place line keeps its ' · '`).toContain(' · ');
+  expect(b.overflow, `${label}: nothing past the column edge`).toBeLessThanOrEqual(0.5);
+}
+
+/**
+ * Desktop rows (stable scrollbar gutter), run in Chromium and Firefox: the
+ * phone widths where the plain-space strings broke badly (debug note
+ * waypoint2-label-and-kicker, Evidence 15:50 and 15:55), then the full card.
+ */
+const BREAK_ROWS: ReadonlyArray<{
+  width: number;
+  height: number;
+  reducedMotion: boolean;
+  layout: 'docked' | 'full';
+}> = [
+  { width: 375, height: 900, reducedMotion: false, layout: 'docked' },
+  { width: 360, height: 780, reducedMotion: false, layout: 'docked' },
+  { width: 412, height: 915, reducedMotion: false, layout: 'docked' },
+  { width: 768, height: 900, reducedMotion: false, layout: 'full' },
+  { width: 375, height: 900, reducedMotion: true, layout: 'full' },
+];
+
+/**
  * Card line breaks (G-09-3 b, G-09-4 N2; D-10, D-20; 09-UI-SPEC "Waypoint
  * Cards" rows 1 and 4). The kicker and place line used to be plain-space
  * strings, so in the 189-199 px docked column the line breaker orphaned '4'
@@ -260,6 +291,23 @@ test.describe('Card line breaks (G-09-3 b, G-09-4 N2)', () => {
       await context.close();
     }
   });
+
+  // "The last kicker line is not a single token" follows from the waypoint
+  // part being one line box: 'Waypoint k of n' can no longer lose its 'n'.
+  for (const { width, height, reducedMotion, layout } of BREAK_ROWS) {
+    const motion = reducedMotion ? ' under reduced motion' : '';
+    test(`${layout} card breaks cleanly at ${width} x ${height}${motion}`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      if (reducedMotion) await page.emulateMedia({ reducedMotion: 'reduce' });
+      await disableWebGL(page);
+      await page.goto('/');
+      for (const w of waypoints) {
+        const breaks = await cardBreaks(page, w.k);
+        if (layout === 'docked') expectDocked(breaks, `waypoint ${w.k}`);
+        else expectFull(breaks, `waypoint ${w.k}`);
+      }
+    });
+  }
 });
 
 /** The accessible name TrailSigns builds: the site.nav label, then the count. */

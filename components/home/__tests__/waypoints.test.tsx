@@ -7,7 +7,7 @@
 import { render, screen, within } from '@testing-library/react';
 import WaypointCard from '../WaypointCard';
 import AscentHero from '../AscentHero';
-import { buildWaypoints, waypointKicker } from '@/lib/ascent/waypoints';
+import { buildWaypoints, waypointKicker, waypointKickerParts } from '@/lib/ascent/waypoints';
 
 const waypoints = buildWaypoints();
 const second = waypoints[1];
@@ -83,6 +83,32 @@ describe('WaypointCard (HOME-05, D-07, D-10)', () => {
     const section = container.querySelector('section')!;
     expect(section).toHaveClass('sticky', 'bottom-0', 'md:static', 'motion-reduce:static', 'ascent-card-fade');
     expect(section.className).toContain('env(safe-area-inset-bottom)');
+  });
+});
+
+describe('WaypointCard break points (G-09-3 b, G-09-4 N2; D-10, D-20)', () => {
+  it('renders the kicker as two nowrap parts that read as the kicker', () => {
+    const { container } = render(<WaypointCard waypoint={second} />);
+    const parts = [...container.querySelectorAll('[data-kicker-part]')];
+    expect(parts.map((el) => el.getAttribute('data-kicker-part'))).toEqual(['altitude', 'waypoint']);
+    expect(parts.map((el) => el.textContent)).toEqual([...waypointKickerParts(second)]);
+    for (const part of parts) expect(part).toHaveClass('whitespace-nowrap');
+    expect(parts[0].parentElement!.textContent).toBe(waypointKicker(second));
+  });
+
+  it('glues a nowrap separator-and-date tail to the place, hidden separator and block date docked', () => {
+    const { container } = render(<WaypointCard waypoint={second} />);
+    const tail = container.querySelector('[data-place-tail]')!;
+    const sep = tail.querySelector('[data-place-sep]')!;
+    const date = tail.querySelector('[data-place-date]')!;
+    expect(tail).toHaveClass('whitespace-nowrap');
+    expect(sep).toHaveClass('hidden', 'md:inline', 'motion-reduce:inline');
+    expect(sep.textContent).toBe(' · ');
+    expect(date).toHaveClass('block', 'md:inline', 'motion-reduce:inline');
+    expect(date.textContent).toBe(second.captureMonth);
+    // No whitespace between the place text and the tail: the tail can never start a line.
+    expect(tail.previousSibling?.textContent).toBe(second.place);
+    expect(tail.parentElement!.textContent).toBe(second.placeDate);
   });
 });
 

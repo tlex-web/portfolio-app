@@ -6,7 +6,12 @@
  * waypoints. Expected strings come from the data and the tested formatters;
  * the only literals are the card copy the UI-SPEC fixes.
  */
-import { buildWaypoints, waypointKicker, type WaypointInput } from '@/lib/ascent/waypoints';
+import {
+  buildWaypoints,
+  waypointKicker,
+  waypointKickerParts,
+  type WaypointInput,
+} from '@/lib/ascent/waypoints';
 import { imageManifest } from '@/data/generated/image-manifest';
 import { photos } from '@/data/generated/photos';
 import { editorial } from '@/data/photos/editorial';
@@ -53,6 +58,24 @@ describe('buildWaypoints on the committed data (HOME-05, D-01)', () => {
       `2,760${NBSP}m approx. · Waypoint 4 of 4`,
     ]);
     for (const w of waypoints) expect(waypointKicker(w)).toContain(formatMetres(w.altitudeM));
+  });
+
+  it('splits the kicker into its two unbreakable parts (G-09-3 b, D-20)', () => {
+    expect(waypoints.map(waypointKickerParts)).toEqual([
+      [`1,617${NBSP}m ·`, 'Waypoint 1 of 4'],
+      [`1,668${NBSP}m ·`, 'Waypoint 2 of 4'],
+      [`2,585${NBSP}m ·`, 'Waypoint 3 of 4'],
+      [`2,760${NBSP}m approx. ·`, 'Waypoint 4 of 4'],
+    ]);
+  });
+
+  it('joins the kicker parts with one space into the kicker, for every waypoint', () => {
+    for (const w of waypoints) expect(waypointKickerParts(w).join(' ')).toBe(waypointKicker(w));
+  });
+
+  it('builds the place and date line from the place and the capture month (G-09-4 N2)', () => {
+    expect(waypoints.map((w) => w.captureMonth)).toEqual(['Sep 2021', 'Sep 2021', 'Sep 2021', '2019']);
+    for (const w of waypoints) expect(w.placeDate).toBe(`${w.place} · ${w.captureMonth}`);
   });
 
   it('copies slug, title, alt and story verbatim from the editorial copy', () => {
@@ -123,6 +146,9 @@ describe('buildWaypoints on synthetic data (D-01 generalised)', () => {
   it('prints "Waypoint 1 of 1" for a single photo', () => {
     const [only] = buildWaypoints(synthetic([['solo', 1500]]));
     expect(waypointKicker(only)).toBe(`1,500${NBSP}m · Waypoint 1 of 1`);
+    expect(waypointKickerParts(only)).toEqual([`1,500${NBSP}m ·`, 'Waypoint 1 of 1']);
+    expect(waypointKickerParts(only).join(' ')).toBe(waypointKicker(only));
+    expect(only.placeDate).toBe(`${only.place} · ${only.captureMonth}`);
   });
 
   it('throws on an empty photo set', () => {
