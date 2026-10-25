@@ -1,6 +1,9 @@
+import PinMark, { SummitMark } from '@/components/home/PinMark';
 import ContourField from '@/components/terrain/ContourField';
 import { terrain } from '@/data/generated/terrain';
 import { POSTER_X_BIAS } from '@/lib/ascent/poster-frame';
+import { buildWaypoints } from '@/lib/ascent/waypoints';
+import { formatMetres } from '@/lib/photo-format';
 
 const SIDE = 'max(100cqw, 100cqh)';
 
@@ -21,12 +24,20 @@ const SIDE = 'max(100cqw, 100cqh)';
  * over preload (RESEARCH Pattern 1, Pitfall 9). `alt=""` because the
  * whole stage is decorative; a failed load leaves the bg-surface ground and the
  * contour field, with no broken-image glyph.
+ *
+ * The poster pins (HOME-05, D-09) sit in the sheet box at left u x 100%, top
+ * v x 100%: one PinMark per waypoint in ascent order, labelled with its short
+ * place and height, and the summit mark. AscentController lights the active
+ * one. The layer hides once the 3D pins take over (data-ascent-mode="3d").
  */
 export default function PosterSheet() {
   const { avif, webp } = terrain.assets.hillshade;
+  const waypoints = buildWaypoints();
+  const at = (uv: { u: number; v: number }) => ({ left: `${uv.u * 100}%`, top: `${uv.v * 100}%` });
 
   return (
     <div
+      data-sheet-box
       className="absolute"
       style={{
         width: SIDE,
@@ -36,8 +47,16 @@ export default function PosterSheet() {
       }}
     >
       <picture>
-        <source type="image/avif" srcSet={`${avif['640']} 640w, ${avif['1100']} 1100w`} sizes="100vw" />
-        <source type="image/webp" srcSet={`${webp['640']} 640w, ${webp['1100']} 1100w`} sizes="100vw" />
+        <source
+          type="image/avif"
+          srcSet={`${avif['640']} 640w, ${avif['1100']} 1100w`}
+          sizes="100vw"
+        />
+        <source
+          type="image/webp"
+          srcSet={`${webp['640']} 640w, ${webp['1100']} 1100w`}
+          sizes="100vw"
+        />
         {/* A raw <img> on purpose: content-hashed, pre-sized terrain asset with picture
             type switching. @next/next/no-img-element exempts an img inside <picture>. */}
         <img
@@ -54,6 +73,22 @@ export default function PosterSheet() {
         />
       </picture>
       <ContourField lod="hero" className="absolute inset-0" />
+      <div
+        data-pin-layer="poster"
+        className="pointer-events-none absolute inset-0 group-data-[ascent-mode=3d]/stage:invisible"
+      >
+        {waypoints.map((w) => (
+          <PinMark
+            key={w.id}
+            k={w.k}
+            label={`${w.shortPlace} · ${formatMetres(w.altitudeM)}${w.approximate ? ' approx.' : ''}`}
+            approximate={w.approximate}
+            u={w.uv.u}
+            style={at(w.uv)}
+          />
+        ))}
+        <SummitMark style={at(terrain.summit.uv)} />
+      </div>
     </div>
   );
 }
