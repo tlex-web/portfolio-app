@@ -72,7 +72,7 @@
   **09-12 note:** Tim kept the defaults (pull-back 450 m). The wider desktop summit FOV from the plaque fix (75° horizontal, about 51° vertical at 1440 x 900) brings the summit marker and the peak's dark faces further into the bottom of the frame: a dark mass of about 200 x 135 px near x 560-760, y 765-900 at 1440 x 900. See the scratchpad render summit-fixed-1440.png. This is for the 09-14 visual review.
 
 - After the 09-12 plaque fix, summit pins still sit behind the plaque at some sizes where the plaque fills most of the stage
-  status: open
+  status: resolved
   **What:** The summit pins are measured on the dev server with SwiftShader and `#summit` centred.
   - 375 x 667: all four pins overlap. The docked plaque column spans y 121-659 of the stage, which leaves no clear area above it.
   - 820 x 1180 (portrait tablet, wide rig): pins 1-3 overlap. The centred plaque spans y 383-861, and the clear band to its right (x 472-586) is narrower than a pin cluster.
@@ -83,23 +83,49 @@
   **Found by:** 09-12 plaque fix, size sweep.
   **Owner:** Tim. Fixing these needs a plaque layout decision, for example a compact summit plaque on short or portrait stages, or a framing that fits the pins above a centred plaque. It is outside the 09-12 camera-only scope.
   **Decision (2026-10-25, after 09-12):** Tim answered "Gap plan after 09-14". Close Phase 9 as planned, then fix this through `/gsd-plan-phase 09 --gaps` if UAT flags it. The Home baselines may need one more re-baseline afterwards.
+  **Resolved by:** gap closure G-09-2. 09-18 (`d4fc6c7`, `dd7c5aa`, `3799586`): the compact summit plaque docks a one-line plate and the signs at the bottom wherever the full plaque would cover the fixed poster pins, guarded at eleven sizes in Chromium and Firefox. 09-20 (`3a8f228`, `8798b71`): the 3D summit framing is measured from the plaque column, guarded at the same eleven sizes. 09-16, 09-19 and 09-21 close the companion card and label gaps below. Home re-baseline: Tim's commit `e9ebee7` (12 home PNGs). CI on it: run 40229497215 and its one re-run (09-22-SUMMARY).
+  **Visual review:** Tim committed and pushed the baselines with the reply "pushed" and no comment on the 09-22 review checklist. The checklist items stay open in 09-22-SUMMARY; this entry is resolved on code, tests and CI. Two related cases stay open as their own entries below: the 375 x 900 / 412 x 915 summit pin-4 edge cut (S3) and the reduced-motion plaque overlap at 375 x 667.
 
 - At 768 px the waypoint-2 pin label hides behind the Gornerschlucht card in the static poster
-  status: open
+  status: resolved
   **What:** In the 09-14 CI baseline `home/768-ascent-waypoint-2-visual-dark-linux.png` (static poster at 768 x 900), pin 2 is lit but its label flips to the side under the card, so only a sliver of it shows at the card's right edge.
   **Found by:** 09-14 Task 2 review checklist (visual dispatch 40193370705).
   **Owner:** Gap plan after 09-14, bundled with the summit-plaque overlap entry above; one more Home re-baseline covers both.
   **Decision (2026-10-25, 09-14 Task 2):** Tim was asked "At 768 px the waypoint-2 pin label hides behind the card (and at 375 the kicker orphans the "4"). How should these be handled?" and answered "Add to the gap plan (Recommended)" ("Bundle with the plaque overlaps in the gap plan after 09-14; one more Home re-baseline covers all of them. Commit these baselines now as-is.").
+  **Resolved by:** gap closure G-09-3 a. 09-19 (`7ef7ea2`, `ce1b985`, `e84ed56`, `68fd6d5`): `placePinLabel` places the lit poster label right, left, above or below the head, clear of the active card and the rail marks, and the pin layers sit above the rail scrim. 09-20 (`3a8f228`) and 09-21 (`40c50f9`, `e8c85f8`): measured 3D framing puts the lit pin beside the card at md stages, and the 3D label uses the same placement rule. 09-16 and 09-18 close the companion gaps in this list. Home re-baseline: Tim's commit `e9ebee7` (`home/768-ascent-waypoint-2` changed). CI on it: run 40229497215 and its one re-run (09-22-SUMMARY).
+  **Visual review:** Tim committed and pushed the baselines with the reply "pushed" and no comment on the 09-22 review checklist; the checklist items stay open in 09-22-SUMMARY.
 
 - At 375 px the docked waypoint-2 card's kicker orphans the "4"
-  status: open
+  status: resolved
   **What:** In the 09-14 CI baseline `home/375-ascent-waypoint-2-visual-dark-linux.png`, the docked card's kicker wraps so that its trailing "4" sits alone on the second line.
   **Found by:** 09-14 Task 2 review checklist (visual dispatch 40193370705).
   **Owner:** Gap plan after 09-14, bundled with the summit-plaque overlap entry above; one more Home re-baseline covers both.
   **Decision (2026-10-25, 09-14 Task 2):** same question and reply as the 768 label entry above: "Add to the gap plan (Recommended)".
+  **Resolved by:** gap closure G-09-3 b / G-09-4 N2. 09-16 (`d307211`, `d4ed0b3`): the kicker renders as two nowrap parts ('1,668 m ·', 'Waypoint 2 of 4') and the place line keeps 'Sep 2021' on its own line when docked. 09-22 `f13abc1` fixed the line-break e2e helper for the Linux CI runner (it now loads only the primary web font). 09-18, 09-19, 09-20 and 09-21 close the companion gaps in this list. Home re-baseline: Tim's commit `e9ebee7` (`home/375-ascent-waypoint-2` changed). CI on it: run 40229497215 and its one re-run (09-22-SUMMARY).
+  **Visual review:** Tim committed and pushed the baselines with the reply "pushed" and no comment on the 09-22 review checklist; the checklist items stay open in 09-22-SUMMARY.
 
 - `e2e/home-canvas.spec.ts` and `lib/useAscentMode.ts` fail `prettier --check` on lines no 09-15 change touches
   status: open
   **What:** At `1826e6d` both files already differ from the repo's Prettier output (`intersects()`, `settledPinBoxes()` and several `expect(...)` wraps in the spec; the `decideAscentMode({...})` call at `lib/useAscentMode.ts:76`). `npm run lint` passes (it does not run Prettier). 09-15 kept its own additions formatted and did not reformat the rest, so its diff stays reviewable.
   **Found by:** 09-15 Task 1 (pre-commit format check).
   **Owner:** Any later formatting pass (one `prettier --write` commit of its own). Out of scope for 09-15 (scope boundary).
+
+- In the static poster at about 768-1090 px, waypoint 3's pin label is hidden while waypoint 3 is active
+  status: accepted
+  **What:** The poster pins keep fixed plan-view positions (UV, D-16) and the card sits on the side away from the rail (left card, D-07), so at about 768-1090 px stage width pin 3's head lies under its own card. Since 09-19 a poster label is hidden while the lit head's centre lies inside its own card, so the pin carries `data-label="none"` and its label has computed visibility `hidden` there. Live 3D has no such case (09-21).
+  **Source:** the D-09 amendment in 09-CONTEXT.md (amended 2026-10-25 at gap planning), from Tim's literal answer "Accept, amend D-09" (09-UAT.md, Gap Plan Decisions). Recorded in the UI-SPEC Pins "Label" row.
+  **Scope check:** 09-19-SUMMARY.md lists "Outside the D-09 amendment: none" (every head-under-card case is waypoint 3 at 768-1024 px), so no open entry is added for another case.
+  **09-22:** Tim's Task 2 reply was "pushed", with no comment on this case.
+
+- S3 (09-22 review checklist): on the phone summit shots, pin 4 is cut off at the right edge and the summit triangle is off the left edge
+  status: open
+  **What:** On the `home/375-ascent-summit` shot, pin 4 is cut off at the right edge: its head is at x 377-401 in a 375 x 900 viewport and at x 403-427 in 412 x 915. The summit triangle is off the left edge at every phone size. At 375 x 667 and 360 x 640 all four pins are on screen.
+  **Not a plan-22 regression:** pins 1 and 2 are in the same spots in the old (`284f433`) and new (`e9ebee7`) shots, so it predates plan 22.
+  **Found by:** 09-22 Task 2 review (visual dispatch 40228415066).
+  **Owner:** Tim to triage. Tim committed and pushed the PNGs ("pushed") without comment on S3, so it is not accepted.
+
+- Under reduced motion the full summit plaque covers the poster pins at 375 x 667 with the summit centred
+  status: open
+  **What:** Reduced motion keeps the full plaque at natural height (09-18 pairs the compact layout with motion-safe). With `#summit` centred at 375 x 667, the plaque column covers all four poster pins: gaps of -105.0 / -117.2 / -120.5 / -15.5 px in Chromium and -108.6 / -120.8 / -126.9 / -19.1 px in Firefox (pins 1-4), so about 15-127 px. 09-18 recorded it without a gate, because reduced motion is the stacked layout with no fixed summit frame.
+  **Found by:** 09-18 Task 3 (flagged for Tim in 09-18-SUMMARY "Next Phase Readiness"); not logged here until 09-22.
+  **Owner:** Tim. One possible follow-up is to apply the compact layout under reduced motion as well. Tim has not commented on it (09-22 Task 2 reply: "pushed").
