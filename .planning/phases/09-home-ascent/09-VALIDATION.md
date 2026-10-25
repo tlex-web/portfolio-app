@@ -74,6 +74,26 @@ created: "2026-10-24"
 | 09-14-T1 | 09-14 | 11 | HOME-08 | — | N/A | unit | `npx jest lib/__tests__/frame-budget.test.ts lib/__tests__/frame-budget-policy.test.ts --silent && npx playwright test e2e/home-canvas.spec.ts --project=chromium -g "frame-budget verdict|slow device"` (B1 policy guard plus the real-budget verdict and decline tests) | ✅ | ✅ green |
 | 09-14-T2 | 09-14 | 11 | HOME-01, HOME-02, HOME-05 | T-09-21 | Home re-baseline only, Tim commits | visual (CI container) | `node scripts/ci/check-snapshot-commit.mjs --sha HEAD --some --allow home --allow-deletions` | ✅ | ✅ green |
 | 09-14-T3 | 09-14 | 11 | GUARD-03 (phase close) | T-09-22 | Ratchet only rises | guard | `node scripts/guards/test-count.mjs --jest jest-results.json` | ✅ | ✅ green |
+| 09-15-T1 | 09-15 | 12 | HOME-07, HOME-02 | T-09-25, T-09-26 | G-09-5/WR-01: a burst interrupted by a hidden tab is dropped; a fresh burst follows the show; no gap-based restart; FRAME_BUDGET_DEFAULTS unchanged | e2e (both device scales) + unit policy | `npx playwright test e2e/home-canvas.spec.ts --project=chromium -g "hidden" && npx jest lib/__tests__/frame-budget-policy.test.ts lib/__tests__/frame-budget.test.ts --silent` | ✅ | ✅ green |
+| 09-15-T2 | 09-15 | 12 | HOME-07, HOME-02 | T-09-25, T-09-26 | WR-02: context-loss and hidden-tab tests are measure-only, slow-device and verdict tests keep the real budget; IN-05 JSDoc | unit + e2e + lint | `npx jest lib/__tests__/frame-budget-policy.test.ts lib/__tests__/useAscentMode.test.tsx --silent && npx playwright test e2e/home-canvas.spec.ts --project=chromium -g "context loss\|slow device\|records the frame-budget" && npm run lint && npm run type-check` | ✅ | ✅ green |
+| 09-16-T1 | 09-16 | 13 | HOME-05 | T-09-27 | Kicker breaks only between its parts; place tail glued; no leading '·'; text rendered escaped | e2e (375x667 mobile) + component | `npx playwright test e2e/home-ascent.spec.ts --project=chromium -g "line break" && npx jest components/home/__tests__/waypoints.test.tsx lib/__tests__/ascent-waypoints.test.ts --silent` | ✅ | ✅ green |
+| 09-16-T2 | 09-16 | 13 | HOME-05 | T-09-27 | Strings unchanged (waypointKicker, placeDate); other widths and layouts, Firefox on CI | unit + e2e (chromium; firefox on CI) | `npx jest lib/__tests__/ascent-waypoints.test.ts components/home/__tests__/waypoints.test.tsx --silent && npx playwright test e2e/home-ascent.spec.ts --project=chromium --project=firefox -g "line break"` | ✅ | ✅ green |
+| 09-17-T1 | 09-17 | 14 | HOME-04 | T-09-28 | Rail in its own aria-hidden, pointer-events-none layer; composed contrast at 768 x 900, p=0 | e2e + component | `npx playwright test e2e/home-modes.spec.ts e2e/home-ascent.spec.ts --project=chromium -g "N1\|rail\|B7\|B8" && npx jest components/home/__tests__/rail.test.tsx --silent` | ✅ | ✅ green |
+| 09-17-T2 | 09-17 | 14 | HOME-04 | T-09-28 | Composed-contrast matrix 768/1023/1280 at p 0 and 0.05; B7/B8/axe unchanged | e2e (chromium; firefox on CI) | `npx playwright test e2e/home-modes.spec.ts --project=chromium --project=firefox -g "N1\|B7\|B8\|axe"` | ✅ | ✅ green |
+| 09-18-T1 | 09-18 | 15 | HOME-06, HOME-05 | T-09-29 | Compact summit at 375x667; exactly one visible stats copy; heading outline unchanged | e2e | `npx playwright test e2e/home-ascent.spec.ts --project=chromium -g "Summit\|summit\|375 px\|heading outline"` | ✅ | ✅ green |
+| 09-18-T2 | 09-18 | 15 | HOME-06 | T-09-29 | summit-layout thresholds equal the CSS media query; poster pins clear the modelled column at 11 sizes | unit (sweep) | `npx jest lib/__tests__/summit-layout.test.ts --silent` | ✅ | ✅ green |
+| 09-18-T3 | 09-18 | 15 | HOME-06, HOME-05 | T-09-29 | Eleven-size poster sweep; compact stats group named by the summit h2; jsdom variant checks | e2e (chromium; firefox on CI) + component | `npx playwright test e2e/home-ascent.spec.ts --project=chromium --project=firefox -g "Summit\|summit" && npx jest components/home/__tests__/summit.test.tsx lib/__tests__/summit-layout.test.ts --silent && npm run lint && npm run type-check` | ✅ | ✅ green |
+| 09-19-T1 | 09-19 | 16 | HOME-05 | T-09-30 | Card-aware poster label for waypoint 2 at 768x900; 3D pin lights | e2e | `npx playwright test e2e/home-ascent.spec.ts --project=chromium -g "Lit poster label\|poster pins sit at their UV" && npx playwright test e2e/home-canvas.spec.ts --project=chromium -g "waypoint 2 lights its 3D pin\|pins hand over"` | ✅ | ✅ green |
+| 09-19-T2 | 09-19 | 16 | HOME-05 | T-09-30 | placePinLabel rules (right, left, above, below, 4 px margins, least-overlap, no label inside a cover); 3D layer above the scrim | unit + component | `npx jest lib/__tests__/framing.test.ts components/home/__tests__/rail.test.tsx components/home/__tests__/pin-layer-3d.test.tsx --silent` | ✅ | ✅ green |
+| 09-19-T3 | 09-19 | 16 | HOME-05 | T-09-30 | Poster label sweep across md, desktop and phone sizes; ratchet guard | e2e (chromium; firefox on CI) + guard | `npx playwright test e2e/home-ascent.spec.ts --project=chromium --project=firefox -g "Lit poster label" && npx jest --json --outputFile=jest-results.json --silent && npm run guard:tests` | ✅ | ✅ green |
+| 09-20-T1 | 09-20 | 17 | HOME-02, HOME-05, HOME-06 | T-09-31 | Measured summit framing: 3D pins visible, inside the stage, left of the rail scrim, 8 px off the plaque (1024x768) | e2e (measure-only) | `npx playwright test e2e/home-canvas.spec.ts --project=chromium -g "summit"` | ✅ | ✅ green |
+| 09-20-T2 | 09-20 | 17 | HOME-02, HOME-06 | T-09-31 | fitCluster, summitClearRects, stageViewKeys, viewTrackAt; share-based helpers removed from route.ts (asserted absent) | unit | `npx jest lib/__tests__/framing.test.ts lib/__tests__/ascent-route.test.ts --silent` | ✅ | ✅ green |
+| 09-20-T3 | 09-20 | 17 | HOME-02, HOME-05, HOME-06 | T-09-31 | Eleven-size 3D summit table; md switch uses matchMedia(min-width 48rem) (sizes 768 and 778 in the table) | e2e + unit + lint | `npx playwright test e2e/home-canvas.spec.ts --project=chromium -g "summit" && npx jest lib/__tests__/frame-budget-policy.test.ts --silent && npm run lint` | ✅ | ✅ green |
+| 09-21-T1 | 09-21 | 18 | HOME-02, HOME-05 | T-09-32 | Measured md stage framing and 3D labels clear of card and rail at 768x900 for every waypoint | e2e (measure-only) + unit | `npx playwright test e2e/home-canvas.spec.ts --project=chromium -g "lights a clear 3D pin\|waypoint 2 lights its 3D pin\|a canvas revealed while stationary" && npx jest lib/__tests__/frame-budget-policy.test.ts --silent && npm run type-check` | ✅ | ✅ green |
+| 09-21-T2 | 09-21 | 18 | HOME-02, HOME-05 | T-09-32 | waypointTarget (natural, beside, above, below, natural fallback, no card, 8 px margin); remaining md and desktop rows | unit + e2e + guard | `npx jest lib/__tests__/framing.test.ts --silent && npx playwright test e2e/home-canvas.spec.ts --project=chromium && npm run guard:tests` | ✅ | ✅ green |
+| 09-22-T1 | 09-22 | 19 | HOME-02, HOME-04, HOME-05, HOME-06 | T-09-33 | No ci/09-22 push, dispatch or re-run before Tim's literal go-ahead (checkpoint:decision, human by design) | CI | `node scripts/ci/check-visual-run.mjs --sha 05a5e8c --job "E2E Tests"` (run 40232792001, attempts 1 and 2) | ✅ | ✅ green |
+| 09-22-T2 | 09-22 | 19 | HOME-02, HOME-04, HOME-05, HOME-06 | T-09-34 | One Home re-baseline; only home/ PNGs change; Tim commits; CI green twice (checkpoint:human-action); hand-over test holds the heightmap with the service worker blocked (05a5e8c) | visual (CI container) | `node scripts/ci/check-snapshot-commit.mjs --sha e9ebee7 --some --allow home` | ✅ | ✅ green |
+| 09-22-T3 | 09-22 | 19 | GUARD-03 (phase close) | T-09-35 | Ratchet only rises (jest 725, e2e 241, total 966, above 646/186/832) | guard | `npx jest --json --outputFile=jest-results.json --silent && node scripts/guards/test-count.mjs --jest jest-results.json` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -90,6 +110,7 @@ No separate Wave 0 plan: each plan's tracer or TDD task writes its tests first (
 - [x] `e2e/home-ascent.spec.ts` (09-03, 09-05, 09-06), `e2e/home-modes.spec.ts` (09-07), `e2e/home-canvas.spec.ts` (09-08, 09-10, 09-11); rewrites of `e2e/homepage.spec.ts` (09-01, 09-02), `e2e/no-webgl.spec.ts`, `e2e/shell.spec.ts`, `e2e/visual/routes.spec.ts`, `e2e/perf/home-baseline.spec.ts`
 - [x] (n/a locally: Firefox ran on CI only, green on 284f433) Local: `npx playwright install firefox` (Playwright 1.64 needs firefox-1555), only if gate row E1 in 09-01 approves it; otherwise Firefox runs on CI only
 - [x] Phase close (09-14, 02cfdd7: 533 -> 832): `node scripts/guards/test-count.mjs --jest jest-results.json --update` (09-14)
+- [x] Gap closure (09-15 to 09-22) writes its tests in its own TDD or tracer tasks: `lib/__tests__/summit-layout.test.ts` (09-18), `lib/__tests__/framing.test.ts` (09-19, 09-20, 09-21); ratchet 832 -> 966 (09-22, 4c926e8)
 
 ---
 
@@ -104,6 +125,8 @@ No separate Wave 0 plan: each plan's tracer or TDD task writes its tests first (
 | ci/09-NN pushes and workflow dispatches | HOME-08 | Standing approval covers ci/07 and ci/08 only | 09-13 Task 1: Tim's literal go-ahead. **Done:** "approve" (ci/09-13 and ci/09-14) |
 | Which number gates HOME-08; frame budget under automation | HOME-08 | Measurement definition and CI-only timing | 09-13 Task 3: Tim decides from the container numbers. **Done:** "total-keep (Recommended)" + "B1: extend option A (Recommended)"; the gate is now also asserted in e2e/perf/home-baseline.spec.ts (218840e) |
 | Home baseline PNGs reviewed and committed | GUARD-02 (HOME-01, 02, 05 visuals) | Tim-only process rule | 09-14 Task 2: executor downloads and copies; Tim reviews, commits, pushes. **Done:** Tim's 284f433, CI green twice (run 40193992531 + rerun) |
+| ci/09-22 push, visual dispatch and one re-run | HOME-02, HOME-04, HOME-05, HOME-06 | Pushes and dispatches need Tim's go-ahead per phase | 09-22 Task 1: Tim's literal reply recorded in 09-22-SUMMARY. **Done:** "Approve"; the second fast-forward push and re-run after the hand-over flake: "b" |
+| Home re-baseline PNGs for the gap-closure layouts reviewed and committed | GUARD-02 (HOME-02, 04, 05, 06 visuals) | Tim-only process rule | 09-22 Task 2: executor downloads and copies changed home/ PNGs; Tim reviews, commits, pushes. **Done:** Tim's e9ebee7 ("pushed", no comment on the review checklist); CI green twice on 05a5e8c (run 40232792001 + rerun) |
 
 ---
 
@@ -116,7 +139,7 @@ No separate Wave 0 plan: each plan's tracer or TDD task writes its tests first (
 - [ ] Feedback latency < 9s (not met by design: visual and perf suites run only in the CI container, max 240 s; quick Jest run ~10 s)
 - [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** approved 2026-10-25 (validate-phase audit; HOME-08 gap filled by Tim's "Fix all gaps (Recommended)")
+**Approval:** approved 2026-10-25 (validate-phase audit; HOME-08 gap filled by Tim's "Fix all gaps (Recommended)"). Re-audited 2026-10-25 after the gap closure (09-15 to 09-22): no gaps, nyquist_compliant stays true
 
 ## Validation Audit 2026-10-25
 
@@ -124,4 +147,12 @@ No separate Wave 0 plan: each plan's tracer or TDD task writes its tests first (
 |---|---|
 | Gaps found | 1 |
 | Resolved | 1 |
+| Escalated | 0 |
+
+## Validation Audit 2026-10-25
+
+| Metric | Count |
+|---|---|
+| Gaps found | 0 |
+| Resolved | 0 |
 | Escalated | 0 |
