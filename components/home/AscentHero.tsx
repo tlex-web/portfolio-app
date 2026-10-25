@@ -1,8 +1,12 @@
+import AltimeterRail from '@/components/home/AltimeterRail';
+import AscentController from '@/components/home/AscentController';
 import HeroBlock from '@/components/home/HeroBlock';
 import PosterSheet from '@/components/home/PosterSheet';
 import SummitPlaque from '@/components/home/SummitPlaque';
 import WaypointCard from '@/components/home/WaypointCard';
+import { terrain } from '@/data/generated/terrain';
 import { buildWaypoints } from '@/lib/ascent/waypoints';
+import { formatMetres } from '@/lib/photo-format';
 
 /**
  * The ascent grid (HOME-01, HOME-02; D-12; 09-UI-SPEC "Page Structure" and
@@ -26,40 +30,57 @@ import { buildWaypoints } from '@/lib/ascent/waypoints';
  * The summit section (`section#summit`, `data-ascent-block="summit"`) is the
  * last track child, after the list (D-03, D-13): the target of the hero's
  * "Skip to the summit" cue.
+ *
+ * AscentController (client) wraps the grid and turns page scroll into the one
+ * damped progress value (HOME-03, D-06); the AltimeterRail inside the stage
+ * reads it (HOME-04, D-01, D-05). Only serialisable props cross the boundary:
+ * the waypoint count, the n + 1 heights (waypoints, then the official summit
+ * height) and the tick labels.
  */
 export default function AscentHero() {
   const waypoints = buildWaypoints();
+  const heights = [...waypoints.map((w) => w.altitudeM), terrain.summit.officialM];
+  const ticks = [
+    ...waypoints.map((w) => ({
+      label: `${formatMetres(w.altitudeM)}${w.approximate ? ' approx.' : ''}`,
+      approximate: w.approximate,
+    })),
+    { label: formatMetres(terrain.summit.officialM), approximate: false },
+  ];
 
   return (
-    <div className="grid">
-      <div
-        data-ascent-stage
-        data-ascent-mode="pending"
-        aria-hidden="true"
-        className="group/stage sticky top-(--nav-h) col-start-1 row-start-1 h-[calc(100svh-var(--nav-h))] self-start overflow-hidden bg-surface [container-type:size]"
-      >
-        <PosterSheet />
-      </div>
-      <div data-ascent-track className="relative col-start-1 row-start-1">
-        <HeroBlock />
-        <ol
-          aria-label="Waypoints, lowest first"
-          className="motion-reduce:flex motion-reduce:flex-col motion-reduce:gap-12 motion-reduce:py-12"
+    <AscentController n={waypoints.length} heights={heights}>
+      <div className="grid">
+        <div
+          data-ascent-stage
+          data-ascent-mode="pending"
+          aria-hidden="true"
+          className="group/stage sticky top-(--nav-h) col-start-1 row-start-1 h-[calc(100svh-var(--nav-h))] self-start overflow-hidden bg-surface [container-type:size]"
         >
-          {waypoints.map((waypoint) => (
-            <li
-              key={waypoint.id}
-              id={`waypoint-${waypoint.slug}`}
-              data-ascent-block="waypoint"
-              data-k={waypoint.k}
-              className="mx-auto flex min-h-[calc(100svh-var(--nav-h))] w-full max-w-6xl flex-col justify-end px-4 sm:px-6 md:justify-center lg:px-8 motion-reduce:min-h-0"
-            >
-              <WaypointCard waypoint={waypoint} />
-            </li>
-          ))}
-        </ol>
-        <SummitPlaque />
+          <PosterSheet />
+          <AltimeterRail ticks={ticks} />
+        </div>
+        <div data-ascent-track className="relative col-start-1 row-start-1">
+          <HeroBlock />
+          <ol
+            aria-label="Waypoints, lowest first"
+            className="motion-reduce:flex motion-reduce:flex-col motion-reduce:gap-12 motion-reduce:py-12"
+          >
+            {waypoints.map((waypoint) => (
+              <li
+                key={waypoint.id}
+                id={`waypoint-${waypoint.slug}`}
+                data-ascent-block="waypoint"
+                data-k={waypoint.k}
+                className="mx-auto flex min-h-[calc(100svh-var(--nav-h))] w-full max-w-6xl flex-col justify-end px-4 sm:px-6 md:justify-center lg:px-8 motion-reduce:min-h-0"
+              >
+                <WaypointCard waypoint={waypoint} />
+              </li>
+            ))}
+          </ol>
+          <SummitPlaque />
+        </div>
       </div>
-    </div>
+    </AscentController>
   );
 }

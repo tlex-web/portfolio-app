@@ -41,7 +41,16 @@ describe('arrivalsFromBlocks (measured arrival points)', () => {
   });
 
   it('clamps arrivals into [0, 1]', () => {
-    expect(arrivalsFromBlocks([{ offset: -5, height: 1 }, { offset: 50, height: 1 }], 1, 5)).toEqual([0, 1]);
+    expect(
+      arrivalsFromBlocks(
+        [
+          { offset: -5, height: 1 },
+          { offset: 50, height: 1 },
+        ],
+        1,
+        5
+      )
+    ).toEqual([0, 1]);
   });
 
   it('throws a RangeError on a non-positive distance', () => {
