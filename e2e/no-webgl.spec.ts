@@ -16,14 +16,19 @@ test.describe('Without WebGL', () => {
     await disableWebGL(page);
   });
 
+  // Home mounts no canvas without WebGL2 at all: the capability gate (09-07)
+  // keeps it on the poster, so there is no WebGL failure to wait for
+  // (09-RESEARCH Pitfall 1). It must still be the complete page.
   test('home keeps its content', async ({ page }) => {
-    const failed = webglFailure(page);
     await page.goto('/');
-    await failed;
-    await nextFrames(page);
 
+    await expect(page.locator('[data-ascent-stage]')).toHaveAttribute('data-ascent-mode', 'static');
+    await expect(page.locator('[data-sheet-box] img')).toBeVisible();
+    await expect(page.locator('canvas')).toHaveCount(0);
+    await expect(page.locator('li[data-ascent-block="waypoint"] section')).toHaveCount(4);
+    await expect(page.locator('#summit')).toHaveCount(1);
+    await expect(page.getByRole('heading', { level: 2, name: 'About', exact: true })).toBeVisible();
     await expectNoErrorPage(page);
-    await expect(page.locator('#main-content')).toBeVisible();
   });
 
   test('contact keeps the form', async ({ page }) => {

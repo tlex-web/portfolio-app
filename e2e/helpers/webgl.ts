@@ -7,6 +7,8 @@ import { expect, type Page } from '@playwright/test';
  * `disableWebGL` makes every WebGL context request return null through an init
  * script, so a check behaves the same in every browser and Home stays on its
  * poster path (static-capability mode) in progress and visual specs.
+ * `spoofSaveData` and `spoofDeviceMemory` (09-07) trigger the other two static
+ * modes of the capability gate.
  */
 
 /** Switches WebGL off for every page load in this page's context. */
@@ -27,6 +29,32 @@ export async function disableWebGL(page: Page) {
       );
     };
   });
+}
+
+/**
+ * Reports Save-Data (`navigator.connection.saveData === true`) for every page
+ * load in this page's context, the way Chromium does when the visitor turns on
+ * a data saver. Defined in Firefox too, so the static path runs everywhere.
+ */
+export async function spoofSaveData(page: Page) {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'connection', {
+      configurable: true,
+      value: {
+        saveData: true,
+        effectiveType: '4g',
+        addEventListener() {},
+        removeEventListener() {},
+      },
+    });
+  });
+}
+
+/** Reports `navigator.deviceMemory` as `gb` for every page load in this page's context. */
+export async function spoofDeviceMemory(page: Page, gb: number) {
+  await page.addInitScript((value) => {
+    Object.defineProperty(navigator, 'deviceMemory', { configurable: true, value });
+  }, gb);
 }
 
 /** Resolves once three.js has logged that it could not create a WebGL context. */
