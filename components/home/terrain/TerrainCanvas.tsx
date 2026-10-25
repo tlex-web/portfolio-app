@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import SafeCanvas from '@/components/SafeCanvas';
+import { downgradeAscent } from '@/lib/useAscentMode';
 
 /**
  * The entry of the lazy canvas chunk (HOME-08, D-19; 09-UI-SPEC "Canvas",
@@ -21,6 +22,10 @@ import SafeCanvas from '@/components/SafeCanvas';
  * --duration-settle with ease-geological. The canvas exists only when motion is
  * allowed, so the fade needs no reduced-motion variant.
  *
+ * A canvas that throws (no context after all, a failed mesh load) is caught by
+ * SafeCanvas, whose onCanvasError downgrades Home to static for the rest of the
+ * page view: the canvas unmounts and the poster stays (D-18, D-21).
+ *
  * `inset: 0` and `position: absolute` are inline because R3F writes
  * `position: relative` inline on its wrapper, which beats the class.
  */
@@ -34,6 +39,7 @@ export default function TerrainCanvas({
   return (
     <SafeCanvas
       data-grid-size={gridSize}
+      onCanvasError={() => downgradeAscent('load-error')}
       frameloop="demand"
       dpr={[1, 1.5]}
       resize={{ scroll: false }}

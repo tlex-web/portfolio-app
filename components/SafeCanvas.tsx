@@ -1,12 +1,14 @@
 'use client';
 
-import { Component, type ReactNode } from 'react';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
 // eslint-disable-next-line no-restricted-imports -- the one wrapper; everything else uses SafeCanvas
 import { Canvas, type CanvasProps } from '@react-three/fiber';
 
 interface CanvasErrorBoundaryProps {
   children: ReactNode;
   fallback: ReactNode;
+  /** Called once with the error that tripped the boundary. */
+  onError?: (error: unknown) => void;
 }
 
 interface CanvasErrorBoundaryState {
@@ -22,6 +24,10 @@ export class CanvasErrorBoundary extends Component<
 
   static getDerivedStateFromError(): CanvasErrorBoundaryState {
     return { failed: true };
+  }
+
+  componentDidCatch(error: unknown, _info: ErrorInfo) {
+    this.props.onError?.(error);
   }
 
   render() {
@@ -59,10 +65,17 @@ function InertCanvas({
  * that error reaches app/(site)/error.tsx and replaces the whole page. Here the canvas turns into an
  * empty one instead, which is what users without WebGL got before 9.8: a blank 3D area on an
  * intact page.
+ *
+ * `onCanvasError` (optional) is called once with that error, so a caller can react to the
+ * failure (Home turns static for the rest of the page view, D-18). It is never passed to Canvas.
  */
-export default function SafeCanvas(props: CanvasProps) {
+export default function SafeCanvas({
+  onCanvasError,
+  ...props
+}: CanvasProps & { onCanvasError?: (error: unknown) => void }) {
   return (
     <CanvasErrorBoundary
+      onError={onCanvasError}
       fallback={
         <InertCanvas className={props.className} style={props.style} fallback={props.fallback} />
       }
