@@ -2,44 +2,44 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Topographic Identity
-current_phase: 09
-current_phase_name: Home Ascent
-status: verifying
-stopped_at: Completed 09-22-PLAN.md
-last_updated: "2026-10-25T21:19:35.968Z"
+current_phase: 10
+current_phase_name: Photography
+status: planning
+stopped_at: Phase 09 complete, ready to plan Phase 10
+last_updated: "2026-10-25T22:14:11.031Z"
 last_activity: 2026-10-25
-last_activity_desc: Phase 09 execution started
-state_head: 2d9f9c0f9b7491f68522b25f21b9afc80acf179d
+last_activity_desc: Phase 09 complete, transitioned to Phase 10
+state_head: f5159bfef9a8d49131887c6d8e62a5bb95ac1205
 progress:
   total_phases: 6
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 62
   completed_plans: 62
-  percent: 100
+  percent: 75
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-24)
+See: .planning/PROJECT.md (updated 2026-10-25)
 
 **Core value:** A portfolio that is visually memorable and distinctive (not another generic Tailwind site) while being stable and well-maintained under the hood.
-**Current focus:** Phase 09 — Home Ascent
+**Current focus:** Phase 10 — Photography
 
 ## Current Position
 
-Phase: 09 (Home Ascent) — EXECUTING
-Plan: 22 of 22
-Status: Phase complete — ready for verification
-Last activity: 2026-10-25 — Phase 09 execution started
+Phase: 10 — Photography
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-10-25 — Phase 09 complete, transitioned to Phase 10
 
-Progress: [██████████] 100%
+Progress: [████████░░] 75%
 
 ## Performance Metrics
 
 **Velocity (v2.0):**
-- Total plans completed: 40
+- Total plans completed: 62
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -49,6 +49,7 @@ Progress: [██████████] 100%
 |-------|-------|-------|----------|
 | 07 | 27 | - | - |
 | 08 | 13 | - | - |
+| 09 | 22 | - | - |
 
 *Updated after each plan completion. v1.0 history: 24 plans across Phases 1-6 (see MILESTONES.md).*
 **Per-Plan Metrics:**
@@ -276,6 +277,7 @@ Recent decisions affecting current work:
 - [Phase 09]: 09-21: measured, 768-900 px stages (and 768 x 1024) put the lit pin 8 px beside the card, 1023 px and up keep the natural position; no row needed above or below
 - [Phase 09]: 09-22: Home re-baselined once for the gap closure by Tim (e9ebee7, 12 home PNGs, 'pushed'; checklist S1-S4, W1-W2, T1, R1-R2 not commented); ratchet jest 646 -> 725, e2e 186 -> 241, total 832 -> 966; CI green twice on 05a5e8c (run 40232792001 attempts 1 and 2, same PNG tree)
 - [Phase 09]: 09-22: the production service worker (skipWaiting, clients.claim, cache-first /terrain/) answers the heightmap, so page.route never sees it; an e2e that holds or delays a /terrain/ request must run with serviceWorkers: 'block' (05a5e8c, 'pins hand over at the reveal' + holdHeightmap, Tim's 'b'); the four other delayHeightmap users share the bypass and are open in deferred-items
+- [Phase 09]: UAT round 2 (2026-10-25, 09-UAT.md): Tim answered "pass" to all four checkpoints, so the portrait-phone summit poster (pin 4 and the triangle past the edges), reduced motion at 375 x 667 (full plaque over the poster pins) and landscape phones (poster pin 3 under the compact plaque, WR-01) are accepted as is, and the real-device 3D and comfort check passed (devices not named). Round 1's gaps G-09-2 to G-09-5 were reconciled as resolved by 09-22 and 09-15
 
 ### Pending Todos
 
@@ -288,11 +290,11 @@ Recent decisions affecting current work:
 
 - [Phase 11] Needs from Tim: CLI_X per-grade content and Medium/Critical demo commands with `riskScore` (not supplied at 08-03, where they were optional), metric sources, roadmap order and dates.
 - [Phase 11, from 08-03; answered by Tim 2026-10-25 at 09-13: "Leave for Phase 11" ("Keep it open; the Phase 11 Engineering/CLI_X rework rewrites demo content anyway.")] Demo command 4 (`pkill -f chrome`) is riskLevel `critical` (score 0.87) and shows a CRITICAL RISK badge, but its explanation in `data/projects.ts` still reads "High-risk operation - requires explicit confirmation". The fix moves to the Phase 11 Engineering/CLI_X rework; it is no longer an open question. data/projects.ts stays unchanged until then (code review IN-07).
-- [Phase 9/10, from 08 code review] 08-REVIEW-DISPOSITION.md has 8 open warnings, latent for the current four photos: WR-01 out-of-extent photo gets clamped height and UV outside 0–1; WR-02 `gpsOf` drops lat/lon when GPSAltitude is missing; WR-03 offsetTimeOriginal ignored (Europe/Zurich assumed); WR-04 `formatExposureTime` wrong for 0.25–1 s and 0; WR-05 `photos:derive` write mode not atomic; WR-06 guard skips HEIF/raw formats and `.gitignore` lost the `public/images/landscapes/` line; WR-07 scripts/README.md omits `photos:build`; WR-08 corrections can claim `source: exif` for a hand-typed position. Fold into the first Phase 9/10 plan that adds photo data or surfaces (or run `/gsd-code-review 08 --fix`). Also IN-02: the legacy bridge drops `position.approximate` (footer unaffected; Phase 10 must carry it).
+- [Phase 10, from 08 code review; Phase 9 did not fold them in, all 8 still open in 08-REVIEW-DISPOSITION.md] 08-REVIEW-DISPOSITION.md has 8 open warnings, latent for the current four photos: WR-01 out-of-extent photo gets clamped height and UV outside 0–1; WR-02 `gpsOf` drops lat/lon when GPSAltitude is missing; WR-03 offsetTimeOriginal ignored (Europe/Zurich assumed); WR-04 `formatExposureTime` wrong for 0.25–1 s and 0; WR-05 `photos:derive` write mode not atomic; WR-06 guard skips HEIF/raw formats and `.gitignore` lost the `public/images/landscapes/` line; WR-07 scripts/README.md omits `photos:build`; WR-08 corrections can claim `source: exif` for a hand-typed position. Fold into the first Phase 9/10 plan that adds photo data or surfaces (or run `/gsd-code-review 08 --fix`). Also IN-02: the legacy bridge drops `position.approximate` (footer unaffected; Phase 10 must carry it).
 - [Phase 7; RESOLVED at Phase 07 UAT 2026-10-24, test 3: Tim confirmed the three jobs are Required on main] Required status checks (Visual Regression, Lint and Type Check, Unit Tests) on main are not set yet; until Tim sets them a red visual job does not block merges (07-USER-SETUP.md)
 - [Phase 7] main (Vercel production) lacks the Next 16.4.2 / sharp 0.35.5 security patch until Tim merges gsd/phase-07-foundation-guardrails; GitHub reported 84 Dependabot alerts on the default branch (9 critical). Merge recommended soon. Phase 8 lives on gsd/phase-08-data-terrain-pipeline, stacked on the unmerged Phase 7 tip (39836df) by Tim's choice, so merge Phase 7 first; until Phase 7 is on origin/main, worktree base-check degrades every phase to sequential execution.
-- [Phase 7, from 07-10] Hero badge `components/Hero3DMountain.tsx:73` (text-snow-50 on from-frost-500 to-frost-600, 18px semibold = not large text) is now 1.42-2.17:1 after the locked v1->v2 alias map (v1 was 2.10-2.93:1, also failing). No Phase 7 plan fixes it explicitly: catch it in the 07-20 contrast guard or the Phase 9 hero rework
-- [Phase 7, from 07-10; updated by 08-05] Lost hover background: after the 08-05 codemod `app/(site)/page.tsx:234` and `components/Hero3DMountain.tsx:97` read `bg-ink hover:bg-ink`, so the hover background does not change (shadow/scale remain). Restore a distinct hover state in the Phase 9 Home rebuild
+- [Phase 7, from 07-10; RESOLVED by 09-02: `components/Hero3DMountain.tsx` deleted with the Home rebuild] Hero badge `components/Hero3DMountain.tsx:73` (text-snow-50 on from-frost-500 to-frost-600, 18px semibold = not large text) is now 1.42-2.17:1 after the locked v1->v2 alias map (v1 was 2.10-2.93:1, also failing). No Phase 7 plan fixes it explicitly: catch it in the 07-20 contrast guard or the Phase 9 hero rework
+- [Phase 7, from 07-10; updated by 08-05; RESOLVED by the Phase 9 Home rebuild: no `hover:bg-ink` left in `app/(site)/page.tsx` or `components/home/`, Hero3DMountain deleted in 09-02] Lost hover background: after the 08-05 codemod `app/(site)/page.tsx:234` and `components/Hero3DMountain.tsx:97` read `bg-ink hover:bg-ink`, so the hover background does not change (shadow/scale remain). Restore a distinct hover state in the Phase 9 Home rebuild
 - [Phase 9-12, from 07-11] 37 utility-styled headings in 20 files (e.g. Hero3DMountain.tsx:65 font-bold text-snow-50 drop-shadow-2xl; /projects text-shadow-glow; /contact, /error, /not-found, /offline text-gray-900 dark:text-white) still carry font-bold, glow and v1 colours because utilities beat the 7c @layer base rules; they get the 7c weight/no-glow/ink only when their redesign phase removes those utilities
 - [Phase 11, from 07-13] Roadmap card header overflows at narrow widths: at 375px the RoadmapTimeline "Target Release" pill and its label cross the card's right border by up to ~7px (CI render; 0.8-5.1px on 5 of 6 Medium cards without the CI gutter), after the 20px 7e icons grew the badges to 144.5x32. Tim accepted it for now (07-13 option A); the Phase 11 route-log roadmap redesign must fix the card header so the release block cannot overflow at narrow widths
 - [Phase 7, from 07-14, updated by 07-15 and 07-16; RESOLVED by 07-20: the contrast guard measures danger/surface-overlay 6.18:1 and line-strong/surface-overlay 4.17:1, and 07-19 fixed the offline items] (07-16: the FeedbackForm error text and input borders below are now text-danger and border-line-strong on bg-surface-overlay; their ratios were not re-measured, so the 07-20 contrast guard must confirm them.) Stock dark values now reach every visitor, not only dark-OS ones (since 07-15 collapsed as plain classes, e.g. text-gray-400 on bg-gray-800), and the contrast guard is not active until 07-20. Measured failures to fix in 07-16..07-20: FeedbackForm error text-red-600 on the dark card ~3.2:1 (needs 4.5:1), FeedbackForm input borders border-gray-600 on bg-gray-800 ~1.9:1 (needs 3:1 non-text), app/offline/page.tsx:61 text-gray-500 small text on the gray-900/800 gradient ~3.6:1 (offline:15 icon text-gray-600 ~2.3:1 is fine only if decorative). The FeedbackForm placeholder/autofill part is RESOLVED by 07-15: the light base classes are gone and the inputs have no placeholder class, so the browser default under color-scheme: dark applies
@@ -300,8 +302,10 @@ Recent decisions affecting current work:
 - [Phase 7, from 07-16, for 07-24; RESOLVED by 07-24 (c9aac91): Contact page.tsx has no whileHover, rgba(, rotate, shadow-* or backdrop-blur left; the info cards are solid panels with no hover glow] app/contact/page.tsx:67/93/119 keep hue-coloured hover glows as inline motion props (whileHover boxShadow rgba(6,182,212,0.3), rgba(59,130,246,0.3), rgba(168,85,247,0.3)); they are not classes, so the stock-palette grep and a class-based palette guard miss them. Move them to tokens or drop them in the 07-24 Contact interim restyle
 - [Phase 9/12, from 07-18] Colours the class grep cannot see stay in the Projects group: components/HologramTerminal.tsx keeps Three.js material/light hex (L26-330) and a <style jsx global> block with rgba/hex (L368-486, incl. the .hologram-content navy panel the terminal demo text sits on), out of scope until Phase 9 (UI-SPEC v2-only rule); a class-based palette guard misses them. components/ProjectDetailClient.tsx's 4 v1 aliases were codemodded to v2 names in 08-05 (RESOLVED; no live v1 names remain, enforced by the widened v1names guard)
 - [Phase 10, from 07-19, unverified] During the local e2e/photos.spec.ts run the dev server logged three deprecation warnings and a React 'removeChild ... not a child' console error on the /photos grid/3D toggle; the tests pass. Class-string edits cannot cause a DOM removal error, so it very likely predates 07-19, but it was not checked at HEAD~1 and CI E2E logs do not capture the browser console. Reproduce and fix in the Phase 10 photos/lightbox rework. Also for Phase 10: components/ImageDetailModal.tsx L46/L60 use Tailwind v3 bg-opacity-* classes that Tailwind 4.3 does not generate, so the modal backdrop and close button render fully opaque (pre-existing); components/PhotoCarousel3D.tsx keeps Three.js inline hex (L75, L215, L264, L265, L268 fog) and the v1 alias text-snow-200 (L183)
-- [Phase 9, from 07-22] Home overflows horizontally before its v1 whileInView animations fire: a 'Programming Projects' card starts at initial x: 50, so unsettled scrollWidth is 399 at 375 px and 784 at 768 px (passes only after settling). Real for visitors who have not scrolled yet; the Phase 9 Home rebuild must not translate content past the viewport edge (or clip it)
+- [Phase 9, from 07-22; RESOLVED by 09-01/09-02: the legacy cards are gone and 09-02's no-JavaScript test at 375 px asserts scrollWidth <= clientWidth] Home overflows horizontally before its v1 whileInView animations fire: a 'Programming Projects' card starts at initial x: 50, so unsettled scrollWidth is 399 at 375 px and 784 at 768 px (passes only after settling). Real for visitors who have not scrolled yet; the Phase 9 Home rebuild must not translate content past the viewport edge (or clip it)
 - [Phase 12 / EDGE-01, from 07-23, pre-existing] notFound() inside /projects/[slug] returns HTTP 404 but the server HTML is an empty <html id="__next_error__">; the shell and 404 UI render client-side from the RSC payload (same with app/(site)/not-found.tsx removed), so that path has no server-rendered 404 without JS. Root unmatched URLs are server-rendered. Investigate before EDGE-01 sign-off
+- [Phase 10-12, from Phase 9] 11 open items in `.planning/phases/09-home-ascent/deferred-items.md`: README tree line for `app/page.tsx`, fflate 0.8.2 advisory in the canvas chunk, R3F 9 `THREE.Clock` deprecation warning, canvas chunk holding the load event back about 1.5 s on the HOME-08 profile, hero scrim switching at `lg:` instead of 768 px, the "2,760 m approx." tick at 4.81:1, a dark wedge in the 1440 px summit frame, Prettier drift in `e2e/home-canvas.spec.ts` and `lib/useAscentMode.ts`, four `delayHeightmap` e2e users bypassed by the production service worker, and two parallel-run e2e flakes (photos 3D carousel, no-webgl)
+- [Phase 9] gsd/phase-09-home-ascent is stacked on the Phase 8 tip (itself stacked on unmerged Phase 7): merge 07, then 08, then 09
 
 ## Deferred Items
 
@@ -313,6 +317,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-25T21:19:35.555Z
-Stopped at: Completed 09-22-PLAN.md
+Last session: 2026-10-25T22:16:53Z
+Stopped at: Phase 09 complete, ready to plan Phase 10
 Resume file: None

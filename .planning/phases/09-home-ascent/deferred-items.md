@@ -133,14 +133,16 @@
   **09-22:** Tim's Task 2 reply was "pushed", with no comment on this case.
 
 - S3 (09-22 review checklist): on the phone summit shots, pin 4 is cut off at the right edge and the summit triangle is off the left edge
-  status: open
+  status: accepted
   **What:** On the `home/375-ascent-summit` shot, pin 4 is cut off at the right edge: its head is at x 377-401 in a 375 x 900 viewport and at x 403-427 in 412 x 915. The summit triangle is off the left edge at every phone size. At 375 x 667 and 360 x 640 all four pins are on screen.
   **Not a plan-22 regression:** pins 1 and 2 are in the same spots in the old (`284f433`) and new (`e9ebee7`) shots, so it predates plan 22.
   **Found by:** 09-22 Task 2 review (visual dispatch 40228415066).
   **Owner:** Tim to triage. Tim committed and pushed the PNGs ("pushed") without comment on S3, so it is not accepted.
+  **UAT round 2 (2026-10-25):** accepted. Tim answered the accept-or-route checkpoint (09-UAT.md test 1) with "pass".
 
 - Under reduced motion the full summit plaque covers the poster pins at 375 x 667 with the summit centred
-  status: open
+  status: accepted
   **What:** Reduced motion keeps the full plaque at natural height (09-18 pairs the compact layout with motion-safe). With `#summit` centred at 375 x 667, the plaque column covers all four poster pins: gaps of -105.0 / -117.2 / -120.5 / -15.5 px in Chromium and -108.6 / -120.8 / -126.9 / -19.1 px in Firefox (pins 1-4), so about 15-127 px. 09-18 recorded it without a gate, because reduced motion is the stacked layout with no fixed summit frame.
   **Found by:** 09-18 Task 3 (flagged for Tim in 09-18-SUMMARY "Next Phase Readiness"); not logged here until 09-22.
   **Owner:** Tim. One possible follow-up is to apply the compact layout under reduced motion as well. Tim has not commented on it (09-22 Task 2 reply: "pushed").
+  **UAT round 2 (2026-10-25):** accepted. Tim answered the accept-or-route checkpoint (09-UAT.md test 2) with "pass".

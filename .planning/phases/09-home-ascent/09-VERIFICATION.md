@@ -1,7 +1,7 @@
 ---
 phase: 09-home-ascent
 verified: 2026-10-25T21:48:16Z
-status: human_needed
+status: passed
 score: 5/5 roadmap success criteria verified (code, local checks and CI); 0 behavior-unverified; 4 human decisions or device checks open
 covered_files:
   - ".planning/phases/09-home-ascent/09-01-PLAN.md"

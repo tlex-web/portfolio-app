@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A personal portfolio web application built with Next.js and React, showcasing projects and landscape photography through interactive 3D visualizations. Since v2.0 Phase 7, every page renders inside one dark, token-driven site shell (tokens v2, a single `SiteNav`, Tim Lui's real identity) behind CI guardrails for visual regressions, deleted tests and off-system styling. The v1.0 "Swiss Alps" crystalline pieces (geological depth effects, hexagonal project cards, progressive 3D texture loading) remain on pages v2.0 has not rebuilt yet. Everything supports reduced motion.
+A personal portfolio web application built with Next.js and React, showcasing projects and landscape photography through interactive 3D visualizations. Since v2.0 Phase 7, every page renders inside one dark, token-driven site shell (tokens v2, a single `SiteNav`, Tim Lui's real identity) behind CI guardrails for visual regressions, deleted tests and off-system styling. Since Phase 9, Home is a native-scroll "ascent" up the real Matterhorn terrain (a contour-line shader over swissALTIRegio relief, an altimeter rail, four photo waypoints and a summit plaque), with a static contour poster wherever 3D is off or too slow. The v1.0 "Swiss Alps" crystalline pieces (geological depth effects, hexagonal project cards, progressive 3D texture loading) remain on pages v2.0 has not rebuilt yet. Everything supports reduced motion.
 
 ## Core Value
 
@@ -61,12 +61,12 @@ A portfolio that is visually memorable and distinctive — not another generic T
 - ✓ Privacy-safe images: originals out of the repo and site, metadata-free hashed derivatives ≤ 2560 px, served-image guard over every tracked image — Phase 8
 - ✓ Typed project highlights with real CLI_X riskScores and the trail-grade band scale — Phase 8
 - ✓ Footer map legend (contour band, waypoint ticks, true scale bar, LV95 extent, "Last surveyed", swisstopo attribution) on every route — Phase 8
+- ✓ Home "ascent" on the real Matterhorn: contour-shader terrain in a lazy R3F chunk, native scroll with no scroll-jacking and a skip link, altimeter rail 1,617 m → 4,478 m, four photo waypoints at their EXIF/DEM positions, trail signs and a summit-plaque readout, and a static contour poster for reduced motion, Save-Data, no WebGL2, low memory, a lost context or a failed frame budget (HOME-01 to HOME-08) — Phase 9
 
 ### Active
 
 <!-- Current scope. Building toward these in v2.0. -->
 
-- [ ] Real Matterhorn terrain hero with scroll "ascent" and photo waypoints
 - [ ] Photography experience driven by real EXIF data (map, grid, carousel, lightbox)
 - [ ] Engineering case studies with trail-grade risk visualization
 - [ ] Route-log roadmap, summit-register contact, designed edge pages
@@ -88,6 +88,7 @@ A portfolio that is visually memorable and distinctive — not another generic T
 Shipped v1.0 with 12,484 LOC TypeScript/CSS across 165 files.
 Tech stack: Next.js 16, React 19, Tailwind v4 (CSS-first @theme), Three.js/R3F/drei, Framer Motion.
 After v2.0 Phase 7: Next 16.4.2, React 19.3.1, `motion` 14.1 (`motion/react`), R3F 9.8.1, drei 10.7.9, Playwright 1.64, Node 24 with `npm ci` locally, in CI and on Vercel.
+After v2.0 Phase 9: Home ships 444,761 B of JS in total with the lazy canvas chunk (Phase 7 baseline 468,770 B; mobile LCP 3,112 ms against 4,692 ms); the test-count ratchet stands at jest 725, e2e 241.
 Deployed on Vercel with Upstash Redis for rate limiting.
 
 Design system: "Swiss Alps" crystalline aesthetic — 30 OKLCH tokens across 8 color families (alpine, granite, snow, frost, ember, pine, rust, amber), geological depth shadows (stratum-1/2/3), hex grid layouts, scroll-linked glow intensity.
@@ -97,6 +98,7 @@ Known tech debt:
 - Phase 8 code review (08-REVIEW-DISPOSITION.md): 8 open warnings, latent for the current four photos (out-of-extent photo, missing GPS altitude, non-Zurich offset, 0.25–1 s shutter labels, non-atomic `photos:derive`, guard format gaps, README steps, mislabelled corrections) — fold into the first Phase 9/10 plan that adds photo data
 - ParticleButton deprecated but retained for demo pages
 - SEC-02 (CSRF) traceability was stale in REQUIREMENTS.md but implemented in Phase 2
+- Phase 9 open deferred items (`.planning/phases/09-home-ascent/deferred-items.md`): README tree line for `app/page.tsx`, fflate 0.8.2 advisory in the canvas chunk, R3F 9 `THREE.Clock` deprecation warning, the canvas chunk holding the load event back about 1.5 s on the HOME-08 profile, hero scrim switching at `lg:` instead of 768 px, the "2,760 m approx." tick at 4.81:1, a dark wedge in the 1440 px summit frame, Prettier drift in two files, four `delayHeightmap` e2e users bypassed by the service worker, and two parallel-run e2e flakes
 
 UI audit (2026-10-10, before v2.0):
 - v1.0 tokens reach only Home, nav and Projects index; Photos, Project detail, Roadmap, Contact use stock Tailwind blue/cyan/purple/pink/gray — 29 files with stock palette classes
@@ -162,6 +164,12 @@ UI audit (2026-10-10, before v2.0):
 | Photo heights from the DEM, not EXIF altitude (D-17) | One consistent surface for footer, altimeter and terrain; EXIF altitude is noisy (gorge photo DEM 1,668 m vs GPS 1,715 m) | ✓ Good — `lowestDemM` 1,617 m starts the altimeter rail |
 | Meteorological seasons for photo tags; capture year only for the film scan | September photos read "autumn"; the 2020 scan date never surfaces (Tim approved at 08-10) | ✓ Good |
 | Hillshade poster: NW light 315°/45° + 270°/55°, linear gamma | Tim approved the poster as rendered (08-06) after seeing the light/mid-grey trade-off; tuning stays in the `HILLSHADE` block | ✓ Good |
+| Frame-budget decline under automation: tests opt in to a measure-only flag (`window.__ascentBudgetMeasureOnly`); one real-decline e2e keeps the real budget | CI runners cannot hold the 50 ms median, but the poster fallback must stay tested; real visitors are unaffected (Tim, 09-11 and 09-13) | ✓ Good — Phase 9 |
+| HOME-08 measured as total JS after the canvas is ready plus mobile LCP ("total-keep") | The canvas chunk arms before the load event on the HOME-08 profile, so an initial/late split measures nothing (Tim, 09-13) | ✓ Good — 444,761 ≤ 468,770 B; LCP 3,112 ≤ 4,692 ms |
+| A frame-budget downgrade lasts the session (module-level, until a full reload) | Simpler than re-probing on every mount; documented in the JSDoc (IN-05, Tim: "Keep sticky, document") | Accepted (Phase 9) |
+| Altimeter rail in its own sticky aria-hidden layer after the track | The hero scrim painted over the rail at 768–1023 px (1.3–2.5:1), and no z-index inside the sticky stage could escape it (G-09-4, Tim's option B) | ✓ Good — Phase 9 gap closure |
+| Compact summit plaque except on landscape 1100–1943 px stages, and only with motion-safe; 3D summit framing fits the pins into the clear rectangles around the plaque | The fixed-pixel plaque covered pins on short, portrait-tablet and 768–1069 px stages (G-09-2, Tim: "Compact plaque + measured 3D") | ✓ Good — Phase 9 gap closure |
+| Static-poster pin cases accepted as decorative: waypoint 3's label hidden at about 768–1090 px (D-09 amended), the portrait-phone summit (pin 4 and the triangle past the edges), landscape phones (pin 3 under the compact plaque) and reduced motion (full plaque over the pins at 375 × 667) | Poster pins keep fixed plan-view positions (D-16); live 3D is unaffected | Accepted at Phase 9 UAT (round 2) |
 
 ## Evolution
 
@@ -181,4 +189,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-24 after Phase 8*
+*Last updated: 2026-10-25 after Phase 9*
