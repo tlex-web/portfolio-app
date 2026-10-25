@@ -509,8 +509,19 @@ test.describe('Home modes (HOME-02, HOME-07, HOME-08)', () => {
     }
   });
 
+  /**
+   * G-09-4 N1 (D-05, D-17): from 768 to 1023 px the hero scrim used to paint
+   * over the rail (1.3-2.5:1), and at 1280 px its lg: tail still touched the
+   * long label (4.45:1). The rail now lives in its own layer above the track
+   * (Tim's option B, 09-17). Each width runs at p = 0 and at p = 0.05 (a
+   * quarter of the first leg, inside the tilt-in, where the denser bottom of
+   * the scrim gradient has moved up over the labels). The rail holds the first
+   * height through the tilt-in, so the readout sits on tick 0 at both.
+   */
   test.describe('N1: rail labels and readout over the hero, composed through every overlay', () => {
-    const rows: { width: number; height: number; p: number }[] = [{ width: 768, height: 900, p: 0 }];
+    const rows: { width: number; height: number; p: number }[] = [768, 1023, 1280].flatMap((width) =>
+      [0, 0.05].map((p) => ({ width, height: 900, p }))
+    );
     for (const { width, height, p } of rows) {
       test(`at ${width} x ${height}, p = ${p}, static capability mode`, async ({ page }) => {
         await disableWebGL(page);
@@ -519,7 +530,24 @@ test.describe('Home modes (HOME-02, HOME-07, HOME-08)', () => {
         await expect(stage(page)).toHaveAttribute('data-ascent-mode', 'static');
         await expect(page.locator('[data-sheet-box] img')).toBeVisible();
         await page.locator('[data-sheet-box] img').evaluate((img: HTMLImageElement) => img.decode());
-        await nextFrames(page);
+        if (p > 0) {
+          // Seek p on the ascent mapping: the sticky start (track top in page
+          // coordinates minus the stage's sticky top) plus p of the distance
+          // (track height minus stage height).
+          const target = await page.evaluate((progress) => {
+            const track = document.querySelector('[data-ascent-track]') as HTMLElement;
+            const stageEl = document.querySelector('[data-ascent-stage]') as HTMLElement;
+            const trackRect = track.getBoundingClientRect();
+            const stickyTop = Number.parseFloat(getComputedStyle(stageEl).top) || 0;
+            const start = trackRect.top + window.scrollY - stickyTop;
+            const distance = trackRect.height - stageEl.getBoundingClientRect().height;
+            const top = Math.round(start + progress * distance);
+            window.scrollTo({ top, behavior: 'instant' });
+            return top;
+          }, p);
+          await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBe(target);
+        }
+        await nextFrames(page, 4);
 
         // The readout box covers the label of the tick it sits on; it is not
         // what the label is read against, so it is hidden while the labels

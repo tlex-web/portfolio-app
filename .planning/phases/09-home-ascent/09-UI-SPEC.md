@@ -74,7 +74,7 @@ Inherited unchanged from 07 (multiples of 4 on Tailwind's 4 px base). The table 
 | Container | `mx-auto w-full max-w-6xl` with 07 gutters (`px-4 sm:px-6 lg:px-8`) for hero copy, cards, summit and About [07] |
 | Breakpoints | 375 (baseline), `md` 768 (rail and side cards appear), `lg` 1024, 1440 (baseline) [07] |
 | Stage height `S` | `calc(100svh - var(--nav-h))` (64 px nav, solid and sticky, unchanged [D-12]) |
-| z-order inside Home | Stage (poster → canvas → pins → rail and rail scrim) sits under the content track (hero copy, cards, summit). Both live in one CSS grid cell, the track later in DOM order with `relative`. No new z-index tokens; the nav stays `--z-nav` 40 above everything [07] |
+| z-order inside Home | Three layers in one CSS grid cell, in DOM and paint order: the stage (poster → canvas → pins → rail scrim) sits under the content track (hero copy and hero scrim, cards, summit), the track later in DOM order with `relative`; the rail box (line, ticks, labels, marker, readout) sits in its own sticky, aria-hidden, pointer-events-none rail layer after the track, so no track overlay (hero or summit scrim) can dim it. A sticky element is its own stacking context, so a z-index on the rail inside the stage cannot lift it. No new z-index tokens; the nav stays `--z-nav` 40 above everything [07] (G-09-4 N1, Tim's option B, 09-17) |
 | Radius | `rounded-lg` (8 px) for cards and the mobile docked panel; `rounded-sm` (4 px) for the plaque, trail signs, buttons, pin labels, rail readout and card photos [07] |
 | Elevation | None. Flat panels separated by 1 px borders [07] |
 
@@ -182,23 +182,25 @@ Rule: **no text over the relief may sit on less than a 0.5 `surface` scrim.** Th
 
 ```
 app/(site)/page.tsx (Server Component; replaces the 'use client' page)
-└─ <AscentHero>                                    Server. CSS grid, one cell, two layers:
+└─ <AscentHero>                                    Server. CSS grid, one cell, three layers (G-09-4 N1, Tim's option B, 09-17):
    ├─ Stage   aria-hidden="true"                    sticky top-(--nav-h), height S, overflow-hidden, @container (size)
    │   ├─ Sheet box (square, side max(100cqw,100cqh)) Poster <picture> + ContourField "hero" + PosterPins (Server)
    │   ├─ TerrainStage slot (Client island)        lazy canvas via SafeCanvas, 3D-projected pins
-   │   └─ AltimeterRail (Client)                   hidden below 768 px, rail scrim
-   └─ Track   (normal flow, relative)
-       ├─ Hero block      height S                   kicker · h1 · role · thesis · TrailSigns · cue links (+ hero scrim)
-       ├─ <ol aria-label="Waypoints, lowest first">  one <li> per photo, ascending DEM height
-       │    └─ Stage block height S → <section id="waypoint-{slug}" aria-labelledby> WaypointCard
-       └─ Summit block    height S → <section id="summit" tabIndex={-1} aria-labelledby> SummitPlaque + TrailSigns
+   │   └─ Rail scrim                                hidden below 768 px; read by the pin label flip and the camera
+   ├─ Track   (normal flow, relative)
+   │   ├─ Hero block      height S                   kicker · h1 · role · thesis · TrailSigns · cue links (+ hero scrim)
+   │   ├─ <ol aria-label="Waypoints, lowest first">  one <li> per photo, ascending DEM height
+   │   │    └─ Stage block height S → <section id="waypoint-{slug}" aria-labelledby> WaypointCard
+   │   └─ Summit block    height S → <section id="summit" tabIndex={-1} aria-labelledby> SummitPlaque + TrailSigns
+   └─ Rail layer aria-hidden, sticky, height S      pointer-events-none, overflow-hidden, after the Track
+       └─ AltimeterRail (Client)                   hidden below 768 px
 └─ <section aria-labelledby="about-title">         About + contact line (Server)
 ```
 
-- The stage and the track share one grid cell (`grid` with both children `col-start-1 row-start-1`; the stage `self-start sticky`). No negative margins.
+- The stage, the track and the rail layer share one grid cell (`grid` with all three children `col-start-1 row-start-1`; the stage and the rail layer `self-start sticky top-(--nav-h)`, height S). DOM order is the paint order: stage, track, rail layer. No negative margins (G-09-4 N1, Tim's option B, 09-17).
 - Everything except the canvas island, the rail and a small focus helper is server-rendered. Nothing from `three` or R3F may be reachable from a Server Component import graph; the canvas is a `next/dynamic` `ssr: false` import made **from a Client Component** [ARCH §5].
 - **Heading outline:** h1 "Tim Lui" → h2 per waypoint card (4) → h2 "Matterhorn summit" → h2 "About". No level skips [UUPM `heading-hierarchy`].
-- The whole stage is `aria-hidden="true"`: the relief, contours, pins and rail are decorative, and every fact they show is also in the cards and the plaque. The poster image has `alt=""`. The canvas has `aria-hidden` (inherited) and `pointer-events: none`. Default (researcher) — confirm at plan review.
+- The whole stage and the rail layer are `aria-hidden="true"`: the relief, contours, pins and rail are decorative, and every fact they show is also in the cards and the plaque. The poster image has `alt=""`. The canvas has `aria-hidden` (inherited) and `pointer-events: none`. Default (researcher) — confirm at plan review.
 - **Waypoint order and count come from data**: `photos` sorted by `elevation.m` ascending (tie: `id`). With `n` photos there are `n` stage blocks and `n` equal legs (D-01 generalised). Today n = 4. A data set with zero photos fails the build (`lowestDemM` is required) [08].
 
 ---
@@ -360,8 +362,8 @@ Pins are HTML overlay marks, `aria-hidden` (inside the stage), `pointer-events: 
 
 | Property | Spec |
 |----------|------|
-| Element | Inside the stage: `hidden md:block absolute right-8 top-12 bottom-12 w-40 pointer-events-none` (`aria-hidden` inherited). Not clickable, not focusable [D-05] |
-| Rail scrim | `absolute inset-y-0 right-0 w-56 bg-linear-to-l from-surface/85 from-0% via-surface/60 via-70% to-transparent`, so every label sits on ≥ 0.6 |
+| Element | Inside the rail layer (sticky, `aria-hidden="true"`, `pointer-events-none`, after the track): `hidden md:block absolute right-8 top-12 bottom-12 w-40 pointer-events-none` (`aria-hidden` inherited). Not clickable, not focusable [D-05] (G-09-4 N1, Tim's option B, 09-17) |
+| Rail scrim | Stays in the stage (the pin label flip and the camera read its width there): `absolute inset-y-0 right-0 w-56 bg-linear-to-l from-surface/85 from-0% via-surface/60 via-70% to-transparent`, so every label sits on ≥ 0.6 (G-09-4 N1, Tim's option B, 09-17) |
 | Line | 1 px vertical `bg-ink-muted` at the right edge of the 160 px box |
 | Ticks | `n + 1` ticks evenly spaced bottom (start) to top (summit): `h-px w-4 bg-ink-muted` to the left of the line; the approximate waypoint's tick is `border-t border-dashed border-ink-muted` [08 D-02] |
 | Tick labels | Left of each tick, right-aligned, `font-mono text-sm text-ink-muted tabular-nums`: `1,617 m`, `1,668 m`, `2,585 m`, `2,760 m approx.`, `4,478 m` (summit uses `terrain.summit.officialM` [08 D-17]) |
@@ -558,7 +560,8 @@ The researcher's composed-contrast checks for text over the tinted relief. `stat
 | Check | Element(s) | Status | Resolution |
 |-------|------------|--------|------------|
 | composed contrast | E3 Hero copy | 🧪 backstop | `{ statement: "At 375, 768 and 1440 px, at p = 0 in static-capability mode (canvas hidden), an e2e test samples the rendered pixels behind each hero text element's bounding box and asserts the worst-case contrast of its colour against them is >= 4.5:1; axe color-contrast reports no violation on /", verification: backstop }` |
-| composed contrast | E8 Altimeter rail | 🧪 backstop | `{ statement: "At 768 and 1440 px, at the summit position, sampled pixels behind every rail tick label give >= 4.5:1 for ink-muted", verification: backstop }` |
+| composed contrast | E8 Altimeter rail | 🧪 backstop | `{ statement: "At 768 and 1440 px, at the summit position, sampled pixels behind every rail tick label give >= 4.5:1 for ink-muted", verification: backstop }` (B8, kept) |
+| composed contrast | E8 Altimeter rail | 🧪 backstop | `{ statement: "At 768, 1023 and 1280 px (x 900), at p = 0 and p = 0.05 in static-capability mode, every rail tick label and the readout compose to >= 4.5:1, with the text colour composed through every overlay (fill-versus-transparent-text shots of each text line, not the raw computed colour)", verification: backstop }` (G-09-4 N1, Tim's option B, 09-17) |
 
 ---
 
