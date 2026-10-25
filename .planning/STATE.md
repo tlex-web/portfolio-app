@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 09
 current_phase_name: Home Ascent
 status: executing
-stopped_at: Completed 09-07-PLAN.md
-last_updated: "2026-10-25T01:10:17.846Z"
+stopped_at: Completed 09-08-PLAN.md
+last_updated: "2026-10-25T01:32:15.488Z"
 last_activity: 2026-10-25
 last_activity_desc: Phase 09 execution started
-state_head: 5e0d353b4376140811bade354148231a831db720
+state_head: a2f8d646ae1b30516a65dd6cb452e3657d16960b
 progress:
   total_phases: 6
   completed_phases: 8
   total_plans: 54
-  completed_plans: 47
-  percent: 87
+  completed_plans: 48
+  percent: 89
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-24)
 ## Current Position
 
 Phase: 09 (Home Ascent) — EXECUTING
-Plan: 8 of 14
+Plan: 9 of 14
 Status: Ready to execute
 Last activity: 2026-10-25 — Phase 09 execution started
 
-Progress: [█████████░] 87% of v2.0 phases (2 of 6: Phases 7–8 complete); 40/40 planned plans done (Phases 9–12 not yet planned)
+Progress: [█████████░] 89% of v2.0 phases (2 of 6: Phases 7–8 complete); 40/40 planned plans done (Phases 9–12 not yet planned)
 
 ## Performance Metrics
 
@@ -102,6 +102,7 @@ Progress: [█████████░] 87% of v2.0 phases (2 of 6: Phases 7�
 | Phase 09 P05 | 15 min | 3 tasks | 11 files |
 | Phase 09 P06 | 17 min | 3 tasks | 12 files |
 | Phase 09 P07 | 14 min | 3 tasks | 13 files |
+| Phase 09 P08 | 18 min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -225,6 +226,9 @@ Recent decisions affecting current work:
 - [Phase 09]: 09-07: useAscentMode decides on the cheap signals before the one WebGL2 probe, so Save-Data, low-memory and reduced-motion visitors are never probed
 - [Phase 09]: 09-07: TerrainCanvas sets position absolute / inset 0 inline because R3F writes position relative inline on its wrapper
 - [Phase 09]: 09-07: composed-contrast backstops (B7/B8) sample the text's Range line boxes, not the block box; hero scrim lg: breakpoint vs UI-SPEC 768 px flagged for 09-14
+- [Phase 09]: 09-08: the terrain texture is a detached copy of the poster image's currentSrc, not the rendered <img> (three sizes texture storage from image.width, the layout width); no second download
+- [Phase 09]: 09-08: the terrain bounding sphere covers relief 0..1 so frustum culling stays on; 09-10 must widen it if uExaggeration > 1
+- [Phase 09]: 09-08: contour width uWidthPx follows R3F viewport.dpr through a material ref; CameraRig keeps invalidating while p moved > 1e-4 since the last frame (D-06)
 
 ### Pending Todos
 
@@ -262,6 +266,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-25T01:10:17.605Z
-Stopped at: Completed 09-07-PLAN.md
+Last session: 2026-10-25T01:32:15.239Z
+Stopped at: Completed 09-08-PLAN.md
 Resume file: None
