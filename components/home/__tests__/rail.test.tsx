@@ -1,0 +1,140 @@
+/**
+ * Pins and rail on the stage (HOME-04, HOME-05; D-01, D-05, D-09; 09-UI-SPEC
+ * "Pins (D-09)", "Altimeter Rail (HOME-04, D-05)" and UI Considerations E7,
+ * E8). PinMark and the poster pins are server components; the rail is the
+ * client island rendered through AscentHero. Every expected string is derived
+ * from the committed data, and the literal UI-SPEC labels are checked too.
+ */
+import { render } from '@testing-library/react';
+import AscentHero from '../AscentHero';
+import PinMark, { SummitMark } from '../PinMark';
+import PosterSheet from '../PosterSheet';
+import { lowestDemM } from '@/data/generated/photos';
+import { terrain } from '@/data/generated/terrain';
+import { buildWaypoints } from '@/lib/ascent/waypoints';
+import { formatMetres } from '@/lib/photo-format';
+
+const waypoints = buildWaypoints();
+const NBSP = / /g;
+const plain = (s: string | null | undefined) => (s ?? '').replace(NBSP, ' ');
+
+describe('PinMark (D-09)', () => {
+  it('renders data-pin, the numeral in a 24 px head, a 16 px stem and the label', () => {
+    const { container } = render(
+      <PinMark k={2} label="Gornerschlucht · 1,668 m" approximate={false} />
+    );
+    const pin = container.querySelector('[data-pin]') as HTMLElement;
+
+    expect(pin).toHaveAttribute('data-pin', '2');
+    const head = pin.querySelector('[data-pin-head]') as HTMLElement;
+    expect(head).toHaveTextContent('2');
+    expect(head).toHaveClass('size-6', 'rounded-full', 'font-mono', 'tabular-nums');
+    const stem = pin.querySelector('[data-pin-stem]') as HTMLElement;
+    expect(stem).toHaveClass('h-4', 'w-px', 'bg-ink-muted');
+    expect(pin.querySelector('[data-pin-label]')).toHaveTextContent('Gornerschlucht · 1,668 m');
+    expect(pin.querySelector('[data-pin-label]')).toHaveClass('whitespace-nowrap');
+    expect(pin).not.toHaveAttribute('data-active');
+  });
+
+  it('draws an approximate position with a 2 px dashed head border and a dashed stem', () => {
+    const { container } = render(<PinMark k={4} label="Riffelsee · 2,760 m approx." approximate />);
+    const head = container.querySelector('[data-pin-head]') as HTMLElement;
+    const stem = container.querySelector('[data-pin-stem]') as HTMLElement;
+
+    expect(head).toHaveClass('border-2', 'border-dashed');
+    expect(stem).toHaveClass('border-l', 'border-dashed', 'border-ink-muted');
+    expect(stem).not.toHaveClass('bg-ink-muted');
+  });
+
+  it('renders the summit as a label-less mark', () => {
+    const { container } = render(<SummitMark />);
+    const mark = container.querySelector('[data-summit-mark]') as HTMLElement;
+    expect(mark).not.toBeNull();
+    expect(mark).toHaveClass('bg-ink-muted');
+    expect(mark).toBeEmptyDOMElement();
+  });
+});
+
+describe('Poster pins (HOME-05, D-09)', () => {
+  it('places one pin per waypoint, in ascent order, at its UV in the sheet box', () => {
+    const { container } = render(<PosterSheet />);
+    const layer = container.querySelector('[data-pin-layer="poster"]') as HTMLElement;
+    expect(layer).not.toBeNull();
+    expect(layer).toHaveClass('pointer-events-none');
+
+    const pins = Array.from(layer.querySelectorAll<HTMLElement>('[data-pin]'));
+    expect(pins.map((p) => p.dataset.pin)).toEqual(waypoints.map((w) => String(w.k)));
+    pins.forEach((pin, i) => {
+      expect(pin.style.left).toBe(`${waypoints[i].uv.u * 100}%`);
+      expect(pin.style.top).toBe(`${waypoints[i].uv.v * 100}%`);
+    });
+  });
+
+  it('labels each pin with its short place and height, approx. only when hand-placed', () => {
+    const { container } = render(<PosterSheet />);
+    const labels = Array.from(
+      container.querySelectorAll('[data-pin-layer="poster"] [data-pin-label]'),
+      (el) => el.textContent
+    );
+
+    expect(labels).toEqual(
+      waypoints.map(
+        (w) => `${w.shortPlace} · ${formatMetres(w.altitudeM)}${w.approximate ? ' approx.' : ''}`
+      )
+    );
+    expect(labels.map(plain)).toEqual([
+      'Zermatt · 1,617 m',
+      'Gornerschlucht · 1,668 m',
+      'Matterhorn Glacier Trail · 2,585 m',
+      'Riffelsee · 2,760 m approx.',
+    ]);
+  });
+
+  it('puts one summit mark at terrain.summit.uv', () => {
+    const { container } = render(<PosterSheet />);
+    const marks = container.querySelectorAll<HTMLElement>(
+      '[data-pin-layer="poster"] [data-summit-mark]'
+    );
+
+    expect(marks).toHaveLength(1);
+    expect(marks[0].style.left).toBe(`${terrain.summit.uv.u * 100}%`);
+    expect(marks[0].style.top).toBe(`${terrain.summit.uv.v * 100}%`);
+  });
+});
+
+describe('AltimeterRail (HOME-04, D-01, D-05)', () => {
+  it('labels the n + 1 ticks bottom to top from the first waypoint to the official summit height', () => {
+    const { container } = render(<AscentHero />);
+    const ticks = Array.from(
+      container.querySelectorAll<HTMLElement>('[data-ascent-rail] [data-rail-tick]')
+    );
+    const labels = ticks.map((t) => t.querySelector('[data-tick-label]')?.textContent);
+
+    expect(labels).toEqual([
+      ...waypoints.map((w) => `${formatMetres(w.altitudeM)}${w.approximate ? ' approx.' : ''}`),
+      formatMetres(terrain.summit.officialM),
+    ]);
+    expect(labels[0]).toBe(formatMetres(lowestDemM));
+    expect(labels.map(plain)).toEqual([
+      '1,617 m',
+      '1,668 m',
+      '2,585 m',
+      '2,760 m approx.',
+      '4,478 m',
+    ]);
+
+    const bottoms = ticks.map((t) => Number.parseFloat(t.style.bottom));
+    expect(bottoms).toEqual(ticks.map((_, k) => (k / waypoints.length) * 100));
+  });
+
+  it('is decorative: inside the aria-hidden stage, no live region, nothing focusable', () => {
+    const { container } = render(<AscentHero />);
+    const rail = container.querySelector('[data-ascent-rail]') as HTMLElement;
+
+    expect(rail.closest('[data-ascent-stage]')).toHaveAttribute('aria-hidden', 'true');
+    expect(rail).toHaveClass('pointer-events-none', 'hidden', 'md:block');
+    expect(rail.querySelector('[aria-live], a, button, [tabindex]')).toBeNull();
+    expect(rail.querySelector('[data-ascent-readout]')).toHaveClass('motion-reduce:hidden');
+    expect(rail.querySelector('[data-ascent-marker]')).toHaveClass('motion-reduce:hidden');
+  });
+});
