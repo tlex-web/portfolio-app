@@ -10,9 +10,13 @@ import { DURATION } from '@/lib/animations';
 import {
   SUMMIT_FRAME_MARGIN_PX,
   fitCluster,
+  placePinLabel,
+  railObstaclesAt,
   stageViewKeys,
   summitClearRects,
   viewTrackAt,
+  waypointTarget,
+  type StageGeometry,
   type TangentBounds,
 } from '@/lib/ascent/framing';
 import { createFrameBudget, type FrameBudgetVerdict } from '@/lib/ascent/frame-budget';
@@ -55,6 +59,17 @@ import { anchorAt, poseAt, routeCurvesFor, type RouteCurves } from './route-curv
  * height, so targets sit above the docked card (D-20), and right 0.2 x the
  * width, so the stage's waypoint has room for its label on the right. The
  * first segment of the track is the tilt-in, so the offsets ramp in with it.
+ *
+ * Measured md stages (G-09-3 a, 09-21; D-07, D-09): on a wide stage each
+ * stage camera would put its waypoint on the view axis, under the 448 px card
+ * up to about 980 px. So once per route build, stage size and geometry
+ * measurement (not per frame) the rig projects each waypoint anchor with a
+ * scratch camera at its stage key pose (no view offset) and asks
+ * waypointTarget where the lit pin should sit: at that natural position when
+ * it and its label already clear the card and the rail, else beside, above or
+ * below the card. natural - target is the stage key's view offset, so the
+ * view moves between stages on the same track and snaps only where the
+ * progress spring snaps (D-06).
  * Narrow versus wide follows matchMedia('(min-width: 48rem)'), the CSS md
  * breakpoint's width source: the canvas is 10 px narrower than the viewport
  * (scrollbar-gutter), so a canvas-width switch disagreed with the layout at
@@ -79,11 +94,12 @@ import { anchorAt, poseAt, routeCurvesFor, type RouteCurves } from './route-curv
  * surface, not the DEM height) is projected through the camera and its
  * PinLayer3D mark is moved with a transform. A mark is hidden while its point
  * is behind the camera or beyond the depth range (NDC z outside (-1, 1)) or
- * more than 10 % outside the stage. A waypoint label is placed left of its
- * head (data-label 'left') within 240 px of the clear stage edge (the stage's
- * right edge, or the rail scrim's left edge from 768 px), else right of it (no
- * data-label). The poster pins use placePinLabel instead (09-19); 09-21 moves
- * the 3D pins onto it too. Lighting stays with AscentController.
+ * more than 10 % outside the stage. The lit pin's label uses the poster's
+ * placement rule (placePinLabel, 09-19 and 09-21): its card and the rail marks
+ * at its plateau are the obstacles, the card the cover, the stage the bounds;
+ * the rig writes data-label and --pin-label-dx on that one mark each frame and
+ * leaves the unlit marks alone (their labels are not shown). Lighting stays
+ * with AscentController.
  *
  * Demand frameloop: every change of the progress spring invalidates a frame,
  * and useFrame (priority 0, never positive: a positive priority takes over
@@ -118,8 +134,6 @@ import { anchorAt, poseAt, routeCurvesFor, type RouteCurves } from './route-curv
 const EPS = 1e-4;
 /** The CSS md breakpoint: below it the card docks over the lower part (D-20) and the stages get the view offset. */
 const WIDE_MEDIA = '(min-width: 48rem)';
-/** A 3D pin head this close to the clear stage edge shows its label on the left (until 09-21). */
-const FLIP_PX = 240;
 /** A pin whose anchor is further outside the stage than this share of its size is hidden. */
 const OFFSTAGE_SHARE = 0.1;
 const W = terrain.extent.widthM;
@@ -202,10 +216,71 @@ function summitTangentBounds(
 }
 
 /**
+ * Each waypoint anchor's natural position on a w x h stage (G-09-3 a, 09-21):
+ * projected (at relief 1) by a camera at its stage key pose (poses.positions[k]
+ * looking at poses.targets[k], up (0, 1, 0), FOV CAMERA_FOV_DEG, the stage
+ * aspect, no view offset). Null for an anchor behind that camera.
+ */
+function stageNaturals(
+  curves: RouteCurves,
+  pins: readonly PinAnchor[],
+  metres: Float32Array,
+  gridSize: number,
+  w: number,
+  h: number
+): ({ x: number; y: number } | null)[] {
+  const { positions, targets } = curves.poses;
+  const cam = new PerspectiveCamera(CAMERA_FOV_DEG, w / h);
+  const p = new Vector3();
+  return pins.map(({ u, v }, i) => {
+    const at = positions[i + 1];
+    const look = targets[i + 1];
+    if (!at || !look) return null;
+    cam.position.set(at.x, at.y, at.z);
+    cam.up.set(0, 1, 0);
+    cam.lookAt(look.x, look.y, look.z);
+    cam.updateMatrixWorld();
+    const a = anchorAt(metres, gridSize, u, v, 1);
+    p.set(a.x, a.y, a.z).applyMatrix4(cam.matrixWorldInverse);
+    if (!(p.z < 0)) return null;
+    p.set(a.x, a.y, a.z).project(cam);
+    return { x: ((p.x + 1) / 2) * w, y: ((1 - p.y) / 2) * h };
+  });
+}
+
+/**
+ * The wide stages' view offsets (G-09-3 a, 09-21): for each waypoint,
+ * natural - waypointTarget (its card, its label size and the rail marks at its
+ * plateau, on the w x h stage). No offset without geometry or for an anchor
+ * behind its stage camera.
+ */
+function wideStageOffsets(
+  naturals: readonly ({ x: number; y: number } | null)[],
+  pins: readonly PinAnchor[],
+  geometry: StageGeometry | null,
+  w: number,
+  h: number
+): { x: number; y: number }[] {
+  return pins.map(({ k }, i) => {
+    const natural = naturals[i];
+    if (!natural || !geometry) return { x: 0, y: 0 };
+    const target = waypointTarget({
+      natural,
+      card: geometry.cards[k - 1] ?? null,
+      label: geometry.labels[k - 1] ?? null,
+      obstacles: railObstaclesAt(geometry.rail, k),
+      stage: { w, h },
+    });
+    return { x: natural.x - target.x, y: natural.y - target.y };
+  });
+}
+
+/**
  * Moves each 3D pin mark (waypoints, then the summit) to its projected anchor
- * on a w x h stage at relief `relief`, or hides it. `edge` is the clear stage
- * edge: a waypoint mark within FLIP_PX of it gets data-label 'left', any other
- * loses the attribute (its label sits right of the head).
+ * on a w x h stage at relief `relief`, or hides it. The lit waypoint mark
+ * (data-active) gets its label placed by placePinLabel from `geometry` (its
+ * card and the rail marks at its plateau): data-label and --pin-label-dx. The
+ * unlit marks keep whatever they had; their labels are not shown.
  */
 function placePins(
   camera: PerspectiveCamera,
@@ -216,7 +291,7 @@ function placePins(
   relief: number,
   w: number,
   h: number,
-  edge: number
+  geometry: StageGeometry | null
 ) {
   for (let i = 0; i <= pins.length; i++) {
     const mark = marks[i];
@@ -237,9 +312,21 @@ function placePins(
     mark.style.visibility = shown ? '' : 'hidden';
     if (!shown) continue;
     mark.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
-    if (i < pins.length) {
-      if (edge - x < FLIP_PX) mark.dataset.label = 'left';
-      else mark.removeAttribute('data-label');
+    if (i < pins.length && geometry && mark.hasAttribute('data-active')) {
+      const k = pins[i].k;
+      const label = geometry.labels[k - 1];
+      if (!label) continue;
+      const card = geometry.cards[k - 1];
+      const cards = card ? [card] : [];
+      const { side, dx } = placePinLabel({
+        anchor: { x, y },
+        label,
+        obstacles: [...cards, ...railObstaclesAt(geometry.rail, k)],
+        covers: cards,
+        bounds: { x0: 0, y0: 0, x1: w, y1: h },
+      });
+      mark.dataset.label = side;
+      mark.style.setProperty('--pin-label-dx', `${dx}px`);
     }
   }
 }
@@ -330,6 +417,21 @@ export default function CameraRig({
     () => (curves && metres ? summitTangentBounds(curves, pins, metres, gridSize) : null),
     [curves, pins, metres, gridSize]
   );
+
+  /** Each waypoint's natural position at its stage key pose, once per route build and stage size. */
+  const naturals = useMemo(
+    () =>
+      curves && metres && width > 0 && height > 0
+        ? stageNaturals(curves, pins, metres, gridSize, width, height)
+        : null,
+    [curves, pins, metres, gridSize, width, height]
+  );
+  /** The wide stage offsets for the current naturals and geometry measurement (recomputed when either changes). */
+  const stageOffsets = useRef<{
+    naturals: ReturnType<typeof stageNaturals>;
+    geometry: StageGeometry | null;
+    offsets: { x: number; y: number }[];
+  } | null>(null);
 
   useEffect(() => invalidate(), [curves, invalidate]);
 
@@ -428,11 +530,27 @@ export default function CameraRig({
         ),
         maxFocalPx,
       });
+      // Wide stages: the measured offsets, recomputed only for a new route build,
+      // stage size or geometry measurement (G-09-3 a, 09-21; T-09-32).
+      let wideOffsets: { x: number; y: number }[] | undefined;
+      if (!narrow && naturals) {
+        const g = geometry.current ?? null;
+        const cached = stageOffsets.current;
+        if (!cached || cached.naturals !== naturals || cached.geometry !== g) {
+          stageOffsets.current = {
+            naturals,
+            geometry: g,
+            offsets: wideStageOffsets(naturals, pins, g, w, h),
+          };
+        }
+        wideOffsets = stageOffsets.current!.offsets;
+      }
       const keys = stageViewKeys({
         n: pins.length,
         narrow,
         stage,
         summit: { x: fit.offsetX, y: fit.offsetY, fov: fit.fovDeg },
+        wideStageOffsets: wideOffsets,
       });
       const { x, y, fov } = viewTrackAt(keys, t);
       camera.fov = fov;
@@ -446,7 +564,7 @@ export default function CameraRig({
     }
     camera.updateMatrixWorld();
     if (metres) {
-      placePins(camera, pinsRef.current, pins, metres, gridSize, tilt, w, h, w - railZone.current);
+      placePins(camera, pinsRef.current, pins, metres, gridSize, tilt, w, h, geometry.current);
     }
 
     const continuous = requested.current;

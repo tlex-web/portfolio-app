@@ -740,7 +740,150 @@ test.describe('Home terrain route and 3D pins (HOME-02, HOME-03, HOME-05)', () =
     await waitForRevealed(page);
     await expectLit3dPin(page, 2);
   });
+
+  test.describe('md stages keep the lit 3D pin and its label clear of the card (G-09-3 a)', () => {
+    // From 768 px the waypoint card is a 448 px column on the left and the rail
+    // box sits on the right. Before 09-21 the lit 3D pin sat on the view axis
+    // (0.5 w; 0.3 w at 768-777 px), under the card from 768 to about 980 px, so
+    // pin and label were hidden at every waypoint (.planning/debug/waypoint2-
+    // label-and-kicker.md Evidence 15:45). Since 09-21 each md stage has a
+    // measured view offset (lib/ascent/framing.ts waypointTarget) and the 3D
+    // label uses placePinLabel, like the poster. Every row centres each waypoint
+    // and checks the lit pin's head and label against the card, every rail mark
+    // and the stage; the annotation says where the pin sat (natural, beside,
+    // above or below the card). Stages from 768 px run the 512² mesh, so every
+    // row is measure-only.
+    const SIZES: ReadonlyArray<readonly [number, number]> = [[768, 900]];
+    for (const [width, height] of SIZES) {
+      test(`lights a clear 3D pin beside its card at ${width} x ${height} @chromium-only`, async ({
+        page,
+      }) => {
+        await budgetMeasureOnly(page);
+        test.setTimeout(120000);
+        await page.setViewportSize({ width, height });
+        await page.goto('/');
+        await scrollOnce(page);
+        await waitForRevealed(page);
+        for (const w of waypoints) {
+          const b = await settledLit3dBoxes(page, w.k);
+          const what = `waypoint ${w.k} at ${width} x ${height}`;
+          test.info().annotations.push({
+            type: `waypoint ${w.k}`,
+            description:
+              `${placementOf(b)}; side ${b.side ?? 'right'}; head ${fmt(b.head)}; ` +
+              `label ${fmt(b.label)}; card ${fmt(b.card)}`,
+          });
+          expect(b.lit, `${what}: the lit 3D pins`).toEqual([String(w.k)]);
+          expect(b.labelDisplay, `${what}: label display`).not.toBe('none');
+          expect(b.labelVisibility, `${what}: label visibility`).toBe('visible');
+          for (const [name, box] of [
+            ['head', b.head],
+            ['label', b.label],
+          ] as const) {
+            expect.soft(inside(box, b.stage), `${what}: ${name} inside the stage`).toBe(true);
+            expect
+              .soft(boxGap(box, b.card), `${what}: ${name} gap to the card`)
+              .toBeGreaterThanOrEqual(0);
+            for (const mark of b.rail)
+              expect
+                .soft(boxGap(box, mark), `${what}: ${name} gap to the ${mark.name}`)
+                .toBeGreaterThanOrEqual(0);
+          }
+        }
+      });
+    }
+  });
 });
+
+type Lit3dBoxes = {
+  stage: Box;
+  card: Box;
+  mark: Box;
+  head: Box;
+  label: Box;
+  labelDisplay: string;
+  labelVisibility: string;
+  side: string | null;
+  lit: string[];
+  rail: (Box & { name: string })[];
+};
+
+const fmt = (b: Box) =>
+  `${b.x.toFixed(1)},${b.y.toFixed(1)} ${b.width.toFixed(1)}x${b.height.toFixed(1)}`;
+
+/**
+ * Centres waypoint `k`, waits for the readout to show its height and its 3D pin
+ * to light, then reads the lit pin's boxes, its card and the rail marks every 10
+ * frames until two reads agree within 0.5 px (the camera has settled).
+ */
+async function settledLit3dBoxes(page: Page, k: number): Promise<Lit3dBoxes> {
+  await scrollBlockToCentre(page, `li[data-k="${k}"]`);
+  await expect(readout(page)).toHaveText(formatMetres(waypoints[k - 1].altitudeM));
+  await expect(pin3d(page, k)).toHaveAttribute('data-active', '');
+  const read = () =>
+    page.evaluate((k): Lit3dBoxes => {
+      const box = (el: Element) => {
+        const r = el.getBoundingClientRect();
+        return { x: r.x, y: r.y, width: r.width, height: r.height };
+      };
+      const one = (selector: string) => {
+        const el = document.querySelector(selector);
+        if (!el) throw new Error(`no ${selector}`);
+        return el;
+      };
+      const pin = one(`[data-pin-layer="3d"] [data-pin="${k}"]`) as HTMLElement;
+      const label = one(`[data-pin-layer="3d"] [data-pin="${k}"] [data-pin-label]`);
+      const style = getComputedStyle(label);
+      const railBox = box(one('[data-ascent-rail]'));
+      const rail = [
+        ...[...document.querySelectorAll('[data-rail-tick]')].map((el, i) => ({
+          name: `tick row ${i}`,
+          ...box(el),
+        })),
+        // The rail line: the rail box's right 1 px column.
+        { name: 'rail line', ...railBox, x: railBox.x + railBox.width - 1, width: 1 },
+        { name: 'readout', ...box(one('[data-ascent-readout]')) },
+        { name: 'marker', ...box(one('[data-ascent-marker]')) },
+      ].filter((b) => b.width > 0 && b.height > 0);
+      return {
+        stage: box(one('[data-ascent-stage]')),
+        card: box(one(`li[data-k="${k}"] section`)),
+        mark: box(pin),
+        head: box(one(`[data-pin-layer="3d"] [data-pin="${k}"] [data-pin-head]`)),
+        label: box(label),
+        labelDisplay: style.display,
+        labelVisibility: style.visibility,
+        side: pin.dataset.label ?? null,
+        lit: [...document.querySelectorAll('[data-pin-layer="3d"] [data-pin][data-active]')].map(
+          (el) => (el as HTMLElement).dataset.pin ?? ''
+        ),
+        rail,
+      };
+    }, k);
+  const near = (a: Box, b: Box) => Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) < 0.5;
+  let last = await read();
+  for (let i = 0; i < 60; i++) {
+    await nextFrames(page, 10);
+    const next = await read();
+    const still = near(next.head, last.head) && near(next.label, last.label);
+    last = next;
+    if (still) return next;
+  }
+  throw new Error(`3D pin ${k} did not settle`);
+}
+
+/**
+ * Where the lit mark sat against its card (waypointTarget's candidates): beside
+ * (8 px right of it), above (8 px above it, left-aligned), below (8 px below
+ * it, left-aligned), else its natural position.
+ */
+function placementOf({ mark, card }: Lit3dBoxes): string {
+  const close = (a: number, b: number) => Math.abs(a - b) < 1.5;
+  if (close(mark.x, card.x + card.width + 8)) return 'beside';
+  if (close(mark.x, card.x) && close(mark.y + mark.height, card.y - 8)) return 'above';
+  if (close(mark.x, card.x) && close(mark.y, card.y + card.height + 8)) return 'below';
+  return 'natural';
+}
 
 const PHONE = { width: 412, height: 839 };
 const DESKTOP = { width: 1440, height: 900 };

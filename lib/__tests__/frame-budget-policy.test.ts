@@ -62,6 +62,7 @@ const PHONE_3D = [
   'waypoint 2 lights its 3D pin',
   'at ${width} x ${height}', // summit frame shows every waypoint, and summit pins clear the plaque
   'a canvas revealed while stationary lights its 3D pin',
+  'lights a clear 3D pin beside its card at ${width} x ${height}', // md stages (G-09-3 a, 09-21)
   'context loss falls back to the poster',
   'draws nothing at rest',
   'draws nothing off-screen',
@@ -103,6 +104,7 @@ describe('frame-budget policy under automation (B1)', () => {
       { title: 'at ${width} x ${height}', measureOnly: true }, // summit pins clear the plaque
       { title: 'route clears the terrain', measureOnly: false },
       { title: 'a canvas revealed while stationary lights its 3D pin', measureOnly: true },
+      { title: 'lights a clear 3D pin beside its card at ${width} x ${height}', measureOnly: true },
       { title: 'context loss falls back to the poster', measureOnly: true },
       { title: 'draws nothing at rest', measureOnly: true },
       { title: 'draws nothing off-screen', measureOnly: true },

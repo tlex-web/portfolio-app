@@ -1,8 +1,9 @@
 /**
  * Pin label placement (G-09-3 a, 09-19; D-07, D-09 and its 2026-10-25
  * amendment; 09-UI-SPEC "Pins (D-09)" and UI Considerations E7; the
- * measurements are in .planning/debug/waypoint2-label-and-kicker.md part a)
- * and the measured summit framing (G-09-2, 09-20; see the section below
+ * measurements are in .planning/debug/waypoint2-label-and-kicker.md part a),
+ * the md stage targets (waypointTarget, G-09-3 a, 09-21) and the measured
+ * summit framing (G-09-2, 09-20; see the sections below
  * placePinLabel). Pure and import-free, like poster-frame.ts: keep it to
  * erasable TypeScript and never add an import.
  *
@@ -231,6 +232,100 @@ export function placePinLabel({
   }
   // candidates is never empty, so best is set.
   return { side: best!.side, dx: best!.dx, clear: false };
+}
+
+/*
+ * Measured md stage framing (G-09-3 a, 3D half, 09-21; D-06, D-07, D-09,
+ * D-20; .planning/debug/waypoint2-label-and-kicker.md Evidence 15:45).
+ *
+ * Each stage camera looks along the line from the summit through its waypoint,
+ * so with no view offset the lit waypoint sits on the view axis: under the
+ * 448 px card from 768 to about 980 px. On md stages the rig picks a target
+ * for the lit pin's anchor (waypointTarget) and moves the optical centre by
+ * natural - target (setViewOffset shows a full-image pixel at its position
+ * minus the offset). The band between the card and the rail is only 62-94 px
+ * at 768 px, narrower than any label, so the target may also sit above or
+ * below the card.
+ */
+
+/** waypointTarget's default clearance from the card and the stage edges. */
+export const WAYPOINT_FRAME_MARGIN_PX = 8;
+
+/** A label whose size is unknown counts as the longest label. */
+const FALLBACK_LABEL: Size = { w: 240, h: 30 };
+
+/** Overlap area (px²) below which two touching boxes count as apart (float rounding). */
+const EPS_PX2 = 1e-6;
+
+/** Where waypointTarget put the anchor. */
+export type WaypointPlacement = 'natural' | 'beside' | 'above' | 'below';
+
+/**
+ * The anchor target (stem foot, stage px) for a stage's lit waypoint. The
+ * candidates, in order:
+ * - natural: where the stage camera puts it with no view offset;
+ * - beside: the mark `margin` right of the card (x = card right + margin +
+ *   12), at the natural height clamped to [margin + 40, stage height - margin];
+ * - above: the mark left-aligned with the card (x = card left + 12), its foot
+ *   `margin` above the card's top;
+ * - below: the mark left-aligned with the card, its top `margin` below the
+ *   card's bottom (y = card bottom + margin + 40).
+ * A candidate is accepted when its mark box (pinBoxes) lies `margin` inside the
+ * stage, keeps `margin` from the card, does not touch any obstacle (the rail
+ * marks), and placePinLabel finds a clear label for it (the obstacles plus the
+ * card, the card as cover, the stage as bounds). No card means natural; a
+ * missing label size counts as 240 x 30 px. If nothing is accepted the result
+ * is natural.
+ */
+export function waypointTarget({
+  natural,
+  card,
+  label,
+  obstacles,
+  stage,
+  margin = WAYPOINT_FRAME_MARGIN_PX,
+}: {
+  natural: { x: number; y: number };
+  card: Box | null;
+  label: Size | null;
+  obstacles: readonly Box[];
+  stage: Size;
+  margin?: number;
+}): { x: number; y: number; placement: WaypointPlacement } {
+  if (!card) return { ...natural, placement: 'natural' };
+  const size = label ?? FALLBACK_LABEL;
+  const inner: Box = { x0: margin, y0: margin, x1: stage.w - margin, y1: stage.h - margin };
+  const keepOut = inflate(card, margin);
+  const bounds: Box = { x0: 0, y0: 0, x1: stage.w, y1: stage.h };
+  const labelObstacles = [...obstacles, card];
+  const minY = margin + PIN_HEIGHT_PX;
+  const maxY = stage.h - margin;
+  const candidates: { x: number; y: number; placement: WaypointPlacement }[] = [
+    { x: natural.x, y: natural.y, placement: 'natural' },
+    {
+      x: card.x1 + margin + PIN_HALF_WIDTH_PX,
+      y: minY > maxY ? natural.y : Math.min(Math.max(natural.y, minY), maxY),
+      placement: 'beside',
+    },
+    { x: card.x0 + PIN_HALF_WIDTH_PX, y: card.y0 - margin, placement: 'above' },
+    { x: card.x0 + PIN_HALF_WIDTH_PX, y: card.y1 + margin + PIN_HEIGHT_PX, placement: 'below' },
+  ];
+  for (const candidate of candidates) {
+    const { mark } = pinBoxes(candidate.x, candidate.y);
+    if (mark.x0 < inner.x0 || mark.y0 < inner.y0 || mark.x1 > inner.x1 || mark.y1 > inner.y1)
+      continue;
+    if (overlap(mark, keepOut) > EPS_PX2) continue;
+    if (obstacles.some((o) => overlap(mark, o) > EPS_PX2)) continue;
+    const placed = placePinLabel({
+      anchor: candidate,
+      label: size,
+      obstacles: labelObstacles,
+      covers: [card],
+      bounds,
+    });
+    if (placed.clear) return candidate;
+  }
+  return { ...natural, placement: 'natural' };
 }
 
 /*
