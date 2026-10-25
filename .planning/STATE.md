@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 09
 current_phase_name: Home Ascent
 status: executing
-stopped_at: Completed 09-06-PLAN.md
-last_updated: "2026-10-25T00:52:17.961Z"
+stopped_at: Completed 09-07-PLAN.md
+last_updated: "2026-10-25T01:10:17.846Z"
 last_activity: 2026-10-25
 last_activity_desc: Phase 09 execution started
-state_head: a186326e919c4c5a0179c315fbaed1c27785129d
+state_head: 5e0d353b4376140811bade354148231a831db720
 progress:
   total_phases: 6
   completed_phases: 8
   total_plans: 54
-  completed_plans: 46
-  percent: 85
+  completed_plans: 47
+  percent: 87
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-24)
 ## Current Position
 
 Phase: 09 (Home Ascent) — EXECUTING
-Plan: 7 of 14
+Plan: 8 of 14
 Status: Ready to execute
 Last activity: 2026-10-25 — Phase 09 execution started
 
-Progress: [█████████░] 85% of v2.0 phases (2 of 6: Phases 7–8 complete); 40/40 planned plans done (Phases 9–12 not yet planned)
+Progress: [█████████░] 87% of v2.0 phases (2 of 6: Phases 7–8 complete); 40/40 planned plans done (Phases 9–12 not yet planned)
 
 ## Performance Metrics
 
@@ -101,6 +101,7 @@ Progress: [█████████░] 85% of v2.0 phases (2 of 6: Phases 7�
 | Phase 09 P04 | 5 min | 2 tasks | 5 files |
 | Phase 09 P05 | 15 min | 3 tasks | 11 files |
 | Phase 09 P06 | 17 min | 3 tasks | 12 files |
+| Phase 09 P07 | 14 min | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -221,6 +222,9 @@ Recent decisions affecting current work:
 - [Phase 09]: 09-06: altitude and rail position interpolate between plateau edges, so the readout never jumps at a plateau
 - [Phase 09]: 09-06: pin label flip measures 240 px from the clear stage edge (stage minus rail scrim from 768 px); refines UI-SPEC E7, flagged for Tim
 - [Phase 09]: 09-06: later pin layers render PinMark under data-ascent-root and call useAscent().syncPins() on mount
+- [Phase 09]: 09-07: useAscentMode decides on the cheap signals before the one WebGL2 probe, so Save-Data, low-memory and reduced-motion visitors are never probed
+- [Phase 09]: 09-07: TerrainCanvas sets position absolute / inset 0 inline because R3F writes position relative inline on its wrapper
+- [Phase 09]: 09-07: composed-contrast backstops (B7/B8) sample the text's Range line boxes, not the block box; hero scrim lg: breakpoint vs UI-SPEC 768 px flagged for 09-14
 
 ### Pending Todos
 
@@ -258,6 +262,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-25T00:52:17.718Z
-Stopped at: Completed 09-06-PLAN.md
+Last session: 2026-10-25T01:10:17.605Z
+Stopped at: Completed 09-07-PLAN.md
 Resume file: None
