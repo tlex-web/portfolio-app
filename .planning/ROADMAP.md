@@ -238,7 +238,7 @@ Plans:
   4. With reduced motion, Save-Data, no WebGL2, low device memory or a lost WebGL context, a static contour poster renders and every Home section shows its final readable state. The WebGL canvas renders on demand and pauses when scrolled off-screen.
   5. Mobile LCP and Home JavaScript size are no worse than the baseline recorded at the end of Phase 7.
 
-**Plans**: 14/14 plans executed in 11 waves
+**Plans**: 22 plans: 14/14 executed in 11 waves, plus 8 gap-closure plans (09-15 to 09-22, waves 12-19, sequential) for UAT gaps G-09-2 to G-09-5
 
 Plans:
 **Wave 1**
@@ -276,6 +276,32 @@ Plans:
 
 **Wave 11** *(blocked on Wave 10 completion)*
 - [x] 09-14-PLAN.md — Apply the frame-budget choice; Home re-baseline (Tim commits PNGs); ratchet raise
+
+Gap closure (09-UAT.md, sequential on the main working tree):
+
+**Wave 12** *(blocked on Wave 11 completion)*
+- [ ] 09-15-PLAN.md — G-09-5: hidden-tab reveal burst restarts (WR-01), IN-05 documented, WR-02 measure-only context-loss test
+
+**Wave 13** *(blocked on Wave 12 completion)*
+- [ ] 09-16-PLAN.md — G-09-3 b / G-09-4 N2: explicit break points for the card kicker and place line
+
+**Wave 14** *(blocked on Wave 13 completion)*
+- [ ] 09-17-PLAN.md — G-09-4 N1: altimeter rail in its own layer above the hero scrim; composed-contrast test
+
+**Wave 15** *(blocked on Wave 14 completion)*
+- [ ] 09-18-PLAN.md — G-09-2 static: compact summit plaque, stats after the frame, poster clearance at eleven sizes
+
+**Wave 16** *(blocked on Wave 15 completion)*
+- [ ] 09-19-PLAN.md — G-09-3 a static: card- and rail-aware poster pin labels; pins above the rail scrim
+
+**Wave 17** *(blocked on Wave 16 completion)*
+- [ ] 09-20-PLAN.md — G-09-2 3D: summit framing measured from the plaque; md switch on the CSS width source
+
+**Wave 18** *(blocked on Wave 17 completion)*
+- [ ] 09-21-PLAN.md — G-09-3 a 3D: md stages frame the lit waypoint clear of its card; 3D labels share the poster rule
+
+**Wave 19** *(blocked on Wave 18 completion)*
+- [ ] 09-22-PLAN.md — One Home re-baseline (Tim commits PNGs), CI green twice, ratchet raise (checkpoints)
 
 **UI hint**: yes
 **Scope notes**:
