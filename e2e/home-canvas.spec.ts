@@ -404,10 +404,16 @@ function inside(inner: Box, outer: Box) {
   );
 }
 
-/** True when two boxes share any area (touching edges do not count). */
-function intersects(a: Box, b: Box) {
-  return (
-    a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height
+/** A settled 3D pin keeps at least this gap from the summit plaque column (09-20, D-03). */
+const PLAQUE_CLEARANCE_PX = 8;
+
+/** Separation of two boxes in px: positive when apart (the larger axis gap), negative when they overlap. */
+function boxGap(a: Box, b: Box): number {
+  return Math.max(
+    b.x - (a.x + a.width),
+    a.x - (b.x + b.width),
+    b.y - (a.y + a.height),
+    a.y - (b.y + b.height)
   );
 }
 
@@ -611,10 +617,15 @@ test.describe('Home terrain route and 3D pins (HOME-02, HOME-03, HOME-05)', () =
   test.describe('summit pins clear the plaque', () => {
     // At the summit the plaque column (card and trail signs) covers the left of a
     // wide stage and docks over the bottom of a narrow one; no waypoint pin may sit
-    // behind it (09-12, Tim: "Fix in 09-12 (Recommended)"). 412 x 839 is the
-    // narrow-stage regression guard. 1440 x 900 and the default 1280 x 720
-    // viewport run the 512² mesh; CI's 412 x 839 verdict is noise (B1).
+    // behind it (09-12, Tim: "Fix in 09-12 (Recommended)"). Since 09-20 (G-09-2,
+    // Tim: "Compact plaque + measured 3D") the rig frames the pins in the clear
+    // rectangle above or right of the measured plaque, so every settled pin box
+    // must be inside the stage, end left of the rail scrim (0 px wide below
+    // 768 px) and keep PLAQUE_CLEARANCE_PX from the plaque column.
+    // 1024 x 768 had pin 4 under the scrim before 09-20. 1440 x 900, 1280 x 720
+    // and 1024 x 768 run the 512² mesh; CI's 412 x 839 verdict is noise (B1).
     for (const { width, height } of [
+      { width: 1024, height: 768 },
       { width: 1440, height: 900 },
       { width: 1280, height: 720 },
       { width: 412, height: 839 },
@@ -632,18 +643,28 @@ test.describe('Home terrain route and 3D pins (HOME-02, HOME-03, HOME-05)', () =
         const plaque = await page.locator('#summit [data-summit-plaque]').boundingBox();
         expect(plaque, 'the summit plaque column has a box').not.toBeNull();
         const stageBox = await stage(page).boundingBox();
+        expect(stageBox, 'the stage has a box').not.toBeNull();
+        const scrim = await page
+          .locator('[data-ascent-rail-scrim]')
+          .evaluate((el) => (el as HTMLElement).offsetWidth);
+        const clearRight = stageBox!.x + stageBox!.width - scrim;
         for (const [i, w] of waypoints.entries()) {
-          await expect(pin3d(page, w.k), `3D pin ${w.k} shown`).toBeVisible();
-          expect(
-            stageBox && inside(boxes[i], stageBox),
-            `3D pin ${w.k} inside the stage`
-          ).toBe(true);
-          expect(
-            intersects(boxes[i], plaque!),
-            `3D pin ${w.k} (${boxes[i].x.toFixed(0)}, ${boxes[i].y.toFixed(0)}) clear of the plaque ` +
-              `(${plaque!.x.toFixed(0)}-${(plaque!.x + plaque!.width).toFixed(0)} x ` +
-              `${plaque!.y.toFixed(0)}-${(plaque!.y + plaque!.height).toFixed(0)})`
-          ).toBe(false);
+          const box = boxes[i];
+          const gap = boxGap(plaque!, box);
+          test.info().annotations.push({
+            type: `pin ${w.k}`,
+            description:
+              `box ${box.x.toFixed(1)},${box.y.toFixed(1)}; gap to the plaque ${gap.toFixed(1)} px; ` +
+              `right edge ${(box.x + box.width).toFixed(1)} vs clear edge ${clearRight.toFixed(1)}`,
+          });
+          await expect.soft(pin3d(page, w.k), `3D pin ${w.k} shown`).toBeVisible();
+          expect.soft(inside(box, stageBox!), `3D pin ${w.k} inside the stage`).toBe(true);
+          expect
+            .soft(box.x + box.width, `3D pin ${w.k} ends left of the rail scrim`)
+            .toBeLessThanOrEqual(clearRight + 1);
+          expect
+            .soft(gap, `3D pin ${w.k} gap to the plaque column`)
+            .toBeGreaterThanOrEqual(PLAQUE_CLEARANCE_PX);
         }
       });
     }

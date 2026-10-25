@@ -26,7 +26,16 @@ import { meshHeightAtUv, uvToWorld } from '@/lib/terrain/heightmap';
  * assumes.
  */
 
-export type RouteCurves = { position: CatmullRomCurve3; target: CatmullRomCurve3 };
+/**
+ * The route curves, plus the key poses they run through (`poses`, n + 2
+ * positions and look targets: plan view, stages, summit), so the rig can build
+ * a camera at any key pose (the measured summit framing, 09-20).
+ */
+export type RouteCurves = {
+  position: CatmullRomCurve3;
+  target: CatmullRomCurve3;
+  poses: { positions: readonly Vec3[]; targets: readonly Vec3[] };
+};
 
 const toVector = (p: Vec3) => new Vector3(p.x, p.y, p.z);
 const W = terrain.extent.widthM;
@@ -73,7 +82,7 @@ export function routeCurvesFor({
   return buildRouteCurves(keyPoses({ anchors: ground, summit, planView }));
 }
 
-/** Builds the position and target curves through the key poses. */
+/** Builds the position and target curves through the key poses (kept as `poses`). */
 export function buildRouteCurves(poses: {
   positions: readonly Vec3[];
   targets: readonly Vec3[];
@@ -81,6 +90,7 @@ export function buildRouteCurves(poses: {
   return {
     position: new CatmullRomCurve3(poses.positions.map(toVector), false, 'centripetal'),
     target: new CatmullRomCurve3(poses.targets.map(toVector), false, 'centripetal'),
+    poses,
   };
 }
 

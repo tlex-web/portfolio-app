@@ -3,30 +3,32 @@
 import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useMotionValueEvent } from 'motion/react';
-import { Vector3, type PerspectiveCamera, type ShaderMaterial } from 'three';
+import { PerspectiveCamera, Vector3, type ShaderMaterial } from 'three';
 import { useAscent } from '@/components/home/AscentController';
 import { terrain } from '@/data/generated/terrain';
 import { DURATION } from '@/lib/animations';
+import {
+  SUMMIT_FRAME_MARGIN_PX,
+  fitCluster,
+  stageViewKeys,
+  summitClearRects,
+  viewTrackAt,
+  type TangentBounds,
+} from '@/lib/ascent/framing';
 import { createFrameBudget, type FrameBudgetVerdict } from '@/lib/ascent/frame-budget';
 import { posterFrame } from '@/lib/ascent/poster-frame';
 import {
   CAMERA_FOV_DEG,
   RELIEF_EXAGGERATION,
   curveParamAt,
-  fovAt,
   planViewPose,
   reliefAt,
   summitHfovDeg,
-  summitVerticalFov,
-  summitViewOffsetXAt,
-  summitViewOffsetYAt,
-  viewOffsetAt,
-  viewOffsetXAt,
   type PinAnchor,
   type Pose,
 } from '@/lib/ascent/route';
 import { downgradeAscent } from '@/lib/useAscentMode';
-import { anchorAt, poseAt, routeCurvesFor } from './route-curve';
+import { anchorAt, poseAt, routeCurvesFor, type RouteCurves } from './route-curve';
 
 /**
  * The terrain camera (HOME-02, HOME-03; D-02, D-03, D-06, D-16, D-20;
@@ -41,17 +43,33 @@ import { anchorAt, poseAt, routeCurvesFor } from './route-curve';
  * mesh height, meshHeightAtUv, not the DEM value: Pitfall 2).
  *
  * The tilt-in (D-16) shares one fraction, reliefAt(p, p_1): uRelief eases from
- * 0 to 1 (with uExaggeration = RELIEF_EXAGGERATION), `up` turns from north
- * (0, 0, -1), which a straight-down view needs, to (0, 1, 0), and below 768 px
- * the view offset ramps in: up, so targets sit above the docked card (D-20),
- * and right, so the stage's waypoint sits at 30 % of the width with room for
- * its label on the right. All three are 0 at p = 0, so the canvas
- * still equals the poster there, and complete at the start of waypoint 1's
- * plateau. The vertical FOV widens across the last leg to summitVerticalFov
- * (aspect, summitHfovDeg), so the summit frame shows every waypoint on a phone
- * too (D-03). Across the same leg the summit view offsets ramp in (09-12): on a
- * wide stage the waypoints move right of the summit plaque (left column), on a
- * narrow one up, above the docked plaque.
+ * 0 to 1 (with uExaggeration = RELIEF_EXAGGERATION) and `up` turns from north
+ * (0, 0, -1), which a straight-down view needs, to (0, 1, 0). Both are 0 at
+ * p = 0, so the canvas still equals the poster there, and complete at the
+ * start of waypoint 1's plateau.
+ *
+ * View offset and FOV follow one key track (lib/ascent/framing.ts
+ * stageViewKeys and viewTrackAt, linear in the curve parameter between keys):
+ * the plan view has no offset and the plan-view FOV; on a narrow stage (below
+ * the md breakpoint) every stage key moves the optical centre up 0.2 x the
+ * height, so targets sit above the docked card (D-20), and right 0.2 x the
+ * width, so the stage's waypoint has room for its label on the right. The
+ * first segment of the track is the tilt-in, so the offsets ramp in with it.
+ * Narrow versus wide follows matchMedia('(min-width: 48rem)'), the CSS md
+ * breakpoint's width source: the canvas is 10 px narrower than the viewport
+ * (scrollbar-gutter), so a canvas-width switch disagreed with the layout at
+ * 768 to 777 px (G-09-2, 09-20).
+ *
+ * Measured summit framing (G-09-2, 09-20; Tim: "Compact plaque + measured
+ * 3D"; D-03): once per route build the waypoint anchors are taken into the
+ * summit camera's space (their tangent bounds). Each frame the summit key is
+ * fitCluster over summitClearRects: the clear rectangles above and right of
+ * the measured plaque column (AscentController geometry.plaque), 16 px inside
+ * the stage and clear of the rail zone. The rig takes the rectangle that holds
+ * the cluster largest, never zooms past the summit's 60 degree (narrow) or 75
+ * degree (wide) horizontal FOV, and centres the pin boxes in it. The summit
+ * key ramps in over the last leg. A geometry measurement invalidates a frame
+ * (subscribeGeometry); nothing reads layout in the frame loop.
  *
  * Until the metres arrive (the canvas is still invisible) or the layout is
  * measured, the camera holds the plan view.
@@ -98,8 +116,8 @@ import { anchorAt, poseAt, routeCurvesFor } from './route-curve';
 
 /** Progress change below which no further frame is needed (D-06). */
 const EPS = 1e-4;
-/** Stages narrower than this dock the card over the lower part (D-20) and get the view offset. */
-const NARROW_STAGE_PX = 768;
+/** The CSS md breakpoint: below it the card docks over the lower part (D-20) and the stages get the view offset. */
+const WIDE_MEDIA = '(min-width: 48rem)';
 /** A 3D pin head this close to the clear stage edge shows its label on the left (until 09-21). */
 const FLIP_PX = 240;
 /** A pin whose anchor is further outside the stage than this share of its size is hidden. */
@@ -140,6 +158,48 @@ function markBudget(
 const scratch = { position: new Vector3(), target: new Vector3() };
 const up = new Vector3();
 const point = new Vector3();
+
+/**
+ * The tangent bounds of the waypoint anchors (at relief 1) as the summit key
+ * pose sees them: a camera at poses.positions[n + 1] looking at
+ * poses.targets[n + 1] with up (0, 1, 0); each anchor in camera space gives
+ * tx = X / -Z and ty = Y / -Z. Anchors behind the camera are skipped. Null
+ * when no anchor is in front of it.
+ */
+function summitTangentBounds(
+  curves: RouteCurves,
+  pins: readonly PinAnchor[],
+  metres: Float32Array,
+  gridSize: number
+): TangentBounds | null {
+  const { positions, targets } = curves.poses;
+  const at = positions[positions.length - 1];
+  const look = targets[targets.length - 1];
+  const cam = new PerspectiveCamera();
+  cam.position.set(at.x, at.y, at.z);
+  cam.up.set(0, 1, 0);
+  cam.lookAt(look.x, look.y, look.z);
+  cam.updateMatrixWorld();
+  const toCamera = cam.matrixWorldInverse;
+  let bounds: TangentBounds | null = null;
+  const p = new Vector3();
+  for (const { u, v } of pins) {
+    const a = anchorAt(metres, gridSize, u, v, 1);
+    p.set(a.x, a.y, a.z).applyMatrix4(toCamera);
+    if (!(p.z < 0)) continue;
+    const tx = p.x / -p.z;
+    const ty = p.y / -p.z;
+    bounds = bounds
+      ? {
+          a0: Math.min(bounds.a0, tx),
+          a1: Math.max(bounds.a1, tx),
+          b0: Math.min(bounds.b0, ty),
+          b1: Math.max(bounds.b1, ty),
+        }
+      : { a0: tx, a1: tx, b0: ty, b1: ty };
+  }
+  return bounds;
+}
 
 /**
  * Moves each 3D pin mark (waypoints, then the summit) to its projected anchor
@@ -214,7 +274,7 @@ export default function CameraRig({
   /** Called when the frame budget drops the pixel ratio to 1, so the canvas keeps it there. */
   onDprStepDown?: () => void;
 }) {
-  const { progress, layout, stageRef, revealed } = useAscent();
+  const { progress, layout, stageRef, revealed, geometry, subscribeGeometry } = useAscent();
   const invalidate = useThree((s) => s.invalidate);
   const setDpr = useThree((s) => s.setDpr);
   const width = useThree((s) => s.size.width);
@@ -222,6 +282,8 @@ export default function CameraRig({
   const applied = useRef(Number.NaN);
   /** Width of the rail scrim (0 below 768 px, where the rail is hidden), measured per stage size. */
   const railZone = useRef(0);
+  /** matchMedia(WIDE_MEDIA).matches, or null before the first read. */
+  const wide = useRef<boolean | null>(null);
   /** True when the last frame asked for another one (state.invalidate in useFrame). */
   const requested = useRef(false);
   /** The running reveal-burst budget, or null when no burst runs. */
@@ -243,10 +305,31 @@ export default function CameraRig({
     invalidate();
   }, [width, height, stageRef, invalidate]);
 
+  // Narrow versus wide on the CSS md breakpoint's width source (G-09-2, 09-20).
+  useEffect(() => {
+    const query = window.matchMedia(WIDE_MEDIA);
+    const read = () => {
+      wide.current = query.matches;
+      invalidate();
+    };
+    read();
+    query.addEventListener('change', read);
+    return () => query.removeEventListener('change', read);
+  }, [invalidate]);
+
+  // A new layout measurement (the plaque box) re-frames the summit.
+  useEffect(() => subscribeGeometry(() => invalidate()), [subscribeGeometry, invalidate]);
+
   const curves = useMemo(() => {
     if (!metres || !(width > 0 && height > 0)) return null;
     return routeCurvesFor({ width, height, anchors: pins, metres, gridSize });
   }, [metres, gridSize, pins, width, height]);
+
+  /** The waypoint cluster's tangent bounds from the summit key pose, once per route build. */
+  const summitBounds = useMemo(
+    () => (curves && metres ? summitTangentBounds(curves, pins, metres, gridSize) : null),
+    [curves, pins, metres, gridSize]
+  );
 
   useEffect(() => invalidate(), [curves, invalidate]);
 
@@ -330,11 +413,29 @@ export default function CameraRig({
       camera.position.copy(scratch.position);
       camera.up.copy(up.set(0, tilt, -(1 - tilt)).normalize());
       camera.lookAt(scratch.target);
-      const narrow = w < NARROW_STAGE_PX;
-      const n = pins.length;
-      camera.fov = fovAt(t, n, summitVerticalFov(w / h, summitHfovDeg(narrow)));
-      const x = viewOffsetXAt(p, first, narrow, w) + summitViewOffsetXAt(t, n, narrow, w);
-      const y = viewOffsetAt(p, first, narrow, h) + summitViewOffsetYAt(t, n, narrow, h);
+      // Before the first media read, fall back to the canvas width.
+      const narrow = !(wide.current ?? w >= 768);
+      const stage = { w, h };
+      const maxFocalPx = w / 2 / Math.tan((summitHfovDeg(narrow) * Math.PI) / 360);
+      const fit = fitCluster({
+        bounds: summitBounds ?? { a0: 0, a1: 0, b0: 0, b1: 0 },
+        stage,
+        rects: summitClearRects(
+          stage,
+          geometry.current?.plaque ?? null,
+          railZone.current,
+          SUMMIT_FRAME_MARGIN_PX
+        ),
+        maxFocalPx,
+      });
+      const keys = stageViewKeys({
+        n: pins.length,
+        narrow,
+        stage,
+        summit: { x: fit.offsetX, y: fit.offsetY, fov: fit.fovDeg },
+      });
+      const { x, y, fov } = viewTrackAt(keys, t);
+      camera.fov = fov;
       if (x !== 0 || y !== 0) camera.setViewOffset(w, h, x, y, w, h);
       else camera.clearViewOffset();
       camera.updateProjectionMatrix();

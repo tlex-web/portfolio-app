@@ -1,9 +1,10 @@
 /**
  * Pin label placement (G-09-3 a, 09-19; D-07, D-09 and its 2026-10-25
  * amendment; 09-UI-SPEC "Pins (D-09)" and UI Considerations E7; the
- * measurements are in .planning/debug/waypoint2-label-and-kicker.md part a).
- * Pure and import-free, like poster-frame.ts: keep it to erasable TypeScript
- * and never add an import.
+ * measurements are in .planning/debug/waypoint2-label-and-kicker.md part a)
+ * and the measured summit framing (G-09-2, 09-20; see the section below
+ * placePinLabel). Pure and import-free, like poster-frame.ts: keep it to
+ * erasable TypeScript and never add an import.
  *
  * The lit pin's label has to stay legible beside the waypoint card (left, from
  * 768 px) and the altimeter rail (right). At 768 px the band between the two is
@@ -37,8 +38,9 @@ export type RailGeometry = {
 
 /**
  * The measured stage: its size, each waypoint card's box at its arrival (index
- * k - 1, null when it could not be read), each pin label's size (index k - 1)
- * and the rail.
+ * k - 1, null when it could not be read), each pin label's size (index k - 1),
+ * the rail, and the summit plaque column's box at the summit arrival (null
+ * when it could not be read; G-09-2, 09-20).
  */
 export type StageGeometry = {
   width: number;
@@ -46,6 +48,7 @@ export type StageGeometry = {
   cards: (Box | null)[];
   labels: (Size | null)[];
   rail: RailGeometry;
+  plaque: Box | null;
 };
 
 /** Half the pin mark's width (the 24 px head). */
@@ -228,4 +231,196 @@ export function placePinLabel({
   }
   // candidates is never empty, so best is set.
   return { side: best!.side, dx: best!.dx, clear: false };
+}
+
+/*
+ * Measured summit framing (G-09-2, 3D half, 09-20; Tim: "Compact plaque +
+ * measured 3D"; D-03, D-16, D-20; .planning/debug/summit-pins-under-plaque.md).
+ *
+ * The summit frame must show all four waypoint pins beside or above the summit
+ * plaque column and clear of the rail zone. Instead of fixed shares of the
+ * stage, the rig measures the plaque (StageGeometry.plaque), takes the clear
+ * rectangles above and right of it (summitClearRects), and fits the pin cluster
+ * into the one that holds it largest (fitCluster), never zooming in past the
+ * summit's 60 / 75 degree horizontal FOV. The view offset and FOV then follow
+ * one key track over the plan view, the stages and the summit (stageViewKeys,
+ * viewTrackAt).
+ *
+ * Pinhole model (consistent with three's setViewOffset(w, h, x, y, w, h), where
+ * a full-image pixel shows at its position minus the offset): a camera-space
+ * point (X, Y, Z) with Z < 0 has tangents tx = X / -Z, ty = Y / -Z; with focal
+ * length F = h / (2 tan(vfov / 2)) its full-image pixel is (w / 2 + F tx,
+ * h / 2 - F ty). A pin box spans PIN_HALF_WIDTH_PX either side of the anchor
+ * and PIN_HEIGHT_PX above it.
+ */
+
+/** The cluster's tangent extent in camera space: tx from a0 to a1, ty from b0 to b1. */
+export type TangentBounds = { a0: number; a1: number; b0: number; b1: number };
+
+/** A view offset in px (setViewOffset x, y) and a vertical FOV in degrees. */
+export type ViewKey = { x: number; y: number; fov: number };
+
+/** The summit frame keeps the pin boxes this far from the plaque, the rail zone and the stage edges. */
+export const SUMMIT_FRAME_MARGIN_PX = 16;
+
+/**
+ * The plan view's and every stage's vertical FOV. A copy of route.ts
+ * CAMERA_FOV_DEG (this module stays import-free; ascent-route.test asserts
+ * they match).
+ */
+export const STAGE_FOV_DEG = 40;
+
+/**
+ * Narrow stages (below the md breakpoint) move the optical centre up by this
+ * share of the stage height (D-20). A copy of route.ts VIEW_OFFSET_SHARE.
+ */
+export const NARROW_VIEW_OFFSET_Y_SHARE = 0.2;
+
+/**
+ * Narrow stages move the optical centre right by this share of the stage
+ * width. A copy of route.ts VIEW_OFFSET_X_SHARE.
+ */
+export const NARROW_VIEW_OFFSET_X_SHARE = 0.2;
+
+/**
+ * fitCluster never goes wider than this share of maxFocalPx (a quarter of the
+ * summit zoom), so a degenerate rectangle cannot ask for a FOV near 180°.
+ */
+const MIN_FOCAL_SHARE = 0.25;
+
+const DEG = Math.PI / 180;
+
+const nonEmpty = (b: Box) => b.x1 > b.x0 && b.y1 > b.y0;
+
+/**
+ * The clear rectangles of a stage at the summit, each `margin` inside the
+ * stage edges and clear of the rail zone (the right `railZone` px, 0 below
+ * 768 px) and of the plaque:
+ * - above the plaque: the full width (less the rail zone) from the top down to
+ *   `margin` above the plaque's top;
+ * - right of it: from `margin` right of the plaque's right edge to the rail
+ *   zone, the full height.
+ * With no plaque, the whole stage less the rail zone. Empty rectangles are
+ * dropped, so the result may be empty.
+ */
+export function summitClearRects(
+  stage: Size,
+  plaque: Box | null,
+  railZone: number,
+  margin: number = SUMMIT_FRAME_MARGIN_PX
+): Box[] {
+  const x0 = margin;
+  const y0 = margin;
+  const x1 = stage.w - Math.max(0, railZone) - margin;
+  const y1 = stage.h - margin;
+  if (!plaque) return [{ x0, y0, x1, y1 }].filter(nonEmpty);
+  return [
+    { x0, y0, x1, y1: Math.min(y1, plaque.y0 - margin) },
+    { x0: Math.max(x0, plaque.x1 + margin), y0, x1, y1 },
+  ].filter(nonEmpty);
+}
+
+/**
+ * The summit frame that fits the pin cluster into one of `rects`. For each
+ * rectangle the focal length F is the smallest of (rect width - 24) / (a1 - a0),
+ * (rect height - 40) / (b1 - b0) and maxFocalPx (a zero extent does not
+ * constrain); the largest F wins, a larger area breaks ties. The view offset
+ * centres the pin boxes in that rectangle:
+ *   offsetX = w / 2 + F (a0 + a1) / 2 - rect centre x
+ *   offsetY = h / 2 - F (b0 + b1) / 2 - 20 - rect centre y
+ * and fovDeg = 2 atan(h / (2 F)) in degrees. F never drops below
+ * MIN_FOCAL_SHARE x maxFocalPx. With no rectangle the whole stage is used.
+ */
+export function fitCluster({
+  bounds,
+  stage,
+  rects,
+  maxFocalPx,
+}: {
+  bounds: TangentBounds;
+  stage: Size;
+  rects: readonly Box[];
+  maxFocalPx: number;
+}): { fovDeg: number; offsetX: number; offsetY: number; rect: Box } {
+  const spanA = bounds.a1 - bounds.a0;
+  const spanB = bounds.b1 - bounds.b0;
+  const options = rects.length > 0 ? rects : [{ x0: 0, y0: 0, x1: stage.w, y1: stage.h }];
+  const focalFor = (r: Box) => {
+    let f = maxFocalPx;
+    if (spanA > 0) f = Math.min(f, (r.x1 - r.x0 - 2 * PIN_HALF_WIDTH_PX) / spanA);
+    if (spanB > 0) f = Math.min(f, (r.y1 - r.y0 - PIN_HEIGHT_PX) / spanB);
+    return f;
+  };
+  let best = options[0];
+  let bestF = focalFor(best);
+  for (const r of options.slice(1)) {
+    const f = focalFor(r);
+    if (f > bestF || (f === bestF && area(r) > area(best))) {
+      best = r;
+      bestF = f;
+    }
+  }
+  const F = Math.max(bestF, MIN_FOCAL_SHARE * maxFocalPx);
+  const cx = (best.x0 + best.x1) / 2;
+  const cy = (best.y0 + best.y1) / 2;
+  return {
+    fovDeg: (2 * Math.atan(stage.h / (2 * F))) / DEG,
+    offsetX: stage.w / 2 + (F * (bounds.a0 + bounds.a1)) / 2 - cx,
+    offsetY: stage.h / 2 - (F * (bounds.b0 + bounds.b1)) / 2 - PIN_HEIGHT_PX / 2 - cy,
+    rect: best,
+  };
+}
+
+/**
+ * The n + 2 view keys of the route: the plan view (no offset, STAGE_FOV_DEG:
+ * the canvas equals the poster at p = 0, D-16), one per stage, then `summit`.
+ * A narrow stage moves the optical centre right by NARROW_VIEW_OFFSET_X_SHARE
+ * of the width and up by NARROW_VIEW_OFFSET_Y_SHARE of the height (D-20); a
+ * wide stage takes wideStageOffsets[k - 1] (default no offset). Every stage key
+ * has STAGE_FOV_DEG.
+ */
+export function stageViewKeys({
+  n,
+  narrow,
+  stage,
+  summit,
+  wideStageOffsets = [],
+}: {
+  n: number;
+  narrow: boolean;
+  stage: Size;
+  summit: ViewKey;
+  wideStageOffsets?: readonly { x: number; y: number }[];
+}): ViewKey[] {
+  const keys: ViewKey[] = [{ x: 0, y: 0, fov: STAGE_FOV_DEG }];
+  for (let i = 0; i < n; i++) {
+    const o = narrow
+      ? { x: NARROW_VIEW_OFFSET_X_SHARE * stage.w, y: NARROW_VIEW_OFFSET_Y_SHARE * stage.h }
+      : (wideStageOffsets[i] ?? { x: 0, y: 0 });
+    keys.push({ x: o.x, y: o.y, fov: STAGE_FOV_DEG });
+  }
+  keys.push(summit);
+  return keys;
+}
+
+/**
+ * The view key at curve parameter t (0 to 1, clamped): key i sits at t = i /
+ * (keys.length - 1), and between neighbours it is linear in s = t x
+ * (keys.length - 1). Over the first segment s is reliefAt (curveParamAt's
+ * first segment), so the narrow offsets ramp in with the tilt-in; on every
+ * plateau t holds, so the key does too.
+ */
+export function viewTrackAt(keys: readonly ViewKey[], t: number): ViewKey {
+  const last = keys.length - 1;
+  if (last <= 0) return keys[0] ?? { x: 0, y: 0, fov: STAGE_FOV_DEG };
+  const s = Math.min(Math.max(t, 0), 1) * last;
+  const i = Math.min(Math.floor(s), last - 1);
+  const f = s - i;
+  const a = keys[i];
+  const b = keys[i + 1];
+  return {
+    x: a.x + (b.x - a.x) * f,
+    y: a.y + (b.y - a.y) * f,
+    fov: a.fov + (b.fov - a.fov) * f,
+  };
 }

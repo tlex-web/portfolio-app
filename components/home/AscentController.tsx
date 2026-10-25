@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useEffectEvent,
@@ -69,6 +70,11 @@ import { useReducedMotion } from '@/lib/useReducedMotion';
  * bounds the stage. The result is written as `data-label` and
  * `--pin-label-dx` on the pin (PinMark). Measurement only, never per frame.
  *
+ * Summit framing (G-09-2, 09-20; Tim: "Compact plaque + measured 3D"): the
+ * geometry also holds the summit plaque column's box at the summit arrival
+ * (`plaque`), and every measurement notifies the subscribeGeometry listeners,
+ * so the 3D rig fits the summit frame to the measured plaque.
+ *
  * Focus contract (D-08): when keyboard focus (`:focus-visible`) enters a
  * waypoint or summit block, the block is scrolled to the centre with
  * scrollIntoView({ block: 'center', behavior: 'auto' }); the spring snaps if
@@ -109,6 +115,11 @@ type AscentContextValue = {
   stageRef: RefObject<HTMLDivElement | null>;
   /** The stage geometry from the last layout measurement (G-09-3 a), or null. */
   geometry: RefObject<StageGeometry | null>;
+  /**
+   * Calls `listener` after every layout measurement has updated `geometry`
+   * (09-20: the rig re-frames the summit); returns the unsubscribe.
+   */
+  subscribeGeometry: (listener: () => void) => () => void;
 };
 
 const AscentContext = createContext<AscentContextValue | null>(null);
@@ -250,7 +261,25 @@ function measureRail(root: HTMLElement, stageRect: DOMRect): RailGeometry {
   };
 }
 
-/** The stage geometry for label placement (G-09-3 a), or null for an empty stage. */
+/**
+ * The summit plaque column (`#summit [data-summit-plaque]`) at the summit
+ * arrival, in stage px: at the arrival the summit block's centre meets the
+ * stage centre, so its top sits half of any block height beyond the stage
+ * above the stage top. Null when the column has no box.
+ */
+function measurePlaque(root: HTMLElement, stageRect: DOMRect): Box | null {
+  const summit = root.querySelector<HTMLElement>('#summit');
+  const plaque = summit?.querySelector<HTMLElement>('[data-summit-plaque]');
+  if (!summit || !plaque) return null;
+  const summitRect = summit.getBoundingClientRect();
+  const r = plaque.getBoundingClientRect();
+  if (!(r.width > 0 && r.height > 0)) return null;
+  const y0 = r.top - summitRect.top - (summitRect.height - stageRect.height) / 2;
+  const x0 = r.left - stageRect.left;
+  return { x0, y0, x1: x0 + r.width, y1: y0 + r.height };
+}
+
+/** The stage geometry for label placement (G-09-3 a) and the summit framing (G-09-2), or null for an empty stage. */
 function measureGeometry(root: HTMLElement, stage: HTMLElement): StageGeometry | null {
   const stageRect = stage.getBoundingClientRect();
   if (!(stageRect.width > 0 && stageRect.height > 0)) return null;
@@ -260,6 +289,7 @@ function measureGeometry(root: HTMLElement, stage: HTMLElement): StageGeometry |
     cards: measureCards(root, stageRect),
     labels: measureLabels(root),
     rail: measureRail(root, stageRect),
+    plaque: measurePlaque(root, stageRect),
   };
 }
 
@@ -313,6 +343,16 @@ export default function AscentController({
   if (revealed && mode !== 'eligible') setRevealed(false);
   const layout = useRef<AscentLayout | null>(null);
   const geometry = useRef<StageGeometry | null>(null);
+  const [geometryListeners] = useState(() => new Set<() => void>());
+  const subscribeGeometry = useCallback(
+    (listener: () => void) => {
+      geometryListeners.add(listener);
+      return () => {
+        geometryListeners.delete(listener);
+      };
+    },
+    [geometryListeners]
+  );
   const { scrollY } = useScroll();
   const progress = useSpring(0, { visualDuration: DURATION.panel, bounce: 0 });
   const active = useRef<number | null>(null);
@@ -352,6 +392,7 @@ export default function AscentController({
   const measure = useEffectEvent((snap: boolean): boolean => {
     const root = rootRef.current;
     layout.current = root ? measureLayout(root, geometry) : null;
+    geometryListeners.forEach((listener) => listener());
     follow(window.scrollY, snap);
     light(progress.get());
     return layout.current !== null;
@@ -415,6 +456,7 @@ export default function AscentController({
         markRevealed,
         stageRef,
         geometry,
+        subscribeGeometry,
       }}
     >
       <div ref={rootRef} data-ascent-root>
