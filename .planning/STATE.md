@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 09
 current_phase_name: Home Ascent
 status: executing
-stopped_at: Completed 09-18-PLAN.md
-last_updated: "2026-10-25T17:00:22.737Z"
+stopped_at: Completed 09-19-PLAN.md
+last_updated: "2026-10-25T17:20:21.560Z"
 last_activity: 2026-10-25
 last_activity_desc: Phase 09 execution started
-state_head: 690538dab3a8c5ce86e3ce7856434b8d6402359c
+state_head: f28fd394870316dc2595af5da72690be9259b4c6
 progress:
   total_phases: 6
   completed_phases: 8
   total_plans: 62
-  completed_plans: 58
-  percent: 94
+  completed_plans: 59
+  percent: 95
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-24)
 ## Current Position
 
 Phase: 09 (Home Ascent) — EXECUTING
-Plan: 19 of 22
+Plan: 20 of 22
 Status: Ready to execute
 Last activity: 2026-10-25 — Phase 09 execution started
 
-Progress: [█████████░] 94%
+Progress: [█████████░] 95%
 
 ## Performance Metrics
 
@@ -113,6 +113,7 @@ Progress: [█████████░] 94%
 | Phase 09 P16 | 7 min | 2 tasks | 6 files |
 | Phase 09 P17 | 8 min | 2 tasks | 6 files |
 | Phase 09 P18 | 14 min | 3 tasks | 9 files |
+| Phase 09 P19 | 17 min | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -263,6 +264,8 @@ Recent decisions affecting current work:
 - [Phase 09]: 09-17: composedContrast (fill-vs-transparent-text shots) is the contrast method for text an overlay may cover; worstContrastBehind stays for text above a scrim (B7)
 - [Phase 09]: 09-18: Full summit plaque only on landscape viewports 1100 to below 1944 px (SUMMIT_FULL_MEDIA in lib/ascent/summit-layout.ts, guarded against app/globals.css); compact elsewhere, motion-safe only
 - [Phase 09]: 09-18: Compact summit stats move after the ascent into [data-summit-details], a group named by the summit h2 (no disclosure, no new heading); the summit block scrim is removed
+- [Phase 09]: 09-19: placePinLabel (lib/ascent/framing.ts) places the lit poster label right, left, above or below the head, 4 px clear of the stage edge, the active card and the rail marks; above/below also slide along the head when no fixed alignment is clear (pin 4 at 768-778 px)
+- [Phase 09]: 09-19: poster and 3D pin layers are z-10 inside the stage (above the rail scrim, under the rail box layer); stage geometry is shared as useAscent().geometry for 09-20/09-21
 
 ### Pending Todos
 
@@ -300,6 +303,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-25T17:00:22.323Z
-Stopped at: Completed 09-18-PLAN.md
+Last session: 2026-10-25T17:20:21.245Z
+Stopped at: Completed 09-19-PLAN.md
 Resume file: None
