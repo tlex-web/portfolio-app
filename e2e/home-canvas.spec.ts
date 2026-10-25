@@ -12,7 +12,7 @@ import { buildWaypoints } from '@/lib/ascent/waypoints';
 import { formatMetres } from '@/lib/photo-format';
 import { meshHeightAtUv, toMetres } from '@/lib/terrain/heightmap';
 import { readout, scrollBlockToCentre } from './helpers/ascent';
-import { nextFrames } from './helpers/webgl';
+import { expectNoErrorPage, nextFrames } from './helpers/webgl';
 
 /**
  * The live terrain canvas in a browser (HOME-02; D-16, D-17, D-18, D-22;
@@ -37,6 +37,10 @@ import { nextFrames } from './helpers/webgl';
  * reveals while the visitor is stationary) and all show in the summit frame;
  * and, in Node, the camera route stays at least 120 m above the decoded 512²
  * mesh from the first waypoint to the summit.
+ *
+ * Resilience (09-11; D-18, D-21; HOME-07): a lost WebGL context turns Home into
+ * the full static poster for the rest of the page view, with no error and no
+ * retry.
  */
 
 const stage = (page: Page) => page.locator('[data-ascent-stage]');
@@ -557,5 +561,55 @@ test.describe('Home terrain route and 3D pins (HOME-02, HOME-03, HOME-05)', () =
 
     await waitForRevealed(page);
     await expectLit3dPin(page, 2);
+  });
+});
+
+test.describe('Home canvas resilience (HOME-02, HOME-07)', () => {
+  test('context loss falls back to the poster @chromium-only', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.setViewportSize({ width: 412, height: 839 });
+    const errors = pageErrors(page);
+    await page.goto('/');
+    await scrollOnce(page);
+    await waitForRevealed(page);
+
+    const lost = await page.evaluate(() => {
+      const gl = document.querySelector('[data-ascent-stage] canvas')?.getContext('webgl2');
+      const ext = gl?.getExtension('WEBGL_lose_context');
+      ext?.loseContext();
+      return !!ext;
+    });
+    expect(lost, 'WEBGL_lose_context available').toBe(true);
+
+    // At once and with no fade: the canvas is gone, the poster and its pins are the terrain.
+    await expect(stage(page)).toHaveAttribute('data-ascent-mode', 'static');
+    await expect(page.locator('canvas')).toHaveCount(0);
+    await expect(page.locator('[data-pin-layer="3d"]')).toHaveCount(0);
+    await expect(page.locator('[data-pin-layer="poster"]')).toBeVisible();
+    expect(
+      await page
+        .locator('[data-pin-layer="poster"]')
+        .evaluate((el) => getComputedStyle(el).visibility)
+    ).toBe('visible');
+    // A full Home, never an error (D-21).
+    await expectNoErrorPage(page);
+    await expect(page.locator('li[data-ascent-block="waypoint"] section')).toHaveCount(
+      waypoints.length
+    );
+    await expect(page.locator('#summit')).toHaveCount(1);
+    await expect(page.getByRole('heading', { level: 2, name: 'About', exact: true })).toHaveCount(1);
+    const downgrade = await page.evaluate(() =>
+      performance
+        .getEntriesByName('ascent-downgrade')
+        .map((mark) => ((mark as PerformanceMark).detail as { reason: string }).reason)
+    );
+    expect(downgrade).toEqual(['context-lost']);
+
+    // Sticky for the page view: scrolling on never brings the canvas back (no retry).
+    await scrollBlockToCentre(page, waypoint(3));
+    await page.waitForTimeout(5000);
+    await expect(stage(page)).toHaveAttribute('data-ascent-mode', 'static');
+    await expect(page.locator('canvas')).toHaveCount(0);
+    expect(errors).toEqual([]);
   });
 });

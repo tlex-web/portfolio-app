@@ -7,6 +7,7 @@ import { tokens } from '@/data/generated/tokens';
 import type { PinAnchor } from '@/lib/ascent/route';
 import { downgradeAscent } from '@/lib/useAscentMode';
 import CameraRig from './CameraRig';
+import ContextLossGuard from './ContextLossGuard';
 import PinLayer3D from './PinLayer3D';
 import TerrainMesh from './TerrainMesh';
 
@@ -30,7 +31,9 @@ import TerrainMesh from './TerrainMesh';
  *
  * A canvas that throws (no context after all, a failed mesh load) is caught by
  * SafeCanvas, whose onCanvasError downgrades Home to static for the rest of the
- * page view: the canvas unmounts and the poster stays (D-18, D-21).
+ * page view: the canvas unmounts and the poster stays (D-18, D-21). A lost
+ * WebGL context does the same through ContextLossGuard (09-11), which ignores
+ * the loss R3F inflicts on its own canvas when it unmounts.
  *
  * `inset: 0` and `position: absolute` are inline because R3F writes
  * `position: relative` inline on its wrapper, which beats the class.
@@ -78,6 +81,7 @@ export default function TerrainCanvas({
         style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
         className="absolute inset-0 opacity-0 transition-opacity duration-(--duration-settle) ease-geological group-data-[ascent-mode=3d]/stage:opacity-100"
       >
+        <ContextLossGuard />
         <TerrainMesh gridSize={gridSize} onMetres={setMetres} shaderRef={shaderRef} />
         <CameraRig
           pins={pins}
