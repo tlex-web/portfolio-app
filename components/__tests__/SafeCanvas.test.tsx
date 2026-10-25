@@ -4,13 +4,15 @@ import { Canvas } from '@react-three/fiber';
 import SafeCanvas from '../SafeCanvas';
 
 let mockCanvasError: Error | null = null;
+let mockCanvasProps: Record<string, unknown> | null = null;
 
 // Stands in for R3F's <Canvas>. Since 9.8 it rethrows a WebGLRenderer that could not be created
 // (no WebGL) from its own render; the error case reproduces exactly that.
 jest.mock('@react-three/fiber', () => {
   const { createElement } = jest.requireActual<typeof import('react')>('react');
   return {
-    Canvas: () => {
+    Canvas: (props: Record<string, unknown>) => {
+      mockCanvasProps = props;
       if (mockCanvasError) throw mockCanvasError;
       return createElement('canvas', { 'data-testid': 'r3f-canvas' });
     },
@@ -22,6 +24,7 @@ describe('SafeCanvas', () => {
 
   beforeEach(() => {
     mockCanvasError = null;
+    mockCanvasProps = null;
     // React reports every caught render error through console.error
     consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
   });
@@ -62,5 +65,46 @@ describe('SafeCanvas', () => {
     expect(inert).toBeInTheDocument();
     expect(inert?.parentElement?.parentElement).toHaveClass('absolute', 'inset-0');
     expect(inert?.parentElement?.parentElement).toHaveStyle({ opacity: '0.5', height: '100%' });
+  });
+
+  describe('onCanvasError (D-18: a failed canvas turns Home static)', () => {
+    it('is called once with the error when the canvas throws, and the inert canvas renders', () => {
+      const error = new Error('Error creating WebGL context.');
+      mockCanvasError = error;
+      const onCanvasError = jest.fn();
+
+      const { container } = render(<SafeCanvas className="absolute inset-0" onCanvasError={onCanvasError} />);
+
+      expect(onCanvasError).toHaveBeenCalledTimes(1);
+      expect(onCanvasError).toHaveBeenCalledWith(error);
+      expect(screen.queryByTestId('r3f-canvas')).not.toBeInTheDocument();
+      expect(container.querySelector('canvas')).toBeInTheDocument();
+    });
+
+    it('is not called while the canvas renders', () => {
+      const onCanvasError = jest.fn();
+
+      render(<SafeCanvas onCanvasError={onCanvasError} />);
+
+      expect(screen.getByTestId('r3f-canvas')).toBeInTheDocument();
+      expect(onCanvasError).not.toHaveBeenCalled();
+    });
+
+    it('is not forwarded to the R3F Canvas', () => {
+      render(<SafeCanvas frameloop="demand" onCanvasError={jest.fn()} />);
+
+      expect(mockCanvasProps).not.toBeNull();
+      expect(mockCanvasProps).toHaveProperty('frameloop', 'demand');
+      expect(mockCanvasProps).not.toHaveProperty('onCanvasError');
+    });
+
+    it('without the prop, a throwing canvas still falls back to the inert canvas', () => {
+      mockCanvasError = new Error('Error creating WebGL context.');
+
+      const { container } = render(<SafeCanvas />);
+
+      expect(container.querySelector('canvas')).toBeInTheDocument();
+      expect(screen.queryByTestId('r3f-canvas')).not.toBeInTheDocument();
+    });
   });
 });
