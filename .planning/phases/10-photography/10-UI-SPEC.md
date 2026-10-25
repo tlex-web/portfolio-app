@@ -15,7 +15,7 @@ created: "2026-10-26"
 >
 > **Baseline:** `07-UI-SPEC.md` is the design system, `08-UI-SPEC.md` the terrain and footer conventions, `09-UI-SPEC.md` the poster, pin and label conventions. This spec **inherits** tokens v2, the type roles, the spacing scale, interaction states, motion tokens and every guardrail, and redefines none of them. Where it adds something (contrast pairs, layout variants, a CSS rule), it says so.
 >
-> **Source tags:** **[D-NN]** = a locked decision in `10-CONTEXT.md`. **[07]** / **[08]** / **[09]** = inherited from that phase's UI-SPEC. **[RES]** = `10-RESEARCH.md` (probe results, Pitfall N, Pattern N, OQ N). **[REPO]** = repo scouting on 2026-10-26. **[UUPM]** = a `ui-ux-pro-max` rule ID. **[MEAS]** = measured this session (text widths with the project's built fonts in Chromium 156; layout sweeps; contrast with colorjs.io). **Discretion (researcher)** = an item CONTEXT handed to Claude or to this spec. **⚠ default — confirm with Tim** = a value only Tim can settle; each is also listed in "Defaults to Confirm with Tim". None of those is presented as his decision.
+> **Source tags:** **[D-NN]** = a locked decision in `10-CONTEXT.md`. **[07]** / **[08]** / **[09]** = inherited from that phase's UI-SPEC. **[RES]** = `10-RESEARCH.md` (probe results, Pitfall N, Pattern N, OQ N). **[REPO]** = repo scouting on 2026-10-26. **[UUPM]** = a `ui-ux-pro-max` rule ID. **[MEAS]** = measured this session (text widths with the project's built fonts in Chromium 156; layout sweeps; contrast with colorjs.io). **Discretion (researcher)** = an item CONTEXT handed to Claude or to this spec. **[TIM 2026-10-26]** = a researcher default that Tim confirmed on 2026-10-26 (he picked the recommended option for all six items in the `/gsd-ui-phase` session); the six are listed in "Defaults Confirmed by Tim". No unconfirmed defaults are left in this spec.
 >
 > **Not decided here (open checkpoint):** 10-RESEARCH Open Question 1, the mechanism for previous/next (D-08 vs the probe finding). Tim re-decides it at planning. This contract is written so it holds under every option: it specifies outcomes (the URL names the shown photo, no history entry is added, no dialog appears on the full page, the pressed control keeps focus), not the API that produces them.
 
@@ -50,7 +50,7 @@ Known-good icons for Phase 10 (non-exhaustive; any `dist/ssr` icon that follows 
 | `ArrowLeftIcon` | 20 | "All photographs" link on the photo page |
 | `ArrowsOutIcon` | 20 | "Open photo" (carousel, stepper) |
 | `ArrowSquareOutIcon` | 16 | Trailing glyph on external source links in hotspot details |
-| `ArrowClockwiseIcon` | 20 | "Retry" in the photo load-error state |
+| `ArrowClockwiseIcon` | 20 | "Retry" (name "Retry loading photo") in the photo load-error state |
 
 Map pins, the summit mark, leader lines, hotspot markers and numbered dots are bespoke marks (plain elements or inline SVG), not icons [09].
 
@@ -63,7 +63,7 @@ Inherited unchanged from 07 (multiples of 4 on Tailwind's 4 px base).
 | Token | Value | Tailwind | Phase 10 use |
 |-------|-------|----------|--------------|
 | xs | 4px | `1` | Plate vertical padding (`py-1`); counter ↔ caret gap; place line → story (`mt-1`) |
-| sm | 8px | `2` | Plate horizontal padding (`px-2`); label insets inside the map sheet and stage; gap between stacked labels; chrome button gap (`gap-2`); kicker → h1 (`mb-2`) |
+| sm | 8px | `2` | Plate horizontal padding (`px-2`); hotspot detail panel padding (`p-2`, so the panel text lines up with the `px-2` label above it); label insets inside the map sheet and stage; gap between stacked labels; chrome button gap (`gap-2`); kicker → h1 (`mb-2`) |
 | md | 16px | `4` | Strip vertical padding (`py-4`); chrome horizontal padding (`px-4`); grid gap (`gap-4`); gutter outer inset; mobile gutter |
 | lg | 24px | `6` | Header band bottom padding (`pb-6`); header → view (`pt-6`); map margin line column gap (`gap-x-6`) |
 | xl | 32px | `8` | Header band top padding (`pt-8`); strip column gap (`gap-x-8`); header row gap (`gap-x-8`) |
@@ -74,7 +74,7 @@ Inherited unchanged from 07 (multiples of 4 on Tailwind's 4 px base).
 - **Touch targets:** every button and link ≥ 44 px (`min-h-11 min-w-11`) [07]. Map label plates are 48 px tall on the wide tier and 68 px on the compact tier (D-04 asks for ≥ 44). Numbered hotspot dots draw 24 px and hit 44 px.
 - **Component sizes:** lightbox chrome bar 56 px (`h-14`); map label plate width 240 px (`w-60`, wide tier) and 144 px (`w-36`, compact tier); summit plate 93 × 48 px (content width); hotspot gutter plate 192 px (`w-48`); reserved hotspot gutter 216 px (`w-54`); map preview thumbnail 160 px (`w-40`); map dot 12 px + 2 px casing; hotspot marker 12 px + 2 px casing.
 - **Strokes:** 1 px leader lines, borders and neatline; 2 px dashed border for the approximate map dot [08 dashed tick]; 2 px accent bar under the selected segment (`h-0.5`, a stroke, not spacing); 3 px gallery-black casing under hotspot leaders; 2 px focus ring [07].
-- **Geometric values:** the map sheet side (see Map), the photo `aspect-ratio` from the manifest, justified-row `flex` values, label positions as `calc(<fraction> * 100cqw + <n>px)`.
+- **Geometric values:** the map sheet side (see Map), the photo `aspect-ratio` from the manifest, justified-row `flex` values, label positions as `calc(<fraction> * 100cqw + <n>px)`. Every fixed `<n>` in those positions is a scale step (4, 8, 12 = 8 + 4, 16, 20 = 16 + 4) or is derived from a declared box size, never a free offset: "vertically centred on the dot" is written `dot y − H / 2` with the plate height constant `H` (48 wide, 68 compact), and the executor uses the constant, not a literal.
 - **Banned:** half steps for spacing and arbitrary pixel spacing [07].
 
 ### Layout widths, breakpoints, layers
@@ -166,6 +166,14 @@ app/(site)/photos/@modal/(.)[slug]     Server → LightboxDialog (client <dialog
 
 - **Heading outline.** `/photos`: h1 "Photographs" → sr-only h2 naming the view. Lightbox: the dialog is labelled by its own h2 (the photo title). Photo page: h1 = the photo title. No level skips [UUPM `heading-hierarchy`].
 - **Exactly one view is mounted** (`key={view}`), never two hidden by CSS [RES Pitfall 6].
+- **Focal point per surface** (the one element that leads; everything else is subordinate in size and contrast [UUPM `visual-hierarchy`, `content-priority`]). The header band is the same compact strip on every view and never competes with the anchor below it:
+
+| Surface | Primary visual anchor | Why it leads |
+|---------|-----------------------|--------------|
+| `/photos` Map | **The map sheet** | The largest block (660 px at 1440 × 900, full-bleed on phones) and the only relief surface on the page; plates and margin line sit inside or under it |
+| `/photos` Grid | **The photographs in the first row** | Images are the largest, highest-contrast element; captions are 16/14 px text below each, with no overlay |
+| `/photos` Carousel | **The front frame** (3D) / **the shown photo** (stepper) | Centred in the 448 / 576 px frame box; the controls bar below is secondary, and "Open photo" is its only accent |
+| Viewer (modal and page) | **The photo stage** | The largest contain-fit box on gallery black; chrome is 56 px of outline buttons, the strip text sits below it, and gutter labels are 14 px plates beside it |
 - **`data-photo-id="{slug}"`** is set on every element that can open a photo (map pin link, grid tile link, carousel/stepper "Open photo"), for focus restore.
 - **Document titles** (template `%s · Tim Lui` [REPO `app/layout.tsx:32`]): `/photos` → `Photographs · Tim Lui`; a photo → `{title} · Tim Lui`, kept in sync on every step.
 - **URLs.** Map is `/photos` (no param). Grid `/photos?view=grid`, Carousel `/photos?view=carousel`. Unknown `view` values render the map [RES `parseView`]. Switching views adds no history entry [locked].
@@ -177,7 +185,7 @@ app/(site)/photos/@modal/(.)[slug]     Server → LightboxDialog (client <dialog
 | Property | Spec |
 |----------|------|
 | Band | Container, `pt-8 pb-6 border-b border-line`, `flex flex-wrap items-end justify-between gap-x-8 gap-y-4`. Not sticky. No prose, no hero image |
-| Kicker | `<p class="mb-2 font-mono text-sm text-ink-muted">`: **`4 waypoints · 1,617–2,760 m · Zermatt`**. Count = `countLabel(photos.length, 'waypoint', 'waypoints')`; range = lowest and highest DEM heights, en dash U+2013, one unit after the upper value (`formatMetres`); place = the first part of the sheet title `Zermatt – Matterhorn`, read from one shared constant (today that literal lives only in `components/site/SiteFooter.tsx:102`; the planner moves it to data so the footer and kicker share it, zero visual diff for the footer). 311 px wide [MEAS], so it fits one line at 375. ⚠ default — confirm with Tim (wording; the range does not repeat "approx." for the hand-placed Riffelsee height) |
+| Kicker | `<p class="mb-2 font-mono text-sm text-ink-muted">`: **`4 waypoints · 1,617–2,760 m · Zermatt`**. Count = `countLabel(photos.length, 'waypoint', 'waypoints')`; range = lowest and highest DEM heights, en dash U+2013, one unit after the upper value (`formatMetres`); place = the first part of the sheet title `Zermatt – Matterhorn`, read from one shared constant (today that literal lives only in `components/site/SiteFooter.tsx:102`; the planner moves it to data so the footer and kicker share it, zero visual diff for the footer). 311 px wide [MEAS], so it fits one line at 375. Wording confirmed by Tim, including no "approx." on the range for the hand-placed Riffelsee height [TIM 2026-10-26] |
 | h1 | `Photographs` (base h1: Schibsted 40/44 600), matching Home's trail sign |
 | View switcher | Right of the title block from `md` (`items-end` aligns it with the h1 baseline row); wraps below the title on phones |
 
@@ -204,10 +212,10 @@ app/(site)/photos/@modal/(.)[slug]     Server → LightboxDialog (client <dialog
 |----------|------|
 | Wrapper | `<section aria-label="Map of the photo locations">` holding the sheet and its margin line |
 | Sheet box | `relative aspect-square overflow-hidden border border-line bg-surface` with `container-type: inline-size` (`@container`). The full 11 × 11 km extent, no crop, no pan, no zoom, no tiles [D-01] |
-| Sheet side `S` | Below 640 px: **full-bleed** (`-mx-4`, `S` = viewport width), so phones get the largest sheet. From 640 px: centred, `width: min(100%, max(30rem, calc(100svh - var(--nav-h) - 11rem)))`, so on desktop the whole sheet fits the first viewport under the header band (11rem = band 128 px + 24 px above + 24 px below the view). At 1440 × 900 → 660 px; 768 × 1024 → 720 px; 375 → 375 px (365 px in CI, whose 10 px scrollbar gutter phones do not have [STATE 07-12]). ⚠ default — confirm with Tim ("full sheet" read as "the whole extent fits the screen", not "as wide as the container") |
+| Sheet side `S` | Below 640 px: **full-bleed** (`-mx-4`, `S` = viewport width), so phones get the largest sheet. From 640 px: centred, `width: min(100%, max(30rem, calc(100svh - var(--nav-h) - 11rem)))`, so on desktop the whole sheet fits the first viewport under the header band (11rem = band 128 px + 24 px above + 24 px below the view). At 1440 × 900 → 660 px; 768 × 1024 → 720 px; 375 → 375 px (365 px in CI, whose 10 px scrollbar gutter phones do not have [STATE 07-12]). Tim confirmed "fit the first viewport": "full sheet" means the whole extent fits the screen, not "as wide as the container" [TIM 2026-10-26] |
 | Base | Night-tinted relief + `hero` contours, as in Color |
 | Marks | One link per photo in an `<ol aria-label="Photo locations, lowest first">`, DOM order = `buildWaypoints()` order (DEM height ascending, ties by id) [D-03; PHOTO-03] |
-| Margin line | Below the sheet, `mt-2 flex flex-wrap justify-between gap-x-6 gap-y-1 font-mono text-sm text-ink-muted` (container gutters on phones): left `Zermatt – Matterhorn · contours every 100 m` (interval from `terrain.contours.hero.intervalM`), right `Terrain: swissALTIRegio, swisstopo` (a short reference beside the map; the full `site.attribution.terrain` stays in the footer) [RES Pitfall 9]. ⚠ default — confirm with Tim (copy and whether a short reference next to the map is wanted) |
+| Margin line | Below the sheet, `mt-2 flex flex-wrap justify-between gap-x-6 gap-y-1 font-mono text-sm text-ink-muted` (container gutters on phones): left `Zermatt – Matterhorn · contours every 100 m` (interval from `terrain.contours.hero.intervalM`), right `Terrain: swissALTIRegio, swisstopo` (a short reference beside the map; the full `site.attribution.terrain` stays in the footer) [RES Pitfall 9]. Tim confirmed both the line and its copy [TIM 2026-10-26] |
 
 ### Waypoint marks (one link each)
 
@@ -242,13 +250,13 @@ Positions are emitted by one pure function as CSS lengths of the form `calc(<fra
 | k | Slot | Rule |
 |---|------|------|
 | 1 (Zermatt) | Top | Plate top 8 px from the sheet top, centred on the dot's x, clamped 8 px inside the sheet; vertical leader down to the dot |
-| 2 (Gornerschlucht) | West of its dot | Plate right edge 20 px left of the dot centre; top = `max(dot y − 34 px, slot 1 bottom + 8 px)`; horizontal leader |
+| 2 (Gornerschlucht) | West of its dot | Plate right edge 20 px left of the dot centre (16 px of leader from the plate, plus the 4 px it runs before reaching the dot centre, where the dot covers its end: 16 + 4, both scale steps); vertically centred on the dot unless that meets slot 1: top = `max(dot y − H / 2, slot 1 bottom + 8 px)` with `H` = 68 px, the compact plate height (so `H / 2` evaluates to 34 px; it is derived, not a spacing value); horizontal leader |
 | 3 (Glacier Trail) | Bottom-left | Plate bottom 8 px above the sheet bottom; centred on the dot's x, clamped between 8 px and (slot 4 left − 8 px − 144 px); vertical leader up |
 | 4 (Riffelsee) | Bottom-right | Plate bottom 8 px above the sheet bottom; centred on the dot's x, clamped 8 px inside the sheet; vertical leader up |
 
-Visual order (top → bottom, then left → right) equals DOM order and tab order [UUPM `keyboard-nav`]. The template is written for the current four waypoints; a Jest guard fails if the photo count changes, so a fifth photo forces a layout revision instead of a silent overlap. ⚠ default — confirm with Tim (the compact arrangement and its two-line labels; D-04 describes label rows but not their placement).
+Visual order (top → bottom, then left → right) equals DOM order and tab order [UUPM `keyboard-nav`]. The template is written for the current four waypoints; a Jest guard fails if the photo count changes, so a fifth photo forces a layout revision instead of a silent overlap. Tim confirmed the compact arrangement: two-line plates in four slots (D-04 describes label rows but not their placement) [TIM 2026-10-26].
 
-**Measured [MEAS]:** a sweep of every integer sheet side with these exact boxes found no plate overlap (8 px gap), no plate covering a dot or the summit, no leader crossing a plate, and visual order = altitude order for `S` 312–559 (compact) and 560–1100 (wide). The compact template fails below `S = 312` (slots 3 and 4 no longer fit side by side); real 320 px phones have `S = 320`. The unit test repeats this sweep; the e2e asserts it on the rendered page at 360, 375, 412, 768, 1024 and 1440.
+**Measured [MEAS]:** a sweep of every integer sheet side with these exact boxes found no plate overlap (8 px gap), no plate covering a dot or the summit, no leader crossing a plate, and visual order = altitude order for `S` 312–559 (compact) and 560–1100 (wide). The compact template fails below `S = 312` (slots 3 and 4 no longer fit side by side); real 320 px phones have `S = 320`. Re-run 2026-10-26 after the revision that writes slot 2's offset as `dot y − H / 2` (the same geometry as before, so the result is unchanged): sides 312–1100 pass, only 310 and 311 fail (slots 3–4 overlap). The unit test repeats this sweep; the e2e asserts it on the rendered page at 360, 375, 412, 768, 1024 and 1440.
 
 ---
 
@@ -301,7 +309,7 @@ One `PhotoViewer` renders both surfaces. **Modal**: inside the `LightboxDialog` 
 | Shell | `<dialog aria-labelledby="{title id}" class="m-0 h-dvh max-h-none w-full max-w-none bg-gallery p-0 text-ink">`; `::backdrop` opaque `gallery`. Scroll lock: `overflow: hidden` on `<html>` (the stable gutter stays, so the nav box does not move [07 Scrollbar rule 3]; G3 extended) | Full-bleed `bg-gallery` block in `<main>`; on the key and gutter tiers `h-[calc(100svh-var(--nav-h))]`, so chrome, photo and strip fill the first viewport and the footer follows |
 | Title | `<h2>` (the dialog label) | `<h1>` |
 | Leading control | — | `← All photographs` (`ArrowLeftIcon` + text, `text-base font-semibold text-ink-muted hover:text-ink`, `min-h-11`) → `/photos`. On the scroll tier it sits on its own row above the chrome |
-| Close | `×` button (`aria-label="Close"`), Escape (last layer), browser Back | "All photographs", Escape (last layer) → `/photos`; never a blind `history.back()` [D-08] |
+| Close | `×` button (accessible name `Close photo`; visible text `Close` from 768 px), Escape (last layer), browser Back | "All photographs", Escape (last layer) → `/photos`; never a blind `history.back()` [D-08] |
 | Focus on open | The Close button [RES probe] | Normal page load (no forced focus) |
 
 ### Layout tiers
@@ -312,7 +320,7 @@ One `PhotoViewer` renders both surfaces. **Modal**: inside the `LightboxDialog` 
 | **Key** | 768–1279 px, height ≥ 640 | Fixed, no surface scroll: `flex flex-col`; chrome (56 px), stage (`flex-1 min-h-0`), strip (content height). Strip in two columns. Hotspots use numbered dots + the key |
 | **Gutter** | ≥ 1280 px, height ≥ 640 | As Key, but the stage reserves a **216 px gutter on each side** of the photo box for the callouts; the gutters stay reserved when labels are hidden, so the photo never resizes on toggle |
 
-**The gutter tier starts at 1280 px, not "about 768" (D-11).** A callout plate needs 192 px plus a 16 px outer inset and 8 px to the photo: 216 px a side. At 1024 × 768 a fitted 3:2 photo leaves 110 px gutters; reserving 216 px there would shrink the photo to 592 px wide. From 1280 × 800 the photo keeps 848 px with full gutters. ⚠ default — confirm with Tim.
+**The gutter tier starts at 1280 px, not "about 768" (D-11).** A callout plate needs 192 px plus a 16 px outer inset and 8 px to the photo: 216 px a side. At 1024 × 768 a fitted 3:2 photo leaves 110 px gutters; reserving 216 px there would shrink the photo to 592 px wide. From 1280 × 800 the photo keeps 848 px with full gutters. Tim confirmed gutters from 1280 px wide and 640 px tall, with numbered dots + the key below that [TIM 2026-10-26].
 
 ### Chrome bar (56 px, `h-14 px-4 flex items-center justify-between gap-2`)
 
@@ -323,9 +331,9 @@ One `PhotoViewer` renders both surfaces. **Modal**: inside the `LightboxDialog` 
 
 | Control | Spec |
 |---------|------|
-| Buttons | `inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-sm border border-line-strong text-ink`; from 768 px Hide labels, Zoom and Close show their text label after the icon (`px-4`), below 768 px they are icon-only with the same accessible name. Hover: border `ink-muted`. Pressed toggles (`aria-pressed="true"`): `bg-ink text-gallery` (16.87). Ends: `aria-disabled` as in the carousel |
+| Buttons | `inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-sm border border-line-strong text-ink`; from 768 px Hide labels, Zoom and Close show their text label after the icon (`px-4`), below 768 px they are icon-only with the same accessible name. Accessible names: `Hide labels`, `Zoom photo`, `Close photo` (set with `aria-label`; each starts with its visible word, so the name contains the visible label for speech input, WCAG 2.5.3) [UUPM `aria-labels`, `icon-context`]. Hover: border `ink-muted`. Pressed toggles (`aria-pressed="true"`): `bg-ink text-gallery` (16.87). Ends: `aria-disabled` as in the carousel |
 | Hide labels | Constant name "Hide labels", `aria-pressed`, shortcut H, `aria-keyshortcuts="h"`, `EyeSlashIcon` [D-10]. Rendered for every photo; the preference is global |
-| Zoom | Constant name "Zoom", `aria-pressed`, shortcut Z, icon `MagnifyingGlassPlusIcon` fitted / `MagnifyingGlassMinusIcon` zoomed [D-06] |
+| Zoom | Constant name "Zoom photo" (visible text `Zoom`), `aria-pressed`, shortcut Z, icon `MagnifyingGlassPlusIcon` fitted / `MagnifyingGlassMinusIcon` zoomed [D-06] |
 | Fit at 375 | Left group ≈ 160 px + right group 3 × 44 + 2 × 8 = 148 px, inside 343 px |
 
 ### Stage and photo
@@ -336,7 +344,7 @@ One `PhotoViewer` renders both surfaces. **Modal**: inside the `LightboxDialog` 
 | Image | `<picture>` with manifest AVIF + WebP 1024/1600/2560, `sizes` from the tier (`(min-width: 1280px) calc(100vw - 432px), 100vw`), editorial `alt`, `loading="eager"`, `fetchPriority="high"`. It first paints **the derivative the opener already loaded** (640/1024), then swaps to the large one once decoded, with no fade and no blur filter, so the morph pair never meets an empty box [RES Pitfall 4]. No `loading.tsx` in the modal slot |
 | Neighbours | After the current photo decodes, the previous and next photos' display derivatives are fetched at low priority. Discretion (researcher) |
 | Slow load | If nothing has decoded after 1 s, a centred `text-sm text-ink-muted` "Loading photo" appears in the box (no spinner, no animation) [UUPM `progressive-loading`] |
-| Load error | The box keeps its ratio and shows, centred, `Couldn't load this photo.` (`text-sm text-ink`) and a **Retry** button (secondary on gallery, `ArrowClockwiseIcon`), which reloads the large derivative. The chrome and strip stay fully usable |
+| Load error | The box keeps its ratio and shows, centred, `Couldn't load this photo.` (`text-sm text-ink`) and a **Retry** button (visible text `Retry`, accessible name `Retry loading photo`; secondary on gallery, `ArrowClockwiseIcon`), which reloads the large derivative. The chrome and strip stay fully usable |
 | Click / tap | Toggles zoom (except on a numbered dot) |
 | Zoom (D-06) | Zoomed = the 2560 px derivative at 2560 CSS px inside the stage, which becomes `overflow: auto` over its full area (gutters included). Entering by click keeps the clicked point under the pointer; by Z or the button, centres the photo. Drag pans (4 px threshold before a pan starts, so a click still unzooms) [UUPM `drag-threshold`]; ←/→/↑/↓ pan 80 px per press. Hotspots hide while zoomed. Cursor `zoom-in` / `grab` (`grabbing` while dragging). Instant under reduced motion; with motion, the change is instant too (a scale animation would need a transform on an `overflow` box). Native pinch is never blocked: the stage has `touch-action: pan-y pinch-zoom` fitted and `pan-x pan-y pinch-zoom` zoomed |
 | Swipe | Fitted only: a horizontal drag of ≥ 48 px that is 1.5 × its vertical travel steps on release; the photo follows the finger until then and springs back over `--duration-fast` if the swipe is short or at an end. Reduced motion: no follow, step on release [UUPM `gesture-feedback`]. Buttons and keys cover the same action [UUPM `gesture-alternative`] |
@@ -361,7 +369,7 @@ One `PhotoViewer` renders both surfaces. **Modal**: inside the `LightboxDialog` 
 | Trap | Tab and Shift+Tab wrap inside the dialog (explicit wrap handler; WebKit otherwise escaped to `BODY` [RES probe]) |
 | Order | Chrome (left → right) → hotspot gutter labels (reading order) → strip (key rows, expanded-detail links, Retry) |
 | Escape layers | `keydown` with `preventDefault()` (the native `cancel` stops being cancelable from the third press [RES Pitfall 5]): 1 collapse the expanded hotspot (focus returns to its label or key row) → 2 leave zoom → 3 close (modal) / go to `/photos` (page) [D-06] |
-| Return on close (OQ2 decided) | Focus moves to `[data-photo-id="{slug of the photo shown at close}"]` in the still-mounted view (map pin link, grid tile, or the carousel's "Open photo", whose carousel first turns to that photo), then falls back to the original opener, then to the h1. Rationale: the WAI-ARIA dialog pattern allows a different return target when it gives a more logical workflow; after stepping to photo 3, landing on photo 3's tile keeps the visitor's place, and with no stepping the target is the opener itself, as LBOX-03 states. The element is scrolled into view if needed. ⚠ default — confirm with Tim (LBOX-03 reads "the thumbnail or pin that opened it") |
+| Return on close (OQ2 decided) | Focus moves to `[data-photo-id="{slug of the photo shown at close}"]` in the still-mounted view (map pin link, grid tile, or the carousel's "Open photo", whose carousel first turns to that photo), then falls back to the original opener, then to the h1. Rationale: the WAI-ARIA dialog pattern allows a different return target when it gives a more logical workflow; after stepping to photo 3, landing on photo 3's tile keeps the visitor's place, and with no stepping the target is the opener itself, as LBOX-03 states. The element is scrolled into view if needed. Tim confirmed this order over the literal LBOX-03 reading ("the thumbnail or pin that opened it") [TIM 2026-10-26] |
 | Not obscured | The sticky chrome on the scroll tier never covers a focused strip control: the global `scroll-margin-top` (nav-h + 16 = 80 px) exceeds the 56 px bar [07; UUPM `focus-not-obscured`] |
 
 ### Strip (D-05, D-07, LBOX-04, LBOX-07)
@@ -398,7 +406,7 @@ Shared rules: markers and labels follow reading order (top-left → bottom-right
 | Stacking | Per gutter, sorted by marker `y`: centred on the marker's y, pushed down to clear the previous by 8 px, pushed up from the bottom on overflow, 8 px inside the stage; an expanded panel counts in the stack. Pure function, unit-tested for any count (today 1–2 per photo, 6 in total) |
 | Leader | Straight line from the label's inner edge (at the marker's y, clamped 8 px inside the plate) to the marker: 1 px `ink` over a 3 px `gallery` casing, `aria-hidden`; expanded: 1 px `accent` |
 | Marker | Decorative and `pointer-events: none` on this tier (a click on the photo is zoom) |
-| Expanded panel | Directly under its label, same width, `mt-2 rounded-sm border border-line bg-gallery p-3`: description `text-sm text-ink-muted`, then a `<ul>` of facts (`text-sm text-ink-muted`, `mt-2` each) with the source as a link: `Wikipedia` for Wikipedia URLs (prose-link style in `accent`, `ArrowSquareOutIcon` 16 px, `target="_blank" rel="noopener noreferrer"`, sr-only "(opens in a new tab)"); non-URL sources print as plain text (`Source: Tim`, `Source: swissALTIRegio terrain model` for `dem`). Panels never cover the photo [D-09]. If a gutter's stack ever exceeds the stage height, that gutter scrolls (last resort) |
+| Expanded panel | Directly under its label, same width, `mt-2 rounded-sm border border-line bg-gallery p-2` (8 px, the plate's own `px-2` inset, so label and panel text share one left edge; 174 px of text width in the 192 px panel): description `text-sm text-ink-muted`, then a `<ul>` of facts (`text-sm text-ink-muted`, `mt-2` each) with the source as a link: `Wikipedia` for Wikipedia URLs (prose-link style in `accent`, `ArrowSquareOutIcon` 16 px, `target="_blank" rel="noopener noreferrer"`, sr-only "(opens in a new tab)"); non-URL sources print as plain text (`Source: Tim`, `Source: swissALTIRegio terrain model` for `dem`). Panels never cover the photo [D-09]. If a gutter's stack ever exceeds the stage height, that gutter scrolls (last resort) |
 | Keyboard | Enter/Space toggles; Escape collapses and returns focus to the label [D-09] |
 
 **Key and scroll tiers (< 1280 px or height < 640):**
@@ -407,7 +415,7 @@ Shared rules: markers and labels follow reading order (top-left → bottom-right
 |------|------|
 | Dots | 24 px numbered circles (`bg-ink text-gallery font-mono text-sm`, 2 px `gallery` casing) at the annotation positions, 44 × 44 px hit area, numbered in reading order. Pointer-only (`tabIndex={-1}`, `aria-hidden`): a tap expands the matching key row; the key rows are the keyboard path. Expanded dot: `bg-accent text-ink-inverse` [D-11] |
 | Key | In the strip's left column after the story, `mt-4 <ul aria-label="Labels">`: each row a `<button aria-expanded>` `min-h-11 w-full flex items-center gap-2 text-left`: the same 24 px numbered badge, title `text-sm font-semibold text-ink`, ` · ` and height `font-mono text-sm text-ink-muted` (`① Matterhorn summit · 4,478 m` in D-11's terms) |
-| Expanded row | The description and facts expand in place below the row (same content and link style as the gutter panel), and its dot turns accent. No sheet, no overlay on the photo [D-11] |
+| Expanded row | The description and facts expand in place below the row in the same panel box as the gutter tier (`mt-2 rounded-sm border border-line bg-gallery p-2`, full key width; same content and link style), and its dot turns accent. No sheet, no overlay on the photo [D-11] |
 | Hidden labels | Dots disappear; the key stays and still expands (no dot highlight while hidden) |
 
 ### Open and close motion (LBOX-06)
@@ -470,17 +478,17 @@ All durations and easings are 07 tokens [07 DSGN-08]. At most one element animat
 | Element | Copy |
 |---------|------|
 | Primary CTA | **Open photo** (Carousel and stepper; the one accent fill on `/photos`) |
-| h1 / kicker | `Photographs` / `4 waypoints · 1,617–2,760 m · Zermatt` (derived; ⚠ wording) |
+| h1 / kicker | `Photographs` / `4 waypoints · 1,617–2,760 m · Zermatt` (derived; wording confirmed [TIM 2026-10-26]) |
 | View switcher | Group `View`; buttons `Map`, `Grid`, `Carousel`; sr-only h2 per view `Map`, `Grid`, `Carousel` |
-| Map | Section `Map of the photo locations`; list `Photo locations, lowest first`; link names `{title}, {altitude}` (`…, 2,760 m approx.`); summit `Matterhorn` / `4,478 m`; margin `Zermatt – Matterhorn · contours every 100 m` · `Terrain: swissALTIRegio, swisstopo` (⚠) |
+| Map | Section `Map of the photo locations`; list `Photo locations, lowest first`; link names `{title}, {altitude}` (`…, 2,760 m approx.`); summit `Matterhorn` / `4,478 m`; margin `Zermatt – Matterhorn · contours every 100 m` · `Terrain: swissALTIRegio, swisstopo` (confirmed [TIM 2026-10-26]) |
 | Grid | List `Photographs, lowest first`; caption `{title}` / `{short place} · {altitude}[ approx.] · {Mon YYYY | YYYY}` |
 | Carousel | Region `Photographs`; buttons `Previous photo`, `Next photo`; counter `2 / 4`; status `Photo 2 of 4: {title}` |
-| Viewer chrome | `Previous photo`, `Next photo`, `Hide labels`, `Zoom`, `Close`; page link `All photographs` |
+| Viewer chrome | Accessible names `Previous photo`, `Next photo`, `Hide labels`, `Zoom photo`, `Close photo`; visible text from 768 px `Hide labels`, `Zoom`, `Close` (each name starts with its visible word); page link `All photographs` |
 | Strip | As the Strip table: place · date, story (approved editorial copy, verbatim), EXIF, position, `© {year} Tim Lui, all rights reserved`, film `Film scan · 2019`, approx `≈ … · ±100 m (approx.)` |
 | Hotspots | Key list `Labels`; sources `Wikipedia` (+ sr-only `(opens in a new tab)`), `Source: Tim`, `Source: swissALTIRegio terrain model` |
 | Live region | `Photo {n} of {total}: {title}` |
 | Loading | `Loading photo` (after 1 s, viewer only) |
-| Error state | `Couldn't load this photo.` + button **Retry** (the strip stays usable). Unknown slug: the shell's designed 404 [07 SHELL-05] |
+| Error state | `Couldn't load this photo.` + button **Retry** (accessible name `Retry loading photo`; the strip stays usable). Unknown slug: the shell's designed 404 [07 SHELL-05] |
 | Empty state | Not applicable at runtime: photo data is committed and typed; zero photos fails the build [08, 09]. A photo with no annotations shows no markers and no key |
 | Destructive confirmation | None. Phase 10 has no destructive actions |
 
@@ -594,10 +602,10 @@ Quick-reference rules applied: `color-contrast`, `color-not-only`, `focus-states
 
 | Item | Decision | Rationale (short) |
 |------|----------|-------------------|
-| OQ2 focus return after prev/next | The photo shown at close (`[data-photo-id]`), then the opener, then the h1 | Matches the visible state; equals the opener when there was no step (⚠ confirm, LBOX-03 wording) |
+| OQ2 focus return after prev/next | The photo shown at close (`[data-photo-id]`), then the opener, then the h1 | Matches the visible state; equals the opener when there was no step. Confirmed by Tim over the LBOX-03 wording [TIM 2026-10-26] |
 | OQ3 map contours | `hero` (100 m) | D-01 names it; meets the 08 density rule at 320 px; one mask |
 | OQ4 wrap | No wrap, `aria-disabled` ends | The order is an ascent; the counter and disabled ends state the bounds |
-| D-11 breakpoint | Gutter callouts from 1280 px (and height ≥ 640) | 216 px gutters need it (⚠ confirm) |
+| D-11 breakpoint | Gutter callouts from 1280 px (and height ≥ 640) | 216 px gutters need it. Confirmed by Tim [TIM 2026-10-26] |
 | Strip stacking | One column on the scroll tier (`< 768` wide or `< 640` tall), two columns above | Content height vs photo size |
 | Kicker, switcher styling | See Header Band | 07 one-primary rule: the switcher is not a primary fill |
 | Map pins and labels | Dots (solid / dashed), plates, leaders, summit plate | 08 dashed convention, 09 plate styling |
@@ -606,18 +614,20 @@ Quick-reference rules applied: `color-contrast`, `color-not-only`, `focus-states
 
 ---
 
-## Defaults to Confirm with Tim
+## Defaults Confirmed by Tim (2026-10-26)
 
-Each item below is a researcher default, **not** Tim's decision.
+These six began as researcher defaults. On 2026-10-26 Tim picked the recommended option for each (his selections in the `/gsd-ui-phase` session), so each row is now his decision. The rejected alternative is kept for the record.
 
-| # | ⚠ Default — confirm with Tim | Alternative |
-|---|------------------------------|-------------|
-| 1 | Hotspot gutter callouts from **1280 px** (and ≥ 640 px tall); numbered dots + key below | Gutters from 768 px with narrower plates (the photo shrinks to make room) |
-| 2 | Compact map labels (sheet < 560 px): two-line 144 × 68 px plates in four fixed slots (top, west, bottom-left, bottom-right) | One-line plates in rows (do not fit below a ≈ 365 px sheet) |
-| 3 | Map sheet sized to fit the first viewport on desktop (660 px at 1440 × 900), full-bleed on phones | Sheet as wide as the container (1088 px at 1440, needs scrolling) |
-| 4 | Focus returns to the photo shown at close | Always the original opener (LBOX-03 literal) |
-| 5 | Kicker `4 waypoints · 1,617–2,760 m · Zermatt` (no "approx." on the range) | `… 1,617–2,760 m approx. …`, or another wording |
-| 6 | Map margin line `Zermatt – Matterhorn · contours every 100 m` · `Terrain: swissALTIRegio, swisstopo` | No line under the map (the footer carries the attribution) |
+| # | Confirmed by Tim 2026-10-26 (his selection) | Decision | Alternative not chosen |
+|---|---------------------------------------------|----------|------------------------|
+| 1 | "From 1280 px (Recommended)" | Hotspot gutter callouts from **1280 px** wide and ≥ 640 px tall; numbered dots + key below that | Gutters from 768 px with narrower plates (the photo shrinks to make room) |
+| 2 | "Two-line plates, 4 slots (Recommended)" | Compact map labels (sheet < 560 px): two-line 144 × 68 px plates in four fixed slots (top, west, bottom-left, bottom-right) | One-line plates in rows (do not fit below a ≈ 365 px sheet) |
+| 3 | "Fit first viewport (Recommended)" | Map sheet sized to fit the first viewport on desktop (660 px at 1440 × 900), full-bleed on phones | Sheet as wide as the container (1088 px at 1440, needs scrolling) |
+| 4 | "Photo shown at close (Recommended)" | Focus returns to the photo shown at close, then the opener, then the h1 | Always the original opener (LBOX-03 literal) |
+| 5 | "No \"approx.\" (Recommended)" | Kicker `4 waypoints · 1,617–2,760 m · Zermatt` | `… 1,617–2,760 m approx. …`, or another wording |
+| 6 | "Add the margin line (Recommended)" | Map margin line `Zermatt – Matterhorn · contours every 100 m` · `Terrain: swissALTIRegio, swisstopo` | No line under the map (the footer carries the attribution) |
+
+**Still open (not decided here):** 10-RESEARCH Open Question 1, the previous/next URL mechanism (D-08). Tim re-decides it at planning; see the scope note at the top.
 
 ---
 
