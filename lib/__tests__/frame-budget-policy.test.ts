@@ -59,6 +59,7 @@ const PHONE_3D = [
   'draws nothing at rest',
   'draws nothing off-screen',
   'pauses while the tab is hidden',
+  'a tab hidden during the reveal burst restarts it at device scale ${scale}',
   'a remount returns to 3D',
 ];
 
@@ -99,6 +100,10 @@ describe('frame-budget policy under automation (B1)', () => {
       { title: 'draws nothing at rest', measureOnly: true },
       { title: 'draws nothing off-screen', measureOnly: true },
       { title: 'pauses while the tab is hidden', measureOnly: true },
+      {
+        title: 'a tab hidden during the reveal burst restarts it at device scale ${scale}',
+        measureOnly: true,
+      },
       { title: 'a remount returns to 3D', measureOnly: true },
       { title: 'a slow device declines to the poster', measureOnly: false },
       { title: 'records the frame-budget verdict at ${width} x ${height}', measureOnly: false },

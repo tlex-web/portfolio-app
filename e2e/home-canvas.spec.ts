@@ -17,8 +17,10 @@ import {
   budgetMeasureOnly,
   countDraws,
   expectNoErrorPage,
+  holdFramesWhileHidden,
   nextFrames,
   readDraws,
+  type HiddenTab,
 } from './helpers/webgl';
 
 /**
@@ -882,6 +884,107 @@ test.describe('Home canvas resilience (HOME-02, HOME-07)', () => {
       .poll(() => readDraws(page), { timeout: 1000, message: 'draws once the tab shows again' })
       .toBeGreaterThan(before);
   });
+
+  // G-09-5 (09-REVIEW WR-01; .planning/debug/hidden-tab-burst-decline.md): a
+  // real background tab runs no animation frame, so a reveal burst it
+  // interrupts must be dropped by the flag change itself. holdFramesWhileHidden
+  // hides the tab at the start of the 4th frame in '3d' (inside the burst) and
+  // holds every frame until show(), the way Chromium does. Measure-only, so the
+  // marks prove it: the first verdict after the show must come from a fresh
+  // burst, never from the stale one (whose samples are the pre-hide frames).
+  for (const scale of [1, 2]) {
+    test(`a tab hidden during the reveal burst restarts it at device scale ${scale} @chromium-only`, async ({
+      browser,
+      baseURL,
+    }) => {
+      test.setTimeout(60000);
+      const context = await browser.newContext({
+        viewport: PHONE,
+        deviceScaleFactor: scale,
+        baseURL,
+      });
+      try {
+        const page = await context.newPage();
+        await budgetMeasureOnly(page); // the marks are the proof, a decline must not act (B1)
+        await countDraws(page);
+        await holdFramesWhileHidden(page, { hideAfterFrames: 3 });
+        const tab = () => page.evaluate(() => (window as unknown as { __tab: HiddenTab }).__tab);
+        const marks = () =>
+          page.evaluate(() =>
+            performance.getEntriesByName('ascent-frame-budget').map((mark) => ({
+              startTime: mark.startTime,
+              ...((mark as PerformanceMark).detail as BudgetMark),
+            }))
+          );
+
+        await page.goto('/');
+        await scrollOnce(page);
+        // No frame runs while hidden: nothing below may wait on requestAnimationFrame.
+        await expect
+          .poll(async () => (await tab()).hiddenAt, {
+            timeout: 20000,
+            message: 'the tab hides during the reveal burst',
+          })
+          .not.toBeNull();
+
+        const drawsAtHide = await readDraws(page);
+        const { drawsAt3dStart } = await tab();
+        expect(typeof drawsAt3dStart, 'draws counted at the first 3D frame').toBe('number');
+        const delta = drawsAtHide - (drawsAt3dStart as number);
+        expect(
+          delta,
+          'no burst draw happened in a 3D frame before the hide, so the test did not hide during a live burst'
+        ).toBeGreaterThanOrEqual(1);
+        expect(
+          await marks(),
+          'the verdict came before the hide, so the test did not hide during the burst'
+        ).toEqual([]);
+
+        await page.waitForTimeout(2000);
+        expect(await readDraws(page), 'draws while hidden').toBe(drawsAtHide);
+        expect(await marks(), 'verdicts while hidden').toEqual([]);
+
+        await page.evaluate(() => (window as unknown as { __tab: HiddenTab }).__tab.show());
+        const { shownAt } = await tab();
+        let first: (BudgetMark & { startTime: number }) | undefined;
+        await expect
+          .poll(
+            async () => {
+              first = (await marks()).find((m) => m.startTime > (shownAt as number));
+              return first !== undefined;
+            },
+            { timeout: 10000, message: 'a frame-budget verdict after the show' }
+          )
+          .toBe(true);
+        const mark = first as BudgetMark & { startTime: number };
+        const afterShow = mark.startTime - (shownAt as number);
+        test.info().annotations.push(
+          {
+            type: `hidden tab at device scale ${scale}`,
+            description: `draws in 3D frames before the hide (drawsAtHide - drawsAt3dStart): ${delta}`,
+          },
+          {
+            type: `first verdict after the show at device scale ${scale}`,
+            description: `${mark.verdict}, samples ${mark.samples}, dpr ${mark.dpr}, median ${mark.medianMs?.toFixed(1) ?? 'n/a'} ms, ${afterShow.toFixed(1)} ms after the show`,
+          }
+        );
+        expect(
+          mark.samples >= FRAME_BUDGET_DEFAULTS.minSamples ||
+            afterShow >= FRAME_BUDGET_DEFAULTS.burstWindowMs,
+          `the first verdict after the show comes from a fresh burst (got samples ${mark.samples}, ${afterShow.toFixed(1)} ms after the show)`
+        ).toBe(true);
+        expect(mark.dpr, 'the canvas pixel ratio (dpr prop [1, 1.5])').toBe(scale === 1 ? 1 : 1.5);
+
+        await expect(stage(page)).toHaveAttribute('data-ascent-mode', '3d');
+        expect(
+          await page.evaluate(() => performance.getEntriesByName('ascent-downgrade').length),
+          'downgrades'
+        ).toBe(0);
+      } finally {
+        await context.close();
+      }
+    });
+  }
 
   test('a remount returns to 3D @chromium-only', async ({ page }) => {
     test.setTimeout(60000);
