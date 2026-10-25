@@ -37,7 +37,7 @@ export default function SummitPlaque() {
     >
       <div aria-hidden="true" className={SCRIM} />
       <div className="mx-auto flex min-h-[calc(100svh-var(--nav-h))] w-full max-w-6xl flex-col justify-end px-4 pb-4 sm:px-6 md:justify-center lg:px-8 motion-reduce:min-h-0 motion-reduce:pb-12">
-        <div className="w-full max-w-md">
+        <div data-summit-plaque className="w-full max-w-md">
           <div className="rounded-sm border border-line-strong bg-surface-raised p-6">
             <p className="font-mono text-sm text-ink-muted">{kicker}</p>
             <h2 id="summit-title" className="mt-4">

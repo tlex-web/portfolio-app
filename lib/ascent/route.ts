@@ -62,6 +62,31 @@ export const SUMMIT_LIFT_M = 350;
 /** Horizontal FOV the summit frame must cover: the waypoints spread about 30° from the summit, so 60° leaves margin. */
 export const SUMMIT_HFOV_DEG = 60;
 
+/**
+ * Horizontal FOV of the summit frame on a wide stage (768 px and up). There the
+ * summit plaque fills the left column, so the four waypoints must fit in the
+ * band between the plaque and the altimeter rail, which is about 0.7 NDC wide
+ * at 1280 x 720; at SUMMIT_HFOV_DEG they spread over 0.78 NDC, at 75° over
+ * 0.59 (09-12, the summit plaque covered pins 1 and 2 at 1280 and 1440 px).
+ */
+export const SUMMIT_WIDE_HFOV_DEG = 75;
+
+/**
+ * On a wide stage the summit frame's optical centre moves left by this share of
+ * the stage width (a negative horizontal view offset), so the waypoints move
+ * right, into the band between the plaque and the rail. Ramps in over the last
+ * leg with the summit FOV; 0 at every other stage.
+ */
+export const SUMMIT_VIEW_OFFSET_X_SHARE = 0.095;
+
+/**
+ * On a narrow stage the summit frame's optical centre moves up by this further
+ * share of the stage height, on top of VIEW_OFFSET_SHARE, so the waypoints sit
+ * above the docked plaque (D-20) on a 375 px phone too. Ramps in over the last
+ * leg like the wide offset.
+ */
+export const SUMMIT_VIEW_OFFSET_Y_SHARE = 0.08;
+
 /** Each stage's look target: mix(waypoint, summit, this), so the camera turns gently toward the waypoint (D-02). */
 export const STAGE_TARGET_MIX = 0.35;
 
@@ -257,8 +282,57 @@ export function summitVerticalFov(aspect: number, hfovDeg: number): number {
  * summit, so it holds on every plateau.
  */
 export function fovAt(t: number, n: number, summitFovDeg: number): number {
-  const f = clamp01(t * (n + 1) - n);
-  return lerp(CAMERA_FOV_DEG, summitFovDeg, f);
+  return lerp(CAMERA_FOV_DEG, summitFovDeg, summitShare(t, n));
+}
+
+/**
+ * How far into the last leg the camera is at curve parameter t (n waypoints):
+ * 0 until the leg starts (t = n / (n + 1)), 1 at the summit. The summit FOV and
+ * the summit view offsets ramp with it, so they hold on every other plateau.
+ */
+function summitShare(t: number, n: number): number {
+  return clamp01(t * (n + 1) - n);
+}
+
+/**
+ * The horizontal FOV (degrees) the summit frame must cover: SUMMIT_HFOV_DEG on
+ * a narrow stage, SUMMIT_WIDE_HFOV_DEG on a wide one (the waypoints fit beside
+ * the plaque). Pass it to summitVerticalFov.
+ */
+export function summitHfovDeg(narrow: boolean): number {
+  return narrow ? SUMMIT_HFOV_DEG : SUMMIT_WIDE_HFOV_DEG;
+}
+
+/**
+ * The summit's share of the horizontal view offset in px at curve parameter t
+ * (add it to viewOffsetXAt): on a wide stage -SUMMIT_VIEW_OFFSET_X_SHARE of the
+ * width, ramping in over the last leg, so the waypoints sit right of the
+ * plaque. Always 0 on a narrow stage.
+ */
+export function summitViewOffsetXAt(
+  t: number,
+  n: number,
+  narrow: boolean,
+  stageWidth: number
+): number {
+  if (narrow) return 0;
+  return -summitShare(t, n) * SUMMIT_VIEW_OFFSET_X_SHARE * stageWidth;
+}
+
+/**
+ * The summit's share of the vertical view offset in px at curve parameter t
+ * (add it to viewOffsetAt): on a narrow stage SUMMIT_VIEW_OFFSET_Y_SHARE of the
+ * height, ramping in over the last leg, so the waypoints sit above the docked
+ * plaque. Always 0 on a wide stage.
+ */
+export function summitViewOffsetYAt(
+  t: number,
+  n: number,
+  narrow: boolean,
+  stageHeight: number
+): number {
+  if (!narrow) return 0;
+  return summitShare(t, n) * SUMMIT_VIEW_OFFSET_Y_SHARE * stageHeight;
 }
 
 /**

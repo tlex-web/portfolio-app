@@ -377,6 +377,41 @@ function inside(inner: Box, outer: Box) {
   );
 }
 
+/** True when two boxes share any area (touching edges do not count). */
+function intersects(a: Box, b: Box) {
+  return (
+    a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height
+  );
+}
+
+/**
+ * The 3D pin boxes (waypoints in ascent order) once the camera has settled:
+ * reads them every 10 frames until two reads agree within 0.5 px, so the
+ * damped spring has finished flying to the scrolled position.
+ */
+async function settledPinBoxes(page: Page): Promise<Box[]> {
+  const read = () =>
+    page.evaluate((ks) => {
+      return ks.map((k) => {
+        const el = document.querySelector(`[data-pin-layer="3d"] [data-pin="${k}"]`);
+        if (!el) throw new Error(`no 3D pin ${k}`);
+        const r = el.getBoundingClientRect();
+        return { x: r.x, y: r.y, width: r.width, height: r.height };
+      });
+    }, waypoints.map((w) => w.k));
+  let last = await read();
+  for (let i = 0; i < 60; i++) {
+    await nextFrames(page, 10);
+    const next = await read();
+    const still = next.every(
+      (b, j) => Math.abs(b.x - last[j].x) < 0.5 && Math.abs(b.y - last[j].y) < 0.5
+    );
+    last = next;
+    if (still) return next;
+  }
+  throw new Error('3D pins did not settle');
+}
+
 /** Asserts 3D pin `k` is lit with its label visible inside the stage, and no other 3D pin is lit. */
 async function expectLit3dPin(page: Page, k: number) {
   await expect(pin3d(page, k)).toHaveAttribute('data-active', '');
@@ -539,6 +574,46 @@ test.describe('Home terrain route and 3D pins (HOME-02, HOME-03, HOME-05)', () =
           );
         }
         await expect(page.locator('[data-pin-layer="3d"] [data-pin][data-active]')).toHaveCount(0);
+      });
+    }
+  });
+
+  test.describe('summit pins clear the plaque', () => {
+    // At the summit the plaque column (card and trail signs) covers the left of a
+    // wide stage and docks over the bottom of a narrow one; no waypoint pin may sit
+    // behind it (09-12, Tim: "Fix in 09-12 (Recommended)"). 412 x 839 is the
+    // narrow-stage regression guard.
+    for (const { width, height, measureOnly } of [
+      { width: 1440, height: 900, measureOnly: true }, // the 512² mesh
+      { width: 1280, height: 720, measureOnly: true }, // the default viewport, 512² mesh
+      { width: 412, height: 839, measureOnly: false },
+    ]) {
+      test(`at ${width} x ${height} @chromium-only`, async ({ page }) => {
+        test.setTimeout(60000);
+        if (measureOnly) await budgetMeasureOnly(page);
+        await page.setViewportSize({ width, height });
+        await page.goto('/');
+        await scrollOnce(page);
+        await waitForRevealed(page);
+        await scrollBlockToCentre(page, '#summit');
+        const boxes = await settledPinBoxes(page);
+
+        const plaque = await page.locator('#summit [data-summit-plaque]').boundingBox();
+        expect(plaque, 'the summit plaque column has a box').not.toBeNull();
+        const stageBox = await stage(page).boundingBox();
+        for (const [i, w] of waypoints.entries()) {
+          await expect(pin3d(page, w.k), `3D pin ${w.k} shown`).toBeVisible();
+          expect(
+            stageBox && inside(boxes[i], stageBox),
+            `3D pin ${w.k} inside the stage`
+          ).toBe(true);
+          expect(
+            intersects(boxes[i], plaque!),
+            `3D pin ${w.k} (${boxes[i].x.toFixed(0)}, ${boxes[i].y.toFixed(0)}) clear of the plaque ` +
+              `(${plaque!.x.toFixed(0)}-${(plaque!.x + plaque!.width).toFixed(0)} x ` +
+              `${plaque!.y.toFixed(0)}-${(plaque!.y + plaque!.height).toFixed(0)})`
+          ).toBe(false);
+        }
       });
     }
   });

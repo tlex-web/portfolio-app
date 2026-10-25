@@ -12,12 +12,14 @@ import { posterFrame } from '@/lib/ascent/poster-frame';
 import {
   CAMERA_FOV_DEG,
   RELIEF_EXAGGERATION,
-  SUMMIT_HFOV_DEG,
   curveParamAt,
   fovAt,
   planViewPose,
   reliefAt,
+  summitHfovDeg,
   summitVerticalFov,
+  summitViewOffsetXAt,
+  summitViewOffsetYAt,
   viewOffsetAt,
   viewOffsetXAt,
   type PinAnchor,
@@ -46,7 +48,10 @@ import { anchorAt, poseAt, routeCurvesFor } from './route-curve';
  * its label on the right. All three are 0 at p = 0, so the canvas
  * still equals the poster there, and complete at the start of waypoint 1's
  * plateau. The vertical FOV widens across the last leg to summitVerticalFov
- * (aspect, 60°), so the summit frame shows every waypoint on a phone too (D-03).
+ * (aspect, summitHfovDeg), so the summit frame shows every waypoint on a phone
+ * too (D-03). Across the same leg the summit view offsets ramp in (09-12): on a
+ * wide stage the waypoints move right of the summit plaque (left column), on a
+ * narrow one up, above the docked plaque.
  *
  * Until the metres arrive (the canvas is still invisible) or the layout is
  * measured, the camera holds the plan view.
@@ -306,13 +311,13 @@ export default function CameraRig({
       camera.position.copy(scratch.position);
       camera.up.copy(up.set(0, tilt, -(1 - tilt)).normalize());
       camera.lookAt(scratch.target);
-      camera.fov = fovAt(t, pins.length, summitVerticalFov(w / h, SUMMIT_HFOV_DEG));
-      if (w < NARROW_STAGE_PX) {
-        const x = viewOffsetXAt(p, first, true, w);
-        camera.setViewOffset(w, h, x, viewOffsetAt(p, first, true, h), w, h);
-      } else {
-        camera.clearViewOffset();
-      }
+      const narrow = w < NARROW_STAGE_PX;
+      const n = pins.length;
+      camera.fov = fovAt(t, n, summitVerticalFov(w / h, summitHfovDeg(narrow)));
+      const x = viewOffsetXAt(p, first, narrow, w) + summitViewOffsetXAt(t, n, narrow, w);
+      const y = viewOffsetAt(p, first, narrow, h) + summitViewOffsetYAt(t, n, narrow, h);
+      if (x !== 0 || y !== 0) camera.setViewOffset(w, h, x, y, w, h);
+      else camera.clearViewOffset();
       camera.updateProjectionMatrix();
       if (material) {
         material.uniforms.uRelief.value = tilt;

@@ -9,7 +9,9 @@
  * - Plan-view parity (D-16): at p = 0 the camera frames exactly the poster's
  *   visible UV window, corner to corner.
  * - Summit framing (D-03): the look-back camera shows all four waypoints inside
- *   NDC ±0.9 at phone, tablet and desktop stage sizes.
+ *   NDC ±0.9 at phone, tablet and desktop stage sizes, with the summit FOV and
+ *   view offsets applied (09-12: right of the plaque on wide stages, above the
+ *   docked plaque on narrow ones).
  * - Plateaus and legs: the curve parameter holds on every ±0.03 plateau and
  *   never runs backwards.
  * - Vestibular limit: the look direction turns by at most 45° per leg.
@@ -24,12 +26,18 @@ import {
   CAMERA_FOV_DEG,
   ROUTE_PLATEAU,
   SUMMIT_HFOV_DEG,
+  SUMMIT_VIEW_OFFSET_X_SHARE,
+  SUMMIT_VIEW_OFFSET_Y_SHARE,
+  SUMMIT_WIDE_HFOV_DEG,
   curveParamAt,
   fovAt,
   keyPoses,
   planViewPose,
   reliefAt,
+  summitHfovDeg,
   summitVerticalFov,
+  summitViewOffsetXAt,
+  summitViewOffsetYAt,
   viewOffsetAt,
   viewOffsetXAt,
   yawDeg,
@@ -153,21 +161,21 @@ describe('keyPoses (D-02, D-03)', () => {
   });
 
   it.each(SIZES)(
-    'the summit frame shows all four waypoints inside NDC ±0.9 at %i x %i (view offset applied below 768 px)',
+    'the summit frame shows all four waypoints inside NDC ±0.9 at %i x %i (summit FOV and view offsets applied)',
     (w, h) => {
       const { positions, targets } = posesFor(w, h);
-      const fov = summitVerticalFov(w / h, SUMMIT_HFOV_DEG);
+      const narrow = w < 768;
+      const fov = summitVerticalFov(w / h, summitHfovDeg(narrow));
       const camera = cameraAt(
         { position: positions[n + 1], target: targets[n + 1], up: { x: 0, y: 1, z: 0 } },
         w,
         h,
         fov
       );
-      if (w < 768) {
-        const x = viewOffsetXAt(1, ARRIVALS[0], true, w);
-        camera.setViewOffset(w, h, x, viewOffsetAt(1, ARRIVALS[0], true, h), w, h);
-        camera.updateProjectionMatrix();
-      }
+      const x = viewOffsetXAt(1, ARRIVALS[0], narrow, w) + summitViewOffsetXAt(1, n, narrow, w);
+      const y = viewOffsetAt(1, ARRIVALS[0], narrow, h) + summitViewOffsetYAt(1, n, narrow, h);
+      camera.setViewOffset(w, h, x, y, w, h);
+      camera.updateProjectionMatrix();
       for (const a of anchors) {
         const ndc = vec(a).project(camera);
         expect(ndc.z).toBeGreaterThan(-1); // in front of the camera, inside the frustum depth
@@ -266,6 +274,43 @@ describe('tilt-in, FOV and view offset (D-16, D-20)', () => {
     expect(fovAt(0, n, 80)).toBe(CAMERA_FOV_DEG);
     expect(fovAt(n / (n + 1), n, 80)).toBe(CAMERA_FOV_DEG);
     expect(fovAt(1, n, 80)).toBe(80);
+  });
+
+  it('summitHfovDeg widens the summit frame on wide stages only', () => {
+    expect(summitHfovDeg(true)).toBe(SUMMIT_HFOV_DEG);
+    expect(summitHfovDeg(false)).toBe(SUMMIT_WIDE_HFOV_DEG);
+    expect(SUMMIT_WIDE_HFOV_DEG).toBeGreaterThan(SUMMIT_HFOV_DEG);
+  });
+
+  it('the summit view offsets hold 0 until the last leg and reach their share at t = 1', () => {
+    for (const t of [0, 0.3, (n - 1) / (n + 1), n / (n + 1)]) {
+      expect(summitViewOffsetXAt(t, n, false, 1440)).toBeCloseTo(0, 12);
+      expect(summitViewOffsetYAt(t, n, true, 800)).toBeCloseTo(0, 12);
+    }
+    // Wide: the optical centre moves left, so the waypoints move right of the plaque.
+    expect(summitViewOffsetXAt(1, n, false, 1440)).toBeCloseTo(-SUMMIT_VIEW_OFFSET_X_SHARE * 1440, 9);
+    // Narrow: the optical centre moves up, so the waypoints sit above the docked plaque.
+    expect(summitViewOffsetYAt(1, n, true, 800)).toBeCloseTo(SUMMIT_VIEW_OFFSET_Y_SHARE * 800, 9);
+    // Each applies to one layout only.
+    for (let i = 0; i <= 20; i++) {
+      expect(summitViewOffsetXAt(i / 20, n, true, 400)).toBe(0);
+      expect(summitViewOffsetYAt(i / 20, n, false, 900)).toBe(0);
+    }
+  });
+
+  it('on a wide stage the summit frame moves every waypoint right and narrows their spread', () => {
+    const [w, h] = [1440, 836];
+    const { positions, targets } = posesFor(w, h);
+    const pose = { position: positions[n + 1], target: targets[n + 1], up: { x: 0, y: 1, z: 0 } };
+    const before = cameraAt(pose, w, h, summitVerticalFov(w / h, SUMMIT_HFOV_DEG));
+    const after = cameraAt(pose, w, h, summitVerticalFov(w / h, summitHfovDeg(false)));
+    after.setViewOffset(w, h, summitViewOffsetXAt(1, n, false, w), 0, w, h);
+    after.updateProjectionMatrix();
+    const xs = (camera: PerspectiveCamera) => anchors.map((a) => vec(a).project(camera).x);
+    const [b, a] = [xs(before), xs(after)];
+    a.forEach((x, i) => expect(x).toBeGreaterThan(b[i]));
+    expect(Math.min(...a)).toBeGreaterThan(Math.min(...b));
+    expect(Math.max(...a) - Math.min(...a)).toBeLessThan(Math.max(...b) - Math.min(...b));
   });
 
   it('yawDeg has no yaw for a vertical direction', () => {
