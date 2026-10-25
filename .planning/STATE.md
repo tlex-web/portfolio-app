@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 09
 current_phase_name: Home Ascent
 status: executing
-stopped_at: Completed 09-03-PLAN.md
-last_updated: "2026-10-25T00:03:48.621Z"
+stopped_at: Completed 09-04-PLAN.md
+last_updated: "2026-10-25T00:11:23.130Z"
 last_activity: 2026-10-25
 last_activity_desc: Phase 09 execution started
-state_head: c1d9a4a244d5d95456af16050fe752e3a8a09a04
+state_head: 811b44f6e9bf181098c8b19cbd063462ca553559
 progress:
   total_phases: 6
   completed_phases: 8
   total_plans: 54
-  completed_plans: 43
-  percent: 80
+  completed_plans: 44
+  percent: 81
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-24)
 ## Current Position
 
 Phase: 09 (Home Ascent) — EXECUTING
-Plan: 4 of 14
+Plan: 5 of 14
 Status: Ready to execute
 Last activity: 2026-10-25 — Phase 09 execution started
 
-Progress: [████████░░] 80% of v2.0 phases (2 of 6: Phases 7–8 complete); 40/40 planned plans done (Phases 9–12 not yet planned)
+Progress: [████████░░] 81% of v2.0 phases (2 of 6: Phases 7–8 complete); 40/40 planned plans done (Phases 9–12 not yet planned)
 
 ## Performance Metrics
 
@@ -98,6 +98,7 @@ Progress: [████████░░] 80% of v2.0 phases (2 of 6: Phases 7�
 | Phase 09 P01 | 13 min | 2 tasks | 14 files |
 | Phase 09 P02 | 8 min | 3 tasks | 12 files |
 | Phase 09 P03 | 20 min | 3 tasks | 11 files |
+| Phase 09 P04 | 5 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -210,6 +211,7 @@ Recent decisions affecting current work:
 - [Phase 09]: 09-03: View photo links use an explicit aria-label 'View photo: {title}' (flex link; same accname issue as the trail signs)
 - [Phase 09]: 09-03: .ascent-card-fade runs ascent-card-in (fill both) and ascent-card-out (fill forwards only) so the fade-out never masks the fade-in
 - [Phase 09]: 09-03: breakpoint variants sort after motion-reduce in Tailwind 4.3; use sm:motion-reduce: where a breakpoint class would otherwise override a reduced-motion one
+- [Phase 09]: 09-04: shader colours come only from data/generated/tokens.ts (build-tokens.mjs from app/globals.css, colorjs.io); tokens:build -- --check runs in data:check, so editing --relief-opacity at 09-12 needs npm run tokens:build
 
 ### Pending Todos
 
@@ -247,6 +249,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-25T00:03:48.221Z
-Stopped at: Completed 09-03-PLAN.md
+Last session: 2026-10-25T00:11:22.655Z
+Stopped at: Completed 09-04-PLAN.md
 Resume file: None
