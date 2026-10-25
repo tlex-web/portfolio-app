@@ -1,5 +1,6 @@
 import HeroBlock from '@/components/home/HeroBlock';
 import PosterSheet from '@/components/home/PosterSheet';
+import SummitPlaque from '@/components/home/SummitPlaque';
 import WaypointCard from '@/components/home/WaypointCard';
 import { buildWaypoints } from '@/lib/ascent/waypoints';
 
@@ -21,6 +22,10 @@ import { buildWaypoints } from '@/lib/ascent/waypoints';
  * `data-ascent-block="waypoint"` and `data-k` (correction C8: the fragment id
  * is on the block, not the card). In tall modes every block is one stage high;
  * under reduced motion the blocks collapse to natural height and stack.
+ *
+ * The summit section (`section#summit`, `data-ascent-block="summit"`) is the
+ * last track child, after the list (D-03, D-13): the target of the hero's
+ * "Skip to the summit" cue.
  */
 export default function AscentHero() {
   const waypoints = buildWaypoints();
@@ -53,6 +58,7 @@ export default function AscentHero() {
             </li>
           ))}
         </ol>
+        <SummitPlaque />
       </div>
     </div>
   );

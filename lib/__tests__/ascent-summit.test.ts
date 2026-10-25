@@ -16,7 +16,7 @@ import { formatKilometres, formatLatLon, formatYearRange } from '@/lib/home-form
 import { formatMetres } from '@/lib/photo-format';
 
 /** The formatters keep units and hemisphere letters on their number with U+00A0. */
-const NBSP = ' ';
+const NBSP = ' ';
 
 describe('summitPlaque on the committed data (HOME-06, D-03)', () => {
   const plaque = summitPlaque();

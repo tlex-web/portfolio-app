@@ -88,12 +88,16 @@ test.describe('Home without JavaScript (HOME-01)', () => {
       await page.setViewportSize(viewport);
       await page.goto('/');
 
+      // Scoped to the hero block: the summit section repeats the kicker and the
+      // trail signs (09-05, D-13), so main holds two of each; the h1 stays unique.
       const main = page.locator('#main-content');
+      await expect(main.getByRole('heading', { level: 1 })).toHaveCount(1);
+      const hero = main.locator('[data-ascent-block="hero"]');
       const targets = [
-        main.getByRole('heading', { level: 1, name: site.name, exact: true }),
-        main.getByText(site.role, { exact: true }),
-        main.getByText(kicker, { exact: true }),
-        ...signs.map((name) => main.getByRole('link', { name, exact: true })),
+        hero.getByRole('heading', { level: 1, name: site.name, exact: true }),
+        hero.getByText(site.role, { exact: true }),
+        hero.getByText(kicker, { exact: true }),
+        ...signs.map((name) => hero.getByRole('link', { name, exact: true })),
       ];
 
       for (const target of targets) {

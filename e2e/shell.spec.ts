@@ -29,7 +29,15 @@ const ROUTES: ReadonlyArray<readonly [path: string, current: Label | null]> = [
 ];
 
 const primaryNav = (page: Page) => page.getByRole('navigation', { name: 'Primary' });
-const skipLinks = (page: Page) => page.getByRole('link', { name: /skip to/i });
+/**
+ * The global skip link, by its exact name (07-27 intent: one per route). Home
+ * also has a visible "Skip to the summit" cue (09-05, D-15), so a /skip to/i
+ * count would read 2 there; the exact name keeps every toHaveCount(1) meaning
+ * "one global skip link", and anySkipLinks() pins what else may match.
+ */
+const skipLinks = (page: Page) => page.getByRole('link', { name: 'Skip to main content', exact: true });
+const anySkipLinks = (page: Page) => page.getByRole('link', { name: /skip to/i });
+const summitSkipLinks = (page: Page) => page.getByRole('link', { name: 'Skip to the summit', exact: true });
 
 /**
  * Fires every once:true whileInView animation by scrolling the full height,
@@ -69,6 +77,10 @@ test.describe('Shell landmarks', () => {
       await expect(page.getByRole('contentinfo')).toHaveCount(1);
       // SHELL-01 / SC4: exactly one skip link, so a page-level second skip link fails here.
       await expect(skipLinks(page)).toHaveCount(1);
+      // The only other 'Skip to …' link on any route is Home's 'Skip to the summit' (09-05, D-15):
+      // every /skip to/i match is one of the two allowed names.
+      await expect(summitSkipLinks(page)).toHaveCount(path === '/' ? 1 : 0);
+      await expect(anySkipLinks(page)).toHaveCount(path === '/' ? 2 : 1);
       // The Primary nav lives in the banner; the footer holds no nav.
       await expect(page.getByRole('banner').getByRole('navigation', { name: 'Primary' })).toHaveCount(1);
       await expect(page.getByRole('contentinfo').getByRole('navigation')).toHaveCount(0);
@@ -161,6 +173,7 @@ test.describe('Shell 404', () => {
       await expect(page.getByRole('contentinfo')).toHaveCount(1);
       // SHELL-01 / SC4: exactly one skip link, so a page-level second skip link fails here.
       await expect(skipLinks(page)).toHaveCount(1);
+      await expect(anySkipLinks(page)).toHaveCount(1);
 
       const main = page.getByRole('main');
       await expect(main.getByRole('heading', { level: 1 })).toHaveCount(1);
