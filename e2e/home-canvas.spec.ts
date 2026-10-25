@@ -1,7 +1,17 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { test, expect, type Page } from '@playwright/test';
 import { decode } from 'fast-png';
+import { Vector3 } from 'three';
+import { routeCurvesFor } from '@/components/home/terrain/route-curve';
+import { lowestDemM } from '@/data/generated/photos';
+import { terrain } from '@/data/generated/terrain';
 import { arrivalsFromBlocks } from '@/lib/ascent/progress';
-import { scrollBlockToCentre } from './helpers/ascent';
+import { RELIEF_EXAGGERATION, curveParamAt } from '@/lib/ascent/route';
+import { buildWaypoints } from '@/lib/ascent/waypoints';
+import { formatMetres } from '@/lib/photo-format';
+import { meshHeightAtUv, toMetres } from '@/lib/terrain/heightmap';
+import { readout, scrollBlockToCentre } from './helpers/ascent';
 import { nextFrames } from './helpers/webgl';
 
 /**
@@ -19,9 +29,20 @@ import { nextFrames } from './helpers/webgl';
  * reveal a late load at the current progress. Headless Firefox on the CI
  * runner has no WebGL, so every title carries '@chromium-only' (the Firefox
  * project drops them).
+ *
+ * The route (09-10; D-02, D-03, D-09, D-22): the D-22 smoke test renders the
+ * canvas at three ascent positions and checks it is not blank, has contour
+ * lines and changes between positions; the 3D pins take over from the poster
+ * pins at the reveal, light with the active stage (also when the canvas
+ * reveals while the visitor is stationary) and all show in the summit frame;
+ * and, in Node, the camera route stays at least 120 m above the decoded 512²
+ * mesh from the first waypoint to the summit.
  */
 
 const stage = (page: Page) => page.locator('[data-ascent-stage]');
+const waypoint = (k: number) => `li[data-ascent-block="waypoint"] >> nth=${k - 1}`;
+const pin3d = (page: Page, k: number) => page.locator(`[data-pin-layer="3d"] [data-pin="${k}"]`);
+const waypoints = buildWaypoints();
 /** R3F's wrapper div: it carries the class (and so the fade) and data-grid-size. */
 const canvasBox = (page: Page) => page.locator('[data-ascent-stage] [data-grid-size]');
 const HEIGHTMAP = /\/terrain\/heightmap-/;
@@ -220,8 +241,7 @@ test.describe('Home terrain canvas (HOME-02)', () => {
     await delayHeightmap(page, 2000);
     const trackHeight = () =>
       page.locator('[data-ascent-track]').evaluate((el) => el.getBoundingClientRect().height);
-    const saysLoading = () =>
-      stage(page).evaluate((el) => /loading/i.test(el.textContent ?? ''));
+    const saysLoading = () => stage(page).evaluate((el) => /loading/i.test(el.textContent ?? ''));
 
     await page.goto('/');
     await page.evaluate(() => document.fonts.ready.then(() => undefined));
@@ -290,5 +310,252 @@ test.describe('Home terrain canvas (HOME-02)', () => {
     });
     expect(p).not.toBeNull();
     expect(Math.abs((p as number) - arrival)).toBeLessThanOrEqual(0.03);
+  });
+});
+
+/** 32 x 32 block means of the RGB channels of a PNG screenshot (the D-22 progression check). */
+function downsample(png: Buffer, size = 32): Float64Array {
+  const { data, channels, width, height } = decode(png);
+  const out = new Float64Array(size * size * 3);
+  const count = new Float64Array(size * size);
+  for (let y = 0; y < height; y++) {
+    const by = Math.min(size - 1, Math.floor((y * size) / height));
+    for (let x = 0; x < width; x++) {
+      const bx = Math.min(size - 1, Math.floor((x * size) / width));
+      const b = by * size + bx;
+      const i = (y * width + x) * channels;
+      for (let c = 0; c < 3; c++) out[b * 3 + c] += data[i + c];
+      count[b]++;
+    }
+  }
+  for (let b = 0; b < size * size; b++) for (let c = 0; c < 3; c++) out[b * 3 + c] /= count[b];
+  return out;
+}
+
+const meanDiff = (a: Float64Array, b: Float64Array) =>
+  a.reduce((sum, value, i) => sum + Math.abs(value - b[i]), 0) / a.length;
+
+type Box = { x: number; y: number; width: number; height: number };
+
+/** True when `inner` lies inside `outer` (1 px tolerance for subpixel rounding). */
+function inside(inner: Box, outer: Box) {
+  return (
+    inner.x >= outer.x - 1 &&
+    inner.y >= outer.y - 1 &&
+    inner.x + inner.width <= outer.x + outer.width + 1 &&
+    inner.y + inner.height <= outer.y + outer.height + 1
+  );
+}
+
+/** Asserts 3D pin `k` is lit with its label visible inside the stage, and no other 3D pin is lit. */
+async function expectLit3dPin(page: Page, k: number) {
+  await expect(pin3d(page, k)).toHaveAttribute('data-active', '');
+  await expect(page.locator('[data-pin-layer="3d"] [data-pin][data-active]')).toHaveCount(1);
+  const label = pin3d(page, k).locator('[data-pin-label]');
+  await expect(label).toBeVisible();
+  const box = await label.boundingBox();
+  const stageBox = await stage(page).boundingBox();
+  test.info().annotations.push({
+    type: `pin ${k} label`,
+    description: JSON.stringify({ label: box, stage: stageBox }),
+  });
+  expect(box && stageBox && inside(box, stageBox), 'label inside the stage').toBe(true);
+}
+
+test.describe('Home terrain route and 3D pins (HOME-02, HOME-03, HOME-05)', () => {
+  test('smoke at three ascent positions @chromium-only', async ({ page }) => {
+    test.setTimeout(90000);
+    await page.setViewportSize({ width: 412, height: 839 });
+    await page.goto('/');
+    await scrollOnce(page);
+    await waitForRevealed(page);
+    // Only the canvas pixels: the cards, rail and pins sit over the stage.
+    await page.addStyleTag({
+      content:
+        'body * { visibility: hidden !important; } [data-ascent-stage] canvas { visibility: visible !important; }',
+    });
+
+    const positions = [
+      { name: 'top', seek: () => page.evaluate(() => window.scrollTo(0, 0)), m: lowestDemM },
+      {
+        name: 'waypoint 2',
+        seek: () => scrollBlockToCentre(page, waypoint(2)),
+        m: waypoints[1].altitudeM,
+      },
+      {
+        name: 'summit',
+        seek: () => scrollBlockToCentre(page, '#summit'),
+        m: terrain.summit.officialM,
+      },
+    ];
+    const frames: Float64Array[] = [];
+    for (const { name, seek, m } of positions) {
+      await seek();
+      await expect
+        .poll(() => readout(page).evaluate((el) => el.textContent), { timeout: 5000 })
+        .toBe(formatMetres(m));
+      await nextFrames(page, 6); // the spring has settled and the demand frame is drawn
+      const shot = await stage(page).locator('canvas').screenshot();
+      const { contourFrac, lumStd } = canvasStats(shot);
+      test.info().annotations.push({
+        type: `canvas-stats ${name}`,
+        description: `lumStd ${lumStd.toFixed(2)}, contourFrac ${contourFrac.toFixed(4)}`,
+      });
+      expect(lumStd, `${name}: luminance standard deviation (not blank)`).toBeGreaterThan(4);
+      expect(contourFrac, `${name}: share of contour-coloured pixels`).toBeGreaterThan(0.003);
+      frames.push(downsample(shot));
+    }
+    for (let i = 1; i < frames.length; i++) {
+      const diff = meanDiff(frames[i - 1], frames[i]);
+      test.info().annotations.push({ type: `progression ${i}`, description: diff.toFixed(2) });
+      expect(
+        diff,
+        `${positions[i - 1].name} -> ${positions[i].name}: the view changes`
+      ).toBeGreaterThan(6);
+    }
+  });
+
+  test('pins hand over at the reveal @chromium-only', async ({ page }) => {
+    test.setTimeout(60000);
+    await delayHeightmap(page, 2000);
+    await page.goto('/');
+    // No scroll: the idle callback arms the stage, so the reveal happens at p = 0 (the plan view).
+    await expect(page.locator('[data-pin-layer="3d"]')).toHaveCount(1, { timeout: 15000 });
+
+    // While the canvas loads: the poster pins show, the 3D pins do not.
+    await expect(stage(page)).toHaveAttribute('data-ascent-mode', 'eligible');
+    const visibility = (selector: string) =>
+      page.locator(selector).evaluate((el) => getComputedStyle(el).visibility);
+    expect(await visibility('[data-pin-layer="poster"]')).toBe('visible');
+    expect(await visibility('[data-pin-layer="3d"]')).toBe('hidden');
+
+    // At the switch to '3d', both layers flip in the same style recalculation, and
+    // every 3D pin is shown where its poster pin was (the plan view equals the poster).
+    await page.evaluate(() => {
+      const el = document.querySelector('[data-ascent-stage]') as HTMLElement;
+      const w = window as unknown as { __handover: unknown };
+      new MutationObserver(() => {
+        if (el.dataset.ascentMode !== '3d' || w.__handover) return;
+        const vis = (s: string) =>
+          getComputedStyle(document.querySelector(s) as Element).visibility;
+        const shown = Array.from(
+          document.querySelectorAll('[data-pin-layer="3d"] [data-pin]'),
+          (pin) => getComputedStyle(pin).visibility
+        ).filter((v) => v === 'visible').length;
+        const offsets = Array.from(
+          document.querySelectorAll('[data-pin-layer="3d"] [data-pin]'),
+          (pin) => {
+            const k = pin.getAttribute('data-pin');
+            const poster = document.querySelector(`[data-pin-layer="poster"] [data-pin="${k}"]`);
+            const a = pin.getBoundingClientRect();
+            const b = (poster as Element).getBoundingClientRect();
+            return Math.max(Math.abs(a.left - b.left), Math.abs(a.top - b.top));
+          }
+        );
+        w.__handover = {
+          poster: vis('[data-pin-layer="poster"]'),
+          layer3d: vis('[data-pin-layer="3d"]'),
+          shown,
+          onPosterPins: Math.max(...offsets) <= 2,
+        };
+      }).observe(el, { attributes: true, attributeFilter: ['data-ascent-mode'] });
+    });
+    await waitForRevealed(page);
+    const handover = await page.evaluate(
+      () => (window as unknown as { __handover: unknown }).__handover
+    );
+    expect(handover).toEqual({
+      poster: 'hidden',
+      layer3d: 'visible',
+      shown: waypoints.length,
+      onPosterPins: true,
+    });
+  });
+
+  test('waypoint 2 lights its 3D pin @chromium-only', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.setViewportSize({ width: 412, height: 839 });
+    await page.goto('/');
+    await scrollOnce(page);
+    await waitForRevealed(page);
+    await scrollBlockToCentre(page, waypoint(2));
+    await nextFrames(page, 4);
+    await expectLit3dPin(page, 2);
+  });
+
+  test.describe('summit frame shows every waypoint', () => {
+    for (const { width, height } of [
+      { width: 1440, height: 900 },
+      { width: 412, height: 839 },
+    ]) {
+      test(`at ${width} x ${height} @chromium-only`, async ({ page }) => {
+        test.setTimeout(60000);
+        await page.setViewportSize({ width, height });
+        await page.goto('/');
+        await scrollOnce(page);
+        await waitForRevealed(page);
+        await scrollBlockToCentre(page, '#summit');
+        await nextFrames(page, 6);
+
+        const stageBox = await stage(page).boundingBox();
+        for (const w of waypoints) {
+          const pin = pin3d(page, w.k);
+          await expect(pin, `3D pin ${w.k} shown`).toBeVisible();
+          const box = await pin.boundingBox();
+          expect(box && stageBox && inside(box, stageBox), `3D pin ${w.k} inside the stage`).toBe(
+            true
+          );
+        }
+        await expect(page.locator('[data-pin-layer="3d"] [data-pin][data-active]')).toHaveCount(0);
+      });
+    }
+  });
+
+  test('route clears the terrain @chromium-only', async () => {
+    const file = path.join(process.cwd(), 'public', terrain.assets.heightmap['512']);
+    const png = decode(fs.readFileSync(file));
+    const n = 512;
+    const metres = toMetres(png.data, terrain.dem.heightScale);
+    const W = terrain.extent.widthM;
+    const anchors = waypoints.map((w) => w.uv);
+    const arrivals = [...waypoints.map((_, i) => (i + 1) / (waypoints.length + 1)), 1];
+    const t0 = curveParamAt(arrivals[0], arrivals);
+    const point = new Vector3();
+
+    for (const [width, height] of [
+      [1440, 836],
+      [375, 603],
+    ]) {
+      const curves = routeCurvesFor({ width, height, anchors, metres, gridSize: n });
+      let lowest = Infinity;
+      for (let i = 0; i <= 200; i++) {
+        const t = t0 + ((1 - t0) * i) / 200;
+        curves.position.getPoint(t, point);
+        const ground = meshHeightAtUv(metres, n, point.x / W + 0.5, point.z / W + 0.5);
+        lowest = Math.min(lowest, point.y - ground * RELIEF_EXAGGERATION);
+      }
+      test.info().annotations.push({
+        type: `clearance ${width} x ${height}`,
+        description: `${lowest.toFixed(0)} m`,
+      });
+      expect(
+        lowest,
+        `${width} x ${height}: lowest clearance above the mesh`
+      ).toBeGreaterThanOrEqual(120);
+    }
+  });
+
+  test('a canvas revealed while stationary lights its 3D pin @chromium-only', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.setViewportSize({ width: 412, height: 839 });
+    await delayHeightmap(page, 3000);
+    await page.goto('/');
+    const requested = page.waitForRequest(HEIGHTMAP, { timeout: 15000 });
+    // Centring waypoint 2 is the first scroll: it arms the stage. No scroll or mouse move after it.
+    await scrollBlockToCentre(page, waypoint(2));
+    await requested;
+
+    await waitForRevealed(page);
+    await expectLit3dPin(page, 2);
   });
 });
