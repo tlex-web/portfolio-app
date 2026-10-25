@@ -127,11 +127,22 @@ describe('AltimeterRail (HOME-04, D-01, D-05)', () => {
     expect(bottoms).toEqual(ticks.map((_, k) => (k / waypoints.length) * 100));
   });
 
-  it('is decorative: inside the aria-hidden stage, no live region, nothing focusable', () => {
+  it('is decorative: in the aria-hidden rail layer after the track, no live region, nothing focusable', () => {
     const { container } = render(<AscentHero />);
     const rail = container.querySelector('[data-ascent-rail]') as HTMLElement;
+    const layer = rail.closest('[data-ascent-rail-layer]') as HTMLElement;
+    const scrim = container.querySelector('[data-ascent-rail-scrim]') as HTMLElement;
+    const track = container.querySelector('[data-ascent-track]') as HTMLElement;
 
-    expect(rail.closest('[data-ascent-stage]')).toHaveAttribute('aria-hidden', 'true');
+    // G-09-4 N1, Tim's option B (09-17): the rail paints above the hero scrim;
+    // its own scrim stays in the stage for the pin label flip and the camera.
+    expect(layer).toHaveAttribute('aria-hidden', 'true');
+    expect(layer).toHaveClass('pointer-events-none', 'sticky', 'col-start-1', 'row-start-1');
+    expect(rail.closest('[data-ascent-stage]')).toBeNull();
+    expect(track.compareDocumentPosition(layer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(scrim.closest('[data-ascent-stage]')).toHaveAttribute('aria-hidden', 'true');
+    expect(scrim).toHaveClass('pointer-events-none', 'hidden', 'md:block', 'w-56');
+    expect(layer.querySelector('[aria-live], a, button, [tabindex]')).toBeNull();
     expect(rail).toHaveClass('pointer-events-none', 'hidden', 'md:block');
     expect(rail.querySelector('[aria-live], a, button, [tabindex]')).toBeNull();
     expect(rail.querySelector('[data-ascent-readout]')).toHaveClass('motion-reduce:hidden');

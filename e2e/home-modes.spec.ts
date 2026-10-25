@@ -188,6 +188,100 @@ function worstContrastIn(page: Page, png: Buffer, textColor: string): Promise<nu
   );
 }
 
+/**
+ * The worst WCAG contrast of an element's text as the visitor sees it: the
+ * text colour and its background both composed through every overlay (G-09-4
+ * N1, D-17). worstContrastBehind compares the raw computed colour with the
+ * composed background, which is right for text painted above a scrim (B7) but
+ * blind to an overlay painted above the text: a scrim over the rail tints the
+ * glyphs too, so that method read 7.6-8.6:1 where the rail measured 1.3-2.5:1.
+ *
+ * Two shots of each rendered line of the text (Range client rects, inset by
+ * one pixel so no edge pixel blends with the surroundings): first with the
+ * text transparent (the background as composed), then with the element's
+ * background set to its own text colour (the text colour as composed through
+ * anything above it). The lowest per-pixel ratio between the pairs wins.
+ * Transitions are off while sampling and the inline style is restored after.
+ */
+async function composedContrast(page: Page, target: Locator): Promise<number> {
+  const color = await target.evaluate((el: HTMLElement) => {
+    const value = getComputedStyle(el).color;
+    el.dataset.contrastPrevStyle = el.getAttribute('style') ?? '';
+    el.style.setProperty('transition', 'none', 'important');
+    el.style.setProperty('color', 'transparent', 'important');
+    el.style.setProperty('text-decoration-color', 'transparent', 'important');
+    return value;
+  });
+  await nextFrames(page);
+  const lines = await target.evaluate((el) => {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    return Array.from(range.getClientRects(), (r) => {
+      const x = Math.ceil(r.left) + 1;
+      const y = Math.ceil(r.top) + 1;
+      return { x, y, width: Math.floor(r.right) - 1 - x, height: Math.floor(r.bottom) - 1 - y };
+    }).filter((r) => r.width >= 1 && r.height >= 1);
+  });
+  if (lines.length === 0) throw new Error('element renders no text');
+  const backgrounds = [];
+  for (const clip of lines) backgrounds.push(await page.screenshot({ clip, animations: 'disabled' }));
+  await target.evaluate((el: HTMLElement, fill) => {
+    el.style.setProperty('background-color', fill, 'important');
+  }, color);
+  await nextFrames(page);
+  const fills = [];
+  for (const clip of lines) fills.push(await page.screenshot({ clip, animations: 'disabled' }));
+  await target.evaluate((el: HTMLElement) => {
+    el.setAttribute('style', el.dataset.contrastPrevStyle ?? '');
+    if (!el.getAttribute('style')) el.removeAttribute('style');
+    delete el.dataset.contrastPrevStyle;
+  });
+
+  let worst = Infinity;
+  for (let i = 0; i < lines.length; i++) {
+    worst = Math.min(worst, await worstPairContrast(page, fills[i], backgrounds[i]));
+  }
+  return worst;
+}
+
+/** The lowest per-pixel contrast between two same-size PNGs, decoded in the page. */
+function worstPairContrast(page: Page, fill: Buffer, background: Buffer): Promise<number> {
+  return page.evaluate(
+    async ({ fill, background }) => {
+      const decode = async (base64: string) => {
+        const image = new Image();
+        image.src = `data:image/png;base64,${base64}`;
+        await image.decode();
+        const surface = document.createElement('canvas');
+        surface.width = image.naturalWidth;
+        surface.height = image.naturalHeight;
+        const ctx = surface.getContext('2d', { willReadFrequently: true });
+        if (!ctx) throw new Error('no 2D context');
+        ctx.drawImage(image, 0, 0);
+        return ctx.getImageData(0, 0, surface.width, surface.height).data;
+      };
+      const [a, b] = await Promise.all([decode(fill), decode(background)]);
+      if (a.length !== b.length) throw new Error('shot sizes differ');
+
+      const channel = (c: number) => {
+        const s = c / 255;
+        return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+      };
+      const luminance = (p: Uint8ClampedArray, i: number) =>
+        0.2126 * channel(p[i]) + 0.7152 * channel(p[i + 1]) + 0.0722 * channel(p[i + 2]);
+      let worst = Infinity;
+      for (let i = 0; i < a.length; i += 4) {
+        const la = luminance(a, i);
+        const lb = luminance(b, i);
+        const ratio = (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+        if (ratio < worst) worst = ratio;
+      }
+      return worst;
+    },
+    { fill: fill.toString('base64'), background: background.toString('base64') }
+  );
+}
+
 test.describe('Home modes (HOME-02, HOME-07, HOME-08)', () => {
   test.describe('static triggers keep the full Home and download nothing heavy', () => {
     for (const { name, setup } of STATIC_TRIGGERS) {
@@ -411,6 +505,50 @@ test.describe('Home modes (HOME-02, HOME-07, HOME-08)', () => {
           test.info().annotations.push({ type: 'contrast', description: `tick ${i} @ ${width}: ${worst.toFixed(2)}` });
           expect(worst, `tick ${i} (${await label.textContent()}) at ${width} px`).toBeGreaterThanOrEqual(4.5);
         }
+      });
+    }
+  });
+
+  test.describe('N1: rail labels and readout over the hero, composed through every overlay', () => {
+    const rows: { width: number; height: number; p: number }[] = [{ width: 768, height: 900, p: 0 }];
+    for (const { width, height, p } of rows) {
+      test(`at ${width} x ${height}, p = ${p}, static capability mode`, async ({ page }) => {
+        await disableWebGL(page);
+        await page.setViewportSize({ width, height });
+        await page.goto('/');
+        await expect(stage(page)).toHaveAttribute('data-ascent-mode', 'static');
+        await expect(page.locator('[data-sheet-box] img')).toBeVisible();
+        await page.locator('[data-sheet-box] img').evaluate((img: HTMLImageElement) => img.decode());
+        await nextFrames(page);
+
+        // The readout box covers the label of the tick it sits on; it is not
+        // what the label is read against, so it is hidden while the labels
+        // are sampled, then shown again and sampled itself.
+        const cursor = page.locator('[data-ascent-cursor]');
+        await cursor.evaluate((el: HTMLElement) => {
+          el.style.visibility = 'hidden';
+        });
+        const labels = page.locator('[data-ascent-rail] [data-tick-label]');
+        await expect(labels).toHaveCount(waypoints.length + 1);
+        const failures: string[] = [];
+        for (let i = 0; i < waypoints.length + 1; i++) {
+          const label = labels.nth(i);
+          const text = (await label.textContent())?.replace(/ /g, ' ');
+          const worst = await composedContrast(page, label);
+          test.info().annotations.push({ type: 'contrast', description: `tick ${i} (${text}) @ ${width}x${height} p ${p}: ${worst.toFixed(2)}` });
+          if (worst < 4.5) failures.push(`tick ${i} (${text}) ${worst.toFixed(2)}`);
+        }
+        await cursor.evaluate((el: HTMLElement) => {
+          el.style.visibility = '';
+        });
+        await nextFrames(page);
+        const readout = page.locator('[data-ascent-readout]');
+        const readoutText = (await readout.textContent())?.replace(/ /g, ' ');
+        const readoutWorst = await composedContrast(page, readout);
+        test.info().annotations.push({ type: 'contrast', description: `readout (${readoutText}) @ ${width}x${height} p ${p}: ${readoutWorst.toFixed(2)}` });
+        if (readoutWorst < 4.5) failures.push(`readout (${readoutText}) ${readoutWorst.toFixed(2)}`);
+
+        expect(failures, `composed contrast below 4.5:1 at ${width} x ${height}, p = ${p}`).toEqual([]);
       });
     }
   });

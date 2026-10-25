@@ -14,16 +14,26 @@ import { formatMetres } from '@/lib/photo-format';
  * The ascent grid (HOME-01, HOME-02; D-12; 09-UI-SPEC "Page Structure" and
  * "Stage: Poster, Sheet Box and Canvas"). Server component.
  *
- * One CSS grid cell holds two layers: the stage (sticky under the solid 64 px
- * nav, one stage tall, decorative and aria-hidden) and the content track, later
- * in DOM order and `relative`, so it paints above the stage without new z-index
- * tokens or negative margins. The stage is a size container so the poster sheet
- * box can size itself in cqw/cqh.
+ * One CSS grid cell holds three layers, in DOM and paint order: the stage
+ * (sticky under the solid 64 px nav, one stage tall, decorative and
+ * aria-hidden), the content track (`relative`, so it paints above the stage),
+ * and the rail layer (sticky, one stage tall, aria-hidden, no pointer events),
+ * which paints above the track. No new z-index tokens or negative margins. The
+ * stage is a size container so the poster sheet box can size itself in
+ * cqw/cqh.
  *
  * Hooks for later plans: `data-ascent-stage` (with `data-ascent-mode`, written
- * by the client AscentStageFrame from the capability gate, 09-07) and
- * `data-ascent-track`. Inside the stage, in paint order: the poster, the lazy
- * canvas (TerrainStage, eligible devices only) and the rail.
+ * by the client AscentStageFrame from the capability gate, 09-07),
+ * `data-ascent-track` and `data-ascent-rail-layer`. Inside the stage, in paint
+ * order: the poster, the lazy canvas (TerrainStage, eligible devices only) and
+ * the rail scrim (md and up), which stays in the stage because the pin label
+ * flip (AscentController) and the camera (CameraRig) read its width there.
+ *
+ * The rail box lives in its own layer after the track (G-09-4 N1, Tim's option
+ * B, 09-17): the hero scrim is part of the track and painted over the stage, so
+ * inside the stage the rail read 1.3-2.5:1 from 768 to 1023 px. A sticky element
+ * is its own stacking context, so a z-index on the rail inside the stage could
+ * not lift it; a later sibling of the track can.
  *
  * After the hero, the track holds the waypoint list (HOME-05, D-08): one stage
  * block per photo in ascending DEM height, each `li#waypoint-{slug}` with
@@ -36,7 +46,7 @@ import { formatMetres } from '@/lib/photo-format';
  * "Skip to the summit" cue.
  *
  * AscentController (client) wraps the grid and turns page scroll into the one
- * damped progress value (HOME-03, D-06); the AltimeterRail inside the stage
+ * damped progress value (HOME-03, D-06); the AltimeterRail in the rail layer
  * reads it (HOME-04, D-01, D-05). Only serialisable props cross the boundary:
  * the waypoint count, the n + 1 heights (waypoints, then the official summit
  * height) and the tick labels. The lazy canvas gets the pin anchors (number,
@@ -67,7 +77,10 @@ export default function AscentHero() {
         <AscentStageFrame>
           <PosterSheet />
           <TerrainStage pins={pins} />
-          <AltimeterRail ticks={ticks} />
+          <div
+            data-ascent-rail-scrim
+            className="pointer-events-none absolute inset-y-0 right-0 hidden w-56 bg-linear-to-l from-surface/85 from-0% via-surface/60 via-70% to-transparent md:block"
+          />
         </AscentStageFrame>
         <div data-ascent-track className="relative col-start-1 row-start-1">
           <HeroBlock />
@@ -88,6 +101,13 @@ export default function AscentHero() {
             ))}
           </ol>
           <SummitPlaque />
+        </div>
+        <div
+          data-ascent-rail-layer
+          aria-hidden="true"
+          className="pointer-events-none sticky top-(--nav-h) col-start-1 row-start-1 h-[calc(100svh-var(--nav-h))] self-start overflow-hidden"
+        >
+          <AltimeterRail ticks={ticks} />
         </div>
       </div>
     </AscentController>

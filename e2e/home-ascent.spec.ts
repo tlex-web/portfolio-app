@@ -480,6 +480,7 @@ test.describe('Ascent progress (HOME-03, HOME-04, HOME-05)', () => {
   const approximate = waypoints.find((w) => w.approximate);
   const rail = (page: Page) => page.locator('[data-ascent-rail]');
   const stage = (page: Page) => page.locator('[data-ascent-stage]');
+  const railLayer = (page: Page) => page.locator('[data-ascent-rail-layer]');
   const posterPins = (page: Page) => page.locator('[data-pin-layer="poster"] [data-pin]');
 
   test.beforeEach(async ({ page }) => {
@@ -494,14 +495,28 @@ test.describe('Ascent progress (HOME-03, HOME-04, HOME-05)', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await expect(rail(page)).toBeVisible();
     await expect(stage(page)).toHaveAttribute('aria-hidden', 'true');
-    await expect(stage(page).locator('[data-ascent-rail]')).toHaveCount(1);
+    // The rail box lives in its own sticky layer after the track, so it paints
+    // above the hero scrim; its scrim stays in the stage, where the pin label
+    // flip and the camera read it (G-09-4 N1, Tim's option B, 09-17).
+    await expect(railLayer(page)).toHaveAttribute('aria-hidden', 'true');
+    await expect(railLayer(page).locator('[data-ascent-rail]')).toHaveCount(1);
+    await expect(stage(page).locator('[data-ascent-rail-scrim]')).toHaveCount(1);
     await expect(rail(page)).toHaveCSS('pointer-events', 'none');
-    await expect(stage(page).locator('[aria-live]')).toHaveCount(0);
-    await expect(
-      stage(page).locator(
-        'a[href], button, input, select, textarea, [contenteditable], [tabindex]:not([tabindex="-1"])'
-      )
-    ).toHaveCount(0);
+    await expect(railLayer(page)).toHaveCSS('pointer-events', 'none');
+    const trackFirst = await page.evaluate(() => {
+      const track = document.querySelector('[data-ascent-track]');
+      const layer = document.querySelector('[data-ascent-rail-layer]');
+      return Boolean(
+        track && layer && track.compareDocumentPosition(layer) & Node.DOCUMENT_POSITION_FOLLOWING
+      );
+    });
+    expect(trackFirst, 'the rail layer follows the track in document order').toBe(true);
+    const focusable =
+      'a[href], button, input, select, textarea, [contenteditable], [tabindex]:not([tabindex="-1"])';
+    for (const layer of [stage(page), railLayer(page)]) {
+      await expect(layer.locator('[aria-live]')).toHaveCount(0);
+      await expect(layer.locator(focusable)).toHaveCount(0);
+    }
   });
 
   test('the readout climbs from the first waypoint to the summit', async ({ page }) => {
