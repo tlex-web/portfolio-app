@@ -144,7 +144,11 @@ const contains = (b: Box, x: number, y: number) => x >= b.x0 && x <= b.x1 && y >
  * - Otherwise the candidates, in order: right (8 px right of the head,
  *   centred on it), left (8 px left of it), above (4 px above the mark), below
  *   (4 px below it). Above and below each try the label centred on the head,
- *   aligned to its left and aligned to its right, clamped into the bounds.
+ *   aligned to its left and aligned to its right, then slid along the head
+ *   (still spanning it) until one of its edges meets an inflated obstacle's
+ *   edge or the inner bounds, nearest to centred first; each is clamped into
+ *   the bounds. The slides are what fit pin 4 at 768 px, whose head sits in
+ *   the rail box column, between the card and the rail line.
  * - The first candidate inside the bounds (4 px margin) that intersects no
  *   obstacle inflated by 4 px wins, with clear true.
  * - If none is clear, the candidate with the smallest total intersection with
@@ -183,8 +187,21 @@ export function placePinLabel({
     { side: 'right', dx: PIN_HEAD_PX + LABEL_SIDE_GAP_PX },
     { side: 'left', dx: -LABEL_SIDE_GAP_PX - w },
   ];
+  const centred = (PIN_HEAD_PX - w) / 2;
+  // Slides: a label above or below may also shift along the head (dx from 24 - w
+  // to 0, so it still spans the head) until an edge meets an inflated obstacle's
+  // edge or the inner bounds, nearest to centred first.
+  const lo = Math.min(0, PIN_HEAD_PX - w);
+  const hi = Math.max(0, PIN_HEAD_PX - w);
+  const slides = [
+    ...blocked.flatMap((o) => [o.x1 - mark.x0, o.x0 - w - mark.x0]),
+    inner.x0 - mark.x0,
+    inner.x1 - w - mark.x0,
+  ]
+    .filter((dx) => dx >= lo && dx <= hi)
+    .sort((a, b) => Math.abs(a - centred) - Math.abs(b - centred));
   for (const side of ['above', 'below'] as const) {
-    for (const dx of [(PIN_HEAD_PX - w) / 2, 0, PIN_HEAD_PX - w]) {
+    for (const dx of [centred, 0, PIN_HEAD_PX - w, ...slides]) {
       const clamped = clampDx(dx);
       if (!candidates.some((c) => c.side === side && Math.abs(c.dx - clamped) < 1e-9))
         candidates.push({ side, dx: clamped });

@@ -134,6 +134,37 @@ describe('placePinLabel', () => {
     expect(place([BOUNDS])).toEqual({ side: 'right', dx: PIN_HEAD_PX + 8, clear: false });
   });
 
+  it('slides an above or below label along the head when no alignment is clear', () => {
+    // Waypoint 4 at 768 x 900 (measured in 09-19): head x 628-652, inside the rail box
+    // column. Centred crosses the rail line, head-left leaves the stage, head-right
+    // meets the card; slid so its right edge is 4 px from the line, it fits below.
+    const card: Box = { x0: 24, y0: 135, x1: 472, y1: 717 };
+    const rail: RailGeometry = {
+      ticks: [
+        { x0: 643, y0: 778, x1: 726, y1: 798 },
+        { x0: 643, y0: 593, x1: 726, y1: 613 },
+        { x0: 643, y0: 408, x1: 726, y1: 428 },
+        { x0: 576, y0: 223, x1: 726, y1: 243 },
+        { x0: 643, y0: 38, x1: 726, y1: 58 },
+      ],
+      line: { x0: 725, y0: 48, x1: 726, y1: 788 },
+      readout: { w: 85, h: 34 },
+      railRight: 726,
+      tickCentres: [788, 603, 418, 233, 48],
+    };
+    const result = placePinLabel({
+      anchor: { x: 640, y: 493 },
+      label: { w: 194.5, h: 30 },
+      obstacles: [card, ...railObstaclesAt(rail, 4)],
+      covers: [card],
+      bounds: { x0: 0, y0: 0, x1: 758, y1: 836 },
+    });
+    expect(result.side).toBe('below');
+    expect(result.clear).toBe(true);
+    // Label right edge at the inflated line (721): 628 + dx + 194.5 = 721.
+    expect(result.dx).toBeCloseTo(721 - 194.5 - 628, 6);
+  });
+
   it("gives 'below' with dx 0 for waypoint 2 at 768 x 900 (stage 758 x 836)", () => {
     // .planning/debug/waypoint2-label-and-kicker.md Evidence 15:30 and 15:55: card x 24-472,
     // rail box x 566-726 (top-12 / bottom-12), five evenly spaced tick rows ending at x 726,

@@ -206,9 +206,10 @@ function measureLabels(root: HTMLElement): (Size | null)[] {
   const labels = pins.map((pin) => pin.querySelector<HTMLElement>('[data-pin-label]'));
   const saved = labels.map((label) => label?.style.display ?? '');
   labels.forEach((label) => label?.style.setProperty('display', 'block'));
-  const sizes = labels.map((label) =>
-    label && label.offsetWidth > 0 ? { w: label.offsetWidth, h: label.offsetHeight } : null
-  );
+  const sizes = labels.map((label) => {
+    const r = label?.getBoundingClientRect();
+    return r && r.width > 0 ? { w: r.width, h: r.height } : null;
+  });
   labels.forEach((label, i) => {
     if (label) label.style.display = saved[i];
   });
@@ -384,10 +385,17 @@ export default function AscentController({
     };
 
     window.addEventListener('resize', remeasure);
+    // A web font that lands after the first measurement changes the label widths
+    // without resizing the track: measure once more when the fonts are ready.
+    let live = true;
+    document.fonts?.ready.then(() => {
+      if (live) remeasure();
+    });
     const track = rootRef.current?.querySelector('[data-ascent-track]');
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(remeasure);
     if (observer && track) observer.observe(track);
     return () => {
+      live = false;
       window.removeEventListener('resize', remeasure);
       observer?.disconnect();
     };
