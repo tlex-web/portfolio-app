@@ -96,6 +96,24 @@ async function scrollOnce(page: Page) {
   await nextFrames(page);
 }
 
+/**
+ * The Vercel Analytics and Speed Insights loaders exist only on Vercel's edge:
+ * under `next start` (CI's production server) /_vercel/insights/script.js and
+ * /_vercel/speed-insights/script.js answer with a 404 body (text/html in the
+ * CI container, text/plain on Windows), which Chromium refuses to execute on
+ * MIME type. That is not a CSP violation, so the CSP check skips exactly these
+ * two MIME refusals and nothing else.
+ */
+const OFF_VERCEL_ANALYTICS_404 =
+  /^Refused to execute script from '[^']*\/_vercel\/(speed-)?insights\/script\.js' because its MIME type \('[^']*'\) is not executable, and strict MIME type checking is enabled\.$/;
+
+/** Console messages that report a CSP violation or a refused resource. */
+function cspMessages(messages: string[]): string[] {
+  return messages.filter(
+    (m) => /Content Security Policy|Refused to/.test(m) && !OFF_VERCEL_ANALYTICS_404.test(m)
+  );
+}
+
 /** Collects uncaught page errors. */
 function pageErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -248,7 +266,7 @@ test.describe('Home terrain canvas (HOME-02)', () => {
       () => (window as unknown as { __workers: number }).__workers
     );
     expect(workers, 'Worker constructions').toBe(0);
-    expect(messages.filter((m) => /Content Security Policy|Refused to/.test(m))).toEqual([]);
+    expect(cspMessages(messages)).toEqual([]);
     expect(errors).toEqual([]);
   });
 
