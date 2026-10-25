@@ -63,29 +63,14 @@ export const SUMMIT_LIFT_M = 350;
 export const SUMMIT_HFOV_DEG = 60;
 
 /**
- * Horizontal FOV of the summit frame on a wide stage (768 px and up). There the
- * summit plaque fills the left column, so the four waypoints must fit in the
- * band between the plaque and the altimeter rail, which is about 0.7 NDC wide
- * at 1280 x 720; at SUMMIT_HFOV_DEG they spread over 0.78 NDC, at 75° over
- * 0.59 (09-12, the summit plaque covered pins 1 and 2 at 1280 and 1440 px).
+ * Horizontal FOV of the summit frame on a wide stage (the md breakpoint and
+ * up). There the four waypoints must fit beside the summit plaque, so the
+ * frame may zoom out further than on a phone (09-12: the summit plaque covered
+ * pins 1 and 2 at 1280 and 1440 px at SUMMIT_HFOV_DEG). Since 09-20 both are
+ * the zoom cap of the measured summit framing in framing.ts: it never zooms in
+ * past the focal length this FOV gives.
  */
 export const SUMMIT_WIDE_HFOV_DEG = 75;
-
-/**
- * On a wide stage the summit frame's optical centre moves left by this share of
- * the stage width (a negative horizontal view offset), so the waypoints move
- * right, into the band between the plaque and the rail. Ramps in over the last
- * leg with the summit FOV; 0 at every other stage.
- */
-export const SUMMIT_VIEW_OFFSET_X_SHARE = 0.095;
-
-/**
- * On a narrow stage the summit frame's optical centre moves up by this further
- * share of the stage height, on top of VIEW_OFFSET_SHARE, so the waypoints sit
- * above the docked plaque (D-20) on a 375 px phone too. Ramps in over the last
- * leg like the wide offset.
- */
-export const SUMMIT_VIEW_OFFSET_Y_SHARE = 0.08;
 
 /** Each stage's look target: mix(waypoint, summit, this), so the camera turns gently toward the waypoint (D-02). */
 export const STAGE_TARGET_MIX = 0.35;
@@ -106,15 +91,21 @@ export const LAST_STAGE_RADIUS_M = 1100;
  */
 export const CAMERA_GLIDE_DEG = 26;
 
-/** Below 768 px the optical centre moves up by this share of the stage height (D-20): targets sit above the docked card. */
+/**
+ * Below the md breakpoint the optical centre moves up by this share of the
+ * stage height (D-20): targets sit above the docked card. The stage keys of
+ * the measured summit framing's key track (framing.ts stageViewKeys) copy it
+ * as NARROW_VIEW_OFFSET_Y_SHARE; ascent-route.test asserts they match.
+ */
 export const VIEW_OFFSET_SHARE = 0.2;
 
 /**
- * Below 768 px the optical centre also moves right by this share of the stage
- * width, so the stage's waypoint (on the view axis) sits at 30 % of the width
- * and its label fits to its right: a centred pin on a 402 px stage has room
- * for only about 177 px of label on either side, and the labels run 184 to
- * 250 px. Ramps in with the tilt-in like the vertical offset.
+ * Below the md breakpoint the optical centre also moves right by this share of
+ * the stage width, so the stage's waypoint (on the view axis) sits at 30 % of
+ * the width and its label fits to its right: a centred pin on a 402 px stage
+ * has room for only about 177 px of label on either side, and the labels run
+ * 184 to 250 px. Ramps in with the tilt-in like the vertical offset; copied in
+ * framing.ts as NARROW_VIEW_OFFSET_X_SHARE (ascent-route.test asserts it).
  */
 export const VIEW_OFFSET_X_SHARE = 0.2;
 
@@ -144,8 +135,10 @@ const mix3 = (a: Vec3, b: Vec3, t: number): Vec3 => ({
 /**
  * The tilt-in fraction at p (D-16): 0 at p = 0 (the plan view), easing to 1 at
  * the start of waypoint 1's plateau (p_1 - PLATEAU), so the camera holds still
- * on the plateau. Drives uRelief (0 to RELIEF_EXAGGERATION via the uniform), the
- * camera's up vector and the narrow-stage view offset. reliefAt(p_1) is 1.
+ * on the plateau. Drives uRelief (0 to RELIEF_EXAGGERATION via the uniform) and
+ * the camera's up vector; the narrow-stage view offset ramps the same way (the
+ * first segment of framing.ts's key track is curveParamAt's first segment).
+ * reliefAt(p_1) is 1.
  */
 export function reliefAt(p: number, firstArrival: number): number {
   const end = firstArrival - ROUTE_PLATEAU;
@@ -269,102 +262,21 @@ export function curveParamAt(p: number, arrivals: readonly number[]): number {
 
 /**
  * The vertical FOV (degrees) whose horizontal FOV is `hfovDeg` at `aspect`
- * (width / height): 2 atan(tan(hfov / 2) / aspect). The summit frame uses it
- * so all four waypoints fit across a portrait phone too (D-03).
+ * (width / height): 2 atan(tan(hfov / 2) / aspect). Its focal length,
+ * w / (2 tan(hfov / 2)), is the zoom cap of the measured summit framing in
+ * framing.ts (all four waypoints fit across a portrait phone too, D-03).
  */
 export function summitVerticalFov(aspect: number, hfovDeg: number): number {
   return (2 * Math.atan(Math.tan((hfovDeg * DEG) / 2) / aspect)) / DEG;
 }
 
 /**
- * The camera's vertical FOV at curve parameter t: CAMERA_FOV_DEG until the
- * last leg starts (t = n / (n + 1)), then linear in t to `summitFovDeg` at the
- * summit, so it holds on every plateau.
- */
-export function fovAt(t: number, n: number, summitFovDeg: number): number {
-  return lerp(CAMERA_FOV_DEG, summitFovDeg, summitShare(t, n));
-}
-
-/**
- * How far into the last leg the camera is at curve parameter t (n waypoints):
- * 0 until the leg starts (t = n / (n + 1)), 1 at the summit. The summit FOV and
- * the summit view offsets ramp with it, so they hold on every other plateau.
- */
-function summitShare(t: number, n: number): number {
-  return clamp01(t * (n + 1) - n);
-}
-
-/**
- * The horizontal FOV (degrees) the summit frame must cover: SUMMIT_HFOV_DEG on
- * a narrow stage, SUMMIT_WIDE_HFOV_DEG on a wide one (the waypoints fit beside
- * the plaque). Pass it to summitVerticalFov.
+ * The horizontal FOV (degrees) the summit frame may cover at most:
+ * SUMMIT_HFOV_DEG on a narrow stage, SUMMIT_WIDE_HFOV_DEG on a wide one. The
+ * rig caps the measured summit framing's focal length at w / (2 tan(this / 2)).
  */
 export function summitHfovDeg(narrow: boolean): number {
   return narrow ? SUMMIT_HFOV_DEG : SUMMIT_WIDE_HFOV_DEG;
-}
-
-/**
- * The summit's share of the horizontal view offset in px at curve parameter t
- * (add it to viewOffsetXAt): on a wide stage -SUMMIT_VIEW_OFFSET_X_SHARE of the
- * width, ramping in over the last leg, so the waypoints sit right of the
- * plaque. Always 0 on a narrow stage.
- */
-export function summitViewOffsetXAt(
-  t: number,
-  n: number,
-  narrow: boolean,
-  stageWidth: number
-): number {
-  if (narrow) return 0;
-  return -summitShare(t, n) * SUMMIT_VIEW_OFFSET_X_SHARE * stageWidth;
-}
-
-/**
- * The summit's share of the vertical view offset in px at curve parameter t
- * (add it to viewOffsetAt): on a narrow stage SUMMIT_VIEW_OFFSET_Y_SHARE of the
- * height, ramping in over the last leg, so the waypoints sit above the docked
- * plaque. Always 0 on a wide stage.
- */
-export function summitViewOffsetYAt(
-  t: number,
-  n: number,
-  narrow: boolean,
-  stageHeight: number
-): number {
-  if (!narrow) return 0;
-  return summitShare(t, n) * SUMMIT_VIEW_OFFSET_Y_SHARE * stageHeight;
-}
-
-/**
- * The vertical view offset in px (D-20) for camera.setViewOffset: on a narrow
- * stage (below 768 px, where the card docks over the lower part) the optical
- * centre moves up by VIEW_OFFSET_SHARE of the stage height, ramping in with
- * the tilt-in, so it is 0 at p = 0 (poster parity). Always 0 on wide stages.
- */
-export function viewOffsetAt(
-  p: number,
-  firstArrival: number,
-  narrow: boolean,
-  stageHeight: number
-): number {
-  if (!narrow) return 0;
-  return reliefAt(p, firstArrival) * VIEW_OFFSET_SHARE * stageHeight;
-}
-
-/**
- * The horizontal view offset in px for camera.setViewOffset on a narrow stage
- * (VIEW_OFFSET_X_SHARE of the width, ramping in with the tilt-in): the stage's
- * waypoint moves left of centre so its label fits on the right. 0 at p = 0 and
- * always 0 on wide stages.
- */
-export function viewOffsetXAt(
-  p: number,
-  firstArrival: number,
-  narrow: boolean,
-  stageWidth: number
-): number {
-  if (!narrow) return 0;
-  return reliefAt(p, firstArrival) * VIEW_OFFSET_X_SHARE * stageWidth;
 }
 
 /**
