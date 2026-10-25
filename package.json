@@ -29,7 +29,8 @@
     "photos:build": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/photos/build-photo-data.mjs",
     "terrain:fetch": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/terrain/fetch-dem.mjs",
     "terrain:build": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/terrain/build-terrain.mjs",
-    "data:check": "npm run terrain:build -- --check && npm run photos:exif -- --check && npm run photos:derive -- --check && npm run photos:build -- --check"
+    "tokens:build": "node scripts/tokens/build-tokens.mjs",
+    "data:check": "npm run terrain:build -- --check && npm run photos:exif -- --check && npm run photos:derive -- --check && npm run photos:build -- --check && npm run tokens:build -- --check"
   },
   "engines": {
     "node": "24.x"
