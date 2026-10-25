@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 09
 current_phase_name: Home Ascent
 status: executing
-stopped_at: Completed 09-17-PLAN.md
-last_updated: "2026-10-25T16:42:46.749Z"
+stopped_at: Completed 09-18-PLAN.md
+last_updated: "2026-10-25T17:00:22.737Z"
 last_activity: 2026-10-25
 last_activity_desc: Phase 09 execution started
-state_head: 36c00fb80bd24f57691825c0add9b4da169bd9d0
+state_head: 690538dab3a8c5ce86e3ce7856434b8d6402359c
 progress:
   total_phases: 6
   completed_phases: 8
   total_plans: 62
-  completed_plans: 57
-  percent: 92
+  completed_plans: 58
+  percent: 94
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-24)
 ## Current Position
 
 Phase: 09 (Home Ascent) — EXECUTING
-Plan: 18 of 22
+Plan: 19 of 22
 Status: Ready to execute
 Last activity: 2026-10-25 — Phase 09 execution started
 
-Progress: [█████████░] 92%
+Progress: [█████████░] 94%
 
 ## Performance Metrics
 
@@ -112,6 +112,7 @@ Progress: [█████████░] 92%
 | Phase 09 P15 | 8 min | 2 tasks | 8 files |
 | Phase 09 P16 | 7 min | 2 tasks | 6 files |
 | Phase 09 P17 | 8 min | 2 tasks | 6 files |
+| Phase 09 P18 | 14 min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -260,6 +261,8 @@ Recent decisions affecting current work:
 - [Phase 09]: 09-16: card kicker renders as two nowrap parts ('{altitude} ·', 'Waypoint k of n') and the place line as place text glued to a nowrap ' · date' tail (separator hidden and date its own line docked); waypointKicker and placeDate strings unchanged
 - [Phase 09]: 09-17: altimeter rail box in its own sticky aria-hidden layer ([data-ascent-rail-layer]) after the track (Tim's option B); rail scrim stays in the stage for flipPinLabels and CameraRig; composed rail contrast at 768-1280 x 900, p 0 and 0.05 is 5.20-8.76:1 (was 1.17-2.48 at 768)
 - [Phase 09]: 09-17: composedContrast (fill-vs-transparent-text shots) is the contrast method for text an overlay may cover; worstContrastBehind stays for text above a scrim (B7)
+- [Phase 09]: 09-18: Full summit plaque only on landscape viewports 1100 to below 1944 px (SUMMIT_FULL_MEDIA in lib/ascent/summit-layout.ts, guarded against app/globals.css); compact elsewhere, motion-safe only
+- [Phase 09]: 09-18: Compact summit stats move after the ascent into [data-summit-details], a group named by the summit h2 (no disclosure, no new heading); the summit block scrim is removed
 
 ### Pending Todos
 
@@ -297,6 +300,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-25T16:42:46.346Z
-Stopped at: Completed 09-17-PLAN.md
+Last session: 2026-10-25T17:00:22.323Z
+Stopped at: Completed 09-18-PLAN.md
 Resume file: None
