@@ -172,3 +172,4 @@ Tim's answers on 2026-10-25, after diagnosis and before gap planning:
 - G-09-4 N1 fix: "B: rail in own layer". Move the rail box (not its scrim) into its own sticky aria-hidden layer after the track. Amend the UI-SPEC z-order row and tree, and rewrite the rail containment assertion.
 - IN-05: "Keep sticky, document". No behaviour change to the module-level `downgraded` / `dprSteppedDown`; correct the JSDoc to say the downgrade lasts the session (until a full reload).
 - WR-02: "Include". Add `budgetMeasureOnly` to the context-loss test in the same gap plan.
+- Pin 3 static-poster label (raised by the plan checker on 09-19): "Accept, amend D-09". In the static poster at about 768-1090 px, when waypoint 3 is active its pin head sits under its own card (D-16 fixed poster positions plus the D-07 left card), and its label is hidden. Record this exception in CONTEXT D-09 and the UI-SPEC during planning, not at 09-22.
