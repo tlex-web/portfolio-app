@@ -623,6 +623,11 @@ type LitBoxes = {
 async function litBoxes(page: Page, k: number): Promise<LitBoxes> {
   await scrollBlockToCentre(page, `li[data-k="${k}"]`);
   await expect(readout(page)).toHaveText(formatMetres(waypoints[k - 1].altitudeM));
+  // The readout already shows waypoint 1's height at p = 0, so also wait for the lit pin.
+  await expect(page.locator(`[data-pin-layer="poster"] [data-pin="${k}"]`)).toHaveAttribute(
+    'data-active',
+    ''
+  );
   await nextFrames(page);
   return page.evaluate((k) => {
     const box = (el: Element) => {
@@ -692,19 +697,53 @@ function expectLabelClear(b: LitBoxes, what: string) {
  * head whose centre is under its card shows no label (the D-09 amendment).
  */
 test.describe('Lit poster label clears its card and the rail (G-09-3 a)', () => {
+  // The md band either side of the scrollbar gutter (768/778) and up to the lg
+  // padding step (1023/1024), the 768 x 1024 portrait iPad, desktops and two
+  // phones (debug note Evidence 15:40 and 15:55).
+  const SIZES: ReadonlyArray<readonly [number, number]> = [
+    [768, 900],
+    [778, 900],
+    [820, 900],
+    [900, 900],
+    [1023, 900],
+    [1024, 900],
+    [768, 1024],
+    [1280, 900],
+    [1440, 900],
+    [375, 667],
+    [412, 839],
+  ];
+  /** The UAT truth (test 3): pin 2's own head is clear of its card at 768 px. */
+  const HEAD_CLEAR_OF_CARD = new Set(['768x900', '768x1024']);
+
   test.beforeEach(async ({ page }) => {
     await disableWebGL(page);
   });
 
-  test('waypoint 2 at 768 x 900 is legible beside its card', async ({ page }) => {
-    await page.setViewportSize({ width: 768, height: 900 });
-    await page.goto('/');
+  for (const [width, height] of SIZES) {
+    test(`every lit label at ${width} x ${height}`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await page.goto('/');
 
-    const b = await litBoxes(page, 2);
-    test.info().annotations.push({ type: 'side', description: `waypoint 2: ${b.side}` });
-    expect(centreInside(b.head, b.card), 'pin 2 head centre outside the card').toBe(false);
-    expectLabelClear(b, 'waypoint 2');
-  });
+      for (const w of waypoints) {
+        const b = await litBoxes(page, w.k);
+        const what = `waypoint ${w.k} at ${width} x ${height}`;
+        if (w.k === 2 && HEAD_CLEAR_OF_CARD.has(`${width}x${height}`))
+          expect(centreInside(b.head, b.card), `${what}: head centre outside the card`).toBe(false);
+        if (centreInside(b.head, b.card)) {
+          // The static-poster exception (D-09 amendment 2026-10-25): no label.
+          test
+            .info()
+            .annotations.push({ type: 'head under its card', description: `waypoint ${w.k}` });
+          expect(b.side, `${what}: placement`).toBe('none');
+          expect(b.labelVisibility, `${what}: label hidden under the card`).toBe('hidden');
+          continue;
+        }
+        test.info().annotations.push({ type: 'side', description: `waypoint ${w.k}: ${b.side}` });
+        expectLabelClear(b, what);
+      }
+    });
+  }
 });
 
 /**
