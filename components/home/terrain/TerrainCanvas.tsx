@@ -2,7 +2,10 @@
 
 import type { ReactNode } from 'react';
 import SafeCanvas from '@/components/SafeCanvas';
+import { tokens } from '@/data/generated/tokens';
 import { downgradeAscent } from '@/lib/useAscentMode';
+import CameraRig from './CameraRig';
+import TerrainMesh from './TerrainMesh';
 
 /**
  * The entry of the lazy canvas chunk (HOME-08, D-19; 09-UI-SPEC "Canvas",
@@ -17,8 +20,8 @@ import { downgradeAscent } from '@/lib/useAscentMode';
  *
  * It starts at opacity 0 and stays there while the stage reads 'eligible': the
  * poster underneath is the visible terrain (the D-19 "3D not ready yet" state).
- * The terrain mesh (children, 09-08) calls useAscent().markRevealed() after its
- * first drawn frame; the stage then reads '3d' and the canvas fades in over
+ * TerrainMesh (09-08) calls useAscent().markRevealed() after its first drawn
+ * frame; the stage then reads '3d' and the canvas fades in over
  * --duration-settle with ease-geological. The canvas exists only when motion is
  * allowed, so the fade needs no reduced-motion variant.
  *
@@ -28,6 +31,12 @@ import { downgradeAscent } from '@/lib/useAscentMode';
  *
  * `inset: 0` and `position: absolute` are inline because R3F writes
  * `position: relative` inline on its wrapper, which beats the class.
+ *
+ * The scene: TerrainMesh (the heightmap mesh with the poster-parity shader) and
+ * CameraRig (the plan view of the poster at p = 0). The camera's near and far
+ * planes bracket the plan-view altitudes (about 8 to 22 km) and the later
+ * oblique route. The clear colour is the stage ground, night-950, from the
+ * generated tokens; `children` stays open for the 3D pins (09-10).
  */
 export default function TerrainCanvas({
   gridSize,
@@ -41,6 +50,8 @@ export default function TerrainCanvas({
       data-grid-size={gridSize}
       onCanvasError={() => downgradeAscent('load-error')}
       frameloop="demand"
+      camera={{ fov: 40, near: 10, far: 100000 }}
+      onCreated={({ gl }) => gl.setClearColor(tokens.hex.night950)}
       dpr={[1, 1.5]}
       resize={{ scroll: false }}
       flat
@@ -49,6 +60,8 @@ export default function TerrainCanvas({
       style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
       className="absolute inset-0 opacity-0 transition-opacity duration-(--duration-settle) ease-geological group-data-[ascent-mode=3d]/stage:opacity-100"
     >
+      <TerrainMesh gridSize={gridSize} />
+      <CameraRig />
       {children}
     </SafeCanvas>
   );
