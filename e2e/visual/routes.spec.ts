@@ -1,9 +1,13 @@
 import path from 'path';
 import { test, expect, type Page } from '@playwright/test';
+import { buildWaypoints } from '@/lib/ascent/waypoints';
+import { disableWebGL, nextFrames } from '../helpers/webgl';
+import { scrollBlockToCentre } from '../helpers/ascent';
 
 /**
  * GUARD-02 visual regression: every route at 375 / 768 / 1440 px, plus Home
- * viewport shots at 0 / 50 / 100 % scroll with motion enabled.
+ * viewport shots at three fixed ascent positions (top, waypoint 2 centred,
+ * summit centred) with motion enabled on the static poster path (D-22).
  *
  * Runs only in the visual-dark and visual-light projects. Baselines are
  * captured in the Playwright Linux container (see e2e/visual/README.md);
@@ -27,7 +31,18 @@ const ROUTES = [
 
 const WIDTHS = [375, 768, 1440] as const;
 const HEIGHT = 900;
-const SCROLL_PCTS = [0, 50, 100] as const;
+
+/**
+ * Fixed ascent positions for the Home motion shots (D-22, 09-RESEARCH
+ * Pitfall 3): p = 0 at the top, waypoint 2's block centred (inside its arrival
+ * plateau) and the summit centred. The waypoint selector comes from the data,
+ * never from a literal slug.
+ */
+const ASCENT_SHOTS = [
+  ['start', null],
+  ['waypoint-2', `#waypoint-${buildWaypoints()[1].slug}`],
+  ['summit', '#summit'],
+] as const;
 
 // Hides every <canvas> (WebGL / random). Never use `mask:` for these.
 // Resolved from this file, so the run does not depend on the cwd.
@@ -68,6 +83,16 @@ async function settle(page: Page) {
     performance
       .getEntriesByType('resource')
       .some((entry) => /\/terrain\/contours-strip\.[0-9a-f]{10}\.svg$/.test(entry.name)),
+  );
+  // Home's poster draws its contour lines from the hashed hero SVG, which does
+  // not hold up the load event either: wait for it on / as well, so a baseline
+  // can never show an empty contour layer (09-RESEARCH Pitfall 3).
+  await page.waitForFunction(
+    () =>
+      location.pathname !== '/' ||
+      performance
+        .getEntriesByType('resource')
+        .some((entry) => /\/terrain\/contours-hero\.[0-9a-f]{10}\.svg$/.test(entry.name)),
   );
   await page.evaluate(
     () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
@@ -110,23 +135,32 @@ for (const [name, route] of ROUTES) {
   }
 }
 
-// Motion ON: exercises the useScroll / useMotionValueEvent paths that
-// reduced-motion shots cannot see (RESEARCH Pitfall 3). Viewport only.
+// Motion ON: exercises the ascent's scroll-driven paths (progress spring, live
+// rail, poster pins) that reduced-motion shots cannot see. Viewport only.
+// WebGL is switched off so Home takes the static poster path every time: with
+// SwiftShader the canvas would load at idle and swap the poster pins for HTML
+// 3D pins on a timing no baseline can pin (09-RESEARCH Pitfall 3). Canvases
+// stay hidden through hide-canvas.css either way; the 3D path is covered by
+// the SwiftShader checks in e2e/home-canvas.spec.ts, not by baselines.
 // `animations: 'allow'` plus freezeTimeAnimations keeps the scroll-driven
 // state in the shot while every time-based animation is still frozen.
 for (const w of WIDTHS) {
-  for (const pct of SCROLL_PCTS) {
-    test(`home scroll ${pct}% @${w}`, async ({ page }) => {
+  for (const [shot, selector] of ASCENT_SHOTS) {
+    test(`home ascent ${shot} @${w}`, async ({ page }) => {
+      await disableWebGL(page);
       await page.emulateMedia({ reducedMotion: 'no-preference' });
       await page.setViewportSize({ width: w, height: HEIGHT });
       await page.goto('/');
       await settle(page);
-      await page.evaluate((p) => window.scrollTo(0, (window.innerHeight * p) / 100), pct);
-      await page.evaluate(
-        () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
-      );
+      // A jump of more than one leg snaps the spring, so two frames suffice.
+      if (selector === null) {
+        await page.evaluate(() => window.scrollTo(0, 0));
+        await nextFrames(page);
+      } else {
+        await scrollBlockToCentre(page, selector);
+      }
       await freezeTimeAnimations(page);
-      await expect(page).toHaveScreenshot(['home', `${w}-scroll-${pct}.png`], {
+      await expect(page).toHaveScreenshot(['home', `${w}-ascent-${shot}.png`], {
         stylePath,
         animations: 'allow',
       });

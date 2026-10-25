@@ -1,9 +1,18 @@
 # Visual regression baselines (GUARD-02)
 
 `routes.spec.ts` screenshots every route at 375, 768 and 1440 px in the
-`visual-dark` and `visual-light` Playwright projects, plus Home at 0 / 50 /
-100 % scroll with motion enabled: 36 tests per scheme. Every later Phase 7
-plan is judged against these files.
+`visual-dark` and `visual-light` Playwright projects (reduced motion, full
+page), plus Home with motion enabled at three fixed ascent positions on the
+static poster path: the top (p = 0), waypoint 2's block centred and the summit
+centred (`home/<width>-ascent-{start,waypoint-2,summit}.png`): 36 tests per
+scheme. Every later plan is judged against these files.
+
+The Home motion shots switch WebGL off (`disableWebGL` from
+`e2e/helpers/webgl.ts`), so the capability gate keeps Home on the poster, its
+pins and the live rail, whatever the runner's GPU. Positions are reached by
+centring a block, never by a scroll percentage, so a change in track height
+cannot move them. Canvases stay hidden either way; the 3D path is covered by
+the SwiftShader checks in `e2e/home-canvas.spec.ts`, not by baselines.
 
 Since 07-14 only visual-dark PNGs exist (36 files); visual-light asserts
 against them through `expect.toHaveScreenshot.pathTemplate: DARK_PATH`, so a
