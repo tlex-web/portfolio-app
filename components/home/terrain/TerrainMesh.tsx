@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useEffectEvent, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState, type RefObject } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { decode } from 'fast-png';
 import {
@@ -14,6 +14,7 @@ import {
 } from 'three';
 import { useAscent } from '@/components/home/AscentController';
 import { terrain } from '@/data/generated/terrain';
+import { RELIEF_EXAGGERATION } from '@/lib/ascent/route';
 import { planeSize, toMetres, validateHeightmap, vertexUv } from '@/lib/terrain/heightmap';
 import { downgradeAscent } from '@/lib/useAscentMode';
 import {
@@ -55,7 +56,11 @@ import {
  * texture that finishes after the cleanup on the spot.
  *
  * Frustum culling stays on with a bounding sphere that covers every relief
- * from 0 (flat) to 1; 09-10 must widen it if uExaggeration goes above 1.
+ * from 0 (flat) up to RELIEF_EXAGGERATION (the largest uRelief x
+ * uExaggeration the camera rig sets, 09-10).
+ *
+ * `shaderRef` receives the live material (null after the cleanup), so the
+ * camera rig can drive uRelief and uExaggeration along the route (09-10).
  */
 
 const W = terrain.extent.widthM;
@@ -78,10 +83,12 @@ function buildGeometry(metres: Float32Array, n: number): PlaneGeometry {
       uv.setXY(k, u, v);
     }
   }
-  // Bounds for every relief between 0 (the flat plan view) and 1.
+  // Bounds for every relief between 0 (the flat plan view) and RELIEF_EXAGGERATION.
   geometry.computeBoundingBox();
   const box = (geometry.boundingBox as Box3).clone();
-  box.min.y = Math.min(0, box.min.y);
+  const maxScale = Math.max(1, RELIEF_EXAGGERATION);
+  box.min.y = Math.min(0, box.min.y * maxScale);
+  box.max.y = Math.max(0, box.max.y * maxScale);
   geometry.boundingSphere = box.getBoundingSphere(new Sphere());
   return geometry;
 }
@@ -124,10 +131,13 @@ async function loadHillshade(stage: HTMLElement | null): Promise<Texture> {
 export default function TerrainMesh({
   gridSize,
   onMetres,
+  shaderRef,
 }: {
   gridSize: 256 | 512;
   /** Receives the decoded metres (gridSize² values, row 0 north) for anchoring things on the mesh. */
   onMetres?: (metres: Float32Array) => void;
+  /** Receives the live terrain material (null once disposed), for the relief uniforms. */
+  shaderRef?: RefObject<ShaderMaterial | null>;
 }) {
   const { stageRef, markRevealed, progress } = useAscent();
   const gl = useThree((s) => s.gl);
@@ -143,6 +153,9 @@ export default function TerrainMesh({
   const dprRef = useRef(dpr);
 
   const deliverMetres = useEffectEvent((metres: Float32Array) => onMetres?.(metres));
+  const shareMaterial = useEffectEvent((live: ShaderMaterial | null) => {
+    if (shaderRef) shaderRef.current = live;
+  });
 
   useEffect(() => {
     const controller = new AbortController();
@@ -180,6 +193,7 @@ export default function TerrainMesh({
         toneMapped: false,
       });
       materialRef.current = material;
+      shareMaterial(material);
       deliverMetres(metres);
       setBuilt({ geometry, material });
       invalidate();
@@ -192,6 +206,7 @@ export default function TerrainMesh({
       if (revealFrame.current !== null) cancelAnimationFrame(revealFrame.current);
       revealFrame.current = null;
       materialRef.current = null;
+      shareMaterial(null);
       geometry?.dispose();
       material?.dispose();
       // A uniform texture is not freed by material.dispose() (A4); the poster img stays.

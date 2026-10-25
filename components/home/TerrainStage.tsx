@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { useAscent } from '@/components/home/AscentController';
 import { terrain } from '@/data/generated/terrain';
+import type { PinAnchor } from '@/lib/ascent/route';
 
 /**
  * The render-gated lazy canvas (HOME-08, D-19; 09-RESEARCH Pattern 3;
@@ -22,6 +23,9 @@ import { terrain } from '@/data/generated/terrain';
  *
  * The mesh size is fixed at arm time from the stage width: the 256² heightmap
  * below 768 px, else 512² (D-18: capable phones still get 3D).
+ *
+ * `pins` (serialisable, from the Server AscentHero) are the waypoint anchors
+ * the canvas flies the camera past and draws as 3D pins (09-10).
  */
 
 const TerrainCanvas = dynamic(() => import('./terrain/TerrainCanvas'), { ssr: false });
@@ -31,7 +35,7 @@ const MOBILE_STAGE_PX = 768;
 
 type GridSize = 256 | 512;
 
-export default function TerrainStage() {
+export default function TerrainStage({ pins }: { pins: readonly PinAnchor[] }) {
   const { mode, stageRef } = useAscent();
   const eligible = mode === 'eligible';
   const [gridSize, setGridSize] = useState<GridSize | null>(null);
@@ -59,5 +63,5 @@ export default function TerrainStage() {
   }, [eligible, gridSize, stageRef]);
 
   if (!eligible || gridSize === null) return null;
-  return <TerrainCanvas gridSize={gridSize} />;
+  return <TerrainCanvas gridSize={gridSize} pins={pins} />;
 }

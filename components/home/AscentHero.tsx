@@ -6,6 +6,7 @@ import SummitPlaque from '@/components/home/SummitPlaque';
 import TerrainStage from '@/components/home/TerrainStage';
 import WaypointCard from '@/components/home/WaypointCard';
 import { terrain } from '@/data/generated/terrain';
+import type { PinAnchor } from '@/lib/ascent/route';
 import { buildWaypoints } from '@/lib/ascent/waypoints';
 import { formatMetres } from '@/lib/photo-format';
 
@@ -38,7 +39,9 @@ import { formatMetres } from '@/lib/photo-format';
  * damped progress value (HOME-03, D-06); the AltimeterRail inside the stage
  * reads it (HOME-04, D-01, D-05). Only serialisable props cross the boundary:
  * the waypoint count, the n + 1 heights (waypoints, then the official summit
- * height) and the tick labels.
+ * height) and the tick labels. The lazy canvas gets the pin anchors (number,
+ * label, approximate flag, UV) the same way (09-10), so the 3D pins carry the
+ * poster pins' labels without shipping the photo data to the client.
  */
 export default function AscentHero() {
   const waypoints = buildWaypoints();
@@ -50,13 +53,20 @@ export default function AscentHero() {
     })),
     { label: formatMetres(terrain.summit.officialM), approximate: false },
   ];
+  const pins: PinAnchor[] = waypoints.map((w) => ({
+    k: w.k,
+    label: `${w.shortPlace} · ${formatMetres(w.altitudeM)}${w.approximate ? ' approx.' : ''}`,
+    approximate: w.approximate,
+    u: w.uv.u,
+    v: w.uv.v,
+  }));
 
   return (
     <AscentController n={waypoints.length} heights={heights}>
       <div className="grid">
         <AscentStageFrame>
           <PosterSheet />
-          <TerrainStage />
+          <TerrainStage pins={pins} />
           <AltimeterRail ticks={ticks} />
         </AscentStageFrame>
         <div data-ascent-track className="relative col-start-1 row-start-1">
