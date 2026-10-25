@@ -285,3 +285,7 @@ None - no external service configuration required.
 ---
 *Phase: 09-home-ascent*
 *Completed: 2026-10-25*
+
+## Self-Check: PASSED
+
+The SUMMARY, data/home.ts, lib/ascent/route.ts and e2e/home-canvas.spec.ts exist. Commits ae50279 and fc24d57 are ancestors of HEAD: `git rev-list --count 9af9355..fc24d57` is 2. public/service-worker.js is clean and nothing listens on :3000.
