@@ -23,6 +23,8 @@ import {
   stageViewKeys,
   summitClearRects,
   viewTrackAt,
+  waypointTarget,
+  WAYPOINT_FRAME_MARGIN_PX,
   type Box,
   type RailGeometry,
   type TangentBounds,
@@ -450,5 +452,166 @@ describe('viewTrackAt', () => {
     const plateau = viewTrackAt(keys, curveParamAt(arrivals[1], arrivals));
     expect(plateau.x).toBeCloseTo(NARROW_VIEW_OFFSET_X_SHARE * w, 9);
     expect(plateau.y).toBeCloseTo(NARROW_VIEW_OFFSET_Y_SHARE * h, 9);
+  });
+});
+
+/*
+ * G-09-3 (a), 3D half, 09-21 (D-07, D-09, D-20; .planning/debug/waypoint2-
+ * label-and-kicker.md Evidence 15:45): the md stage target for the lit
+ * waypoint. The card is the 448 px md column, the rail a column of marks on
+ * the right (here one box for the whole rail, so no label can slip between its
+ * tick rows).
+ */
+describe('waypointTarget', () => {
+  const M = WAYPOINT_FRAME_MARGIN_PX;
+  const LABEL_184 = { w: 184, h: 30 };
+  /** 768 x 900: stage 758 x 836, card x 24-472, rail box from x 566. */
+  const MD_STAGE = { w: 758, h: 836 };
+  const MD_CARD: Box = { x0: 24, y0: 103, x1: 472, y1: 733 };
+  const MD_RAIL: Box = { x0: 566, y0: 12, x1: 726, y1: 824 };
+  /** 1024 x 900: stage 1014 x 836, card x 32-480, rail box from x 798. */
+  const LG_STAGE = { w: 1014, h: 836 };
+  const LG_CARD: Box = { x0: 32, y0: 103, x1: 480, y1: 733 };
+  const LG_RAIL: Box = { x0: 798, y0: 12, x1: 998, y1: 824 };
+
+  /** The accepted-target contract: mark inside the stage, `M` from the card, a clear label. */
+  function expectClear(
+    target: { x: number; y: number },
+    card: Box,
+    obstacles: Box[],
+    stage: { w: number; h: number },
+    label = LABEL_184
+  ) {
+    const { mark } = pinBoxes(target.x, target.y);
+    expect(mark.x0).toBeGreaterThanOrEqual(M);
+    expect(mark.y0).toBeGreaterThanOrEqual(M);
+    expect(mark.x1).toBeLessThanOrEqual(stage.w - M);
+    expect(mark.y1).toBeLessThanOrEqual(stage.h - M);
+    const gap = Math.max(
+      card.x0 - mark.x1,
+      mark.x0 - card.x1,
+      card.y0 - mark.y1,
+      mark.y0 - card.y1
+    );
+    expect(gap).toBeGreaterThanOrEqual(M - 1e-9);
+    const placed = placePinLabel({
+      anchor: target,
+      label,
+      obstacles: [...obstacles, card],
+      covers: [card],
+      bounds: { x0: 0, y0: 0, x1: stage.w, y1: stage.h },
+    });
+    expect(placed.clear).toBe(true);
+  }
+
+  it('keeps the natural position when it already clears (1440 x 836, 448 px left card)', () => {
+    const stage = { w: 1430, h: 836 };
+    const card: Box = { x0: 171, y0: 103, x1: 619, y1: 733 };
+    const rail: Box = { x0: 1190, y0: 12, x1: 1406, y1: 824 };
+    const target = waypointTarget({
+      natural: { x: 715, y: 418 },
+      card,
+      label: LABEL_184,
+      obstacles: [rail],
+      stage,
+    });
+    expect(target).toEqual({ x: 715, y: 418, placement: 'natural' });
+    expectClear(target, card, [rail], stage);
+  });
+
+  it('moves beside the card when the band to the rail fits head and label, at the natural height', () => {
+    const target = waypointTarget({
+      natural: { x: 300, y: 418 },
+      card: LG_CARD,
+      label: LABEL_184,
+      obstacles: [LG_RAIL],
+      stage: LG_STAGE,
+    });
+    expect(target).toEqual({ x: LG_CARD.x1 + M + 12, y: 418, placement: 'beside' });
+    expectClear(target, LG_CARD, [LG_RAIL], LG_STAGE);
+  });
+
+  it('clamps the beside height into the stage', () => {
+    const target = waypointTarget({
+      natural: { x: 300, y: 20 },
+      card: LG_CARD,
+      label: LABEL_184,
+      obstacles: [LG_RAIL],
+      stage: LG_STAGE,
+    });
+    expect(target).toEqual({ x: LG_CARD.x1 + M + 12, y: M + 40, placement: 'beside' });
+    expectClear(target, LG_CARD, [LG_RAIL], LG_STAGE);
+  });
+
+  it('moves above the card when the band to the rail is too narrow (768 x 836)', () => {
+    // The band x 472-566 is 94 px; no 184 px label fits beside the head there.
+    const target = waypointTarget({
+      natural: { x: 379, y: 418 },
+      card: MD_CARD,
+      label: LABEL_184,
+      obstacles: [MD_RAIL],
+      stage: MD_STAGE,
+    });
+    expect(target).toEqual({ x: MD_CARD.x0 + 12, y: MD_CARD.y0 - M, placement: 'above' });
+    expectClear(target, MD_CARD, [MD_RAIL], MD_STAGE);
+  });
+
+  it('moves below the card when there is no room above it', () => {
+    const card: Box = { x0: 24, y0: 20, x1: 472, y1: 600 };
+    const target = waypointTarget({
+      natural: { x: 379, y: 300 },
+      card,
+      label: LABEL_184,
+      obstacles: [MD_RAIL],
+      stage: MD_STAGE,
+    });
+    expect(target).toEqual({ x: card.x0 + 12, y: card.y1 + M + 40, placement: 'below' });
+    expectClear(target, card, [MD_RAIL], MD_STAGE);
+  });
+
+  it('returns natural when nothing fits', () => {
+    const card: Box = { x0: 8, y0: 8, x1: 700, y1: 828 };
+    expect(
+      waypointTarget({
+        natural: { x: 379, y: 418 },
+        card,
+        label: LABEL_184,
+        obstacles: [MD_RAIL],
+        stage: MD_STAGE,
+      })
+    ).toEqual({ x: 379, y: 418, placement: 'natural' });
+  });
+
+  it('returns natural when there is no card', () => {
+    expect(
+      waypointTarget({
+        natural: { x: 379, y: 418 },
+        card: null,
+        label: LABEL_184,
+        obstacles: [MD_RAIL],
+        stage: MD_STAGE,
+      })
+    ).toEqual({ x: 379, y: 418, placement: 'natural' });
+  });
+
+  it('keeps 8 px from the card: a natural mark 3 px right of it moves beside', () => {
+    const target = waypointTarget({
+      natural: { x: LG_CARD.x1 + 3 + 12, y: 418 },
+      card: LG_CARD,
+      label: LABEL_184,
+      obstacles: [LG_RAIL],
+      stage: LG_STAGE,
+    });
+    expect(target).toEqual({ x: LG_CARD.x1 + M + 12, y: 418, placement: 'beside' });
+  });
+
+  it('treats a missing label as 240 x 30 px', () => {
+    // Free band x 476-712 right of the card: a 184 px label fits beside, a 240 px one does not.
+    const rail: Box = { x0: 716, y0: 12, x1: 900, y1: 824 };
+    const args = { natural: { x: 300, y: 418 }, card: LG_CARD, obstacles: [rail], stage: LG_STAGE };
+    expect(waypointTarget({ ...args, label: LABEL_184 }).placement).toBe('beside');
+    const target = waypointTarget({ ...args, label: null });
+    expect(target.placement).toBe('above');
+    expectClear(target, LG_CARD, [rail], LG_STAGE, { w: 240, h: 30 });
   });
 });

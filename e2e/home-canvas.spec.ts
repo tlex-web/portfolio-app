@@ -753,7 +753,20 @@ test.describe('Home terrain route and 3D pins (HOME-02, HOME-03, HOME-05)', () =
     // and the stage; the annotation says where the pin sat (natural, beside,
     // above or below the card). Stages from 768 px run the 512² mesh, so every
     // row is measure-only.
-    const SIZES: ReadonlyArray<readonly [number, number]> = [[768, 900]];
+    // The md band either side of the scrollbar gutter (768/778), up to the lg
+    // padding step (1023/1024), the 768 x 1024 portrait iPad and two desktops,
+    // whose compositions must not change (natural).
+    const SIZES: ReadonlyArray<readonly [number, number]> = [
+      [768, 900],
+      [778, 900],
+      [820, 900],
+      [900, 900],
+      [1023, 900],
+      [1024, 900],
+      [768, 1024],
+      [1280, 900],
+      [1440, 900],
+    ];
     for (const [width, height] of SIZES) {
       test(`lights a clear 3D pin beside its card at ${width} x ${height} @chromium-only`, async ({
         page,
