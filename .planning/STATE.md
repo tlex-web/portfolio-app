@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 09
 current_phase_name: Home Ascent
 status: executing
-stopped_at: Completed 09-10-PLAN.md
-last_updated: "2026-10-25T02:13:51.417Z"
+stopped_at: Completed 09-11-PLAN.md
+last_updated: "2026-10-25T10:29:49.214Z"
 last_activity: 2026-10-25
 last_activity_desc: Phase 09 execution started
-state_head: 5fb3245de34ace5ab06568a93d32fe27f601726d
+state_head: 1d712e63d8ef492002ce2e413d45b0b47aa93d74
 progress:
   total_phases: 6
   completed_phases: 8
   total_plans: 54
-  completed_plans: 50
-  percent: 93
+  completed_plans: 51
+  percent: 94
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-24)
 ## Current Position
 
 Phase: 09 (Home Ascent) — EXECUTING
-Plan: 11 of 14
+Plan: 12 of 14
 Status: Ready to execute
 Last activity: 2026-10-25 — Phase 09 execution started
 
-Progress: [█████████░] 93% of v2.0 phases (2 of 6: Phases 7–8 complete); 40/40 planned plans done (Phases 9–12 not yet planned)
+Progress: [█████████░] 94% of v2.0 phases (2 of 6: Phases 7–8 complete); 40/40 planned plans done (Phases 9–12 not yet planned)
 
 ## Performance Metrics
 
@@ -105,6 +105,7 @@ Progress: [█████████░] 93% of v2.0 phases (2 of 6: Phases 7�
 | Phase 09 P08 | 18 min | 3 tasks | 9 files |
 | Phase 09 P09 | 7min | 2 tasks | 3 files |
 | Phase 09 P10 | 28 min | 3 tasks | 11 files |
+| Phase 09 P11 | 45 min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -237,6 +238,8 @@ Recent decisions affecting current work:
 - [Phase 09]: 09-10: stage cameras look back NE down each waypoint-summit line (yaw 4-18 deg per leg, waypoint centred on phones); a summit-facing flight would need a 170 deg turn at the top. Flagged for Tim at 09-12
 - [Phase 09]: 09-10: below 768 px the view offset is vertical (D-20) and horizontal (20 % of the width) so the active waypoint sits at 30 % and its label fits on the right
 - [Phase 09]: 09-10: pin anchors cross from the server AscentHero as props; route-curve routeCurvesFor/anchorAt is the one route builder for CameraRig and the clearance e2e
+- [Phase 09]: 09-11 Rule-4: Tim chose "A: measure-only flag (Recommended)" - test-only window.__ascentBudgetMeasureOnly keeps the frame-budget verdict without acting on it; only six desktop-size 3D e2e opt in; real decline proven at 1440x900 with no flag; 09-14 Task 1 applies option A (no relax, no webdriver skip)
+- [Phase 09]: 09-11: real-decline e2e forces 60 ms frames instead of test.skip (test-count guard forbids .skip()
 
 ### Pending Todos
 
@@ -274,6 +277,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-25T02:13:43.035Z
-Stopped at: Completed 09-10-PLAN.md
+Last session: 2026-10-25T10:29:48.976Z
+Stopped at: Completed 09-11-PLAN.md
 Resume file: None
