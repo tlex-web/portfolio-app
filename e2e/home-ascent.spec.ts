@@ -604,6 +604,109 @@ test.describe('Summit plaque clears the poster pins (G-09-2, static)', () => {
   });
 });
 
+type LitBoxes = {
+  stage: Box;
+  card: Box;
+  head: Box;
+  label: Box;
+  labelVisibility: string;
+  labelDisplay: string;
+  side: string | null;
+  /** The rail marks that are drawn (zero-size boxes, e.g. below 768 px, are left out). */
+  rail: Array<Box & { name: string }>;
+};
+
+/**
+ * Centres waypoint k's block (static mode), waits until the readout shows its
+ * height, and returns the boxes the lit-label clearance needs, in viewport px.
+ */
+async function litBoxes(page: Page, k: number): Promise<LitBoxes> {
+  await scrollBlockToCentre(page, `li[data-k="${k}"]`);
+  await expect(readout(page)).toHaveText(formatMetres(waypoints[k - 1].altitudeM));
+  await nextFrames(page);
+  return page.evaluate((k) => {
+    const box = (el: Element) => {
+      const r = el.getBoundingClientRect();
+      return { x: r.x, y: r.y, width: r.width, height: r.height };
+    };
+    const one = (selector: string) => {
+      const el = document.querySelector(selector);
+      if (!el) throw new Error(`no ${selector}`);
+      return el;
+    };
+    const pin = one(`[data-pin-layer="poster"] [data-pin="${k}"]`) as HTMLElement;
+    const label = one(`[data-pin-layer="poster"] [data-pin="${k}"] [data-pin-label]`);
+    const style = getComputedStyle(label);
+    const rail = [
+      ...[...document.querySelectorAll('[data-rail-tick]')].map((el, i) => ({
+        name: `tick row ${i}`,
+        ...box(el),
+      })),
+      { name: 'rail line', ...box(one('[data-ascent-rail] > div')) },
+      { name: 'readout', ...box(one('[data-ascent-readout]')) },
+      { name: 'marker', ...box(one('[data-ascent-marker]')) },
+    ].filter((b) => b.width > 0 && b.height > 0);
+    return {
+      stage: box(one('[data-ascent-stage]')),
+      card: box(one(`li[data-k="${k}"] section`)),
+      head: box(one(`[data-pin-layer="poster"] [data-pin="${k}"] [data-pin-head]`)),
+      label: box(label),
+      labelVisibility: style.visibility,
+      labelDisplay: style.display,
+      side: pin.dataset.label ?? null,
+      rail,
+    };
+  }, k);
+}
+
+const centreInside = (b: Box, c: Box) => {
+  const x = b.x + b.width / 2;
+  const y = b.y + b.height / 2;
+  return x >= c.x && x <= c.x + c.width && y >= c.y && y <= c.y + c.height;
+};
+
+/** The lit label is shown, inside the stage (1 px) and meets neither the card nor a rail mark. */
+function expectLabelClear(b: LitBoxes, what: string) {
+  expect(b.labelDisplay, `${what}: label display`).not.toBe('none');
+  expect(b.labelVisibility, `${what}: label visibility`).toBe('visible');
+  expect.soft(b.label.x, `${what}: label left in the stage`).toBeGreaterThanOrEqual(b.stage.x - 1);
+  expect.soft(b.label.y, `${what}: label top in the stage`).toBeGreaterThanOrEqual(b.stage.y - 1);
+  expect
+    .soft(b.label.x + b.label.width, `${what}: label right in the stage`)
+    .toBeLessThanOrEqual(b.stage.x + b.stage.width + 1);
+  expect
+    .soft(b.label.y + b.label.height, `${what}: label bottom in the stage`)
+    .toBeLessThanOrEqual(b.stage.y + b.stage.height + 1);
+  expect.soft(boxGap(b.label, b.card), `${what}: label gap to the card`).toBeGreaterThanOrEqual(0);
+  for (const mark of b.rail)
+    expect
+      .soft(boxGap(b.label, mark), `${what}: label gap to the ${mark.name}`)
+      .toBeGreaterThanOrEqual(0);
+}
+
+/**
+ * The static half of G-09-3 (a) (D-07, D-09; .planning/debug/waypoint2-label-
+ * and-kicker.md). The poster pins never move (D-16), so the lit label is placed
+ * around its head by placePinLabel (lib/ascent/framing.ts): right, left, above
+ * or below, clear of the stage edge, the active card and the rail marks. A
+ * head whose centre is under its card shows no label (the D-09 amendment).
+ */
+test.describe('Lit poster label clears its card and the rail (G-09-3 a)', () => {
+  test.beforeEach(async ({ page }) => {
+    await disableWebGL(page);
+  });
+
+  test('waypoint 2 at 768 x 900 is legible beside its card', async ({ page }) => {
+    await page.setViewportSize({ width: 768, height: 900 });
+    await page.goto('/');
+
+    const b = await litBoxes(page, 2);
+    test.info().annotations.push({ type: 'side', description: `waypoint 2: ${b.side}` });
+    expect(centreInside(b.head, b.card), 'pin 2 head centre outside the card').toBe(false);
+    expectLabelClear(b, 'waypoint 2');
+  });
+});
+
 /**
  * The one damped progress value in a browser (HOME-03, HOME-04, HOME-05; D-01,
  * D-05, D-06, D-08, D-09; 09-UI-SPEC "Ascent Mapping", "Pins", "Altimeter
@@ -633,8 +736,8 @@ test.describe('Ascent progress (HOME-03, HOME-04, HOME-05)', () => {
     await expect(rail(page)).toBeVisible();
     await expect(stage(page)).toHaveAttribute('aria-hidden', 'true');
     // The rail box lives in its own sticky layer after the track, so it paints
-    // above the hero scrim; its scrim stays in the stage, where the pin label
-    // flip and the camera read it (G-09-4 N1, Tim's option B, 09-17).
+    // above the hero scrim; its scrim stays in the stage, where the camera
+    // reads it (G-09-4 N1, Tim's option B, 09-17), under the pin layer (09-19).
     await expect(railLayer(page)).toHaveAttribute('aria-hidden', 'true');
     await expect(railLayer(page).locator('[data-ascent-rail]')).toHaveCount(1);
     await expect(stage(page).locator('[data-ascent-rail-scrim]')).toHaveCount(1);

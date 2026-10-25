@@ -28,7 +28,10 @@ const SIDE = 'max(100cqw, 100cqh)';
  * The poster pins (HOME-05, D-09) sit in the sheet box at left u x 100%, top
  * v x 100%: one PinMark per waypoint in ascent order, labelled with its short
  * place and height, and the summit mark. AscentController lights the active
- * one. The layer hides once the 3D pins take over (data-ascent-mode="3d").
+ * one and places its label (G-09-3 a, 09-19). The layer is z-10 so it paints
+ * above the rail scrim inside the stage: a label in the scrim zone is not
+ * dimmed (the rail box layer still paints above the whole stage). It hides
+ * once the 3D pins take over (data-ascent-mode="3d").
  */
 export default function PosterSheet() {
   const { avif, webp } = terrain.assets.hillshade;
@@ -75,7 +78,7 @@ export default function PosterSheet() {
       <ContourField lod="hero" className="absolute inset-0" />
       <div
         data-pin-layer="poster"
-        className="pointer-events-none absolute inset-0 group-data-[ascent-mode=3d]/stage:invisible"
+        className="pointer-events-none absolute inset-0 z-10 group-data-[ascent-mode=3d]/stage:invisible"
       >
         {waypoints.map((w) => (
           <PinMark
@@ -84,6 +87,7 @@ export default function PosterSheet() {
             label={`${w.shortPlace} · ${formatMetres(w.altitudeM)}${w.approximate ? ' approx.' : ''}`}
             approximate={w.approximate}
             u={w.uv.u}
+            v={w.uv.v}
             style={at(w.uv)}
           />
         ))}

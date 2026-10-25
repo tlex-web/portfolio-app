@@ -61,10 +61,11 @@ import { anchorAt, poseAt, routeCurvesFor } from './route-curve';
  * surface, not the DEM height) is projected through the camera and its
  * PinLayer3D mark is moved with a transform. A mark is hidden while its point
  * is behind the camera or beyond the depth range (NDC z outside (-1, 1)) or
- * more than 10 % outside the stage. A waypoint label flips to the left of its
- * head within 240 px of the clear stage edge (the stage's right edge, or the
- * rail scrim's left edge from 768 px), the rule AscentController applies to
- * the poster pins. Lighting stays with AscentController.
+ * more than 10 % outside the stage. A waypoint label is placed left of its
+ * head (data-label 'left') within 240 px of the clear stage edge (the stage's
+ * right edge, or the rail scrim's left edge from 768 px), else right of it (no
+ * data-label). The poster pins use placePinLabel instead (09-19); 09-21 moves
+ * the 3D pins onto it too. Lighting stays with AscentController.
  *
  * Demand frameloop: every change of the progress spring invalidates a frame,
  * and useFrame (priority 0, never positive: a positive priority takes over
@@ -99,7 +100,7 @@ import { anchorAt, poseAt, routeCurvesFor } from './route-curve';
 const EPS = 1e-4;
 /** Stages narrower than this dock the card over the lower part (D-20) and get the view offset. */
 const NARROW_STAGE_PX = 768;
-/** A pin head this close to the clear stage edge shows its label on the left (as AscentController). */
+/** A 3D pin head this close to the clear stage edge shows its label on the left (until 09-21). */
 const FLIP_PX = 240;
 /** A pin whose anchor is further outside the stage than this share of its size is hidden. */
 const OFFSTAGE_SHARE = 0.1;
@@ -143,7 +144,8 @@ const point = new Vector3();
 /**
  * Moves each 3D pin mark (waypoints, then the summit) to its projected anchor
  * on a w x h stage at relief `relief`, or hides it. `edge` is the clear stage
- * edge for the label flip.
+ * edge: a waypoint mark within FLIP_PX of it gets data-label 'left', any other
+ * loses the attribute (its label sits right of the head).
  */
 function placePins(
   camera: PerspectiveCamera,
@@ -175,7 +177,10 @@ function placePins(
     mark.style.visibility = shown ? '' : 'hidden';
     if (!shown) continue;
     mark.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
-    if (i < pins.length) mark.toggleAttribute('data-flip', edge - x < FLIP_PX);
+    if (i < pins.length) {
+      if (edge - x < FLIP_PX) mark.dataset.label = 'left';
+      else mark.removeAttribute('data-label');
+    }
   }
 }
 

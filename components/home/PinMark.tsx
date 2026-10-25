@@ -10,8 +10,12 @@ import type { CSSProperties, Ref } from 'react';
  * `style` (left/top). Its states are attributes set from outside by
  * AscentController, never React state: `data-active` lights the head (accent,
  * 11.29:1 numeral), shows the label and draws the pin above the others;
- * `data-flip` moves the label to the left of the head near the stage's right
- * edge. The lit state is a colour swap with no transition.
+ * `data-label` says where the label sits around the head (G-09-3 a, 09-19;
+ * placePinLabel in lib/ascent/framing.ts): right of the head when absent or
+ * 'right', 'left' of it, 'above' or 'below' the mark (left edge at
+ * `--pin-label-dx` from the mark's left edge), or 'none' (invisible, never
+ * 'visible', so the 3D layer's inherited visibility still applies). The lit
+ * state is a colour swap with no transition.
  *
  * An approximate position (the hand-placed film scan) draws a 2 px dashed head
  * border and a dashed stem: shape, not colour, carries the difference (08 D-02).
@@ -22,14 +26,16 @@ export default function PinMark({
   label,
   approximate,
   u,
+  v,
   style,
   ref,
 }: {
   k: number;
   label: string;
   approximate: boolean;
-  /** The anchor's u on the poster sheet, for the label-flip measurement (poster layer only). */
+  /** The anchor's u and v on the poster sheet, for the label placement (poster layer only). */
   u?: number;
+  v?: number;
   style?: CSSProperties;
   ref?: Ref<HTMLDivElement>;
 }) {
@@ -38,6 +44,7 @@ export default function PinMark({
       ref={ref}
       data-pin={k}
       data-u={u}
+      data-v={v}
       style={style}
       className="group/pin absolute flex w-6 -translate-x-1/2 -translate-y-full flex-col items-center data-[active]:z-10"
     >
@@ -57,7 +64,7 @@ export default function PinMark({
       />
       <span
         data-pin-label
-        className="absolute top-3 left-full ml-2 hidden -translate-y-1/2 rounded-sm border border-line bg-surface-raised px-2 py-1 font-body text-sm whitespace-nowrap text-ink group-data-[active]/pin:block group-data-[flip]/pin:right-full group-data-[flip]/pin:left-auto group-data-[flip]/pin:mr-2 group-data-[flip]/pin:ml-0"
+        className="absolute top-3 left-full ml-2 hidden -translate-y-1/2 rounded-sm border border-line bg-surface-raised px-2 py-1 font-body text-sm whitespace-nowrap text-ink group-data-[active]/pin:block group-data-[label=left]/pin:right-full group-data-[label=left]/pin:left-auto group-data-[label=left]/pin:mr-2 group-data-[label=left]/pin:ml-0 group-data-[label=above]/pin:top-auto group-data-[label=above]/pin:bottom-full group-data-[label=above]/pin:left-(--pin-label-dx) group-data-[label=above]/pin:mb-1 group-data-[label=above]/pin:ml-0 group-data-[label=above]/pin:translate-y-0 group-data-[label=below]/pin:top-full group-data-[label=below]/pin:left-(--pin-label-dx) group-data-[label=below]/pin:mt-1 group-data-[label=below]/pin:ml-0 group-data-[label=below]/pin:translate-y-0 group-data-[label=none]/pin:invisible"
       >
         {label}
       </span>

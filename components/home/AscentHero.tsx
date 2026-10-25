@@ -27,8 +27,9 @@ import { formatMetres } from '@/lib/photo-format';
  * by the client AscentStageFrame from the capability gate, 09-07),
  * `data-ascent-track` and `data-ascent-rail-layer`. Inside the stage, in paint
  * order: the poster, the lazy canvas (TerrainStage, eligible devices only) and
- * the rail scrim (md and up), which stays in the stage because the pin label
- * flip (AscentController) and the camera (CameraRig) read its width there.
+ * the rail scrim (md and up), which stays in the stage because the camera
+ * (CameraRig) reads its width there. The poster pin layer is z-10, so it
+ * paints above the scrim (G-09-3 a, 09-19).
  *
  * The rail box lives in its own layer after the track (G-09-4 N1, Tim's option
  * B, 09-17): the hero scrim is part of the track and painted over the stage, so

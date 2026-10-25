@@ -12,6 +12,14 @@ import {
 } from 'react';
 import { useMotionValueEvent, useScroll, useSpring, type MotionValue } from 'motion/react';
 import { DURATION } from '@/lib/animations';
+import {
+  placePinLabel,
+  railObstaclesAt,
+  type Box,
+  type RailGeometry,
+  type Size,
+  type StageGeometry,
+} from '@/lib/ascent/framing';
 import { posterFrame } from '@/lib/ascent/poster-frame';
 import {
   activePin,
@@ -49,10 +57,17 @@ import { useReducedMotion } from '@/lib/useReducedMotion';
  * a ref and written as `data-active` on every `[data-pin]` under the root, so
  * the poster layer and the 3D layer (09-10) light the same stage. `syncPins()`
  * re-applies it; a pin layer that mounts later calls it, so its lit state never
- * depends on when it mounted. Under reduced motion no pin is lit. Each layout
- * measurement sets `data-flip` on poster pins whose head is within 240 px of
- * the clear stage's right edge (from posterFrame and the pin's `data-u`; the
- * rail scrim is excluded from 768 px).
+ * depends on when it mounted. Under reduced motion no pin is lit.
+ *
+ * Label placement (G-09-3 a, 09-19; D-07, D-09 and its amendment): each layout
+ * measurement also reads the stage geometry (lib/ascent/framing.ts
+ * StageGeometry: every waypoint card's box at its arrival, every poster label's
+ * size, the rail's tick rows, line and readout) and shares it through the
+ * context as `geometry` for the 3D rig. Each poster pin's label is then placed
+ * by placePinLabel: anchor from posterFrame and the pin's `data-u`/`data-v`,
+ * obstacles its own card and the rail marks at its plateau, cover its card,
+ * bounds the stage. The result is written as `data-label` and
+ * `--pin-label-dx` on the pin (PinMark). Measurement only, never per frame.
  *
  * Focus contract (D-08): when keyboard focus (`:focus-visible`) enters a
  * waypoint or summit block, the block is scrolled to the centre with
@@ -92,6 +107,8 @@ type AscentContextValue = {
   markRevealed: () => void;
   /** The stage element (AscentStageFrame). */
   stageRef: RefObject<HTMLDivElement | null>;
+  /** The stage geometry from the last layout measurement (G-09-3 a), or null. */
+  geometry: RefObject<StageGeometry | null>;
 };
 
 const AscentContext = createContext<AscentContextValue | null>(null);
@@ -105,13 +122,19 @@ export function useAscent(): AscentContextValue {
 
 const BLOCKS = '[data-ascent-block="waypoint"], [data-ascent-block="summit"]';
 const REDUCED = '(prefers-reduced-motion: reduce)';
-/** A pin head this close to the stage's right edge shows its label on the left. */
-const FLIP_PX = 240;
 
 const prefersReducedMotion = () => window.matchMedia(REDUCED).matches;
 
-/** Reads the ascent layout from the DOM, or null when there is no sticky distance. */
-function measureLayout(root: HTMLElement): AscentLayout | null {
+/**
+ * Reads the ascent layout from the DOM, or null when there is no sticky
+ * distance. Also measures the stage geometry into `geometry` (null when there
+ * is no layout) and places the poster labels from it.
+ */
+function measureLayout(
+  root: HTMLElement,
+  geometry: { current: StageGeometry | null }
+): AscentLayout | null {
+  geometry.current = null;
   const track = root.querySelector<HTMLElement>('[data-ascent-track]');
   const stage = root.querySelector<HTMLElement>('[data-ascent-stage]');
   if (!track || !stage) return null;
@@ -127,7 +150,8 @@ function measureLayout(root: HTMLElement): AscentLayout | null {
     return { offset: rect.top - trackRect.top, height: rect.height };
   });
 
-  flipPinLabels(root, stage);
+  geometry.current = measureGeometry(root, stage);
+  if (geometry.current) placePosterLabels(root, geometry.current);
 
   return {
     start: trackRect.top + window.scrollY - stickyTop,
@@ -136,21 +160,138 @@ function measureLayout(root: HTMLElement): AscentLayout | null {
   };
 }
 
+/** A DOM rect as a Box relative to `origin` (the stage's rect). */
+const boxIn = (r: DOMRect, origin: DOMRect): Box => ({
+  x0: r.left - origin.left,
+  y0: r.top - origin.top,
+  x1: r.right - origin.left,
+  y1: r.bottom - origin.top,
+});
+
 /**
- * Sets data-flip on each poster pin whose head is within FLIP_PX of the right
- * edge of the clear stage: the stage's right edge, or from 768 px the left edge
- * of the rail scrim, so an active label never runs under the rail.
+ * Each waypoint card's box at its arrival, in stage px (index k - 1). At its
+ * arrival a block's centre meets the stage centre, so its top is at
+ * (stageH - blockH) / 2. A static card (md and up) keeps its offset in the
+ * block; a sticky docked card (below 768 px) sits at the bottom of its block,
+ * held inside the stage by its sticky bottom.
  */
-function flipPinLabels(root: HTMLElement, stage: HTMLElement): void {
-  const { width, height } = stage.getBoundingClientRect();
-  if (!(width > 0 && height > 0)) return;
-  const frame = posterFrame(width, height);
-  const railZone = stage.querySelector<HTMLElement>('[data-ascent-rail-scrim]')?.offsetWidth ?? 0;
-  const edge = width - railZone;
-  root.querySelectorAll<HTMLElement>('[data-pin][data-u]').forEach((pin) => {
-    const x = frame.left + Number(pin.dataset.u) * frame.side;
-    pin.toggleAttribute('data-flip', edge - x < FLIP_PX);
+function measureCards(root: HTMLElement, stageRect: DOMRect): (Box | null)[] {
+  const blocks = [...root.querySelectorAll<HTMLElement>('li[data-ascent-block="waypoint"]')];
+  blocks.sort((a, b) => Number(a.dataset.k) - Number(b.dataset.k));
+  return blocks.map((block) => {
+    const card = block.querySelector<HTMLElement>('section');
+    if (!card) return null;
+    const blockRect = block.getBoundingClientRect();
+    const cardRect = card.getBoundingClientRect();
+    const blockTop = (stageRect.height - blockRect.height) / 2;
+    const x0 = cardRect.left - stageRect.left;
+    const x1 = cardRect.right - stageRect.left;
+    if (getComputedStyle(card).position === 'sticky') {
+      const y1 = Math.min(blockTop + blockRect.height, stageRect.height);
+      return { x0, y0: y1 - cardRect.height, x1, y1 };
+    }
+    const y0 = blockTop + (cardRect.top - blockRect.top);
+    return { x0, y0, x1, y1: y0 + cardRect.height };
   });
+}
+
+/**
+ * Every poster label's size (index k - 1). The labels are display: none until
+ * lit, so each is shown as a block for the read and restored in the same task:
+ * all writes, one read pass, all restores, so the reads share one layout.
+ */
+function measureLabels(root: HTMLElement): (Size | null)[] {
+  const pins = [...root.querySelectorAll<HTMLElement>('[data-pin-layer="poster"] [data-pin]')];
+  pins.sort((a, b) => Number(a.dataset.pin) - Number(b.dataset.pin));
+  const labels = pins.map((pin) => pin.querySelector<HTMLElement>('[data-pin-label]'));
+  const saved = labels.map((label) => label?.style.display ?? '');
+  labels.forEach((label) => label?.style.setProperty('display', 'block'));
+  const sizes = labels.map((label) =>
+    label && label.offsetWidth > 0 ? { w: label.offsetWidth, h: label.offsetHeight } : null
+  );
+  labels.forEach((label, i) => {
+    if (label) label.style.display = saved[i];
+  });
+  return sizes;
+}
+
+/**
+ * The rail in stage px: tick rows, the line (the rail box's right 1 px
+ * column), the readout's size, the rail's right edge and the tick centres.
+ * Empty when the rail box has no size (below 768 px, where it is hidden).
+ */
+function measureRail(root: HTMLElement, stageRect: DOMRect): RailGeometry {
+  const empty: RailGeometry = {
+    ticks: [],
+    line: null,
+    readout: null,
+    railRight: null,
+    tickCentres: [],
+  };
+  const rail = root.querySelector<HTMLElement>('[data-ascent-rail-layer] [data-ascent-rail]');
+  if (!rail) return empty;
+  const railRect = rail.getBoundingClientRect();
+  if (!(railRect.width > 0 && railRect.height > 0)) return empty;
+  const box = boxIn(railRect, stageRect);
+  const ticks = [...rail.querySelectorAll<HTMLElement>('[data-rail-tick]')]
+    .sort((a, b) => Number(a.dataset.railTick) - Number(b.dataset.railTick))
+    .map((tick) => boxIn(tick.getBoundingClientRect(), stageRect));
+  const readout = rail.querySelector<HTMLElement>('[data-ascent-readout]');
+  return {
+    ticks,
+    line: { x0: box.x1 - 1, y0: box.y0, x1: box.x1, y1: box.y1 },
+    readout:
+      readout && readout.offsetWidth > 0
+        ? { w: readout.offsetWidth, h: readout.offsetHeight }
+        : null,
+    railRight: box.x1,
+    tickCentres: ticks.map((t) => (t.y0 + t.y1) / 2),
+  };
+}
+
+/** The stage geometry for label placement (G-09-3 a), or null for an empty stage. */
+function measureGeometry(root: HTMLElement, stage: HTMLElement): StageGeometry | null {
+  const stageRect = stage.getBoundingClientRect();
+  if (!(stageRect.width > 0 && stageRect.height > 0)) return null;
+  return {
+    width: stageRect.width,
+    height: stageRect.height,
+    cards: measureCards(root, stageRect),
+    labels: measureLabels(root),
+    rail: measureRail(root, stageRect),
+  };
+}
+
+/**
+ * Places each poster pin's label with placePinLabel and writes `data-label`
+ * and `--pin-label-dx`. The anchor comes from posterFrame and the pin's
+ * `data-u`/`data-v`; the obstacles are its card and the rail marks at its
+ * plateau, the cover its card, the bounds the stage.
+ */
+function placePosterLabels(root: HTMLElement, geometry: StageGeometry): void {
+  const frame = posterFrame(geometry.width, geometry.height);
+  const bounds: Box = { x0: 0, y0: 0, x1: geometry.width, y1: geometry.height };
+  root
+    .querySelectorAll<HTMLElement>('[data-pin-layer="poster"] [data-pin][data-u][data-v]')
+    .forEach((pin) => {
+      const k = Number(pin.dataset.pin);
+      const label = geometry.labels[k - 1];
+      if (!label) return;
+      const card = geometry.cards[k - 1];
+      const cards = card ? [card] : [];
+      const { side, dx } = placePinLabel({
+        anchor: {
+          x: frame.left + Number(pin.dataset.u) * frame.side,
+          y: frame.top + Number(pin.dataset.v) * frame.side,
+        },
+        label,
+        obstacles: [...cards, ...railObstaclesAt(geometry.rail, k)],
+        covers: cards,
+        bounds,
+      });
+      pin.dataset.label = side;
+      pin.style.setProperty('--pin-label-dx', `${dx}px`);
+    });
 }
 
 export default function AscentController({
@@ -170,6 +311,7 @@ export default function AscentController({
   // The canvas unmounts whenever the mode leaves 'eligible'; its reveal goes with it.
   if (revealed && mode !== 'eligible') setRevealed(false);
   const layout = useRef<AscentLayout | null>(null);
+  const geometry = useRef<StageGeometry | null>(null);
   const { scrollY } = useScroll();
   const progress = useSpring(0, { visualDuration: DURATION.panel, bounce: 0 });
   const active = useRef<number | null>(null);
@@ -208,7 +350,7 @@ export default function AscentController({
   /** Re-reads the layout; returns true once there is one. The first one lands without animating. */
   const measure = useEffectEvent((snap: boolean): boolean => {
     const root = rootRef.current;
-    layout.current = root ? measureLayout(root) : null;
+    layout.current = root ? measureLayout(root, geometry) : null;
     follow(window.scrollY, snap);
     light(progress.get());
     return layout.current !== null;
@@ -253,7 +395,19 @@ export default function AscentController({
 
   return (
     <AscentContext.Provider
-      value={{ progress, layout, n, heights, rootRef, syncPins, mode, revealed, markRevealed, stageRef }}
+      value={{
+        progress,
+        layout,
+        n,
+        heights,
+        rootRef,
+        syncPins,
+        mode,
+        revealed,
+        markRevealed,
+        stageRef,
+        geometry,
+      }}
     >
       <div ref={rootRef} data-ascent-root>
         {children}

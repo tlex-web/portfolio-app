@@ -14,7 +14,7 @@ import { formatMetres } from '@/lib/photo-format';
  * other track overlay (G-09-4 N1, Tim's option B, 09-17). It takes no pointer
  * events, has no focusable descendant and no live region, and is hidden below
  * 768 px. Its scrim is not part of this component: it stays in the stage,
- * where the pin label flip and the camera read its width.
+ * where the camera reads its width, under the poster pin layer (09-19).
  * The n + 1 ticks are server-rendered and evenly spaced (a route profile from
  * the first waypoint to the summit, not a linear altimeter); the approximate
  * waypoint's tick is dashed (08 D-02).
