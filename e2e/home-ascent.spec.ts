@@ -1,7 +1,12 @@
 import { test, expect, type Page } from '@playwright/test';
 import { photos } from '@/data/generated/photos';
 import { editorial } from '@/data/photos/editorial';
+import { projects } from '@/data/projects';
+import { home } from '@/data/home';
+import { site } from '@/data/site';
+import { summitPlaque } from '@/lib/ascent/summit';
 import { buildWaypoints, waypointKicker } from '@/lib/ascent/waypoints';
+import { countLabel } from '@/lib/home-format';
 
 /**
  * Home's waypoint list in a browser (HOME-05; D-08, D-20, D-21; 09-UI-SPEC
@@ -135,5 +140,150 @@ test.describe('Waypoint cards (HOME-05)', () => {
       clientWidth: document.documentElement.clientWidth,
     }));
     expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+  });
+});
+
+/** The accessible name TrailSigns builds: the site.nav label, then the count. */
+function signName(href: string, count: string): string {
+  const entry = site.nav.find((item) => item.href === href);
+  if (!entry) throw new Error(`no site.nav entry for ${href}`);
+  return count ? `${entry.label}, ${count}` : entry.label;
+}
+
+/**
+ * The end of the ascent in a browser (HOME-03, HOME-06; D-03, D-13, D-14,
+ * D-15; 09-UI-SPEC "Summit Section", "Hero Block" cue row, "About and
+ * Contact" and "UI Considerations" E5, E9). The plaque values, sign names,
+ * card titles and About copy come from summitPlaque(), the data files and
+ * buildWaypoints(), never from literals.
+ */
+test.describe('Summit, trail signs and About (HOME-03, HOME-06)', () => {
+  const plaque = summitPlaque();
+  const summit = (page: Page) => page.locator('#summit');
+
+  test('plaque shows the derived summit stats', async ({ page }) => {
+    await page.goto('/');
+    const section = summit(page);
+    await section.scrollIntoViewIfNeeded();
+
+    await expect(section.getByText(plaque.kicker, { exact: true })).toBeVisible();
+    await expect(section.getByRole('heading', { level: 2, name: plaque.title, exact: true })).toBeVisible();
+    await expect(section.getByText(plaque.height, { exact: true })).toBeVisible();
+
+    const items = section.locator('dl > div');
+    await expect(items).toHaveCount(plaque.stats.length);
+    for (const [i, stat] of plaque.stats.entries()) {
+      const item = items.nth(i);
+      await expect(item.locator('dt')).toHaveText(stat.label);
+      await expect(item.locator('dd')).toBeVisible();
+      await expect(item.locator('dd')).toContainText(stat.value);
+      if (stat.note) await expect(item.locator('dd')).toContainText(stat.note);
+    }
+  });
+
+  test('trail signs appear in the hero and at the summit', async ({ page }) => {
+    await page.goto('/');
+
+    const groups = page.locator('ul[aria-label="Trail signs"]');
+    await expect(groups).toHaveCount(2);
+    const signs = [
+      { name: signName('/photos', countLabel(photos.length, 'waypoint', 'waypoints')), href: '/photos' },
+      { name: signName('/projects', countLabel(projects.length, 'route', 'routes')), href: '/projects' },
+    ];
+    for (const group of [groups.nth(0), groups.nth(1)]) {
+      await expect(group.getByRole('link')).toHaveCount(signs.length);
+      for (const { name, href } of signs) {
+        await expect(group.getByRole('link', { name, exact: true })).toHaveAttribute('href', href);
+      }
+    }
+    await expect(page.locator('[data-ascent-block="hero"] ul[aria-label="Trail signs"]')).toHaveCount(1);
+    await expect(summit(page).locator('ul[aria-label="Trail signs"]')).toHaveCount(1);
+  });
+
+  test('Skip to the summit moves focus to the summit', async ({ page }) => {
+    await page.goto('/');
+
+    await page.getByRole('link', { name: 'Skip to the summit', exact: true }).click();
+    await expect(page).toHaveURL(/#summit$/);
+    await expect(summit(page)).toBeFocused();
+    const { top, innerHeight } = await summit(page).evaluate((el) => ({
+      top: el.getBoundingClientRect().top,
+      innerHeight: window.innerHeight,
+    }));
+    expect(top).toBeGreaterThanOrEqual(0);
+    expect(top).toBeLessThan(innerHeight);
+  });
+
+  test('Start the ascent resolves to the first waypoint', async ({ page }) => {
+    await page.goto('/');
+
+    const start = page.getByRole('link', { name: 'Start the ascent', exact: true });
+    const href = await start.getAttribute('href');
+    expect(href).toBe(`#waypoint-${waypoints[0].slug}`);
+    await expect(page.locator(`[id="${href!.slice(1)}"]`)).toHaveCount(1);
+  });
+
+  test('heading outline has no skipped level', async ({ page }) => {
+    await page.goto('/');
+    const main = page.getByRole('main');
+
+    await expect(main.getByRole('heading', { level: 1 })).toHaveCount(1);
+    await expect(main.getByRole('heading', { level: 2 })).toHaveText([
+      ...waypoints.map((w) => w.title),
+      plaque.title,
+      'About',
+    ]);
+    await expect(main.locator('h3, h4, h5, h6')).toHaveCount(0);
+  });
+
+  test('About and contact', async ({ page }) => {
+    await page.goto('/');
+    const about = page.getByRole('region', { name: 'About' });
+    const { contactLink, roadmapLink } = home.about.contact;
+
+    await expect(about.getByRole('heading', { level: 2, name: 'About', exact: true })).toBeVisible();
+    await expect(about.getByText(home.about.body, { exact: true })).toBeVisible();
+    await expect(about.getByRole('link', { name: contactLink.label, exact: true })).toHaveAttribute(
+      'href',
+      contactLink.href,
+    );
+    await expect(about.getByRole('link', { name: roadmapLink.label, exact: true })).toHaveAttribute(
+      'href',
+      roadmapLink.href,
+    );
+    expect([contactLink.href, roadmapLink.href]).toEqual(['/contact', '/roadmap']);
+  });
+
+  test('nothing overflows at 375 px', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/');
+
+    const overflow = () =>
+      page.evaluate(() => ({
+        scrollWidth: document.documentElement.scrollWidth,
+        clientWidth: document.documentElement.clientWidth,
+      }));
+    let { scrollWidth, clientWidth } = await overflow();
+    expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+
+    await summit(page).evaluate((el) => el.scrollIntoView({ block: 'end' }));
+    ({ scrollWidth, clientWidth } = await overflow());
+    expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+
+    // Plaque values never wrap; every dd value is one line inside its column.
+    const values = await summit(page)
+      .locator('dd > span.whitespace-nowrap')
+      .evaluateAll((spans) =>
+        spans.map((s) => {
+          const r = s.getBoundingClientRect();
+          const col = s.closest('div')!.getBoundingClientRect();
+          return { height: r.height, right: r.right, colRight: col.right };
+        }),
+      );
+    expect(values).toHaveLength(plaque.stats.length);
+    for (const v of values) {
+      expect(v.height).toBeLessThan(30);
+      expect(v.right).toBeLessThanOrEqual(v.colRight + 0.5);
+    }
   });
 });
