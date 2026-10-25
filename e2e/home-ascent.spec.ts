@@ -186,8 +186,16 @@ async function cardBreaks(page: Page, k: number): Promise<CardBreaks> {
     const date = q('[data-place-date]');
     const place = tail.parentElement!;
     // The computed `font` shorthand can be empty, so build it from the longhands.
+    // Load the primary (web) family only: next/font appends a size-adjusted
+    // '… Fallback' face with `src: local(Arial)`, and where Arial is absent (the
+    // Linux CI runner) that face fails, which rejects a load of the whole list
+    // with NetworkError although the web font itself loads.
     const cs = getComputedStyle(altitude);
-    await document.fonts.load(`${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`);
+    const primary = cs.fontFamily.split(',')[0].trim();
+    const faces = await document.fonts.load(
+      `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${primary}`
+    );
+    if (faces.length === 0) throw new Error(`no ${primary} face loaded`);
     await document.fonts.ready;
 
     const lines = (rects: DOMRectList | DOMRect[]) =>
