@@ -144,6 +144,10 @@ Applied values:
 Question: "The summit plaque covers 3D pins 1 and 2 at 1440 px (all four are clear at 412). What should happen?"
 Tim's reply: **"Fix in 09-12 (Recommended)"**. The option was described as "Adjust the desktop summit framing (camera bearing or a pin-side offset) in this plan's Task 3, and add an occlusion check to the summit e2e, all before the 09-13 CI run and the 09-14 baselines."
 
+### Follow-up after the plan (orchestrator, 2026-10-25)
+- Question: "The 09-12 executor also lifted the phone summit framing by 8% of the stage height (beyond the desktop-only fix you approved). Keep it?" Tim's reply: **"Keep (Recommended)"**. `SUMMIT_VIEW_OFFSET_Y_SHARE` 0.08 stays.
+- Question: "Remaining overlaps at 375×667, 768×1024, 820×1180 and 1024×768, plus the static poster pins below 1280 px, need a plaque layout decision. When?" Tim's reply: **"Gap plan after 09-14"**. This is recorded in deferred-items.md.
+
 ## Evidence Tim reviewed (Tasks 1 and 2, scratchpad renders)
 
 The renders are in the session scratchpad, `.../scratchpad/09-12/shots/`, 32 PNGs. The scratch script is `render.cjs`, and the contrast data is in `poster-contrast.json`.

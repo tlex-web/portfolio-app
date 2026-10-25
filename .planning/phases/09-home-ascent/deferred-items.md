@@ -82,3 +82,4 @@
   The first two match the pre-fix measurement with the 09-12 constants set to neutral, so they are not regressions. The static poster at the summit is clear at 1280 px and up. Below that, its fixed plan-view pins sit under the docked or centred plaque: 3 pins at 375, 2 at 412, and 1 at 768 and 1024. That is the D-20 docked layout, not camera framing.
   **Found by:** 09-12 plaque fix, size sweep.
   **Owner:** Tim. Fixing these needs a plaque layout decision, for example a compact summit plaque on short or portrait stages, or a framing that fits the pins above a centred plaque. It is outside the 09-12 camera-only scope.
+  **Decision (2026-10-25, after 09-12):** Tim answered "Gap plan after 09-14". Close Phase 9 as planned, then fix this through `/gsd-plan-phase 09 --gaps` if UAT flags it. The Home baselines may need one more re-baseline afterwards.
