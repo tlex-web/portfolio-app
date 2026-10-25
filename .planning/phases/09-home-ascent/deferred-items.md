@@ -15,7 +15,20 @@
   **Owner:** Phase 10 (photos/lightbox rework, with the existing removeChild item). Out of scope for 09-03.
 
 - `e2e/no-webgl.spec.ts` "home keeps its content" times out waiting for "Error creating WebGL context"
-  status: open
+  status: resolved
   **What:** Since 09-01 made Home a Server Component, `/` mounts no canvas, so the console error the test awaits never fires and it fails after 15 s (09-RESEARCH Pitfall 1). Reproduced in the 09-06 Task 3 run; the other three tests in the spec pass with the helpers moved to `e2e/helpers/webgl.ts`. 09-06 adds no canvas (its pre-plan commit `bd16add` has none either) and keeps the test unchanged, as the plan requires.
   **Found by:** 09-06 Task 3.
   **Owner:** 09-07, which rewrites this test to assert static mode (`data-ascent-mode`) instead of a WebGL failure.
+  **Resolved by:** 09-07 Task 3 (`3264177`): the test asserts `data-ascent-mode="static"`, the poster, no canvas, four cards, `#summit` and About; it passes in Chromium and Firefox.
+
+- Hero scrim switches to the horizontal gradient at `lg:` (1024 px), not at 768 px as 09-UI-SPEC "Hero" specifies
+  status: open
+  **What:** `HeroBlock`'s `SCRIM` uses the vertical phone gradient up to 1023 px. At 768 x 1024 the kicker sits at about 71% of the hero height from the bottom, where the scrim is about 0.68 `surface`: above the 0.5 floor, but below the UI-SPEC's "at least 0.7 everywhere text can fall". The composed-contrast backstop (09-07 B7) still measures every hero text line at 6.84:1 or better at 768 px. Inside the 576 px block box of the kicker, beside its text, a contour index line measures 3.62:1. No glyph sits there, but it is the closest pixel to the floor. The UI-SPEC's own `md:` gradient would not help that pixel either: it fades to transparent at 75% of the width.
+  **Found by:** 09-07 Task 3 (B7 diagnosis).
+  **Owner:** 09-14 visual review (decide whether to align the breakpoint or amend the UI-SPEC row). 09-07 does not modify HeroBlock (scope boundary).
+
+- Rail tick label "2,760 m approx." measures 4.81:1 at 768 px with the summit centred
+  status: open
+  **What:** 09-07's B8 backstop passes every tick (4.5 floor), but the Riffelsee label at 768 px is the closest to the floor (5.42:1 at 1440 px; the other ticks are 6.8 or better). The rail scrim is narrower than the label run at that width.
+  **Found by:** 09-07 Task 3.
+  **Owner:** 09-14 visual review; recheck after 09-08 puts the live canvas behind the rail (B8 samples the poster today).
