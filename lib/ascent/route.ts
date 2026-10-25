@@ -84,6 +84,15 @@ export const CAMERA_GLIDE_DEG = 26;
 /** Below 768 px the optical centre moves up by this share of the stage height (D-20): targets sit above the docked card. */
 export const VIEW_OFFSET_SHARE = 0.2;
 
+/**
+ * Below 768 px the optical centre also moves right by this share of the stage
+ * width, so the stage's waypoint (on the view axis) sits at 30 % of the width
+ * and its label fits to its right: a centred pin on a 402 px stage has room
+ * for only about 177 px of label on either side, and the labels run 184 to
+ * 250 px. Ramps in with the tilt-in like the vertical offset.
+ */
+export const VIEW_OFFSET_X_SHARE = 0.2;
+
 /** Mirrors PLATEAU in lib/ascent/progress.ts (this module stays import-free; ascent-route.test asserts they match). */
 export const ROUTE_PLATEAU = 0.03;
 
@@ -266,6 +275,22 @@ export function viewOffsetAt(
 ): number {
   if (!narrow) return 0;
   return reliefAt(p, firstArrival) * VIEW_OFFSET_SHARE * stageHeight;
+}
+
+/**
+ * The horizontal view offset in px for camera.setViewOffset on a narrow stage
+ * (VIEW_OFFSET_X_SHARE of the width, ramping in with the tilt-in): the stage's
+ * waypoint moves left of centre so its label fits on the right. 0 at p = 0 and
+ * always 0 on wide stages.
+ */
+export function viewOffsetXAt(
+  p: number,
+  firstArrival: number,
+  narrow: boolean,
+  stageWidth: number
+): number {
+  if (!narrow) return 0;
+  return reliefAt(p, firstArrival) * VIEW_OFFSET_X_SHARE * stageWidth;
 }
 
 /**

@@ -13,17 +13,15 @@ import {
   SUMMIT_HFOV_DEG,
   curveParamAt,
   fovAt,
-  keyPoses,
   planViewPose,
   reliefAt,
   summitVerticalFov,
   viewOffsetAt,
+  viewOffsetXAt,
   type PinAnchor,
   type Pose,
-  type Vec3,
 } from '@/lib/ascent/route';
-import { meshHeightAtUv, uvToWorld } from '@/lib/terrain/heightmap';
-import { buildRouteCurves, poseAt } from './route-curve';
+import { anchorAt, poseAt, routeCurvesFor } from './route-curve';
 
 /**
  * The terrain camera (HOME-02, HOME-03; D-02, D-03, D-06, D-16, D-20;
@@ -40,7 +38,9 @@ import { buildRouteCurves, poseAt } from './route-curve';
  * The tilt-in (D-16) shares one fraction, reliefAt(p, p_1): uRelief eases from
  * 0 to 1 (with uExaggeration = RELIEF_EXAGGERATION), `up` turns from north
  * (0, 0, -1), which a straight-down view needs, to (0, 1, 0), and below 768 px
- * the view offset (D-20) ramps in. All three are 0 at p = 0, so the canvas
+ * the view offset ramps in: up, so targets sit above the docked card (D-20),
+ * and right, so the stage's waypoint sits at 30 % of the width with room for
+ * its label on the right. All three are 0 at p = 0, so the canvas
  * still equals the poster there, and complete at the start of waypoint 1's
  * plateau. The vertical FOV widens across the last leg to summitVerticalFov
  * (aspect, 60°), so the summit frame shows every waypoint on a phone too (D-03).
@@ -73,12 +73,6 @@ const FLIP_PX = 240;
 /** A pin whose anchor is further outside the stage than this share of its size is hidden. */
 const OFFSTAGE_SHARE = 0.1;
 const W = terrain.extent.widthM;
-
-/** A ground point on the mesh at extent UV (u, v), at relief `relief` (exaggeration applied). */
-function anchorAt(metres: Float32Array, n: number, u: number, v: number, relief: number): Vec3 {
-  const { x, z } = uvToWorld(u, v, W);
-  return { x, y: meshHeightAtUv(metres, n, u, v) * relief * RELIEF_EXAGGERATION, z };
-}
 
 // Scratch objects for the frame loop (one canvas per page).
 const scratch = { position: new Vector3(), target: new Vector3() };
@@ -167,11 +161,7 @@ export default function CameraRig({
 
   const curves = useMemo(() => {
     if (!metres || !(width > 0 && height > 0)) return null;
-    const planView = planViewPose(posterFrame(width, height), W, CAMERA_FOV_DEG);
-    const anchors = pins.map((pin) => anchorAt(metres, gridSize, pin.u, pin.v, 1));
-    const { u, v } = terrain.summit.uv;
-    const summit = anchorAt(metres, gridSize, u, v, 1);
-    return buildRouteCurves(keyPoses({ anchors, summit, planView }));
+    return routeCurvesFor({ width, height, anchors: pins, metres, gridSize });
   }, [metres, gridSize, pins, width, height]);
 
   useEffect(() => invalidate(), [curves, invalidate]);
@@ -199,7 +189,8 @@ export default function CameraRig({
       camera.lookAt(scratch.target);
       camera.fov = fovAt(t, pins.length, summitVerticalFov(w / h, SUMMIT_HFOV_DEG));
       if (w < NARROW_STAGE_PX) {
-        camera.setViewOffset(w, h, 0, viewOffsetAt(p, first, true, h), w, h);
+        const x = viewOffsetXAt(p, first, true, w);
+        camera.setViewOffset(w, h, x, viewOffsetAt(p, first, true, h), w, h);
       } else {
         camera.clearViewOffset();
       }

@@ -31,6 +31,7 @@ import {
   reliefAt,
   summitVerticalFov,
   viewOffsetAt,
+  viewOffsetXAt,
   yawDeg,
   type Pose,
   type Vec3,
@@ -163,7 +164,8 @@ describe('keyPoses (D-02, D-03)', () => {
         fov
       );
       if (w < 768) {
-        camera.setViewOffset(w, h, 0, viewOffsetAt(1, ARRIVALS[0], true, h), w, h);
+        const x = viewOffsetXAt(1, ARRIVALS[0], true, w);
+        camera.setViewOffset(w, h, x, viewOffsetAt(1, ARRIVALS[0], true, h), w, h);
         camera.updateProjectionMatrix();
       }
       for (const a of anchors) {
@@ -246,6 +248,12 @@ describe('tilt-in, FOV and view offset (D-16, D-20)', () => {
     expect(viewOffsetAt(0, 0.2, true, 600)).toBe(0);
     for (let i = 0; i <= 20; i++) expect(viewOffsetAt(i / 20, 0.2, false, 600)).toBe(0);
     expect(viewOffsetAt(0.2, 0.2, true, 600)).toBeGreaterThan(0);
+  });
+
+  it('viewOffsetXAt moves a narrow stage view right from p_1, never at p = 0 or on wide stages', () => {
+    expect(viewOffsetXAt(0, 0.2, true, 400)).toBe(0);
+    expect(viewOffsetXAt(0.2, 0.2, true, 400)).toBeCloseTo(80, 9);
+    for (let i = 0; i <= 20; i++) expect(viewOffsetXAt(i / 20, 0.2, false, 1440)).toBe(0);
   });
 
   it('summitVerticalFov keeps the horizontal FOV: equal at aspect 1, wider on portrait stages', () => {
