@@ -11,13 +11,23 @@
  */
 import {
   LABEL_MARGIN_PX,
+  NARROW_VIEW_OFFSET_X_SHARE,
+  NARROW_VIEW_OFFSET_Y_SHARE,
   PIN_HEAD_PX,
+  STAGE_FOV_DEG,
+  SUMMIT_FRAME_MARGIN_PX,
+  fitCluster,
   pinBoxes,
   placePinLabel,
   railObstaclesAt,
+  stageViewKeys,
+  summitClearRects,
+  viewTrackAt,
   type Box,
   type RailGeometry,
+  type TangentBounds,
 } from '@/lib/ascent/framing';
+import { curveParamAt, reliefAt } from '@/lib/ascent/route';
 
 const BOUNDS: Box = { x0: 0, y0: 0, x1: 400, y1: 400 };
 const ANCHOR = { x: 100, y: 100 };
@@ -233,5 +243,212 @@ describe('railObstaclesAt', () => {
       tickCentres: [],
     };
     expect(railObstaclesAt(empty, 1)).toEqual([]);
+  });
+});
+
+/*
+ * G-09-2 (3D half), 09-20 (Tim: "Compact plaque + measured 3D"; D-03, D-16,
+ * D-20): the measured summit framing on plain numbers. Pinhole model: an
+ * anchor with tangents (tx, ty) shows at (w / 2 + F tx - offsetX,
+ * h / 2 - F ty - offsetY); its pin box spans 12 px either side and 40 px above.
+ */
+
+/** The pin boxes' bounding box for a fit, from the pinhole model. */
+function clusterBox(
+  bounds: TangentBounds,
+  stage: { w: number; h: number },
+  fit: { fovDeg: number; offsetX: number; offsetY: number }
+): Box {
+  const F = stage.h / (2 * Math.tan((fit.fovDeg * Math.PI) / 360));
+  const px = (tx: number) => stage.w / 2 + F * tx - fit.offsetX;
+  const py = (ty: number) => stage.h / 2 - F * ty - fit.offsetY;
+  return {
+    x0: px(bounds.a0) - 12,
+    y0: py(bounds.b1) - 40,
+    x1: px(bounds.a1) + 12,
+    y1: py(bounds.b0),
+  };
+}
+
+const focalOf = (fovDeg: number, h: number) => h / (2 * Math.tan((fovDeg * Math.PI) / 360));
+
+describe('fitCluster', () => {
+  const STAGE = { w: 400, h: 400 };
+  const BOUNDS: TangentBounds = { a0: -0.1, a1: 0.1, b0: -0.05, b1: 0.05 };
+  const WHOLE: Box = { x0: 0, y0: 0, x1: 400, y1: 400 };
+
+  it('caps F at maxFocalPx when the rectangle is wider than needed', () => {
+    const fit = fitCluster({ bounds: BOUNDS, stage: STAGE, rects: [WHOLE], maxFocalPx: 500 });
+    expect(focalOf(fit.fovDeg, STAGE.h)).toBeCloseTo(500, 9);
+    expect(fit.rect).toEqual(WHOLE);
+  });
+
+  it('lowers F so the pin boxes fit a narrow rectangle exactly', () => {
+    const rect: Box = { x0: 200, y0: 0, x1: 324, y1: 400 };
+    const fit = fitCluster({ bounds: BOUNDS, stage: STAGE, rects: [rect], maxFocalPx: 1000 });
+    expect(focalOf(fit.fovDeg, STAGE.h)).toBeCloseTo((124 - 24) / 0.2, 9);
+    const box = clusterBox(BOUNDS, STAGE, fit);
+    expect(box.x0).toBeCloseTo(rect.x0, 9);
+    expect(box.x1).toBeCloseTo(rect.x1, 9);
+  });
+
+  it('centres the pin boxes on the rectangle centre (asymmetric cluster)', () => {
+    const bounds: TangentBounds = { a0: 0.05, a1: 0.25, b0: -0.2, b1: -0.1 };
+    const rect: Box = { x0: 40, y0: 30, x1: 260, y1: 330 };
+    const fit = fitCluster({ bounds, stage: STAGE, rects: [rect], maxFocalPx: 600 });
+    const box = clusterBox(bounds, STAGE, fit);
+    expect((box.x0 + box.x1) / 2).toBeCloseTo(150, 9);
+    expect((box.y0 + box.y1) / 2).toBeCloseTo(180, 9);
+  });
+
+  it('returns fovDeg = 2 atan(h / 2F)', () => {
+    const fit = fitCluster({ bounds: BOUNDS, stage: STAGE, rects: [WHOLE], maxFocalPx: 500 });
+    expect(fit.fovDeg).toBeCloseTo((2 * Math.atan(400 / 1000) * 180) / Math.PI, 9);
+  });
+
+  it('of two rectangles takes the one that allows the larger F, in either order', () => {
+    const small: Box = { x0: 0, y0: 0, x1: 100, y1: 100 };
+    const large: Box = { x0: 100, y0: 0, x1: 400, y1: 400 };
+    for (const rects of [
+      [small, large],
+      [large, small],
+    ]) {
+      const fit = fitCluster({ bounds: BOUNDS, stage: STAGE, rects, maxFocalPx: 10000 });
+      expect(fit.rect).toEqual(large);
+    }
+  });
+
+  it('breaks an F tie (both capped) with the larger area', () => {
+    const a: Box = { x0: 0, y0: 0, x1: 300, y1: 300 };
+    const b: Box = { x0: 0, y0: 0, x1: 400, y1: 400 };
+    const fit = fitCluster({ bounds: BOUNDS, stage: STAGE, rects: [a, b], maxFocalPx: 100 });
+    expect(fit.rect).toEqual(b);
+  });
+
+  it('a zero-width cluster is constrained only by height and the cap', () => {
+    const bounds: TangentBounds = { a0: 0.05, a1: 0.05, b0: -0.1, b1: 0.1 };
+    const thin: Box = { x0: 100, y0: 0, x1: 130, y1: 240 };
+    const fit = fitCluster({ bounds, stage: STAGE, rects: [thin], maxFocalPx: 2000 });
+    expect(focalOf(fit.fovDeg, STAGE.h)).toBeCloseTo((240 - 40) / 0.2, 9);
+    const capped = fitCluster({ bounds, stage: STAGE, rects: [thin], maxFocalPx: 300 });
+    expect(focalOf(capped.fovDeg, STAGE.h)).toBeCloseTo(300, 9);
+  });
+});
+
+describe('summitClearRects', () => {
+  const M = SUMMIT_FRAME_MARGIN_PX;
+
+  it('a bottom-docked compact plaque on a phone leaves only the rectangle above it', () => {
+    const plaque: Box = { x0: 16, y0: 417, x1: 336, y1: 587 };
+    expect(summitClearRects({ w: 365, h: 603 }, plaque, 0)).toEqual([
+      { x0: M, y0: M, x1: 365 - M, y1: 417 - M },
+    ]);
+  });
+
+  it('a left-centred full plaque gives a short rectangle above and the band right of it, clear of the rail zone', () => {
+    const plaque: Box = { x0: 32, y0: 179, x1: 480, y1: 657 };
+    expect(summitClearRects({ w: 1270, h: 836 }, plaque, 224)).toEqual([
+      { x0: M, y0: M, x1: 1270 - 224 - M, y1: 179 - M },
+      { x0: 480 + M, y0: M, x1: 1270 - 224 - M, y1: 836 - M },
+    ]);
+  });
+
+  it('without a plaque is the stage less the rail zone and the margin', () => {
+    expect(summitClearRects({ w: 1014, h: 704 }, null, 224, 10)).toEqual([
+      { x0: 10, y0: 10, x1: 1014 - 224 - 10, y1: 704 - 10 },
+    ]);
+  });
+
+  it('drops empty rectangles', () => {
+    const cover: Box = { x0: 0, y0: 0, x1: 400, y1: 400 };
+    expect(summitClearRects({ w: 400, h: 400 }, cover, 0)).toEqual([]);
+  });
+});
+
+describe('stageViewKeys', () => {
+  const SUMMIT = { x: -30, y: 55, fov: 70 };
+
+  it('narrow stages move the optical centre 0.2 w right and 0.2 h up, at the stage FOV, until the summit key', () => {
+    const keys = stageViewKeys({ n: 4, narrow: true, stage: { w: 400, h: 600 }, summit: SUMMIT });
+    expect(keys).toHaveLength(6);
+    expect(keys[0]).toEqual({ x: 0, y: 0, fov: STAGE_FOV_DEG });
+    for (const key of keys.slice(1, 5)) {
+      expect(key.x).toBeCloseTo(NARROW_VIEW_OFFSET_X_SHARE * 400, 12);
+      expect(key.y).toBeCloseTo(NARROW_VIEW_OFFSET_Y_SHARE * 600, 12);
+      expect(key.fov).toBe(STAGE_FOV_DEG);
+    }
+    expect(keys[5]).toEqual(SUMMIT);
+  });
+
+  it('wide stages take the given offsets, or none', () => {
+    const given = stageViewKeys({
+      n: 2,
+      narrow: false,
+      stage: { w: 1440, h: 836 },
+      summit: SUMMIT,
+      wideStageOffsets: [{ x: 12, y: -8 }],
+    });
+    expect(given.slice(1, 3)).toEqual([
+      { x: 12, y: -8, fov: STAGE_FOV_DEG },
+      { x: 0, y: 0, fov: STAGE_FOV_DEG },
+    ]);
+    const none = stageViewKeys({ n: 2, narrow: false, stage: { w: 1440, h: 836 }, summit: SUMMIT });
+    expect(none).toEqual([
+      { x: 0, y: 0, fov: STAGE_FOV_DEG },
+      { x: 0, y: 0, fov: STAGE_FOV_DEG },
+      { x: 0, y: 0, fov: STAGE_FOV_DEG },
+      SUMMIT,
+    ]);
+  });
+});
+
+describe('viewTrackAt', () => {
+  const KEYS = [
+    { x: 0, y: 0, fov: 40 },
+    { x: 10, y: 20, fov: 40 },
+    { x: 10, y: 20, fov: 80 },
+  ];
+
+  it('is key 0 at t = 0 and the last key at t = 1', () => {
+    expect(viewTrackAt(KEYS, 0)).toEqual(KEYS[0]);
+    expect(viewTrackAt(KEYS, 1)).toEqual(KEYS[2]);
+  });
+
+  it('is linear inside a segment', () => {
+    expect(viewTrackAt(KEYS, 0.25)).toEqual({ x: 5, y: 10, fov: 40 });
+    expect(viewTrackAt(KEYS, 0.75)).toEqual({ x: 10, y: 20, fov: 60 });
+  });
+
+  it('clamps outside [0, 1]', () => {
+    expect(viewTrackAt(KEYS, -1)).toEqual(KEYS[0]);
+    expect(viewTrackAt(KEYS, 2)).toEqual(KEYS[2]);
+  });
+
+  it('ramps the narrow offsets in exactly like reliefAt over the first segment (D-16, D-20)', () => {
+    const arrivals = [0.2, 0.4, 0.6, 0.8, 1];
+    const [w, h] = [402, 775];
+    const keys = stageViewKeys({
+      n: 4,
+      narrow: true,
+      stage: { w, h },
+      summit: { x: 0, y: 0, fov: 60 },
+    });
+    expect(viewTrackAt(keys, curveParamAt(0, arrivals))).toEqual({
+      x: 0,
+      y: 0,
+      fov: STAGE_FOV_DEG,
+    });
+    for (let i = 0; i <= 40; i++) {
+      const p = (i / 40) * arrivals[0];
+      const key = viewTrackAt(keys, curveParamAt(p, arrivals));
+      const r = reliefAt(p, arrivals[0]);
+      expect(key.x).toBeCloseTo(r * NARROW_VIEW_OFFSET_X_SHARE * w, 9);
+      expect(key.y).toBeCloseTo(r * NARROW_VIEW_OFFSET_Y_SHARE * h, 9);
+      expect(key.fov).toBeCloseTo(STAGE_FOV_DEG, 9);
+    }
+    // The stage plateau has the full D-20 offsets.
+    const plateau = viewTrackAt(keys, curveParamAt(arrivals[1], arrivals));
+    expect(plateau.x).toBeCloseTo(NARROW_VIEW_OFFSET_X_SHARE * w, 9);
+    expect(plateau.y).toBeCloseTo(NARROW_VIEW_OFFSET_Y_SHARE * h, 9);
   });
 });
