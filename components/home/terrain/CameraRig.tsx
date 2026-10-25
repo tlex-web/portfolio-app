@@ -48,6 +48,16 @@ import { buildRouteCurves, poseAt } from './route-curve';
  * Until the metres arrive (the canvas is still invisible) or the layout is
  * measured, the camera holds the plan view.
  *
+ * 3D pins (D-09, corrections C3 and C5): after the pose update, each anchor
+ * (uvToWorld, meshHeightAtUv x uRelief x RELIEF_EXAGGERATION: the rendered
+ * surface, not the DEM height) is projected through the camera and its
+ * PinLayer3D mark is moved with a transform. A mark is hidden while its point
+ * is behind the camera or beyond the depth range (NDC z outside (-1, 1)) or
+ * more than 10 % outside the stage. A waypoint label flips to the left of its
+ * head within 240 px of the clear stage edge (the stage's right edge, or the
+ * rail scrim's left edge from 768 px), the rule AscentController applies to
+ * the poster pins. Lighting stays with AscentController.
+ *
  * Demand frameloop: every change of the progress spring invalidates a frame,
  * and useFrame (priority 0, never positive: a positive priority takes over
  * rendering) keeps invalidating while the progress moved since the last
@@ -58,6 +68,10 @@ import { buildRouteCurves, poseAt } from './route-curve';
 const EPS = 1e-4;
 /** Stages narrower than this dock the card over the lower part (D-20) and get the view offset. */
 const NARROW_STAGE_PX = 768;
+/** A pin head this close to the clear stage edge shows its label on the left (as AscentController). */
+const FLIP_PX = 240;
+/** A pin whose anchor is further outside the stage than this share of its size is hidden. */
+const OFFSTAGE_SHARE = 0.1;
 const W = terrain.extent.widthM;
 
 /** A ground point on the mesh at extent UV (u, v), at relief `relief` (exaggeration applied). */
@@ -69,6 +83,46 @@ function anchorAt(metres: Float32Array, n: number, u: number, v: number, relief:
 // Scratch objects for the frame loop (one canvas per page).
 const scratch = { position: new Vector3(), target: new Vector3() };
 const up = new Vector3();
+const point = new Vector3();
+
+/**
+ * Moves each 3D pin mark (waypoints, then the summit) to its projected anchor
+ * on a w x h stage at relief `relief`, or hides it. `edge` is the clear stage
+ * edge for the label flip.
+ */
+function placePins(
+  camera: PerspectiveCamera,
+  marks: readonly (HTMLDivElement | null)[],
+  pins: readonly PinAnchor[],
+  metres: Float32Array,
+  gridSize: number,
+  relief: number,
+  w: number,
+  h: number,
+  edge: number
+) {
+  for (let i = 0; i <= pins.length; i++) {
+    const mark = marks[i];
+    if (!mark) continue;
+    const { u, v } = i < pins.length ? pins[i] : terrain.summit.uv;
+    const a = anchorAt(metres, gridSize, u, v, relief);
+    point.set(a.x, a.y, a.z).project(camera);
+    const x = ((point.x + 1) / 2) * w;
+    const y = ((1 - point.y) / 2) * h;
+    const shown =
+      point.z > -1 &&
+      point.z < 1 &&
+      x >= -OFFSTAGE_SHARE * w &&
+      x <= (1 + OFFSTAGE_SHARE) * w &&
+      y >= -OFFSTAGE_SHARE * h &&
+      y <= (1 + OFFSTAGE_SHARE) * h;
+    // '' inherits the layer's visibility (invisible until '3d'); 'visible' would override it.
+    mark.style.visibility = shown ? '' : 'hidden';
+    if (!shown) continue;
+    mark.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
+    if (i < pins.length) mark.toggleAttribute('data-flip', edge - x < FLIP_PX);
+  }
+}
 
 /** Puts `camera` in `pose` with the given vertical FOV and no view offset. */
 function applyPose(camera: PerspectiveCamera, pose: Pose) {
@@ -85,6 +139,7 @@ export default function CameraRig({
   metres,
   gridSize,
   shaderRef,
+  pinsRef,
 }: {
   /** The waypoint anchors, in ascent order. */
   pins: readonly PinAnchor[];
@@ -93,12 +148,22 @@ export default function CameraRig({
   gridSize: 256 | 512;
   /** The live terrain material, for uRelief and uExaggeration. */
   shaderRef: RefObject<ShaderMaterial | null>;
+  /** The PinLayer3D marks: waypoints in ascent order, then the summit. */
+  pinsRef: RefObject<(HTMLDivElement | null)[]>;
 }) {
-  const { progress, layout } = useAscent();
+  const { progress, layout, stageRef } = useAscent();
   const invalidate = useThree((s) => s.invalidate);
   const width = useThree((s) => s.size.width);
   const height = useThree((s) => s.size.height);
   const applied = useRef(Number.NaN);
+  /** Width of the rail scrim (0 below 768 px, where the rail is hidden), measured per stage size. */
+  const railZone = useRef(0);
+
+  useEffect(() => {
+    const scrim = stageRef.current?.querySelector<HTMLElement>('[data-ascent-rail-scrim]');
+    railZone.current = scrim?.offsetWidth ?? 0;
+    invalidate();
+  }, [width, height, stageRef, invalidate]);
 
   const curves = useMemo(() => {
     if (!metres || !(width > 0 && height > 0)) return null;
@@ -120,13 +185,14 @@ export default function CameraRig({
     const arrivals = layout.current?.arrivals;
     const material = shaderRef.current;
 
+    let tilt = 0;
     if (!curves || !arrivals) {
       applyPose(camera, planViewPose(posterFrame(w, h), W, CAMERA_FOV_DEG));
       if (material) material.uniforms.uRelief.value = 0;
     } else {
       const first = arrivals[0];
       const t = curveParamAt(p, arrivals);
-      const tilt = reliefAt(p, first);
+      tilt = reliefAt(p, first);
       poseAt(curves, t, scratch);
       camera.position.copy(scratch.position);
       camera.up.copy(up.set(0, tilt, -(1 - tilt)).normalize());
@@ -144,6 +210,9 @@ export default function CameraRig({
       }
     }
     camera.updateMatrixWorld();
+    if (metres) {
+      placePins(camera, pinsRef.current, pins, metres, gridSize, tilt, w, h, w - railZone.current);
+    }
 
     const moved = !(Math.abs(p - applied.current) <= EPS);
     applied.current = p;

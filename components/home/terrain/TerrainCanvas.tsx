@@ -7,6 +7,7 @@ import { tokens } from '@/data/generated/tokens';
 import type { PinAnchor } from '@/lib/ascent/route';
 import { downgradeAscent } from '@/lib/useAscentMode';
 import CameraRig from './CameraRig';
+import PinLayer3D from './PinLayer3D';
 import TerrainMesh from './TerrainMesh';
 
 /**
@@ -42,6 +43,11 @@ import TerrainMesh from './TerrainMesh';
  * a shared ref for the relief uniforms. The camera's near and far planes
  * bracket the plan-view altitudes (about 8 to 22 km) and the oblique route.
  * The clear colour is the stage ground, night-950, from the generated tokens.
+ *
+ * PinLayer3D (the 3D pins, D-09) is a DOM sibling of the canvas, not a scene
+ * child: the rig projects the anchors and moves the marks through `pinsRef`.
+ * It mounts and unmounts with the canvas, so a downgrade removes both and the
+ * poster pins show again in the same frame.
  */
 export default function TerrainCanvas({
   gridSize,
@@ -55,24 +61,34 @@ export default function TerrainCanvas({
 }) {
   const [metres, setMetres] = useState<Float32Array | null>(null);
   const shaderRef = useRef<ShaderMaterial | null>(null);
+  const pinsRef = useRef<(HTMLDivElement | null)[]>([]);
   return (
-    <SafeCanvas
-      data-grid-size={gridSize}
-      onCanvasError={() => downgradeAscent('load-error')}
-      frameloop="demand"
-      camera={{ fov: 40, near: 10, far: 100000 }}
-      onCreated={({ gl }) => gl.setClearColor(tokens.hex.night950)}
-      dpr={[1, 1.5]}
-      resize={{ scroll: false }}
-      flat
-      gl={{ alpha: false, antialias: true, powerPreference: 'high-performance' }}
-      aria-hidden
-      style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
-      className="absolute inset-0 opacity-0 transition-opacity duration-(--duration-settle) ease-geological group-data-[ascent-mode=3d]/stage:opacity-100"
-    >
-      <TerrainMesh gridSize={gridSize} onMetres={setMetres} shaderRef={shaderRef} />
-      <CameraRig pins={pins} metres={metres} gridSize={gridSize} shaderRef={shaderRef} />
-      {children}
-    </SafeCanvas>
+    <>
+      <SafeCanvas
+        data-grid-size={gridSize}
+        onCanvasError={() => downgradeAscent('load-error')}
+        frameloop="demand"
+        camera={{ fov: 40, near: 10, far: 100000 }}
+        onCreated={({ gl }) => gl.setClearColor(tokens.hex.night950)}
+        dpr={[1, 1.5]}
+        resize={{ scroll: false }}
+        flat
+        gl={{ alpha: false, antialias: true, powerPreference: 'high-performance' }}
+        aria-hidden
+        style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+        className="absolute inset-0 opacity-0 transition-opacity duration-(--duration-settle) ease-geological group-data-[ascent-mode=3d]/stage:opacity-100"
+      >
+        <TerrainMesh gridSize={gridSize} onMetres={setMetres} shaderRef={shaderRef} />
+        <CameraRig
+          pins={pins}
+          metres={metres}
+          gridSize={gridSize}
+          shaderRef={shaderRef}
+          pinsRef={pinsRef}
+        />
+        {children}
+      </SafeCanvas>
+      <PinLayer3D pins={pins} pinsRef={pinsRef} />
+    </>
   );
 }

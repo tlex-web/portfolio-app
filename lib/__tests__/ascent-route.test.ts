@@ -138,11 +138,14 @@ describe('keyPoses (D-02, D-03)', () => {
     expect(cam.x).toBeLessThan(summit.x); // west
     expect(cam.z).toBeGreaterThan(summit.z); // south
     expect(cam.y).toBeGreaterThan(summit.y);
-    const centroid = anchors.reduce((c, a) => ({ x: c.x + a.x / n, y: c.y + a.y / n, z: c.z + a.z / n }), {
-      x: 0,
-      y: 0,
-      z: 0,
-    });
+    const centroid = anchors.reduce(
+      (c, a) => ({ x: c.x + a.x / n, y: c.y + a.y / n, z: c.z + a.z / n }),
+      {
+        x: 0,
+        y: 0,
+        z: 0,
+      }
+    );
     expect(targets[n + 1].x).toBeCloseTo(centroid.x, 6);
     expect(targets[n + 1].y).toBeCloseTo(centroid.y, 6);
     expect(targets[n + 1].z).toBeCloseTo(centroid.z, 6);
@@ -153,7 +156,12 @@ describe('keyPoses (D-02, D-03)', () => {
     (w, h) => {
       const { positions, targets } = posesFor(w, h);
       const fov = summitVerticalFov(w / h, SUMMIT_HFOV_DEG);
-      const camera = cameraAt({ position: positions[n + 1], target: targets[n + 1], up: { x: 0, y: 1, z: 0 } }, w, h, fov);
+      const camera = cameraAt(
+        { position: positions[n + 1], target: targets[n + 1], up: { x: 0, y: 1, z: 0 } },
+        w,
+        h,
+        fov
+      );
       if (w < 768) {
         camera.setViewOffset(w, h, 0, viewOffsetAt(1, ARRIVALS[0], true, h), w, h);
         camera.updateProjectionMatrix();

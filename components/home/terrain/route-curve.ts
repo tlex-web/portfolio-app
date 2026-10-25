@@ -1,3 +1,5 @@
+'use client';
+
 import { CatmullRomCurve3, Vector3 } from 'three';
 import type { Vec3 } from '@/lib/ascent/route';
 
@@ -20,7 +22,10 @@ export type RouteCurves = { position: CatmullRomCurve3; target: CatmullRomCurve3
 const toVector = (p: Vec3) => new Vector3(p.x, p.y, p.z);
 
 /** Builds the position and target curves through the key poses. */
-export function buildRouteCurves(poses: { positions: readonly Vec3[]; targets: readonly Vec3[] }): RouteCurves {
+export function buildRouteCurves(poses: {
+  positions: readonly Vec3[];
+  targets: readonly Vec3[];
+}): RouteCurves {
   return {
     position: new CatmullRomCurve3(poses.positions.map(toVector), false, 'centripetal'),
     target: new CatmullRomCurve3(poses.targets.map(toVector), false, 'centripetal'),
