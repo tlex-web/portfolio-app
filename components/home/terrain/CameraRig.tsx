@@ -89,8 +89,10 @@ import { anchorAt, poseAt, routeCurvesFor } from './route-curve';
  * invalidate only while the stage is on screen and the tab visible, so nothing
  * is drawn behind About or in a background tab. When both are true again the
  * rig invalidates once, so the camera catches up with the progress. A burst
- * cut short by a pause starts over with a fresh budget when the canvas shows
- * again (an interrupted burst would read the pause as slow frames).
+ * cut short by a pause is dropped when the flag changes (a background tab runs
+ * no frame, so it cannot wait for useFrame) and starts over with a fresh budget
+ * when the canvas shows again: an interrupted burst would read the pause as
+ * slow frames (G-09-5, 09-REVIEW WR-01).
  */
 
 /** Progress change below which no further frame is needed (D-06). */
@@ -259,10 +261,21 @@ export default function CameraRig({
   // Pause while the stage is off-screen or the tab is hidden (HOME-07).
   useEffect(() => {
     const shown = () => onScreen.current && visible.current;
-    /** Applies a flag change; on the way back to shown, catch up (and restart a cut burst). */
+    /** Applies a flag change: drop a running burst on the way out, catch up (and restart it) on the way back. */
     const update = (change: () => void) => {
       const was = shown();
       change();
+      if (was && !shown()) {
+        // No frame runs while the tab is hidden (rAF is suspended), so the burst is
+        // dropped here, not in useFrame: the frame after the show would otherwise
+        // feed the stale budget and read the pause as slow frames (G-09-5, WR-01).
+        if (budget.current) {
+          budget.current = null;
+          burstStart.current = -1;
+          burstPaused.current = true;
+        }
+        return;
+      }
       if (was || !shown()) return;
       if (burstPaused.current) {
         burstPaused.current = false;
@@ -336,7 +349,8 @@ export default function CameraRig({
     let burst = false;
     const running = budget.current;
     if (running && !shown) {
-      // Paused mid-burst: drop the samples and measure again once the canvas shows.
+      // Fallback for a frame that runs while not shown (off-screen): update() drops
+      // the burst on the flag change; drop the samples and measure again once shown.
       budget.current = null;
       burstStart.current = -1;
       burstPaused.current = true;
