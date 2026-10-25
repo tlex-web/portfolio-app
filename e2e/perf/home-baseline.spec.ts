@@ -291,4 +291,27 @@ test('home mobile LCP + JS bytes', async ({ browser }, testInfo) => {
       `canvas ready ${result.canvasReadyMs ?? 'n/a'} ms, modes ${result.modes.join(',')}, ` +
       `${lateScripts.length} late scripts -> ${out}`,
   );
+
+  // HOME-08 gate (Tim's 09-13 decision "total-keep (Recommended)"). Asserted after
+  // the JSON is written so the artifact exists for diagnosis when the gate fails.
+  // Limits are the Phase 7 baseline; initialJsTransferBytes and the legacy
+  // jsTransferBytes stay recorded only.
+  const phase7 = JSON.parse(
+    fs.readFileSync(path.join(configDir, 'e2e/perf/home-baseline.json'), 'utf-8'),
+  ) as { lcpMs: number; jsTransferBytes: number };
+  const maxTotalBytes = phase7.jsTransferBytes;
+  const maxLcpMs = phase7.lcpMs;
+
+  expect(
+    samples.map((s) => s.mode),
+    'HOME-08: every sample must stay in 3d (measure-only frame budget)',
+  ).toEqual(samples.map(() => '3d'));
+  expect(
+    result.totalJsTransferBytes,
+    `HOME-08: median total script transfer ${result.totalJsTransferBytes} B must be <= Phase 7 baseline ${maxTotalBytes} B`,
+  ).toBeLessThanOrEqual(maxTotalBytes);
+  expect(
+    result.lcpMs,
+    `HOME-08: median LCP ${result.lcpMs} ms must be <= Phase 7 baseline ${maxLcpMs} ms`,
+  ).toBeLessThanOrEqual(maxLcpMs);
 });
