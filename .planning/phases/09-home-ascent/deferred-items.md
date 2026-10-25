@@ -56,3 +56,15 @@
   **What:** In the 09-09 local production probe (Pixel 7, 4x CPU, 150 ms, 200000 B/s), `requestIdleCallback` arms the stage at about 3.1 s, while the hillshade AVIF is still downloading. The dynamically inserted chunk scripts (`three`/R3F 241,953 B, mesh/shader/fast-png 17,583 B, a 474 B stub) then hold the `load` event until they finish: loadEventStart was 4856 ms, and the three/R3F chunk's responseEnd was 4684 ms. LCP is unaffected (3084 ms locally, because canvases are never LCP candidates), and HOME-08 judges LCP and script bytes, not the load event. One consequence: by the plan's boundary (startTime before loadEventStart) the lazy chunk counts as "initial", so `initialJsTransferBytes` equals `totalJsTransferBytes` and `lateScripts` is empty. The perf JSON's `scriptTimeline` and per-sample `loadEventStartMs` still show the chunk.
   **Found by:** 09-09 Task 2 early HOME-08 signal.
   **Owner:** Tim at the 09-13 Task 3 gate choice: "gate on initial bytes" measures the same as total under this boundary. Moving the arm after `load` (TerrainStage) or adding an arm mark would make the split meaningful; either is a behaviour or product-code change outside 09-09.
+
+- The summit frame at 1440 px puts 3D pins 1 and 2 behind the summit plaque
+  status: open
+  **What:** With `#summit` centred at 1440 x 900, the look-back camera (450 m SW of and 350 m above the summit, aimed at the waypoint centroid) projects Zermatt and Gornerschlucht at NDC x -0.30 and -0.19, about x 504 and 583 px. The summit plaque card spans about x 172-618 px there, so both pins are covered (still inside the stage, so the 'summit frame shows every waypoint' e2e passes). Pins 3 and 4 show to the right of the plaque. Levers (constants only): aim the summit target a little west of the centroid, or add a wide-stage horizontal view offset at the summit like the narrow one (`VIEW_OFFSET_X_SHARE`), so the waypoints sit right of the plaque.
+  **Found by:** 09-10 visual check after Task 3.
+  **Owner:** Tim at the 09-12 render review (tuning constants).
+
+- A small dark wedge at the bottom edge of the 1440 px summit frame
+  status: open
+  **What:** About 70 x 40 px near x 400-460 px, y 860 px at 1440 x 900 with `#summit` centred, darker than the surrounding relief. The summit peak sits about 38° below the camera, right at the frame's bottom edge (half vertical FOV 18.5° plus about 20° of pitch), so this is most likely the peak's steep faces seen from just above, or the contour merge fade on them. It is not seen at 412 px (wider FOV).
+  **Found by:** 09-10 visual check after Task 3.
+  **Owner:** Tim at the 09-12 render review (`SUMMIT_LIFT_M`, `SUMMIT_PULLBACK_M`), then 09-14.
