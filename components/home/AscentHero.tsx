@@ -2,6 +2,7 @@ import AltimeterRail from '@/components/home/AltimeterRail';
 import AscentController, { AscentStageFrame } from '@/components/home/AscentController';
 import HeroBlock from '@/components/home/HeroBlock';
 import PosterSheet from '@/components/home/PosterSheet';
+import SummitDetails from '@/components/home/SummitDetails';
 import SummitPlaque from '@/components/home/SummitPlaque';
 import TerrainStage from '@/components/home/TerrainStage';
 import WaypointCard from '@/components/home/WaypointCard';
@@ -43,7 +44,9 @@ import { formatMetres } from '@/lib/photo-format';
  *
  * The summit section (`section#summit`, `data-ascent-block="summit"`) is the
  * last track child, after the list (D-03, D-13): the target of the hero's
- * "Skip to the summit" cue.
+ * "Skip to the summit" cue. In the compact summit layout the plaque's kicker
+ * and stats follow the grid in SummitDetails, outside the track, so arrivals
+ * and the summit centring do not change (G-09-2, 09-18).
  *
  * AscentController (client) wraps the grid and turns page scroll into the one
  * damped progress value (HOME-03, D-06); the AltimeterRail in the rail layer
@@ -110,6 +113,7 @@ export default function AscentHero() {
           <AltimeterRail ticks={ticks} />
         </div>
       </div>
+      <SummitDetails />
     </AscentController>
   );
 }

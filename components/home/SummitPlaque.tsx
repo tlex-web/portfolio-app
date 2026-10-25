@@ -2,13 +2,28 @@ import TrailSigns from '@/components/home/TrailSigns';
 import { summitPlaque } from '@/lib/ascent/summit';
 
 /**
- * Below 768 px the plaque sits low over the final frame, so it gets the hero's
- * vertical scrim, which never drops under 0.5 (09-UI-SPEC "Summit Section",
- * correction C6 stops). From 768 px the solid plate needs no scrim. Alphas are
- * opacity modifiers on the surface token, not new colours.
+ * The four plaque stats as a dl (HOME-06; 09-UI-SPEC "Summit-plaque stats").
+ * Server component. Rendered twice: inside the full plaque, and in
+ * SummitDetails for the compact layout. Each copy is display none in the other
+ * layout, so only one is ever in the accessibility tree.
  */
-const SCRIM =
-  'pointer-events-none absolute inset-0 -z-10 bg-linear-to-t from-surface/90 from-0% via-surface/75 via-60% to-surface/50 to-100% md:hidden';
+export function SummitStats({ className = '' }: { className?: string }) {
+  const { stats } = summitPlaque();
+
+  return (
+    <dl className={`grid grid-cols-2 gap-x-6 gap-y-4 ${className}`}>
+      {stats.map(({ label, value, note }) => (
+        <div key={label}>
+          <dt className="text-sm text-ink-muted">{label}</dt>
+          <dd className="mt-1 font-mono text-base text-ink tabular-nums">
+            <span className="whitespace-nowrap">{value}</span>
+            {note ? <span className="block text-sm text-ink-muted">{note}</span> : null}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
 
 /**
  * The summit, the last block of the ascent (HOME-03, HOME-06; D-03, D-13,
@@ -21,11 +36,22 @@ const SCRIM =
  * summitPlaque(), with no count-up. The trail signs repeat below it so the
  * climb ends on the same two destinations it started with.
  *
- * One stage tall in tall modes (bottom-docked below 768 px, centred from md);
- * natural height when reduced motion is requested (stacked).
+ * Two layouts (G-09-2, Tim: "Compact plaque + measured 3D", 09-18; the
+ * thresholds are SUMMIT_FULL_MEDIA in lib/ascent/summit-layout.ts):
+ * - full (summit-full, landscape 1100 to below 1944 px): the plate holds the
+ *   kicker, the h2, the height and the stats, in a 448 px column centred
+ *   vertically on the left, beside the poster pins.
+ * - compact (summit-compact, everywhere else, motion allowed): a 320 px column
+ *   docked at the bottom holds a one-line plate (h2 and height) and the signs,
+ *   so the pins above it stay in view; the kicker and the stats follow the
+ *   ascent in SummitDetails.
+ * Every summit text sits on a solid plate, so there is no block scrim.
+ *
+ * One stage tall in tall modes; natural height with the full plaque when
+ * reduced motion is requested (stacked).
  */
 export default function SummitPlaque() {
-  const { kicker, title, height, stats } = summitPlaque();
+  const { kicker, title, height } = summitPlaque();
 
   return (
     <section
@@ -35,28 +61,26 @@ export default function SummitPlaque() {
       data-ascent-block="summit"
       className="relative isolate min-h-[calc(100svh-var(--nav-h))] motion-reduce:min-h-0"
     >
-      <div aria-hidden="true" className={SCRIM} />
-      <div className="mx-auto flex min-h-[calc(100svh-var(--nav-h))] w-full max-w-6xl flex-col justify-end px-4 pb-4 sm:px-6 md:justify-center lg:px-8 motion-reduce:min-h-0 motion-reduce:pb-12">
-        <div data-summit-plaque className="w-full max-w-md">
-          <div className="rounded-sm border border-line-strong bg-surface-raised p-6">
-            <p className="font-mono text-sm text-ink-muted">{kicker}</p>
-            <h2 id="summit-title" className="mt-4">
-              {title}
-            </h2>
-            <p className="mt-2 font-mono text-heading font-semibold text-ink tabular-nums">{height}</p>
-            <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-4">
-              {stats.map(({ label, value, note }) => (
-                <div key={label}>
-                  <dt className="text-sm text-ink-muted">{label}</dt>
-                  <dd className="mt-1 font-mono text-base text-ink tabular-nums">
-                    <span className="whitespace-nowrap">{value}</span>
-                    {note ? <span className="block text-sm text-ink-muted">{note}</span> : null}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+      <div className="mx-auto flex min-h-[calc(100svh-var(--nav-h))] w-full max-w-6xl flex-col justify-end px-4 pb-4 sm:px-6 lg:px-8 summit-full:justify-center motion-reduce:min-h-0 motion-reduce:pb-12">
+        <div data-summit-plaque className="w-full max-w-md summit-compact:motion-safe:max-w-80">
+          <div className="rounded-sm border border-line-strong bg-surface-raised p-6 summit-compact:motion-safe:px-4 summit-compact:motion-safe:py-2">
+            <p className="font-mono text-sm text-ink-muted summit-compact:motion-safe:hidden">
+              {kicker}
+            </p>
+            <div className="summit-compact:motion-safe:flex summit-compact:motion-safe:items-baseline summit-compact:motion-safe:justify-between summit-compact:motion-safe:gap-4">
+              <h2
+                id="summit-title"
+                className="mt-4 summit-compact:motion-safe:mt-0 summit-compact:motion-safe:text-base"
+              >
+                {title}
+              </h2>
+              <p className="mt-2 font-mono text-heading font-semibold text-ink tabular-nums summit-compact:motion-safe:mt-0 summit-compact:motion-safe:text-base summit-compact:motion-safe:whitespace-nowrap">
+                {height}
+              </p>
+            </div>
+            <SummitStats className="mt-6 summit-compact:motion-safe:hidden" />
           </div>
-          <div className="mt-6">
+          <div className="mt-6 summit-compact:motion-safe:mt-2">
             <TrailSigns />
           </div>
         </div>

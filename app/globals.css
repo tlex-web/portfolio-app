@@ -281,6 +281,25 @@ html {
   }
 }
 
+/* Summit layouts (G-09-2, 09-18; 09-UI-SPEC "Summit Section"). The numbers come
+   from SUMMIT_FULL_MEDIA in lib/ascent/summit-layout.ts, and a Jest guard fails
+   if these two media conditions drift from it. summit-full: landscape from
+   1100 px to below 1944 px, where the 448 px plaque column sits left of the
+   poster pins. summit-compact: everything else, where a bottom-docked 320 px
+   column holds the compact plate and the signs and the stats follow the ascent.
+   The two are mutually exclusive; compact is always paired with motion-safe. */
+@custom-variant summit-full {
+  @media (orientation: landscape) and (68.75rem <= width < 121.5rem) {
+    @slot;
+  }
+}
+
+@custom-variant summit-compact {
+  @media not all and (orientation: landscape) and (68.75rem <= width < 121.5rem) {
+    @slot;
+  }
+}
+
 /* The only way to paint trail yellow (09-UI-SPEC "Trail yellow"). Phase 9 uses it
    on the decorative trail-sign tip only */
 @utility bg-trail {

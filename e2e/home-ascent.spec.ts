@@ -450,8 +450,10 @@ test.describe('Summit, trail signs and About (HOME-03, HOME-06)', () => {
     expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
 
     // Plaque values never wrap; every dd value is one line inside its column.
-    const values = await summit(page)
-      .locator('dd > span.whitespace-nowrap')
+    // At 375 px the summit is compact, so the visible stats are the copy after
+    // the ascent (G-09-2, 09-18).
+    const values = await page
+      .locator('[data-summit-details] dd > span.whitespace-nowrap')
       .evaluateAll((spans) =>
         spans.map((s) => {
           const r = s.getBoundingClientRect();
@@ -465,6 +467,90 @@ test.describe('Summit, trail signs and About (HOME-03, HOME-06)', () => {
       expect(v.right).toBeLessThanOrEqual(v.colRight + 0.5);
     }
   });
+});
+
+type Box = { x: number; y: number; width: number; height: number };
+
+/**
+ * With #summit centred (static mode), the plaque column [data-summit-plaque]
+ * and every poster pin box. Two more frames after the centring helper's own
+ * two, so the active-pin attributes have settled.
+ */
+async function summitBoxes(page: Page): Promise<{ plaque: Box; pins: Array<Box & { k: number }> }> {
+  await scrollBlockToCentre(page, '#summit');
+  await nextFrames(page);
+  return page.evaluate(() => {
+    const box = (el: Element) => {
+      const r = el.getBoundingClientRect();
+      return { x: r.x, y: r.y, width: r.width, height: r.height };
+    };
+    const plaque = document.querySelector('[data-summit-plaque]');
+    if (!plaque) throw new Error('no [data-summit-plaque]');
+    const pins = [
+      ...document.querySelectorAll<HTMLElement>('[data-pin-layer="poster"] [data-pin]'),
+    ].map((el) => ({ k: Number(el.dataset.pin), ...box(el) }));
+    return { plaque: box(plaque), pins };
+  });
+}
+
+/** Separation of two boxes in px: positive when apart (the larger axis gap), negative when they overlap. */
+function boxGap(a: Box, b: Box): number {
+  return Math.max(
+    b.x - (a.x + a.width),
+    a.x - (b.x + b.width),
+    b.y - (a.y + a.height),
+    a.y - (b.y + b.height)
+  );
+}
+
+/**
+ * The static half of G-09-2 (D-03; Tim: "Compact plaque + measured 3D", 09-18;
+ * .planning/debug/summit-pins-under-plaque.md). The poster pins never move
+ * (D-16), so the plaque must clear them: no pin box may meet the plaque column
+ * inflated by 8 px. Where the full plaque cannot sit beside the pins, the
+ * compact layout docks a 320 px column (compact plate and signs) at the bottom
+ * and the kicker and stats follow the ascent in [data-summit-details].
+ */
+test.describe('Summit plaque clears the poster pins (G-09-2, static)', () => {
+  const plaque = summitPlaque();
+  const CLEARANCE = 8;
+  const ROWS: ReadonlyArray<{ width: number; height: number; layout: 'compact' | 'full' }> = [
+    { width: 375, height: 667, layout: 'compact' },
+  ];
+
+  for (const { width, height, layout } of ROWS) {
+    test(`${layout} summit clears every poster pin at ${width} x ${height}`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await disableWebGL(page);
+      await page.goto('/');
+
+      const { plaque: column, pins } = await summitBoxes(page);
+      expect(pins).toHaveLength(waypoints.length);
+      for (const pin of pins) {
+        expect
+          .soft(boxGap(column, pin), `pin ${pin.k} gap to the plaque column`)
+          .toBeGreaterThanOrEqual(CLEARANCE);
+      }
+
+      const section = page.locator('#summit');
+      const details = page.locator('[data-summit-details]');
+      await expect(
+        section.getByRole('heading', { level: 2, name: plaque.title, exact: true })
+      ).toBeVisible();
+      await expect(section.getByText(plaque.height, { exact: true })).toBeVisible();
+      if (layout === 'compact') {
+        await expect(section.locator('dl')).toBeHidden();
+        await expect(details).toBeVisible();
+        await expect(details.locator('dl > div')).toHaveCount(plaque.stats.length);
+        for (const item of await details.locator('dl > div').all())
+          await expect(item).toBeVisible();
+      } else {
+        await expect(section.locator('dl > div')).toHaveCount(plaque.stats.length);
+        await expect(section.locator('dl')).toBeVisible();
+        await expect(details).toBeHidden();
+      }
+    });
+  }
 });
 
 /**
