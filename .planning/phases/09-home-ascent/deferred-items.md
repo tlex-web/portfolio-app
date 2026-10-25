@@ -58,13 +58,27 @@
   **Owner:** Tim at the 09-13 Task 3 gate choice: "gate on initial bytes" measures the same as total under this boundary. Moving the arm after `load` (TerrainStage) or adding an arm mark would make the split meaningful; either is a behaviour or product-code change outside 09-09.
 
 - The summit frame at 1440 px puts 3D pins 1 and 2 behind the summit plaque
-  status: open
+  status: resolved
   **What:** With `#summit` centred at 1440 x 900, the look-back camera (450 m SW of and 350 m above the summit, aimed at the waypoint centroid) projects Zermatt and Gornerschlucht at NDC x -0.30 and -0.19, about x 504 and 583 px. The summit plaque card spans about x 172-618 px there, so both pins are covered (still inside the stage, so the 'summit frame shows every waypoint' e2e passes). Pins 3 and 4 show to the right of the plaque. Levers (constants only): aim the summit target a little west of the centroid, or add a wide-stage horizontal view offset at the summit like the narrow one (`VIEW_OFFSET_X_SHARE`), so the waypoints sit right of the plaque.
   **Found by:** 09-10 visual check after Task 3.
   **Owner:** Tim at the 09-12 render review (tuning constants).
+  **Resolution:** 09-12 `fc24d57` (Tim: "Fix in 09-12 (Recommended)"). Wide stages widen the summit FOV to 75° and shift the summit framing right (`SUMMIT_VIEW_OFFSET_X_SHARE` 0.095), and narrow stages lift it (`SUMMIT_VIEW_OFFSET_Y_SHARE` 0.08). All four pins now clear the plaque at 1280 x 720, 1440 x 900, 1920 x 1080, 375 x 812 and 412 x 839, guarded by the e2e 'summit pins clear the plaque'.
 
 - A small dark wedge at the bottom edge of the 1440 px summit frame
   status: open
   **What:** About 70 x 40 px near x 400-460 px, y 860 px at 1440 x 900 with `#summit` centred, darker than the surrounding relief. The summit peak sits about 38° below the camera, right at the frame's bottom edge (half vertical FOV 18.5° plus about 20° of pitch), so this is most likely the peak's steep faces seen from just above, or the contour merge fade on them. It is not seen at 412 px (wider FOV).
   **Found by:** 09-10 visual check after Task 3.
   **Owner:** Tim at the 09-12 render review (`SUMMIT_LIFT_M`, `SUMMIT_PULLBACK_M`), then 09-14.
+  **09-12 note:** Tim kept the defaults (pull-back 450 m). The wider desktop summit FOV from the plaque fix (75° horizontal, about 51° vertical at 1440 x 900) brings the summit marker and the peak's dark faces further into the bottom of the frame: a dark mass of about 200 x 135 px near x 560-760, y 765-900 at 1440 x 900. See the scratchpad render summit-fixed-1440.png. This is for the 09-14 visual review.
+
+- After the 09-12 plaque fix, summit pins still sit behind the plaque at some sizes where the plaque fills most of the stage
+  status: open
+  **What:** The summit pins are measured on the dev server with SwiftShader and `#summit` centred.
+  - 375 x 667: all four pins overlap. The docked plaque column spans y 121-659 of the stage, which leaves no clear area above it.
+  - 820 x 1180 (portrait tablet, wide rig): pins 1-3 overlap. The centred plaque spans y 383-861, and the clear band to its right (x 472-586) is narrower than a pin cluster.
+  - 768 x 1024: pin 3 overlaps. In Playwright the stage is narrower than 768 px (the scrollbar), so the rig uses the narrow offsets while the CSS uses the centred `md` plaque.
+  - 1024 x 768: pin 1 touches the plaque's right edge by 2 px, and pin 4's right edge is 13 px under the rail scrim. The band there is about 0.6 NDC wide.
+
+  The first two match the pre-fix measurement with the 09-12 constants set to neutral, so they are not regressions. The static poster at the summit is clear at 1280 px and up. Below that, its fixed plan-view pins sit under the docked or centred plaque: 3 pins at 375, 2 at 412, and 1 at 768 and 1024. That is the D-20 docked layout, not camera framing.
+  **Found by:** 09-12 plaque fix, size sweep.
+  **Owner:** Tim. Fixing these needs a plaque layout decision, for example a compact summit plaque on short or portrait stages, or a framing that fits the pins above a centred plaque. It is outside the 09-12 camera-only scope.
