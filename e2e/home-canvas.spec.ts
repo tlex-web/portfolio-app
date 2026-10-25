@@ -52,17 +52,23 @@ import {
  * after the tab shows again draws. Turning reduced motion on and off remounts
  * the canvas without the self-inflicted context loss marking the device
  * static. The frame-budget test logs each verdict as one CI line (09-13). The
- * draw tests run at 412 x 839 (the 256 mesh): SwiftShader holds the frame
- * budget there, and they first assert that it did, so a declined device can
- * never pass them by having no canvas.
+ * draw tests run at 412 x 839 (the 256 mesh) and first wait for a verdict and
+ * assert the stage is still '3d', so a device with no canvas can never pass
+ * them.
  *
- * Measure-only frame budget (Tim's 09-11 option A): local SwiftShader runs the
- * 512² mesh (stages from 768 px, so the default 1280 x 720 viewport and
- * 1440 x 900) above the 50 ms budget, so the desktop-size tests that need '3d'
- * call budgetMeasureOnly: the verdict is still measured and marked, but a
- * decline changes nothing. Every other test keeps the real budget, and
- * 'a slow device declines to the poster' runs the real decline at 1440 x 900
- * on frames held to 60 ms, so it declines on every machine.
+ * Measure-only frame budget (Tim's 09-11 "A: measure-only flag
+ * (Recommended)", extended to phones by his 09-13 "B1: extend option A
+ * (Recommended)"): local SwiftShader runs the 512² mesh (stages from 768 px,
+ * so the default 1280 x 720 viewport and 1440 x 900) above the 50 ms budget,
+ * and CI's SwiftShader measures the 412 x 839 verdict as noise around it
+ * (41.1 ms 'ok' in one 09-13 run, 80.7 ms 'decline' in the next). So every
+ * test that needs '3d' calls budgetMeasureOnly: the verdict is still measured
+ * and marked, but a decline changes nothing. Only the tests about the budget
+ * keep the real one: 'records the frame-budget verdict' at both sizes, and
+ * 'a slow device declines to the poster', which runs the real decline at
+ * 1440 x 900 on frames held to 60 ms, so it declines on every machine.
+ * lib/__tests__/frame-budget-policy.test.ts holds every test in this file to
+ * that rule.
  */
 
 const stage = (page: Page) => page.locator('[data-ascent-stage]');
@@ -198,6 +204,7 @@ test.describe('Home terrain canvas (HOME-02)', () => {
 
   test('contour lines are drawn @chromium-only', async ({ page }) => {
     test.setTimeout(60000);
+    await budgetMeasureOnly(page); // 412 x 839: CI's phone verdict is noise (B1)
     await page.setViewportSize({ width: 412, height: 839 });
     await page.goto('/');
     await waitForRevealed(page);
@@ -448,6 +455,7 @@ async function expectLit3dPin(page: Page, k: number) {
 test.describe('Home terrain route and 3D pins (HOME-02, HOME-03, HOME-05)', () => {
   test('smoke at three ascent positions @chromium-only', async ({ page }) => {
     test.setTimeout(90000);
+    await budgetMeasureOnly(page); // 412 x 839: CI's phone verdict is noise (B1)
     await page.setViewportSize({ width: 412, height: 839 });
     await page.goto('/');
     await scrollOnce(page);
@@ -558,6 +566,7 @@ test.describe('Home terrain route and 3D pins (HOME-02, HOME-03, HOME-05)', () =
 
   test('waypoint 2 lights its 3D pin @chromium-only', async ({ page }) => {
     test.setTimeout(60000);
+    await budgetMeasureOnly(page); // 412 x 839: CI's phone verdict is noise (B1)
     await page.setViewportSize({ width: 412, height: 839 });
     await page.goto('/');
     await scrollOnce(page);
@@ -568,13 +577,14 @@ test.describe('Home terrain route and 3D pins (HOME-02, HOME-03, HOME-05)', () =
   });
 
   test.describe('summit frame shows every waypoint', () => {
-    for (const { width, height, measureOnly } of [
-      { width: 1440, height: 900, measureOnly: true }, // the 512² mesh
-      { width: 412, height: 839, measureOnly: false },
+    // 1440 x 900 runs the 512² mesh; CI's 412 x 839 verdict is noise (B1).
+    for (const { width, height } of [
+      { width: 1440, height: 900 },
+      { width: 412, height: 839 },
     ]) {
       test(`at ${width} x ${height} @chromium-only`, async ({ page }) => {
         test.setTimeout(60000);
-        if (measureOnly) await budgetMeasureOnly(page);
+        await budgetMeasureOnly(page);
         await page.setViewportSize({ width, height });
         await page.goto('/');
         await scrollOnce(page);
@@ -600,15 +610,16 @@ test.describe('Home terrain route and 3D pins (HOME-02, HOME-03, HOME-05)', () =
     // At the summit the plaque column (card and trail signs) covers the left of a
     // wide stage and docks over the bottom of a narrow one; no waypoint pin may sit
     // behind it (09-12, Tim: "Fix in 09-12 (Recommended)"). 412 x 839 is the
-    // narrow-stage regression guard.
-    for (const { width, height, measureOnly } of [
-      { width: 1440, height: 900, measureOnly: true }, // the 512² mesh
-      { width: 1280, height: 720, measureOnly: true }, // the default viewport, 512² mesh
-      { width: 412, height: 839, measureOnly: false },
+    // narrow-stage regression guard. 1440 x 900 and the default 1280 x 720
+    // viewport run the 512² mesh; CI's 412 x 839 verdict is noise (B1).
+    for (const { width, height } of [
+      { width: 1440, height: 900 },
+      { width: 1280, height: 720 },
+      { width: 412, height: 839 },
     ]) {
       test(`at ${width} x ${height} @chromium-only`, async ({ page }) => {
         test.setTimeout(60000);
-        if (measureOnly) await budgetMeasureOnly(page);
+        await budgetMeasureOnly(page);
         await page.setViewportSize({ width, height });
         await page.goto('/');
         await scrollOnce(page);
@@ -672,6 +683,7 @@ test.describe('Home terrain route and 3D pins (HOME-02, HOME-03, HOME-05)', () =
 
   test('a canvas revealed while stationary lights its 3D pin @chromium-only', async ({ page }) => {
     test.setTimeout(60000);
+    await budgetMeasureOnly(page); // 412 x 839: CI's phone verdict is noise (B1)
     await page.setViewportSize({ width: 412, height: 839 });
     await delayHeightmap(page, 3000);
     await page.goto('/');
@@ -699,14 +711,19 @@ function budgetMarks(page: Page): Promise<BudgetMark[]> {
   );
 }
 
-/** Waits until the frame budget passed (its last verdict is 'ok'). */
-async function expectBudgetOk(page: Page) {
+/**
+ * Waits for the first frame-budget verdict (the reveal burst is over), then
+ * asserts the stage still reads '3d': in measure-only mode (B1) a decline acts
+ * on nothing, so a draw test can never pass on a page with no canvas.
+ */
+async function expect3dAfterVerdict(page: Page) {
   await expect
-    .poll(
-      async () => (await budgetMarks(page)).map((m) => `${m.verdict} ${m.medianMs}`).join(', '),
-      { timeout: 5000, message: 'the frame budget passes (verdicts, median ms)' }
-    )
-    .toMatch(/(^|, )ok [\d.]+$/);
+    .poll(async () => (await budgetMarks(page)).length, {
+      timeout: 10000,
+      message: 'a frame-budget verdict',
+    })
+    .toBeGreaterThan(0);
+  await expect(stage(page)).toHaveAttribute('data-ascent-mode', '3d');
 }
 
 /**
@@ -793,12 +810,13 @@ test.describe('Home canvas resilience (HOME-02, HOME-07)', () => {
 
   test('draws nothing at rest @chromium-only', async ({ page }) => {
     test.setTimeout(60000);
+    await budgetMeasureOnly(page); // 412 x 839: CI's phone verdict is noise (B1)
     await page.setViewportSize(PHONE);
     await countDraws(page);
     await page.goto('/');
     await scrollOnce(page);
     await waitForRevealed(page);
-    await expectBudgetOk(page);
+    await expect3dAfterVerdict(page);
 
     await page.waitForTimeout(1500);
     const before = await readDraws(page);
@@ -810,12 +828,13 @@ test.describe('Home canvas resilience (HOME-02, HOME-07)', () => {
 
   test('draws nothing off-screen @chromium-only', async ({ page }) => {
     test.setTimeout(60000);
+    await budgetMeasureOnly(page); // 412 x 839: CI's phone verdict is noise (B1)
     await page.setViewportSize(PHONE);
     await countDraws(page);
     await page.goto('/');
     await scrollOnce(page);
     await waitForRevealed(page);
-    await expectBudgetOk(page);
+    await expect3dAfterVerdict(page);
 
     // About into view, then just far enough that the last pixels of the stage leave the viewport.
     await page.evaluate(() => {
@@ -841,12 +860,13 @@ test.describe('Home canvas resilience (HOME-02, HOME-07)', () => {
 
   test('pauses while the tab is hidden @chromium-only', async ({ page }) => {
     test.setTimeout(60000);
+    await budgetMeasureOnly(page); // 412 x 839: CI's phone verdict is noise (B1)
     await page.setViewportSize(PHONE);
     await countDraws(page);
     await page.goto('/');
     await scrollOnce(page);
     await waitForRevealed(page);
-    await expectBudgetOk(page);
+    await expect3dAfterVerdict(page);
     await scrollBlockToCentre(page, waypoint(2));
     await page.waitForTimeout(800);
 
@@ -865,6 +885,7 @@ test.describe('Home canvas resilience (HOME-02, HOME-07)', () => {
 
   test('a remount returns to 3D @chromium-only', async ({ page }) => {
     test.setTimeout(60000);
+    await budgetMeasureOnly(page); // 412 x 839: CI's phone verdict is noise (B1)
     await page.setViewportSize(PHONE);
     const errors = pageErrors(page);
     await page.goto('/');

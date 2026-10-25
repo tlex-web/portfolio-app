@@ -106,9 +106,10 @@ const W = terrain.extent.widthM;
 const BURST_MIN_MS = DURATION.settle * 1000;
 
 /**
- * Test-only measure-only switch (Tim's 09-11 option A). A Playwright init script
- * (e2e/helpers/webgl.ts budgetMeasureOnly) sets it for the desktop-size tests
- * that need '3d' under SwiftShader: the burst still runs and every verdict is
+ * Test-only measure-only switch (Tim's 09-11 option A, extended to phones and
+ * the HOME-08 perf run by his 09-13 B1). A Playwright init script
+ * (e2e/helpers/webgl.ts budgetMeasureOnly) sets it for the e2e tests that need
+ * '3d' under SwiftShader: the burst still runs and every verdict is
  * still marked, but a decline neither steps the pixel ratio down nor turns
  * Home static. Unset for every visitor, so this is one property read per
  * verdict and the budget acts exactly as described above.

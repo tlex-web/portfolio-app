@@ -24,6 +24,9 @@ import { test, expect, devices, type Page } from '@playwright/test';
  *     of the last run with its start time. When the stage arms before the
  *     load event, the lazy chunk holds that event back and counts as initial
  *     (empty `lateScripts`); the timeline still shows it.
+ *   - since 09-14, every context sets the measure-only frame-budget flag
+ *     (Tim's 09-13 B1), so a run cannot decline mid-measurement and `mode`
+ *     '3d' means the stage stayed 3D.
  *
  * Run only through the `perf` project, in the Playwright container:
  *   Actions -> "Update visual baselines" -> suite `perf`
@@ -137,6 +140,12 @@ test('home mobile LCP + JS bytes', async ({ browser }, testInfo) => {
       serviceWorkers: 'block',
     });
     try {
+      // Measure-only frame budget (Tim's 09-13 "B1: extend option A (Recommended)"):
+      // the verdict is still marked, but a decline acts on nothing, so mode '3d'
+      // means the stage stayed 3D for the whole measurement.
+      await context.addInitScript(() => {
+        (window as Window & { __ascentBudgetMeasureOnly?: boolean }).__ascentBudgetMeasureOnly = true;
+      });
       const page = await context.newPage();
       const cdp = await context.newCDPSession(page);
       await cdp.send('Network.enable');
