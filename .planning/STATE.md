@@ -4,18 +4,18 @@ milestone: v2.0
 milestone_name: Topographic Identity
 current_phase: 09
 current_phase_name: Home Ascent
-status: verifying
-stopped_at: Completed 09-14-PLAN.md
-last_updated: "2026-10-25T12:56:36.389Z"
+status: executing
+stopped_at: Completed 09-15-PLAN.md
+last_updated: "2026-10-25T16:18:47.467Z"
 last_activity: 2026-10-25
-last_activity_desc: 09-14 complete (B1 applied; Home re-baselined by Tim, CI green twice; ratchet 832)
-state_head: 88b9643dbd6a6eb368065e87b2e47ed9d12f7c75
+last_activity_desc: Phase 09 execution started
+state_head: 993845b58a88e41c69ea8cdb2220ef4091709454
 progress:
   total_phases: 6
   completed_phases: 8
-  total_plans: 54
-  completed_plans: 54
-  percent: 100
+  total_plans: 62
+  completed_plans: 55
+  percent: 89
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-24)
 ## Current Position
 
 Phase: 09 (Home Ascent) — EXECUTING
-Plan: 14 of 14
-Status: Phase complete — ready for verification
-Last activity: 2026-10-25 — 09-14 complete: B1 frame-budget policy applied; Tim re-baselined Home (284f433), CI 40193992531 green on attempts 1 and 2; ratchet 533 -> 832; gap plan agreed (plaque overlaps, 768 waypoint-2 label, 375 kicker)
+Plan: 16 of 22
+Status: Ready to execute
+Last activity: 2026-10-25 — Phase 09 execution started
 
-Progress: [██████████] 54/54 planned plans done; Phases 7–8 complete, Phase 9 awaiting verification (Phases 10–12 not yet planned)
+Progress: [█████████░] 89%
 
 ## Performance Metrics
 
@@ -109,6 +109,7 @@ Progress: [██████████] 54/54 planned plans done; Phases 7–
 | Phase 09 P12 | 17 min | 3 tasks | 7 files |
 | Phase 09 P13 | 33 min | 3 tasks | 2 files |
 | Phase 09 P14 | 40min | 3 tasks | 28 files |
+| Phase 09 P15 | 8 min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -252,6 +253,8 @@ Recent decisions affecting current work:
 - [Phase 09]: 09-14: B1 applied in the e2e layer (budgetMeasureOnly on the ten 412 x 839 3D tests and the perf contexts; verdict and forced-decline tests keep the real 50 ms budget), guarded by lib/__tests__/frame-budget-policy.test.ts; HOME-08 met under total-keep (444,761 <= 468,770 B, LCP 3,112 <= 4,692 ms)
 - [Phase 09]: 09-14: Home baselines committed as-is by Tim (284f433, "pushed"); the 768 waypoint-2 label and the 375 kicker orphan join the plaque overlaps in the gap plan after 09-14 (Tim: "Add to the gap plan (Recommended)"); 768 rail readout and pin-4 approx ring unconfirmed
 - [Phase 09]: 09-14: test-count ratchet raised at Phase 9 close: jest 416 -> 646, e2e 117 -> 186, total 533 -> 832
+- [Phase 09]: 09-15: WR-01 fixed in CameraRig update(): a running reveal burst is dropped on the shown -> hidden flag change (a background tab runs no frame); useFrame drop kept as off-screen fallback; no gap-based restart, FRAME_BUDGET_DEFAULTS unchanged
+- [Phase 09]: 09-15: IN-05 kept sticky and documented (downgrade and dpr step-down last the session, until a full reload); WR-02 context-loss e2e on the measure-only budget
 
 ### Pending Todos
 
@@ -289,6 +292,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-25T12:56:26.874Z
-Stopped at: Completed 09-14-PLAN.md
+Last session: 2026-10-25T16:18:47.082Z
+Stopped at: Completed 09-15-PLAN.md
 Resume file: None
