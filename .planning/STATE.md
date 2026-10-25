@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 09
 current_phase_name: Home Ascent
 status: executing
-stopped_at: Completed 09-20-PLAN.md
-last_updated: "2026-10-25T17:42:37.624Z"
+stopped_at: Completed 09-21-PLAN.md
+last_updated: "2026-10-25T17:59:06.506Z"
 last_activity: 2026-10-25
 last_activity_desc: Phase 09 execution started
-state_head: c03bb99349021728665bd00e7a7b210c264b3ff2
+state_head: 4f70e65fcf8a9a2eaeecb91c24406c117082e093
 progress:
   total_phases: 6
   completed_phases: 8
   total_plans: 62
-  completed_plans: 60
-  percent: 97
+  completed_plans: 61
+  percent: 98
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-24)
 ## Current Position
 
 Phase: 09 (Home Ascent) — EXECUTING
-Plan: 21 of 22
+Plan: 22 of 22
 Status: Ready to execute
 Last activity: 2026-10-25 — Phase 09 execution started
 
-Progress: [█████████░] 97%
+Progress: [█████████░] 98%
 
 ## Performance Metrics
 
@@ -115,6 +115,7 @@ Progress: [█████████░] 97%
 | Phase 09 P18 | 14 min | 3 tasks | 9 files |
 | Phase 09 P19 | 17 min | 3 tasks | 13 files |
 | Phase 09 P20 | 17 min | 3 tasks | 9 files |
+| Phase 09 P21 | 12 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -270,6 +271,8 @@ Recent decisions affecting current work:
 - [Phase 09]: Summit framing is measured: fitCluster over summitClearRects (16 px inside the stage, clear of the plaque column and rail zone), capped at the 60/75 degree summit zoom (09-20)
 - [Phase 09]: View offset and FOV follow one key track (stageViewKeys, viewTrackAt); route.ts lost the seven share-based helpers (09-20)
 - [Phase 09]: CameraRig decides narrow/wide with matchMedia('(min-width: 48rem)'), the CSS md width source (09-20)
+- [Phase 09]: 09-21: md stages take a measured view offset per waypoint (waypointTarget: natural, beside, above, below the card), applied as natural - target on the 09-20 key track; the lit 3D label uses placePinLabel like the poster
+- [Phase 09]: 09-21: measured, 768-900 px stages (and 768 x 1024) put the lit pin 8 px beside the card, 1023 px and up keep the natural position; no row needed above or below
 
 ### Pending Todos
 
@@ -307,6 +310,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-25T17:42:37.300Z
-Stopped at: Completed 09-20-PLAN.md
+Last session: 2026-10-25T17:59:06.153Z
+Stopped at: Completed 09-21-PLAN.md
 Resume file: None

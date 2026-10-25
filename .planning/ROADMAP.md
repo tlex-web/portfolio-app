@@ -238,7 +238,7 @@ Plans:
   4. With reduced motion, Save-Data, no WebGL2, low device memory or a lost WebGL context, a static contour poster renders and every Home section shows its final readable state. The WebGL canvas renders on demand and pauses when scrolled off-screen.
   5. Mobile LCP and Home JavaScript size are no worse than the baseline recorded at the end of Phase 7.
 
-**Plans**: 20/22 plans executed: 14/14 executed in 11 waves, plus 8 gap-closure plans (09-15 to 09-22, waves 12-19, sequential) for UAT gaps G-09-2 to G-09-5
+**Plans**: 21/22 plans executed: 14/14 executed in 11 waves, plus 8 gap-closure plans (09-15 to 09-22, waves 12-19, sequential) for UAT gaps G-09-2 to G-09-5
 
 Plans:
 **Wave 1**
@@ -298,7 +298,7 @@ Gap closure (09-UAT.md, sequential on the main working tree):
 - [x] 09-20-PLAN.md — G-09-2 3D: summit framing measured from the plaque; md switch on the CSS width source
 
 **Wave 18** *(blocked on Wave 17 completion)*
-- [ ] 09-21-PLAN.md — G-09-3 a 3D: md stages frame the lit waypoint clear of its card; 3D labels share the poster rule
+- [x] 09-21-PLAN.md — G-09-3 a 3D: md stages frame the lit waypoint clear of its card; 3D labels share the poster rule
 
 **Wave 19** *(blocked on Wave 18 completion)*
 - [ ] 09-22-PLAN.md — One Home re-baseline (Tim commits PNGs), CI green twice, ratchet raise (checkpoints)
@@ -427,7 +427,7 @@ Gap closure (09-UAT.md, sequential on the main working tree):
 | 6. Integration Wiring Fixes | v1.0 | 1/1 | Complete | 2026-03-12 |
 | 7. Foundation & Guardrails | v2.0 | 27/27 | Complete    | 2026-10-24 |
 | 8. Data & Terrain Pipeline | v2.0 | 13/13 | Complete    | 2026-10-24 |
-| 9. Home Ascent | v2.0 | 20/22 | In Progress | - |
+| 9. Home Ascent | v2.0 | 21/22 | In Progress | - |
 | 10. Photography | v2.0 | 0/TBD | Not started | - |
 | 11. Engineering & Roadmap | v2.0 | 0/TBD | Not started | - |
 | 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 0/TBD | Not started | - |
