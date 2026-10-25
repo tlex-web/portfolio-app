@@ -97,6 +97,22 @@ async function delayHeightmap(page: Page, ms: number) {
   });
 }
 
+/**
+ * Holds every heightmap request until the test calls `release()` (a load that
+ * ends when the test says so, however slow the runner), then lets it and any
+ * later one through. page.route never sees a request the service worker
+ * answers, so a test that holds must block the service worker.
+ */
+async function holdHeightmap(page: Page) {
+  let release = () => {};
+  const released = new Promise<void>((resolve) => (release = resolve));
+  await page.route(HEIGHTMAP, async (route) => {
+    await released;
+    await route.continue().catch(() => {}); // the page may have closed or abandoned the request
+  });
+  return { release };
+}
+
 /** Scrolls once with the wheel (a real first scroll for the arming listener). */
 async function scrollOnce(page: Page) {
   await page.mouse.move(200, 200);
@@ -424,14 +440,17 @@ function boxGap(a: Box, b: Box): number {
  */
 async function settledPinBoxes(page: Page): Promise<Box[]> {
   const read = () =>
-    page.evaluate((ks) => {
-      return ks.map((k) => {
-        const el = document.querySelector(`[data-pin-layer="3d"] [data-pin="${k}"]`);
-        if (!el) throw new Error(`no 3D pin ${k}`);
-        const r = el.getBoundingClientRect();
-        return { x: r.x, y: r.y, width: r.width, height: r.height };
-      });
-    }, waypoints.map((w) => w.k));
+    page.evaluate(
+      (ks) => {
+        return ks.map((k) => {
+          const el = document.querySelector(`[data-pin-layer="3d"] [data-pin="${k}"]`);
+          if (!el) throw new Error(`no 3D pin ${k}`);
+          const r = el.getBoundingClientRect();
+          return { x: r.x, y: r.y, width: r.width, height: r.height };
+        });
+      },
+      waypoints.map((w) => w.k)
+    );
   let last = await read();
   for (let i = 0; i < 60; i++) {
     await nextFrames(page, 10);
@@ -514,61 +533,79 @@ test.describe('Home terrain route and 3D pins (HOME-02, HOME-03, HOME-05)', () =
     }
   });
 
-  test('pins hand over at the reveal @chromium-only', async ({ page }) => {
-    test.setTimeout(60000);
-    await budgetMeasureOnly(page); // 1280 x 720
-    await delayHeightmap(page, 2000);
-    await page.goto('/');
-    // No scroll: the idle callback arms the stage, so the reveal happens at p = 0 (the plan view).
-    await expect(page.locator('[data-pin-layer="3d"]')).toHaveCount(1, { timeout: 15000 });
+  // The production server registers the service worker (skipWaiting, clients.claim,
+  // cache-first for /terrain/), and on CI it controlled the page before the heightmap
+  // request, so page.route never held it: the fixed 2 s delay held nothing and the
+  // reveal raced these checks (09-22, CI run 40229497215 attempt 2). Blocking the
+  // worker lets the hold below see the request; the test releases it itself.
+  test.describe('with the service worker blocked', () => {
+    test.use({ serviceWorkers: 'block' });
 
-    // While the canvas loads: the poster pins show, the 3D pins do not.
-    await expect(stage(page)).toHaveAttribute('data-ascent-mode', 'eligible');
-    const visibility = (selector: string) =>
-      page.locator(selector).evaluate((el) => getComputedStyle(el).visibility);
-    expect(await visibility('[data-pin-layer="poster"]')).toBe('visible');
-    expect(await visibility('[data-pin-layer="3d"]')).toBe('hidden');
+    test('pins hand over at the reveal @chromium-only', async ({ page }) => {
+      test.setTimeout(60000);
+      await budgetMeasureOnly(page); // 1280 x 720
+      const heightmap = await holdHeightmap(page);
+      try {
+        const requested = page.waitForRequest(HEIGHTMAP, { timeout: 15000 });
+        await page.goto('/');
+        // No scroll: the idle callback arms the stage, so the reveal happens at p = 0 (the plan view).
+        await expect(page.locator('[data-pin-layer="3d"]')).toHaveCount(1, { timeout: 15000 });
+        await requested; // the canvas is loading, and its heightmap is held
 
-    // At the switch to '3d', both layers flip in the same style recalculation, and
-    // every 3D pin is shown where its poster pin was (the plan view equals the poster).
-    await page.evaluate(() => {
-      const el = document.querySelector('[data-ascent-stage]') as HTMLElement;
-      const w = window as unknown as { __handover: unknown };
-      new MutationObserver(() => {
-        if (el.dataset.ascentMode !== '3d' || w.__handover) return;
-        const vis = (s: string) =>
-          getComputedStyle(document.querySelector(s) as Element).visibility;
-        const shown = Array.from(
-          document.querySelectorAll('[data-pin-layer="3d"] [data-pin]'),
-          (pin) => getComputedStyle(pin).visibility
-        ).filter((v) => v === 'visible').length;
-        const offsets = Array.from(
-          document.querySelectorAll('[data-pin-layer="3d"] [data-pin]'),
-          (pin) => {
-            const k = pin.getAttribute('data-pin');
-            const poster = document.querySelector(`[data-pin-layer="poster"] [data-pin="${k}"]`);
-            const a = pin.getBoundingClientRect();
-            const b = (poster as Element).getBoundingClientRect();
-            return Math.max(Math.abs(a.left - b.left), Math.abs(a.top - b.top));
-          }
+        // While the canvas loads: the poster pins show, the 3D pins do not.
+        await expect(stage(page)).toHaveAttribute('data-ascent-mode', 'eligible');
+        const visibility = (selector: string) =>
+          page.locator(selector).evaluate((el) => getComputedStyle(el).visibility);
+        expect(await visibility('[data-pin-layer="poster"]')).toBe('visible');
+        expect(await visibility('[data-pin-layer="3d"]')).toBe('hidden');
+
+        // At the switch to '3d', both layers flip in the same style recalculation, and
+        // every 3D pin is shown where its poster pin was (the plan view equals the poster).
+        await page.evaluate(() => {
+          const el = document.querySelector('[data-ascent-stage]') as HTMLElement;
+          const w = window as unknown as { __handover: unknown };
+          new MutationObserver(() => {
+            if (el.dataset.ascentMode !== '3d' || w.__handover) return;
+            const vis = (s: string) =>
+              getComputedStyle(document.querySelector(s) as Element).visibility;
+            const shown = Array.from(
+              document.querySelectorAll('[data-pin-layer="3d"] [data-pin]'),
+              (pin) => getComputedStyle(pin).visibility
+            ).filter((v) => v === 'visible').length;
+            const offsets = Array.from(
+              document.querySelectorAll('[data-pin-layer="3d"] [data-pin]'),
+              (pin) => {
+                const k = pin.getAttribute('data-pin');
+                const poster = document.querySelector(
+                  `[data-pin-layer="poster"] [data-pin="${k}"]`
+                );
+                const a = pin.getBoundingClientRect();
+                const b = (poster as Element).getBoundingClientRect();
+                return Math.max(Math.abs(a.left - b.left), Math.abs(a.top - b.top));
+              }
+            );
+            w.__handover = {
+              poster: vis('[data-pin-layer="poster"]'),
+              layer3d: vis('[data-pin-layer="3d"]'),
+              shown,
+              onPosterPins: Math.max(...offsets) <= 2,
+            };
+          }).observe(el, { attributes: true, attributeFilter: ['data-ascent-mode'] });
+        });
+        heightmap.release();
+        await waitForRevealed(page);
+        const handover = await page.evaluate(
+          () => (window as unknown as { __handover: unknown }).__handover
         );
-        w.__handover = {
-          poster: vis('[data-pin-layer="poster"]'),
-          layer3d: vis('[data-pin-layer="3d"]'),
-          shown,
-          onPosterPins: Math.max(...offsets) <= 2,
-        };
-      }).observe(el, { attributes: true, attributeFilter: ['data-ascent-mode'] });
-    });
-    await waitForRevealed(page);
-    const handover = await page.evaluate(
-      () => (window as unknown as { __handover: unknown }).__handover
-    );
-    expect(handover).toEqual({
-      poster: 'hidden',
-      layer3d: 'visible',
-      shown: waypoints.length,
-      onPosterPins: true,
+        expect(handover).toEqual({
+          poster: 'hidden',
+          layer3d: 'visible',
+          shown: waypoints.length,
+          onPosterPins: true,
+        });
+      } finally {
+        heightmap.release(); // a failed check never leaves the request held past the test
+      }
     });
   });
 
