@@ -69,7 +69,7 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 
 - [ ] **PHOTO-01**: `/photos` opens on the Map view, showing each photo as a keyboard-operable waypoint on the contour map
 - [ ] **PHOTO-02**: A visitor can switch to Grid (justified rows at true aspect ratios) and Carousel (the 3D carousel restyled, a flat stepper under reduced motion), and the chosen view is kept in the URL without adding history entries
-- [ ] **PHOTO-03**: Photos appear in one canonical order (ascending altitude) in every view
+- [x] **PHOTO-03**: Photos appear in one canonical order (ascending altitude) in every view
 - [x] **PHOTO-04**: The carousel never advances without user control, or offers pause and stops on focus and under reduced motion
 
 ### Lightbox
@@ -205,7 +205,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HOME-08 | Phase 9 | Complete |
 | PHOTO-01 | Phase 10 | Pending |
 | PHOTO-02 | Phase 10 | Pending |
-| PHOTO-03 | Phase 10 | Pending |
+| PHOTO-03 | Phase 10 | Complete |
 | PHOTO-04 | Phase 10 | Complete |
 | LBOX-01 | Phase 10 | Pending |
 | LBOX-02 | Phase 10 | Pending |

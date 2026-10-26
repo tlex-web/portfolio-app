@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 10
 current_phase_name: Photography
 status: executing
-stopped_at: Completed 10-07-PLAN.md
-last_updated: "2026-10-26T13:23:22.263Z"
+stopped_at: Completed 10-08-PLAN.md
+last_updated: "2026-10-26T14:02:05.542Z"
 last_activity: 2026-10-26
 last_activity_desc: Phase 10 execution started
-state_head: 4efc000badb5d670bdaedde7f54a158f2abd1c5f
+state_head: 9ac3f677aeedc24771a587a43f9325f523cfe690
 progress:
   total_phases: 6
   completed_phases: 9
   total_plans: 75
-  completed_plans: 69
-  percent: 92
+  completed_plans: 70
+  percent: 93
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-25)
 ## Current Position
 
 Phase: 10 (Photography) — EXECUTING
-Plan: 8 of 13
+Plan: 9 of 13
 Status: Ready to execute
 Last activity: 2026-10-26 — Phase 10 execution started
 
-Progress: [█████████░] 92%
+Progress: [█████████░] 93%
 
 ## Performance Metrics
 
@@ -125,6 +125,7 @@ Progress: [█████████░] 92%
 | Phase 10 P05 | 34 min | 3 tasks | 15 files |
 | Phase 10 P06 | 45 min | 3 tasks | 11 files |
 | Phase 10 P07 | 29 min | 2 tasks | 10 files |
+| Phase 10 P08 | 34 min | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -310,6 +311,9 @@ Recent decisions affecting current work:
 - [Phase 10]: 10-07: 3D carousel frames face the camera every frame (the legacy ring faced inwards, so its front photo was mirrored); CameraFit sizes the camera distance so the front frame fills at most 72 % of the stage height and 84 % of its width
 - [Phase 10]: 10-07: 3D colours: clear and fog night-900 (= surface-raised frame box), mounts and ground night-950, one mist-300 light plus ambient; legacy reflections and shadows dropped; float and 'always' frameloop only while visible and not hidden
 - [Phase 10]: 10-07: useProgressiveTextures disposes a Texture before swapping in a larger image (WebGL2 immutable storage made the 640->1024 swap fail with 'Offset overflows texture dimensions')
+- [Phase 10]: 10-08: map plates clear a 16 px dot square (12 px dot plus its 2 px casing each side); a 20 px square fails compact slot 1 at S = 312-313, contradicting the UI-SPEC measured floor
+- [Phase 10]: 10-08: map label positions are a branch-traced pure layout emitted as cascade-only @container map-sheet (min-width) rules with calc(<frac> * 100cqw + <px>px) lengths (13 segments, ~7 KB); a Jest cascade check matches the layout within 0.5 px at every side 312-1100
+- [Phase 10]: 10-08: /photos renders PhotosHeader (derived kicker, h1 from site.nav, children slot for the 10-09 switcher) above one view section keyed by the view; data/sheet.ts is the one sheet title for footer, map margin line and kicker
 
 ### Pending Todos
 
@@ -349,6 +353,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-26T13:23:21.776Z
-Stopped at: Completed 10-07-PLAN.md
+Last session: 2026-10-26T14:02:05.079Z
+Stopped at: Completed 10-08-PLAN.md
 Resume file: None

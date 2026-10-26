@@ -330,7 +330,7 @@ Gap closure (09-UAT.md, sequential on the main working tree):
      - map-style hotspot callouts with leader lines, operable by tap and keyboard, with a legend on mobile and a toggle that hides them
      - "© {capture year} Tim Lui, all rights reserved", with no download button
 
-**Plans**: 7/13 plans executed in 8 waves (10-06 and 10-13 carry blocking checkpoints for Tim)
+**Plans**: 8/13 plans executed in 8 waves (10-06 and 10-13 carry blocking checkpoints for Tim)
 
 Plans:
 **Wave 1**
@@ -349,7 +349,7 @@ Plans:
 - [x] 10-07-PLAN.md — Carousel view: capability gate, flat stepper, restyled 3D carousel, no auto-advance, manifest textures
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 10-08-PLAN.md — Map as the default view: deterministic label layout, survey-sheet MapSheet, header band, shared sheet title
+- [x] 10-08-PLAN.md — Map as the default view: deterministic label layout, survey-sheet MapSheet, header band, shared sheet title
 - [ ] 10-10-PLAN.md — Zoom fit/1:1 with drag and key pan and the Escape layer
 
 **Wave 6** *(blocked on Wave 5 completion)*
@@ -459,6 +459,6 @@ Plans:
 | 7. Foundation & Guardrails | v2.0 | 27/27 | Complete    | 2026-10-24 |
 | 8. Data & Terrain Pipeline | v2.0 | 13/13 | Complete    | 2026-10-24 |
 | 9. Home Ascent | v2.0 | 22/22 | Complete    | 2026-10-25 |
-| 10. Photography | v2.0 | 7/13 | In Progress | - |
+| 10. Photography | v2.0 | 8/13 | In Progress | - |
 | 11. Engineering & Roadmap | v2.0 | 0/TBD | Not started | - |
 | 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 0/TBD | Not started | - |
