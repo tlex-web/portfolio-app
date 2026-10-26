@@ -42,7 +42,7 @@ test.describe('Photo page (LBOX-01 direct load)', () => {
 
       // LBOX-07: no download control anywhere, and only hashed derivatives on the stage.
       await expect(page.locator('[download]')).toHaveCount(0);
-      const img = page.locator('[data-photo-viewer] [data-photo-box] picture img');
+      const img = page.locator('[data-photo-viewer] [data-stage-layer="large"] img');
       await expect(img).toHaveAttribute('alt', view.alt);
       await expect
         .poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0))
@@ -112,7 +112,9 @@ test.describe('Viewer layout tiers (D-05)', () => {
     // The 'All photographs' link is the first control of the chrome's left group.
     const link = page.getByRole('link', { name: 'All photographs', exact: true });
     await expect(link).toHaveCount(1);
-    await expect(page.locator('[data-chrome-left]').getByRole('link')).toHaveText('All photographs');
+    await expect(page.locator('[data-chrome-left]').getByRole('link')).toHaveText(
+      'All photographs'
+    );
   });
 
   test('1024 x 768 key tier: the photo fits the stage and the strip has two columns', async ({
@@ -226,7 +228,7 @@ test.describe('Stage states (UI-SPEC E5)', () => {
     await page.unroute(STAGE_DERIVATIVE);
     await retry.click();
 
-    const large = photoBox.locator('picture img');
+    const large = photoBox.locator('[data-stage-layer="large"] img');
     await expect
       .poll(() => large.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0))
       .toBe(true);
@@ -259,7 +261,7 @@ test.describe('Stage states (UI-SPEC E5)', () => {
     release();
 
     await expect(loading).toHaveCount(0);
-    const large = photoBox.locator('picture img');
+    const large = photoBox.locator('[data-stage-layer="large"] img');
     await expect
       .poll(() => large.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0))
       .toBe(true);

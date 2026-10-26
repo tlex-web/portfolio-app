@@ -4,6 +4,7 @@ import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@phosphor-icons/react/dist/ssr';
 import ExifStrip from '@/components/photos/ExifStrip';
+import StagePhoto from '@/components/photos/StagePhoto';
 import type { PhotoView } from '@/lib/photos/view-model';
 
 /**
@@ -27,7 +28,9 @@ import type { PhotoView } from '@/lib/photos/view-model';
  *
  * The photo box is the largest box at the photo's ratio inside the stage
  * (`--ar` = w / h; width min(100cqw, 100cqh * ar)), drawn object-fit: contain,
- * never cropped, on gallery black, never tinted by the map palette. The server
+ * never cropped, on gallery black, never tinted by the map palette. StagePhoto
+ * fills it: the opener derivative first, the large one on top once loaded,
+ * and the slow-load and load-error states with Retry (10-UI-SPEC E5). The server
  * HTML already holds the layout, the title and the strip before the photo
  * decodes. Below the stage, ExifStrip carries the title, place and date,
  * story, EXIF, position and the rights line (D-05). Only the content-hashed
@@ -57,7 +60,7 @@ export default function PhotoViewer({
 }) {
   const current = photos.find((p) => p.slug === initialSlug);
   if (!current) throw new RangeError(`PhotoViewer: no photo with slug ${initialSlug}`);
-  const { stage, aspect, alt } = current;
+  const { aspect } = current;
   const isPage = variant === 'page';
 
   const boxStyle = {
@@ -112,21 +115,7 @@ export default function PhotoViewer({
           className="mx-auto bg-gallery lb-scroll:w-[min(100%,calc(70svh*var(--ar)))] lb-key:w-[min(100cqw,calc(100cqh*var(--ar)))] lb-gutter:w-[min(100cqw,calc(100cqh*var(--ar)))]"
           style={boxStyle}
         >
-          <picture className="block h-full w-full">
-            <source type="image/avif" srcSet={stage.srcSetAvif} sizes={STAGE_SIZES} />
-            <source type="image/webp" srcSet={stage.srcSetWebp} sizes={STAGE_SIZES} />
-            {/* A raw img inside picture (exempt from @next/next/no-img-element): content-hashed manifest derivative; picture type switching. */}
-            <img
-              src={stage.src}
-              width={stage.width}
-              height={stage.height}
-              alt={alt}
-              loading="eager"
-              fetchPriority="high"
-              decoding="async"
-              className="block h-full w-full object-contain"
-            />
-          </picture>
+          <StagePhoto view={current} sizes={STAGE_SIZES} />
         </div>
       </div>
       <ExifStrip view={current} headingLevel={isPage ? 1 : 2} />
