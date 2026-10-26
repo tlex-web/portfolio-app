@@ -21,7 +21,7 @@ findings:
     title: "`offsetTimeOriginal` is extracted but ignored, so every capture is assumed to be in Europe/Zurich"
   - id: WR-04
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "`formatExposureTime` prints wrong shutter speeds between 0.25 s and 1 s, and for 0"
   - id: WR-05
     severity: warning
@@ -45,7 +45,7 @@ findings:
     title: "Hashed static assets are now served with no CSP at all"
   - id: IN-02
     severity: info
-    disposition: open
+    disposition: fixed
     title: "The legacy bridge drops `position.approximate`"
   - id: IN-03
     severity: info
@@ -75,7 +75,7 @@ findings:
     severity: info
     disposition: open
     title: "`LegacyUrl` accepts `..`"
-open: 10
+open: 8
 total: 18
 recorded: 2026-10-24T20:22:34.612Z
 ---
@@ -88,13 +88,13 @@ recorded: 2026-10-24T20:22:34.612Z
 | WR-01 | warning | fixed | 10-02 (Phase 10) |
 | WR-02 | warning | fixed | 10-02 (Phase 10) |
 | WR-03 | warning | fixed | 10-02 (Phase 10) |
-| WR-04 | warning | open | - |
+| WR-04 | warning | fixed | 10-01 (formatExposureTime rule and tests): `6bb5fb6` |
 | WR-05 | warning | fixed | 10-02 (Phase 10) |
 | WR-06 | warning | fixed | 10-02: extensions and ignore line fixed; pre-commit hook not added (no hook tooling; CI lint is the gate) |
 | WR-07 | warning | fixed | 10-02 (Phase 10) |
 | WR-08 | warning | fixed | 10-02 (Phase 10) |
 | IN-01 | info | open | - |
-| IN-02 | info | open | - |
+| IN-02 | info | fixed | 10-09 bridge removed (`aa9dff6`); 10-11 hotspot height shows approx. (`d5b10f2`) |
 | IN-03 | info | open | - |
 | IN-04 | info | open | - |
 | IN-05 | info | open | - |
