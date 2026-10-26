@@ -2,9 +2,14 @@
 
 import { useRef, useState, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
-import { LandscapeImage } from '@/data/types';
 
 type LoadState = 'loading' | 'thumb' | 'full';
+
+/** One texture's two URLs: a small image loaded first, then the larger one. */
+export interface ProgressiveTextureSource {
+  thumbSrc: string;
+  fullSrc: string;
+}
 
 interface UseProgressiveTexturesResult {
   textures: THREE.Texture[];
@@ -13,9 +18,25 @@ interface UseProgressiveTexturesResult {
 }
 
 /**
+ * Gives `texture` a new image. The GPU copy is released first: under WebGL2
+ * three.js allocates immutable storage at the first upload, so a larger image
+ * written into the same storage fails ("glTexSubImage2D: Offset overflows
+ * texture dimensions") and the thumbnail would stay. After dispose() the same
+ * Texture object uploads afresh at its new size on the next render.
+ */
+function swapImage(texture: THREE.Texture, image: THREE.Texture['image']): void {
+  texture.dispose();
+  texture.image = image;
+  texture.needsUpdate = true;
+}
+
+/**
  * Progressive texture loading hook for Three.js scenes.
  *
- * Phase 1 (mount): Loads all thumbnail textures in parallel (~13-29KB each).
+ * Each source names its two URLs (10-07: the carousel passes the manifest
+ * 640 and 1024 WebP derivatives; the legacy carousel its thumbnail and src).
+ *
+ * Phase 1 (mount): Loads all thumbnail textures in parallel.
  * Phase 2 (activeIndex change): Loads full-resolution textures sequentially by
  * proximity -- active image first, then adjacent, then remaining.
  *
@@ -23,13 +44,13 @@ interface UseProgressiveTexturesResult {
  * updates without remounting React components.
  */
 export function useProgressiveTextures(
-  images: LandscapeImage[],
+  sources: readonly ProgressiveTextureSource[],
   activeIndex: number
 ): UseProgressiveTexturesResult {
   const texturesRef = useRef<THREE.Texture[]>([]);
   const loaderRef = useRef<THREE.TextureLoader>(new THREE.TextureLoader());
   const [loadState, setLoadState] = useState<LoadState[]>(() =>
-    images.map(() => 'loading')
+    sources.map(() => 'loading')
   );
   const [allThumbsLoaded, setAllThumbsLoaded] = useState(false);
 
@@ -68,18 +89,18 @@ export function useProgressiveTextures(
     let loadedCount = 0;
 
     // Pre-allocate texture slots with placeholder textures
-    if (texturesRef.current.length !== images.length) {
+    if (texturesRef.current.length !== sources.length) {
       // Dispose old placeholders before re-allocation to prevent orphaned GPU textures
       texturesRef.current.forEach(t => t.dispose());
-      texturesRef.current = images.map(() => {
+      texturesRef.current = sources.map(() => {
         const t = new THREE.Texture();
         configureTexture(t);
         return t;
       });
     }
 
-    images.forEach((img, i) => {
-      const thumbUrl = img.thumbnailSrc || img.src;
+    sources.forEach((source, i) => {
+      const thumbUrl = source.thumbSrc;
       loader.load(
         thumbUrl,
         (thumbTexture) => {
@@ -96,10 +117,7 @@ export function useProgressiveTextures(
 
           // Hot-swap the placeholder with actual thumbnail data
           const existing = texturesRef.current[i];
-          if (existing) {
-            existing.image = thumbTexture.image;
-            existing.needsUpdate = true;
-          }
+          if (existing) swapImage(existing, thumbTexture.image);
 
           // Dispose the intermediate texture -- .image data has been transferred
           thumbTexture.dispose();
@@ -116,17 +134,17 @@ export function useProgressiveTextures(
             return next;
           });
 
-          if (loadedCount === images.length) {
+          if (loadedCount === sources.length) {
             setAllThumbsLoaded(true);
           }
         },
         undefined,
         (error) => {
           if (!cancelled) {
-            console.warn(`Failed to load thumbnail for ${img.id}:`, error);
+            console.warn(`Failed to load thumbnail ${source.thumbSrc}:`, error);
             // Still count as loaded so we don't block forever
             loadedCount++;
-            if (loadedCount === images.length) {
+            if (loadedCount === sources.length) {
               setAllThumbsLoaded(true);
             }
           }
@@ -142,10 +160,10 @@ export function useProgressiveTextures(
       inFlightRef.current.clear();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [images.length]);
+  }, [sources.length]);
 
   // Phase 2: Load full-resolution textures by proximity to active image.
-  // Depends only on [allThumbsLoaded, images.length] -- NOT activeIndex.
+  // Depends only on [allThumbsLoaded, sources.length] -- NOT activeIndex.
   // Reads activeIndexRef.current on each iteration so navigation does not
   // cancel/restart the sequential load; it just changes which indices are
   // prioritised next time a slot opens up.
@@ -153,7 +171,7 @@ export function useProgressiveTextures(
     if (!allThumbsLoaded) return;
 
     const loader = loaderRef.current;
-    const len = images.length;
+    const len = sources.length;
     if (len === 0) return;
 
     let cancelled = false;
@@ -186,7 +204,7 @@ export function useProgressiveTextures(
 
         await new Promise<void>((resolve) => {
           loader.load(
-            images[nextIdx].src,
+            sources[nextIdx].fullSrc,
             (fullTexture) => {
               // Track in-flight texture BEFORE cancelled check so cleanup can dispose it
               inFlightRef.current.add(fullTexture);
@@ -202,10 +220,7 @@ export function useProgressiveTextures(
 
               // Hot-swap: update existing texture's image data in-place
               const existing = texturesRef.current[nextIdx];
-              if (existing) {
-                existing.image = fullTexture.image;
-                existing.needsUpdate = true;
-              }
+              if (existing) swapImage(existing, fullTexture.image);
 
               // Dispose the intermediate texture -- .image data has been transferred
               fullTexture.dispose();
@@ -225,7 +240,7 @@ export function useProgressiveTextures(
             (error) => {
               if (!cancelled) {
                 console.warn(
-                  `Failed to load full-res for ${images[nextIdx].id}:`,
+                  `Failed to load full-res ${sources[nextIdx].fullSrc}:`,
                   error
                 );
               }
@@ -249,7 +264,7 @@ export function useProgressiveTextures(
       phase2RunningRef.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allThumbsLoaded, images.length]);
+  }, [allThumbsLoaded, sources.length]);
 
   // Cleanup: dispose all textures on unmount
   useEffect(() => {

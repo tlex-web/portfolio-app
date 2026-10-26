@@ -125,7 +125,10 @@ function Carousel({ images, onImageClick, prefersReducedMotion }: CarouselProps)
   const groupRef = useRef<THREE.Group>(null);
 
   // Progressive texture loading: thumbnails first, then full-res by proximity
-  const { textures: textureArray, allThumbsLoaded } = useProgressiveTextures(images, activeIndex);
+  const { textures: textureArray, allThumbsLoaded } = useProgressiveTextures(
+    images.map((i) => ({ thumbSrc: i.thumbnailSrc ?? i.src, fullSrc: i.src })),
+    activeIndex
+  );
 
   const radius = 8;
   const angleStep = (Math.PI * 2) / images.length;
