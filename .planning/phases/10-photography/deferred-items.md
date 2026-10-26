@@ -25,3 +25,9 @@
   **What:** after the first 10-07 run (chromium + firefox, 4 workers, `next dev` freshly started, the `@modal/(.)[slug]` route compiled during the run), every in-site click on a photo link became a document navigation to the full photo page: the 10-07 carousel cases and the existing `photos-lightbox.spec.ts` "a tile click opens the photo in a dialog over the grid" and "Escape closes through the router" cases all failed with no dialog. After a dev-server restart the same cases passed (lightbox 65/65 with no-webgl, carousel 20/20 with `--repeat-each=2`). The same run also hit the known 09 first-compile timeouts in `no-webgl.spec.ts` ("contact keeps the form", "project detail keeps its content"), which passed warm.
   **Not caused by 10-07:** the grid tiles, which 10-07 does not touch, lost interception the same way on the same server.
   **Next step:** likely the same dev-compile race as the 10-01 item. CI runs the production build; warm `/photos/{slug}` before the lightbox specs if it recurs locally.
+
+- The dev server stopped intercepting again after in-place edits (found in 10-08)
+  status: open
+  **What:** twice in 10-08, after `next dev` had served the photos specs and then hot-reloaded edits to `app/(site)/photos/page.tsx` (once also with a concurrent `npm run build`), every in-site photo click became a document navigation: the map lightbox cases and the grid "clicking the first tile opens its photo in the lightbox" case failed with no dialog. A fresh dev server passed `e2e/photos.spec.ts` 41/41 (chromium + firefox), and the production build (`PW_PROD=1`) passed `e2e/photos.spec.ts e2e/shell.spec.ts` 107/107.
+  **Not caused by 10-08:** the grid tile, which 10-08 does not touch, lost interception the same way.
+  **Next step:** same as the 10-01 and 10-07 items; restart the dev server after editing the photos routes, or verify on the production build.
