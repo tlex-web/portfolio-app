@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 10
 current_phase_name: Photography
 status: executing
-stopped_at: Completed 10-09-PLAN.md
-last_updated: "2026-10-26T14:56:56.912Z"
+stopped_at: Completed 10-11-PLAN.md
+last_updated: "2026-10-26T15:28:11.923Z"
 last_activity: 2026-10-26
 last_activity_desc: Phase 10 execution started
-state_head: 7573c9bc35f7abefe3c93d571078cc92f66b8eda
+state_head: bcfe1c98a0406681a2527c36710d26f767a38919
 progress:
   total_phases: 6
   completed_phases: 9
   total_plans: 75
-  completed_plans: 72
-  percent: 96
+  completed_plans: 73
+  percent: 97
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-25)
 ## Current Position
 
 Phase: 10 (Photography) — EXECUTING
-Plan: 11 of 13
+Plan: 12 of 13
 Status: Ready to execute
 Last activity: 2026-10-26 — Phase 10 execution started
 
-Progress: [█████████░] 96%
+Progress: [█████████░] 97%
 
 ## Performance Metrics
 
@@ -128,6 +128,7 @@ Progress: [█████████░] 96%
 | Phase 10 P08 | 34 min | 3 tasks | 12 files |
 | Phase 10 P10 | 21 min | 2 tasks | 5 files |
 | Phase 10 P09 | 25 min | 2 tasks | 20 files |
+| Phase 10 P11 | 29 min | 2 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -324,6 +325,9 @@ Recent decisions affecting current work:
 - [Phase 10]: 10-09: a Jest guard walks app, components and lib for a manifest .legacy read (pattern assembled at run time); data/landscapes.ts, the v1 photo UI and LandscapeImage/ImageAnnotation are deleted
 - [Phase 10]: [orchestrator, after 10-10] Zoomed-photo drag block kept: native image drag-and-drop is suppressed only while zoomed (so a mouse drag pans); right-click and Save image work in both states and fitted drag is native. Tim, asked directly 2026-10-26: "Keep, record exception (Recommended)". 10-13 records it as an approved exception to UI-SPEC line 393 ("no right-click or drag blocking", LBOX-07)
 - [Phase 10]: [orchestrator, after 10-08] Map waypoint clearance is a 16 px square (12 px dot plus its 2 px casing), the reading that reproduces the UI-SPEC 312 px compact floor. Tim, asked directly 2026-10-26: "16 px, as built (Recommended)"; no change to lib/photos/label-layout.ts
+- [Phase 10]: 10-11: Hotspots.tsx exports HotspotMarks (glyphs and dots inside the photo box), HotspotOverlay (gutter labels and leaders over the stage) and HotspotKey (strip key); the stage and photo box are positioned (relative)
+- [Phase 10]: 10-11: the label preference is one 'photos.labels' on/off localStorage value read through useSyncExternalStore (server true), try/catch on every access, a visit-only fallback when storage refuses, storage-event sync
+- [Phase 10]: 10-11: the callout Escape layer runs before zoom: registerEscape from PhotoViewer in the lightbox (newest layer), a window capture listener on the page; photo-ref heights reuse altitudeLabel (IN-02)
 
 ### Pending Todos
 
@@ -363,6 +367,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-26T14:55:27.066Z
-Stopped at: Completed 10-09-PLAN.md
+Last session: 2026-10-26T15:28:11.282Z
+Stopped at: Completed 10-11-PLAN.md
 Resume file: None

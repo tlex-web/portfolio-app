@@ -78,7 +78,7 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 - [ ] **LBOX-02**: In the lightbox a visitor can move between photos with arrow keys, previous/next buttons and swipe, sees a position counter, and moving between photos adds no history entries
 - [ ] **LBOX-03**: The lightbox traps focus, closes on Escape and returns focus to the thumbnail or pin that opened it
 - [ ] **LBOX-04**: The lightbox uses a neutral gallery-black surface and shows an EXIF strip (date, camera, lens, focal length, aperture, shutter, ISO, altitude, coordinates)
-- [ ] **LBOX-05**: Annotation hotspots appear as map-style callouts with leader lines, operable by tap and keyboard, with a legend on mobile and a toggle that hides them
+- [x] **LBOX-05**: Annotation hotspots appear as map-style callouts with leader lines, operable by tap and keyboard, with a legend on mobile and a toggle that hides them
 - [ ] **LBOX-06**: Opening a photo from the grid or map morphs the thumbnail into the lightbox where View Transitions are supported; elsewhere it opens instantly with full functionality
 - [ ] **LBOX-07**: Each photo states "© {capture year} Tim Lui, all rights reserved" and offers no download button
 
@@ -211,7 +211,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LBOX-02 | Phase 10 | Pending |
 | LBOX-03 | Phase 10 | Pending |
 | LBOX-04 | Phase 10 | Pending |
-| LBOX-05 | Phase 10 | Pending |
+| LBOX-05 | Phase 10 | Complete |
 | LBOX-06 | Phase 10 | Pending |
 | LBOX-07 | Phase 10 | Pending |
 | ENG-01 | Phase 11 | Pending |
