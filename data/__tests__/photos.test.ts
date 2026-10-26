@@ -19,7 +19,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { lowestDemM, photos } from '@/data/generated/photos';
 import { terrain } from '@/data/generated/terrain';
-import { Capture, Coord4, PhotoFacts, Position } from '@/data/schemas/photo';
+import {
+  Capture,
+  Coord4,
+  Corrections,
+  ExifSidecarEntry,
+  PhotoFacts,
+  Position,
+} from '@/data/schemas/photo';
 import { lv95ToUv, round4, wgs84ToLv95 } from '@/lib/geo';
 
 const read = (rel: string) => fs.readFileSync(path.join(process.cwd(), rel), 'utf8');
@@ -218,4 +225,47 @@ describe('coordinates (DATA-06, DATA-01)', () => {
       expect(p.uv).toEqual({ u: round4(uv.u), v: round4(uv.v) });
     }
   );
+});
+
+describe('Phase 8 review fixes (WR-01, WR-02, WR-08)', () => {
+  const sidecar = JSON.parse(read('data/photos/exif-sidecar.json')) as {
+    photos: Array<Record<string, unknown> & { id: string; gps: Record<string, unknown> | null }>;
+  };
+
+  test('WR-01: PhotoFacts rejects a uv outside [0, 1] (a position off the DEM sheet)', () => {
+    const p = photo('img-0605');
+    expect(PhotoFacts.safeParse({ ...p, uv: { u: 1.765, v: -4.633 } }).success).toBe(false);
+    expect(PhotoFacts.safeParse({ ...p, uv: { u: 0.5, v: 1.0001 } }).success).toBe(false);
+    expect(PhotoFacts.safeParse({ ...p, uv: { u: -0.0001, v: 0.5 } }).success).toBe(false);
+  });
+
+  test('WR-01: PhotoFacts accepts uv on the sheet edges and every committed photo', () => {
+    const p = photo('img-0605');
+    expect(PhotoFacts.safeParse({ ...p, uv: { u: 0, v: 1 } }).success).toBe(true);
+    expect(PhotoFacts.safeParse({ ...p, uv: { u: 1, v: 0 } }).success).toBe(true);
+    for (const q of photos) expect(PhotoFacts.safeParse(q).success).toBe(true);
+  });
+
+  test('WR-02: ExifSidecarEntry keeps a GPS fix whose altitude is missing (altM null)', () => {
+    const entry = sidecar.photos.find((e) => e.gps !== null);
+    if (!entry || !entry.gps) throw new Error('the sidecar has no GPS entry');
+    const noAlt = { ...entry, gps: { ...entry.gps, altM: null } };
+    expect(ExifSidecarEntry.safeParse(noAlt).success).toBe(true);
+  });
+
+  test('WR-08: Corrections rejects a position labelled as an exact EXIF fix', () => {
+    const fixed = {
+      schemaVersion: 1,
+      photos: {
+        'img-0605': {
+          position: { lat: 46.015, lon: 7.7414, source: 'exif', approximate: false },
+        },
+      },
+    };
+    expect(Corrections.safeParse(fixed).success).toBe(false);
+  });
+
+  test('WR-08: the committed corrections.json (r004-011 hand-placed) still parses', () => {
+    expect(Corrections.safeParse(JSON.parse(correctionsText)).success).toBe(true);
+  });
 });
