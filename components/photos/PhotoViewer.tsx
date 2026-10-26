@@ -87,8 +87,10 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * Open morph (LBOX-06; UI-SPEC "Open and close motion"): the photo box is
  * the lightbox half of the photo-{slug} pair (the morph share class, default none;
  * TileTransition is the grid half, named only while no photo is open). The
- * name follows the shown photo, so after steps the box still carries the
- * current slug; a step forms no pair, because the grid has no names then.
+ * name follows the shown photo (the boundary is keyed by slug), so after
+ * steps the box carries the current slug; a step forms no pair, because the
+ * grid has no names then. The name is dropped as soon as the pathname stops
+ * naming a photo, so it is never mounted twice (Pitfall 6).
  * Close is instant (popstate starts no view transition).
  *
  * Hide labels and Zoom go before Close in data-chrome-right (10-10, 10-11).
@@ -279,10 +281,40 @@ export default function PhotoViewer({
     }
   }
 
+  // The lightbox half of the open morph. Named only while the pathname names a
+  // photo (the complement of TileTransition's condition, read from the same
+  // pathname in the same commit), so on close the viewer drops its name before
+  // the grid tiles take theirs, and the copy Next keeps in a hidden Activity
+  // for Forward carries none. Keyed by slug: a step unmounts the old name and
+  // mounts the new one, because React tracks names per boundary at mount and
+  // a renamed boundary would leave the old name registered.
+  const named = slugFromPath(pathname) !== null;
   const boxStyle = {
     aspectRatio: `${aspect.w} / ${aspect.h}`,
     '--ar': aspect.w / aspect.h,
   } as CSSProperties;
+
+  const box = (
+    <div
+      ref={boxRef}
+      data-photo-box=""
+      className="mx-auto bg-gallery [touch-action:pan-y_pinch-zoom] lb-scroll:w-[min(100%,calc(70svh*var(--ar)))] lb-key:w-[min(100cqw,calc(100cqh*var(--ar)))] lb-gutter:w-[min(100cqw,calc(100cqh*var(--ar)))]"
+      style={boxStyle}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={(event) => endSwipe(event, true)}
+      onPointerCancel={(event) => endSwipe(event, false)}
+    >
+      <StagePhoto view={current} sizes={STAGE_SIZES} onLargeLoad={preloadNeighbours} />
+    </div>
+  );
+  const photoBox = named ? (
+    <ViewTransition key={current.slug} name={`photo-${current.slug}`} share="morph" default="none">
+      {box}
+    </ViewTransition>
+  ) : (
+    box
+  );
 
   return (
     <div
@@ -363,20 +395,7 @@ export default function PhotoViewer({
         data-viewer-stage=""
         className="lb-key:flex lb-key:min-h-0 lb-key:flex-1 lb-key:items-center lb-key:justify-center lb-key:[container-type:size] lb-gutter:flex lb-gutter:min-h-0 lb-gutter:flex-1 lb-gutter:items-center lb-gutter:justify-center lb-gutter:px-54 lb-gutter:[container-type:size]"
       >
-        <ViewTransition name={`photo-${current.slug}`} share="morph" default="none">
-          <div
-            ref={boxRef}
-            data-photo-box=""
-            className="mx-auto bg-gallery [touch-action:pan-y_pinch-zoom] lb-scroll:w-[min(100%,calc(70svh*var(--ar)))] lb-key:w-[min(100cqw,calc(100cqh*var(--ar)))] lb-gutter:w-[min(100cqw,calc(100cqh*var(--ar)))]"
-            style={boxStyle}
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={(event) => endSwipe(event, true)}
-            onPointerCancel={(event) => endSwipe(event, false)}
-          >
-            <StagePhoto view={current} sizes={STAGE_SIZES} onLargeLoad={preloadNeighbours} />
-          </div>
-        </ViewTransition>
+        {photoBox}
       </div>
       <ExifStrip view={current} headingLevel={isPage ? 1 : 2} />
       <p role="status" aria-atomic="true" className="sr-only">

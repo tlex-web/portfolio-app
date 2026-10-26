@@ -601,7 +601,11 @@ test.describe('Morph and motion (LBOX-06)', () => {
   test('no duplicate view-transition-name across open, three steps and close', async ({ page }) => {
     const messages: string[] = [];
     page.on('console', (message) => {
-      if (message.text().includes('view-transition-name')) messages.push(message.text());
+      // The browser's duplicate-name error, and React's dev warning for two
+      // mounted <ViewTransition> boundaries with one name.
+      if (/view-transition-name|ViewTransition name=/.test(message.text())) {
+        messages.push(message.text());
+      }
     });
     const dialog = await openFirstTile(page);
     const next = dialog.getByRole('button', { name: 'Next photo', exact: true });
