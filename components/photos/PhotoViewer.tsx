@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { ViewTransition, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -14,7 +14,7 @@ import ExifStrip from '@/components/photos/ExifStrip';
 import { useLightbox } from '@/components/photos/LightboxDialog';
 import StagePhoto from '@/components/photos/StagePhoto';
 import { site } from '@/data/site';
-import { slugFromPath, swipeStep } from '@/lib/photos/stepping';
+import { slugFromPath, stepIndex, swipeStep } from '@/lib/photos/stepping';
 import type { PhotoView } from '@/lib/photos/view-model';
 
 /**
@@ -73,11 +73,23 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * 2026-10-26), so no history entry is added, the page is never intercepted
  * into a dialog (10-RESEARCH Pitfall 1) and the viewer is never remounted
  * (Pitfall 2): focus stays on the pressed control and the dialog stays open.
- * The slug shown comes from usePathname() (Next syncs it with replaceState),
- * never from the segment params, which keep the stale slug. Each step updates
+ * The slug shown starts from slugFromPath(usePathname()) (Next keeps the
+ * pathname in sync with replaceState; the segment params keep the stale slug)
+ * and is then owned by the viewer: every real navigation to another photo
+ * remounts it, and the steps themselves are the only other change. A step
+ * reads the last slug it wrote from a ref, not from the rendered props: while
+ * a view transition runs (the open morph) React holds commits back, and a
+ * second click in that window would otherwise replay the first step. Each step updates
  * a polite status line inside the viewer ('Photo 2 of 4: {title}') and the
  * document title. Once the current photo's large derivative loads, the
  * neighbours' stage derivatives are fetched at low priority, once per slug.
+ *
+ * Open morph (LBOX-06; UI-SPEC "Open and close motion"): the photo box is
+ * the lightbox half of the photo-{slug} pair (the morph share class, default none;
+ * TileTransition is the grid half, named only while no photo is open). The
+ * name follows the shown photo, so after steps the box still carries the
+ * current slug; a step forms no pair, because the grid has no names then.
+ * Close is instant (popstate starts no view transition).
  *
  * Hide labels and Zoom go before Close in data-chrome-right (10-10, 10-11).
  */
@@ -139,29 +151,32 @@ export default function PhotoViewer({
   const router = useRouter();
   const pathname = usePathname();
 
-  // The photo shown: the pathname's slug once it names a known photo (Next
-  // syncs usePathname with replaceState). While the route leaves (close, Escape
-  // on the page) the pathname no longer names a photo, so the last one stays.
-  const [shownSlug, setShownSlug] = useState(initialSlug);
-  const pathSlug = slugFromPath(pathname);
-  if (pathSlug && pathSlug !== shownSlug && photos.some((p) => p.slug === pathSlug)) {
-    setShownSlug(pathSlug);
-  }
+  // The photo shown, seeded from the pathname (it names this photo on mount).
+  // While the route leaves (close, Escape on the page) the pathname no longer
+  // names a photo, and the viewer keeps showing the last one until it unmounts.
+  const [shownSlug, setShownSlug] = useState(() => {
+    const fromPath = slugFromPath(pathname);
+    return fromPath && photos.some((p) => p.slug === fromPath) ? fromPath : initialSlug;
+  });
+  const lastWritten = useRef(shownSlug);
   const index = photos.findIndex((p) => p.slug === shownSlug);
   const current = photos[index];
   const { aspect, prevSlug, nextSlug } = current;
   const [announcement, setAnnouncement] = useState('');
 
-  // One step: the slug only ever comes from the committed view-model's
-  // prevSlug/nextSlug (T-10-14), and the URL is replaced, never pushed.
-  const stepTo = useCallback(
-    (slug: string | null) => {
-      if (!slug) return;
-      const at = photos.findIndex((p) => p.slug === slug);
-      if (at < 0) return;
+  // One step: the target is the neighbour in the committed view-model's
+  // canonical order (T-10-14), never input; past either end nothing happens
+  // (no wrap); the URL is replaced, never pushed.
+  const step = useCallback(
+    (dir: -1 | 1) => {
+      const from = photos.findIndex((p) => p.slug === lastWritten.current);
+      const to = stepIndex(from, dir, photos.length);
+      if (from < 0 || to === null) return;
+      const { slug, title } = photos[to];
+      lastWritten.current = slug;
       window.history.replaceState(null, '', `/photos/${slug}`);
       setShownSlug(slug);
-      setAnnouncement(`Photo ${at + 1} of ${photos.length}: ${photos[at].title}`);
+      setAnnouncement(`Photo ${to + 1} of ${photos.length}: ${title}`);
     },
     [photos]
   );
@@ -186,18 +201,20 @@ export default function PhotoViewer({
   // ← and → step on both surfaces (the page behind a modal dialog is inert, so
   // only the lightbox's viewer is reachable then). A layer that uses the
   // arrows itself (10-10 zoomed pan) calls preventDefault first; modified
-  // presses are left alone (Alt+← is the browser's Back).
-  useEffect(() => {
+  // presses are left alone (Alt+← is the browser's Back). A layout effect, so
+  // the keys work during the open morph: React runs passive effects only once
+  // the view transition has finished.
+  useLayoutEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
       if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
       if (event.shiftKey || isEditable(event.target)) return;
       event.preventDefault();
-      stepTo(event.key === 'ArrowLeft' ? prevSlug : nextSlug);
+      step(event.key === 'ArrowLeft' ? -1 : 1);
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [prevSlug, nextSlug, stepTo]);
+  }, [step]);
 
   // Neighbour preload, once per slug, after the current photo's large layer loads.
   const preloaded = useRef(new Set<string>());
@@ -252,11 +269,11 @@ export default function PhotoViewer({
     const start = swipe.current;
     if (!start || start.id !== event.pointerId) return;
     swipe.current = null;
-    const step = released ? swipeStep(event.clientX - start.x, event.clientY - start.y) : 0;
-    const target = step === 1 ? nextSlug : step === -1 ? prevSlug : null;
-    if (target) {
+    const dir = released ? swipeStep(event.clientX - start.x, event.clientY - start.y) : 0;
+    const target = dir === 1 ? nextSlug : dir === -1 ? prevSlug : null;
+    if (dir !== 0 && target) {
       setOffset(0, false);
-      stepTo(target);
+      step(dir);
     } else {
       setOffset(0, start.follow);
     }
@@ -307,7 +324,7 @@ export default function PhotoViewer({
             aria-label="Previous photo"
             aria-disabled={prevSlug ? undefined : 'true'}
             className={STEP_BUTTON}
-            onClick={() => stepTo(prevSlug)}
+            onClick={() => step(-1)}
           >
             <CaretLeftIcon size={24} aria-hidden="true" />
           </button>
@@ -323,7 +340,7 @@ export default function PhotoViewer({
             aria-label="Next photo"
             aria-disabled={nextSlug ? undefined : 'true'}
             className={STEP_BUTTON}
-            onClick={() => stepTo(nextSlug)}
+            onClick={() => step(1)}
           >
             <CaretRightIcon size={24} aria-hidden="true" />
           </button>
@@ -346,18 +363,20 @@ export default function PhotoViewer({
         data-viewer-stage=""
         className="lb-key:flex lb-key:min-h-0 lb-key:flex-1 lb-key:items-center lb-key:justify-center lb-key:[container-type:size] lb-gutter:flex lb-gutter:min-h-0 lb-gutter:flex-1 lb-gutter:items-center lb-gutter:justify-center lb-gutter:px-54 lb-gutter:[container-type:size]"
       >
-        <div
-          ref={boxRef}
-          data-photo-box=""
-          className="mx-auto bg-gallery [touch-action:pan-y_pinch-zoom] lb-scroll:w-[min(100%,calc(70svh*var(--ar)))] lb-key:w-[min(100cqw,calc(100cqh*var(--ar)))] lb-gutter:w-[min(100cqw,calc(100cqh*var(--ar)))]"
-          style={boxStyle}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={(event) => endSwipe(event, true)}
-          onPointerCancel={(event) => endSwipe(event, false)}
-        >
-          <StagePhoto view={current} sizes={STAGE_SIZES} onLargeLoad={preloadNeighbours} />
-        </div>
+        <ViewTransition name={`photo-${current.slug}`} share="morph" default="none">
+          <div
+            ref={boxRef}
+            data-photo-box=""
+            className="mx-auto bg-gallery [touch-action:pan-y_pinch-zoom] lb-scroll:w-[min(100%,calc(70svh*var(--ar)))] lb-key:w-[min(100cqw,calc(100cqh*var(--ar)))] lb-gutter:w-[min(100cqw,calc(100cqh*var(--ar)))]"
+            style={boxStyle}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={(event) => endSwipe(event, true)}
+            onPointerCancel={(event) => endSwipe(event, false)}
+          >
+            <StagePhoto view={current} sizes={STAGE_SIZES} onLargeLoad={preloadNeighbours} />
+          </div>
+        </ViewTransition>
       </div>
       <ExifStrip view={current} headingLevel={isPage ? 1 : 2} />
       <p role="status" aria-atomic="true" className="sr-only">

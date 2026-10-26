@@ -7,10 +7,13 @@ import type { Page } from '@playwright/test';
  * `recordViewTransitions` adds an init script that, where the browser has
  * `document.startViewTransition`, wraps it: every call increments
  * `window.__vt.count`, and when the returned transition is `ready` the
- * pseudo-elements that carry an animation at that moment
+ * pseudo-elements that carry a running animation at that moment
  * (`document.getAnimations()` -> `effect.pseudoElement`, for example
  * `::view-transition-group(photo-{slug})`) are pushed to `window.__vt.pseudos`
- * and, per transition, to `window.__vt.transitions`. Where the API is missing
+ * and, per transition, to `window.__vt.transitions`. Finished animations are
+ * left out: React itself adds duration-0, fill-forwards animations on
+ * `::view-transition-group(root)` and `::view-transition` when the root does
+ * not take part, and those move nothing. Where the API is missing
  * the counter stays at 0. `readViewTransitions` returns that record;
  * `removeViewTransitions` deletes the API, to test the instant fallback.
  */
@@ -46,7 +49,7 @@ export async function recordViewTransitions(page: Page) {
         .then(() => {
           for (const animation of document.getAnimations()) {
             const pseudo = (animation.effect as KeyframeEffect | null)?.pseudoElement;
-            if (pseudo) {
+            if (pseudo && animation.playState === 'running') {
               seen.push(pseudo);
               record.pseudos.push(pseudo);
             }

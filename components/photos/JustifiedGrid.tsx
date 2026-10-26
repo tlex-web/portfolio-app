@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
+import TileTransition from '@/components/photos/TileTransition';
 import { justifyTile } from '@/lib/photos/justify';
 import type { PhotoView } from '@/lib/photos/view-model';
 
@@ -39,6 +40,11 @@ const MOUNT =
  * so phones get one full-width column. The link's accessible name is an
  * explicit aria-label with the title, as on WaypointCard: name computation
  * over the image alt and the caption would read every photo twice.
+ *
+ * Each image box is wrapped in TileTransition (a small client component; the
+ * grid itself stays a Server Component), which names it photo-{slug} only
+ * while no photo is open, so opening a tile morphs it into the lightbox photo
+ * and steps inside the lightbox never cross-morph with the grid (LBOX-06).
  */
 export default function JustifiedGrid({ photos }: { photos: readonly PhotoView[] }) {
   return (
@@ -59,34 +65,36 @@ export default function JustifiedGrid({ photos }: { photos: readonly PhotoView[]
               aria-label={title}
               className={MOUNT}
             >
-              <div
-                data-tile-box=""
-                className="overflow-hidden bg-surface-overlay"
-                style={{ aspectRatio: justified.aspectRatio }}
-              >
-                <picture className="block h-full w-full">
-                  <source
-                    type="image/avif"
-                    srcSet={tile.srcSetAvif}
-                    sizes="(min-width: 640px) 50vw, 100vw"
-                  />
-                  <source
-                    type="image/webp"
-                    srcSet={tile.srcSetWebp}
-                    sizes="(min-width: 640px) 50vw, 100vw"
-                  />
-                  {/* A raw img inside picture (exempt from @next/next/no-img-element): content-hashed manifest derivative; picture type switching. */}
-                  <img
-                    src={tile.src}
-                    width={tile.width}
-                    height={tile.height}
-                    alt={alt}
-                    loading={i < 2 ? 'eager' : 'lazy'}
-                    decoding="async"
-                    className="block h-full w-full object-cover"
-                  />
-                </picture>
-              </div>
+              <TileTransition slug={slug}>
+                <div
+                  data-tile-box=""
+                  className="overflow-hidden bg-surface-overlay"
+                  style={{ aspectRatio: justified.aspectRatio }}
+                >
+                  <picture className="block h-full w-full">
+                    <source
+                      type="image/avif"
+                      srcSet={tile.srcSetAvif}
+                      sizes="(min-width: 640px) 50vw, 100vw"
+                    />
+                    <source
+                      type="image/webp"
+                      srcSet={tile.srcSetWebp}
+                      sizes="(min-width: 640px) 50vw, 100vw"
+                    />
+                    {/* A raw img inside picture (exempt from @next/next/no-img-element): content-hashed manifest derivative; picture type switching. */}
+                    <img
+                      src={tile.src}
+                      width={tile.width}
+                      height={tile.height}
+                      alt={alt}
+                      loading={i < 2 ? 'eager' : 'lazy'}
+                      decoding="async"
+                      className="block h-full w-full object-cover"
+                    />
+                  </picture>
+                </div>
+              </TileTransition>
               <div className="px-1 pt-2 pb-1">
                 <p className="text-base font-semibold text-ink">{title}</p>
                 <p className="font-mono text-sm text-ink-muted tabular-nums">

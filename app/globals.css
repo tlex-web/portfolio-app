@@ -621,3 +621,35 @@ html {
     scroll-behavior: auto;
   }
 }
+
+/* Phase 10 (LBOX-06; 10-UI-SPEC "Open and close motion"; 10-RESEARCH Pitfall 3).
+   The grid tile morphs into the lightbox photo (the photo-{slug} pair, share="morph").
+   Steps and the open never crossfade the page behind: the root group and its
+   snapshots do not animate while a photo viewer is shown. Close is instant (popstate
+   starts no view transition). Under reduced motion the ::view-transition-* rule above
+   settles everything at once. */
+::view-transition {
+  pointer-events: none;
+}
+
+::view-transition-group(.morph) {
+  animation-duration: var(--duration-settle);
+  animation-timing-function: var(--ease-geological);
+}
+
+html:has(dialog[open], [data-photo-viewer])::view-transition-group(root),
+html:has(dialog[open], [data-photo-viewer])::view-transition-old(root),
+html:has(dialog[open], [data-photo-viewer])::view-transition-new(root) {
+  animation: none;
+}
+
+/* The lightbox fades in over --duration-fast; on a grid open it runs alongside the morph. */
+@media (prefers-reduced-motion: no-preference) {
+  dialog:has([data-photo-viewer])[open] {
+    transition: opacity var(--duration-fast) var(--ease-erosion);
+
+    @starting-style {
+      opacity: 0;
+    }
+  }
+}

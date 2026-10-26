@@ -138,6 +138,10 @@ export default function LightboxDialog({
       close: () => {
         if (closing.current) return;
         closing.current = true;
+        // The URL is the latest truth: usePathname can lag a replaceState step
+        // that ran while a view transition held React's commits back.
+        const slug = slugOf(window.location.pathname);
+        if (slug) shownSlug.current = slug;
         router.back();
       },
       registerEscape: (handler) => {
