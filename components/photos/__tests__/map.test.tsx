@@ -52,7 +52,8 @@ describe('MapSheet (PHOTO-01, PHOTO-03, D-01..D-04)', () => {
     const { links } = renderMap();
     photoViews.forEach((view, i) => {
       expect(within(links[i]).getByText(view.title)).toBeInTheDocument();
-      expect(within(links[i]).getByText(view.altitudeLabel)).toBeInTheDocument();
+      // Testing Library normalises U+00A0 to a space.
+      expect(within(links[i]).getByText(view.altitudeLabel.replace(NBSP, ' '))).toBeInTheDocument();
     });
   });
 
@@ -85,7 +86,7 @@ describe('MapSheet (PHOTO-01, PHOTO-03, D-01..D-04)', () => {
     const plate = container.querySelector('[data-summit-plate]') as HTMLElement;
     expect(plate).not.toBeNull();
     expect(plate).toHaveTextContent('Matterhorn');
-    expect(plate).toHaveTextContent(`4,478${NBSP}m`);
+    expect(plate.textContent).toContain(`4,478${NBSP}m`);
     expect(plate.closest('[aria-hidden="true"]')).not.toBeNull();
     expect(plate.closest('a')).toBeNull();
     expect(container.querySelector('[data-summit-mark]')?.closest('a')).toBeNull();
@@ -110,7 +111,7 @@ describe('MapSheet (PHOTO-01, PHOTO-03, D-01..D-04)', () => {
 
   it('prints the margin line under the sheet', () => {
     const { section } = renderMap();
-    expect(section).toHaveTextContent(`Zermatt – Matterhorn · contours every 100${NBSP}m`);
+    expect(section.textContent).toContain(`Zermatt – Matterhorn · contours every 100${NBSP}m`);
     expect(section).toHaveTextContent('Terrain: swissALTIRegio, swisstopo');
   });
 });

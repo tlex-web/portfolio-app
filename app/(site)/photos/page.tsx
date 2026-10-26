@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
-import PhotosPageClient from '@/components/PhotosPageClient';
 import CarouselView from '@/components/photos/CarouselView';
 import JustifiedGrid from '@/components/photos/JustifiedGrid';
-import { landscapes } from '@/data/landscapes';
+import MapSheet from '@/components/photos/MapSheet';
 import { photoViews } from '@/lib/photos/view-model';
 import { VIEW_LABELS, parseView } from '@/lib/photos/view-param';
 
@@ -13,8 +12,9 @@ export const metadata: Metadata = { title: 'Photographs' };
  * A Server Component: the URL is the only source of view state, so the view
  * comes from `?view=` through parseView (Map default, locked). `?view=grid`
  * mounts the justified grid and `?view=carousel` the Carousel view (the 3D
- * carousel or the flat stepper behind the capability gate, 10-07); the map
- * value keeps the current gallery until 10-08 replaces it.
+ * carousel or the flat stepper behind the capability gate, 10-07); the map,
+ * the default for no or an unknown value, mounts the survey-sheet map with
+ * the waypoint links (PHOTO-01, D-01 to D-04, 10-08).
  */
 export default async function PhotosPage({
   searchParams,
@@ -50,23 +50,13 @@ export default async function PhotosPage({
   }
 
   return (
-    <>
-      <div className="min-h-screen bg-gradient-to-b from-surface to-surface-raised">
-        {/* Hero Section - Static Server Component */}
-        <div className="bg-surface-raised border-t border-line py-20">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="text-5xl font-bold mb-6 text-ink">Landscape Gallery</h1>
-            <p className="text-xl text-ink-muted max-w-3xl mx-auto mb-8">
-              A collection of {landscapes.length} stunning landscape photographs from the Swiss Alps, each with interactive hotspots,
-              technical details, and the stories behind the shots.
-            </p>
-          </div>
-        </div>
-
-        {/* Client-side interactive components */}
-        <PhotosPageClient images={landscapes} />
-      </div>
-
-    </>
+    <div className="mx-auto w-full max-w-6xl px-4 pt-6 pb-12 sm:px-6 md:pb-16 lg:px-8">
+      <section aria-labelledby="view-title">
+        <h2 id="view-title" className="sr-only">
+          {VIEW_LABELS[view]}
+        </h2>
+        <MapSheet photos={photoViews} />
+      </section>
+    </div>
   );
 }

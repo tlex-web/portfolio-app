@@ -129,11 +129,18 @@ test.describe('Map view (PHOTO-01, PHOTO-03, D-01..D-04)', () => {
     const links = mapLinks(page);
     await expect(links).toHaveCount(views.length);
     for (const [i, view] of views.entries()) {
-      const style = await links
+      const border = await links
         .nth(i)
         .locator('[data-map-dot]')
-        .evaluate((el) => getComputedStyle(el).borderTopStyle);
-      expect([view.slug, style]).toEqual([view.slug, view.approximate ? 'dashed' : 'none']);
+        .evaluate((el) => {
+          const cs = getComputedStyle(el);
+          return `${cs.borderTopWidth} ${cs.borderTopStyle}`;
+        });
+      // Preflight gives every element a solid 0 px border; only the film scan draws one.
+      expect([view.slug, border]).toEqual([
+        view.slug,
+        view.approximate ? '2px dashed' : '0px solid',
+      ]);
     }
     const summit = page.locator('[data-summit-plate]');
     await expect(summit).toHaveText(/Matterhorn/);
