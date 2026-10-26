@@ -645,3 +645,168 @@ test.describe('Morph and motion (LBOX-06)', () => {
     await expect(dialog.getByRole('button', { name: 'Close photo', exact: true })).toBeFocused();
   });
 });
+
+test.describe('Zoom (D-06)', () => {
+  /** A landscape photo (2560 px wide at 1:1) that has a next photo, and its grid position. */
+  const zi = views.findIndex((v, i) => v.stage.width === 2560 && i < views.length - 1);
+  const photo = views[zi];
+  const nextPhoto = views[zi + 1];
+
+  const zoomButton = (scope: Page | Locator) =>
+    scope.getByRole('button', { name: 'Zoom photo', exact: true });
+  const stage = (scope: Page | Locator) => scope.locator('[data-viewer-stage]');
+  const zoomedImg = (scope: Page | Locator) => scope.locator('[data-zoom-photo] img');
+  const scrollOf = (scope: Page | Locator) =>
+    stage(scope).evaluate((el) => ({ left: el.scrollLeft, top: el.scrollTop }));
+
+  /** Open the landscape photo's tile in the lightbox at 1440 x 900. */
+  async function openZoomPhoto(page: Page) {
+    expect(zi, 'a landscape photo with a next photo').toBeGreaterThanOrEqual(0);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/photos?view=grid');
+    return clickTile(page, zi);
+  }
+
+  /** Wait until the zoomed 1:1 photo has decoded. */
+  async function zoomedLoaded(scope: Page | Locator) {
+    await expect
+      .poll(() =>
+        zoomedImg(scope).evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth)
+      )
+      .toBe(2560);
+  }
+
+  test('Z zooms to 1:1 of the 2560 px derivative and the stage scrolls', async ({ page }) => {
+    const dialog = await openZoomPhoto(page);
+    const button = zoomButton(dialog);
+    await expect(button).toHaveAttribute('aria-pressed', 'false');
+    await expect(button).toHaveAttribute('aria-keyshortcuts', 'z');
+
+    await page.keyboard.press('z');
+    await expect(button).toHaveAttribute('aria-pressed', 'true');
+    await zoomedLoaded(dialog);
+    const rect = (await zoomedImg(dialog).boundingBox())!;
+    expect(Math.abs(rect.width - 2560)).toBeLessThanOrEqual(1);
+    const { scrollWidth, clientWidth } = await stage(dialog).evaluate((el) => ({
+      scrollWidth: el.scrollWidth,
+      clientWidth: el.clientWidth,
+    }));
+    expect(scrollWidth).toBeGreaterThan(clientWidth);
+    // Z centres the photo.
+    const centred = await stage(dialog).evaluate((el) => ({
+      left: (el.scrollWidth - el.clientWidth) / 2,
+      top: (el.scrollHeight - el.clientHeight) / 2,
+    }));
+    const scroll = await scrollOf(dialog);
+    expect(Math.abs(scroll.left - centred.left)).toBeLessThanOrEqual(1);
+    expect(Math.abs(scroll.top - centred.top)).toBeLessThanOrEqual(1);
+  });
+
+  test('the arrows pan 80 px while zoomed; after Escape they step again', async ({ page }) => {
+    const dialog = await openZoomPhoto(page);
+    await page.keyboard.press('z');
+    await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'true');
+    const url = page.url();
+    const before = await scrollOf(dialog);
+
+    await page.keyboard.press('ArrowRight');
+    await expect.poll(async () => (await scrollOf(dialog)).left).toBe(before.left + 80);
+    await page.keyboard.press('ArrowDown');
+    await expect.poll(async () => (await scrollOf(dialog)).top).toBe(before.top + 80);
+    expect(page.url()).toBe(url);
+
+    await page.keyboard.press('Escape');
+    await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.getByRole('dialog')).toHaveCount(1);
+
+    await page.keyboard.press('ArrowRight');
+    await expect(page).toHaveURL(new RegExp(`/photos/${nextPhoto.slug}$`));
+  });
+
+  test('Escape twice from zoomed closes the lightbox (LBOX-03)', async ({ page }) => {
+    const dialog = await openZoomPhoto(page);
+    await zoomButton(dialog).click();
+    await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'true');
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(1);
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page).toHaveURL(GRID_URL);
+  });
+
+  test('a click zooms at the point, a drag pans and a click without movement unzooms', async ({
+    page,
+  }) => {
+    const dialog = await openZoomPhoto(page);
+    const box = (await dialog.locator('[data-photo-box]').boundingBox())!;
+    const cx = box.x + box.width / 2;
+    const cy = box.y + box.height / 2;
+    await page.mouse.click(cx, cy);
+    await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'true');
+    // The clicked point (the photo's centre) stays under the pointer.
+    const centred = await stage(dialog).evaluate((el) => (el.scrollWidth - el.clientWidth) / 2);
+    const start = await scrollOf(dialog);
+    expect(Math.abs(start.left - centred)).toBeLessThanOrEqual(2);
+
+    await page.mouse.move(cx, cy);
+    await page.mouse.down();
+    await page.mouse.move(cx - 50, cy, { steps: 5 });
+    await page.mouse.move(cx - 100, cy, { steps: 5 });
+    await page.mouse.up();
+    await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'true');
+    const dragged = await scrollOf(dialog);
+    expect(Math.abs(dragged.left - (start.left + 100))).toBeLessThanOrEqual(1);
+
+    await page.mouse.click(cx, cy);
+    await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  test('Next photo while zoomed shows the next photo fitted', async ({ page }) => {
+    const dialog = await openZoomPhoto(page);
+    await page.keyboard.press('z');
+    await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'true');
+    await dialog.getByRole('button', { name: 'Next photo', exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/photos/${nextPhoto.slug}$`));
+    await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'false');
+    await expect(zoomedImg(dialog)).toHaveCount(0);
+    await expect(dialog.locator('[data-photo-box]')).toBeVisible();
+  });
+
+  test('on the photo page, Escape leaves zoom first, then goes to /photos', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/photos/${photo.slug}`);
+    const main = page.getByRole('main');
+    const button = zoomButton(main);
+    await waitForHydration(button);
+    await page.waitForLoadState('load');
+    // The key listener attaches just after hydration; press until it takes.
+    await expect(async () => {
+      await page.keyboard.press('z');
+      await expect(button).toHaveAttribute('aria-pressed', 'true', { timeout: 2000 });
+    }).toPass({ timeout: 15000 });
+
+    await page.keyboard.press('Escape');
+    await expect(button).toHaveAttribute('aria-pressed', 'false');
+    await expect(page).toHaveURL(new RegExp(`/photos/${photo.slug}$`));
+    await page.keyboard.press('Escape');
+    await expect(page).toHaveURL(/\/photos$/);
+  });
+
+  test('native pinch-zoom is never blocked: touch-action keeps pinch-zoom in both states', async ({
+    page,
+  }) => {
+    const dialog = await openZoomPhoto(page);
+    const touchAction = () => stage(dialog).evaluate((el) => getComputedStyle(el).touchAction);
+    const cursor = () => stage(dialog).evaluate((el) => getComputedStyle(el).cursor);
+    expect(await touchAction()).toContain('pinch-zoom');
+    expect(
+      await dialog.locator('[data-photo-box]').evaluate((el) => getComputedStyle(el).cursor)
+    ).toBe('zoom-in');
+
+    await page.keyboard.press('z');
+    await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'true');
+    expect(await touchAction()).toContain('pinch-zoom');
+    expect(await touchAction()).toContain('pan-x');
+    expect(await cursor()).toBe('grab');
+  });
+});
