@@ -1,157 +1,172 @@
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import GalleryGrid from '../GalleryGrid';
-import { LandscapeImage } from '@/data/types';
+/**
+ * The Grid view (PHOTO-02, PHOTO-03; D-15; 10-UI-SPEC "Grid View"): the four
+ * committed photos as justified slide mounts in the canonical order, each a
+ * link to /photos/{slug} with an always-visible caption and no hover overlay
+ * or hotspot badge. Rewritten in 10-04 from the legacy GalleryGrid tests
+ * (D-15): every former case maps to a JustifiedGrid case, none is dropped,
+ * and the former '1 hotspots' badge assertion is now the film scan caption.
+ * Server component rendered from real data; nothing is mocked.
+ */
+import { render, screen, within } from '@testing-library/react';
+import JustifiedGrid from '@/components/photos/JustifiedGrid';
+import { FILLER_GROW, ROW_H_MD_PX, ROW_H_PX, justifyTile } from '@/lib/photos/justify';
+import { photoViews } from '@/lib/photos/view-model';
 
-// Mock Next.js Image component
-jest.mock('next/image', () => ({
-  __esModule: true,
-  default: (props: { fill?: boolean; src?: string; alt?: string; [key: string]: unknown }) => {
-    const { fill, blurDataURL, placeholder, loading, sizes, ...rest } = props;
-    return <img alt="" {...rest} />;
-  },
-}));
+/** The formatters keep a unit on its number with U+00A0. */
+const NBSP = String.fromCharCode(0xa0);
+const LIST_NAME = 'Photographs, lowest first';
 
-// Mock ImageDetailModal
-jest.mock('../ImageDetailModal', () => ({
-  __esModule: true,
-  default: ({ image, onClose }: { image: LandscapeImage | null; onClose: () => void }) => {
-    if (!image) return null;
-    return (
-      <div data-testid="image-detail-modal">
-        <h2>{image.title}</h2>
-        <button onClick={onClose}>Close</button>
-      </div>
-    );
-  },
-}));
+function renderGrid() {
+  const utils = render(<JustifiedGrid photos={photoViews} />);
+  const list = screen.getByRole('list', { name: LIST_NAME });
+  const links = within(list).getAllByRole('link');
+  return { ...utils, list, links };
+}
 
-describe('GalleryGrid', () => {
-  const mockImages: LandscapeImage[] = [
-    {
-      id: '1',
-      src: '/images/test1.jpg',
-      alt: 'Test Image 1',
-      title: 'Mountain View',
-      location: 'Swiss Alps',
-      story: 'A beautiful mountain view',
-      technicalDetails: {
-        camera: 'Canon EOS R5',
-        lens: '24-70mm',
-        aperture: 'f/8',
-        shutterSpeed: '1/250s',
-        iso: 100,
-      },
-      tags: ['mountain', 'landscape'],
-    },
-    {
-      id: '2',
-      src: '/images/test2.jpg',
-      alt: 'Test Image 2',
-      title: 'Lake Sunset',
-      location: 'Lake Geneva',
-      story: 'A stunning sunset',
-      technicalDetails: {
-        camera: 'Sony A7III',
-        lens: '16-35mm',
-      },
-      tags: ['lake', 'sunset'],
-      annotations: [
-        {
-          id: 'a1',
-          title: 'Peak',
-          description: 'Matterhorn peak',
-          position: { x: 50, y: 30 },
-          icon: 'mountain',
-        },
-      ],
-    },
-  ];
+/** The mono data line of a tile: the p holding the three caption parts. */
+function dataLine(link: HTMLElement): HTMLElement {
+  const part = link.querySelector('[data-caption-part]');
+  if (!part?.parentElement) throw new Error('tile has no caption data line');
+  return part.parentElement;
+}
 
-  it('renders all images in grid', () => {
-    render(<GalleryGrid images={mockImages} />);
-
-    expect(screen.getByAltText('Test Image 1')).toBeInTheDocument();
-    expect(screen.getByAltText('Test Image 2')).toBeInTheDocument();
-    expect(screen.getByText('Mountain View')).toBeInTheDocument();
-    expect(screen.getByText('Lake Sunset')).toBeInTheDocument();
-  });
-
-  it('shows annotation badge for images with hotspots', () => {
-    render(<GalleryGrid images={mockImages} />);
-
-    expect(screen.getByText('1 hotspots')).toBeInTheDocument();
-  });
-
-  it('does not show annotation badge for images without hotspots', () => {
-    render(<GalleryGrid images={mockImages} />);
-
-    const badges = screen.queryAllByText(/hotspots/);
-    expect(badges).toHaveLength(1); // Only one image has annotations
-  });
-
-  it('opens modal when image is clicked', async () => {
-    const user = userEvent.setup();
-    render(<GalleryGrid images={mockImages} />);
-
-    const imageButton = screen.getByLabelText('View details for Mountain View');
-    await user.click(imageButton);
-
-    const modal = screen.getByTestId('image-detail-modal');
-    expect(modal).toBeInTheDocument();
-    expect(modal).toHaveTextContent('Mountain View');
-  });
-
-  it('closes modal when close button is clicked', async () => {
-    const user = userEvent.setup();
-    render(<GalleryGrid images={mockImages} />);
-
-    // Open modal
-    const imageButton = screen.getByLabelText('View details for Lake Sunset');
-    await user.click(imageButton);
-
-    expect(screen.getByTestId('image-detail-modal')).toBeInTheDocument();
-
-    // Close modal
-    const closeButton = screen.getByText('Close');
-    await user.click(closeButton);
-
-    expect(screen.queryByTestId('image-detail-modal')).not.toBeInTheDocument();
-  });
-
-  it('renders empty grid when no images provided', () => {
-    const { container } = render(<GalleryGrid images={[]} />);
-    const grid = container.querySelector('.grid');
-    expect(grid?.children).toHaveLength(0);
-  });
-
-  it('has proper accessibility attributes', () => {
-    render(<GalleryGrid images={mockImages} />);
-
-    const buttons = screen.getAllByRole('button');
-    buttons.forEach((button) => {
-      expect(button).toHaveAttribute('aria-label');
+describe('JustifiedGrid (PHOTO-02, PHOTO-03, D-15)', () => {
+  it('renders every photo as a tile with its image and title', () => {
+    const { links } = renderGrid();
+    expect(links).toHaveLength(photoViews.length);
+    photoViews.forEach((view, i) => {
+      expect(within(links[i]).getByRole('img', { name: view.alt })).toBeInTheDocument();
+      expect(within(links[i]).getByText(view.title)).toBeInTheDocument();
     });
   });
 
-  it('displays location information', () => {
-    render(<GalleryGrid images={mockImages} />);
-
-    expect(screen.getByText('Swiss Alps')).toBeInTheDocument();
-    expect(screen.getByText('Lake Geneva')).toBeInTheDocument();
+  it("captions the film scan 'Riffelsee · 2,760 m approx. · 2019' (was the hotspot badge test)", () => {
+    const { links } = renderGrid();
+    const captions = links.map((link) => dataLine(link).textContent);
+    expect(captions).toContain(`Riffelsee · 2,760${NBSP}m approx. · 2019`);
+    expect(captions).toContain(`Gornerschlucht · 1,668${NBSP}m · Sep 2021`);
   });
 
-  it('gives each item its image slug as the id, the /photos#{slug} target (HOME-05)', () => {
-    const withSlugs = mockImages.map((image, i) => ({ ...image, slug: `test-slug-${i + 1}` }));
-    const { container } = render(<GalleryGrid images={withSlugs} />);
-
-    expect(container.querySelector('#test-slug-1')).toBe(screen.getByLabelText('View details for Mountain View'));
-    expect(container.querySelector('#test-slug-2')).toBe(screen.getByLabelText('View details for Lake Sunset'));
+  it('shows no hotspot count or hover overlay', () => {
+    const { container } = renderGrid();
+    expect(container.textContent).not.toMatch(/hotspot/i);
+    expect(container.textContent).not.toMatch(/View details/);
+    expect(container.textContent).not.toMatch(/Click to explore/);
+    expect(screen.queryByRole('button')).toBeNull();
   });
 
-  it('shows interactive annotation hint on hover target', () => {
-    render(<GalleryGrid images={mockImages} />);
+  it('links each tile to /photos/{slug} (was the open-modal test)', () => {
+    const { links } = renderGrid();
+    photoViews.forEach((view, i) => {
+      expect(links[i]).toHaveAttribute('href', `/photos/${view.slug}`);
+    });
+  });
 
-    expect(screen.getByText('Click to explore interactive annotations')).toBeInTheDocument();
+  it('carries data-photo-id on every opener for focus restore (was the close-modal test)', () => {
+    const { links } = renderGrid();
+    for (const link of links) {
+      expect(link).toHaveAttribute('data-photo-id');
+    }
+  });
+
+  it('renders exactly the four committed photos in altitude order (was the empty-grid test)', () => {
+    const { list } = renderGrid();
+    const items = within(list).getAllByRole('listitem');
+    expect(items).toHaveLength(4);
+    const ids = items.map((li) => li.querySelector('a')?.getAttribute('data-photo-id'));
+    expect(ids).toEqual(photoViews.map((v) => v.slug));
+    const heights = photoViews.map((v) => v.altitudeM);
+    expect(heights).toEqual([...heights].sort((a, b) => a - b));
+  });
+
+  it('names the list and gives each link its photo title as an explicit aria-label', () => {
+    const { links } = renderGrid();
+    photoViews.forEach((view, i) => {
+      expect(links[i]).toHaveAttribute('aria-label', view.title);
+      expect(links[i]).toHaveAccessibleName(view.title);
+    });
+  });
+
+  it('opens each caption data line with the short place (was the location test)', () => {
+    const { links } = renderGrid();
+    photoViews.forEach((view, i) => {
+      const parts = links[i].querySelectorAll('[data-caption-part]');
+      expect(parts[0]).toHaveTextContent(view.shortPlace);
+      expect(parts[0]).toHaveAttribute('data-caption-part', 'place');
+    });
+  });
+
+  it('gives each tile a data-photo-id equal to its slug (was the fragment-id test)', () => {
+    const { links } = renderGrid();
+    photoViews.forEach((view, i) => {
+      expect(links[i]).toHaveAttribute('data-photo-id', view.slug);
+    });
+  });
+
+  it('makes every caption part nowrap, so the line breaks only at " · " (was the hover-hint test)', () => {
+    const { links } = renderGrid();
+    photoViews.forEach((view, i) => {
+      const line = dataLine(links[i]);
+      const parts = [...line.querySelectorAll('[data-caption-part]')];
+      expect(parts.map((p) => p.getAttribute('data-caption-part'))).toEqual([
+        'place',
+        'altitude',
+        'date',
+      ]);
+      for (const part of parts) expect(part).toHaveClass('whitespace-nowrap');
+      expect(line.textContent).toBe(
+        `${view.shortPlace} · ${view.altitudeLabel} · ${view.captureMonth}`
+      );
+      expect(line).toHaveClass('font-mono', 'text-sm', 'text-ink-muted');
+    });
+  });
+
+  it('lists AVIF before WebP, each 640w/1024w/1600w, sized for half the row from 640 px', () => {
+    const { links } = renderGrid();
+    photoViews.forEach((view, i) => {
+      const sources = links[i].querySelectorAll('picture > source');
+      expect(sources).toHaveLength(2);
+      expect(sources[0]).toHaveAttribute('type', 'image/avif');
+      expect(sources[0]).toHaveAttribute('srcset', view.tile.srcSetAvif);
+      expect(sources[1]).toHaveAttribute('type', 'image/webp');
+      expect(sources[1]).toHaveAttribute('srcset', view.tile.srcSetWebp);
+      for (const source of sources) {
+        expect(source.getAttribute('srcset')).toMatch(/ 640w, .* 1024w, .* 1600w$/);
+        expect(source).toHaveAttribute('sizes', '(min-width: 640px) 50vw, 100vw');
+      }
+      const img = within(links[i]).getByRole('img', { name: view.alt });
+      expect(img).toHaveAttribute('src', view.tile.src);
+      expect(img).toHaveAttribute('width', String(view.tile.width));
+      expect(img).toHaveAttribute('height', String(view.tile.height));
+      expect(img).toHaveAttribute('decoding', 'async');
+    });
+  });
+
+  it('loads the first two images eagerly and the others lazily', () => {
+    const { links } = renderGrid();
+    const loading = links.map((link) => link.querySelector('img')?.getAttribute('loading'));
+    expect(loading).toEqual(['eager', 'eager', 'lazy', 'lazy']);
+  });
+
+  it('reserves each image box at the manifest ratio over surface-overlay, its li flexing from justifyTile', () => {
+    const { list } = renderGrid();
+    const items = within(list).getAllByRole('listitem');
+    photoViews.forEach((view, i) => {
+      const tile = justifyTile(view.aspect.w, view.aspect.h);
+      expect(items[i].style.getPropertyValue('--tile-flex')).toBe(tile.flex);
+      const box = items[i].querySelector('[data-tile-box]') as HTMLElement;
+      expect(box.style.aspectRatio).toBe(tile.aspectRatio);
+      expect(box).toHaveClass('bg-surface-overlay', 'overflow-hidden');
+    });
+  });
+
+  it('sets --row-h from the justify constants and a trailing filler that is not a list item', () => {
+    const { list } = renderGrid();
+    expect(list.className).toContain(`--row-h:${ROW_H_MD_PX}px`);
+    expect(list.className).toContain(`--row-h:${ROW_H_PX}px`);
+    expect(list.className).toContain(`${FILLER_GROW}_1_0px`);
+    expect(list.className).toMatch(/sm:flex-row/);
+    expect(list.className).toMatch(/sm:flex-wrap/);
+    expect(within(list).getAllByRole('listitem')).toHaveLength(photoViews.length);
   });
 });
