@@ -100,12 +100,15 @@ describe('the four committed photos (UI-SPEC Grid: two rows of two)', () => {
     [720, ROW_H_MD_PX],
     [960, ROW_H_PX],
     [1088, ROW_H_PX],
-  ])('breaks a %i px line at %i px rows into two rows of two, the filler on the last', (w, rowH) => {
-    expect(flexLines(w, items(rowH), GAP)).toEqual([
-      [0, 1],
-      [2, 3, 4],
-    ]);
-  });
+  ])(
+    'breaks a %i px line at %i px rows into two rows of two, the filler on the last',
+    (w, rowH) => {
+      expect(flexLines(w, items(rowH), GAP)).toEqual([
+        [0, 1],
+        [2, 3, 4],
+      ]);
+    }
+  );
 
   it('puts one tile per line at 720 px with 280 px rows (the reason for ROW_H_MD_PX)', () => {
     expect(flexLines(720, items(ROW_H_PX), GAP)).toEqual([[0], [1], [2], [3, 4]]);
