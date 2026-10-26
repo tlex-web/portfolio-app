@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 10
 current_phase_name: Photography
 status: executing
-stopped_at: Completed 10-05-PLAN.md
-last_updated: "2026-10-26T12:01:08.834Z"
+stopped_at: Completed 10-06-PLAN.md
+last_updated: "2026-10-26T12:50:53.582Z"
 last_activity: 2026-10-26
 last_activity_desc: Phase 10 execution started
-state_head: ee1ec2ac8138e0f3a742c557b1ed9ae923c955be
+state_head: 0a30cd6347379280ab557b30ba1ed434e78e254e
 progress:
   total_phases: 6
   completed_phases: 9
   total_plans: 75
-  completed_plans: 67
-  percent: 89
+  completed_plans: 68
+  percent: 91
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-25)
 ## Current Position
 
 Phase: 10 (Photography) — EXECUTING
-Plan: 6 of 13
+Plan: 7 of 13
 Status: Ready to execute
 Last activity: 2026-10-26 — Phase 10 execution started
 
-Progress: [█████████░] 89%
+Progress: [█████████░] 91%
 
 ## Performance Metrics
 
@@ -123,6 +123,7 @@ Progress: [█████████░] 89%
 | Phase 10 P03 | 20 min | 2 tasks | 10 files |
 | Phase 10 P04 | 10 min | 2 tasks | 8 files |
 | Phase 10 P05 | 34 min | 3 tasks | 15 files |
+| Phase 10 P06 | 45 min | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -298,6 +299,11 @@ Recent decisions affecting current work:
 - [Phase 10]: 10-05: close() calls router.back() at most once per lightbox instance, so a repeated Escape cannot go back past the gallery
 - [Phase 10]: 10-05: the modal viewer is h-full on the key and gutter tiers; a height-less size-container stage would leave the photo box 0 px wide
 - [Phase 10]: 10-05: local Playwright WebKit cannot load scripts because proxy.ts's CSP upgrade-insecure-requests applies to localhost; deferred (security-header change), Safari Tab wrap stays a UAT item
+- [Phase 10]: 10-06: Task 1 recorded Tim's OQ1 answer from the plan gate row, 'A: replaceState both (Recommended)' (2026-10-26); previous/next uses history.replaceState on the photo page and in the lightbox
+- [Phase 10]: 10-06: the viewer owns the shown slug (seeded from slugFromPath(usePathname())); steps read the last written slug from a ref because React holds commits while a view transition runs
+- [Phase 10]: 10-06: keyboard listeners that must work during the open morph register in useLayoutEffect; passive effects wait for the view transition
+- [Phase 10]: 10-06: the viewer's photo-{slug} ViewTransition is keyed by slug and named only while the pathname names a photo (complement of TileTransition), so no name is ever registered twice
+- [Phase 10]: 10-06: the root crossfade is off on the root group and its old/new snapshots while a viewer is shown
 
 ### Pending Todos
 
@@ -337,6 +343,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-26T12:01:08.236Z
-Stopped at: Completed 10-05-PLAN.md
+Last session: 2026-10-26T12:50:53.185Z
+Stopped at: Completed 10-06-PLAN.md
 Resume file: None
