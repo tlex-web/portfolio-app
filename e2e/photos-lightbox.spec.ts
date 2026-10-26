@@ -267,3 +267,59 @@ test.describe('Stage states (UI-SPEC E5)', () => {
       .toBe(true);
   });
 });
+
+/** The grid list at /photos?view=grid (10-04); its tile links open the lightbox. */
+const GRID_LIST = 'Photographs, lowest first';
+const GRID_URL = /\/photos\?view=grid$/;
+
+test.describe('Lightbox over the gallery (LBOX-01)', () => {
+  const first = views[0];
+
+  /** Open the first grid tile in-site and wait for the dialog. */
+  async function openFirstTile(page: import('@playwright/test').Page) {
+    await page.goto('/photos?view=grid');
+    await page.getByRole('list', { name: GRID_LIST }).getByRole('link').first().click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    return dialog;
+  }
+
+  test('a tile click opens the photo in a dialog over the grid', async ({ page }) => {
+    const dialog = await openFirstTile(page);
+    await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
+    await expect(dialog).toHaveAccessibleName(first.title);
+    await expect(dialog.getByRole('heading', { level: 2, name: first.title })).toBeVisible();
+    // The gallery stays mounted behind the dialog, inside the one shell.
+    // The page behind a modal dialog is inert, so these queries include it.
+    await expect(
+      page.getByRole('list', { name: GRID_LIST, includeHidden: true })
+    ).toHaveCount(1);
+    await expect(page.getByRole('banner', { includeHidden: true })).toHaveCount(1);
+    await expect(page).toHaveTitle(`${first.title} · Tim Lui`);
+  });
+
+  test('Back closes it, Forward reopens it, reload lands on the full page', async ({ page }) => {
+    await openFirstTile(page);
+
+    await page.goBack();
+    await expect(page).toHaveURL(GRID_URL);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+
+    await page.goForward();
+    await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
+    await expect(page.getByRole('dialog')).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toHaveText(
+      first.title
+    );
+  });
+
+  test('the Close photo button closes it and the URL returns to the grid', async ({ page }) => {
+    const dialog = await openFirstTile(page);
+    await dialog.getByRole('button', { name: 'Close photo', exact: true }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page).toHaveURL(GRID_URL);
+  });
+});

@@ -91,8 +91,8 @@ test.describe('Photo Gallery', () => {
  * row the image boxes share one height (±1 px) and keep their true ratio
  * (±1 %); with four photos that is two rows of two at 768 and 1440 (224 px
  * rows from 640 px, 280 px from 1024 px, approved by Tim 2026-10-26). Below
- * 640 px one column, with no horizontal overflow at 375. 10-05 changes the
- * click expectation to the lightbox dialog.
+ * 640 px one column, with no horizontal overflow at 375. A tile click opens
+ * its photo in the lightbox dialog over the grid (10-05, LBOX-01).
  */
 test.describe('Grid view (PHOTO-02, PHOTO-03, D-15)', () => {
   const views = buildPhotoViews();
@@ -177,11 +177,13 @@ test.describe('Grid view (PHOTO-02, PHOTO-03, D-15)', () => {
     }
   });
 
-  test('clicking the first tile opens its photo page', async ({ page }) => {
+  test('clicking the first tile opens its photo in the lightbox (LBOX-01)', async ({ page }) => {
     await page.goto('/photos?view=grid');
     const first = views[0];
     await page.getByRole('list', { name: LIST }).getByRole('link').first().click();
     await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
-    await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toHaveText(first.title);
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(first.title);
   });
 });
