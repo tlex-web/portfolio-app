@@ -1,7 +1,39 @@
+import type { Metadata } from 'next';
 import PhotosPageClient from '@/components/PhotosPageClient';
+import JustifiedGrid from '@/components/photos/JustifiedGrid';
 import { landscapes } from '@/data/landscapes';
+import { photoViews } from '@/lib/photos/view-model';
+import { VIEW_LABELS, parseView } from '@/lib/photos/view-param';
 
-export default function PhotosPage() {
+export const metadata: Metadata = { title: 'Photographs' };
+
+/**
+ * /photos (PHOTO-02, PHOTO-03; D-14, D-15; 10-UI-SPEC "Page Structure").
+ * A Server Component: the URL is the only source of view state, so the view
+ * comes from `?view=` through parseView (Map default, locked). `?view=grid`
+ * mounts the justified grid; the map and carousel values keep the current
+ * gallery until 10-07 (carousel) and 10-08 (map) replace them.
+ */
+export default async function PhotosPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const view = parseView((await searchParams).view);
+
+  if (view === 'grid') {
+    return (
+      <div className="mx-auto w-full max-w-6xl px-4 pt-6 pb-12 sm:px-6 md:pb-16 lg:px-8">
+        <section aria-labelledby="view-title">
+          <h2 id="view-title" className="sr-only">
+            {VIEW_LABELS[view]}
+          </h2>
+          <JustifiedGrid photos={photoViews} />
+        </section>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="min-h-screen bg-gradient-to-b from-surface to-surface-raised">
