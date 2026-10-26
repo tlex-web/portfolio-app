@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 10
 current_phase_name: Photography
 status: executing
-stopped_at: Completed 10-08-PLAN.md
-last_updated: "2026-10-26T14:02:05.542Z"
+stopped_at: Completed 10-10-PLAN.md
+last_updated: "2026-10-26T14:26:55.037Z"
 last_activity: 2026-10-26
 last_activity_desc: Phase 10 execution started
-state_head: 9ac3f677aeedc24771a587a43f9325f523cfe690
+state_head: 549626a05a8bd685b3ecc4631526e6344883e4d1
 progress:
   total_phases: 6
   completed_phases: 9
   total_plans: 75
-  completed_plans: 70
-  percent: 93
+  completed_plans: 71
+  percent: 95
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-25)
 ## Current Position
 
 Phase: 10 (Photography) — EXECUTING
-Plan: 9 of 13
+Plan: 10 of 13
 Status: Ready to execute
 Last activity: 2026-10-26 — Phase 10 execution started
 
-Progress: [█████████░] 93%
+Progress: [█████████░] 95%
 
 ## Performance Metrics
 
@@ -126,6 +126,7 @@ Progress: [█████████░] 93%
 | Phase 10 P06 | 45 min | 3 tasks | 11 files |
 | Phase 10 P07 | 29 min | 2 tasks | 10 files |
 | Phase 10 P08 | 34 min | 3 tasks | 12 files |
+| Phase 10 P10 | 21 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -314,6 +315,9 @@ Recent decisions affecting current work:
 - [Phase 10]: 10-08: map plates clear a 16 px dot square (12 px dot plus its 2 px casing each side); a 20 px square fails compact slot 1 at S = 312-313, contradicting the UI-SPEC measured floor
 - [Phase 10]: 10-08: map label positions are a branch-traced pure layout emitted as cascade-only @container map-sheet (min-width) rules with calc(<frac> * 100cqw + <px>px) lengths (13 segments, ~7 KB); a Jest cascade check matches the layout within 0.5 px at every side 312-1100
 - [Phase 10]: 10-08: /photos renders PhotosHeader (derived kicker, h1 from site.nav, children slot for the 10-09 switcher) above one view section keyed by the view; data/sheet.ts is the one sheet title for footer, map margin line and kicker
+- [Phase 10]: 10-10: ZoomStage renders [data-viewer-stage] and wraps the whole photo box (zoomed, the stage is the scroll box); children stay mounted (hidden) while zoomed
+- [Phase 10]: 10-10: click-to-zoom is decided by the photo box rectangle on the stage handlers, because during the open morph Chromium hit-tests the stage instead of the named box
+- [Phase 10]: 10-10: zoom keys and the page Escape layer use a capture-phase document listener that prevents the press; the lightbox layer registers via registerEscape. Image drag-and-drop is prevented only on the zoomed photo, where a drag pans
 
 ### Pending Todos
 
@@ -353,6 +357,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-26T14:02:05.079Z
-Stopped at: Completed 10-08-PLAN.md
+Last session: 2026-10-26T14:26:54.608Z
+Stopped at: Completed 10-10-PLAN.md
 Resume file: None
