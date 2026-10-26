@@ -1,87 +1,213 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
+import { terrain } from '@/data/generated/terrain';
 import { buildPhotoViews } from '@/lib/photos/view-model';
+import { readViewTransitions, recordViewTransitions } from './helpers/view-transitions';
 
-test.describe('Photo Gallery', () => {
-  test('should display gallery grid', async ({ page }) => {
+/**
+ * The Map view in a browser (PHOTO-01, PHOTO-03; D-01 to D-04; 10-UI-SPEC
+ * "Map View" and UI Considerations E2). /photos opens on the full survey sheet
+ * with one link per photo, lowest first; each link's box is its label plate,
+ * and it opens the photo in the lightbox with a plain enter. The six legacy
+ * gallery tests (hero, hotspot buttons, the old modal and the 3D toggle) were
+ * rewritten in 10-08 to map cases, none dropped. Expected values come from
+ * buildPhotoViews(), never hand-typed.
+ */
+test.describe('Map view (PHOTO-01, PHOTO-03, D-01..D-04)', () => {
+  const views = buildPhotoViews();
+  const MAP = 'Map of the photo locations';
+  const LIST = 'Photo locations, lowest first';
+  const names = views.map((v) => `${v.title}, ${v.altitudeLabel}`);
+
+  const mapLinks = (page: Page) =>
+    page.getByRole('region', { name: MAP }).getByRole('list', { name: LIST }).getByRole('link');
+
+  /** Wait until React has hydrated a link (a click before that is a document navigation). */
+  async function waitForHydration(link: Locator) {
+    await expect
+      .poll(
+        () => link.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))),
+        { timeout: 15000 }
+      )
+      .toBe(true);
+  }
+
+  /** Click a map plate (hydrated) and wait for the dialog. */
+  async function openFromMap(page: Page, index: number) {
+    const link = mapLinks(page).nth(index);
+    await waitForHydration(link);
+    await link.click();
+    const dialog = page.getByRole('dialog');
+    // The dev server compiles the intercepted route on its first request.
+    await expect(dialog).toBeVisible({ timeout: 20000 });
+    return { dialog, link };
+  }
+
+  test('opens on the map with four waypoint links in altitude order (PHOTO-01)', async ({
+    page,
+  }) => {
     await page.goto('/photos');
-
-    await expect(page.getByRole('heading', { name: /Landscape Gallery/i })).toBeVisible();
-
-    // Should have images
-    const images = page.getByRole('button', { name: /View details for/i });
-    await expect(images.first()).toBeVisible();
+    await expect(page.getByRole('region', { name: MAP })).toBeVisible();
+    const links = mapLinks(page);
+    await expect(links).toHaveCount(views.length);
+    for (const [i, view] of views.entries()) {
+      await expect(links.nth(i)).toHaveAccessibleName(names[i]);
+      await expect(links.nth(i)).toHaveAttribute('href', `/photos/${view.slug}`);
+      await expect(links.nth(i)).toHaveAttribute('data-photo-id', view.slug);
+    }
   });
 
-  test('should open image detail modal when clicking on image', async ({ page }) => {
+  test('Tab reaches the four waypoint links in altitude order', async ({ page }) => {
     await page.goto('/photos');
-
-    // Click first image (Playwright auto-waits for it to be actionable)
-    const firstImage = page.getByRole('button', { name: /View details for/i }).first();
-    await firstImage.click();
-
-    // Modal should be visible
-    await expect(page.getByRole('dialog')).toBeVisible();
-
-    // Should have close button (uses aria-label="Close modal")
-    await expect(page.getByLabel(/Close modal/i)).toBeVisible();
+    const links = mapLinks(page);
+    await expect(links).toHaveCount(views.length);
+    const focusedName = () =>
+      page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? '');
+    // Tab through the shell until the first waypoint has focus.
+    for (let i = 0; i < 40 && (await focusedName()) !== names[0]; i++) {
+      await page.keyboard.press('Tab');
+    }
+    await expect(links.nth(0)).toBeFocused();
+    for (let i = 1; i < views.length; i++) {
+      await page.keyboard.press('Tab');
+      await expect(links.nth(i)).toBeFocused();
+    }
   });
 
-  test('should close modal when clicking close button', async ({ page }) => {
+  test('a map plate opens the lightbox', async ({ page }) => {
     await page.goto('/photos');
-
-    // Open modal
-    const firstImage = page.getByRole('button', { name: /View details for/i }).first();
-    await firstImage.click();
-    await expect(page.getByRole('dialog')).toBeVisible();
-
-    // Close modal
-    await page.getByLabel(/Close modal/i).click();
-    await expect(page.getByRole('dialog')).not.toBeVisible();
+    const { dialog } = await openFromMap(page, 1);
+    await expect(page).toHaveURL(new RegExp(`/photos/${views[1].slug}$`));
+    await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(views[1].title);
   });
 
-  test('should close modal when pressing Escape key', async ({ page }) => {
+  test('Close photo closes the lightbox opened from the map', async ({ page }) => {
     await page.goto('/photos');
+    const { dialog } = await openFromMap(page, 1);
+    await dialog.getByRole('button', { name: 'Close photo', exact: true }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page).toHaveURL(/\/photos$/);
+  });
 
-    // Open modal
-    const firstImage = page.getByRole('button', { name: /View details for/i }).first();
-    await firstImage.click();
-    await expect(page.getByRole('dialog')).toBeVisible();
-
-    // Press Escape
+  test('Escape closes it and focus returns to the plate', async ({ page }) => {
+    await page.goto('/photos');
+    const { link } = await openFromMap(page, 1);
     await page.keyboard.press('Escape');
-    await expect(page.getByRole('dialog')).not.toBeVisible();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(link).toBeFocused();
   });
 
-  test('should switch to 3D carousel view', async ({ page }) => {
+  test('opening from the map is a plain enter: no photo-* pseudo-element @chromium-only', async ({
+    page,
+  }) => {
+    await recordViewTransitions(page);
     await page.goto('/photos');
-
-    // Wait for images to load before switching views
-    await expect(page.getByRole('button', { name: /View details for/i }).first()).toBeVisible();
-
-    // Click 3D view button
-    await page.getByRole('button', { name: /3D Carousel/i }).click();
-
-    // Wait for the lazy-loaded 3D canvas to appear (may take time to load WebGL)
-    const canvas = page.locator('canvas');
-    await expect(canvas).toBeAttached({ timeout: 15000 });
+    const before = (await readViewTransitions(page)).transitions.length;
+    await openFromMap(page, 1);
+    await page.waitForTimeout(800);
+    const after = (await readViewTransitions(page)).transitions.slice(before).flat();
+    expect(after.filter((pseudo) => pseudo.includes('photo-'))).toEqual([]);
   });
 
-  test('should switch between grid and 3D view', async ({ page }) => {
+  test('?view=carousel shows the carousel region', async ({ page }) => {
+    await page.goto('/photos?view=carousel');
+    await expect(page.getByRole('region', { name: 'Photographs' })).toBeVisible();
+    await expect(page.getByRole('region', { name: MAP })).toHaveCount(0);
+  });
+
+  test('?view=grid and ?view=xyz render the grid and the map', async ({ page }) => {
+    await page.goto('/photos?view=grid');
+    await expect(page.getByRole('list', { name: 'Photographs, lowest first' })).toBeVisible();
+    await expect(page.getByRole('region', { name: MAP })).toHaveCount(0);
+
+    await page.goto('/photos?view=xyz');
+    await expect(page.getByRole('region', { name: MAP })).toBeVisible();
+    await expect(mapLinks(page)).toHaveCount(views.length);
+  });
+
+  test('the Riffelsee dot is dashed and the summit is not a link', async ({ page }) => {
     await page.goto('/photos');
-
-    // Wait for images to load first
-    await expect(page.getByRole('button', { name: /View details for/i }).first()).toBeVisible();
-
-    // Check for view mode toggle buttons
-    const gridButton = page.getByRole('button', { name: /Grid View|grid/i });
-    const carousel3DButton = page.getByRole('button', { name: /3D|Carousel/i });
-
-    // At least one view mode button should be visible
-    const hasGridButton = await gridButton.isVisible().catch(() => false);
-    const has3DButton = await carousel3DButton.isVisible().catch(() => false);
-
-    expect(hasGridButton || has3DButton).toBe(true);
+    const links = mapLinks(page);
+    await expect(links).toHaveCount(views.length);
+    for (const [i, view] of views.entries()) {
+      const style = await links
+        .nth(i)
+        .locator('[data-map-dot]')
+        .evaluate((el) => getComputedStyle(el).borderTopStyle);
+      expect([view.slug, style]).toEqual([view.slug, view.approximate ? 'dashed' : 'none']);
+    }
+    const summit = page.locator('[data-summit-plate]');
+    await expect(summit).toHaveText(/Matterhorn/);
+    expect(await summit.evaluate((el) => el.closest('a') === null)).toBe(true);
+    expect(await summit.evaluate((el) => el.closest('[aria-hidden="true"]') !== null)).toBe(true);
   });
+
+  for (const width of [360, 375, 412, 768, 1024, 1440]) {
+    test(`at ${width} x 900 the plates keep their boxes, gaps and dots`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/photos');
+      await expect(mapLinks(page)).toHaveCount(views.length);
+      const geometry = await page.locator('[data-map-sheet]').evaluate((sheet) => {
+        const box = sheet.getBoundingClientRect();
+        const origin = { x: box.x + sheet.clientLeft, y: box.y + sheet.clientTop };
+        const rel = (r: DOMRect) => ({
+          x: r.x - origin.x,
+          y: r.y - origin.y,
+          width: r.width,
+          height: r.height,
+        });
+        const marks = [...sheet.querySelectorAll<HTMLElement>('[data-map-mark]')].map((el) => {
+          const dot = el.querySelector('[data-map-dot]')!.getBoundingClientRect();
+          return {
+            plate: rel(el.getBoundingClientRect()),
+            dot: { x: dot.x + dot.width / 2 - origin.x, y: dot.y + dot.height / 2 - origin.y },
+          };
+        });
+        const summit = rel(sheet.querySelector('[data-summit-plate]')!.getBoundingClientRect());
+        return { S: sheet.clientWidth, H: sheet.clientHeight, marks, summit };
+      });
+      const { S, marks, summit } = geometry;
+      expect(Math.abs(geometry.H - S)).toBeLessThanOrEqual(1);
+      const plates = marks.map((m) => m.plate);
+      for (const p of plates) {
+        expect([48, 68]).toContain(Math.round(p.height));
+        expect(p.x).toBeGreaterThanOrEqual(7.5);
+        expect(p.y).toBeGreaterThanOrEqual(7.5);
+        expect(p.x + p.width).toBeLessThanOrEqual(S - 7.5);
+        expect(p.y + p.height).toBeLessThanOrEqual(S - 7.5);
+      }
+      // 8 px (to 0.5 px) between waypoint plates; no overlap with the summit plate.
+      const all = [...plates, summit];
+      for (let i = 0; i < all.length; i++) {
+        for (let j = i + 1; j < all.length; j++) {
+          const a = all[i];
+          const b = all[j];
+          const gap = Math.max(
+            b.x - (a.x + a.width),
+            a.x - (b.x + b.width),
+            b.y - (a.y + a.height),
+            a.y - (b.y + b.height)
+          );
+          const min = j === all.length - 1 ? 0 : 7.5;
+          expect([i, j, gap >= min]).toEqual([i, j, true]);
+        }
+      }
+      marks.forEach((m, i) => {
+        expect(Math.abs(m.dot.x - views[i].uv.u * S)).toBeLessThanOrEqual(1);
+        expect(Math.abs(m.dot.y - views[i].uv.v * S)).toBeLessThanOrEqual(1);
+      });
+      expect(Math.abs(summit.x - (terrain.summit.uv.u * S + 14))).toBeLessThanOrEqual(1);
+      // Visual order (top to bottom, then left to right) is altitude order.
+      const order = [...plates.keys()].sort(
+        (a, b) => plates[a].y - plates[b].y || plates[a].x - plates[b].x
+      );
+      expect(order).toEqual([...views.keys()]);
+      const overflow = await page.evaluate(() => {
+        const root = document.documentElement;
+        return root.scrollWidth - root.clientWidth;
+      });
+      expect(overflow).toBeLessThanOrEqual(0);
+    });
+  }
 });
 
 /**
