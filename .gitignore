@@ -56,6 +56,8 @@ next-env.d.ts
 
 # Original photos with GPS EXIF (D-09): local only, never committed, not even with LFS (public repo)
 assets/photos-original/
+# The old originals path, ignored again so a clone that still has them there cannot add them (08-REVIEW WR-06)
+public/images/landscapes/
 
 # IDEs
 .vscode/

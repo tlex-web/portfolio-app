@@ -10,9 +10,11 @@
  * anywhere with `git add -f`, because the metadata rule covers the whole repo.
  *
  * Scope:
- *   repo mode (no --root):  git ls-files of *.jpg *.jpeg *.png *.webp *.avif *.gif
- *                           *.tif *.tiff *.heic *.svg (case-insensitive) anywhere in
- *                           the repo, minus scripts/guards/__selftest__/**; the
+ *   repo mode (no --root):  git ls-files of *.jpg *.jpeg *.jfif *.png *.webp *.avif
+ *                           *.gif *.tif *.tiff *.heic *.heif *.jxl *.bmp *.svg and
+ *                           the camera raws *.dng *.cr2 *.cr3 *.nef *.arw
+ *                           (case-insensitive) anywhere in the repo, minus
+ *                           scripts/guards/__selftest__/**; the
  *                           metadata-call rule reads tracked scripts/photos and
  *                           scripts/terrain sources
  *   fixture mode (--root):  recursive walk of <dir> (fixtures are not a git repo)
@@ -56,7 +58,8 @@ import path from 'path';
 import sharp from 'sharp';
 
 const MAX_LONG_EDGE = 2560;
-const IMAGE_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif', '.tif', '.tiff', '.heic', '.svg']);
+// Raw and HEIF originals carry the full GPS IFD; sharp cannot read most raw formats, so they fail as unreadable (08-REVIEW WR-06).
+const IMAGE_EXT = new Set(['.jpg', '.jpeg', '.jfif', '.png', '.webp', '.avif', '.gif', '.tif', '.tiff', '.heic', '.heif', '.jxl', '.dng', '.cr2', '.cr3', '.nef', '.arw', '.bmp', '.svg']);
 const PATHSPECS = [...IMAGE_EXT].map((ext) => `:(icase)*${ext}`);
 const SELFTEST_PREFIX = 'scripts/guards/__selftest__/';
 const HASHED_DIRS = ['public/terrain/', 'public/images/photos/'];

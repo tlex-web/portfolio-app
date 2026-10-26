@@ -25,16 +25,23 @@
  * Lossy encoders are not byte-stable across platforms (RESEARCH Pattern 3), so
  * the committed bytes are authoritative and the hash is checked against them.
  *
- * The manifest is a pure function of the files on disk and the sidecar: write
- * mode writes the derivatives, then builds the manifest from disk; --check
- * rebuilds it the same way and compares bytes.
+ * The manifest is a pure function of the derivative files and the sidecar. Write
+ * mode builds it from the encoded buffers in memory; --check rebuilds it from the
+ * files on disk. Both go through the same assembly (assembleManifest), so they
+ * give the same bytes for the same files.
  *
  * Modes:
  *   (default)  needs the originals. Each original's sha256 must equal the
  *              sidecar's (run `npm run photos:exif` first after editing a
- *              photo). Encodes everything in memory, then writes the files,
- *              deletes stale files in public/images/photos/ and writes the
- *              manifest. Any failure exits 1 before anything is written.
+ *              photo). In this order (08-REVIEW WR-05):
+ *                1. encode every derivative into memory;
+ *                2. build the manifest from those buffers and validate it
+ *                   (decodable, AVIF and WebP sizes agree, no duplicate name,
+ *                   ImageManifest schema);
+ *                3. only then write the derivatives and the manifest;
+ *                4. delete stale files in public/images/photos/ last.
+ *              Any failure in steps 1-2 exits 1 before anything is written or
+ *              deleted.
  *   --check    needs no originals (CI). Fails when a manifest file is missing,
  *              its name hash does not match its bytes, its format or size
  *              differs from the manifest, or it carries EXIF/XMP/IPTC/ICC or an
@@ -137,34 +144,14 @@ function outFiles() {
 }
 
 /**
- * Build the manifest from the files on disk and the sidecar. Pushes one problem
- * per missing, duplicate or undecodable file; returns { value, text } only when
- * there was none.
+ * Assemble and validate the manifest. `one(id, edge, ext)` resolves one output to
+ * `{ url, width, height }`, or pushes a problem and returns null. Pushes one
+ * problem per missing, duplicate or undecodable file and per AVIF/WebP size
+ * mismatch; returns { value, text } only when there was none.
  */
-async function manifestFromDisk(sidecar, problems) {
-  const files = outFiles();
+async function assembleManifest(sidecar, one, problems) {
   const before = problems.length;
   const manifest = {};
-
-  async function one(id, edge, ext) {
-    const re = new RegExp(`^${id}-${edge}\\.[0-9a-f]{10}\\.${ext}$`);
-    const hits = files.filter((f) => re.test(f));
-    if (hits.length !== 1) {
-      problems.push(
-        hits.length === 0
-          ? `missing ${OUT_REL}${id}-${edge}.<hash>.${ext}`
-          : `duplicate ${OUT_REL}${id}-${edge}.*.${ext} (${hits.join(', ')})`
-      );
-      return null;
-    }
-    try {
-      const md = await sharp(fs.readFileSync(path.join(OUT_DIR, hits[0]))).metadata();
-      return { url: URL_PREFIX + hits[0], width: md.width, height: md.height };
-    } catch {
-      problems.push(`${OUT_REL}${hits[0]}: not a decodable image`);
-      return null;
-    }
-  }
 
   for (const p of sidecar.photos) {
     const variants = [];
@@ -201,6 +188,58 @@ async function manifestFromDisk(sidecar, problems) {
   return { value, text };
 }
 
+/** `{ url, width, height }` of one derivative's bytes, or a problem when sharp cannot decode them. */
+async function described(name, bytes, problems) {
+  try {
+    const md = await sharp(bytes).metadata();
+    return { url: URL_PREFIX + name, width: md.width, height: md.height };
+  } catch {
+    problems.push(`${OUT_REL}${name}: not a decodable image`);
+    return null;
+  }
+}
+
+/** The manifest built from the files in public/images/photos/ (--check). */
+function manifestFromDisk(sidecar, problems) {
+  const files = outFiles();
+  return assembleManifest(
+    sidecar,
+    async (id, edge, ext) => {
+      const re = new RegExp(`^${id}-${edge}\\.[0-9a-f]{10}\\.${ext}$`);
+      const hits = files.filter((f) => re.test(f));
+      if (hits.length !== 1) {
+        problems.push(
+          hits.length === 0
+            ? `missing ${OUT_REL}${id}-${edge}.<hash>.${ext}`
+            : `duplicate ${OUT_REL}${id}-${edge}.*.${ext} (${hits.join(', ')})`
+        );
+        return null;
+      }
+      return described(hits[0], fs.readFileSync(path.join(OUT_DIR, hits[0])), problems);
+    },
+    problems
+  );
+}
+
+/**
+ * The manifest built from the encoded buffers, before anything is written
+ * (write mode, WR-05). `encoded` maps `id|edge|ext` to `{ name, bytes }`.
+ */
+function manifestFromMemory(sidecar, encoded, problems) {
+  return assembleManifest(
+    sidecar,
+    async (id, edge, ext) => {
+      const hit = encoded.get(`${id}|${edge}|${ext}`);
+      if (!hit) {
+        problems.push(`missing encoded ${OUT_REL}${id}-${edge}.<hash>.${ext}`);
+        return null;
+      }
+      return described(hit.name, hit.bytes, problems);
+    },
+    problems
+  );
+}
+
 /** Refuse anything but an sRGB original (dropping the ICC profile must stay colour-neutral). */
 async function assertSrgb(p, bytes) {
   const md = await sharp(bytes).metadata();
@@ -231,8 +270,10 @@ async function write() {
     process.exit(1);
   }
 
-  // Encode everything in memory first, so a failure leaves the committed files untouched.
-  const outputs = new Map();
+  // 1. Encode everything in memory first, so a failure leaves the committed files untouched.
+  const outputs = new Map(); // file name -> bytes
+  const encoded = new Map(); // `id|edge|ext` -> { name, bytes }
+  const problems = [];
   for (const p of sidecar.photos) {
     const abs = path.join(ORIGINALS_DIR, p.file);
     if (!fs.existsSync(abs)) throw new Error(`original ${ORIGINALS_REL}${p.file} is missing`);
@@ -244,28 +285,35 @@ async function write() {
     await assertSrgb(p, bytes);
     for (const [edge, ext] of OUTPUTS) {
       const out = await encode(bytes, edge, ext);
-      outputs.set(hashedName(p.id, edge, ext, out), out);
+      const name = hashedName(p.id, edge, ext, out);
+      const key = `${p.id}|${edge}|${ext}`;
+      if (outputs.has(name) || encoded.has(key)) problems.push(`duplicate ${OUT_REL}${name}`);
+      outputs.set(name, out);
+      encoded.set(key, { name, bytes: out });
     }
     console.log(`${NAME}: encoded ${p.id} (${OUTPUTS.length} files)`);
   }
 
+  // 2. Build and validate the manifest from the buffers; nothing is on disk yet.
+  const built = problems.length === 0 ? await manifestFromMemory(sidecar, encoded, problems) : null;
+  if (!built) {
+    for (const l of problems) console.log(`${NAME}: ${l}`);
+    console.log(`${NAME}: ${problems.length} problems; nothing written`);
+    process.exit(1);
+  }
+
+  // 3. Write the derivatives and the manifest.
   fs.mkdirSync(OUT_DIR, { recursive: true });
   for (const [name, out] of outputs) fs.writeFileSync(path.join(OUT_DIR, name), out);
+  fs.mkdirSync(path.dirname(MANIFEST_PATH), { recursive: true });
+  fs.writeFileSync(MANIFEST_PATH, built.text, 'utf8');
+
+  // 4. Delete stale derivatives last, once the new set and its manifest are in place.
   for (const f of outFiles()) {
     if (outputs.has(f)) continue;
     fs.unlinkSync(path.join(OUT_DIR, f));
     console.log(`${NAME}: removed stale ${OUT_REL}${f}`);
   }
-
-  const problems = [];
-  const built = await manifestFromDisk(sidecar, problems);
-  if (!built) {
-    for (const l of problems) console.log(`${NAME}: ${l}`);
-    console.log(`${NAME}: ${problems.length} problems; manifest not written`);
-    process.exit(1);
-  }
-  fs.mkdirSync(path.dirname(MANIFEST_PATH), { recursive: true });
-  fs.writeFileSync(MANIFEST_PATH, built.text, 'utf8');
   console.log(`${NAME}: wrote ${outputs.size} files to ${OUT_REL} and ${MANIFEST_REL}`);
   console.log(`${NAME}: OK`);
 }

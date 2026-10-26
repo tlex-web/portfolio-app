@@ -561,6 +561,13 @@ const cases = [
     expectOutput: ['public/images/o.jpg orientation: tag 6'],
   },
   {
+    name: 'served-images: a raw camera file under public fails as unreadable',
+    guard: SERVED,
+    args: ['--root', si('bad-raw')],
+    expectExit: 1,
+    expectOutput: ['public/images/x.dng metadata: unreadable by sharp'],
+  },
+  {
     name: 'served-images: a terrain file whose name hash does not match its bytes fails',
     guard: SERVED,
     args: ['--root', si('bad-hash-name')],

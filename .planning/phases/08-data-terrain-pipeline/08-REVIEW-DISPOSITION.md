@@ -9,15 +9,15 @@ findings:
     title: "The full-resolution originals with complete GPS EXIF are in the public repository's git history"
   - id: WR-01
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "A photo outside the DEM extent gets a clamped edge height and an out-of-band UV, with no error"
   - id: WR-02
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "`gpsOf` drops a valid latitude and longitude when `GPSAltitude` is missing"
   - id: WR-03
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "`offsetTimeOriginal` is extracted but ignored, so every capture is assumed to be in Europe/Zurich"
   - id: WR-04
     severity: warning
@@ -25,19 +25,19 @@ findings:
     title: "`formatExposureTime` prints wrong shutter speeds between 0.25 s and 1 s, and for 0"
   - id: WR-05
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "The `photos:derive` write mode is not atomic, although its header says it is"
   - id: WR-06
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Privacy guard coverage gaps: raw and HEIF formats, post-push only, narrowed ignore"
   - id: WR-07
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "`scripts/README.md` misses the `photos:build` stage, so the documented photo workflow fails CI"
   - id: WR-08
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Corrections can label a hand-typed position as an exact EXIF position"
   - id: IN-01
     severity: info
@@ -75,7 +75,7 @@ findings:
     severity: info
     disposition: open
     title: "`LegacyUrl` accepts `..`"
-open: 18
+open: 10
 total: 18
 recorded: 2026-10-24T20:22:34.612Z
 ---
@@ -85,14 +85,14 @@ recorded: 2026-10-24T20:22:34.612Z
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
 | CR-01 | critical | deferred | Accepted risk D-12 (Tim, 08-CONTEXT): history exposure at 287c2e9/347d8e1/8fa0991 accepted, no rewrite or force-push; filter-repo purge remains a separate step Tim may run. Follow-up: "never committed" wording in code/tests overstates D-09 — reword when touched. |
-| WR-01 | warning | open | - |
-| WR-02 | warning | open | - |
-| WR-03 | warning | open | - |
+| WR-01 | warning | fixed | 10-02 (Phase 10) |
+| WR-02 | warning | fixed | 10-02 (Phase 10) |
+| WR-03 | warning | fixed | 10-02 (Phase 10) |
 | WR-04 | warning | open | - |
-| WR-05 | warning | open | - |
-| WR-06 | warning | open | - |
-| WR-07 | warning | open | - |
-| WR-08 | warning | open | - |
+| WR-05 | warning | fixed | 10-02 (Phase 10) |
+| WR-06 | warning | fixed | 10-02: extensions and ignore line fixed; pre-commit hook not added (no hook tooling; CI lint is the gate) |
+| WR-07 | warning | fixed | 10-02 (Phase 10) |
+| WR-08 | warning | fixed | 10-02 (Phase 10) |
 | IN-01 | info | open | - |
 | IN-02 | info | open | - |
 | IN-03 | info | open | - |
