@@ -180,10 +180,21 @@ test.describe('Grid view (PHOTO-02, PHOTO-03, D-15)', () => {
   test('clicking the first tile opens its photo in the lightbox (LBOX-01)', async ({ page }) => {
     await page.goto('/photos?view=grid');
     const first = views[0];
-    await page.getByRole('list', { name: LIST }).getByRole('link').first().click();
-    await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
+    const tile = page.getByRole('list', { name: LIST }).getByRole('link').first();
+    // Before hydration a click is a document navigation, which is never intercepted.
+    await expect
+      .poll(
+        () => tile.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))),
+        {
+          timeout: 15000,
+        }
+      )
+      .toBe(true);
+    await tile.click();
     const dialog = page.getByRole('dialog');
-    await expect(dialog).toBeVisible();
+    // The dev server compiles the intercepted route on its first request.
+    await expect(dialog).toBeVisible({ timeout: 20000 });
+    await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
     await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(first.title);
   });
 });

@@ -272,15 +272,32 @@ test.describe('Stage states (UI-SPEC E5)', () => {
 const GRID_LIST = 'Photographs, lowest first';
 const GRID_URL = /\/photos\?view=grid$/;
 
+/**
+ * Wait until React has hydrated a link. A click on a server-rendered
+ * next/link before hydration is a plain document navigation, which is never
+ * intercepted (it would land on the full page and no dialog would open), and
+ * the dev server can take seconds to hydrate under parallel load.
+ */
+async function waitForHydration(link: import('@playwright/test').Locator) {
+  await expect
+    .poll(() => link.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))), {
+      timeout: 15000,
+    })
+    .toBe(true);
+}
+
 test.describe('Lightbox over the gallery (LBOX-01)', () => {
   const first = views[0];
 
   /** Open the first grid tile in-site and wait for the dialog. */
   async function openFirstTile(page: import('@playwright/test').Page) {
     await page.goto('/photos?view=grid');
-    await page.getByRole('list', { name: GRID_LIST }).getByRole('link').first().click();
+    const tile = page.getByRole('list', { name: GRID_LIST }).getByRole('link').first();
+    await waitForHydration(tile);
+    await tile.click();
     const dialog = page.getByRole('dialog');
-    await expect(dialog).toBeVisible();
+    // The dev server compiles the intercepted route on its first request.
+    await expect(dialog).toBeVisible({ timeout: 20000 });
     return dialog;
   }
 
@@ -291,9 +308,7 @@ test.describe('Lightbox over the gallery (LBOX-01)', () => {
     await expect(dialog.getByRole('heading', { level: 2, name: first.title })).toBeVisible();
     // The gallery stays mounted behind the dialog, inside the one shell.
     // The page behind a modal dialog is inert, so these queries include it.
-    await expect(
-      page.getByRole('list', { name: GRID_LIST, includeHidden: true })
-    ).toHaveCount(1);
+    await expect(page.getByRole('list', { name: GRID_LIST, includeHidden: true })).toHaveCount(1);
     await expect(page.getByRole('banner', { includeHidden: true })).toHaveCount(1);
     await expect(page).toHaveTitle(`${first.title} · Tim Lui`);
   });
@@ -311,9 +326,7 @@ test.describe('Lightbox over the gallery (LBOX-01)', () => {
 
     await page.reload();
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toHaveText(
-      first.title
-    );
+    await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toHaveText(first.title);
   });
 
   test('the Close photo button closes it and the URL returns to the grid', async ({ page }) => {

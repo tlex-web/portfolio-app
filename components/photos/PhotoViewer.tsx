@@ -2,8 +2,9 @@
 
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
-import { ArrowLeftIcon } from '@phosphor-icons/react/dist/ssr';
+import { ArrowLeftIcon, XIcon } from '@phosphor-icons/react/dist/ssr';
 import ExifStrip from '@/components/photos/ExifStrip';
+import { useLightbox } from '@/components/photos/LightboxDialog';
 import StagePhoto from '@/components/photos/StagePhoto';
 import type { PhotoView } from '@/lib/photos/view-model';
 
@@ -38,9 +39,16 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * referenced: no original, no download control and no right-click or drag
  * blocking (LBOX-07, T-10-03).
  *
- * The chrome groups (data-chrome-left, data-chrome-right) are filled by later
- * plans: stepping and the counter (10-06), Hide labels and Zoom (10-10,
- * 10-11), Close (10-05).
+ * The surface comes from the variant and, for the modal, from useLightbox():
+ * inside the LightboxDialog the viewer fills the dialog (h-full on key and
+ * gutter, so the size-container stage has a height), the chrome is sticky at
+ * the dialog's top on the scroll tier, and Close is the last control of the
+ * chrome's right group (accessible name 'Close photo', visible text 'Close'
+ * from 768 px), closing through router.back() (LBOX-01).
+ *
+ * The other chrome controls are filled by later plans: stepping and the
+ * counter in data-chrome-left (10-06), Hide labels and Zoom before Close in
+ * data-chrome-right (10-10, 10-11).
  */
 
 /** The stage `sizes`: the gutter tier takes 2 x 216 px from the viewport width. */
@@ -48,6 +56,10 @@ const STAGE_SIZES = '(min-width: 1280px) calc(100vw - 432px), 100vw';
 
 const BACK_LINK =
   'min-h-11 items-center gap-2 text-base font-semibold text-ink-muted hover:text-ink';
+
+/** The chrome bar buttons (10-UI-SPEC "Chrome bar"): icon-only below 768 px, icon + text from 768 px. */
+const CHROME_BUTTON =
+  'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-sm border border-line-strong text-ink hover:border-ink-muted md:px-4';
 
 export default function PhotoViewer({
   variant,
@@ -62,6 +74,7 @@ export default function PhotoViewer({
   if (!current) throw new RangeError(`PhotoViewer: no photo with slug ${initialSlug}`);
   const { aspect } = current;
   const isPage = variant === 'page';
+  const lightbox = useLightbox();
 
   const boxStyle = {
     aspectRatio: `${aspect.w} / ${aspect.h}`,
@@ -74,7 +87,7 @@ export default function PhotoViewer({
       className={
         isPage
           ? 'flex flex-col bg-gallery text-ink lb-key:h-[calc(100svh-var(--nav-h))] lb-gutter:h-[calc(100svh-var(--nav-h))]'
-          : 'flex flex-col bg-gallery text-ink'
+          : 'flex flex-col bg-gallery text-ink lb-key:h-full lb-gutter:h-full'
       }
     >
       {isPage && (
@@ -104,7 +117,19 @@ export default function PhotoViewer({
             </Link>
           )}
         </div>
-        <div data-chrome-right="" className="flex items-center gap-2" />
+        <div data-chrome-right="" className="flex items-center gap-2">
+          {lightbox && (
+            <button
+              type="button"
+              aria-label="Close photo"
+              className={CHROME_BUTTON}
+              onClick={lightbox.close}
+            >
+              <XIcon size={24} aria-hidden="true" />
+              <span className="hidden md:inline">Close</span>
+            </button>
+          )}
+        </div>
       </div>
       <div
         data-viewer-stage=""

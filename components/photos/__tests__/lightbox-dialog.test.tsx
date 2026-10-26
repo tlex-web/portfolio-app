@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import LightboxDialog, { useLightbox, type LightboxApi } from '../LightboxDialog';
+import LightboxDialog, { useLightbox } from '../LightboxDialog';
 
 /**
  * The lightbox shell in jsdom (LBOX-01; 10-RESEARCH Pitfall 11). jsdom has no
@@ -14,16 +14,17 @@ jest.mock('next/navigation', () => ({
   usePathname: () => '/photos/test',
 }));
 
-let seen: LightboxApi | null | undefined;
-
+/** Renders the title and what useLightbox() returned, as text the test can read. */
 function Probe() {
-  seen = useLightbox();
-  return <h2 id="photo-title">Test photo</h2>;
+  const api = useLightbox();
+  const shape = api ? `${typeof api.close},${typeof api.registerEscape}` : 'null';
+  return (
+    <>
+      <h2 id="photo-title">Test photo</h2>
+      <p data-testid="lightbox-api">{shape}</p>
+    </>
+  );
 }
-
-beforeEach(() => {
-  seen = undefined;
-});
 
 describe('LightboxDialog', () => {
   it('renders a dialog labelled by the photo title, open after mount', () => {
@@ -40,7 +41,7 @@ describe('LightboxDialog', () => {
 
   it('useLightbox() is null outside the dialog', () => {
     render(<Probe />);
-    expect(seen).toBeNull();
+    expect(screen.getByTestId('lightbox-api')).toHaveTextContent('null');
   });
 
   it('useLightbox() gives close and registerEscape inside the dialog', () => {
@@ -49,9 +50,7 @@ describe('LightboxDialog', () => {
         <Probe />
       </LightboxDialog>
     );
-    expect(seen).not.toBeNull();
-    expect(typeof seen?.close).toBe('function');
-    expect(typeof seen?.registerEscape).toBe('function');
+    expect(screen.getByTestId('lightbox-api')).toHaveTextContent('function,function');
   });
 
   it('locks the page scroll while open and restores it on unmount', () => {

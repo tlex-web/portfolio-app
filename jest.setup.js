@@ -38,4 +38,22 @@ if (typeof window !== 'undefined') {
   if (typeof global.IntersectionObserver === 'undefined') {
     global.IntersectionObserver = MockIntersectionObserver;
   }
+
+  // jsdom 26.1 has no HTMLDialogElement.showModal / close (10-RESEARCH
+  // Pitfall 11). The stubs only toggle the open attribute and fire 'close';
+  // focus, Escape and the trap are tested in Playwright.
+  if (typeof HTMLDialogElement !== 'undefined') {
+    if (typeof HTMLDialogElement.prototype.showModal !== 'function') {
+      HTMLDialogElement.prototype.showModal = function showModal() {
+        this.setAttribute('open', '');
+      };
+    }
+    if (typeof HTMLDialogElement.prototype.close !== 'function') {
+      HTMLDialogElement.prototype.close = function close() {
+        if (!this.hasAttribute('open')) return;
+        this.removeAttribute('open');
+        this.dispatchEvent(new Event('close'));
+      };
+    }
+  }
 }
