@@ -603,18 +603,18 @@ const cases = [
     expectOutput: ['scripts/photos/x.mjs metadata-call: line 2 calls .withMetadata()'],
   },
   {
-    name: 'contrast: the real app/globals.css passes all 32 pairs (28 UI-SPEC + 4 accent-strong) in table order',
+    name: 'contrast: the real app/globals.css passes all 36 pairs (28 UI-SPEC + 4 accent-strong + 4 gallery) in table order',
     guard: CONTRAST,
     args: ['--css', path.join(repoRoot, 'app', 'globals.css')],
     expectExit: 0,
-    expectOutput: ['ink/surface 16.03 4.5 PASS', 'danger/surface-raised 6.74 4.5 PASS', 'line-strong/surface-overlay 4.17 3 PASS', 'ink-inverse/accent-strong 7.40 4.5 PASS', 'accent-strong/surface-overlay 6.37 3 PASS', 'contrast: OK (32 pairs)'],
+    expectOutput: ['ink/surface 16.03 4.5 PASS', 'danger/surface-raised 6.74 4.5 PASS', 'line-strong/surface-overlay 4.17 3 PASS', 'ink-inverse/accent-strong 7.40 4.5 PASS', 'accent-strong/surface-overlay 6.37 3 PASS', 'accent/gallery 11.88 4.5 PASS', 'line-strong/gallery 5.10 3 PASS', 'contrast: OK (36 pairs)'],
   },
   {
     name: 'contrast: a pair exactly at 4.5:1 passes (inclusive raw-float threshold)',
     guard: CONTRAST,
     args: ['--css', con('at-threshold.css')],
     expectExit: 0,
-    expectOutput: ['ink-muted/surface 4.50 4.5 PASS', 'ink-muted/surface-overlay 4.50 4.5 PASS', 'contrast: OK (32 pairs)'],
+    expectOutput: ['ink-muted/surface 4.50 4.5 PASS', 'ink-muted/surface-overlay 4.50 4.5 PASS', 'contrast: OK (36 pairs)'],
   },
   {
     name: 'contrast: a pair 0.01 below 4.5:1 fails',

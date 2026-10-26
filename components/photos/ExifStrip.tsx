@@ -10,7 +10,11 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * in the lightbox), place · date, the story, then the data column: the EXIF
  * list (or 'Film scan · 2019'), the altitude and position list, and the
  * rights line last. Rows 4 (hotspot key) and 8 (shortcut legend) arrive in
- * 10-11; the two-column tiers in 10-03.
+ * 10-11. On the scroll tier the two blocks stack in one column; on the key and
+ * gutter tiers (lb-key, lb-gutter) they sit side by side in a 3fr / 2fr grid
+ * with a 32 px gap: identity and story left, data right. At 1440 the 420 px
+ * right column holds EXIF line 1 and the approximate position line on one
+ * line each; narrower, they wrap at ' · ' only. Nothing truncates.
  *
  * Every value comes from view.strip, which already left out anything missing
  * (D-07), so nothing here prints '—', 'unknown', 'undefined', 'null' or 'NaN',
@@ -68,9 +72,9 @@ export default function ExifStrip({
   if (strip.approxNote) positionRows.push({ key: 'approx', value: strip.approxNote });
 
   return (
-    <div className="border-t border-line bg-gallery py-4">
-      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div>
+    <div data-photo-strip="" className="shrink-0 border-t border-line bg-gallery py-4">
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 lb-key:grid lb-key:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lb-key:gap-x-8 lb-gutter:grid lb-gutter:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lb-gutter:gap-x-8">
+        <div data-strip-identity="">
           <Title
             id={headingLevel === 2 ? 'photo-title' : undefined}
             className="font-display text-heading font-semibold text-ink"
@@ -86,7 +90,7 @@ export default function ExifStrip({
           </p>
           <p className="mt-2 max-w-prose text-base text-ink-muted">{story}</p>
         </div>
-        <div className="mt-4">
+        <div data-strip-data="" className="mt-4 lb-key:mt-0 lb-gutter:mt-0">
           {strip.filmLine && (
             <p data-strip-film="" className="font-mono text-sm text-ink tabular-nums">
               {strip.filmLine}

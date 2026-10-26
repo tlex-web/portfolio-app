@@ -300,6 +300,31 @@ html {
   }
 }
 
+/* Lightbox layout tiers (D-05, D-11; 10-UI-SPEC "Layout tiers"). The strings come
+   from LB_SCROLL_MEDIA, LB_KEY_MEDIA and LB_GUTTER_MEDIA in
+   lib/photos/lightbox-tiers.ts, and a Jest guard (lib/__tests__/lightbox-tiers.test.ts)
+   fails if they drift. lb-scroll: below 768 px wide or 640 px tall, the viewer
+   scrolls as one column. lb-key: 768 to below 1280 px wide, a fixed viewer with a
+   two-column strip. lb-gutter: from 1280 px wide, as key plus a 216 px hotspot
+   gutter on each side of the photo. The three are mutually exclusive. */
+@custom-variant lb-scroll {
+  @media (width < 48rem), (height < 40rem) {
+    @slot;
+  }
+}
+
+@custom-variant lb-key {
+  @media (48rem <= width < 80rem) and (height >= 40rem) {
+    @slot;
+  }
+}
+
+@custom-variant lb-gutter {
+  @media (width >= 80rem) and (height >= 40rem) {
+    @slot;
+  }
+}
+
 /* The only way to paint trail yellow (09-UI-SPEC "Trail yellow"). Phase 9 uses it
    on the decorative trail-sign tip only */
 @utility bg-trail {

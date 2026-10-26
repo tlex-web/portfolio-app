@@ -71,7 +71,7 @@ The ratchet only goes down: a higher count fails, a lower count fails until `--u
 
 ### `check-contrast.mjs` (GUARD-05)
 
-Reads every token from `app/globals.css` (`:root` and all `@theme` blocks), resolves `var()` chains and measures 32 pairs (the 28 UI-SPEC pairs plus 4 `accent-strong` pairs) with `colorjs.io` (`contrast(…, 'WCAG21')`): text pairs need 4.5:1, non-text pairs (focus, line-strong) 3:1, compared as raw floats. An unknown `--color-*` token, a missing pair token, an alpha token in a measured pair or a file without token blocks fails. v1 alias tokens are skipped; `line` and `contour` are decorative and exempt. Adding a semantic token means adding it and its pairs to the script in the same commit.
+Reads every token from `app/globals.css` (`:root` and all `@theme` blocks), resolves `var()` chains and measures 36 pairs (the 28 UI-SPEC pairs, 4 `accent-strong` pairs and the 4 photo-viewer `gallery` pairs: `accent`/`gallery`, `gallery`/`ink`, `focus`/`gallery`, `line-strong`/`gallery`) with `colorjs.io` (`contrast(…, 'WCAG21')`): text pairs need 4.5:1, non-text pairs (focus, line-strong) 3:1, compared as raw floats. An unknown `--color-*` token, a missing pair token, an alpha token in a measured pair or a file without token blocks fails. v1 alias tokens are skipped; `line` and `contour` are decorative and exempt. Adding a semantic token means adding it and its pairs to the script in the same commit.
 
 ```bash
 npm run guard:contrast
