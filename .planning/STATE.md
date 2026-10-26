@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 10
 current_phase_name: Photography
 status: executing
-stopped_at: Completed 10-04-PLAN.md
-last_updated: "2026-10-26T11:23:24.085Z"
+stopped_at: Completed 10-05-PLAN.md
+last_updated: "2026-10-26T12:01:08.834Z"
 last_activity: 2026-10-26
 last_activity_desc: Phase 10 execution started
-state_head: c96bdb398ef1cac9ffda5e2e071f3acdf7cff40e
+state_head: ee1ec2ac8138e0f3a742c557b1ed9ae923c955be
 progress:
   total_phases: 6
   completed_phases: 9
   total_plans: 75
-  completed_plans: 66
-  percent: 88
+  completed_plans: 67
+  percent: 89
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-25)
 ## Current Position
 
 Phase: 10 (Photography) — EXECUTING
-Plan: 5 of 13
+Plan: 6 of 13
 Status: Ready to execute
 Last activity: 2026-10-26 — Phase 10 execution started
 
-Progress: [█████████░] 88%
+Progress: [█████████░] 89%
 
 ## Performance Metrics
 
@@ -122,6 +122,7 @@ Progress: [█████████░] 88%
 | Phase 10 P02 | 10 min | 2 tasks | 11 files |
 | Phase 10 P03 | 20 min | 2 tasks | 10 files |
 | Phase 10 P04 | 10 min | 2 tasks | 8 files |
+| Phase 10 P05 | 34 min | 3 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -293,6 +294,10 @@ Recent decisions affecting current work:
 - [Phase 10]: 10-04: grid --row-h is 224 px from 640 px and 280 px from 1024 px (Tim: "Accept 224/280 (Recommended)"); e2e confirms two rows of two at 768 and 1440 (7dd8760)
 - [Phase 10]: 10-04: JustifiedGrid is a hook-free Server Component; tiles are a[data-photo-id][scroll=false] slide mounts with [data-tile-box] aspect-ratio boxes and [data-caption-part] nowrap caption parts; /photos?view=grid mounts it, map/carousel keep the legacy gallery until 10-07/10-08 (7dd8760)
 - [Phase 10]: 10-04: lib/photos/justify.ts exports flexLines (flex-wrap line model) alongside justifyTile/rowHeights; the grid view container carries the UI-SPEC header-to-view pt-6 (4fa61c1, 7dd8760)
+- [Phase 10]: 10-05: the lightbox handles Escape and Tab on a document keydown listener (not the dialog's onKeyDown), so presses are caught wherever focus sits
+- [Phase 10]: 10-05: close() calls router.back() at most once per lightbox instance, so a repeated Escape cannot go back past the gallery
+- [Phase 10]: 10-05: the modal viewer is h-full on the key and gutter tiers; a height-less size-container stage would leave the photo box 0 px wide
+- [Phase 10]: 10-05: local Playwright WebKit cannot load scripts because proxy.ts's CSP upgrade-insecure-requests applies to localhost; deferred (security-header change), Safari Tab wrap stays a UAT item
 
 ### Pending Todos
 
@@ -332,6 +337,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-26T11:23:23.490Z
-Stopped at: Completed 10-04-PLAN.md
+Last session: 2026-10-26T12:01:08.236Z
+Stopped at: Completed 10-05-PLAN.md
 Resume file: None
