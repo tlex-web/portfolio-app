@@ -812,3 +812,233 @@ test.describe('Zoom (D-06)', () => {
     expect(await cursor()).toBe('grab');
   });
 });
+
+test.describe('Hotspots (LBOX-05)', () => {
+  const trail = views.findIndex((v) => v.id === 'img-0662');
+  const lake = views.find((v) => v.id === 'r004-011')!;
+  const labels = (scope: Page | Locator) => scope.locator('[data-hotspot-label]');
+  const markers = (scope: Page | Locator) => scope.locator('[data-hotspot-marker]');
+  const hideLabels = (scope: Page | Locator) =>
+    scope.getByRole('button', { name: 'Hide labels', exact: true });
+  const zoomButton = (scope: Page | Locator) =>
+    scope.getByRole('button', { name: 'Zoom photo', exact: true });
+
+  /** Open the Glacier Trail photo (two hotspots) in the lightbox at the given size. */
+  async function openTrail(page: Page, width = 1440, height = 900) {
+    expect(trail).toBeGreaterThanOrEqual(0);
+    await page.setViewportSize({ width, height });
+    await page.goto('/photos?view=grid');
+    return clickTile(page, trail);
+  }
+
+  /** Load a photo page and wait until its key listeners are attached (they follow hydration). */
+  async function loadPage(page: Page, slug: string) {
+    await page.goto(`/photos/${slug}`);
+    const button = hideLabels(page.getByRole('main'));
+    await waitForHydration(button);
+    await page.waitForLoadState('load');
+    return button;
+  }
+
+  test('gutter tier: Enter expands a label, Escape collapses it to the label, then closes', async ({
+    page,
+  }) => {
+    const dialog = await openTrail(page);
+    await expect(labels(dialog)).toHaveCount(2);
+    const first = labels(dialog).first();
+    await expect(first).toBeVisible();
+    await expect(first).toHaveAttribute('aria-expanded', 'false');
+    await expect(labels(dialog).nth(1)).toHaveAttribute('aria-expanded', 'false');
+
+    await first.focus();
+    await page.keyboard.press('Enter');
+    await expect(first).toHaveAttribute('aria-expanded', 'true');
+    const link = dialog.getByRole('link', { name: 'Wikipedia (opens in a new tab)' }).first();
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute('target', '_blank');
+    await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    // The panel sits in the gutter, never over the photo.
+    const panel = dialog.locator(`[id="${await first.getAttribute('aria-controls')}"]`);
+    const box = (await dialog.locator('[data-photo-box]').boundingBox())!;
+    const panelBox = (await panel.boundingBox())!;
+    expect(panelBox.x).toBeGreaterThanOrEqual(box.x + box.width);
+
+    // From inside the panel, Escape collapses it and focus returns to its label.
+    await link.focus();
+    await page.keyboard.press('Escape');
+    await expect(first).toHaveAttribute('aria-expanded', 'false');
+    await expect(first).toBeFocused();
+    await expect(page.getByRole('dialog')).toHaveCount(1);
+
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
+
+  test('from zoomed with a callout open, Escape unwinds callout, then zoom, then close', async ({
+    page,
+  }) => {
+    const dialog = await openTrail(page);
+    const first = labels(dialog).first();
+    await first.click();
+    await expect(first).toHaveAttribute('aria-expanded', 'true');
+    await page.keyboard.press('z');
+    await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'true');
+    // Hotspots hide while zoomed (D-06).
+    await expect(labels(dialog)).toHaveCount(0);
+    await expect(markers(dialog)).toHaveCount(0);
+
+    await page.keyboard.press('Escape');
+    await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'true');
+    await page.keyboard.press('Escape');
+    await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'false');
+    await expect(labels(dialog).first()).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.getByRole('dialog')).toHaveCount(1);
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
+
+  test('a step collapses the open callout', async ({ page }) => {
+    const dialog = await openTrail(page);
+    await labels(dialog).first().click();
+    await expect(labels(dialog).first()).toHaveAttribute('aria-expanded', 'true');
+    await dialog.getByRole('button', { name: 'Previous photo', exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/photos/${views[trail - 1].slug}$`));
+    await dialog.getByRole('button', { name: 'Next photo', exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/photos/${views[trail].slug}$`));
+    await expect(labels(dialog)).toHaveCount(2);
+    for (const label of await labels(dialog).all()) {
+      await expect(label).toHaveAttribute('aria-expanded', 'false');
+    }
+  });
+
+  test('H hides every label and marker, and the choice survives a reload', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const slug = views[trail].slug;
+    const button = await loadPage(page, slug);
+    await expect(button).toHaveAttribute('aria-pressed', 'false');
+    await expect(button).toHaveAttribute('aria-keyshortcuts', 'h');
+    await expect(labels(page)).toHaveCount(2);
+    await expect(markers(page).first()).toBeVisible();
+    await expect(async () => {
+      await page.keyboard.press('h');
+      await expect(button).toHaveAttribute('aria-pressed', 'true', { timeout: 2000 });
+    }).toPass({ timeout: 15000 });
+    await expect(labels(page)).toHaveCount(0);
+    await expect(markers(page)).toHaveCount(0);
+    await expect(page.locator('[data-hotspot-leader]')).toHaveCount(0);
+    expect(await page.evaluate(() => window.localStorage.getItem('photos.labels'))).toBe('off');
+
+    await page.reload();
+    const again = hideLabels(page.getByRole('main'));
+    await waitForHydration(again);
+    await expect(again).toHaveAttribute('aria-pressed', 'true');
+    await expect(labels(page)).toHaveCount(0);
+
+    // Toggling back returns to the original state.
+    await again.click();
+    await expect(again).toHaveAttribute('aria-pressed', 'false');
+    await expect(labels(page)).toHaveCount(2);
+  });
+
+  test('with localStorage throwing, labels show and H still toggles for the visit', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      const blocked = () => {
+        throw new DOMException('blocked', 'SecurityError');
+      };
+      Storage.prototype.getItem = blocked;
+      Storage.prototype.setItem = blocked;
+    });
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const button = await loadPage(page, views[trail].slug);
+    await expect(button).toHaveAttribute('aria-pressed', 'false');
+    await expect(labels(page)).toHaveCount(2);
+    await expect(async () => {
+      await page.keyboard.press('h');
+      await expect(button).toHaveAttribute('aria-pressed', 'true', { timeout: 2000 });
+    }).toPass({ timeout: 15000 });
+    await expect(labels(page)).toHaveCount(0);
+    await page.keyboard.press('h');
+    await expect(button).toHaveAttribute('aria-pressed', 'false');
+    await expect(labels(page)).toHaveCount(2);
+    expect(errors).toEqual([]);
+  });
+
+  test('key tier: numbered dots and the Labels key; a dot expands its key row in accent', async ({
+    page,
+  }) => {
+    const dialog = await openTrail(page, 1024, 768);
+    const dots = dialog.locator('[data-hotspot-dot]');
+    await expect(dots).toHaveCount(2);
+    await expect(dots.first()).toBeVisible();
+    await expect(labels(dialog).first()).toBeHidden();
+    const key = dialog.getByRole('list', { name: 'Labels' });
+    await expect(key).toBeVisible();
+    const rows = key.getByRole('button');
+    await expect(rows).toHaveCount(2);
+
+    await dots.nth(1).click();
+    await expect(rows.nth(1)).toHaveAttribute('aria-expanded', 'true');
+    await expect(rows.nth(0)).toHaveAttribute('aria-expanded', 'false');
+    await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'false');
+    const accent = await page.evaluate(() => {
+      const probe = document.createElement('span');
+      probe.className = 'bg-accent';
+      document.body.append(probe);
+      const colour = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      return colour;
+    });
+    const fill = (i: number) =>
+      dots
+        .nth(i)
+        .locator('span')
+        .first()
+        .evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(await fill(1)).toBe(accent);
+    expect(await fill(0)).not.toBe(accent);
+  });
+
+  test("the lake reads 'Riffelsee' with '2,760 m approx.' (IN-02)", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/photos/${lake.slug}`);
+    const label = labels(page).filter({ hasText: 'Riffelsee' });
+    await expect(label).toBeVisible();
+    await expect(label).toContainText(`2,760${NBSP}m approx.`);
+  });
+
+  test('at 375 the chrome groups fit 343 px and nothing overflows sideways', async ({ page }) => {
+    const dialog = await openTrail(page, 375, 800);
+    const left = (await dialog.locator('[data-chrome-left]').boundingBox())!;
+    const right = (await dialog.locator('[data-chrome-right]').boundingBox())!;
+    expect(left.width + 8 + right.width).toBeLessThanOrEqual(343);
+    expect(right.x + right.width).toBeLessThanOrEqual(375 - 16 + 0.5);
+    await expect(hideLabels(dialog)).toBeVisible();
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+
+  test('the strip legend shows its keys on a fine pointer from 768 px, not at 375', async ({
+    page,
+  }) => {
+    const dialog = await openTrail(page);
+    const legend = dialog.locator('[data-strip-legend]');
+    await expect(legend).toBeVisible();
+    await expect(legend.locator('kbd')).toHaveCount(5);
+    await expect(legend).toHaveText('← → photos · Z zoom · H labels · Esc close');
+
+    await page.setViewportSize({ width: 375, height: 800 });
+    await expect(legend).toBeHidden();
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/photos/${views[trail].slug}`);
+    await expect(page.locator('[data-strip-legend]')).toHaveText(
+      '← → photos · Z zoom · H labels · Esc all photographs'
+    );
+  });
+});
