@@ -4,18 +4,18 @@ milestone: v2.0
 milestone_name: Topographic Identity
 current_phase: 10
 current_phase_name: Photography
-status: executing
-stopped_at: Completed 10-12-PLAN.md
-last_updated: "2026-10-26T15:50:26.179Z"
+status: verifying
+stopped_at: Completed 10-13-PLAN.md
+last_updated: "2026-10-26T17:47:12.131Z"
 last_activity: 2026-10-26
 last_activity_desc: Phase 10 execution started
-state_head: efd4ad4c7d068fe8a92eb66c674becbc4fc5a56c
+state_head: 0c8e3812894e4c7f4a949feafbc1aa5eabd1bc7f
 progress:
   total_phases: 6
   completed_phases: 9
   total_plans: 75
-  completed_plans: 74
-  percent: 99
+  completed_plans: 75
+  percent: 100
 ---
 
 # Project State
@@ -31,10 +31,10 @@ See: .planning/PROJECT.md (updated 2026-10-25)
 
 Phase: 10 (Photography) — EXECUTING
 Plan: 13 of 13
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-10-26 — Phase 10 execution started
 
-Progress: [█████████░] 99%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -130,6 +130,7 @@ Progress: [█████████░] 99%
 | Phase 10 P09 | 25 min | 2 tasks | 20 files |
 | Phase 10 P11 | 29 min | 2 tasks | 13 files |
 | Phase 10 P12 | 18 min | 2 tasks | 4 files |
+| Phase 10 P13 | 1h 52m | 3 tasks | 23 files |
 
 ## Accumulated Context
 
@@ -331,11 +332,15 @@ Recent decisions affecting current work:
 - [Phase 10]: 10-11: the callout Escape layer runs before zoom: registerEscape from PhotoViewer in the lightbox (newest layer), a window capture listener on the page; photo-ref heights reuse altitudeLabel (IN-02)
 - [Phase 10]: 10-12: visual settle() awaits only rendered images (img.complete or no layout box); the map's hidden lazy hover previews hung every /photos shot since 10-08
 - [Phase 10]: 10-12: the visual matrix is 48 per scheme: photos-grid, photos-carousel (stepper), photo (film scan) and lightbox shots added for the one 10-13 re-baseline
+- [Phase 10]: 10-13: wide map plate 240 -> 256 px (w-64, PLATE_WIDE 256 x 48) with nowrap title (wide tier) and altitude, an approved UI-SPEC deviation (Tim: 'A: widen + nowrap (Recommended)'); the Linux CI render of the longest title wrapped inside the old 224 px content box (487e113)
+- [Phase 10]: 10-13: zoomed-photo drag prevention (10-10) kept as a recorded exception to UI-SPEC line 393 / LBOX-07 (Tim: 'Keep, record exception (Recommended)'); map plate clearance stays a 16 px dot square (Tim: '16 px, as built (Recommended)')
+- [Phase 10]: 10-13: Phase 10 re-baseline in Tim's commit 483895b (3 changed photos/*, 12 new; reply 'pushed', no review notes); CI green twice on it (run 40367226761 attempts 1 and 2); test-count ratchet raised to jest 942 / e2e 358 / total 1300
 
 ### Pending Todos
 
+- [Deploy, from 10-13] The service worker serves cached HTML stale-while-revalidate, so a returning visitor may see the old /photos (legacy gallery) once after the Phase 10 deploy. Check /photos after one reload on the production build.
 - [Consumers migrated by 10-09 (aa9dff6): data/landscapes.ts and the v1 photo UI are deleted, and a Jest guard (lib/__tests__/photos-view-model.test.ts) fails if any app, components or lib file reads a manifest `.legacy` path] Legacy image variants (-thumb/-medium/-large, 60 files) are still on disk and in the manifest's `legacy` entries. Delete them in Phase 12 (VERIFY-01) (code review IN-08).
-- [Phase 10, from 08-11; CODE RESOLVED: 10-04 rewrote GalleryGrid.test.tsx against JustifiedGrid (no badge) and 10-09 deleted components/GalleryGrid.tsx; only the photos/* re-baseline through the gh flow remains, Tim commits the PNGs] The /photos grid badge reads "1 hotspots": `components/GalleryGrid.tsx:60` always prints `{n} hotspots` and `components/__tests__/GalleryGrid.test.tsx:83` asserts the literal '1 hotspots'. Two photos have one hotspot since the 08-10 copy, so the photos/* baselines (c0f2418) show it. Tim committed those baselines as-is (option A by action), so fix the plural, update the test and re-baseline photos/* in the Phase 10 GalleryGrid rebuild.
+- [Phase 10, from 08-11; RESOLVED 2026-10-26: 10-04 rewrote GalleryGrid.test.tsx against JustifiedGrid (no badge), 10-09 deleted components/GalleryGrid.tsx, and Tim re-baselined photos/* in 483895b (10-13, reply "pushed")] The /photos grid badge reads "1 hotspots": `components/GalleryGrid.tsx:60` always prints `{n} hotspots` and `components/__tests__/GalleryGrid.test.tsx:83` asserts the literal '1 hotspots'. Two photos have one hotspot since the 08-10 copy, so the photos/* baselines (c0f2418) show it. Tim committed those baselines as-is (option A by action), so fix the plural, update the test and re-baseline photos/* in the Phase 10 GalleryGrid rebuild.
 - [Phase 12, from 08-13] Firefox 1 px stroke check for the footer contour band (08-13 Task 1 step 6, RESEARCH A2) was NOT reported by Tim (his only reply was "pushed"). Open the local production build (`npm run build && npm run start`, then `git checkout -- public/service-worker.js`) in Firefox (and Safari if available) and record whether the band's lines read as 1 px strokes; carry any difference into the Phase 12 cross-browser pass.
 - [Phase 7, from 07-11; RESOLVED 2026-10-25 at 09-13: Tim answered "Commit it" ("Track it, so the tree stays clean and agents get the Next.js warning."); AGENTS.md tracked unedited in c4d00d0] Open item for Tim: `next dev` created an untracked `AGENTS.md` at the repo root. It is left untracked; Tim decides whether to keep and commit it, gitignore it, or delete it.
 
@@ -343,7 +348,7 @@ Recent decisions affecting current work:
 
 - [Phase 11] Needs from Tim: CLI_X per-grade content and Medium/Critical demo commands with `riskScore` (not supplied at 08-03, where they were optional), metric sources, roadmap order and dates.
 - [Phase 11, from 08-03; answered by Tim 2026-10-25 at 09-13: "Leave for Phase 11" ("Keep it open; the Phase 11 Engineering/CLI_X rework rewrites demo content anyway.")] Demo command 4 (`pkill -f chrome`) is riskLevel `critical` (score 0.87) and shows a CRITICAL RISK badge, but its explanation in `data/projects.ts` still reads "High-risk operation - requires explicit confirmation". The fix moves to the Phase 11 Engineering/CLI_X rework; it is no longer an open question. data/projects.ts stays unchanged until then (code review IN-07).
-- [Phase 10, from 08 code review; MOSTLY RESOLVED 2026-10-26: WR-04 fixed in code by 10-01 (6bb5fb6); WR-01, WR-02, WR-03, WR-05, WR-06 (hook part accepted), WR-07 and WR-08 fixed and recorded by 10-02 (ae5cf28, 9e3db72); WR-04 and IN-02 disposition rows still open, recorded by 10-13] 08-REVIEW-DISPOSITION.md has 8 open warnings, latent for the current four photos: WR-01 out-of-extent photo gets clamped height and UV outside 0–1; WR-02 `gpsOf` drops lat/lon when GPSAltitude is missing; WR-03 offsetTimeOriginal ignored (Europe/Zurich assumed); WR-04 `formatExposureTime` wrong for 0.25–1 s and 0; WR-05 `photos:derive` write mode not atomic; WR-06 guard skips HEIF/raw formats and `.gitignore` lost the `public/images/landscapes/` line; WR-07 scripts/README.md omits `photos:build`; WR-08 corrections can claim `source: exif` for a hand-typed position. Fold into the first Phase 9/10 plan that adds photo data or surfaces (or run `/gsd-code-review 08 --fix`). Also IN-02: the legacy bridge drops `position.approximate` (footer unaffected; Phase 10 must carry it). [IN-02 code RESOLVED by 10-09: the bridge is deleted and the view-model carries `approximate` (altitudeLabel, strip ≈ and approx note); the disposition row stays for 10-13.]
+- [Phase 10, from 08 code review; RESOLVED 2026-10-26: WR-04 fixed in code by 10-01 (6bb5fb6); WR-01, WR-02, WR-03, WR-05, WR-06 (hook part accepted), WR-07 and WR-08 fixed and recorded by 10-02 (ae5cf28, 9e3db72); WR-04 and IN-02 rows recorded fixed by 10-13 (b73b101), 08-REVIEW-DISPOSITION open 10 -> 8 (CR-01 deferred and IN-01, IN-03..IN-09 remain)] 08-REVIEW-DISPOSITION.md has 8 open warnings, latent for the current four photos: WR-01 out-of-extent photo gets clamped height and UV outside 0–1; WR-02 `gpsOf` drops lat/lon when GPSAltitude is missing; WR-03 offsetTimeOriginal ignored (Europe/Zurich assumed); WR-04 `formatExposureTime` wrong for 0.25–1 s and 0; WR-05 `photos:derive` write mode not atomic; WR-06 guard skips HEIF/raw formats and `.gitignore` lost the `public/images/landscapes/` line; WR-07 scripts/README.md omits `photos:build`; WR-08 corrections can claim `source: exif` for a hand-typed position. Fold into the first Phase 9/10 plan that adds photo data or surfaces (or run `/gsd-code-review 08 --fix`). Also IN-02: the legacy bridge drops `position.approximate` (footer unaffected; Phase 10 must carry it). [IN-02 code RESOLVED by 10-09: the bridge is deleted and the view-model carries `approximate` (altitudeLabel, strip ≈ and approx note); the disposition row stays for 10-13.]
 - [Phase 7; RESOLVED at Phase 07 UAT 2026-10-24, test 3: Tim confirmed the three jobs are Required on main] Required status checks (Visual Regression, Lint and Type Check, Unit Tests) on main are not set yet; until Tim sets them a red visual job does not block merges (07-USER-SETUP.md)
 - [Phase 7] main (Vercel production) lacks the Next 16.4.2 / sharp 0.35.5 security patch until Tim merges gsd/phase-07-foundation-guardrails; GitHub reported 84 Dependabot alerts on the default branch (9 critical). Merge recommended soon. Phase 8 lives on gsd/phase-08-data-terrain-pipeline, stacked on the unmerged Phase 7 tip (39836df) by Tim's choice, so merge Phase 7 first; until Phase 7 is on origin/main, worktree base-check degrades every phase to sequential execution.
 - [Phase 7, from 07-10; RESOLVED by 09-02: `components/Hero3DMountain.tsx` deleted with the Home rebuild] Hero badge `components/Hero3DMountain.tsx:73` (text-snow-50 on from-frost-500 to-frost-600, 18px semibold = not large text) is now 1.42-2.17:1 after the locked v1->v2 alias map (v1 was 2.10-2.93:1, also failing). No Phase 7 plan fixes it explicitly: catch it in the 07-20 contrast guard or the Phase 9 hero rework
@@ -354,10 +359,10 @@ Recent decisions affecting current work:
 - [Phase 7, from 07-15, for 07-20; RESOLVED by 07-20 (9656640): `@source not` for ../.planning, ../.claude, ../graphify-out and ../scripts; compiled CSS now has 0 dark and 0 stock selectors] Add `@source not` for `.planning` and `.claude` in app/globals.css before any compiled-CSS guard: Tailwind v4 source detection reads tracked Markdown (.planning/milestones/v1.0-phases/04-design-components/04-03-PLAN.md, 04-05-PLAN.md, 04-RESEARCH.md, .claude/skills/ui-styling/references/shadcn-theming.md), so the compiled CSS (.next/static/chunks/*.css) still has 41 phantom :where(.dark,.dark *) selectors (e.g. dark:scale-0, dark:-rotate-90, dark:group-hover:text-cyan-400) and dead stock classes (07-09's .to-amber-500) that no code uses. No visual effect, but a palette or dark: guard over the compiled CSS would count them
 - [Phase 7, from 07-16, for 07-24; RESOLVED by 07-24 (c9aac91): Contact page.tsx has no whileHover, rgba(, rotate, shadow-* or backdrop-blur left; the info cards are solid panels with no hover glow] app/contact/page.tsx:67/93/119 keep hue-coloured hover glows as inline motion props (whileHover boxShadow rgba(6,182,212,0.3), rgba(59,130,246,0.3), rgba(168,85,247,0.3)); they are not classes, so the stock-palette grep and a class-based palette guard miss them. Move them to tokens or drop them in the 07-24 Contact interim restyle
 - [Phase 9/12, from 07-18] Colours the class grep cannot see stay in the Projects group: components/HologramTerminal.tsx keeps Three.js material/light hex (L26-330) and a <style jsx global> block with rgba/hex (L368-486, incl. the .hologram-content navy panel the terminal demo text sits on), out of scope until Phase 9 (UI-SPEC v2-only rule); a class-based palette guard misses them. components/ProjectDetailClient.tsx's 4 v1 aliases were codemodded to v2 names in 08-05 (RESOLVED; no live v1 names remain, enforced by the widened v1names guard)
-- [Phase 10, from 07-19, unverified; MOSTLY RESOLVED by 10-09 (aa9dff6): components/ImageDetailModal.tsx (bg-opacity classes), the legacy components/PhotoCarousel3D.tsx (inline hex, text-snow-200) and the legacy grid/3D toggle (PhotosPageClient) are deleted; the removeChild error was never reproduced and its toggle no longer exists] During the local e2e/photos.spec.ts run the dev server logged three deprecation warnings and a React 'removeChild ... not a child' console error on the /photos grid/3D toggle; the tests pass. Class-string edits cannot cause a DOM removal error, so it very likely predates 07-19, but it was not checked at HEAD~1 and CI E2E logs do not capture the browser console. Reproduce and fix in the Phase 10 photos/lightbox rework. Also for Phase 10: components/ImageDetailModal.tsx L46/L60 use Tailwind v3 bg-opacity-* classes that Tailwind 4.3 does not generate, so the modal backdrop and close button render fully opaque (pre-existing); components/PhotoCarousel3D.tsx keeps Three.js inline hex (L75, L215, L264, L265, L268 fog) and the v1 alias text-snow-200 (L183)
+- [Phase 10, from 07-19; RESOLVED 2026-10-26: 10-07 (ee46a53) rebuilt the 3D carousel without drei Html or a window key listener, 10-09 (aa9dff6) deleted components/ImageDetailModal.tsx (bg-opacity classes), the legacy components/PhotoCarousel3D.tsx (inline hex, text-snow-200) and the legacy grid/3D toggle (PhotosPageClient), and the 10-12 (ebe0569) console assertion across view switches passes locally and in CI E2E; recorded in the 09 deferred-items by 10-13] During the local e2e/photos.spec.ts run the dev server logged three deprecation warnings and a React 'removeChild ... not a child' console error on the /photos grid/3D toggle; the tests pass. Class-string edits cannot cause a DOM removal error, so it very likely predates 07-19, but it was not checked at HEAD~1 and CI E2E logs do not capture the browser console. Reproduce and fix in the Phase 10 photos/lightbox rework. Also for Phase 10: components/ImageDetailModal.tsx L46/L60 use Tailwind v3 bg-opacity-* classes that Tailwind 4.3 does not generate, so the modal backdrop and close button render fully opaque (pre-existing); components/PhotoCarousel3D.tsx keeps Three.js inline hex (L75, L215, L264, L265, L268 fog) and the v1 alias text-snow-200 (L183)
 - [Phase 9, from 07-22; RESOLVED by 09-01/09-02: the legacy cards are gone and 09-02's no-JavaScript test at 375 px asserts scrollWidth <= clientWidth] Home overflows horizontally before its v1 whileInView animations fire: a 'Programming Projects' card starts at initial x: 50, so unsettled scrollWidth is 399 at 375 px and 784 at 768 px (passes only after settling). Real for visitors who have not scrolled yet; the Phase 9 Home rebuild must not translate content past the viewport edge (or clip it)
 - [Phase 12 / EDGE-01, from 07-23, pre-existing] notFound() inside /projects/[slug] returns HTTP 404 but the server HTML is an empty <html id="__next_error__">; the shell and 404 UI render client-side from the RSC payload (same with app/(site)/not-found.tsx removed), so that path has no server-rendered 404 without JS. Root unmatched URLs are server-rendered. Investigate before EDGE-01 sign-off
-- [Phase 10-12, from Phase 9] 11 open items in `.planning/phases/09-home-ascent/deferred-items.md`: README tree line for `app/page.tsx`, fflate 0.8.2 advisory in the canvas chunk, R3F 9 `THREE.Clock` deprecation warning, canvas chunk holding the load event back about 1.5 s on the HOME-08 profile, hero scrim switching at `lg:` instead of 768 px, the "2,760 m approx." tick at 4.81:1, a dark wedge in the 1440 px summit frame, Prettier drift in `e2e/home-canvas.spec.ts` and `lib/useAscentMode.ts`, four `delayHeightmap` e2e users bypassed by the production service worker, and two parallel-run e2e flakes (photos 3D carousel, no-webgl)
+- [Phase 10-12, from Phase 9] 11 open items in `.planning/phases/09-home-ascent/deferred-items.md`: README tree line for `app/page.tsx`, fflate 0.8.2 advisory in the canvas chunk, R3F 9 `THREE.Clock` deprecation warning, canvas chunk holding the load event back about 1.5 s on the HOME-08 profile, hero scrim switching at `lg:` instead of 768 px, the "2,760 m approx." tick at 4.81:1, a dark wedge in the 1440 px summit frame, Prettier drift in `e2e/home-canvas.spec.ts` and `lib/useAscentMode.ts`, four `delayHeightmap` e2e users bypassed by the production service worker, and a parallel-run e2e flake (no-webgl). [The photos 3D carousel flake is resolved by 10-07/10-09/10-12, recorded by 10-13.]
 - [Phase 9] gsd/phase-09-home-ascent is stacked on the Phase 8 tip (itself stacked on unmerged Phase 7): merge 07, then 08, then 09
 
 ## Deferred Items
@@ -370,6 +375,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-26T15:50:25.699Z
-Stopped at: Completed 10-12-PLAN.md
+Last session: 2026-10-26T17:47:11.766Z
+Stopped at: Completed 10-13-PLAN.md
 Resume file: None

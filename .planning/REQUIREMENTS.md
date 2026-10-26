@@ -67,8 +67,8 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 
 ### Photos
 
-- [ ] **PHOTO-01**: `/photos` opens on the Map view, showing each photo as a keyboard-operable waypoint on the contour map
-- [ ] **PHOTO-02**: A visitor can switch to Grid (justified rows at true aspect ratios) and Carousel (the 3D carousel restyled, a flat stepper under reduced motion), and the chosen view is kept in the URL without adding history entries
+- [x] **PHOTO-01**: `/photos` opens on the Map view, showing each photo as a keyboard-operable waypoint on the contour map
+- [x] **PHOTO-02**: A visitor can switch to Grid (justified rows at true aspect ratios) and Carousel (the 3D carousel restyled, a flat stepper under reduced motion), and the chosen view is kept in the URL without adding history entries
 - [x] **PHOTO-03**: Photos appear in one canonical order (ascending altitude) in every view
 - [x] **PHOTO-04**: The carousel never advances without user control, or offers pause and stops on focus and under reduced motion
 
@@ -77,9 +77,9 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 - [x] **LBOX-01**: Each photo has its own URL (`/photos/[slug]`) that loads a full page when opened directly and opens as a lightbox over the gallery when navigated in-site; Back closes the lightbox
 - [x] **LBOX-02**: In the lightbox a visitor can move between photos with arrow keys, previous/next buttons and swipe, sees a position counter, and moving between photos adds no history entries
 - [x] **LBOX-03**: The lightbox traps focus, closes on Escape and returns focus to the thumbnail or pin that opened it
-- [ ] **LBOX-04**: The lightbox uses a neutral gallery-black surface and shows an EXIF strip (date, camera, lens, focal length, aperture, shutter, ISO, altitude, coordinates)
+- [x] **LBOX-04**: The lightbox uses a neutral gallery-black surface and shows an EXIF strip (date, camera, lens, focal length, aperture, shutter, ISO, altitude, coordinates)
 - [x] **LBOX-05**: Annotation hotspots appear as map-style callouts with leader lines, operable by tap and keyboard, with a legend on mobile and a toggle that hides them
-- [ ] **LBOX-06**: Opening a photo from the grid or map morphs the thumbnail into the lightbox where View Transitions are supported; elsewhere it opens instantly with full functionality
+- [x] **LBOX-06**: Opening a photo from the grid or map morphs the thumbnail into the lightbox where View Transitions are supported; elsewhere it opens instantly with full functionality
 - [x] **LBOX-07**: Each photo states "© {capture year} Tim Lui, all rights reserved" and offers no download button
 
 ### Engineering
@@ -203,16 +203,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HOME-06 | Phase 9 | Complete |
 | HOME-07 | Phase 9 | Complete |
 | HOME-08 | Phase 9 | Complete |
-| PHOTO-01 | Phase 10 | Pending |
-| PHOTO-02 | Phase 10 | Pending |
+| PHOTO-01 | Phase 10 | Complete |
+| PHOTO-02 | Phase 10 | Complete |
 | PHOTO-03 | Phase 10 | Complete |
 | PHOTO-04 | Phase 10 | Complete |
 | LBOX-01 | Phase 10 | Complete |
 | LBOX-02 | Phase 10 | Complete |
 | LBOX-03 | Phase 10 | Complete |
-| LBOX-04 | Phase 10 | Pending |
+| LBOX-04 | Phase 10 | Complete |
 | LBOX-05 | Phase 10 | Complete |
-| LBOX-06 | Phase 10 | Pending |
+| LBOX-06 | Phase 10 | Complete |
 | LBOX-07 | Phase 10 | Complete |
 | ENG-01 | Phase 11 | Pending |
 | ENG-02 | Phase 11 | Pending |
