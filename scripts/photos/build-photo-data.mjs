@@ -17,12 +17,16 @@
  *              Europe/Zurich and the offset Node's ICU gives for that wall time
  *              (build-time Intl only; shipped code never uses it). When the
  *              sidecar has a GPS UTC time, |(local - utc) - offset| must be under
- *              60 s, or the build fails (D-04, RESEARCH Pitfall 4).
- *   position   corrections, else the sidecar GPS as exif / not approximate,
- *              else null (DATA-04).
+ *              60 s, or the build fails (D-04, RESEARCH Pitfall 4). When the
+ *              camera recorded an OffsetTimeOriginal, it must equal that offset,
+ *              or the build fails (08-REVIEW WR-03).
+ *   position   corrections (hand-placed only, WR-08), else the sidecar GPS as
+ *              exif / not approximate, else null (DATA-04).
  *   elevation  bilinear at pixel centres of the native source raster at the
  *              4-decimal coordinates, rounded to whole metres (D-17, Pitfall 2).
- *   uv         round4 of lv95ToUv in the source extent (DATA-01, DATA-06).
+ *   uv         round4 of lv95ToUv in the source extent (DATA-01, DATA-06). A
+ *              position whose raw uv is outside [0, 1] fails the build before a
+ *              (clamped) DEM height is sampled (08-REVIEW WR-01).
  *   exif       null for a film scan, else the six sidecar exposure fields.
  *   tags       year and meteorological season from the capture (D-08).
  * Every entry is parsed with PhotoFacts; `lowestDemM` is the minimum elevation,
@@ -135,6 +139,12 @@ function buildCapture(entry, fix) {
     throw new Error(`${entry.id}: no DateTimeOriginal and no captureOverride`);
   const local = entry.dateTimeOriginal;
   const { offset, s } = zurichOffset(entry.id, local);
+  // WR-03: a camera-recorded offset must agree with the derived Zurich one.
+  if (entry.offsetTimeOriginal != null && entry.offsetTimeOriginal !== offset) {
+    throw new Error(
+      `${entry.id}: EXIF OffsetTimeOriginal ${entry.offsetTimeOriginal} is not the Europe/Zurich offset ${offset}`
+    );
+  }
   if (entry.gps?.utc) {
     const deltaS = (naiveMs(local) - Date.parse(entry.gps.utc)) / 1000;
     if (!(Math.abs(deltaS - s) < MAX_GPS_DRIFT_S)) {
@@ -150,6 +160,12 @@ function buildCapture(entry, fix) {
 function buildPosition(entry, fix) {
   const p = fix?.position;
   if (p) {
+    // WR-08: a typed-in position is never an exact EXIF fix (the schema rejects it too).
+    if (p.source !== 'hand-placed') {
+      throw new Error(
+        `${entry.id}: ${CORRECTIONS_REL} position has source '${p.source}'; a correction is 'hand-placed' (DATA-04)`
+      );
+    }
     return {
       lat: p.lat,
       lon: p.lon,
@@ -200,6 +216,12 @@ async function build() {
     if (position) {
       const lv95 = wgs84ToLv95(position);
       const raw = lv95ToUv(lv95, dem.extent);
+      // WR-01: off the sheet there is no pin to place and only a clamped edge height to sample.
+      if (raw.u < 0 || raw.u > 1 || raw.v < 0 || raw.v > 1) {
+        throw new Error(
+          `${entry.id}: position lies outside the DEM extent (uv ${raw.u.toFixed(3)}, ${raw.v.toFixed(3)})`
+        );
+      }
       uv = { u: round4(raw.u), v: round4(raw.v) };
       const m = sampleAtLv95(dem.metres, dem.width, dem.height, dem.extent, lv95);
       elevation = { source: 'dem', m: Math.round(m) };

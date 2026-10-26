@@ -40,11 +40,16 @@ const Alt1 = z
   .number()
   .refine((v) => Math.abs(v * 10 - Math.round(v * 10)) < 1e-6, 'max 1 decimal');
 
-/** GPS as extracted, already rounded (D-10 stage 1, DATA-06). `utc` is GPSDateStamp + GPSTimeStamp. */
+/**
+ * GPS as extracted, already rounded (D-10 stage 1, DATA-06). `utc` is GPSDateStamp + GPSTimeStamp.
+ * `altM` is null when the camera or geotagger wrote no GPSAltitude: a latitude and
+ * longitude are still a position (08-REVIEW WR-02), and no consumer reads altM,
+ * because heights come from the DEM (D-17).
+ */
 const Gps = z.strictObject({
   lat: Coord4,
   lon: Coord4,
-  altM: Alt1,
+  altM: Alt1.nullable(),
   utc: z.string().nullable(),
 });
 
@@ -168,6 +173,17 @@ export const LocationOverride = z.strictObject({
 });
 export type LocationOverride = z.infer<typeof LocationOverride>;
 
+/**
+ * A position in corrections.json is typed by hand, so it can only be hand-placed
+ * (and therefore approximate, with a reason and a radius). An exact `exif`
+ * position comes from the sidecar GPS, never from a correction (08-REVIEW WR-08,
+ * DATA-04).
+ */
+const CorrectionPosition = Position.refine(
+  (p) => p.source === 'hand-placed',
+  "a corrections position is source 'hand-placed'; exif positions come from the sidecar (WR-08, DATA-04)"
+);
+
 /** data/photos/corrections.json: Tim's reasoned overrides, keyed by photo id. */
 export const Corrections = z.strictObject({
   schemaVersion: z.literal(1),
@@ -183,7 +199,7 @@ export const Corrections = z.strictObject({
           reason: z.string().min(1),
         })
         .optional(),
-      position: Position.optional(),
+      position: CorrectionPosition.optional(),
       locationOverride: LocationOverride.optional(),
     })
   ),
@@ -193,14 +209,16 @@ export type Corrections = z.infer<typeof Corrections>;
 /**
  * One photo's typed facts in data/generated/photos.ts. `tags.year` and
  * `tags.season` are derived from `capture` (D-08); a year-only capture has no
- * season. `uv` is the terrain UV (DATA-01) of `position`, rounded to 4 decimals.
+ * season. `uv` is the terrain UV (DATA-01) of `position`, rounded to 4 decimals,
+ * and bounded to [0, 1]: a photo off the DEM sheet has no pin or tick to place
+ * (08-REVIEW WR-01; the build fails before it samples a clamped edge height).
  */
 export const PhotoFacts = z.strictObject({
   id: PhotoId,
   medium: z.enum(['digital', 'film-scan']),
   capture: Capture,
   position: Position.nullable(),
-  uv: z.strictObject({ u: z.number(), v: z.number() }).nullable(),
+  uv: z.strictObject({ u: z.number().min(0).max(1), v: z.number().min(0).max(1) }).nullable(),
   elevation: Elevation.nullable(),
   exif: Exposure.nullable(),
   tags: z.strictObject({

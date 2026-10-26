@@ -119,12 +119,14 @@ function gpsOf(g) {
   const lat = dmsToDecimal(g.GPSLatitude, str(g.GPSLatitudeRef));
   const lon = dmsToDecimal(g.GPSLongitude, str(g.GPSLongitudeRef));
   const alt = num(g.GPSAltitude);
-  // No position -> null, never a guessed one. A missing altitude is not guessed either.
-  if (lat === null || lon === null || alt === null) return null;
+  // No position -> null, never a guessed one. A missing altitude is not guessed
+  // either: it is null, and the latitude and longitude are kept (08-REVIEW WR-02;
+  // heights come from the DEM, D-17).
+  if (lat === null || lon === null) return null;
   return {
     lat: round4(lat),
     lon: round4(lon),
-    altM: round1(g.GPSAltitudeRef === 1 ? -alt : alt),
+    altM: alt === null ? null : round1(g.GPSAltitudeRef === 1 ? -alt : alt),
     utc: gpsUtc(g.GPSDateStamp, g.GPSTimeStamp),
   };
 }
