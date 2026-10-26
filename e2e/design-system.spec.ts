@@ -152,9 +152,12 @@ test.describe('Scrollbar', () => {
         viewport: { width: 1440, height: 900 },
       });
       const page = await context.newPage();
-      await page.goto('/photos');
+      // The lightbox (10-05) is the scroll-locking overlay: a grid tile opens it.
+      await page.goto('/photos?view=grid');
 
-      const header = page.getByRole('banner').first();
+      // includeHidden: once the modal dialog is open the header is inert, and
+      // the box must still be read from the same element.
+      const header = page.getByRole('banner', { includeHidden: true }).first();
       await expect(header).toBeVisible();
 
       // Guard against a trivial pass: the classic scrollbar must take up layout
@@ -180,8 +183,21 @@ test.describe('Scrollbar', () => {
 
       const before = await settledBox();
 
-      await page.getByRole('button', { name: /View details for/i }).first().click();
-      await expect(page.getByRole('dialog')).toBeVisible();
+      const tile = page
+        .getByRole('list', { name: 'Photographs, lowest first' })
+        .getByRole('link')
+        .first();
+      // A click before hydration is a document navigation, which is never
+      // intercepted, so wait for React to own the link first.
+      await expect
+        .poll(
+          () => tile.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))),
+          { timeout: 15000 }
+        )
+        .toBe(true);
+      await tile.click();
+      await expect(page.getByRole('dialog')).toBeVisible({ timeout: 20000 });
+      expect(await page.evaluate(() => document.documentElement.style.overflow)).toBe('hidden');
 
       const after = await settledBox();
       console.log(`G3 header box before ${JSON.stringify(before)} after ${JSON.stringify(after)}`);

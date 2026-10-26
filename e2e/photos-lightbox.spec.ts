@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
 import { buildPhotoViews } from '@/lib/photos/view-model';
 import { LB_CHROME_PX, LB_GUTTER_PX } from '@/lib/photos/lightbox-tiers';
 
@@ -278,7 +278,7 @@ const GRID_URL = /\/photos\?view=grid$/;
  * intercepted (it would land on the full page and no dialog would open), and
  * the dev server can take seconds to hydrate under parallel load.
  */
-async function waitForHydration(link: import('@playwright/test').Locator) {
+async function waitForHydration(link: Locator) {
   await expect
     .poll(() => link.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))), {
       timeout: 15000,
@@ -286,20 +286,25 @@ async function waitForHydration(link: import('@playwright/test').Locator) {
     .toBe(true);
 }
 
+/** Click a grid tile (already on the grid, hydrated) and wait for the dialog. */
+async function clickTile(page: Page, index = 0) {
+  const tile = page.getByRole('list', { name: GRID_LIST }).getByRole('link').nth(index);
+  await waitForHydration(tile);
+  await tile.click();
+  const dialog = page.getByRole('dialog');
+  // The dev server compiles the intercepted route on its first request.
+  await expect(dialog).toBeVisible({ timeout: 20000 });
+  return dialog;
+}
+
+/** Open the first grid tile in-site and wait for the dialog. */
+async function openFirstTile(page: Page) {
+  await page.goto('/photos?view=grid');
+  return clickTile(page, 0);
+}
+
 test.describe('Lightbox over the gallery (LBOX-01)', () => {
   const first = views[0];
-
-  /** Open the first grid tile in-site and wait for the dialog. */
-  async function openFirstTile(page: import('@playwright/test').Page) {
-    await page.goto('/photos?view=grid');
-    const tile = page.getByRole('list', { name: GRID_LIST }).getByRole('link').first();
-    await waitForHydration(tile);
-    await tile.click();
-    const dialog = page.getByRole('dialog');
-    // The dev server compiles the intercepted route on its first request.
-    await expect(dialog).toBeVisible({ timeout: 20000 });
-    return dialog;
-  }
 
   test('a tile click opens the photo in a dialog over the grid', async ({ page }) => {
     const dialog = await openFirstTile(page);
@@ -334,5 +339,81 @@ test.describe('Lightbox over the gallery (LBOX-01)', () => {
     await dialog.getByRole('button', { name: 'Close photo', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page).toHaveURL(GRID_URL);
+  });
+});
+
+test.describe('Focus and Escape (LBOX-03)', () => {
+  const first = views[0];
+
+  /** True when document.activeElement is inside the open dialog. */
+  const focusInDialog = (page: Page) =>
+    page.evaluate(() => document.activeElement?.closest('dialog[open]') != null);
+
+  test('focus moves to Close photo on open', async ({ page }) => {
+    const dialog = await openFirstTile(page);
+    await expect(dialog.getByRole('button', { name: 'Close photo', exact: true })).toBeFocused();
+  });
+
+  test('Tab and Shift+Tab, 12 presses each, keep focus inside the dialog', async ({ page }) => {
+    await openFirstTile(page);
+    for (let i = 0; i < 12; i++) {
+      await page.keyboard.press('Tab');
+      expect(await focusInDialog(page), `after Tab ${i + 1}`).toBe(true);
+    }
+    for (let i = 0; i < 12; i++) {
+      await page.keyboard.press('Shift+Tab');
+      expect(await focusInDialog(page), `after Shift+Tab ${i + 1}`).toBe(true);
+    }
+  });
+
+  test('Escape closes through the router and focus returns to the photo tile', async ({ page }) => {
+    await openFirstTile(page);
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page).toHaveURL(GRID_URL);
+    await expect
+      .poll(() => page.evaluate(() => document.activeElement?.getAttribute('data-photo-id')))
+      .toBe(first.slug);
+  });
+
+  test('three open-and-Escape cycles in a row each close with the URL in sync', async ({
+    page,
+  }) => {
+    await page.goto('/photos?view=grid');
+    for (let cycle = 1; cycle <= 3; cycle++) {
+      await clickTile(page, 0);
+      await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
+      await page.keyboard.press('Escape');
+      await expect(page.getByRole('dialog'), `cycle ${cycle}`).toHaveCount(0);
+      await expect(page, `cycle ${cycle}`).toHaveURL(GRID_URL);
+    }
+  });
+
+  test('opening from a scrolled grid and closing leaves the scroll position unchanged', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1024, height: 700 });
+    await page.goto('/photos?view=grid');
+    const third = page.getByRole('list', { name: GRID_LIST }).getByRole('link').nth(2);
+    await third.scrollIntoViewIfNeeded();
+    const before = await page.evaluate(() => window.scrollY);
+    expect(before, 'the grid must be scrolled to its second row').toBeGreaterThan(0);
+
+    await clickTile(page, 2);
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect
+      .poll(() => page.evaluate(() => document.activeElement?.getAttribute('data-photo-id')))
+      .toBe(views[2].slug);
+    expect(await page.evaluate(() => window.scrollY)).toBe(before);
+  });
+
+  test('on the photo page, Escape goes to /photos (D-08)', async ({ page }) => {
+    await page.goto(`/photos/${first.slug}`);
+    const back = page.getByRole('main').getByRole('link', { name: 'All photographs' }).first();
+    await waitForHydration(back);
+    await page.keyboard.press('Escape');
+    await expect(page).toHaveURL(/\/photos$/);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 });
