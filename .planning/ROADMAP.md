@@ -345,7 +345,7 @@ Plans:
 - [ ] 10-05-PLAN.md — In-site lightbox: @modal slot, intercepted route, native dialog, focus trap and return, scroll lock (G3), Home links to photo pages
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 10-06-PLAN.md — Previous/next without history entries (Tim decides OQ1 vs D-08 first), counter, swipe, grid-to-lightbox morph
+- [ ] 10-06-PLAN.md — Previous/next without history entries (history.replaceState on both surfaces, Tim's OQ1 answer 2026-10-26), counter, swipe, grid-to-lightbox morph
 - [ ] 10-07-PLAN.md — Carousel view: capability gate, flat stepper, restyled 3D carousel, no auto-advance, manifest textures
 
 **Wave 5** *(blocked on Wave 4 completion)*

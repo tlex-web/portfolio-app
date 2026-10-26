@@ -465,9 +465,12 @@ return open ? tile : (
 | A4 | The root crossfade per prev/next step is acceptable or tunable in CSS | Pitfall 3 | Visual noise on rapid stepping; the UI-SPEC can null `::view-transition-*(root)` for steps |
 | A5 | `restoreFocus()` to the *current* photo's tile satisfies LBOX-03 | Pattern 4 | Tim may want the original opener; a one-line change |
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+All four questions are settled (2026-10-26). The original question text and recommendations stay below for the record; each carries its resolution.
 
 1. **D-08 says the full page uses `router.replace` for prev/next. The probe shows that is intercepted.**
+   - **RESOLVED (Tim, 2026-10-26): A, `history.replaceState` on both surfaces.** Tim's selected answer: "A: replaceState both (Recommended)". 10-CONTEXT.md carries a dated amendment under D-08; implemented in 10-06 (gate row OQ1, Task 2).
    - What we know: all three engines open the modal over the full page, with the URL and content out of sync. `history.replaceState` works on both surfaces.
    - Options for Tim:
 
@@ -478,8 +481,11 @@ return open ? tile : (
      | C. Full page prev/next as hard navigations (`<a href>`) | Trivial | Full reload per photo, nav flash |
    - Recommendation: A. The planner adds a `checkpoint:decision` for Tim, because D-08 is locked.
 2. **After prev/next, should focus return to the opener or to the current photo?** Recommendation: the current photo (it matches the visible state). Settle it in the UI-SPEC.
+   - **RESOLVED in 10-UI-SPEC.md (confirmed by Tim 2026-10-26):** focus goes to `[data-photo-id]` of the photo shown at close, then the original opener, then the h1. See 10-UI-SPEC.md "Focus (LBOX-03)" row "Return on close (OQ2 decided)" (line 374) and "Decisions Settled Here" row OQ2 (line 626). Implemented in 10-05 (focus return) and asserted after steps in 10-06.
 3. **Map contour LOD:** D-01 names `contours-hero` (100 m), but a `map` LOD (50 m, `terrain.assets.contours.map`) exists [VERIFIED: data/generated/terrain.ts]. Settle it in the UI-SPEC (density at 375 px vs 1440 px).
+   - **RESOLVED in 10-UI-SPEC.md:** `hero` (100 m), not `map` (50 m). See 10-UI-SPEC.md "Map relief" layer row "3 Contours" (line 149, "OQ3 decided") and "Decisions Settled Here" row OQ3 (line 627). Implemented in 10-08 (`ContourField lod="hero"` in MapSheet).
 4. **Wrap at the ends?** This is Claude's discretion. Recommend wrapping with the "n / 4" counter (the probe used wrapping without issue). The UI-SPEC decides.
+   - **RESOLVED in 10-UI-SPEC.md: no wrap** (the recommendation above was not taken); the ends are `aria-disabled` and stay focusable. See 10-UI-SPEC.md Carousel View "OQ4 decided" paragraph (line 299), Moving between photos row "Order and ends" (line 360) and "Decisions Settled Here" row OQ4 (line 628). Implemented in 10-07 (carousel stepper) and 10-06 (viewer, `stepIndex` returns null past either end).
 
 ## Environment Availability
 
