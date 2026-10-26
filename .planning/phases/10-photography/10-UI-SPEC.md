@@ -1,7 +1,8 @@
 ---
 phase: "10"
 slug: "photography"
-status: draft
+status: approved
+reviewed_at: "2026-10-26"
 shadcn_initialized: false
 preset: none
 created: "2026-10-26"
@@ -15,7 +16,7 @@ created: "2026-10-26"
 >
 > **Baseline:** `07-UI-SPEC.md` is the design system, `08-UI-SPEC.md` the terrain and footer conventions, `09-UI-SPEC.md` the poster, pin and label conventions. This spec **inherits** tokens v2, the type roles, the spacing scale, interaction states, motion tokens and every guardrail, and redefines none of them. Where it adds something (contrast pairs, layout variants, a CSS rule), it says so.
 >
-> **Source tags:** **[D-NN]** = a locked decision in `10-CONTEXT.md`. **[07]** / **[08]** / **[09]** = inherited from that phase's UI-SPEC. **[RES]** = `10-RESEARCH.md` (probe results, Pitfall N, Pattern N, OQ N). **[REPO]** = repo scouting on 2026-10-26. **[UUPM]** = a `ui-ux-pro-max` rule ID. **[MEAS]** = measured this session (text widths with the project's built fonts in Chromium 156; layout sweeps; contrast with colorjs.io). **Discretion (researcher)** = an item CONTEXT handed to Claude or to this spec. **[TIM 2026-10-26]** = a researcher default that Tim confirmed on 2026-10-26 (he picked the recommended option for all six items in the `/gsd-ui-phase` session); the six are listed in "Defaults Confirmed by Tim". No unconfirmed defaults are left in this spec.
+> **Source tags:** **[D-NN]** = a locked decision in `10-CONTEXT.md`. **[07]** / **[08]** / **[09]** = inherited from that phase's UI-SPEC. **[RES]** = `10-RESEARCH.md` (probe results, Pitfall N, Pattern N, OQ N). **[REPO]** = repo scouting on 2026-10-26. **[UUPM]** = a `ui-ux-pro-max` rule ID. **[MEAS]** = measured this session (text widths with the project's built fonts in Chromium 156; layout sweeps; contrast with colorjs.io). **Discretion (researcher)** = an item CONTEXT handed to Claude or to this spec. **[TIM 2026-10-26]** = a researcher default that Tim confirmed on 2026-10-26 (he picked the recommended option for all six researcher defaults in the `/gsd-ui-phase` session, then made three more choices after the checker review and the UI-consideration probe); all nine are listed in "Defaults Confirmed by Tim". No unconfirmed defaults are left in this spec.
 >
 > **Not decided here (open checkpoint):** 10-RESEARCH Open Question 1, the mechanism for previous/next (D-08 vs the probe finding). Tim re-decides it at planning. This contract is written so it holds under every option: it specifies outcomes (the URL names the shown photo, no history entry is added, no dialog appears on the full page, the pressed control keeps focus), not the API that produces them.
 
@@ -223,10 +224,11 @@ app/(site)/photos/@modal/(.)[slug]     Server → LightboxDialog (client <dialog
 |------|------|
 | Link | `<a href="/photos/{slug}" data-photo-id="{slug}" scroll={false}>` (Next `Link`) whose box **is the label plate**; the dot and the leader are absolutely positioned children, so a click on either opens the photo [D-03]. Explicit `aria-label="{title}, {altitude}"`, approximate: `"{title}, {altitude} approx."` (flex accname issue [09 STATE]) |
 | Dot | 12 px circle at `left: u × 100%`, `top: v × 100%`, centred on the anchor. Exact: `bg-ink` with a 2 px `surface` casing (`ring-2 ring-surface`). Approximate (`position.approximate`, never an id): hollow `bg-surface` with `border-2 border-dashed border-ink`, same casing [08 D-02; DATA-04]. Hit area 24 × 24 px (`before:` inset) [UUPM `web-target-size`] |
-| Plate, wide tier | `w-60` (240 px), 48 px tall: `rounded-sm border border-line-strong bg-surface-raised px-2 py-1 text-left`. Line 1 title `text-sm font-semibold text-ink`; line 2 altitude `font-mono text-sm text-ink-muted` (`1,617 m`; approximate `2,760 m approx.`) [D-02] |
+| Plate, wide tier | `w-60` (240 px), 48 px tall: `rounded-sm bg-surface-raised px-2 py-1 text-left ring-1 ring-inset ring-line-strong`. Line 1 title `text-sm font-semibold text-ink`; line 2 altitude `font-mono text-sm text-ink-muted` (`1,617 m`; approximate `2,760 m approx.`) [D-02] |
+| Plate outline | **Inset ring, not `border`**: `ring-1 ring-inset` is a box-shadow and takes no layout space, so the box is exactly 8 px padding + 40 px of text = 48 px (compact 8 + 60 = 68 px), the sizes the label-layout sweep and slot maths use. A `border` would add 2 px (50 / 70) and break them. Focus is unaffected: it is the global `:focus-visible` outline [07]. Applies to every fixed-height plate in this spec (map plates, gutter labels) and to the shared expanded panel. Tim chose this over `border` with 50 / 70 boxes [TIM 2026-10-26] |
 | Plate, compact tier | `w-36` (144 px), 68 px reserved (title on two lines + altitude), same styles. Every current title wraps to exactly two lines at 128 px [MEAS] |
 | Leader | 1 px straight line, `ink-muted`, from the plate's attach point to the dot centre, drawn under the dot, `aria-hidden`, `pointer-events: none`. Attach point: the plate edge facing the dot, at the dot's coordinate clamped 8 px inside that edge. A leader is drawn for every mark (4 px long when the plate sits right beside its dot) |
-| Hover / pressed | Plate `bg-surface-overlay`, border `ink-muted` (the trail-sign hover [09]); dot unchanged. No scale |
+| Hover / pressed | Plate `bg-surface-overlay`, ring `ink-muted` (the trail-sign hover [09]); dot unchanged. No scale |
 | Focus-visible | 2 px `focus` ring on the plate (the link box) and, through `group-focus-visible:`, a 2 px `focus` ring around the dot |
 | Preview (Discretion) | Wide tier and `(hover: hover)` only: on `:hover` and on `:focus-visible`, a `w-40` (160 px) preview of the photo (640 AVIF/WebP derivative, true aspect ratio, `rounded-sm border border-line-strong bg-surface-raised`) appears above the plate, or below it when the plate's top is within 120 px of the sheet top. `aria-hidden`, `pointer-events: none`, `z-10`, instant (no animation), never carries information the plate lacks [D-03; UUPM `hover-vs-tap`] |
 | Opening | An intercepted soft navigation opens the lightbox straight away with a **plain enter** (map pins have no image to morph) [D-03] |
@@ -402,11 +404,11 @@ Shared rules: markers and labels follow reading order (top-left → bottom-right
 | Part | Spec |
 |------|------|
 | Side | Annotation `x < 50` → left gutter, else right [RES Pattern 6] |
-| Label | `<button aria-expanded aria-controls>` plate `w-48` (192 px), 48 px: `rounded-sm border border-line-strong bg-gallery px-2 py-1 text-left`; title `text-sm font-semibold text-ink`, height `font-mono text-sm text-ink-muted` (`4,478 m`, `1,668 m`, `2,760 m approx.`). 16 px from the outer screen edge |
+| Label | `<button aria-expanded aria-controls>` plate `w-48` (192 px), 48 px: `rounded-sm bg-gallery px-2 py-1 text-left ring-1 ring-inset ring-line-strong` (inset-ring outline, see Map plate outline); title `text-sm font-semibold text-ink`, height `font-mono text-sm text-ink-muted` (`4,478 m`, `1,668 m`, `2,760 m approx.`). 16 px from the outer screen edge |
 | Stacking | Per gutter, sorted by marker `y`: centred on the marker's y, pushed down to clear the previous by 8 px, pushed up from the bottom on overflow, 8 px inside the stage; an expanded panel counts in the stack. Pure function, unit-tested for any count (today 1–2 per photo, 6 in total) |
 | Leader | Straight line from the label's inner edge (at the marker's y, clamped 8 px inside the plate) to the marker: 1 px `ink` over a 3 px `gallery` casing, `aria-hidden`; expanded: 1 px `accent` |
 | Marker | Decorative and `pointer-events: none` on this tier (a click on the photo is zoom) |
-| Expanded panel | Directly under its label, same width, `mt-2 rounded-sm border border-line bg-gallery p-2` (8 px, the plate's own `px-2` inset, so label and panel text share one left edge; 174 px of text width in the 192 px panel): description `text-sm text-ink-muted`, then a `<ul>` of facts (`text-sm text-ink-muted`, `mt-2` each) with the source as a link: `Wikipedia` for Wikipedia URLs (prose-link style in `accent`, `ArrowSquareOutIcon` 16 px, `target="_blank" rel="noopener noreferrer"`, sr-only "(opens in a new tab)"); non-URL sources print as plain text (`Source: Tim`, `Source: swissALTIRegio terrain model` for `dem`). Panels never cover the photo [D-09]. If a gutter's stack ever exceeds the stage height, that gutter scrolls (last resort) |
+| Expanded panel | Directly under its label, same width, `mt-2 rounded-sm bg-gallery p-2 ring-1 ring-inset ring-line` (8 px, the plate's own `px-2` inset; both outlines are inset rings, so label and panel text share one left edge; 176 px of text width in the 192 px panel): description `text-sm text-ink-muted`, then a `<ul>` of facts (`text-sm text-ink-muted`, `mt-2` each) with the source as a link: `Wikipedia` for Wikipedia URLs (prose-link style in `accent`, `ArrowSquareOutIcon` 16 px, `target="_blank" rel="noopener noreferrer"`, sr-only "(opens in a new tab)"); non-URL sources print as plain text (`Source: Tim`, `Source: swissALTIRegio terrain model` for `dem`). Panels never cover the photo [D-09]. If a gutter's stack ever exceeds the stage height, that gutter scrolls (last resort) |
 | Keyboard | Enter/Space toggles; Escape collapses and returns focus to the label [D-09] |
 
 **Key and scroll tiers (< 1280 px or height < 640):**
@@ -415,7 +417,7 @@ Shared rules: markers and labels follow reading order (top-left → bottom-right
 |------|------|
 | Dots | 24 px numbered circles (`bg-ink text-gallery font-mono text-sm`, 2 px `gallery` casing) at the annotation positions, 44 × 44 px hit area, numbered in reading order. Pointer-only (`tabIndex={-1}`, `aria-hidden`): a tap expands the matching key row; the key rows are the keyboard path. Expanded dot: `bg-accent text-ink-inverse` [D-11] |
 | Key | In the strip's left column after the story, `mt-4 <ul aria-label="Labels">`: each row a `<button aria-expanded>` `min-h-11 w-full flex items-center gap-2 text-left`: the same 24 px numbered badge, title `text-sm font-semibold text-ink`, ` · ` and height `font-mono text-sm text-ink-muted` (`① Matterhorn summit · 4,478 m` in D-11's terms) |
-| Expanded row | The description and facts expand in place below the row in the same panel box as the gutter tier (`mt-2 rounded-sm border border-line bg-gallery p-2`, full key width; same content and link style), and its dot turns accent. No sheet, no overlay on the photo [D-11] |
+| Expanded row | The description and facts expand in place below the row in the same panel box as the gutter tier (`mt-2 rounded-sm bg-gallery p-2 ring-1 ring-inset ring-line`, full key width; same content and link style), and its dot turns accent. No sheet, no overlay on the photo [D-11] |
 | Hidden labels | Dots disappear; the key stays and still expands (no dot highlight while hidden) |
 
 ### Open and close motion (LBOX-06)
@@ -461,12 +463,12 @@ All durations and easings are 07 tokens [07 DSGN-08]. At most one element animat
 | Element | Default | Hover / pressed | Focus-visible | Disabled / pressed state |
 |---------|---------|-----------------|---------------|--------------------------|
 | View segment | `text-ink-muted` on the raised track | `bg-surface-overlay text-ink` | 2 px ring | Selected: overlay + ink + accent bar, `aria-pressed="true"` |
-| Map label link | Raised plate, `line-strong` border | Overlay plate, `ink-muted` border; preview (wide, hover devices) | Ring on plate and dot | n/a |
+| Map label link | Raised plate, `line-strong` inset ring | Overlay plate, `ink-muted` inset ring; preview (wide, hover devices) | Ring on plate and dot | n/a |
 | Grid tile | Raised mount, `line` border | Overlay mount, `line-strong` border | Ring on mount | n/a |
 | Carousel ‹ › | Secondary icon button | `bg-surface-overlay` | Ring | Ends: `aria-disabled`, `opacity-50`, `cursor-not-allowed` |
 | Open photo | Primary (`bg-accent text-ink-inverse`) | `bg-accent-hover` | Ring | n/a |
 | Viewer buttons | `line-strong` border on gallery | Border `ink-muted` | Ring (14.33 on gallery) | Pressed toggle: `bg-ink text-gallery`; ends: `aria-disabled` |
-| Gutter label / key row | Gallery plate, `line-strong` border / plain row | Border `ink-muted` / text `ink` | Ring | Expanded: `aria-expanded="true"`, marker or dot accent |
+| Gutter label / key row | Gallery plate, `line-strong` inset ring / plain row | Inset ring `ink-muted` / text `ink` | Ring | Expanded: `aria-expanded="true"`, marker or dot accent |
 | Source link | `accent`, underlined | `accent-hover` | Ring | n/a |
 
 `cursor-pointer` on every button; `touch-action: manipulation` on buttons [07]. Every target ≥ 44 px with ≥ 8 px between neighbours, except the map dots (24 px hit area, part of a link whose plate is ≥ 48 px) [UUPM `touch-target-size`, `touch-spacing`, `web-target-size`].
@@ -517,53 +519,72 @@ All durations and easings are 07 tokens [07 DSGN-08]. At most one element animat
 
 ## UI Considerations
 
-> Populated by the ui-phase UI-consideration probe (Step 9.5) and lifted by plan-phase's `## UI Considerations` rule. **Draft rows from the researcher**; the probe replaces them on its run. Copy for empty and error states lives in the Copywriting Contract.
+> Populated by the ui-phase UI-consideration probe (Step 9.5, `ui-consideration-probe.cjs`, run 2026-10-26) and lifted by plan-phase's `## UI Considerations` rule: ✅ covered → a `must_haves.truths` string; 🧪 backstop → `{ statement, verification: backstop }`; ➖ dismissed → not lifted (the reason is the audit trail). Copy for empty and error states lives in the Copywriting Contract. Tim accepted the element kinds and these resolutions on 2026-10-26 [TIM 2026-10-26].
 
-**Element kinds (proposed):** E1 Header band = static-content, interactive-control. E2 Map sheet = media, nav, list-collection. E3 Grid = list-collection, media. E4 Carousel / stepper = media, interactive-control. E5 Viewer stage = media, interactive-control. E6 Strip = static-content. E7 Hotspots = interactive-control, list-collection. E8 Photo page = nav.
+**Element kinds (confirmed):** E1 Header band = static-content, interactive-control (+ list-collection, media: prose false positives from "Grid" and "Photographs", their extra categories dismissed). E2 Map sheet = media, nav, list-collection, static-content. E3 Grid = list-collection, media, static-content. E4 Carousel / stepper = media, interactive-control. E5 Viewer stage = media, interactive-control, static-content. E6 Strip = static-content, list-collection (added: the EXIF and position `<dl>` field lists can be partial) (+ media, a prose false positive). E7 Hotspots = list-collection, interactive-control, static-content. E8 Photo page = nav, media (+ form, a false positive from "page form").
 
-Applicable state considerations resolved: 30 covered, 8 backstop, 6 dismissed (draft, pending the probe).
+**Coverage:** 58 applicable · 36 covered · 8 backstop · 14 dismissed · 0 unresolved · 0 unclassified.
 
-| Category | Element(s) | Status | Resolution / Reason |
-|----------|------------|--------|---------------------|
-| long-text | E1 Header band | ✅ covered | The kicker is 311 px in Mono 14 and fits 343 px at 375; the switcher (≈ 292 px) wraps below the title on phones; nothing truncates |
-| loading | E1 View switcher | ✅ covered | Server-rendered buttons; until hydration the map (default) is already complete |
-| error | E1 View switcher | ✅ covered | An unknown `?view=` renders the map; no error copy |
+| Category | Element | Status | Resolution / Reason |
+|----------|---------|--------|---------------------|
+| empty | E1 Header band | ➖ dismissed | No collection or media in the band: "Grid" and "Photographs" in the prose are view names; zero photos fails the build [08, 09] |
+| loading | E1 Header band | ✅ covered | Server-rendered buttons; until hydration the map (default view) is already complete |
+| error | E1 Header band | ✅ covered | An unknown ?view= value renders the map (parseView); no error copy |
+| populated | E1 Header band | ➖ dismissed | Not a collection or media surface; its one state is the kicker, h1 and switcher defined in Header Band |
+| partial | E1 Header band | ➖ dismissed | The kicker is derived from complete build-time data; the band has no optional fields |
+| overflow | E1 Header band | ✅ covered | The band is flex-wrap: the switcher (about 292 px) wraps below the title on phones; nothing clips or scrolls sideways at 375 |
+| zero-one-many | E1 Header band | ✅ covered | The kicker count uses countLabel (singular "1 waypoint", plural "4 waypoints"); zero photos fails the build |
+| long-text | E1 Header band | ✅ covered | The kicker is 311 px in Mono 14 and fits 343 px at 375; the h1 is fixed copy; nothing truncates |
 | empty | E2 Map sheet | ➖ dismissed | Zero photos fails the build; the map always has its four marks |
-| loading | E2 Map sheet | ✅ covered | Plates, dots and links are server HTML; until the relief decodes the sheet shows `bg-surface` with contours |
-| error | E2 Map sheet | ✅ covered | A failed relief or contour load leaves the plain sheet with every plate, dot and link working (`alt=""`, mask has no broken glyph) |
+| loading | E2 Map sheet | ✅ covered | Plates, dots and links are server HTML; until the relief decodes the sheet shows bg-surface with contours |
+| error | E2 Map sheet | ✅ covered | A failed relief or contour load leaves the plain sheet with every plate, dot and link working (alt="", the mask has no broken glyph) |
 | populated | E2 Map sheet | 🧪 backstop | `{ statement: "At 375, 768 and 1440 px the map shows four labelled marks in altitude order, the dashed approximate Riffelsee dot with 'approx.', and the unlinked summit plate; the photos/* visual baselines show it", verification: backstop }` |
+| partial | E2 Map sheet | ✅ covered | The one partial position is the film scan: hollow dashed dot, "2,760 m approx." on the plate and in the link name [08 D-02; DATA-04] |
 | overflow | E2 Map sheet | 🧪 backstop | `{ statement: "For every sheet side 312–1100 px the label layout has no plate overlap (8 px gap), no plate over a dot or the summit, no leader across a plate, every plate 8 px inside the sheet, and visual order equal to altitude order (Jest sweep); the same holds on the rendered page at 360, 375, 412, 768, 1024 and 1440 (e2e)", verification: backstop }` |
 | zero-one-many | E2 Map sheet | ✅ covered | The compact template is defined for four waypoints and a Jest guard fails on any other count; the wide tier handles any count |
-| long-text | E2 Map labels | 🧪 backstop | `{ statement: "Every rendered map plate is exactly 48 px (wide) or 68 px (compact) tall, so no title wraps beyond its reserved box", verification: backstop }` |
+| long-text | E2 Map sheet | 🧪 backstop | `{ statement: "Every rendered map plate is exactly 48 px (wide) or 68 px (compact) tall, its outline drawn as an inset ring that takes no layout space, so no title wraps beyond its reserved box", verification: backstop }` |
 | empty | E3 Grid | ➖ dismissed | Zero photos fails the build |
-| loading | E3 Grid | ✅ covered | Image boxes reserve the manifest aspect ratio in `bg-surface-overlay`; captions are final before images load; CLS 0 |
-| error | E3 Grid | ✅ covered | A failed image keeps its box with the browser alt text; the caption and link work |
+| loading | E3 Grid | ✅ covered | Image boxes reserve the manifest aspect ratio in bg-surface-overlay; captions are final before images load; CLS 0 |
+| error | E3 Grid | ✅ covered | A failed image keeps its box with the browser alt text; the caption and link still work |
 | populated | E3 Grid | 🧪 backstop | `{ statement: "From 640 px, tiles in one row share one image height (±1 px) and keep their true ratio (±1 %); below 640 px one column; no horizontal overflow at 375", verification: backstop }` |
-| partial | E3 Grid | ✅ covered | The film scan's caption reads `Riffelsee · 2,760 m approx. · 2019` (year only, approx.) |
-| overflow / long-text | E3 Grid | ✅ covered | The caption data line wraps only between its three nowrap parts; the longest (378 px) wraps once in a 2-column tile at 768 |
-| zero-one-many | E3 Grid | ✅ covered | The trailing filler keeps a single last tile from stretching across a row |
-| loading | E4 Carousel | ✅ covered | 3D: a static frame-outline skeleton with live controls; stepper: image box at its ratio |
-| error | E4 Carousel | ✅ covered | No WebGL2, Save-Data, low memory, reduced motion or a lost context render the stepper; no error copy; three.js never loads under the static gate |
-| populated | E4 Carousel | 🧪 backstop | `{ statement: "The front frame is unchanged after 6 s idle; ←/→ only act with focus inside the region and never while a dialog is open; 1/4 disables Previous and 4/4 disables Next with aria-disabled", verification: backstop }` |
-| empty | E5 Viewer stage | ➖ dismissed | Every slug maps to a photo; unknown slugs return the 404 page |
-| loading | E5 Viewer stage | ✅ covered | The opener's derivative paints first, the large derivative swaps in when decoded; after 1 s with nothing decoded, "Loading photo" shows |
-| error | E5 Viewer stage | ✅ covered | "Couldn't load this photo." + Retry inside the reserved box; chrome and strip stay usable |
+| partial | E3 Grid | ✅ covered | The film scan caption reads "Riffelsee · 2,760 m approx. · 2019" (year only, approx.) |
+| overflow | E3 Grid | ✅ covered | The caption data line wraps only between its three nowrap parts; the longest (378 px) wraps once in a two-column tile at 768 |
+| zero-one-many | E3 Grid | ✅ covered | The trailing flex filler keeps a single last tile from stretching across a row |
+| long-text | E3 Grid | ✅ covered | Titles wrap; the data line breaks only at " · "; nothing truncates [UUPM truncation-strategy] |
+| empty | E4 Carousel / stepper | ➖ dismissed | Zero photos fails the build; the carousel always has four frames |
+| loading | E4 Carousel / stepper | ✅ covered | 3D: a static frame-outline skeleton with live controls; stepper: the image box at its ratio in bg-surface-overlay |
+| error | E4 Carousel / stepper | ✅ covered | No WebGL2, Save-Data, low memory, reduced motion or a lost context render the stepper; no error copy; three.js never loads under the static gate |
+| populated | E4 Carousel / stepper | 🧪 backstop | `{ statement: "The front frame is unchanged after 6 s idle; ←/→ act only with focus inside the region and never while a dialog is open; 1/4 disables Previous and 4/4 disables Next with aria-disabled", verification: backstop }` |
+| long-text | E4 Carousel / stepper | ✅ covered | The controls bar is flex-wrap: the caption title wraps in the centre column; button labels are fixed short copy; nothing truncates |
+| empty | E5 Viewer stage | ➖ dismissed | Every slug maps to a photo; unknown slugs return the designed 404 |
+| loading | E5 Viewer stage | ✅ covered | The opener's derivative paints first and the large derivative swaps in when decoded; after 1 s with nothing decoded, "Loading photo" shows [UUPM progressive-loading] |
+| error | E5 Viewer stage | ✅ covered | "Couldn't load this photo." and Retry (accessible name "Retry loading photo") inside the reserved box; chrome and strip stay usable [UUPM error-recovery] |
 | populated | E5 Viewer stage | 🧪 backstop | `{ statement: "Direct /photos/<slug> renders the page surface with nav and footer and no dialog; a grid click opens the dialog with URL /photos/<slug>; Back closes it; three steps keep history.length constant and focus on Next; Tab stays inside the dialog in Chromium, Firefox and local WebKit; Escape unwinds callout → zoom → close; focus returns to [data-photo-id] of the photo shown at close", verification: backstop }` |
-| overflow | E5 Viewer stage | ✅ covered | The photo box is the largest contain-fit at the photo's ratio; zoomed, the stage scrolls over its full area; scroll tier caps the photo at 70svh |
-| loading | E6 Strip | ➖ dismissed | Build-time data, rendered with the viewer |
-| partial | E6 Strip | 🧪 backstop | `{ statement: "The film scan strip shows 'Film scan · 2019' and '≈ 45.9837 N 7.7623 E · ±100 m (approx.)' and '© 2019 Tim Lui, all rights reserved'; no strip of any photo contains —, undefined, null, NaN or unknown; formatExposureTime prints 0.3 s and 1/4 s correctly and omits 0", verification: backstop }` |
-| overflow / long-text | E6 Strip | ✅ covered | Data lines wrap only at ` · `; titles and story wrap; the scroll tier lets the surface scroll; nothing truncates |
-| loading | E7 Hotspots | ➖ dismissed | Static editorial data |
-| error | E7 Hotspots | ✅ covered | Unavailable `localStorage` falls back to labels on, with no error |
+| overflow | E5 Viewer stage | ✅ covered | The photo box is the largest contain-fit at the photo's ratio; zoomed, the stage scrolls over its full area; the scroll tier caps the photo at 70svh |
+| long-text | E5 Viewer stage | ✅ covered | Chrome labels are fixed short copy, visible only from 768 px; at 375 the chrome fits 343 px (160 + 148 px groups) |
+| empty | E6 Strip | ✅ covered | Missing fields are left out, never shown as filler (—, unknown, undefined, null, NaN or an empty separator) [D-07]; every photo has a title, story and rights line |
+| loading | E6 Strip | ➖ dismissed | Build-time data, rendered with the viewer; the photo's own loading state is E5 |
+| error | E6 Strip | ➖ dismissed | Build-time text with no fetch, so nothing can fail to load; the photo's load error is E5 |
+| populated | E6 Strip | ✅ covered | Strip rows 1–8: one column on the scroll tier, two columns (3fr / 2fr) on the key and gutter tiers |
+| partial | E6 Strip | 🧪 backstop | `{ statement: "The film scan strip shows 'Film scan · 2019', '≈ 45.9837 N 7.7623 E · ±100 m (approx.)' and '© 2019 Tim Lui, all rights reserved'; no strip of any photo contains —, undefined, null, NaN or unknown; formatExposureTime prints 0.3 s and 1/4 s correctly and omits 0", verification: backstop }` |
+| overflow | E6 Strip | ✅ covered | Data lines wrap only at " · "; titles and story wrap; on the scroll tier the surface scrolls; nothing truncates |
+| zero-one-many | E6 Strip | ➖ dismissed | A fixed field set, not a variable-length list; individual missing fields are handled under partial |
+| long-text | E6 Strip | ✅ covered | The story is max-w-prose and wraps; EXIF line 1 (404 px) and the approx. position line (411 px) fit the 420 px column at 1440 and wrap at " · " below it |
+| empty | E7 Hotspots | ✅ covered | A photo with no annotations shows no markers, leaders, gutter labels, dots or key; the Hide labels toggle still renders (global preference) |
+| loading | E7 Hotspots | ➖ dismissed | Static editorial data, rendered with the viewer |
+| error | E7 Hotspots | ✅ covered | Unavailable localStorage falls back to labels on, with no error (try/catch on every read and write) |
 | populated | E7 Hotspots | 🧪 backstop | `{ statement: "Gutter labels and key rows expose aria-expanded; Enter expands and Escape collapses with focus back on the label; H toggles aria-pressed on Hide labels and the choice survives a reload; with storage blocked labels are on", verification: backstop }` |
-| partial | E7 Hotspots | ✅ covered | An annotation without facts (summit above the Riffelsee) expands to its description only |
+| partial | E7 Hotspots | ✅ covered | An annotation without facts (the summit above the Riffelsee) expands to its description only |
 | overflow | E7 Hotspots | ✅ covered | The stacker keeps labels inside the stage for any count; an expanded panel pushes later labels down; a gutter scrolls only if its stack exceeds the stage |
-| zero-one-many | E7 Hotspots | ✅ covered | Zero annotations: no markers, no key; one or many: reading-order numbering and stacking |
+| zero-one-many | E7 Hotspots | ✅ covered | Zero annotations: no markers and no key; one or many: reading-order numbering and stacking (today 1–2 per photo) |
 | long-text | E7 Hotspots | ✅ covered | Titles and facts wrap inside the 192 px plate or the key row; nothing truncates |
-| loading | E8 Photo page | ✅ covered | Server-rendered with metadata; the photo follows the stage loading rule |
-| error | E8 Photo page | ✅ covered | Unknown slug → designed 404 inside the shell (server-rendered status checked by e2e) |
+| empty | E8 Photo page | ➖ dismissed | Every valid slug has a photo; unknown slugs render the designed 404 (dynamicParams = false) |
+| loading | E8 Photo page | ✅ covered | Server-rendered with metadata; the photo follows the E5 stage loading rule |
+| error | E8 Photo page | ✅ covered | Unknown slug → the designed 404 inside the shell, with a 404 status checked by e2e |
+| populated | E8 Photo page | ✅ covered | Direct load renders SiteNav, the "All photographs" link, the page-variant viewer with the title as h1, and SiteFooter, with no dialog element (e2e LBOX-01) |
+| partial | E8 Photo page | ➖ dismissed | No form on this page ("page form" in the prose means the page variant of the viewer); partial photo data is E6 |
 | overflow | E8 Photo page | ✅ covered | On the scroll tier the back link takes its own row above the chrome |
-| long-text | E8 Photo page | ➖ dismissed | Fixed short copy ("All photographs") |
+| long-text | E8 Photo page | ➖ dismissed | Fixed short copy ("All photographs"); the photo title wraps under E6 |
 
 ---
 
@@ -627,18 +648,28 @@ These six began as researcher defaults. On 2026-10-26 Tim picked the recommended
 | 5 | "No \"approx.\" (Recommended)" | Kicker `4 waypoints · 1,617–2,760 m · Zermatt` | `… 1,617–2,760 m approx. …`, or another wording |
 | 6 | "Add the margin line (Recommended)" | Map margin line `Zermatt – Matterhorn · contours every 100 m` · `Terrain: swissALTIRegio, swisstopo` | No line under the map (the footer carries the attribution) |
 
+Three more choices followed the checker's sign-off review and the UI-consideration probe (same session, 2026-10-26):
+
+| # | Tim's selection | Decision | Alternative not chosen |
+|---|-----------------|----------|------------------------|
+| 7 | "Inset ring, keep 48/68" | Fixed-height plates (map plates, gutter labels) and the expanded panel draw their outline as `ring-1 ring-inset`, so the boxes are exactly 48 / 68 px and the label-layout sweep (sheet sides 312–1100 px) stands unchanged | Keep `border` and declare 50 / 70 px boxes (Phase 9 recipe; the compact floor moves to a 316 px sheet) |
+| 8 | "Keep short visible text (Recommended)" | Visible text `Close`, `Zoom`, `Retry` from 768 px, with accessible names `Close photo`, `Zoom photo`, `Retry loading photo` (each starts with its visible word, WCAG 2.5.3) | Visible text equal to the full accessible name |
+| 9 | "Accept as proposed (Recommended)" | The element kinds and the 58 resolutions in UI Considerations (36 covered, 8 backstop, 14 dismissed) | Revising individual rows |
+
 **Still open (not decided here):** 10-RESEARCH Open Question 1, the previous/next URL mechanism (D-08). Tim re-decides it at planning; see the scope note at the top.
 
 ---
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
-- [ ] Dimension 7 Inventory Provenance: PASS
+gsd-ui-checker, re-check after revision 1 (2026-10-26): **UI-SPEC VERIFIED**, 0 BLOCK, 2 FLAG.
 
-**Approval:** pending
+- [x] Dimension 1 Copywriting: FLAG (non-blocking): one-word visible labels; kept by Tim's choice 8, the accessible names carry the noun
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: FLAG (non-blocking): `border` + `py-1` plates measured 50 / 70 px against the declared 48 / 68; resolved after the check by Tim's choice 7 (inset-ring outline)
+- [x] Dimension 6 Registry Safety: PASS
+- [x] Dimension 7 Inventory Provenance: PASS
+
+**Approval:** approved 2026-10-26
