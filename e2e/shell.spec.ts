@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { site } from '@/data/site';
 import { terrain } from '@/data/generated/terrain';
 import { photos } from '@/data/generated/photos';
+import { buildPhotoViews } from '@/lib/photos/view-model';
 
 /**
  * Shell contract (SHELL-01, SHELL-02, DSGN-08 shell; UI-SPEC "Guardrail
@@ -20,6 +21,8 @@ type Label = (typeof site.nav)[number]['label'];
 const ROUTES: ReadonlyArray<readonly [path: string, current: Label | null]> = [
   ['/', 'Home'],
   ['/photos', 'Photographs'],
+  // The full photo page (LBOX-01, D-08): under /photos, Photographs stays current.
+  ['/photos/' + buildPhotoViews()[0].slug, 'Photographs'],
   ['/projects', 'Engineering'],
   ['/projects/clix-cli', 'Engineering'],
   ['/roadmap', 'Roadmap'],
@@ -156,6 +159,9 @@ const NOT_FOUND_PATHS: ReadonlyArray<readonly [path: string, current: Label | nu
   ['/transitions', null],
   // Under /projects the Engineering destination stays current (prefix match).
   ['/projects/no-such-slug', 'Engineering'],
+  // Photo slugs match exactly and case-sensitively (dynamicParams = false + notFound(), T-10-01).
+  ['/photos/no-such-slug', 'Photographs'],
+  ['/photos/MATTERHORN-FROM-ZERMATT', 'Photographs'],
 ];
 
 test.describe('Shell 404', () => {
