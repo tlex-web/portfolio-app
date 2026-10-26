@@ -8,11 +8,14 @@ import {
   ArrowLeftIcon,
   CaretLeftIcon,
   CaretRightIcon,
+  MagnifyingGlassMinusIcon,
+  MagnifyingGlassPlusIcon,
   XIcon,
 } from '@phosphor-icons/react/dist/ssr';
 import ExifStrip from '@/components/photos/ExifStrip';
 import { useLightbox } from '@/components/photos/LightboxDialog';
 import StagePhoto from '@/components/photos/StagePhoto';
+import ZoomStage from '@/components/photos/ZoomStage';
 import { site } from '@/data/site';
 import { slugFromPath, stepIndex, swipeStep } from '@/lib/photos/stepping';
 import type { PhotoView } from '@/lib/photos/view-model';
@@ -93,7 +96,20 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * naming a photo, so it is never mounted twice (Pitfall 6).
  * Close is instant (popstate starts no view transition).
  *
- * Hide labels and Zoom go before Close in data-chrome-right (10-10, 10-11).
+ * Zoom (D-06; 10-UI-SPEC "Chrome bar", Zoom row, and "Stage and photo", Zoom
+ * row): the viewer owns `zoomed`, and ZoomStage renders the stage around the
+ * photo box (fit, or 1:1 of the 2560 px derivative in a scroll box). The
+ * chrome's right group holds the Zoom toggle before Close: constant name
+ * 'Zoom photo', visible text 'Zoom' from 768 px, aria-pressed (pressed:
+ * bg-ink text-gallery), aria-keyshortcuts 'z', MagnifyingGlassPlusIcon fitted
+ * and MagnifyingGlassMinusIcon zoomed. The Z key (no modifier held, not in a
+ * text field) toggles it too. Z and the button centre the photo; a click on
+ * the photo zooms in at that point. While zoomed, ZoomStage claims the arrow
+ * keys (they pan, so the stepping listener below skips them) and the first
+ * Escape (an Escape layer in the lightbox; on the page a prevented press the
+ * page handler skips); the swipe is off. Every step resets zoom to fit.
+ *
+ * Hide labels goes before Zoom in data-chrome-right (10-11).
  */
 
 /** The stage `sizes`: the gutter tier takes 2 x 216 px from the viewport width. */
@@ -165,10 +181,14 @@ export default function PhotoViewer({
   const current = photos[index];
   const { aspect, prevSlug, nextSlug } = current;
   const [announcement, setAnnouncement] = useState('');
+  // Fit (false) or 1:1 (true); every step starts fitted (D-06).
+  const [zoomed, setZoomed] = useState(false);
+  const toggleZoom = useCallback(() => setZoomed((z) => !z), []);
+  const onZoomChange = useCallback((z: boolean) => setZoomed(z), []);
 
   // One step: the target is the neighbour in the committed view-model's
   // canonical order (T-10-14), never input; past either end nothing happens
-  // (no wrap); the URL is replaced, never pushed.
+  // (no wrap); the URL is replaced, never pushed; zoom resets to fit.
   const step = useCallback(
     (dir: -1 | 1) => {
       const from = photos.findIndex((p) => p.slug === lastWritten.current);
@@ -178,6 +198,7 @@ export default function PhotoViewer({
       lastWritten.current = slug;
       window.history.replaceState(null, '', `/photos/${slug}`);
       setShownSlug(slug);
+      setZoomed(false);
       setAnnouncement(`Photo ${to + 1} of ${photos.length}: ${title}`);
     },
     [photos]
@@ -189,6 +210,8 @@ export default function PhotoViewer({
   }, [current.title]);
 
   // Page surface only: Escape is the last layer and goes to the gallery (D-08).
+  // The zoom layer runs first (ZoomStage, capture phase): while zoomed it
+  // prevents the press and leaves zoom, and this handler skips it.
   useEffect(() => {
     if (!isPage) return;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -218,6 +241,21 @@ export default function PhotoViewer({
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [step]);
 
+  // Z toggles zoom on both surfaces (the button declares it as its keyboard shortcut):
+  // only with no modifier held and outside text fields. A layout effect for
+  // the same reason as the arrows.
+  useLayoutEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'z' && event.key !== 'Z') return;
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (event.shiftKey || event.repeat || isEditable(event.target)) return;
+      event.preventDefault();
+      toggleZoom();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [toggleZoom]);
+
   // Neighbour preload, once per slug, after the current photo's large layer loads.
   const preloaded = useRef(new Set<string>());
   const preloadNeighbours = useCallback(() => {
@@ -246,6 +284,8 @@ export default function PhotoViewer({
   }
 
   function onPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    // Fitted only: zoomed, a touch drag pans the stage natively.
+    if (zoomed) return;
     if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
     if (!event.isPrimary) return;
     swipe.current = {
@@ -378,6 +418,21 @@ export default function PhotoViewer({
           </button>
         </div>
         <div data-chrome-right="" className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-label="Zoom photo"
+            aria-pressed={zoomed}
+            aria-keyshortcuts="z"
+            className={`${CHROME_BUTTON} aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-gallery aria-pressed:hover:border-ink`}
+            onClick={toggleZoom}
+          >
+            {zoomed ? (
+              <MagnifyingGlassMinusIcon size={24} aria-hidden="true" className="md:size-5" />
+            ) : (
+              <MagnifyingGlassPlusIcon size={24} aria-hidden="true" className="md:size-5" />
+            )}
+            <span className="hidden md:inline">Zoom</span>
+          </button>
           {lightbox && (
             <button
               type="button"
@@ -391,12 +446,9 @@ export default function PhotoViewer({
           )}
         </div>
       </div>
-      <div
-        data-viewer-stage=""
-        className="lb-key:flex lb-key:min-h-0 lb-key:flex-1 lb-key:items-center lb-key:justify-center lb-key:[container-type:size] lb-gutter:flex lb-gutter:min-h-0 lb-gutter:flex-1 lb-gutter:items-center lb-gutter:justify-center lb-gutter:px-54 lb-gutter:[container-type:size]"
-      >
+      <ZoomStage view={current} zoomed={zoomed} onZoomChange={onZoomChange}>
         {photoBox}
-      </div>
+      </ZoomStage>
       <ExifStrip view={current} headingLevel={isPage ? 1 : 2} />
       <p role="status" aria-atomic="true" className="sr-only">
         {announcement}

@@ -789,7 +789,8 @@ test.describe('Zoom (D-06)', () => {
     await expect(button).toHaveAttribute('aria-pressed', 'false');
     await expect(page).toHaveURL(new RegExp(`/photos/${photo.slug}$`));
     await page.keyboard.press('Escape');
-    await expect(page).toHaveURL(/\/photos$/);
+    // The dev server may compile /photos on this first visit.
+    await expect(page).toHaveURL(/\/photos$/, { timeout: 15000 });
   });
 
   test('native pinch-zoom is never blocked: touch-action keeps pinch-zoom in both states', async ({
@@ -805,8 +806,9 @@ test.describe('Zoom (D-06)', () => {
 
     await page.keyboard.press('z');
     await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'true');
-    expect(await touchAction()).toContain('pinch-zoom');
-    expect(await touchAction()).toContain('pan-x');
+    // 'pan-x pan-y pinch-zoom' is exactly what 'manipulation' means, and Chromium
+    // computes it to that keyword.
+    expect(['manipulation', 'pan-x pan-y pinch-zoom']).toContain(await touchAction());
     expect(await cursor()).toBe('grab');
   });
 });
