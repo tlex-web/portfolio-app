@@ -31,3 +31,9 @@
   **What:** twice in 10-08, after `next dev` had served the photos specs and then hot-reloaded edits to `app/(site)/photos/page.tsx` (once also with a concurrent `npm run build`), every in-site photo click became a document navigation: the map lightbox cases and the grid "clicking the first tile opens its photo in the lightbox" case failed with no dialog. A fresh dev server passed `e2e/photos.spec.ts` 41/41 (chromium + firefox), and the production build (`PW_PROD=1`) passed `e2e/photos.spec.ts e2e/shell.spec.ts` 107/107.
   **Not caused by 10-08:** the grid tile, which 10-08 does not touch, lost interception the same way.
   **Next step:** same as the 10-01 and 10-07 items; restart the dev server after editing the photos routes, or verify on the production build.
+
+- Dev-server run reset the reduced-motion carousel stepper mid-test (found in 10-09)
+  status: open
+  **What:** with `next dev` and 2 workers, `photos-carousel.spec.ts` "the stepper shows one photo with the controls and never advances by itself" failed in Chromium twice (once in a lightbox + carousel run, once in 1 of 2 `--repeat-each=2` repeats): after Next stepped to 2 / 4, the six idle seconds ended on "1 / 4", so the stepper had remounted. A probe on the same dev server (4 runs) never reset, and the production build (`PW_PROD=1`) passed the case 4 of 4 in `photos-carousel.spec.ts` + `photos.spec.ts` (130/130) and again in the 238-case photo/shell/privacy/design run.
+  **Not caused by 10-09:** the carousel's key does not change on that page and no view switch happens in the case; the reset matches the dev-server cross-talk items above (an HMR reload or compile from another worker).
+  **Next step:** same as the 10-01, 10-06 and 10-07 items; verify on the production build, which CI uses.
