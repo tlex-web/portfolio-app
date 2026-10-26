@@ -330,7 +330,7 @@ Gap closure (09-UAT.md, sequential on the main working tree):
      - map-style hotspot callouts with leader lines, operable by tap and keyboard, with a legend on mobile and a toggle that hides them
      - "© {capture year} Tim Lui, all rights reserved", with no download button
 
-**Plans**: 3/13 plans executed in 8 waves (10-06 and 10-13 carry blocking checkpoints for Tim)
+**Plans**: 4/13 plans executed in 8 waves (10-06 and 10-13 carry blocking checkpoints for Tim)
 
 Plans:
 **Wave 1**
@@ -339,7 +339,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [x] 10-03-PLAN.md — Viewer layout tiers (lb-scroll/key/gutter), contain-fit stage, two-column strip, loading and error states, gallery contrast pairs
-- [ ] 10-04-PLAN.md — Grid view at ?view=grid: justified rows, slide-mount captions, rewritten GalleryGrid test
+- [x] 10-04-PLAN.md — Grid view at ?view=grid: justified rows, slide-mount captions, rewritten GalleryGrid test
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 10-05-PLAN.md — In-site lightbox: @modal slot, intercepted route, native dialog, focus trap and return, scroll lock (G3), Home links to photo pages
@@ -459,6 +459,6 @@ Plans:
 | 7. Foundation & Guardrails | v2.0 | 27/27 | Complete    | 2026-10-24 |
 | 8. Data & Terrain Pipeline | v2.0 | 13/13 | Complete    | 2026-10-24 |
 | 9. Home Ascent | v2.0 | 22/22 | Complete    | 2026-10-25 |
-| 10. Photography | v2.0 | 3/13 | In Progress | - |
+| 10. Photography | v2.0 | 4/13 | In Progress | - |
 | 11. Engineering & Roadmap | v2.0 | 0/TBD | Not started | - |
 | 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 0/TBD | Not started | - |
