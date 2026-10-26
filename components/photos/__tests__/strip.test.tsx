@@ -42,12 +42,44 @@ describe('ExifStrip fields for every photo (D-05, D-07)', () => {
     }
   );
 
-  it('puts the rights line last in the data column (LBOX-07)', () => {
+  it('puts the rights line last among the data rows, followed only by the shortcut legend (LBOX-07)', () => {
     for (const view of photoViews) {
       const rights = renderStrip(view).querySelector('[data-strip-rights]')!;
       expect(rights).toHaveTextContent(view.rights);
-      expect(rights.nextElementSibling).toBeNull();
+      const legend = rights.nextElementSibling!;
+      expect(legend).toHaveAttribute('data-strip-legend');
+      expect(legend.nextElementSibling).toBeNull();
     }
+  });
+
+  it('row 8: the shortcut legend with every key in a kbd, Esc closing or going to all photographs', () => {
+    const view = viewOf('img-0605');
+    const modal = renderStrip(view, 2).querySelector('[data-strip-legend]')!;
+    expect(modal.textContent).toBe('← → photos · Z zoom · H labels · Esc close');
+    expect([...modal.querySelectorAll('kbd')].map((k) => k.textContent)).toEqual([
+      '←',
+      '→',
+      'Z',
+      'H',
+      'Esc',
+    ]);
+    const page = renderStrip(view, 1).querySelector('[data-strip-legend]')!;
+    expect(page.textContent).toBe('← → photos · Z zoom · H labels · Esc all photographs');
+    // Hidden by default: only a hover-capable fine pointer from 768 px shows it.
+    expect(page).toHaveClass('hidden');
+  });
+
+  it('row 4: the hotspot key slot follows the story in the identity column', () => {
+    const { container } = render(
+      <ExifStrip
+        view={viewOf('img-0605')}
+        headingLevel={2}
+        hotspotKey={<ul aria-label="Labels" data-testid="key" />}
+      />
+    );
+    const key = container.querySelector('[data-testid="key"]')!;
+    expect(key.parentElement).toHaveAttribute('data-strip-identity');
+    expect(key.previousElementSibling).toHaveTextContent(viewOf('img-0605').story);
   });
 
   it('prints place and date with the date in one nowrap tail', () => {

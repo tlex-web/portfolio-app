@@ -1,6 +1,14 @@
 'use client';
 
-import { ViewTransition, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+  ViewTransition,
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -8,15 +16,18 @@ import {
   ArrowLeftIcon,
   CaretLeftIcon,
   CaretRightIcon,
+  EyeSlashIcon,
   MagnifyingGlassMinusIcon,
   MagnifyingGlassPlusIcon,
   XIcon,
 } from '@phosphor-icons/react/dist/ssr';
 import ExifStrip from '@/components/photos/ExifStrip';
+import { HotspotKey, HotspotMarks, HotspotOverlay } from '@/components/photos/Hotspots';
 import { useLightbox } from '@/components/photos/LightboxDialog';
 import StagePhoto from '@/components/photos/StagePhoto';
 import ZoomStage from '@/components/photos/ZoomStage';
 import { site } from '@/data/site';
+import { useLabelsOn } from '@/lib/photos/hotspot-pref';
 import { slugFromPath, stepIndex, swipeStep } from '@/lib/photos/stepping';
 import type { PhotoView } from '@/lib/photos/view-model';
 
@@ -109,7 +120,24 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * Escape (an Escape layer in the lightbox; on the page a prevented press the
  * page handler skips); the swipe is off. Every step resets zoom to fit.
  *
- * Hide labels goes before Zoom in data-chrome-right (10-11).
+ * Hotspots (LBOX-05; D-09, D-10, D-11; 10-UI-SPEC "Hotspots"): HotspotMarks
+ * draws the glyphs (gutter tier) and the numbered dots (key and scroll tiers)
+ * inside the photo box, HotspotOverlay the gutter labels and leaders over the
+ * stage, and HotspotKey the strip's 'Labels' key. The viewer owns expandedId
+ * (one callout open at a time, collapsed on every step) and the global label
+ * preference (useLabelsOn: one localStorage value, on by default). The
+ * chrome's right group starts with 'Hide labels' (constant name, aria-pressed
+ * while hidden, aria-keyshortcuts 'h', EyeSlashIcon, visible text from
+ * 768 px); the H key toggles it too. Hidden labels and zoom both remove
+ * everything drawn on or around the photo; the key stays.
+ *
+ * The callout is the first Escape layer (10-UI-SPEC "Focus": callout, then
+ * zoom, then close): it collapses the open hotspot and returns focus to its
+ * gutter label or key row, whichever is shown. In the lightbox it registers
+ * through registerEscape after ZoomStage (a child, whose layout effect runs
+ * first), so it runs first; on the page it listens on window in the capture
+ * phase, ahead of ZoomStage's document capture listener, and prevents the
+ * press so the later layers skip it.
  */
 
 /** The stage `sizes`: the gutter tier takes 2 x 216 px from the viewport width. */
@@ -184,6 +212,14 @@ export default function PhotoViewer({
   // Fit (false) or 1:1 (true); every step starts fitted (D-06).
   const [zoomed, setZoomed] = useState(false);
   const toggleZoom = useCallback(() => setZoomed((z) => !z), []);
+  // The open hotspot (one at a time) and the global label preference (D-10).
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const toggleHotspot = useCallback(
+    (id: string) => setExpandedId((open) => (open === id ? null : id)),
+    []
+  );
+  const [labelsOn, setLabelsOn] = useLabelsOn();
+  const viewerRef = useRef<HTMLDivElement>(null);
   const onZoomChange = useCallback((z: boolean) => setZoomed(z), []);
 
   // One step: the target is the neighbour in the committed view-model's
@@ -199,6 +235,7 @@ export default function PhotoViewer({
       window.history.replaceState(null, '', `/photos/${slug}`);
       setShownSlug(slug);
       setZoomed(false);
+      setExpandedId(null);
       setAnnouncement(`Photo ${to + 1} of ${photos.length}: ${title}`);
     },
     [photos]
@@ -255,6 +292,44 @@ export default function PhotoViewer({
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [toggleZoom]);
+
+  // H toggles Hide labels on both surfaces, under the same rules as Z.
+  const toggleLabels = useEffectEvent(() => setLabelsOn(!labelsOn));
+  useLayoutEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'h' && event.key !== 'H') return;
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (event.shiftKey || event.repeat || isEditable(event.target)) return;
+      event.preventDefault();
+      toggleLabels();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  // The callout Escape layer: collapse the open hotspot and return focus to
+  // its gutter label or key row, whichever is rendered and shown (while
+  // zoomed neither label is drawn, so focus stays where it is).
+  const collapseCallout = useEffectEvent((): boolean => {
+    if (expandedId === null) return false;
+    const id = CSS.escape(expandedId);
+    setExpandedId(null);
+    const candidates = viewerRef.current?.querySelectorAll<HTMLElement>(
+      `[data-hotspot-label="${id}"], [data-hotspot-row="${id}"]`
+    );
+    [...(candidates ?? [])].find((el) => el.getClientRects().length > 0)?.focus();
+    return true;
+  });
+  useLayoutEffect(() => lightbox?.registerEscape(() => collapseCallout()), [lightbox]);
+  useLayoutEffect(() => {
+    if (lightbox) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return;
+      if (collapseCallout()) event.preventDefault();
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [lightbox]);
 
   // Neighbour preload, once per slug, after the current photo's large layer loads.
   const preloaded = useRef(new Set<string>());
@@ -338,7 +413,7 @@ export default function PhotoViewer({
     <div
       ref={boxRef}
       data-photo-box=""
-      className="mx-auto bg-gallery [touch-action:pan-y_pinch-zoom] lb-scroll:w-[min(100%,calc(70svh*var(--ar)))] lb-key:w-[min(100cqw,calc(100cqh*var(--ar)))] lb-gutter:w-[min(100cqw,calc(100cqh*var(--ar)))]"
+      className="relative mx-auto bg-gallery [touch-action:pan-y_pinch-zoom] lb-scroll:w-[min(100%,calc(70svh*var(--ar)))] lb-key:w-[min(100cqw,calc(100cqh*var(--ar)))] lb-gutter:w-[min(100cqw,calc(100cqh*var(--ar)))]"
       style={boxStyle}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -346,6 +421,13 @@ export default function PhotoViewer({
       onPointerCancel={(event) => endSwipe(event, false)}
     >
       <StagePhoto view={current} sizes={STAGE_SIZES} onLargeLoad={preloadNeighbours} />
+      <HotspotMarks
+        view={current}
+        labelsOn={labelsOn}
+        zoomed={zoomed}
+        expandedId={expandedId}
+        onToggle={toggleHotspot}
+      />
     </div>
   );
   const photoBox = named ? (
@@ -358,6 +440,7 @@ export default function PhotoViewer({
 
   return (
     <div
+      ref={viewerRef}
       data-photo-viewer=""
       className={
         isPage
@@ -420,6 +503,17 @@ export default function PhotoViewer({
         <div data-chrome-right="" className="flex items-center gap-2">
           <button
             type="button"
+            aria-label="Hide labels"
+            aria-pressed={!labelsOn}
+            aria-keyshortcuts="h"
+            className={`${CHROME_BUTTON} aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-gallery aria-pressed:hover:border-ink`}
+            onClick={() => setLabelsOn(!labelsOn)}
+          >
+            <EyeSlashIcon size={24} aria-hidden="true" className="md:size-5" />
+            <span className="hidden md:inline">Hide labels</span>
+          </button>
+          <button
+            type="button"
             aria-label="Zoom photo"
             aria-pressed={zoomed}
             aria-keyshortcuts="z"
@@ -448,8 +542,26 @@ export default function PhotoViewer({
       </div>
       <ZoomStage view={current} zoomed={zoomed} onZoomChange={onZoomChange}>
         {photoBox}
+        <HotspotOverlay
+          view={current}
+          labelsOn={labelsOn}
+          zoomed={zoomed}
+          expandedId={expandedId}
+          onToggle={toggleHotspot}
+        />
       </ZoomStage>
-      <ExifStrip view={current} headingLevel={isPage ? 1 : 2} />
+      <ExifStrip
+        view={current}
+        headingLevel={isPage ? 1 : 2}
+        hotspotKey={
+          <HotspotKey
+            view={current}
+            labelsOn={labelsOn}
+            expandedId={expandedId}
+            onToggle={toggleHotspot}
+          />
+        }
+      />
       <p role="status" aria-atomic="true" className="sr-only">
         {announcement}
       </p>

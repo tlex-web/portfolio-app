@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import type { PhotoView } from '@/lib/photos/view-model';
 
 /**
@@ -9,8 +9,14 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * Order (D-05): the title (h1 on the page, h2#photo-title as the dialog label
  * in the lightbox), place · date, the story, then the data column: the EXIF
  * list (or 'Film scan · 2019'), the altitude and position list, and the
- * rights line last. Rows 4 (hotspot key) and 8 (shortcut legend) arrive in
- * 10-11. On the scroll tier the two blocks stack in one column; on the key and
+ * rights line last. Row 4 is the hotspot key (the `hotspotKey` slot, filled by
+ * PhotoViewer with HotspotKey, which shows only on the key and scroll tiers).
+ * Row 8 is the shortcut legend, '← → photos · Z zoom · H labels · Esc close'
+ * ('Esc all photographs' on the page, h1 surface), each key in a kbd, shown
+ * only from 768 px on a device that hovers with a fine pointer: the keys mean
+ * nothing on touch (10-UI-SPEC Strip row 8, in place of a '?' overlay). Each
+ * key and its word are one nowrap unit, so the line wraps only at ' · '.
+ * On the scroll tier the two blocks stack in one column; on the key and
  * gutter tiers (lb-key, lb-gutter) they sit side by side in a 3fr / 2fr grid
  * with a 32 px gap: identity and story left, data right. At 1440 the 420 px
  * right column holds EXIF line 1 and the approximate position line on one
@@ -48,12 +54,20 @@ function ListLine({ rows }: { rows: readonly ListRow[] }) {
   ));
 }
 
+/** Row 8: only from 768 px with hover and a fine pointer (an arbitrary media variant). */
+const LEGEND =
+  'mt-2 hidden font-mono text-sm text-ink-muted [@media(min-width:48rem)_and_(hover:hover)_and_(pointer:fine)]:block';
+
 export default function ExifStrip({
   view,
   headingLevel,
+  hotspotKey,
 }: {
   view: PhotoView;
+  /** 1 on the photo page (the h1 surface, Escape goes to all photographs), 2 in the lightbox. */
   headingLevel: 1 | 2;
+  /** Row 4, the hotspot key (HotspotKey), after the story. */
+  hotspotKey?: ReactNode;
 }) {
   const { title, story, rights, strip } = view;
   const Title = headingLevel === 1 ? 'h1' : 'h2';
@@ -89,6 +103,7 @@ export default function ExifStrip({
             </span>
           </p>
           <p className="mt-2 max-w-prose text-base text-ink-muted">{story}</p>
+          {hotspotKey}
         </div>
         <div data-strip-data="" className="mt-4 lb-key:mt-0 lb-gutter:mt-0">
           {strip.filmLine && (
@@ -114,6 +129,23 @@ export default function ExifStrip({
           )}
           <p data-strip-rights="" className="mt-2 text-sm text-ink-muted">
             {rights}
+          </p>
+          <p data-strip-legend="" className={LEGEND}>
+            <span className="whitespace-nowrap">
+              <kbd>←</kbd> <kbd>→</kbd> photos
+            </span>
+            {' · '}
+            <span className="whitespace-nowrap">
+              <kbd>Z</kbd> zoom
+            </span>
+            {' · '}
+            <span className="whitespace-nowrap">
+              <kbd>H</kbd> labels
+            </span>
+            {' · '}
+            <span className="whitespace-nowrap">
+              <kbd>Esc</kbd> {headingLevel === 1 ? 'all photographs' : 'close'}
+            </span>
           </p>
         </div>
       </div>

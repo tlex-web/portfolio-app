@@ -57,9 +57,12 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * untouched, fitted and zoomed (LBOX-07).
  */
 
-/** The fitted stage, unchanged from 10-03 apart from the touch-action. */
+/**
+ * The fitted stage, unchanged from 10-03 apart from the touch-action, and
+ * positioned so the hotspot gutter layer (10-11 HotspotOverlay) can cover it.
+ */
 const FITTED_STAGE =
-  '[touch-action:pan-y_pinch-zoom] lb-key:flex lb-key:min-h-0 lb-key:flex-1 lb-key:items-center lb-key:justify-center lb-key:[container-type:size] lb-gutter:flex lb-gutter:min-h-0 lb-gutter:flex-1 lb-gutter:items-center lb-gutter:justify-center lb-gutter:px-54 lb-gutter:[container-type:size]';
+  'relative [touch-action:pan-y_pinch-zoom] lb-key:flex lb-key:min-h-0 lb-key:flex-1 lb-key:items-center lb-key:justify-center lb-key:[container-type:size] lb-gutter:flex lb-gutter:min-h-0 lb-gutter:flex-1 lb-gutter:items-center lb-gutter:justify-center lb-gutter:px-54 lb-gutter:[container-type:size]';
 
 /**
  * The zoomed stage: a scroll box over the stage's full area. On the key and
