@@ -6,7 +6,15 @@ import { editorial } from '@/data/photos/editorial';
 import type { ElevationRef } from '@/data/schemas/editorial';
 import { site } from '@/data/site';
 import { buildWaypoints, type Waypoint, type WaypointInput } from '@/lib/ascent/waypoints';
-import { formatCaptureLabel, formatMetres, type CaptureLike } from '@/lib/photo-format';
+import { formatCoordinates } from '@/lib/home-format';
+import {
+  formatAperture,
+  formatCaptureLabel,
+  formatExposureTime,
+  formatFocalLength,
+  formatMetres,
+  type CaptureLike,
+} from '@/lib/photo-format';
 
 /**
  * The one photo view-model (PHOTO-03, LBOX-01, LBOX-04, LBOX-07; D-05, D-07;
@@ -20,7 +28,8 @@ import { formatCaptureLabel, formatMetres, type CaptureLike } from '@/lib/photo-
  * metadata-free, at most 2560 px), never from the old -thumb/-large files (T-10-03).
  *
  * Like buildWaypoints, a missing manifest variant is a data error, not a state
- * to render: buildPhotoViews throws a RangeError naming the photo.
+ * to render: buildPhotoViews throws a RangeError naming the photo. A missing
+ * fact is not an error: the strip leaves it out and never prints filler (D-07).
  */
 
 /** A responsive image source set: the srcsets, the fallback src and the intrinsic size. */
@@ -30,6 +39,24 @@ export type PhotoImage = {
   srcSetAvif: string;
   srcSetWebp: string;
   src: string;
+};
+
+/**
+ * The viewer strip's data (D-05, D-07; 10-UI-SPEC "Strip"), in display order.
+ * Every value is present and printable; an absent or invalid fact has no row
+ * at all, so no surface can show '—', 'unknown', 'undefined', 'null' or 'NaN'.
+ */
+export type StripFields = {
+  /** Field 2: the editorial location and the capture label. */
+  placeDate: { place: string; date: string };
+  /** Field 5: Camera and Lens on line 1; Focal length, Aperture, Shutter speed and Sensitivity on line 2. */
+  exifRows: readonly { line: 1 | 2; term: string; value: string }[];
+  /** Field 5 for a film scan: 'Film scan · 2019' in place of the EXIF rows; null for a digital photo. */
+  filmLine: string | null;
+  /** Field 6: the DEM altitude and the 4-dp position ('≈ '-prefixed when approximate). */
+  positionRows: readonly { term: 'Altitude' | 'Position'; value: string }[];
+  /** '±100 m (approx.)' for an approximate position with a radius, '(approx.)' without one, else null. */
+  approxNote: string | null;
 };
 
 /** One photo as every Phase 10 surface shows it. */
@@ -51,15 +78,47 @@ export type PhotoView = Waypoint & {
   /** The neighbours in the canonical order; null at the ends (no wrap, UI-SPEC OQ4). */
   prevSlug: string | null;
   nextSlug: string | null;
+  strip: StripFields;
 };
 
 type Variant = { longEdge: number; width: number; height: number; avif: string; webp: string };
 
-/** The photo fields buildPhotoViews reads beyond buildWaypoints' own (structural). */
-type PhotoViewPhoto = WaypointInput['photos'][number] & { capture: CaptureLike };
+/** The EXIF facts of a digital photo; each one may be missing (WR-02, D-07). */
+type ExifInput = {
+  camera?: string | null;
+  lens?: string | null;
+  focalLengthMm?: number | null;
+  fNumber?: number | null;
+  exposureTimeS?: number | null;
+  iso?: number | null;
+};
+
+type PositionInput = { lat: number; lon: number; approximate: boolean; radiusM?: number | null };
+
+/**
+ * The photo fields buildPhotoViews reads beyond buildWaypoints' own
+ * (a structural view of data/generated/photos.ts; still a valid
+ * buildWaypoints photo, so one fixture feeds both).
+ */
+type PhotoViewPhoto = WaypointInput['photos'][number] & {
+  capture: CaptureLike;
+  medium: 'digital' | 'film-scan';
+  exif: ExifInput | null;
+  position: PositionInput | null;
+};
+
+/** What the strip is built from: the photo facts plus the copy and height the waypoint already resolved. */
+export type StripSource = {
+  medium: 'digital' | 'film-scan';
+  exif: ExifInput | null;
+  position: PositionInput | null;
+  place: string;
+  captureLabel: string;
+  altitudeM: number;
+};
 
 /** The input of buildPhotoViews; structurally a WaypointInput, so the same fixture feeds both. */
-export type PhotoViewInput = WaypointInput & { photos: readonly PhotoViewPhoto[] };
+export type PhotoViewInput = Omit<WaypointInput, 'photos'> & { photos: readonly PhotoViewPhoto[] };
 
 const TILE_EDGES = [640, 1024, 1600] as const;
 const STAGE_EDGES = [1024, 1600, 2560] as const;
@@ -84,6 +143,54 @@ function imageSet(id: string, variants: readonly Variant[], edges: readonly numb
   };
 }
 
+const positive = (v: number | null | undefined): v is number =>
+  typeof v === 'number' && Number.isFinite(v) && v > 0;
+const text = (v: string | null | undefined): v is string => typeof v === 'string' && v.trim() !== '';
+
+/**
+ * The strip fields of one photo (D-07). Each EXIF unit is kept only when its
+ * value is present and valid (an exposure only above 0, WR-04); a film scan
+ * shows 'Film scan · {year}' instead of EXIF; the position is printed at 4 dp,
+ * marked '≈' with its radius and '(approx.)' when hand-placed (LBOX-04,
+ * T-10-02); a view without coordinates has no Position row.
+ */
+export function stripFields(source: StripSource): StripFields {
+  const { medium, exif, position, place, captureLabel, altitudeM } = source;
+  const exifRows: { line: 1 | 2; term: string; value: string }[] = [];
+  if (medium === 'digital' && exif) {
+    if (text(exif.camera)) exifRows.push({ line: 1, term: 'Camera', value: exif.camera });
+    if (text(exif.lens)) exifRows.push({ line: 1, term: 'Lens', value: exif.lens });
+    if (positive(exif.focalLengthMm)) {
+      exifRows.push({ line: 2, term: 'Focal length', value: formatFocalLength(exif.focalLengthMm) });
+    }
+    if (positive(exif.fNumber)) exifRows.push({ line: 2, term: 'Aperture', value: formatAperture(exif.fNumber) });
+    if (positive(exif.exposureTimeS)) {
+      exifRows.push({ line: 2, term: 'Shutter speed', value: formatExposureTime(exif.exposureTimeS) });
+    }
+    if (positive(exif.iso)) exifRows.push({ line: 2, term: 'Sensitivity', value: `ISO ${Math.round(exif.iso)}` });
+  }
+
+  const positionRows: { term: 'Altitude' | 'Position'; value: string }[] = [];
+  if (Number.isFinite(altitudeM)) positionRows.push({ term: 'Altitude', value: formatMetres(altitudeM) });
+  const located = position !== null && Number.isFinite(position.lat) && Number.isFinite(position.lon);
+  if (located) {
+    const coordinates = formatCoordinates(position);
+    positionRows.push({ term: 'Position', value: position.approximate ? `≈ ${coordinates}` : coordinates });
+  }
+  let approxNote: string | null = null;
+  if (located && position.approximate) {
+    approxNote = positive(position.radiusM) ? `±${formatMetres(position.radiusM)} (approx.)` : '(approx.)';
+  }
+
+  return {
+    placeDate: { place, date: captureLabel },
+    exifRows,
+    filmLine: medium === 'film-scan' ? `Film scan · ${captureLabel}` : null,
+    positionRows,
+    approxNote,
+  };
+}
+
 /**
  * Every photo view in the canonical order (buildWaypoints' order, unchanged).
  *
@@ -102,10 +209,11 @@ export function buildPhotoViews(
     const photo = input.photos.find((p) => p.id === w.id) ?? fail(w.id, 'has no photo facts');
     const variants = input.imageManifest[w.id]?.variants ?? fail(w.id, 'has no image-manifest entry');
     const largest = variant(w.id, variants, 2560);
+    const captureLabel = formatCaptureLabel(photo.capture);
 
     return {
       ...w,
-      captureLabel: formatCaptureLabel(photo.capture),
+      captureLabel,
       altitudeLabel: `${formatMetres(w.altitudeM)}${w.approximate ? ' approx.' : ''}`,
       aspect: { w: largest.width, h: largest.height },
       tile: imageSet(w.id, variants, TILE_EDGES, 640, 640),
@@ -114,6 +222,14 @@ export function buildPhotoViews(
       rights: `© ${w.years} ${site.name}, all rights reserved`,
       prevSlug: i > 0 ? waypoints[i - 1].slug : null,
       nextSlug: i < waypoints.length - 1 ? waypoints[i + 1].slug : null,
+      strip: stripFields({
+        medium: photo.medium,
+        exif: photo.exif,
+        position: photo.position,
+        place: w.place,
+        captureLabel,
+        altitudeM: w.altitudeM,
+      }),
     };
   });
 }

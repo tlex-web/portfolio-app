@@ -81,9 +81,16 @@ export function formatCaptureLabel(capture: CaptureLike): string {
   return `${Number(day)} ${MONTHS[Number(month) - 1]} ${year}, ${time.slice(0, 5)}`;
 }
 
-/** Shutter time: below one second as '1/500 s', otherwise '2 s' or '1.5 s'. */
+/**
+ * Shutter time as a camera shows it (WR-04): from 0.3 s in seconds ('0.3 s',
+ * '0.8 s', '1 s', '1.5 s'), below that as a fraction ('1/4 s', '1/500 s').
+ *
+ * @throws RangeError for a time that is not a finite number above 0, which
+ *   would otherwise print '1/Infinity s'; callers leave the unit out instead.
+ */
 export function formatExposureTime(s: number): string {
-  if (s >= 1) return `${oneDecimal(s)}${NBSP}s`;
+  if (!(s > 0) || !Number.isFinite(s)) throw new RangeError(`formatExposureTime: ${s}`);
+  if (s >= 0.3) return `${oneDecimal(s)}${NBSP}s`;
   return `1/${Math.round(1 / s)}${NBSP}s`;
 }
 

@@ -50,6 +50,16 @@ export function formatLatLon({ lat, lon }: { lat: number; lon: number }): string
 }
 
 /**
+ * WGS84 coordinates as the viewer strip prints them (D-07; 10-UI-SPEC Strip
+ * field 6): the same four decimals and round-half-up rule as formatLatLon, the
+ * hemisphere letter after U+00A0, and one plain space between the halves:
+ * { lat: 46.015, lon: 7.7414 } -> '46.0150 N 7.7414 E'.
+ */
+export function formatCoordinates({ lat, lon }: { lat: number; lon: number }): string {
+  return `${fourDecimals(lat)}${NBSP}${lat < 0 ? 'S' : 'N'} ${fourDecimals(lon)}${NBSP}${lon < 0 ? 'W' : 'E'}`;
+}
+
+/**
  * A capture's month and year for the card line: 'Sep 2021' for an EXIF capture
  * (fixed English month names), the year alone for a year-only capture, which
  * never gains an invented month (08 D-03).
