@@ -27,9 +27,11 @@ const CAROUSEL_URL = '/photos?view=carousel';
 
 const region = (page: Page) => page.getByRole('region', { name: 'Photographs', exact: true });
 const counter = (page: Page) => region(page).locator('[data-carousel-counter]');
-const prev = (page: Page) => region(page).getByRole('button', { name: 'Previous photo', exact: true });
+const prev = (page: Page) =>
+  region(page).getByRole('button', { name: 'Previous photo', exact: true });
 const next = (page: Page) => region(page).getByRole('button', { name: 'Next photo', exact: true });
-const openPhoto = (page: Page) => region(page).getByRole('link', { name: 'Open photo', exact: true });
+const openPhoto = (page: Page) =>
+  region(page).getByRole('link', { name: 'Open photo', exact: true });
 
 /**
  * Wait until React has hydrated an element. A click on server-rendered markup
@@ -38,9 +40,12 @@ const openPhoto = (page: Page) => region(page).getByRole('link', { name: 'Open p
  */
 async function waitForHydration(target: Locator) {
   await expect
-    .poll(() => target.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))), {
-      timeout: 15000,
-    })
+    .poll(
+      () => target.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))),
+      {
+        timeout: 15000,
+      }
+    )
     .toBe(true);
 }
 
@@ -51,7 +56,8 @@ async function loadedScriptBodies(page: Page): Promise<{ url: string; body: stri
       .getEntriesByType('resource')
       .map((entry) => entry as PerformanceResourceTiming)
       .filter(
-        (entry) => entry.initiatorType === 'script' || /\.m?js(\?|$)/.test(new URL(entry.name).pathname)
+        (entry) =>
+          entry.initiatorType === 'script' || /\.m?js(\?|$)/.test(new URL(entry.name).pathname)
       )
       .map((entry) => entry.name)
       .filter((url) => new URL(url).origin === location.origin)
@@ -89,7 +95,10 @@ test.describe('Carousel stepper (reduced motion; PHOTO-02, PHOTO-04, D-12, D-13)
     await expect(carousel.getByText(views[0].title, { exact: true })).toBeVisible();
     await expect(openPhoto(page)).toHaveAttribute('href', `/photos/${views[0].slug}`);
     await expect(openPhoto(page)).toHaveAttribute('data-photo-id', views[0].slug);
-    await expect(carousel.locator('[data-carousel-stepper] img')).toHaveAttribute('alt', views[0].alt);
+    await expect(carousel.locator('[data-carousel-stepper] img')).toHaveAttribute(
+      'alt',
+      views[0].alt
+    );
 
     // Previous at 1 / 4 is ignored; Next steps and announces. An aria-disabled
     // button is not "enabled" to Playwright, so the end presses are forced.
@@ -104,7 +113,10 @@ test.describe('Carousel stepper (reduced motion; PHOTO-02, PHOTO-04, D-12, D-13)
     );
     await expect(openPhoto(page)).toHaveAttribute('href', `/photos/${views[1].slug}`);
     await expect(openPhoto(page)).toHaveAttribute('data-photo-id', views[1].slug);
-    await expect(carousel.locator('[data-carousel-stepper] img')).toHaveAttribute('alt', views[1].alt);
+    await expect(carousel.locator('[data-carousel-stepper] img')).toHaveAttribute(
+      'alt',
+      views[1].alt
+    );
 
     // PHOTO-04: no timer. Six idle seconds change nothing.
     await page.waitForTimeout(6000);
@@ -144,7 +156,9 @@ test.describe('Carousel stepper (reduced motion; PHOTO-02, PHOTO-04, D-12, D-13)
     await expect(region(page)).toHaveAttribute('data-active-slug', views[1].slug);
   });
 
-  test('the stepper opens the lightbox and Escape returns focus to Open photo', async ({ page }) => {
+  test('the stepper opens the lightbox and Escape returns focus to Open photo', async ({
+    page,
+  }) => {
     await page.goto(CAROUSEL_URL);
     await expect(region(page)).toHaveAttribute('data-carousel-mode', 'stepper');
     await waitForHydration(next(page));
@@ -237,6 +251,38 @@ test.describe('3D carousel (capable device; D-12, PHOTO-04)', () => {
     await page.waitForTimeout(6000);
     await expect(carousel).toHaveAttribute('data-active-slug', views[0].slug);
     await expect(counter(page)).toHaveText(`1 / ${views.length}`);
+  });
+
+  test('3D textures request only hashed webp derivatives, never legacy files @chromium-only', async ({
+    page,
+  }) => {
+    const requested = new Set<string>();
+    page.on('request', (request) => {
+      const { pathname } = new URL(request.url());
+      if (pathname.startsWith('/images/')) requested.add(pathname);
+    });
+    await page.goto(CAROUSEL_URL);
+    await expect3dReady(page);
+    // Let the full-size texture swaps finish.
+    await page.waitForTimeout(3000);
+
+    const paths = [...requested];
+    expect(paths.length, '/images/ requests by the 3D carousel').toBeGreaterThan(0);
+    // Every image the page asked for is a content-hashed manifest derivative; no legacy file.
+    // (The server-rendered first paint may fetch one AVIF before the canvas mounts.)
+    for (const path of paths) {
+      expect(path).toMatch(/^\/images\/photos\/[a-z0-9-]+\.[0-9a-f]{10}\.(webp|avif)$/);
+      expect(path).not.toMatch(/-(thumb|medium|large)/);
+    }
+    // The textures themselves are the hashed 640 (first) and 1024 (swap) WebP derivatives.
+    for (const view of views) {
+      for (const size of [640, 1024]) {
+        const found = paths.filter(
+          (p) => p.startsWith(`/images/photos/${view.id}-${size}.`) && p.endsWith('.webp')
+        );
+        expect(found, `${view.id} ${size}px WebP texture`).toHaveLength(1);
+      }
+    }
   });
 
   test('3D keys step inside the region and the front photo follows the lightbox @chromium-only', async ({

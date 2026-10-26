@@ -486,6 +486,33 @@ test.describe('Moving between photos (LBOX-02)', () => {
     await expect(status(dialog)).toHaveText(`Photo 1 of ${views.length}: ${first.title}`);
   });
 
+  test('preload: opening a photo fetches the next photo derivative before Next is pressed', async ({
+    page,
+  }) => {
+    const nextView = views[1];
+    const urls = new Set(
+      [
+        nextView.stage.src,
+        ...nextView.stage.srcSetAvif.split(',').map((u) => u.trim().split(' ')[0]),
+      ].map((u) => new URL(u, 'http://localhost').pathname)
+    );
+    expect(urls.size).toBeGreaterThan(1);
+    for (const u of urls) expect(u).toMatch(DERIVATIVE);
+
+    await page.goto('/photos?view=grid');
+    const tile = page.getByRole('list', { name: GRID_LIST }).getByRole('link').nth(0);
+    await waitForHydration(tile);
+    const preload = page.waitForRequest((request) => urls.has(new URL(request.url()).pathname), {
+      timeout: 20000,
+    });
+    await tile.click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible({ timeout: 20000 });
+    await preload;
+    // Still on the first photo: the fetch came from the preload, not from a step.
+    await expect(page).toHaveURL(new RegExp(`/photos/${views[0].slug}$`));
+  });
+
   test('a touch swipe on the photo steps to the next photo @chromium-only', async ({ page }) => {
     const dialog = await openFirstTile(page);
     const photoBox = dialog.locator('[data-photo-box]');
@@ -1000,6 +1027,79 @@ test.describe('Hotspots (LBOX-05)', () => {
         .evaluate((el) => getComputedStyle(el).backgroundColor);
     expect(await fill(1)).toBe(accent);
     expect(await fill(0)).not.toBe(accent);
+  });
+
+  test('scroll tier (375 x 800): numbered dots on the photo and the Labels key match the hotspots', async ({
+    page,
+  }) => {
+    const hotspots = views[trail].hotspots;
+    expect(hotspots.length).toBeGreaterThan(1);
+    const dialog = await openTrail(page, 375, 800);
+    const dots = dialog.locator('[data-hotspot-dot]');
+    await expect(dots).toHaveCount(hotspots.length);
+    await expect(labels(dialog).first()).toBeHidden();
+    await expect(markers(dialog).first()).toBeHidden();
+    // The gutter layer (labels and leaders) is display: none below the gutter tier.
+    await expect(dialog.locator('[data-hotspot-gutters]')).toBeHidden();
+    const key = dialog.getByRole('list', { name: 'Labels' });
+    await key.scrollIntoViewIfNeeded();
+    await expect(key).toBeVisible();
+    const rows = key.getByRole('button');
+    await expect(rows).toHaveCount(hotspots.length);
+
+    const photo = (await dialog.locator('[data-photo-box]').boundingBox())!;
+    for (const [i, h] of hotspots.entries()) {
+      await expect(dots.nth(i)).toBeVisible();
+      await expect(dots.nth(i)).toHaveText(String(h.n));
+      await expect(rows.nth(i)).toContainText(h.title);
+      await expect(rows.nth(i)).toContainText(String(h.n));
+      // The dot sits at its hotspot's position on the photo.
+      const dot = (await dots.nth(i).boundingBox())!;
+      expect(dot.x + dot.width / 2).toBeCloseTo(photo.x + (h.x / 100) * photo.width, 0);
+      expect(dot.y + dot.height / 2).toBeCloseTo(photo.y + (h.y / 100) * photo.height, 0);
+    }
+  });
+
+  test('leader lines: one per gutter label, each running from its label to its glyph', async ({
+    page,
+  }) => {
+    const hotspots = views[trail].hotspots;
+    const dialog = await openTrail(page, 1440, 900);
+    await expect(labels(dialog)).toHaveCount(hotspots.length);
+    const leaders = dialog.locator('[data-hotspot-leader]');
+    await expect(leaders).toHaveCount(hotspots.length);
+    await expect(markers(dialog)).toHaveCount(hotspots.length);
+    await expect(async () => {
+      const lines = await leaders.evaluateAll((gs) =>
+        gs.map((g) => {
+          const line = g.querySelector('line')!;
+          const origin = line.ownerSVGElement!.getBoundingClientRect();
+          const n = (name: string) => Number(line.getAttribute(name));
+          return {
+            x1: origin.left + n('x1'),
+            y1: origin.top + n('y1'),
+            x2: origin.left + n('x2'),
+            y2: origin.top + n('y2'),
+          };
+        })
+      );
+      expect(lines).toHaveLength(hotspots.length);
+      for (const [i, h] of hotspots.entries()) {
+        const label = (await dialog.locator(`[data-hotspot-label="${h.id}"]`).boundingBox())!;
+        const glyph = (await markers(dialog).nth(i).boundingBox())!;
+        const gx = glyph.x + glyph.width / 2;
+        const gy = glyph.y + glyph.height / 2;
+        const { x1, y1, x2, y2 } = lines[i];
+        // Starts on the label's photo-facing edge, within its height.
+        const edge = h.side === 'left' ? label.x + label.width : label.x;
+        expect(Math.abs(x1 - edge), `${h.id} start x`).toBeLessThanOrEqual(2);
+        expect(y1, `${h.id} start y`).toBeGreaterThanOrEqual(label.y - 2);
+        expect(y1, `${h.id} start y`).toBeLessThanOrEqual(label.y + label.height + 2);
+        // Ends at the glyph (8 px short of its centre, the marker clearance).
+        expect(Math.hypot(x2 - gx, y2 - gy), `${h.id} end to glyph`).toBeLessThanOrEqual(10);
+        expect(Math.hypot(x1 - x2, y1 - y2), `${h.id} has length`).toBeGreaterThan(20);
+      }
+    }).toPass({ timeout: 10000 });
   });
 
   test("the lake reads 'Riffelsee' with '2,760 m approx.' (IN-02)", async ({ page }) => {
