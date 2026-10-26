@@ -215,6 +215,78 @@ test.describe('Map view (PHOTO-01, PHOTO-03, D-01..D-04)', () => {
       expect(overflow).toBeLessThanOrEqual(0);
     });
   }
+
+  // The plate boxes are fixed sizes (lib/photos/label-layout.ts), so the text
+  // has to fit them on every renderer: in the Linux CI render the longest
+  // titles came out about 6 % wider than on Windows, wrapped inside the former
+  // 224 px content box and pushed the altitude out of the plate (10-13). Each
+  // line's client rects must sit inside the plate's padding box, the wide
+  // tier keeps the title on one line and the compact tier on at most two.
+  for (const width of [360, 375, 412, 768, 1024, 1440]) {
+    test(`at ${width} x 900 every plate's title and altitude fit inside the plate`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/photos');
+      await expect(mapLinks(page)).toHaveCount(views.length);
+      await page.evaluate(() => document.fonts.ready);
+      const plates = await page.locator('[data-map-mark]').evaluateAll((els) =>
+        els.map((el) => {
+          const box = el.getBoundingClientRect();
+          const lines = (sel: string) => {
+            const span = el.querySelector(sel)!;
+            const range = document.createRange();
+            range.selectNodeContents(span);
+            return {
+              rects: [...range.getClientRects()].map((r) => ({
+                left: r.left,
+                right: r.right,
+                top: r.top,
+                bottom: r.bottom,
+              })),
+              overflowX: span.scrollWidth - span.clientWidth,
+            };
+          };
+          return {
+            slug: (el as HTMLElement).dataset.mapMark!,
+            box: { left: box.left, right: box.right, top: box.top, bottom: box.bottom },
+            title: lines('[data-map-title]'),
+            altitude: lines('[data-map-altitude]'),
+          };
+        })
+      );
+      const wide = plates[0].box.right - plates[0].box.left > 200;
+      expect(wide).toBe(width >= 768);
+      for (const p of plates) {
+        // px-2 py-1: the text box is 8 px in from the sides and 4 px from the top and bottom.
+        const inner = {
+          left: p.box.left + 8 - 0.5,
+          right: p.box.right - 8 + 0.5,
+          top: p.box.top + 4 - 0.5,
+          bottom: p.box.bottom - 4 + 0.5,
+        };
+        expect([p.slug, p.title.rects.length]).toEqual([
+          p.slug,
+          wide ? 1 : Math.min(p.title.rects.length, 2),
+        ]);
+        expect([p.slug, p.altitude.rects.length]).toEqual([p.slug, 1]);
+        for (const [part, text] of [
+          ['title', p.title],
+          ['altitude', p.altitude],
+        ] as const) {
+          expect([p.slug, part, text.overflowX <= 0]).toEqual([p.slug, part, true]);
+          for (const r of text.rects) {
+            const inside =
+              r.left >= inner.left &&
+              r.right <= inner.right &&
+              r.top >= inner.top &&
+              r.bottom <= inner.bottom;
+            expect([p.slug, part, inside]).toEqual([p.slug, part, true]);
+          }
+        }
+      }
+    });
+  }
 });
 
 /**

@@ -95,7 +95,7 @@ const at = (l: Linear, s: number) => l.frac * s + l.px;
 
 describe('constants', () => {
   it('declares the UI-SPEC boxes, insets and sweep range', () => {
-    expect(PLATE_WIDE).toEqual({ w: 240, h: 48 });
+    expect(PLATE_WIDE).toEqual({ w: 256, h: 48 });
     expect(PLATE_COMPACT).toEqual({ w: 144, h: 68 });
     expect(SUMMIT_PLATE).toEqual({ w: 93, h: 48 });
     expect([INSET, GAP, DOT, DOT_CLEAR]).toEqual([8, 8, 12, 4]);
@@ -218,10 +218,10 @@ describe('plate boxes and slots', () => {
     }
   });
 
-  it('uses 240 x 48 wide plates beside their dots', () => {
+  it('uses 256 x 48 wide plates beside their dots', () => {
     for (const S of SIDES.filter((s) => s > COMPACT_MAX_S)) {
       for (const m of layoutMapMarks(S, marks, summitUv).marks) {
-        expect([m.plate.width, m.plate.height]).toEqual([240, 48]);
+        expect([m.plate.width, m.plate.height]).toEqual([256, 48]);
         const besideRight = Math.abs(m.plate.x - (m.dot.x + 12)) < 1e-6;
         const besideLeft = Math.abs(right(m.plate) - (m.dot.x - 12)) < 1e-6;
         expect(besideRight || besideLeft).toBe(true);

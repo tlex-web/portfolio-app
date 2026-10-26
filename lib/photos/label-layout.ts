@@ -91,8 +91,12 @@ export type MapMarkSegment = {
   placements: MapPlacements;
 };
 
-/** Wide plate: w-60, two 20 px lines plus py-1 (an inset ring takes no layout space). */
-export const PLATE_WIDE = { w: 240, h: 48 } as const;
+/**
+ * Wide plate: w-64, two nowrap 20 px lines plus py-1 (an inset ring takes no
+ * layout space). The 240 px content box holds the longest title (221 px on
+ * Windows, about 234 px on the Linux CI renderer) on one line.
+ */
+export const PLATE_WIDE = { w: 256, h: 48 } as const;
 /** Compact plate: w-36, the title on two lines plus the altitude, plus py-1. */
 export const PLATE_COMPACT = { w: 144, h: 68 } as const;
 /** Summit plate: content width, two lines plus py-1. */

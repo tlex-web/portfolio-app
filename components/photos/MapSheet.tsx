@@ -18,14 +18,21 @@ const SHEET =
   'relative -mx-4 aspect-square overflow-hidden border border-line bg-surface [container-name:map-sheet] [container-type:inline-size] sm:mx-auto sm:w-[min(100%,max(30rem,calc(100svh_-_var(--nav-h)_-_11rem)))]';
 
 /**
- * The plate is the link box: a fixed 48 px (wide) or 68 px (compact) box whose
- * outline is an inset ring, so it takes no layout space and the boxes match
- * the label-layout constants (Tim, "Inset ring, keep 48/68", 2026-10-26). The
- * tier follows the sheet side (`@min-[35rem]` = S >= 560 px), as in
- * lib/photos/label-layout.ts; left and top come from the generated CSS.
+ * The plate is the link box: a fixed 256 x 48 px (wide) or 144 x 68 px
+ * (compact) box whose outline is an inset ring, so it takes no layout space
+ * and the boxes match the label-layout constants (Tim, "Inset ring, keep
+ * 48/68", 2026-10-26). The tier follows the sheet side (`@min-[35rem]` =
+ * S >= 560 px), as in lib/photos/label-layout.ts; left and top come from the
+ * generated CSS.
+ *
+ * On the wide tier each line is nowrap in a 240 px content box: the longest
+ * title is 221 px on Windows and about 234 px on the Linux CI renderer, which
+ * wrapped it inside the former 224 px box and pushed the altitude out of the
+ * plate (Tim, "A: widen + nowrap", 2026-10-26). e2e/photos.spec.ts asserts
+ * every line stays inside its plate at each tested width.
  */
 const PLATE =
-  'group absolute block h-17 w-36 rounded-sm bg-surface-raised px-2 py-1 text-left ring-1 ring-line-strong ring-inset @min-[35rem]:h-12 @min-[35rem]:w-60 hover:bg-surface-overlay hover:ring-ink-muted';
+  'group absolute block h-17 w-36 rounded-sm bg-surface-raised px-2 py-1 text-left ring-1 ring-line-strong ring-inset @min-[35rem]:h-12 @min-[35rem]:w-64 hover:bg-surface-overlay hover:ring-ink-muted';
 
 /** 12 px dot with a 2 px surface casing, a 24 px hit area and a focus ring through the link. */
 const DOT =
@@ -140,8 +147,16 @@ export default function MapSheet({ photos }: { photos: readonly PhotoView[] }) {
                     p.approximate ? 'border-2 border-dashed border-ink bg-surface' : 'bg-ink'
                   }`}
                 />
-                <span className="block text-sm font-semibold text-ink">{p.title}</span>
-                <span className="block font-mono text-sm text-ink-muted tabular-nums">
+                <span
+                  data-map-title
+                  className="block text-sm font-semibold text-ink @min-[35rem]:whitespace-nowrap"
+                >
+                  {p.title}
+                </span>
+                <span
+                  data-map-altitude
+                  className="block font-mono text-sm whitespace-nowrap text-ink-muted tabular-nums"
+                >
                   {p.altitudeLabel}
                 </span>
                 <span
