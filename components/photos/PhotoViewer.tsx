@@ -238,12 +238,15 @@ export default function PhotoViewer({
       const { slug, title } = photos[to];
       lastWritten.current = slug;
       window.history.replaceState(null, '', `/photos/${slug}`);
+      // The lightbox learns the step at once: a browser Back close returns
+      // focus by it, and usePathname can lag the replaceState (10-REVIEW WR-01).
+      lightbox?.setShown(slug);
       setShownSlug(slug);
       setZoomed(false);
       setExpandedId(null);
       setAnnouncement(`Photo ${to + 1} of ${photos.length}: ${title}`);
     },
-    [photos]
+    [lightbox, photos]
   );
 
   // The document title follows the shown photo (the metadata only sets it on load).

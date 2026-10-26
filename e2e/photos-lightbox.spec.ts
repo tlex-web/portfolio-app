@@ -648,6 +648,25 @@ test.describe('Moving between photos (LBOX-02)', () => {
       .toBe(views[2].slug);
   });
 
+  test('browser Back right after a step returns focus to the tile of the photo shown (10-REVIEW WR-01)', async ({
+    page,
+  }) => {
+    const dialog = await openFirstTile(page);
+    const next = dialog.getByRole('button', { name: 'Next photo', exact: true });
+    await waitForHydration(next);
+    // The step and the Back in one task: usePathname has not caught up with
+    // the step's replaceState when the lightbox closes.
+    await next.evaluate((button: HTMLElement) => {
+      button.click();
+      window.history.back();
+    });
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page).toHaveURL(GRID_URL);
+    await expect
+      .poll(() => page.evaluate(() => document.activeElement?.getAttribute('data-photo-id')))
+      .toBe(views[1].slug);
+  });
+
   test('on the photo page Next shows the next photo with no dialog, and reload keeps it (Pitfall 1)', async ({
     page,
   }) => {

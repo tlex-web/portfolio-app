@@ -201,6 +201,34 @@ test.describe('Carousel stepper (reduced motion; PHOTO-02, PHOTO-04, D-12, D-13)
     await expect(openPhoto(page)).toBeFocused();
   });
 
+  test('the stepper front photo follows a step closed by browser Back at once (10-REVIEW WR-01)', async ({
+    page,
+  }) => {
+    await page.goto(CAROUSEL_URL);
+    await expect(region(page)).toHaveAttribute('data-carousel-mode', 'stepper');
+    await waitForHydration(openPhoto(page));
+    await openPhoto(page).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible({ timeout: 20000 });
+    await expect(dialog).toHaveAccessibleName(views[0].title);
+
+    // The step and the Back in one task: usePathname has not caught up with
+    // the step's replaceState when the lightbox closes.
+    const step = dialog.getByRole('button', { name: 'Next photo', exact: true });
+    await waitForHydration(step);
+    await step.evaluate((button: HTMLElement) => {
+      button.click();
+      window.history.back();
+    });
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page).toHaveURL(/\/photos\?view=carousel$/);
+
+    await expect(region(page)).toHaveAttribute('data-active-slug', views[1].slug);
+    await expect(counter(page)).toHaveText(`2 / ${views.length}`);
+    await expect.poll(() => focusedPhotoId(page)).toBe(views[1].slug);
+    await expect(openPhoto(page)).toBeFocused();
+  });
+
   test('the stepper page loads no three.js (D-13)', async ({ page }) => {
     await page.goto(CAROUSEL_URL);
     await expect(region(page)).toHaveAttribute('data-carousel-mode', 'stepper');

@@ -1,7 +1,8 @@
 'use client';
 
-import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { createContext, useContext, useLayoutEffect, useMemo, useRef } from 'react';
 import type { ReactNode } from 'react';
+import { flushSync } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
 
 /**
@@ -38,9 +39,15 @@ import { usePathname, useRouter } from 'next/navigation';
  *   with the slug shown, so a view whose front photo follows the lightbox
  *   (the carousel, 10-07) can show that photo before focus returns, even
  *   when usePathname has not caught up with the last replaceState step.
- * - Context: useLightbox() returns `{ close, registerEscape }` inside the
- *   dialog and null outside, so PhotoViewer knows its surface (10-10 zoom and
- *   10-11 callouts register their Escape layers here).
+ * - The slug shown: the pathname's on mount, then whatever the viewer reports
+ *   through setShown() on every step, never usePathname, which can lag a
+ *   replaceState step. A close that does not go through close() (browser
+ *   Back: the toolbar, Alt+←, a mouse back button, the Android back gesture)
+ *   dispatches LIGHTBOX_CLOSE_EVENT after unmount, flushed before focus
+ *   returns, so the carousel follows that close too (10-REVIEW WR-01).
+ * - Context: useLightbox() returns `{ close, registerEscape, setShown }`
+ *   inside the dialog and null outside, so PhotoViewer knows its surface
+ *   (10-10 zoom and 10-11 callouts register their Escape layers here).
  * - No loading.tsx in the slot (Pitfall 4). jsdom has no showModal, so
  *   jest.setup.js stubs it (Pitfall 11); behaviour is tested in Playwright.
  */
@@ -50,13 +57,16 @@ export type LightboxApi = {
   close(): void;
   /** Register an Escape layer; returns its unregister function. */
   registerEscape(handler: () => boolean): () => void;
+  /** Record the photo now shown (PhotoViewer calls it on every step). */
+  setShown(slug: string): void;
 };
 
 const LightboxContext = createContext<LightboxApi | null>(null);
 
 /**
- * Dispatched on `document` by close(), before router.back(), with the slug
- * shown at close as `detail` (a CustomEvent<string>).
+ * Dispatched on `document` with the slug shown at close as `detail` (a
+ * CustomEvent<string>): by close(), before router.back(), and after unmount
+ * for a close by browser Back.
  */
 export const LIGHTBOX_CLOSE_EVENT = 'photos:lightbox-close';
 
@@ -134,14 +144,8 @@ export default function LightboxDialog({
   const escapeLayers = useRef<Array<() => boolean>>([]);
   const closing = useRef(false);
   const opener = useRef<Element | null>(null);
+  // The slug shown: the route's on mount, then each step's (setShown).
   const shownSlug = useRef<string | null>(slugOf(pathname));
-
-  // The slug shown last; 10-06 steps with history.replaceState, which
-  // usePathname follows, so focus returns to the photo shown at close.
-  useEffect(() => {
-    const slug = slugOf(pathname);
-    if (slug) shownSlug.current = slug;
-  }, [pathname]);
 
   const api = useMemo<LightboxApi>(
     () => ({
@@ -162,6 +166,9 @@ export default function LightboxDialog({
         return () => {
           escapeLayers.current = escapeLayers.current.filter((h) => h !== handler);
         };
+      },
+      setShown: (slug) => {
+        shownSlug.current = slug;
       },
     }),
     [router]
@@ -212,7 +219,15 @@ export default function LightboxDialog({
       queueMicrotask(() => {
         // StrictMode's simulated unmount keeps the dialog in the document.
         if (dialog.isConnected) return;
-        restoreFocus(shownSlug.current ?? '', opener.current);
+        const slug = shownSlug.current ?? '';
+        // Closed without close() (browser Back): tell the view now, and let it
+        // render the photo shown before focus looks for its mark.
+        if (!closing.current && slug) {
+          flushSync(() => {
+            document.dispatchEvent(new CustomEvent<string>(LIGHTBOX_CLOSE_EVENT, { detail: slug }));
+          });
+        }
+        restoreFocus(slug, opener.current);
       });
     };
   }, [api]);

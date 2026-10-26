@@ -52,8 +52,9 @@ function indexOf(photos: readonly PhotoView[], slug: string | null): number {
  *   stays, so "Open photo" carries the data-photo-id of the photo shown at
  *   close and the lightbox returns focus there. usePathname can trail a
  *   replaceState step by a few hundred ms (Chromium), so the lightbox's
- *   close event (LIGHTBOX_CLOSE_EVENT, the slug in the URL at close) sets
- *   the front photo too; it is a document listener for that event only.
+ *   close event (LIGHTBOX_CLOSE_EVENT, the slug shown at close, sent for a
+ *   browser Back close too; 10-REVIEW WR-01) sets the front photo too; it is
+ *   a document listener for that event only.
  * - Live region: the status line reads 'Photo {n} of {total}: {title}' after
  *   a step, never on mount or when following the lightbox.
  *
