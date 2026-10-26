@@ -42,17 +42,20 @@ test.describe('Without WebGL', () => {
     await expect(page.getByLabel(/Name/i)).toBeVisible();
   });
 
-  test('photos keeps the gallery page in 3D view', async ({ page }) => {
-    await page.goto('/photos');
-    await expect(page.getByRole('button', { name: /View details for/i }).first()).toBeVisible();
+  // The carousel reads the same capability gate as Home (D-13): without
+  // WebGL2 it is the flat stepper, so no canvas mounts and no WebGL failure
+  // is logged. It must still be the complete view, never the error page.
+  test('photos carousel falls back to the stepper', async ({ page }) => {
+    await page.goto('/photos?view=carousel');
 
-    const failed = webglFailure(page);
-    await page.getByRole('button', { name: /3D Carousel/i }).click();
-    await failed;
+    const carousel = page.getByRole('region', { name: 'Photographs', exact: true });
+    await expect(carousel).toHaveAttribute('data-carousel-mode', 'stepper');
+    await expect(carousel.getByRole('link', { name: 'Open photo', exact: true })).toBeVisible();
+    await expect(carousel.locator('[data-carousel-stepper] img')).toBeVisible();
     await nextFrames(page);
 
+    await expect(page.locator('canvas')).toHaveCount(0);
     await expectNoErrorPage(page);
-    await expect(page.getByRole('heading', { name: /Landscape Gallery/i })).toBeVisible();
   });
 
   test('project detail keeps its content', async ({ page }) => {
