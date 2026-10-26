@@ -2,12 +2,10 @@ import Link from 'next/link';
 import { SummitMark } from '@/components/home/PinMark';
 import ContourField from '@/components/terrain/ContourField';
 import { terrain } from '@/data/generated/terrain';
+import { sheet } from '@/data/sheet';
 import { formatMetres } from '@/lib/photo-format';
 import { mapMarkCss } from '@/lib/photos/label-layout';
 import type { PhotoView } from '@/lib/photos/view-model';
-
-/** The sheet title in the margin line (the footer's sheet title). */
-const SHEET_TITLE = 'Zermatt – Matterhorn';
 
 /**
  * The sheet box: the full 11 x 11 km extent as a square size container named
@@ -174,7 +172,7 @@ export default function MapSheet({ photos }: { photos: readonly PhotoView[] }) {
       </div>
       <div className="mt-2 flex flex-wrap justify-between gap-x-6 gap-y-1 font-mono text-sm text-ink-muted">
         <p>
-          {SHEET_TITLE} · contours every {formatMetres(terrain.contours.hero.intervalM)}
+          {sheet.title} · contours every {formatMetres(terrain.contours.hero.intervalM)}
         </p>
         <p>Terrain: swissALTIRegio, swisstopo</p>
       </div>

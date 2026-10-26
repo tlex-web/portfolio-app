@@ -2,6 +2,7 @@ import { EnvelopeSimple, GithubLogo, LinkedinLogo } from '@phosphor-icons/react/
 import ContourField from '@/components/terrain/ContourField';
 import { photos } from '@/data/generated/photos';
 import { terrain } from '@/data/generated/terrain';
+import { sheet } from '@/data/sheet';
 import { site } from '@/data/site';
 import {
   SCALE_TIERS,
@@ -99,7 +100,7 @@ export default function SiteFooter() {
           </ul>
         </div>
         <div className="mt-12 pt-6 border-t border-line">
-          <p className="text-base font-semibold text-ink">Zermatt – Matterhorn</p>
+          <p className="text-base font-semibold text-ink">{sheet.title}</p>
           <dl className="mt-4 grid grid-cols-2 gap-x-8 gap-y-6 lg:grid-cols-4">
             <div>
               <dt className={DT}>Scale</dt>

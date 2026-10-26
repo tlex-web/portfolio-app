@@ -88,9 +88,28 @@ export function formatYearRange(years: readonly number[]): string {
   return min === max ? String(min) : `${min}${EN_DASH}${max}`;
 }
 
-/** RED stub (10-08 Task 3). */
-export function formatMetreRange(_lo: number, _hi: number): string {
-  throw new Error('formatMetreRange: not implemented');
+/** Whole metres with comma thousands separators, as formatMetres in lib/photo-format.ts. */
+function groupedMetres(m: number): string {
+  const whole = Math.round(m);
+  const digits = String(Math.abs(whole)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return `${whole < 0 ? '-' : ''}${digits}`;
+}
+
+/**
+ * A height range for the /photos kicker (D-14; 10-UI-SPEC "Header Band"): both
+ * ends grouped and rounded to whole metres, an en dash between them and one
+ * unit after the upper value: (1617, 2760) -> '1,617–2,760 m'. An equal range
+ * prints once.
+ *
+ * @throws RangeError when lo is above hi or either end is not finite.
+ */
+export function formatMetreRange(lo: number, hi: number): string {
+  if (!Number.isFinite(lo) || !Number.isFinite(hi) || lo > hi) {
+    throw new RangeError(`formatMetreRange: expected lo <= hi, got ${lo} and ${hi}`);
+  }
+  const low = groupedMetres(lo);
+  const high = groupedMetres(hi);
+  return low === high ? `${high}${NBSP}m` : `${low}${EN_DASH}${high}${NBSP}m`;
 }
 
 /**
