@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 10
 current_phase_name: Photography
 status: executing
-stopped_at: Phase 10 UI-SPEC approved
-last_updated: "2026-10-26T01:05:09.013Z"
-last_activity: 2026-10-25
-last_activity_desc: Phase 09 complete, transitioned to Phase 10
-state_head: 230f0ccc8eccea0c0837f5a183827e97fd4d610e
+stopped_at: Completed 10-01-PLAN.md
+last_updated: "2026-10-26T10:31:44.742Z"
+last_activity: 2026-10-26
+last_activity_desc: Phase 10 execution started
+state_head: 3ec51f979759d293eeb735c931e6baf9e02945b2
 progress:
   total_phases: 6
   completed_phases: 9
   total_plans: 75
-  completed_plans: 62
-  percent: 83
+  completed_plans: 63
+  percent: 84
 ---
 
 # Project State
@@ -29,12 +29,12 @@ See: .planning/PROJECT.md (updated 2026-10-25)
 
 ## Current Position
 
-Phase: 10 (Photography) — READY TO EXECUTE
-Plan: Not started
+Phase: 10 (Photography) — EXECUTING
+Plan: 2 of 13
 Status: Ready to execute
-Last activity: 2026-10-25 — Phase 09 complete, transitioned to Phase 10
+Last activity: 2026-10-26 — Phase 10 execution started
 
-Progress: [████████░░] 83%
+Progress: [████████░░] 84%
 
 ## Performance Metrics
 
@@ -118,6 +118,7 @@ Progress: [████████░░] 83%
 | Phase 09 P20 | 17 min | 3 tasks | 9 files |
 | Phase 09 P21 | 12 min | 2 tasks | 6 files |
 | Phase 09 P22 | 3h 20m | 3 tasks | 17 files |
+| Phase 10 P01 | 15 min | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -278,6 +279,8 @@ Recent decisions affecting current work:
 - [Phase 09]: 09-22: Home re-baselined once for the gap closure by Tim (e9ebee7, 12 home PNGs, 'pushed'; checklist S1-S4, W1-W2, T1, R1-R2 not commented); ratchet jest 646 -> 725, e2e 186 -> 241, total 832 -> 966; CI green twice on 05a5e8c (run 40232792001 attempts 1 and 2, same PNG tree)
 - [Phase 09]: 09-22: the production service worker (skipWaiting, clients.claim, cache-first /terrain/) answers the heightmap, so page.route never sees it; an e2e that holds or delays a /terrain/ request must run with serviceWorkers: 'block' (05a5e8c, 'pins hand over at the reveal' + holdHeightmap, Tim's 'b'); the four other delayHeightmap users share the bypass and are open in deferred-items
 - [Phase 09]: UAT round 2 (2026-10-25, 09-UAT.md): Tim answered "pass" to all four checkpoints, so the portrait-phone summit poster (pin 4 and the triangle past the edges), reduced motion at 375 x 667 (full plaque over the poster pins) and landscape phones (poster pin 3 under the compact plaque, WR-01) are accepted as is, and the real-device 3D and comfort check passed (devices not named). Round 1's gaps G-09-2 to G-09-5 were reconciled as resolved by 09-22 and 09-15
+- [Phase 10]: 10-01: lib/photos/view-model.ts (buildPhotoViews on top of buildWaypoints, never re-sorted) is the one photo source; /photos/[slug] uses generateStaticParams + dynamicParams = false + notFound, and both photo routes export photoMetadata(slug)
+- [Phase 10]: 10-01: strip data comes from stripFields() (missing or invalid facts get no row, D-07); ExifStrip puts the aria-hidden ' ·' separator inside each dd so the dl stays valid; WR-04 fixed in formatExposureTime (seconds from 0.3 s, RangeError for non-positive or non-finite)
 
 ### Pending Todos
 
@@ -317,6 +320,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-26T00:01:14.988Z
-Stopped at: Phase 10 UI-SPEC approved
-Resume file: .planning/phases/10-photography/10-UI-SPEC.md
+Last session: 2026-10-26T10:31:28.136Z
+Stopped at: Completed 10-01-PLAN.md
+Resume file: None
