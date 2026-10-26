@@ -1,7 +1,9 @@
 'use client';
 
+import { useEffect } from 'react';
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowLeftIcon, XIcon } from '@phosphor-icons/react/dist/ssr';
 import ExifStrip from '@/components/photos/ExifStrip';
 import { useLightbox } from '@/components/photos/LightboxDialog';
@@ -46,6 +48,13 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * chrome's right group (accessible name 'Close photo', visible text 'Close'
  * from 768 px), closing through router.back() (LBOX-01).
  *
+ * Escape (D-08; 10-UI-SPEC "Focus", Escape layers): in the modal the dialog
+ * owns the key and runs the layers registered through useLightbox()
+ * .registerEscape, closing last. On the page a document keydown listener does
+ * the same job: a layer that consumes Escape calls preventDefault, and when
+ * none has, Escape navigates to /photos, never a blind browser Back, because
+ * a directly loaded page may have no gallery behind it.
+ *
  * The other chrome controls are filled by later plans: stepping and the
  * counter in data-chrome-left (10-06), Hide labels and Zoom before Close in
  * data-chrome-right (10-10, 10-11).
@@ -75,6 +84,19 @@ export default function PhotoViewer({
   const { aspect } = current;
   const isPage = variant === 'page';
   const lightbox = useLightbox();
+  const router = useRouter();
+
+  // Page surface only: Escape is the last layer and goes to the gallery (D-08).
+  useEffect(() => {
+    if (!isPage) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return;
+      event.preventDefault();
+      router.push('/photos');
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [isPage, router]);
 
   const boxStyle = {
     aspectRatio: `${aspect.w} / ${aspect.h}`,

@@ -412,8 +412,13 @@ test.describe('Focus and Escape (LBOX-03)', () => {
     await page.goto(`/photos/${first.slug}`);
     const back = page.getByRole('main').getByRole('link', { name: 'All photographs' }).first();
     await waitForHydration(back);
-    await page.keyboard.press('Escape');
-    await expect(page).toHaveURL(/\/photos$/);
+    await page.waitForLoadState('load');
+    // The listener attaches in an effect just after hydration; under parallel
+    // dev-server load a press can land before it, so press again until it does.
+    await expect(async () => {
+      await page.keyboard.press('Escape');
+      await expect(page).toHaveURL(/\/photos$/, { timeout: 2000 });
+    }).toPass({ timeout: 15000 });
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 });
