@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 10
 current_phase_name: Photography
 status: executing
-stopped_at: Completed 10-02-PLAN.md
-last_updated: "2026-10-26T10:45:59.141Z"
+stopped_at: Completed 10-03-PLAN.md
+last_updated: "2026-10-26T11:11:05.153Z"
 last_activity: 2026-10-26
 last_activity_desc: Phase 10 execution started
-state_head: a42ee34c1fd8f806f07a39e6a2fe30734f7cdfa0
+state_head: 9f2ed8e685e8e9ce91690701f66761e7b359991c
 progress:
   total_phases: 6
   completed_phases: 9
   total_plans: 75
-  completed_plans: 64
-  percent: 85
+  completed_plans: 65
+  percent: 87
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-25)
 ## Current Position
 
 Phase: 10 (Photography) — EXECUTING
-Plan: 3 of 13
+Plan: 4 of 13
 Status: Ready to execute
 Last activity: 2026-10-26 — Phase 10 execution started
 
-Progress: [█████████░] 85%
+Progress: [█████████░] 87%
 
 ## Performance Metrics
 
@@ -120,6 +120,7 @@ Progress: [█████████░] 85%
 | Phase 09 P22 | 3h 20m | 3 tasks | 17 files |
 | Phase 10 P01 | 15 min | 3 tasks | 12 files |
 | Phase 10 P02 | 10 min | 2 tasks | 11 files |
+| Phase 10 P03 | 20 min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -284,6 +285,10 @@ Recent decisions affecting current work:
 - [Phase 10]: 10-01: strip data comes from stripFields() (missing or invalid facts get no row, D-07); ExifStrip puts the aria-hidden ' ·' separator inside each dd so the dl stays valid; WR-04 fixed in formatExposureTime (seconds from 0.3 s, RangeError for non-positive or non-finite)
 - [Phase 10]: 10-02: Phase 8 warnings WR-01, WR-02, WR-03, WR-05, WR-06, WR-07 and WR-08 fixed (PhotoFacts.uv in [0, 1] and out-of-extent build error; altitude-less GPS kept; OffsetTimeOriginal must match Zurich; corrections positions hand-placed only; photos:derive validates in memory then writes and unlinks stale last; guard scans raw/HEIF; public/images/landscapes/ ignored again; scripts README corrected)
 - [Phase 10]: 10-02: WR-06 pre-commit hook not added (no hook tooling; CI lint is the gate); WR-04 and IN-02 disposition rows left open for 10-13; disposition open count is 10 (generator counts 'open' rows only)
+- [Phase 10]: 10-03: the stage layers share one grid cell instead of absolute positioning; positioned layers would paint over the sticky scroll-tier chrome and need a z-index the UI-SPEC rules out (357a668)
+- [Phase 10]: 10-03: 'All photographs' is rendered once per tier (own row on lb-scroll, first in the chrome on lb-key/lb-gutter), the other display:none, because the scroll-tier row sits outside the sticky chrome (e1d86de)
+- [Phase 10]: 10-03: the opener img sits in a source-less picture (no-img-element convention); e2e target [data-stage-layer="large"] img; Retry moves focus to the stage root (357a668)
+- [Phase 10]: 10-03: guard:contrast now measures 36 pairs (4 gallery pairs added); the selftest expectations moved with it (e1d86de)
 
 ### Pending Todos
 
@@ -323,6 +328,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-26T10:45:58.685Z
-Stopped at: Completed 10-02-PLAN.md
+Last session: 2026-10-26T11:11:04.533Z
+Stopped at: Completed 10-03-PLAN.md
 Resume file: None
