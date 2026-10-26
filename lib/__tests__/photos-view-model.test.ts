@@ -16,6 +16,7 @@ import {
   photoMetadata,
   photoSlugs,
   photoViews,
+  stripFields,
   type PhotoViewInput,
 } from '@/lib/photos/view-model';
 
@@ -132,5 +133,96 @@ describe('elevationMetres (D-17)', () => {
   it('resolves the summit to the official height and a photo ref to the photo height', () => {
     expect(elevationMetres({ kind: 'summit' }, 1617)).toBe(4478);
     expect(elevationMetres({ kind: 'photo' }, 1617)).toBe(1617);
+  });
+});
+
+/** formatMetres and formatCoordinates keep units and letters on their numbers with U+00A0. */
+const NBSP = '\u00a0';
+const codePoints = (s: string) => Array.from(s, (c) => c.codePointAt(0));
+const viewOf = (views: ReturnType<typeof buildPhotoViews>, id: string) => views.find((v) => v.id === id)!;
+/** The committed photos with one photo's facts replaced, for the D-07 omission cases. */
+const withPhoto = (id: string, patch: Record<string, unknown>) =>
+  buildPhotoViews({ ...committed, photos: photos.map((p) => (p.id === id ? { ...p, ...patch } : p)) });
+
+describe('strip fields (D-07, LBOX-04)', () => {
+  it('img-0605: place and date, six EXIF units on two lines, altitude and exact position', () => {
+    const { strip } = viewOf(photoViews, 'img-0605');
+    expect(strip).toEqual({
+      placeDate: { place: 'Zermatt, Switzerland', date: '6 September 2021, 10:48' },
+      exifRows: [
+        { line: 1, term: 'Camera', value: 'Canon EOS 6D Mark II' },
+        { line: 1, term: 'Lens', value: 'EF24-105mm f/4L IS II USM' },
+        { line: 2, term: 'Focal length', value: `105${NBSP}mm` },
+        { line: 2, term: 'Aperture', value: 'f/5.6' },
+        { line: 2, term: 'Shutter speed', value: `1/500${NBSP}s` },
+        { line: 2, term: 'Sensitivity', value: 'ISO 100' },
+      ],
+      filmLine: null,
+      positionRows: [
+        { term: 'Altitude', value: `1,617${NBSP}m` },
+        { term: 'Position', value: `46.0150${NBSP}N 7.7414${NBSP}E` },
+      ],
+      approxNote: null,
+    });
+    expect(codePoints(strip.positionRows[1].value)).toEqual(codePoints(`46.0150${NBSP}N 7.7414${NBSP}E`));
+  });
+
+  it('r004-011: the film line instead of EXIF, and the position marked approximate with its radius', () => {
+    const { strip } = viewOf(photoViews, 'r004-011');
+    expect(strip).toEqual({
+      placeDate: { place: 'Riffelsee, Zermatt', date: '2019' },
+      exifRows: [],
+      filmLine: 'Film scan · 2019',
+      positionRows: [
+        { term: 'Altitude', value: `2,760${NBSP}m` },
+        { term: 'Position', value: `≈ 45.9837${NBSP}N 7.7623${NBSP}E` },
+      ],
+      approxNote: `±100${NBSP}m (approx.)`,
+    });
+  });
+
+  it('keeps only the EXIF units that are present: a camera alone is one row', () => {
+    const { strip } = viewOf(withPhoto('img-0605', { exif: { camera: 'Canon EOS 6D Mark II' } }), 'img-0605');
+    expect(strip.exifRows).toEqual([{ line: 1, term: 'Camera', value: 'Canon EOS 6D Mark II' }]);
+  });
+
+  it('drops the shutter speed for an exposure that is not above 0 (WR-04)', () => {
+    const exif = { ...photos[0].exif, exposureTimeS: 0 };
+    const { strip } = viewOf(withPhoto('img-0605', { exif }), 'img-0605');
+    expect(strip.exifRows.map((r) => r.term)).toEqual(['Camera', 'Lens', 'Focal length', 'Aperture', 'Sensitivity']);
+  });
+
+  it('shows no EXIF rows and no film line for a digital photo without EXIF', () => {
+    const { strip } = viewOf(withPhoto('img-0605', { exif: null }), 'img-0605');
+    expect(strip.exifRows).toEqual([]);
+    expect(strip.filmLine).toBeNull();
+  });
+
+  it('marks an approximate position without a radius with (approx.) alone', () => {
+    const position = { ...photos[3].position, radiusM: undefined };
+    const { strip } = viewOf(withPhoto('r004-011', { position }), 'r004-011');
+    expect(strip.approxNote).toBe('(approx.)');
+    expect(strip.positionRows[1].value.startsWith('≈ ')).toBe(true);
+  });
+
+  it('drops the Position row for a view without coordinates (stripFields)', () => {
+    const strip = stripFields({
+      medium: 'digital',
+      exif: null,
+      position: null,
+      place: 'Zermatt, Switzerland',
+      captureLabel: '6 September 2021, 10:48',
+      altitudeM: 1617,
+    });
+    expect(strip.positionRows).toEqual([{ term: 'Altitude', value: `1,617${NBSP}m` }]);
+    expect(strip.approxNote).toBeNull();
+  });
+
+  it('never prints filler in any strip field', () => {
+    for (const v of photoViews) {
+      expect(v.strip).toBeDefined();
+      const json = JSON.stringify(v.strip);
+      for (const filler of ['—', 'undefined', 'NaN', 'unknown']) expect(json).not.toContain(filler);
+    }
   });
 });

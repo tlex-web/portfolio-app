@@ -88,6 +88,21 @@ describe('exposure formatters', () => {
     expect(formatExposureTime(1.5)).toBe(`1.5${NBSP}s`);
   });
 
+  test('formatExposureTime keeps 1/4 s as a fraction and prints 0.3 s and longer in seconds (WR-04)', () => {
+    expect(formatExposureTime(0.25)).toBe(`1/4${NBSP}s`);
+    expect(formatExposureTime(0.3)).toBe(`0.3${NBSP}s`);
+    expect(formatExposureTime(0.4)).toBe(`0.4${NBSP}s`);
+    expect(formatExposureTime(0.6)).toBe(`0.6${NBSP}s`);
+    expect(formatExposureTime(0.8)).toBe(`0.8${NBSP}s`);
+  });
+
+  test.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY])(
+    'formatExposureTime rejects %p with a RangeError instead of printing 1/Infinity s (WR-04)',
+    (s) => {
+      expect(() => formatExposureTime(s)).toThrow(RangeError);
+    },
+  );
+
   test('formatAperture drops a trailing .0 and keeps one decimal', () => {
     expect(formatAperture(8)).toBe('f/8');
     expect(formatAperture(5.6)).toBe('f/5.6');

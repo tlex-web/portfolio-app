@@ -12,6 +12,7 @@ import path from 'node:path';
 import {
   countLabel,
   formatCaptureMonth,
+  formatCoordinates,
   formatKilometres,
   formatLatLon,
   formatYearRange,
@@ -41,6 +42,24 @@ describe('formatLatLon (hero and plaque kicker, D-11)', () => {
 
   it('rounds half up at the fourth decimal', () => {
     expect(formatLatLon({ lat: 0.00005, lon: 1.23455 })).toBe(`0.0001${NBSP}N ${MIDDOT} 1.2346${NBSP}E`);
+  });
+});
+
+describe('formatCoordinates (viewer strip position, D-07)', () => {
+  it('prints 4 dp with trailing zeros, U+00A0 before each letter and one ASCII space between the halves', () => {
+    expect(codePoints(formatCoordinates({ lat: 46.015, lon: 7.7414 }))).toEqual(
+      codePoints(`46.0150${NBSP}N 7.7414${NBSP}E`),
+    );
+  });
+
+  it('uses S and W for negative values', () => {
+    expect(codePoints(formatCoordinates({ lat: -1.23456, lon: -7.5 }))).toEqual(
+      codePoints(`1.2346${NBSP}S 7.5000${NBSP}W`),
+    );
+  });
+
+  it('rounds half up at the fourth decimal, like formatLatLon', () => {
+    expect(formatCoordinates({ lat: 0.00005, lon: 1.23455 })).toBe(`0.0001${NBSP}N 1.2346${NBSP}E`);
   });
 });
 
