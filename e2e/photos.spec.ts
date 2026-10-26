@@ -331,3 +331,154 @@ test.describe('Grid view (PHOTO-02, PHOTO-03, D-15)', () => {
     await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(first.title);
   });
 });
+
+/**
+ * The view switcher in a browser (PHOTO-02, D-14; 10-UI-SPEC "Header Band
+ * (D-14)", View switcher table). A toggle group 'View' in the header band:
+ * pressing a segment replaces the URL (`/photos`, `?view=grid`,
+ * `?view=carousel`) with no new history entry and no scroll jump, focus stays
+ * on the pressed segment, exactly one view section is mounted, and the chosen
+ * view survives a reload and the Back button from a photo. The URL is the
+ * only source of view state (locked).
+ */
+test.describe('View switcher (PHOTO-02, D-14)', () => {
+  const views = buildPhotoViews();
+  const LIST = 'Photographs, lowest first';
+  const group = (page: Page) => page.getByRole('group', { name: 'View' });
+  const segment = (page: Page, name: 'Map' | 'Grid' | 'Carousel') =>
+    group(page).getByRole('button', { name });
+  const viewSections = (page: Page) => page.locator('section[aria-labelledby="view-title"]');
+
+  /** Wait until React has hydrated an element (a click before that does nothing). */
+  async function waitForHydration(el: Locator) {
+    await expect
+      .poll(
+        () => el.evaluate((node) => Object.keys(node).some((k) => k.startsWith('__reactProps'))),
+        { timeout: 15000 }
+      )
+      .toBe(true);
+  }
+
+  async function expectPressed(page: Page, pressed: 'Map' | 'Grid' | 'Carousel') {
+    for (const name of ['Map', 'Grid', 'Carousel'] as const) {
+      await expect(segment(page, name)).toHaveAttribute(
+        'aria-pressed',
+        name === pressed ? 'true' : 'false'
+      );
+    }
+  }
+
+  test('opens on Map with the three segments in order', async ({ page }) => {
+    await page.goto('/photos');
+    await expect(group(page).getByRole('button')).toHaveText(['Map', 'Grid', 'Carousel']);
+    await expectPressed(page, 'Map');
+    await expect(viewSections(page)).toHaveCount(1);
+  });
+
+  test('at 375 x 600 switching replaces the URL with no history entry, no scroll jump and focus kept', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 600 });
+    await page.goto('/photos');
+    const grid = segment(page, 'Grid');
+    await waitForHydration(grid);
+    await page.evaluate(() => window.scrollTo(0, 200));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(200);
+    const historyLength = await page.evaluate(() => window.history.length);
+
+    await grid.click();
+    await expect(page).toHaveURL(/\/photos\?view=grid$/);
+    await expectPressed(page, 'Grid');
+    await expect(page.getByRole('list', { name: LIST })).toBeVisible();
+    await expect(viewSections(page)).toHaveCount(1);
+    expect(await page.evaluate(() => window.history.length)).toBe(historyLength);
+    expect(await page.evaluate(() => window.scrollY)).toBe(200);
+    await expect(grid).toBeFocused();
+
+    await segment(page, 'Carousel').click();
+    await expect(page).toHaveURL(/\/photos\?view=carousel$/);
+    await expectPressed(page, 'Carousel');
+    await segment(page, 'Map').click();
+    await expect(page).toHaveURL(/\/photos$/);
+    await expectPressed(page, 'Map');
+    await expect(viewSections(page)).toHaveCount(1);
+    expect(await page.evaluate(() => window.history.length)).toBe(historyLength);
+  });
+
+  test('pressing the pressed segment changes nothing', async ({ page }) => {
+    await page.goto('/photos?view=grid');
+    const grid = segment(page, 'Grid');
+    await waitForHydration(grid);
+    const historyLength = await page.evaluate(() => window.history.length);
+    await grid.click();
+    await page.waitForTimeout(300);
+    await expect(page).toHaveURL(/\/photos\?view=grid$/);
+    await expectPressed(page, 'Grid');
+    expect(await page.evaluate(() => window.history.length)).toBe(historyLength);
+  });
+
+  test('a reload keeps Grid, and Back from a photo returns to the grid with Grid pressed', async ({
+    page,
+  }) => {
+    await page.goto('/photos?view=grid');
+    await expectPressed(page, 'Grid');
+    await page.reload();
+    await expect(page).toHaveURL(/\/photos\?view=grid$/);
+    await expectPressed(page, 'Grid');
+
+    const tile = page.getByRole('list', { name: LIST }).getByRole('link').first();
+    await waitForHydration(tile);
+    await tile.click();
+    // The dev server compiles the intercepted route on its first request.
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 20000 });
+    await expect(page).toHaveURL(new RegExp(`/photos/${views[0].slug}$`));
+
+    await page.goBack();
+    await expect(page).toHaveURL(/\/photos\?view=grid$/);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expectPressed(page, 'Grid');
+    await expect(page.getByRole('list', { name: LIST })).toBeVisible();
+  });
+
+  test('Tab reaches the three segments in order and Space presses one', async ({ page }) => {
+    await page.goto('/photos');
+    const map = segment(page, 'Map');
+    await waitForHydration(map);
+    const focusedText = () => page.evaluate(() => document.activeElement?.textContent ?? '');
+    // Tab through the shell until the Map segment has focus.
+    for (let i = 0; i < 40 && !(await map.evaluate((el) => el === document.activeElement)); i++) {
+      await page.keyboard.press('Tab');
+    }
+    await expect(map).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(segment(page, 'Grid')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(segment(page, 'Carousel')).toBeFocused();
+    expect(await focusedText()).toBe('Carousel');
+
+    await page.keyboard.press('Space');
+    await expect(page).toHaveURL(/\/photos\?view=carousel$/);
+    await expectPressed(page, 'Carousel');
+    await expect(segment(page, 'Carousel')).toBeFocused();
+  });
+
+  test('a switch crossfades the view region as photos-view @chromium-only', async ({ page }) => {
+    await recordViewTransitions(page);
+    await page.goto('/photos');
+    const grid = segment(page, 'Grid');
+    await waitForHydration(grid);
+    const before = await readViewTransitions(page);
+    await grid.click();
+    await expect
+      .poll(async () => (await readViewTransitions(page)).count)
+      .toBeGreaterThan(before.count);
+    await expect
+      .poll(async () => (await readViewTransitions(page)).pseudos)
+      .toEqual(
+        expect.arrayContaining([
+          '::view-transition-old(photos-view)',
+          '::view-transition-new(photos-view)',
+        ])
+      );
+  });
+});
