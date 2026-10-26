@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 0
+open_count: 1
 waived_count: 0
 fixed_count: 1
-total_count: 1
-last_updated: 2026-10-25T01:29:53.825Z
+total_count: 2
+last_updated: 2026-10-26T11:09:20.392Z
 ---
 
 # Broken Windows Ledger
@@ -16,6 +16,7 @@ last_updated: 2026-10-25T01:29:53.825Z
 | id | phase | kind | file | line | description | status | reason | recorded_at | resolved_at |
 |----|-------|------|------|------|-------------|--------|--------|-------------|-------------|
 | 1 | 09 | stub | components/home/terrain/TerrainCanvas.tsx |  | TerrainCanvas renders no scene until 09-08 adds the terrain mesh as children (intentional, plan-stated) | fixed |  | 2026-10-25T01:10:40.435Z | 2026-10-25T01:29:53.825Z |
+| 2 | 10 | stub | components/photos/PhotoViewer.tsx |  | Viewer chrome groups data-chrome-left/right are empty (only the page's 'All photographs' link from 768 px) until 10-05 (Close), 10-06 (stepping, counter) and 10-10/10-11 (Zoom, Hide labels) fill them; the 56 px bar shows blank meanwhile (intentional, plan-stated) | open |  | 2026-10-26T11:09:20.392Z |  |
 
 ````json
 [
@@ -30,6 +31,19 @@ last_updated: 2026-10-25T01:29:53.825Z
     "reason": "",
     "recorded_at": "2026-10-25T01:10:40.435Z",
     "resolved_at": "2026-10-25T01:29:53.825Z",
+    "milestone": "v2.0"
+  },
+  {
+    "id": 2,
+    "kind": "stub",
+    "phase": "10",
+    "file": "components/photos/PhotoViewer.tsx",
+    "line": null,
+    "description": "Viewer chrome groups data-chrome-left/right are empty (only the page's 'All photographs' link from 768 px) until 10-05 (Close), 10-06 (stepping, counter) and 10-10/10-11 (Zoom, Hide labels) fill them; the 56 px bar shows blank meanwhile (intentional, plan-stated)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-26T11:09:20.392Z",
+    "resolved_at": null,
     "milestone": "v2.0"
   }
 ]
