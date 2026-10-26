@@ -180,3 +180,88 @@ test.describe('Viewer layout tiers (D-05)', () => {
     expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.clientWidth);
   });
 });
+
+test.describe('Stage states (UI-SPEC E5)', () => {
+  // The production service worker answers cached derivatives itself, so
+  // page.route would never see them (STATE 09-22); block it for these cases.
+  test.use({ serviceWorkers: 'block' });
+
+  const first = views[0];
+  /** Every stage and opener derivative (the 1024, 1600 and 2560 AVIF and WebP files). */
+  const STAGE_DERIVATIVE = /-(1024|1600|2560)\.[0-9a-f]{10}\.(avif|webp)$/;
+
+  test('a failed photo shows the error and Retry; the chrome and strip stay usable (LBOX-07)', async ({
+    page,
+  }) => {
+    await page.route(STAGE_DERIVATIVE, (route) => route.abort());
+    await page.goto(`/photos/${first.slug}`);
+
+    const photoBox = page.locator('[data-photo-viewer] [data-photo-box]');
+    await expect(photoBox.getByText("Couldn't load this photo.", { exact: true })).toBeVisible();
+    const retry = photoBox.getByRole('button', { name: 'Retry loading photo', exact: true });
+    await expect(retry).toBeVisible();
+    await expect(retry).toHaveText('Retry');
+    await expect(page.locator('[data-stage-photo]')).toHaveAttribute('data-state', 'error');
+
+    // The box keeps the photo's ratio.
+    const rect = (await photoBox.boundingBox())!;
+    const ratio = first.aspect.w / first.aspect.h;
+    expect(Math.abs(rect.width / rect.height - ratio) / ratio).toBeLessThan(0.01);
+
+    // The strip and the chrome stay usable; nothing offers the file.
+    const main = page.getByRole('main');
+    await expect(main.getByText(first.rights, { exact: true })).toBeVisible();
+    await expect(main.getByRole('link', { name: 'All photographs', exact: true })).toBeVisible();
+    await expect(page.locator('[download]')).toHaveCount(0);
+    await expect(page.locator('a[href*="/images/"]')).toHaveCount(0);
+  });
+
+  test('Retry reloads the large derivative once the network is back', async ({ page }) => {
+    await page.route(STAGE_DERIVATIVE, (route) => route.abort());
+    await page.goto(`/photos/${first.slug}`);
+    const photoBox = page.locator('[data-photo-viewer] [data-photo-box]');
+    const retry = photoBox.getByRole('button', { name: 'Retry loading photo', exact: true });
+    await expect(retry).toBeVisible();
+
+    await page.unroute(STAGE_DERIVATIVE);
+    await retry.click();
+
+    const large = photoBox.locator('picture img');
+    await expect
+      .poll(() => large.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0))
+      .toBe(true);
+    await expect(page.locator('[data-stage-photo]')).toHaveAttribute('data-state', 'large');
+    await expect(photoBox.getByText("Couldn't load this photo.", { exact: true })).toHaveCount(0);
+    await expect(retry).toHaveCount(0);
+  });
+
+  test('a slow photo shows "Loading photo" after 1 s and clears it once the photo loads', async ({
+    page,
+  }) => {
+    // Hold every stage derivative until the message has been seen (at least 1.5 s),
+    // so the check does not depend on how fast the dev server hydrates.
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    await page.route(STAGE_DERIVATIVE, async (route) => {
+      await gate;
+      await route.continue();
+    });
+
+    const start = Date.now();
+    await page.goto(`/photos/${first.slug}`, { waitUntil: 'domcontentloaded' });
+    const photoBox = page.locator('[data-photo-viewer] [data-photo-box]');
+    const loading = photoBox.getByText('Loading photo', { exact: true });
+    await expect(page.locator('[data-stage-photo]')).toHaveAttribute('data-state', 'opener');
+    await expect(loading).toBeVisible({ timeout: 10000 });
+    expect(Date.now() - start).toBeGreaterThanOrEqual(1000);
+
+    await page.waitForTimeout(Math.max(0, 1500 - (Date.now() - start)));
+    release();
+
+    await expect(loading).toHaveCount(0);
+    const large = photoBox.locator('picture img');
+    await expect
+      .poll(() => large.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0))
+      .toBe(true);
+  });
+});
