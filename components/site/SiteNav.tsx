@@ -31,6 +31,28 @@ const WORDMARK =
   'font-display text-base font-semibold tracking-[-0.01em] text-ink min-h-11 inline-flex items-center';
 const COLOR_TRANSITION = 'transition-colors duration-(--duration-fast) ease-erosion';
 
+/** The mobile menu panel's id (the disclosure button's aria-controls). */
+const MENU_ID = 'site-menu';
+
+/**
+ * True when a key press belongs to the site chrome, not to the page content
+ * (10-REVIEW CR-01): the mobile menu is open (it sits over the page and owns
+ * the keyboard until it closes), or the press comes from outside `<main>`
+ * (the skip link, this nav, the footer). A press with nothing focused (the
+ * body) belongs to the page. Page shortcuts that listen on the document (the
+ * photo page viewer) skip these presses.
+ */
+export function keyBelongsToChrome(event: KeyboardEvent): boolean {
+  if (document.getElementById(MENU_ID)?.hidden === false) return true;
+  const { target } = event;
+  return (
+    target instanceof Element &&
+    target !== document.body &&
+    target !== document.documentElement &&
+    target.closest('main') === null
+  );
+}
+
 /** `/` matches exactly; every other destination also matches its sub-paths. */
 export function isCurrentPath(pathname: string | null, href: string): boolean {
   if (!pathname) return false;
@@ -68,8 +90,12 @@ function DefaultNav() {
     const isOutside = (node: EventTarget | null) =>
       node instanceof Node && header !== null && !header.contains(node);
 
+    // Escape is the open menu's: a document capture listener that prevents the
+    // press, so a page's own Escape handling (the photo page goes to /photos)
+    // skips it (10-REVIEW CR-01).
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
+      event.preventDefault();
       buttonRef.current?.focus();
       setOpen(false);
     };
@@ -85,12 +111,12 @@ function DefaultNav() {
       if (event.matches) setOpen(false);
     };
 
-    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keydown', onKeyDown, true);
     document.addEventListener('pointerdown', onPointerDown);
     header?.addEventListener('focusout', onFocusOut);
     desktop?.addEventListener('change', onViewportChange);
     return () => {
-      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('keydown', onKeyDown, true);
       document.removeEventListener('pointerdown', onPointerDown);
       header?.removeEventListener('focusout', onFocusOut);
       desktop?.removeEventListener('change', onViewportChange);
@@ -137,7 +163,7 @@ function DefaultNav() {
             ref={buttonRef}
             type="button"
             aria-expanded={open}
-            aria-controls="site-menu"
+            aria-controls={MENU_ID}
             onClick={() => setOpen((value) => !value)}
             className="md:hidden min-h-11 min-w-11 px-4 inline-flex items-center gap-2 text-ink cursor-pointer touch-manipulation"
           >
@@ -148,7 +174,7 @@ function DefaultNav() {
           {/* Disclosure panel, not a dialog: no scroll lock, no focus trap, background stays interactive.
               `hidden` when closed so its links are not focusable. */}
           <div
-            id="site-menu"
+            id={MENU_ID}
             data-state={open ? 'open' : 'closed'}
             hidden={!open}
             className={`md:hidden absolute inset-x-0 top-16 z-(--z-menu) bg-surface-raised border-b border-line max-h-[calc(100svh-var(--nav-h))] overflow-y-auto py-2 ${PANEL_MOTION}`}

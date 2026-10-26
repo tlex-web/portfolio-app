@@ -26,6 +26,7 @@ import { HotspotKey, HotspotMarks, HotspotOverlay } from '@/components/photos/Ho
 import { useLightbox } from '@/components/photos/LightboxDialog';
 import StagePhoto from '@/components/photos/StagePhoto';
 import ZoomStage from '@/components/photos/ZoomStage';
+import { keyBelongsToChrome } from '@/components/site/SiteNav';
 import { site } from '@/data/site';
 import { useLabelsOn } from '@/lib/photos/hotspot-pref';
 import { slugFromPath, stepIndex, swipeStep } from '@/lib/photos/stepping';
@@ -74,7 +75,11 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * .registerEscape, closing last. On the page a document keydown listener does
  * the same job: a layer that consumes Escape calls preventDefault, and when
  * none has, Escape navigates to /photos, never a blind browser Back, because
- * a directly loaded page may have no gallery behind it.
+ * a directly loaded page may have no gallery behind it. On the page every
+ * viewer key (Escape, ← →, Z, H, the zoomed pan) skips a press that belongs
+ * to the site chrome (keyBelongsToChrome: the open mobile menu, or focus in
+ * the nav, skip link or footer); the open menu also takes Escape first and
+ * prevents it (10-REVIEW CR-01).
  *
  * Moving between photos (LBOX-02; 10-UI-SPEC "Moving between photos"): the
  * chrome's left group holds 'Previous photo', the counter 'n / 4' (mono,
@@ -253,6 +258,7 @@ export default function PhotoViewer({
     if (!isPage) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
+      if (keyBelongsToChrome(event)) return;
       event.preventDefault();
       router.push('/photos');
     };
@@ -271,12 +277,13 @@ export default function PhotoViewer({
       if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
       if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
       if (event.shiftKey || isEditable(event.target)) return;
+      if (isPage && keyBelongsToChrome(event)) return;
       event.preventDefault();
       step(event.key === 'ArrowLeft' ? -1 : 1);
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [step]);
+  }, [isPage, step]);
 
   // Z toggles zoom on both surfaces (the button declares it as its keyboard shortcut):
   // only with no modifier held and outside text fields. A layout effect for
@@ -286,12 +293,13 @@ export default function PhotoViewer({
       if (event.key !== 'z' && event.key !== 'Z') return;
       if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
       if (event.shiftKey || event.repeat || isEditable(event.target)) return;
+      if (isPage && keyBelongsToChrome(event)) return;
       event.preventDefault();
       toggleZoom();
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [toggleZoom]);
+  }, [isPage, toggleZoom]);
 
   // H toggles Hide labels on both surfaces, under the same rules as Z.
   const toggleLabels = useEffectEvent(() => setLabelsOn(!labelsOn));
@@ -300,12 +308,13 @@ export default function PhotoViewer({
       if (event.key !== 'h' && event.key !== 'H') return;
       if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
       if (event.shiftKey || event.repeat || isEditable(event.target)) return;
+      if (isPage && keyBelongsToChrome(event)) return;
       event.preventDefault();
       toggleLabels();
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [isPage]);
 
   // The callout Escape layer: collapse the open hotspot and return focus to
   // its gutter label or key row, whichever is rendered and shown (while
@@ -325,6 +334,7 @@ export default function PhotoViewer({
     if (lightbox) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
+      if (keyBelongsToChrome(event)) return;
       if (collapseCallout()) event.preventDefault();
     };
     window.addEventListener('keydown', onKeyDown, true);

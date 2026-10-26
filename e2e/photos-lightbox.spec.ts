@@ -1,5 +1,6 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
 import { buildPhotoViews } from '@/lib/photos/view-model';
+import { HOTSPOT_PREF_KEY } from '@/lib/photos/hotspot-pref';
 import { LB_CHROME_PX, LB_GUTTER_PX } from '@/lib/photos/lightbox-tiers';
 import {
   readViewTransitions,
@@ -291,6 +292,32 @@ async function waitForHydration(link: Locator) {
     .toBe(true);
 }
 
+/**
+ * Record every client-side navigation request the page starts: an RSC fetch
+ * (`rsc: 1`) that is not a prefetch (no `next-router-prefetch`), as a
+ * pathname. Next starts that fetch inside router.push(), so a read right after
+ * a key press shows whether the press navigated.
+ */
+async function recordNavigations(page: Page) {
+  await page.addInitScript(() => {
+    const record: string[] = [];
+    (window as unknown as { __navigations: string[] }).__navigations = record;
+    const original = window.fetch.bind(window);
+    window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = input instanceof Request ? input : null;
+      const headers = new Headers(init?.headers ?? request?.headers);
+      if (headers.get('rsc') === '1' && !headers.has('next-router-prefetch')) {
+        record.push(new URL(request ? request.url : String(input), location.href).pathname);
+      }
+      return original(input, init);
+    };
+  });
+}
+
+/** The navigation requests recordNavigations() has seen so far. */
+const navigations = (page: Page) =>
+  page.evaluate(() => [...(window as unknown as { __navigations: string[] }).__navigations]);
+
 /** Click a grid tile (already on the grid, hydrated) and wait for the dialog. */
 async function clickTile(page: Page, index = 0) {
   const tile = page.getByRole('list', { name: GRID_LIST }).getByRole('link').nth(index);
@@ -425,6 +452,79 @@ test.describe('Focus and Escape (LBOX-03)', () => {
       await expect(page).toHaveURL(/\/photos$/, { timeout: 2000 });
     }).toPass({ timeout: 15000 });
     await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
+
+  test('on the photo page at 375, the open nav menu keeps its keys: Escape closes it and the photo stays (10-REVIEW CR-01)', async ({
+    page,
+  }) => {
+    await recordNavigations(page);
+    await page.setViewportSize({ width: 375, height: 800 });
+    await page.goto(`/photos/${first.slug}`);
+    const main = page.getByRole('main');
+    const next = main.getByRole('button', { name: 'Next photo', exact: true });
+    const zoom = main.getByRole('button', { name: 'Zoom photo', exact: true });
+    const hide = main.getByRole('button', { name: 'Hide labels', exact: true });
+    const menuButton = page.getByRole('banner').getByRole('button', { name: 'Menu', exact: true });
+    const menu = page.locator('#site-menu');
+    await waitForHydration(next);
+    await waitForHydration(menuButton);
+    await page.waitForLoadState('load');
+    const length = await page.evaluate(() => window.history.length);
+
+    // The viewer's keys are live: from the content, → and ← step.
+    await next.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(page).toHaveURL(new RegExp(`/photos/${views[1].slug}$`));
+    await page.keyboard.press('ArrowLeft');
+    await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
+
+    // A keyboard user opens the menu and moves into it.
+    await menuButton.focus();
+    await page.keyboard.press('Enter');
+    await expect(menuButton).toHaveAttribute('aria-expanded', 'true');
+    await expect(menu).toBeVisible();
+    await page.keyboard.press('Tab');
+    await expect(menu.getByRole('link').first()).toBeFocused();
+
+    // The arrows, Z and H belong to the menu now, not to the photo behind it. A
+    // step (replaceState) and Hide labels (localStorage) would act inside the
+    // key handler, so the reads right after each press are exact.
+    for (const key of ['ArrowRight', 'ArrowLeft', 'z', 'h']) {
+      await page.keyboard.press(key);
+      expect(await page.evaluate(() => window.location.pathname), `after ${key}`).toBe(
+        `/photos/${first.slug}`
+      );
+      expect(
+        await page.evaluate((k) => window.localStorage.getItem(k), HOTSPOT_PREF_KEY),
+        `after ${key}`
+      ).toBeNull();
+    }
+
+    // Escape closes the menu to its button, and only the menu: the press
+    // starts no navigation (router.push fetches inside the key handler, so the
+    // read right after the press is exact).
+    const before = await navigations(page);
+    await page.keyboard.press('Escape');
+    expect(await navigations(page), 'Escape in the menu navigated').toEqual(before);
+    await expect(menu).toBeHidden();
+    await expect(menuButton).toHaveAttribute('aria-expanded', 'false');
+    await expect(menuButton).toBeFocused();
+    await expect(zoom).toHaveAttribute('aria-pressed', 'false');
+    await expect(hide).toHaveAttribute('aria-pressed', 'false');
+
+    // Still on the photo page: a step from the content works, and no history
+    // entry was added (a stray router.push('/photos') adds one).
+    await next.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(page).toHaveURL(new RegExp(`/photos/${views[1].slug}$`));
+    await expect(main.getByRole('heading', { level: 1 })).toHaveText(views[1].title);
+    expect(await page.evaluate(() => window.history.length)).toBe(length);
+
+    // From the content, Escape still goes to the gallery (D-08), and the
+    // recorder sees that navigation (so its silence above is meaningful).
+    await page.keyboard.press('Escape');
+    expect(await navigations(page)).toEqual([...before, '/photos']);
+    await expect(page).toHaveURL(/\/photos$/);
   });
 });
 

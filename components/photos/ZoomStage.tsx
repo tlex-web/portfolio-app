@@ -3,6 +3,7 @@
 import { useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import { useLightbox } from '@/components/photos/LightboxDialog';
+import { keyBelongsToChrome } from '@/components/site/SiteNav';
 import {
   centreScroll,
   exceedsDragThreshold,
@@ -41,7 +42,9 @@ import type { PhotoView } from '@/lib/photos/view-model';
  *   on `document` in the capture phase, so it runs before PhotoViewer's
  *   stepping listener and its preventDefault turns the step off. It registers
  *   in a layout effect, as the stepping listener does, because React runs
- *   passive effects only after a view transition.
+ *   passive effects only after a view transition. On the page it skips a
+ *   press that belongs to the site chrome (keyBelongsToChrome: the open nav
+ *   menu, or focus in the nav or footer; 10-REVIEW CR-01).
  * - Escape layer (LBOX-03): zoomed, Escape leaves zoom and nothing else. In
  *   the lightbox it is a layer registered through useLightbox().registerEscape
  *   (the dialog closes only when no layer consumes the press); on the page the
@@ -155,6 +158,8 @@ export default function ZoomStage({
 
   const onKeyDown = useEffectEvent((event: KeyboardEvent) => {
     if (!zoomed || event.defaultPrevented) return;
+    // On the page, a press for the site chrome (the open nav menu) is not ours (10-REVIEW CR-01).
+    if (!lightbox && keyBelongsToChrome(event)) return;
     if (event.key === 'Escape') {
       // In the lightbox the dialog runs its registered layers instead.
       if (lightbox) return;
