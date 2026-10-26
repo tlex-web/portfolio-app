@@ -422,3 +422,118 @@ test.describe('Focus and Escape (LBOX-03)', () => {
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 });
+
+test.describe('Moving between photos (LBOX-02)', () => {
+  const first = views[0];
+  const last = views[views.length - 1];
+
+  /** The viewer's counter ('n / 4', aria-hidden) and its polite status line. */
+  const counter = (scope: Page | Locator) => scope.locator('[data-photo-counter]');
+  const status = (scope: Page | Locator) => scope.locator('[data-photo-viewer] p[role="status"]');
+
+  test('three Next presses in the lightbox: URL, title, counter, focus and no history entry', async ({
+    page,
+  }) => {
+    const dialog = await openFirstTile(page);
+    const length = await page.evaluate(() => window.history.length);
+    const next = dialog.getByRole('button', { name: 'Next photo', exact: true });
+    await expect(counter(dialog)).toHaveText(`1 / ${views.length}`);
+    await expect(counter(dialog)).toHaveAttribute('aria-hidden', 'true');
+
+    for (let i = 0; i < 3; i++) await next.click();
+
+    await expect(page).toHaveURL(new RegExp(`/photos/${last.slug}$`));
+    await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(last.title);
+    await expect(counter(dialog)).toHaveText(`${views.length} / ${views.length}`);
+    await expect(next).toHaveAttribute('aria-disabled', 'true');
+    await expect(next).toBeFocused();
+    await expect(status(dialog)).toHaveText(`Photo ${views.length} of ${views.length}: ${last.title}`);
+    await expect(status(dialog)).toHaveAttribute('aria-atomic', 'true');
+    await expect(page).toHaveTitle(`${last.title} · Tim Lui`);
+    expect(await page.evaluate(() => window.history.length)).toBe(length);
+    // The viewer never remounted: the dialog is still the open one.
+    await expect(page.getByRole('dialog')).toHaveCount(1);
+  });
+
+  test('the arrow keys step, and nothing moves past either end', async ({ page }) => {
+    const dialog = await openFirstTile(page);
+    const prev = dialog.getByRole('button', { name: 'Previous photo', exact: true });
+    await expect(prev).toHaveAttribute('aria-disabled', 'true');
+
+    await page.keyboard.press('ArrowRight');
+    await expect(page).toHaveURL(new RegExp(`/photos/${views[1].slug}$`));
+    await expect(counter(dialog)).toHaveText(`2 / ${views.length}`);
+
+    await page.keyboard.press('ArrowLeft');
+    await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
+    await expect(counter(dialog)).toHaveText(`1 / ${views.length}`);
+
+    // At 1 / 4 neither ArrowLeft nor a press on the disabled Previous changes anything.
+    await page.keyboard.press('ArrowLeft');
+    await prev.click({ force: true });
+    await expect(prev).toBeFocused();
+    await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
+    await expect(counter(dialog)).toHaveText(`1 / ${views.length}`);
+    await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(first.title);
+    await expect(status(dialog)).toHaveText('');
+  });
+
+  test('a touch swipe on the photo steps to the next photo @chromium-only', async ({ page }) => {
+    const dialog = await openFirstTile(page);
+    const photoBox = dialog.locator('[data-photo-box]');
+    const rect = (await photoBox.boundingBox())!;
+    const x = rect.x + rect.width / 2;
+    const y = rect.y + rect.height / 2;
+    const touch = { pointerId: 7, pointerType: 'touch', isPrimary: true, bubbles: true };
+    await photoBox.dispatchEvent('pointerdown', { ...touch, clientX: x, clientY: y, buttons: 1 });
+    await photoBox.dispatchEvent('pointermove', {
+      ...touch,
+      clientX: x - 60,
+      clientY: y + 5,
+      buttons: 1,
+    });
+    await photoBox.dispatchEvent('pointerup', { ...touch, clientX: x - 120, clientY: y + 10 });
+
+    await expect(page).toHaveURL(new RegExp(`/photos/${views[1].slug}$`));
+    await expect(counter(dialog)).toHaveText(`2 / ${views.length}`);
+  });
+
+  test('closing after two steps returns focus to the tile of the photo shown', async ({ page }) => {
+    const dialog = await openFirstTile(page);
+    const next = dialog.getByRole('button', { name: 'Next photo', exact: true });
+    await next.click();
+    await next.click();
+    await expect(page).toHaveURL(new RegExp(`/photos/${views[2].slug}$`));
+
+    await dialog.getByRole('button', { name: 'Close photo', exact: true }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page).toHaveURL(GRID_URL);
+    await expect
+      .poll(() => page.evaluate(() => document.activeElement?.getAttribute('data-photo-id')))
+      .toBe(views[2].slug);
+  });
+
+  test('on the photo page Next shows the next photo with no dialog, and reload keeps it (Pitfall 1)', async ({
+    page,
+  }) => {
+    await page.goto(`/photos/${first.slug}`);
+    const main = page.getByRole('main');
+    const next = main.getByRole('button', { name: 'Next photo', exact: true });
+    await waitForHydration(next);
+    const length = await page.evaluate(() => window.history.length);
+
+    await next.click();
+    await expect(page).toHaveURL(new RegExp(`/photos/${views[1].slug}$`));
+    await expect(main.getByRole('heading', { level: 1 })).toHaveText(views[1].title);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(next).toBeFocused();
+    await expect(page).toHaveTitle(`${views[1].title} · Tim Lui`);
+    expect(await page.evaluate(() => window.history.length)).toBe(length);
+
+    await page.reload();
+    await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toHaveText(
+      views[1].title
+    );
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
+});
