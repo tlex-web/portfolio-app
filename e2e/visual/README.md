@@ -4,8 +4,17 @@
 `visual-dark` and `visual-light` Playwright projects (reduced motion, full
 page), plus Home with motion enabled at three fixed ascent positions on the
 static poster path: the top (p = 0), waypoint 2's block centred and the summit
-centred (`home/<width>-ascent-{start,waypoint-2,summit}.png`): 36 tests per
-scheme. Every later plan is judged against these files.
+centred (`home/<width>-ascent-{start,waypoint-2,summit}.png`), plus the
+lightbox opened from the grid's first tile (`lightbox/<width>.png`, viewport
+only): 48 tests per scheme. Every later plan is judged against these files.
+
+Route slugs (one snapshot folder each): `home`, `photos` (the map, the default
+view), `photos-grid` (`/photos?view=grid`), `photos-carousel`
+(`/photos?view=carousel`, the stepper, since every route shot runs under
+reduced motion), `photo` (the film scan's `/photos/{slug}` page, the photo
+with the partial strip; the slug comes from `buildPhotoViews()`), `projects`,
+`clix-cli`, `clix-website`, `roadmap`, `contact`, `offline`, `not-found`; and
+the `lightbox` viewport shots.
 
 The Home motion shots switch WebGL off (`disableWebGL` from
 `e2e/helpers/webgl.ts`), so the capability gate keeps Home on the poster, its
@@ -14,7 +23,8 @@ centring a block, never by a scroll percentage, so a change in track height
 cannot move them. Canvases stay hidden either way; the 3D path is covered by
 the SwiftShader checks in `e2e/home-canvas.spec.ts`, not by baselines.
 
-Since 07-14 only visual-dark PNGs exist (36 files); visual-light asserts
+Since 07-14 only visual-dark PNGs exist (36 files until 10-13 adds the 12
+`photos-grid`, `photos-carousel`, `photo` and `lightbox` files); visual-light asserts
 against them through `expect.toHaveScreenshot.pathTemplate: DARK_PATH`, so a
 light-OS visitor must see exactly the dark site (DSGN-05). Update with
 visual-dark only: the baseline workflow runs `--project=visual-dark`, and an
@@ -82,7 +92,8 @@ For a plan that is meant to change some screenshots:
    regeneration).
 4. Tim downloads the `visual-baselines` artifact and unzips it into
    `e2e/visual/routes.spec.ts-snapshots/`, overwriting existing files. The
-   zip's contents (the route folders `home/`, `photos/`, ...) go directly into
+   zip's contents (the route folders `home/`, `photos/`, `photos-grid/`,
+   `photos-carousel/`, `photo/`, `lightbox/`, ...) go directly into
    that folder. Windows "Extract all" adds a wrapper folder named after the
    zip (`visual-baselines/`); do not keep it.
 5. Tim reviews `git status --short e2e/visual` against the plan's expected
@@ -92,7 +103,9 @@ For a plan that is meant to change some screenshots:
    then force-pushes to `ci/07-NN` again.
 7. The executor verifies the changed set, for example
    `node scripts/ci/check-snapshot-commit.mjs --sha HEAD --some --allow photos`
-   (add `--allow-deletions` only when the plan deletes PNGs), and the green CI
+   (repeat `--allow` per folder; the Phase 10 photo re-baseline is
+   `--allow photos --allow photos-grid --allow photos-carousel --allow photo --allow lightbox`;
+   add `--allow-deletions` only when the plan deletes PNGs), and the green CI
    run with `node scripts/ci/check-visual-run.mjs --sha <HEAD> --wait 30`.
 
 ### With the GitHub CLI (optional, replaces steps 3-4)

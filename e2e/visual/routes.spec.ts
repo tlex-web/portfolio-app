@@ -1,13 +1,16 @@
 import path from 'path';
 import { test, expect, type Page } from '@playwright/test';
 import { buildWaypoints } from '@/lib/ascent/waypoints';
+import { buildPhotoViews } from '@/lib/photos/view-model';
 import { disableWebGL, nextFrames } from '../helpers/webgl';
 import { scrollBlockToCentre } from '../helpers/ascent';
 
 /**
  * GUARD-02 visual regression: every route at 375 / 768 / 1440 px, plus Home
  * viewport shots at three fixed ascent positions (top, waypoint 2 centred,
- * summit centred) with motion enabled on the static poster path (D-22).
+ * summit centred) with motion enabled on the static poster path (D-22), and
+ * the lightbox opened from the grid at the same three widths (10-UI-SPEC
+ * "Guardrails and Regression Risks", GUARD-02 row).
  *
  * Runs only in the visual-dark and visual-light projects. Baselines are
  * captured in the Playwright Linux container (see e2e/visual/README.md);
@@ -17,9 +20,21 @@ import { scrollBlockToCentre } from '../helpers/ascent';
  * retitling or reordering tests cannot orphan a PNG.
  */
 
+/**
+ * The film scan (the one approximate position) is the photo-page shot: its
+ * strip carries the partial fields (approx. altitude and position, film line).
+ * The slug comes from the data, never from a literal.
+ */
+const filmScan = buildPhotoViews().find((view) => view.approximate);
+if (!filmScan) throw new Error('buildPhotoViews() has no approximate (film-scan) view');
+
 const ROUTES = [
   ['home', '/'],
   ['photos', '/photos'],
+  ['photos-grid', '/photos?view=grid'],
+  // Reduced motion (every shot in the route loop) puts the carousel on its stepper.
+  ['photos-carousel', '/photos?view=carousel'],
+  ['photo', `/photos/${filmScan.slug}`],
   ['projects', '/projects'],
   ['clix-cli', '/projects/clix-cli'],
   ['clix-website', '/projects/clix-website'],
@@ -50,9 +65,9 @@ const stylePath = path.join(__dirname, 'hide-canvas.css');
 
 /**
  * Brings a page to a deterministic state before a screenshot:
- * fonts loaded, every once:true whileInView animation fired and every lazy
- * image loaded (by scrolling the full height), back at the top, and no finite
- * time-based animation still running.
+ * fonts loaded, every once:true whileInView animation fired and every
+ * rendered lazy image loaded (by scrolling the full height), back at the top,
+ * and no finite time-based animation still running.
  *
  * Scroll-driven animations (Motion's useScroll runs on a ViewTimeline) are
  * ignored: their play state stays 'running' at any scroll position, so waiting
@@ -68,7 +83,12 @@ async function settle(page: Page) {
     }
     window.scrollTo(0, 0);
   });
-  await page.waitForFunction(() => Array.from(document.images).every((img) => img.complete));
+  // An image with no layout box (inside a display: none wrapper, such as the
+  // map's hover previews) cannot be in the shot, and a lazy one is never
+  // fetched, so its `complete` stays false: only rendered images are awaited.
+  await page.waitForFunction(() =>
+    Array.from(document.images).every((img) => img.complete || img.getClientRects().length === 0),
+  );
   await page.waitForFunction(() =>
     document
       .getAnimations()
@@ -84,12 +104,13 @@ async function settle(page: Page) {
       .getEntriesByType('resource')
       .some((entry) => /\/terrain\/contours-strip\.[0-9a-f]{10}\.svg$/.test(entry.name)),
   );
-  // Home's poster draws its contour lines from the hashed hero SVG, which does
-  // not hold up the load event either: wait for it on / as well, so a baseline
-  // can never show an empty contour layer (09-RESEARCH Pitfall 3).
+  // Home's poster and the /photos map sheet draw their contour lines from the
+  // hashed hero SVG, which does not hold up the load event either: wait for it
+  // wherever either surface renders, so a baseline can never show an empty
+  // contour layer (09-RESEARCH Pitfall 3).
   await page.waitForFunction(
     () =>
-      location.pathname !== '/' ||
+      !document.querySelector('[data-map-mark], [data-ascent-stage]') ||
       performance
         .getEntriesByType('resource')
         .some((entry) => /\/terrain\/contours-hero\.[0-9a-f]{10}\.svg$/.test(entry.name)),
@@ -166,4 +187,43 @@ for (const w of WIDTHS) {
       });
     });
   }
+}
+
+// The lightbox over the grid (LBOX-01): a viewport shot, not full page, since
+// the dialog covers the viewport and the grid behind it is inert. Opened by a
+// click on the first tile of the grid list, so the intercepted route renders
+// exactly as a visitor sees it; reduced motion keeps the open instant.
+for (const w of WIDTHS) {
+  test(`lightbox @${w}`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.setViewportSize({ width: w, height: HEIGHT });
+    await page.goto('/photos?view=grid');
+    await settle(page);
+    const tile = page
+      .getByRole('list', { name: 'Photographs, lowest first' })
+      .getByRole('link')
+      .first();
+    // A click before hydration is a document navigation (no dialog).
+    await expect
+      .poll(() => tile.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))), {
+        timeout: 15000,
+      })
+      .toBe(true);
+    await tile.click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible({ timeout: 20000 });
+    await expect
+      .poll(() =>
+        dialog
+          .locator('img')
+          .evaluateAll((imgs: HTMLImageElement[]) =>
+            imgs.every((img) => img.complete && img.naturalWidth > 0),
+          ),
+      )
+      .toBe(true);
+    await page.evaluate(
+      () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+    );
+    await expect(page).toHaveScreenshot(['lightbox', `${w}.png`], { stylePath });
+  });
 }
