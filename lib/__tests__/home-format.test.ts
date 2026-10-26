@@ -15,6 +15,7 @@ import {
   formatCoordinates,
   formatKilometres,
   formatLatLon,
+  formatMetreRange,
   formatYearRange,
   shortPlace,
 } from '@/lib/home-format';
@@ -36,25 +37,27 @@ describe('formatLatLon (hero and plaque kicker, D-11)', () => {
 
   it('uses S and W for negative values and pads to four decimals', () => {
     expect(codePoints(formatLatLon({ lat: -1.23456, lon: -7.5 }))).toEqual(
-      codePoints(`1.2346${NBSP}S ${MIDDOT} 7.5000${NBSP}W`),
+      codePoints(`1.2346${NBSP}S ${MIDDOT} 7.5000${NBSP}W`)
     );
   });
 
   it('rounds half up at the fourth decimal', () => {
-    expect(formatLatLon({ lat: 0.00005, lon: 1.23455 })).toBe(`0.0001${NBSP}N ${MIDDOT} 1.2346${NBSP}E`);
+    expect(formatLatLon({ lat: 0.00005, lon: 1.23455 })).toBe(
+      `0.0001${NBSP}N ${MIDDOT} 1.2346${NBSP}E`
+    );
   });
 });
 
 describe('formatCoordinates (viewer strip position, D-07)', () => {
   it('prints 4 dp with trailing zeros, U+00A0 before each letter and one ASCII space between the halves', () => {
     expect(codePoints(formatCoordinates({ lat: 46.015, lon: 7.7414 }))).toEqual(
-      codePoints(`46.0150${NBSP}N 7.7414${NBSP}E`),
+      codePoints(`46.0150${NBSP}N 7.7414${NBSP}E`)
     );
   });
 
   it('uses S and W for negative values', () => {
     expect(codePoints(formatCoordinates({ lat: -1.23456, lon: -7.5 }))).toEqual(
-      codePoints(`1.2346${NBSP}S 7.5000${NBSP}W`),
+      codePoints(`1.2346${NBSP}S 7.5000${NBSP}W`)
     );
   });
 
@@ -65,8 +68,12 @@ describe('formatCoordinates (viewer strip position, D-07)', () => {
 
 describe('formatCaptureMonth (card place/date line)', () => {
   it('prints a three-letter English month and the year for an EXIF capture', () => {
-    expect(formatCaptureMonth({ precision: 'second', local: '2021-09-06T11:22:57' })).toBe('Sep 2021');
-    expect(formatCaptureMonth({ precision: 'second', local: '2020-01-31T08:00:00' })).toBe('Jan 2020');
+    expect(formatCaptureMonth({ precision: 'second', local: '2021-09-06T11:22:57' })).toBe(
+      'Sep 2021'
+    );
+    expect(formatCaptureMonth({ precision: 'second', local: '2020-01-31T08:00:00' })).toBe(
+      'Jan 2020'
+    );
   });
 
   it('prints the year only for a year-only capture (08 D-03)', () => {
@@ -83,7 +90,9 @@ describe('formatKilometres (plaque distance)', () => {
 
 describe('formatYearRange (plaque Photographed)', () => {
   it('prints the distinct min and max years joined by an en dash', () => {
-    expect(codePoints(formatYearRange([2021, 2019, 2021]))).toEqual(codePoints(`2019${EN_DASH}2021`));
+    expect(codePoints(formatYearRange([2021, 2019, 2021]))).toEqual(
+      codePoints(`2019${EN_DASH}2021`)
+    );
   });
 
   it('prints a single distinct year once', () => {
@@ -93,6 +102,23 @@ describe('formatYearRange (plaque Photographed)', () => {
 
   it('throws a RangeError for an empty list', () => {
     expect(() => formatYearRange([])).toThrow(RangeError);
+  });
+});
+
+describe('formatMetreRange (/photos kicker, D-14)', () => {
+  it("prints '1,617–2,760 m': grouped, an en dash between, U+00A0 before the one unit", () => {
+    expect(codePoints(formatMetreRange(1617, 2760))).toEqual(
+      codePoints(`1,617${EN_DASH}2,760${NBSP}m`)
+    );
+  });
+
+  it('rounds to whole metres and prints an equal range once', () => {
+    expect(formatMetreRange(999.6, 12345.4)).toBe(`1,000${EN_DASH}12,345${NBSP}m`);
+    expect(formatMetreRange(1617, 1617)).toBe(`1,617${NBSP}m`);
+  });
+
+  it('throws a RangeError when the range runs downhill', () => {
+    expect(() => formatMetreRange(2760, 1617)).toThrow(RangeError);
   });
 });
 

@@ -88,6 +88,11 @@ export function formatYearRange(years: readonly number[]): string {
   return min === max ? String(min) : `${min}${EN_DASH}${max}`;
 }
 
+/** RED stub (10-08 Task 3). */
+export function formatMetreRange(_lo: number, _hi: number): string {
+  throw new Error('formatMetreRange: not implemented');
+}
+
 /**
  * A count with its noun for the trail signs: '4 waypoints', '1 route'. Zero
  * returns '' so the sign shows its destination only.
