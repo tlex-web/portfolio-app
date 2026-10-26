@@ -5,11 +5,11 @@ titles: json
 findings:
   - id: CR-01
     severity: critical
-    disposition: open
+    disposition: fixed
     title: "On the photo page, the viewer's document key handlers catch keys meant for the site nav; Escape to close the mobile menu also leaves the photo"
   - id: WR-01
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "A browser-Back close (the Android back gesture) uses a slug that may be lagging for focus return and the carousel's front photo"
   - id: IN-01
     severity: info
@@ -51,17 +51,17 @@ findings:
     severity: info
     disposition: open
     title: "`closing` is never reset in LightboxDialog"
-open: 12
+open: 10
 total: 12
-recorded: 2026-10-26T18:24:08.380Z
+recorded: 2026-10-26T18:58:22.182Z
 ---
 
 # Phase 10: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| CR-01 | critical | open | - |
-| WR-01 | warning | open | - |
+| CR-01 | critical | fixed | 10-REVIEW-FIX.md |
+| WR-01 | warning | fixed | 10-REVIEW-FIX.md |
 | IN-01 | info | open | - |
 | IN-02 | info | open | - |
 | IN-03 | info | open | - |
