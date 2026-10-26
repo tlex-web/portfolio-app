@@ -3,7 +3,7 @@ import { imageManifest } from '@/data/generated/image-manifest';
 import { photos } from '@/data/generated/photos';
 import { terrain } from '@/data/generated/terrain';
 import { editorial } from '@/data/photos/editorial';
-import type { ElevationRef } from '@/data/schemas/editorial';
+import type { EditorialAnnotation, ElevationRef, Fact } from '@/data/schemas/editorial';
 import { site } from '@/data/site';
 import { buildWaypoints, type Waypoint, type WaypointInput } from '@/lib/ascent/waypoints';
 import { formatCoordinates } from '@/lib/home-format';
@@ -59,7 +59,14 @@ export type StripFields = {
   approxNote: string | null;
 };
 
-/** RED stub (10-11 Task 1): one hotspot as the viewer shows it. */
+/**
+ * One hotspot as the viewer shows it (LBOX-05; D-09, D-11; 10-UI-SPEC
+ * "Hotspots"), in reading order (sorted by y, then x) and numbered from 1:
+ * the n on its numbered dot and key row, its glyph (a triangle for a peak, a
+ * circle for everything else), its gutter side (x < 50 left, else right),
+ * the height its elevation reference points at, and the facts with their
+ * sources as the strip prints them.
+ */
 export type HotspotView = {
   id: string;
   n: number;
@@ -69,6 +76,7 @@ export type HotspotView = {
   y: number;
   glyph: 'peak' | 'dot';
   side: 'left' | 'right';
+  /** '4,478 m' for the summit, the photo's altitudeLabel for a photo ref ('2,760 m approx.'), else null. */
   heightLabel: string | null;
   facts: readonly {
     text: string;
@@ -96,6 +104,7 @@ export type PhotoView = Waypoint & {
   prevSlug: string | null;
   nextSlug: string | null;
   strip: StripFields;
+  /** The annotations in reading order; [] for a photo without any (no markers, no key). */
   hotspots: readonly HotspotView[];
 };
 
@@ -135,8 +144,22 @@ export type StripSource = {
   altitudeM: number;
 };
 
+/** The editorial fields buildPhotoViews reads beyond buildWaypoints' own: the annotations. */
+type PhotoViewEditorial = Readonly<
+  Record<
+    string,
+    | (NonNullable<WaypointInput['editorial'][string]> & {
+        annotations?: readonly EditorialAnnotation[];
+      })
+    | undefined
+  >
+>;
+
 /** The input of buildPhotoViews; structurally a WaypointInput, so the same fixture feeds both. */
-export type PhotoViewInput = Omit<WaypointInput, 'photos'> & { photos: readonly PhotoViewPhoto[] };
+export type PhotoViewInput = Omit<WaypointInput, 'photos' | 'editorial'> & {
+  photos: readonly PhotoViewPhoto[];
+  editorial: PhotoViewEditorial;
+};
 
 const TILE_EDGES = [640, 1024, 1600] as const;
 const STAGE_EDGES = [1024, 1600, 2560] as const;
@@ -233,6 +256,66 @@ export function stripFields(source: StripSource): StripFields {
   };
 }
 
+/** What a fact's source prints as: a 'Wikipedia' link, another site's host, or 'Source: …' text. */
+function factSource(source: Fact['source']): HotspotView['facts'][number]['source'] {
+  switch (source) {
+    case 'Tim':
+      return { kind: 'text', label: 'Source: Tim' };
+    case 'dem':
+      return { kind: 'text', label: 'Source: swissALTIRegio terrain model' };
+    case 'exif':
+      return { kind: 'text', label: 'Source: camera EXIF' };
+    default: {
+      const host = new URL(source).hostname;
+      const wikipedia = host === 'wikipedia.org' || host.endsWith('.wikipedia.org');
+      return {
+        kind: 'link',
+        href: source,
+        label: wikipedia ? 'Wikipedia' : host.replace(/^www\./, ''),
+      };
+    }
+  }
+}
+
+/**
+ * A photo's hotspots (D-09, IN-02): a sorted copy of its annotations (the
+ * photo order itself is never touched), numbered from 1. A summit reference
+ * prints the official height; a photo reference prints the photo's own
+ * altitude label, which already says 'approx.' for the hand-placed film scan,
+ * so the approximation reaches the callout too (08-REVIEW IN-02).
+ */
+export function hotspotViews(
+  annotations: readonly EditorialAnnotation[],
+  altitudeM: number,
+  altitudeLabel: string
+): readonly HotspotView[] {
+  return [...annotations]
+    .sort((a, b) => a.position.y - b.position.y || a.position.x - b.position.x)
+    .map((a, i) => {
+      const ref = a.details?.elevation;
+      const heightLabel = !ref
+        ? null
+        : ref.kind === 'photo'
+          ? altitudeLabel
+          : formatMetres(elevationMetres(ref, altitudeM));
+      return {
+        id: a.id,
+        n: i + 1,
+        title: a.title,
+        description: a.description,
+        x: a.position.x,
+        y: a.position.y,
+        glyph: a.icon === 'peak' ? 'peak' : 'dot',
+        side: a.position.x < 50 ? 'left' : 'right',
+        heightLabel,
+        facts: (a.details?.facts ?? []).map((f) => ({
+          text: f.text,
+          source: factSource(f.source),
+        })),
+      };
+    });
+}
+
 /**
  * Every photo view in the canonical order (buildWaypoints' order, unchanged).
  *
@@ -253,11 +336,12 @@ export function buildPhotoViews(
       input.imageManifest[w.id]?.variants ?? fail(w.id, 'has no image-manifest entry');
     const largest = variant(w.id, variants, 2560);
     const captureLabel = formatCaptureLabel(photo.capture);
+    const altitudeLabel = `${formatMetres(w.altitudeM)}${w.approximate ? ' approx.' : ''}`;
 
     return {
       ...w,
       captureLabel,
-      altitudeLabel: `${formatMetres(w.altitudeM)}${w.approximate ? ' approx.' : ''}`,
+      altitudeLabel,
       aspect: { w: largest.width, h: largest.height },
       tile: imageSet(w.id, variants, TILE_EDGES, 640, 640),
       stage: imageSet(w.id, variants, STAGE_EDGES, 1600, 2560),
@@ -273,7 +357,7 @@ export function buildPhotoViews(
         captureLabel,
         altitudeM: w.altitudeM,
       }),
-      hotspots: [],
+      hotspots: hotspotViews(input.editorial[w.id]?.annotations ?? [], w.altitudeM, altitudeLabel),
     };
   });
 }
