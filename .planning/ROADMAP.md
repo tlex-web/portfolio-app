@@ -34,7 +34,7 @@
 - [x] **Phase 7: Foundation & Guardrails** - Regression nets, isolated dependency upgrades, tokens v2 and one site shell with Tim Lui's real identity (completed 2026-10-24)
 - [x] **Phase 8: Data & Terrain Pipeline** - Build-time swissALTIRegio terrain and EXIF photo data, privacy-safe images, typed highlights, and the footer map legend (completed 2026-10-24)
 - [x] **Phase 9: Home Ascent** - Real Matterhorn hero with a native-scroll ascent, altimeter rail and photo waypoints, plus a static fallback (completed 2026-10-25)
-- [ ] **Phase 10: Photography** - Map / Grid / Carousel light table and a deep-linkable gallery-black lightbox with EXIF and hotspots
+- [x] **Phase 10: Photography** - Map / Grid / Carousel light table and a deep-linkable gallery-black lightbox with EXIF and hotspots (completed 2026-10-26)
 - [ ] **Phase 11: Engineering & Roadmap** - Route-panel projects, case studies, trail-grade risk scale, tokenized terminal, and a route-log roadmap
 - [ ] **Phase 12: Contact, Edge Pages, Cleanup & Verification** - Summit-register contact, designed 404/error/offline pages, SEO, dead-code removal, and axe plus cross-browser verification
 
@@ -330,7 +330,7 @@ Gap closure (09-UAT.md, sequential on the main working tree):
      - map-style hotspot callouts with leader lines, operable by tap and keyboard, with a legend on mobile and a toggle that hides them
      - "© {capture year} Tim Lui, all rights reserved", with no download button
 
-**Plans**: 13/13 plans executed in 8 waves (10-06 and 10-13 carry blocking checkpoints for Tim)
+**Plans**: 13/13 plans complete in 8 waves (10-06 and 10-13 carry blocking checkpoints for Tim)
 
 Plans:
 **Wave 1**
@@ -459,6 +459,6 @@ Plans:
 | 7. Foundation & Guardrails | v2.0 | 27/27 | Complete    | 2026-10-24 |
 | 8. Data & Terrain Pipeline | v2.0 | 13/13 | Complete    | 2026-10-24 |
 | 9. Home Ascent | v2.0 | 22/22 | Complete    | 2026-10-25 |
-| 10. Photography | v2.0 | 13/13 | In Progress | - |
+| 10. Photography | v2.0 | 13/13 | Complete    | 2026-10-26 |
 | 11. Engineering & Roadmap | v2.0 | 0/TBD | Not started | - |
 | 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 0/TBD | Not started | - |

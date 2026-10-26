@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A personal portfolio web application built with Next.js and React, showcasing projects and landscape photography through interactive 3D visualizations. Since v2.0 Phase 7, every page renders inside one dark, token-driven site shell (tokens v2, a single `SiteNav`, Tim Lui's real identity) behind CI guardrails for visual regressions, deleted tests and off-system styling. Since Phase 9, Home is a native-scroll "ascent" up the real Matterhorn terrain (a contour-line shader over swissALTIRegio relief, an altimeter rail, four photo waypoints and a summit plaque), with a static contour poster wherever 3D is off or too slow. The v1.0 "Swiss Alps" crystalline pieces (geological depth effects, hexagonal project cards, progressive 3D texture loading) remain on pages v2.0 has not rebuilt yet. Everything supports reduced motion.
+A personal portfolio web application built with Next.js and React, showcasing projects and landscape photography through interactive 3D visualizations. Since v2.0 Phase 7, every page renders inside one dark, token-driven site shell (tokens v2, a single `SiteNav`, Tim Lui's real identity) behind CI guardrails for visual regressions, deleted tests and off-system styling. Since Phase 9, Home is a native-scroll "ascent" up the real Matterhorn terrain (a contour-line shader over swissALTIRegio relief, an altimeter rail, four photo waypoints and a summit plaque), with a static contour poster wherever 3D is off or too slow. Since Phase 10, `/photos` is a light table with Map (default), Grid and Carousel views kept in the URL, and every photo has its own `/photos/[slug]` page that opens in-site as a gallery-black lightbox with an EXIF strip, hotspot callouts, zoom and a View Transitions morph from the thumbnail. The v1.0 "Swiss Alps" crystalline pieces (geological depth effects, hexagonal project cards) remain on pages v2.0 has not rebuilt yet. Everything supports reduced motion.
 
 ## Core Value
 
@@ -62,12 +62,12 @@ A portfolio that is visually memorable and distinctive — not another generic T
 - ✓ Typed project highlights with real CLI_X riskScores and the trail-grade band scale — Phase 8
 - ✓ Footer map legend (contour band, waypoint ticks, true scale bar, LV95 extent, "Last surveyed", swisstopo attribution) on every route — Phase 8
 - ✓ Home "ascent" on the real Matterhorn: contour-shader terrain in a lazy R3F chunk, native scroll with no scroll-jacking and a skip link, altimeter rail 1,617 m → 4,478 m, four photo waypoints at their EXIF/DEM positions, trail signs and a summit-plaque readout, and a static contour poster for reduced motion, Save-Data, no WebGL2, low memory, a lost context or a failed frame budget (HOME-01 to HOME-08) — Phase 9
+- ✓ Photography from real EXIF data: Map / Grid / Carousel views in ascending-altitude order with the view in the URL (no history entries, no auto-advance), deep-linkable `/photos/[slug]` pages that open in-site as a focus-trapped gallery-black lightbox (arrow keys, buttons and swipe without history entries, counter, zoom, EXIF strip with rounded coordinates, hotspot callouts with a hide toggle, "© {year} Tim Lui, all rights reserved", no download button) and a thumbnail morph where View Transitions exist (PHOTO-01 to PHOTO-04, LBOX-01 to LBOX-07) — Phase 10
 
 ### Active
 
 <!-- Current scope. Building toward these in v2.0. -->
 
-- [ ] Photography experience driven by real EXIF data (map, grid, carousel, lightbox)
 - [ ] Engineering case studies with trail-grade risk visualization
 - [ ] Route-log roadmap, summit-register contact, designed edge pages
 - [ ] Playground routes and dead code removed (playground routes removed and resolving to the designed 404 in Phase 7; dead code, e.g. the unused `GlassmorphismNav.tsx`, remains for Phase 12)
@@ -89,13 +89,16 @@ Shipped v1.0 with 12,484 LOC TypeScript/CSS across 165 files.
 Tech stack: Next.js 16, React 19, Tailwind v4 (CSS-first @theme), Three.js/R3F/drei, Framer Motion.
 After v2.0 Phase 7: Next 16.4.2, React 19.3.1, `motion` 14.1 (`motion/react`), R3F 9.8.1, drei 10.7.9, Playwright 1.64, Node 24 with `npm ci` locally, in CI and on Vercel.
 After v2.0 Phase 9: Home ships 444,761 B of JS in total with the lazy canvas chunk (Phase 7 baseline 468,770 B; mobile LCP 3,112 ms against 4,692 ms); the test-count ratchet stands at jest 725, e2e 241.
+After v2.0 Phase 10: the test-count ratchet stands at jest 942, e2e 358 (total 1,300); the visual matrix is 48 shots per scheme, with the grid, carousel stepper, photo page and lightbox added.
 Deployed on Vercel with Upstash Redis for rate limiting.
 
 Design system: "Swiss Alps" crystalline aesthetic — 30 OKLCH tokens across 8 color families (alpine, granite, snow, frost, ember, pine, rust, amber), geological depth shadows (stratum-1/2/3), hex grid layouts, scroll-linked glow intensity.
 
 Known tech debt:
-- Old image variants (-thumb/-medium/-large, 60 files) still in repo and served — since Phase 8 `data/landscapes.ts` is a bridge that reaches them only through the image manifest (Home LCP, PhotoCarousel3D, GalleryGrid); delete in Phase 12 once Phase 10 moves the photo UI to the hashed derivatives
-- Phase 8 code review (08-REVIEW-DISPOSITION.md): 8 open warnings, latent for the current four photos (out-of-extent photo, missing GPS altitude, non-Zurich offset, 0.25–1 s shutter labels, non-atomic `photos:derive`, guard format gaps, README steps, mislabelled corrections) — fold into the first Phase 9/10 plan that adds photo data
+- Old image variants (-thumb/-medium/-large, 60 files) still on disk and in the image manifest's `legacy` entries, but no code reads them: Phase 10 (10-09) deleted `data/landscapes.ts` and the v1 photo UI, and a Jest guard fails on any `.legacy` read. Delete them in Phase 12 (VERIFY-01)
+- Phase 8 code review (08-REVIEW-DISPOSITION.md): all eight warnings fixed in Phase 10 (10-01, 10-02); CR-01 stays deferred under D-12, and 8 info rows (IN-01, IN-03 to IN-09) remain open
+- Phase 10 open deferred items (`.planning/phases/10-photography/deferred-items.md`): five dev-server e2e flakes under parallel load or after hot reloads (cold `/photos/[slug]` race, intercepted route that stops intercepting, scroll-lock and reduced-motion stepper cross-talk), and local Playwright WebKit that cannot load scripts because the CSP `upgrade-insecure-requests` applies to localhost (Safari was checked by hand at Phase 10 UAT)
+- After the Phase 10 deploy, the service worker's stale-while-revalidate HTML may show a returning visitor the old `/photos` once; check after one reload on production (network-first navigations are Phase 12 scope)
 - ParticleButton deprecated but retained for demo pages
 - SEC-02 (CSRF) traceability was stale in REQUIREMENTS.md but implemented in Phase 2
 - Phase 9 open deferred items (`.planning/phases/09-home-ascent/deferred-items.md`): README tree line for `app/page.tsx`, fflate 0.8.2 advisory in the canvas chunk, R3F 9 `THREE.Clock` deprecation warning, the canvas chunk holding the load event back about 1.5 s on the HOME-08 profile, hero scrim switching at `lg:` instead of 768 px, the "2,760 m approx." tick at 4.81:1, a dark wedge in the 1440 px summit frame, Prettier drift in two files, four `delayHeightmap` e2e users bypassed by the service worker, and two parallel-run e2e flakes
@@ -138,22 +141,25 @@ UI audit (2026-10-10, before v2.0):
 | 0.01ms duration for reduced-motion CSS | Preserves transitionend event compatibility | ✓ Good |
 | GeologicalButton replaces ParticleButton | Consistent with crystalline design system | ✓ Good |
 | v2.0 direction A "Topographic Survey" over Console / Field Journal | Only direction where photography and engineering share one content source (real terrain, EXIF GPS, trail-grade risk); continues v1.0 contours/easing/OKLCH | — Pending |
-| Gallery-black surface inside the photo viewer | Map palette must never color-cast the photographs | — Pending |
+| Gallery-black surface inside the photo viewer | Map palette must never color-cast the photographs | ✓ Good — shipped in Phase 10 on the photo page and the lightbox, with gallery contrast pairs in `guard:contrast` |
 | Identity: Tim Lui | Replace all placeholder branding and links | ✓ Good — shipped in Phase 7, held by `guard:identity` |
 | Delete `/gradient-mesh`, `/particle-buttons`, `/transitions` | Playground pages dilute the portfolio and are linked from Photos | ✓ Good — removed in Phase 7 |
 | Retire hex project cards (`hex-clip`, `useHexGrid`) | Two projects don't need a grid; clip-path complicates focus and content | — Pending |
 | Upgrade framer-motion 12 → 14 first, in isolation | Avoid building new motion on an API about to change; isolate regression risk | ✓ Good — `motion` 14.1 in 73880a2; 6 home scroll-50 re-baselines ratified by Tim at Phase 7 UAT |
 | Upgrade React 19.3 / Next 16.4 in Phase 7, in isolation | `<ViewTransition>` and `addTransitionType` ship only in React 19.3; R3F 9.8 supports React <19.4; installed node_modules (19.2.4 / 16.1.6) also lag the lockfile — user approved 2026-10-10 | ✓ Good — Next 16.4.2 + React 19.3.1 in fdeb9fe (security release); 6 offline re-baselines ratified at Phase 7 UAT |
 | Build-time DEM + EXIF pipeline (d3-contour, exif-reader + sharp) | Zero client cost, same-origin assets, typed data | ✓ Good — shipped in Phase 8; generators ESLint-fenced into `scripts/`, every output byte-checked offline in lint |
-| Platform APIs over libraries (View Transitions, CSS scroll-driven animations); skip GSAP | 0 KB client cost; GSAP would duplicate Motion | — Pending |
+| Platform APIs over libraries (View Transitions, CSS scroll-driven animations); skip GSAP | 0 KB client cost; GSAP would duplicate Motion | ◐ Phase 10: React `<ViewTransition>` drives the thumbnail morph and the view crossfade, justified rows are built in-house, and no layout or lightbox library was added |
 | swissALTIRegio (10 m) instead of swissALTI3D | swissALTI3D lacks the Italian side south of the summit (10 tiles); Regio is hole-free across the border and ample for a 512² heightmap — user decision 2026-10-10 | ✓ Good — 11 × 11 km extent (Tim: "defaults", 08-04) aligned to the COG grid, no resampling, no holes |
 | Film-scan photo without GPS gets a hand-placed "approx." pin | Keeps all 4 photos on the map and ascent without inventing precision | ✓ Good — Riffelsee north-shore pin (±100 m) approved by Tim at 08-10; dashed footer tick |
 | Move GPS-bearing originals (194 MB) out of `/public` | They were publicly downloadable at full resolution with GPS EXIF | ✓ Good — 08-02 (gitignored `assets/photos-original/`), enforced by the 08-09 served-image guard |
-| `/photos` opens on the Map view | User preference: lead with the most distinctive view; Grid and Carousel one click away | — Pending |
+| `/photos` opens on the Map view | User preference: lead with the most distinctive view; Grid and Carousel one click away | ✓ Good — Phase 10; `?view=` set via `router.replace`, so switching adds no history entries |
 | Deleted playground routes resolve to the designed 404 (no redirects) | No known inbound links | ✓ Good — Phase 7 shell 404 |
-| Coordinates rounded to ~10 m and shown in the lightbox | Useful context without exposing more precision than needed | ◐ Rounding shipped in Phase 8 (4 dp at extraction, `Coord4` schema, CI-checked); lightbox display pending Phase 10 |
-| Photos "all rights reserved" | Supports licensing enquiries via Contact | — Pending |
-| Add photo deep links + full lightbox, and SEO/link previews to scope | Research gaps G1–G3, G2; users expect shareable photo URLs and per-page previews | — Pending |
+| Coordinates rounded to ~10 m and shown in the lightbox | Useful context without exposing more precision than needed | ✓ Good — rounding in Phase 8 (4 dp at extraction, `Coord4` schema, CI-checked); shown in the Phase 10 EXIF strip |
+| Photos "all rights reserved" | Supports licensing enquiries via Contact | ✓ Good — Phase 10 rights line on every photo, no download button; right-click and Save image left alone |
+| Add photo deep links + full lightbox, and SEO/link previews to scope | Research gaps G1–G3, G2; users expect shareable photo URLs and per-page previews | ◐ Deep links and lightbox shipped in Phase 10 (photo routes stay metadata-exporting Server Components); OG images and sitemap are Phase 12 (SEO-01 to SEO-03) |
+| Previous/next in the lightbox and on the photo page use `history.replaceState` | Stepping must add no history entries, so Back always closes the lightbox (Tim's OQ1 answer, "A: replaceState both", 2026-10-26) | ✓ Good — Phase 10 |
+| Zoomed-photo drag prevention kept as an exception to "no right-click or drag blocking" (LBOX-07 / UI-SPEC) | On the 1:1 zoomed photo a mouse drag pans the stage; right-click, Save image and fitted drag stay native (Tim: "Keep, record exception") | Accepted (Phase 10) |
+| Wide map plate 240 → 256 px with nowrap title and altitude; plate clearance a 16 px dot square | The Linux CI render wrapped the longest title inside 224 px; the 16 px square reproduces the UI-SPEC 312 px compact floor (Tim, 10-13) | Accepted (Phase 10) — approved UI-SPEC deviations |
 | Defer "Ask about this photo" and terminal step controls/transcript | Not needed for v2.0; the demo still gets a WCAG 2.2.2 pause control | — Pending |
 | Zero-diff exception policy for upgrades | A screenshot diff that is a verified upstream bug fix matching the code's intent may be re-baselined, with Tim's explicit approval, a documented reason and per-slug checks (Phase 7) | ✓ Good — 3 exceptions (motion 14, Next 16.4 SWC, Chromium 156) ratified at Phase 7 UAT |
 | Visual baselines come only from the CI `workflow_dispatch` container; only Tim commits PNGs | Linux-rendered, reproducible baselines; a human reviews every pixel change (Phase 7) | ✓ Good |
@@ -189,4 +195,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-25 after Phase 9*
+*Last updated: 2026-10-26 after Phase 10*
