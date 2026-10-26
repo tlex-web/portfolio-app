@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@phosphor-icons/react/dist/ssr';
+import ExifStrip from '@/components/photos/ExifStrip';
 import type { PhotoView } from '@/lib/photos/view-model';
 
 /**
@@ -12,10 +13,12 @@ import type { PhotoView } from '@/lib/photos/view-model';
  *
  * The photo sits on gallery black, never tinted by the map palette, drawn
  * `object-fit: contain` in a box reserved at its true ratio, so the server
- * HTML already holds the layout, the title and the rights line before the
- * photo decodes. Only the content-hashed manifest derivatives (AVIF and WebP
- * at 1024, 1600 and 2560 px) are referenced: no original, no download control
- * and no right-click or drag blocking (LBOX-07, T-10-03).
+ * HTML already holds the layout, the title and the strip before the photo
+ * decodes. Below the stage, ExifStrip carries the title, place and date,
+ * story, EXIF, position and the rights line (D-05). Only the content-hashed
+ * manifest derivatives (AVIF and WebP at 1024, 1600 and 2560 px) are
+ * referenced: no original, no download control and no right-click or drag
+ * blocking (LBOX-07, T-10-03).
  *
  * Stepping between photos arrives in 10-06; the layout tiers and the stage
  * `sizes` arrive in 10-03.
@@ -31,8 +34,7 @@ export default function PhotoViewer({
 }) {
   const current = photos.find((p) => p.slug === initialSlug);
   if (!current) throw new RangeError(`PhotoViewer: no photo with slug ${initialSlug}`);
-  const { stage, aspect, alt, title, rights } = current;
-  const Title = variant === 'page' ? 'h1' : 'h2';
+  const { stage, aspect, alt } = current;
 
   return (
     <div data-photo-viewer="" className="bg-gallery text-ink">
@@ -68,15 +70,7 @@ export default function PhotoViewer({
           />
         </picture>
       </div>
-      <div className="mx-auto w-full max-w-6xl px-4 py-4 sm:px-6 lg:px-8">
-        <Title
-          id={variant === 'modal' ? 'photo-title' : undefined}
-          className="font-display text-heading font-semibold text-ink"
-        >
-          {title}
-        </Title>
-        <p className="mt-2 text-sm text-ink-muted">{rights}</p>
-      </div>
+      <ExifStrip view={current} headingLevel={variant === 'page' ? 1 : 2} />
     </div>
   );
 }

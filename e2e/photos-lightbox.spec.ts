@@ -15,6 +15,9 @@ const views = buildPhotoViews();
 /** A content-hashed manifest derivative: /images/photos/<name>.<10 hex>.<avif|webp>. */
 const DERIVATIVE = /^\/images\/photos\/[a-z0-9-]+\.[0-9a-f]{10}\.(avif|webp)$/;
 
+/** The formatters keep a unit on its number with U+00A0. */
+const NBSP = String.fromCharCode(0xa0);
+
 test.describe('Photo page (LBOX-01 direct load)', () => {
   for (const view of views) {
     test(`/photos/${view.slug}: the viewer inside the shell, no dialog (D-08)`, async ({ page }) => {
@@ -46,4 +49,22 @@ test.describe('Photo page (LBOX-01 direct load)', () => {
       expect(currentSrc).toMatch(DERIVATIVE);
     });
   }
+
+  test('the strip shows every field without filler (LBOX-04, D-07)', async ({ page }) => {
+    for (const view of views) {
+      await page.goto(`/photos/${view.slug}`);
+      const main = page.getByRole('main');
+      await expect(main).toContainText(view.strip.placeDate.place);
+      await expect(main).toContainText(view.rights);
+      if (view.strip.filmLine) {
+        await expect(main).toContainText(view.strip.filmLine);
+        await expect(main).toContainText(view.strip.approxNote ?? '(approx.)');
+      }
+      expect(await main.innerText()).not.toMatch(/—|\bundefined\b|\bnull\b|\bNaN\b|\bunknown\b/);
+    }
+    // The film scan is the one photo with a film line and a radius, so it is checked by value too.
+    const film = views.find((v) => v.strip.filmLine);
+    expect(film?.strip.filmLine).toBe('Film scan · 2019');
+    expect(film?.strip.approxNote).toBe(`±100${NBSP}m (approx.)`);
+  });
 });
