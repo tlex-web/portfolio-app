@@ -18,8 +18,8 @@ import { disableWebGL, nextFrames } from './helpers/webgl';
  * "Waypoint Cards", "UI Considerations" E6 and the 375 px overflow guardrail).
  *
  * The cards are the always-rendered list of photo waypoints, in ascending DEM
- * height, and each "View photo" link must land on its photo in the /photos
- * gallery (/photos#{slug} until Phase 10 ships /photos/{slug}). Below 768 px
+ * height, and each "View photo" link opens its photo page, /photos/{slug}: the
+ * full page with its h1, never the gallery lightbox (D-08). Below 768 px
  * the card docks at the bottom of its stage block without the story; under
  * reduced motion the cards stack at natural height with the story. Every
  * expected value is derived from the committed data, never hand-typed.
@@ -38,18 +38,29 @@ const waypointList = (page: Page) => page.getByRole('list', { name: 'Waypoints, 
 const card = (page: Page, slug: string) => page.locator(`li[id="waypoint-${slug}"] section`);
 
 test.describe('Waypoint cards (HOME-05)', () => {
-  test('every View photo link lands on its photo in the gallery', async ({ page }) => {
+  test('every View photo link opens its photo page (D-08)', async ({ page }) => {
     await page.goto('/');
 
     const links = waypointList(page).getByRole('link', { name: /^View photo/ });
     await expect(links).toHaveCount(slugs.length);
     const hrefs = await links.evaluateAll((els) => els.map((el) => el.getAttribute('href')));
-    expect(hrefs).toEqual(slugs.map((slug) => `/photos#${slug}`));
+    expect(hrefs).toEqual(slugs.map((slug) => `/photos/${slug}`));
 
-    await page.goto('/photos');
-    for (const slug of slugs) {
-      await expect(page.locator(`[id="${slug}"]`)).toHaveCount(1);
-    }
+    // A client-side navigation from Home: wait for React to own the link, so
+    // the click is a soft navigation, which must still not be intercepted.
+    const first = links.first();
+    await expect
+      .poll(
+        () => first.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))),
+        { timeout: 15000 }
+      )
+      .toBe(true);
+    await first.click();
+    await expect(page).toHaveURL(new RegExp(`/photos/${slugs[0]}$`), { timeout: 20000 });
+    await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toHaveText(
+      waypoints[0].title
+    );
+    await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 
   test('cards read in ascending altitude with their data', async ({ page }) => {

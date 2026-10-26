@@ -49,8 +49,9 @@ const LINK =
  * stays `waypointKicker(w)` and `w.placeDate`. The photo comes only from the content-hashed manifest variants,
  * lazy, pre-sized at its true ratio on a surface-overlay box, so the layout is
  * final before it arrives and a failed load leaves the box and the alt text.
- * "View photo" opens the gallery at this photo (/photos#{slug}) until Phase 10
- * ships /photos/{slug}. Its accessible name adds the title so the four links
+ * "View photo" opens this photo's page, /photos/{slug}: a waypoint is a
+ * destination, so it lands on the full photo page, never the gallery lightbox
+ * (D-08; a link from Home is not intercepted). Its accessible name adds the title so the four links
  * are distinguishable out of context; it is an explicit aria-label, as on the
  * trail signs, because the link is a flex box and name computation would put a
  * space before an sr-only ': ' separator.
@@ -106,7 +107,7 @@ export default function WaypointCard({ waypoint }: { waypoint: Waypoint }) {
         </p>
       </div>
       <p className="mt-2 hidden max-w-prose text-base text-ink-muted md:block motion-reduce:block">{story}</p>
-      <Link href={`/photos#${slug}`} aria-label={`View photo: ${title}`} className={LINK}>
+      <Link href={`/photos/${slug}`} aria-label={`View photo: ${title}`} className={LINK}>
         View photo
         <ArrowRightIcon size={20} aria-hidden="true" />
       </Link>

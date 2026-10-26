@@ -69,10 +69,10 @@ describe('WaypointCard (HOME-05, D-07, D-10)', () => {
     expect(img).toHaveClass('bg-surface-overlay');
   });
 
-  it('links View photo to the gallery fragment of its slug', () => {
+  it('links View photo to the photo page of its slug', () => {
     render(<WaypointCard waypoint={second} />);
     const link = screen.getByRole('link', { name: `View photo: ${second.title}` });
-    expect(link).toHaveAttribute('href', `/photos#${second.slug}`);
+    expect(link).toHaveAttribute('href', `/photos/${second.slug}`);
     expect(link).toHaveTextContent(/^View photo/);
   });
 
