@@ -382,8 +382,17 @@ test.describe('View switcher (PHOTO-02, D-14)', () => {
     await page.goto('/photos');
     const grid = segment(page, 'Grid');
     await waitForHydration(grid);
-    await page.evaluate(() => window.scrollTo(0, 200));
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(200);
+    // 100 px, not more: at 375 the switcher's top is 184 px down the page and the sticky
+    // site header is 64 px tall, so a deeper scroll hides the switcher under the header and
+    // the click itself would scroll it back into view (measured in 10-09).
+    await page.evaluate(() => window.scrollTo(0, 100));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(100);
+    const headerBottom = await page
+      .locator('body > header, header')
+      .first()
+      .evaluate((el) => el.getBoundingClientRect().bottom);
+    const switcherTop = await group(page).evaluate((el) => el.getBoundingClientRect().top);
+    expect(switcherTop).toBeGreaterThanOrEqual(headerBottom);
     const historyLength = await page.evaluate(() => window.history.length);
 
     await grid.click();
@@ -392,7 +401,7 @@ test.describe('View switcher (PHOTO-02, D-14)', () => {
     await expect(page.getByRole('list', { name: LIST })).toBeVisible();
     await expect(viewSections(page)).toHaveCount(1);
     expect(await page.evaluate(() => window.history.length)).toBe(historyLength);
-    expect(await page.evaluate(() => window.scrollY)).toBe(200);
+    expect(await page.evaluate(() => window.scrollY)).toBe(100);
     await expect(grid).toBeFocused();
 
     await segment(page, 'Carousel').click();

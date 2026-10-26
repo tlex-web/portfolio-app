@@ -643,6 +643,17 @@ html:has(dialog[open], [data-photo-viewer])::view-transition-new(root) {
   animation: none;
 }
 
+/* Phase 10 (PHOTO-02, D-14; 10-UI-SPEC Header Band "View change motion"). A switch between
+   Map, Grid and Carousel crossfades the keyed photos-view region (app/(site)/photos/page.tsx)
+   at --duration-panel ease-erosion. Under reduced motion the ::view-transition-* rule above
+   settles it at once (animation: none !important). */
+::view-transition-group(photos-view),
+::view-transition-old(photos-view),
+::view-transition-new(photos-view) {
+  animation-duration: var(--duration-panel);
+  animation-timing-function: var(--ease-erosion);
+}
+
 /* The lightbox fades in over --duration-fast; on a grid open it runs alongside the morph. */
 @media (prefers-reduced-motion: no-preference) {
   dialog:has([data-photo-viewer])[open] {

@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
+import { ViewTransition } from 'react';
 import CarouselView from '@/components/photos/CarouselView';
 import JustifiedGrid from '@/components/photos/JustifiedGrid';
 import MapSheet from '@/components/photos/MapSheet';
 import PhotosHeader from '@/components/photos/PhotosHeader';
+import ViewSwitcher from '@/components/photos/ViewSwitcher';
 import { photoViews } from '@/lib/photos/view-model';
 import { VIEW_LABELS, parseView } from '@/lib/photos/view-param';
 
@@ -15,9 +17,15 @@ export const metadata: Metadata = { title: 'Photographs' };
  * mounts the justified grid and `?view=carousel` the Carousel view (the 3D
  * carousel or the flat stepper behind the capability gate, 10-07); the map,
  * the default for no or an unknown value, mounts the survey-sheet map with
- * the waypoint links (PHOTO-01, D-01 to D-04, 10-08). The header band (kicker
- * and h1, D-14) sits above every view; exactly one view is mounted, keyed by
- * the view so a switch never reuses another view's tree (RESEARCH Pitfall 6).
+ * the waypoint links (PHOTO-01, D-01 to D-04, 10-08). The header band (kicker,
+ * h1 and the Map · Grid · Carousel switcher, D-14, 10-09) sits above every
+ * view; the switcher replaces the URL, so the view survives reload, sharing
+ * and Back. Exactly one view is mounted, keyed by the view so a switch never
+ * reuses another view's tree (RESEARCH Pitfall 6). The key sits on a
+ * `photos-view` ViewTransition (share and enter auto, default none; the
+ * Next view-transitions guide, Step 4), so a switch crossfades the old and
+ * new view as one pair at --duration-panel ease-erosion (app/globals.css),
+ * instant under reduced motion; there is no AnimatePresence.
  */
 export default async function PhotosPage({
   searchParams,
@@ -36,14 +44,18 @@ export default async function PhotosPage({
 
   return (
     <>
-      <PhotosHeader photos={photoViews} />
+      <PhotosHeader photos={photoViews}>
+        <ViewSwitcher view={view} />
+      </PhotosHeader>
       <div className="mx-auto w-full max-w-6xl px-4 pt-6 pb-12 sm:px-6 md:pb-16 lg:px-8">
-        <section key={view} aria-labelledby="view-title">
-          <h2 id="view-title" className="sr-only">
-            {VIEW_LABELS[view]}
-          </h2>
-          {body}
-        </section>
+        <ViewTransition key={view} name="photos-view" share="auto" enter="auto" default="none">
+          <section aria-labelledby="view-title">
+            <h2 id="view-title" className="sr-only">
+              {VIEW_LABELS[view]}
+            </h2>
+            {body}
+          </section>
+        </ViewTransition>
       </div>
     </>
   );
