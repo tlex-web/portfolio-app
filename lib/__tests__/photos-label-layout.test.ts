@@ -404,6 +404,76 @@ describe('mapMarkCss', () => {
     expect(css).toContain('[data-summit-plate]');
   });
 
+  it('cascades to the layout at every side from 312 to 1100 px, within 0.5 px', () => {
+    const lengthAt = (value: string, S: number): number => {
+      const plain = value.match(/^(-?\d+(?:\.\d+)?)px$/);
+      if (plain) return Number(plain[1]);
+      const calc = value.match(/^calc\((-?\d+(?:\.\d+)?) \* 100cqw ([+-]) (\d+(?:\.\d+)?)px\)$/);
+      if (!calc) throw new Error(`unexpected length ${value}`);
+      return Number(calc[1]) * S + (calc[2] === '-' ? -1 : 1) * Number(calc[3]);
+    };
+    const cascade = (S: number) => {
+      const rules = new Map<string, Record<string, string>>();
+      let minS = 0;
+      for (const line of css.split('\n')) {
+        const query = line.match(/^@container map-sheet \(min-width: (\d+)px\)\{$/);
+        if (query) {
+          minS = Number(query[1]);
+          continue;
+        }
+        if (line === '}' || line === '' || minS > S) continue;
+        const open = line.indexOf('{');
+        const decls = rules.get(line.slice(0, open)) ?? {};
+        for (const decl of line.slice(open + 1, -1).split(';')) {
+          const colon = decl.indexOf(':');
+          decls[decl.slice(0, colon)] = decl.slice(colon + 1);
+        }
+        rules.set(line.slice(0, open), decls);
+      }
+      return rules;
+    };
+    const bad: string[] = [];
+    const near = (name: string, got: number, want: number) => {
+      if (Math.abs(got - want) > 0.5) bad.push(`${name} ${got.toFixed(2)} vs ${want.toFixed(2)}`);
+    };
+    for (const S of SIDES) {
+      const rules = cascade(S);
+      const want = layoutMapMarks(S, marks, summitUv);
+      for (const m of want.marks) {
+        const sel = `[data-map-mark="${m.slug}"]`;
+        const plate = rules.get(sel)!;
+        const px = lengthAt(plate.left, S);
+        const py = lengthAt(plate.top, S);
+        near(`S=${S} ${m.slug} left`, px, m.plate.x);
+        near(`S=${S} ${m.slug} top`, py, m.plate.y);
+        const dot = rules.get(`${sel} [data-map-dot]`)!;
+        near(`S=${S} ${m.slug} dot x`, px + lengthAt(dot.left, S), m.dot.x);
+        near(`S=${S} ${m.slug} dot y`, py + lengthAt(dot.top, S), m.dot.y);
+        const lead = rules.get(`${sel} [data-map-leader]`)!;
+        const x0 = px + lengthAt(lead.left, S);
+        const y0 = py + lengthAt(lead.top, S);
+        const w = lengthAt(lead.width, S);
+        const h = lengthAt(lead.height, S);
+        expect(w).toBeGreaterThanOrEqual(-0.5);
+        expect(h).toBeGreaterThanOrEqual(-0.5);
+        // Unflipped, the line runs top-left to bottom-right; flipped, top-right to bottom-left.
+        const ends =
+          lead.transform === 'none' ? [x0, y0, x0 + w, y0 + h] : [x0 + w, y0, x0, y0 + h];
+        const { x1, y1, x2, y2 } = m.leader;
+        const forward = [x1, y1, x2, y2];
+        const backward = [x2, y2, x1, y1];
+        const off = (pts: number[]) => Math.max(...pts.map((v, i) => Math.abs(v - ends[i])));
+        if (Math.min(off(forward), off(backward)) > 0.5) bad.push(`S=${S} ${m.slug} leader`);
+        const preview = rules.get(`${sel} [data-map-preview]`)!;
+        expect(preview.top === 'auto' ? 'above' : 'below').toBe(m.preview);
+      }
+      const summit = rules.get('[data-summit-plate]')!;
+      near(`S=${S} summit left`, lengthAt(summit.left, S), want.summit.plate.x);
+      near(`S=${S} summit top`, lengthAt(summit.top, S), want.summit.plate.y);
+    }
+    expect(bad).toEqual([]);
+  });
+
   it('refuses a slug that is not lowercase letters, digits and hyphens', () => {
     expect(() =>
       mapMarkCss([...marks.slice(0, 3), { slug: 'x"]{}', u: 0.5, v: 0.5 }], summitUv)
