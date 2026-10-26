@@ -59,6 +59,23 @@ export type StripFields = {
   approxNote: string | null;
 };
 
+/** RED stub (10-11 Task 1): one hotspot as the viewer shows it. */
+export type HotspotView = {
+  id: string;
+  n: number;
+  title: string;
+  description: string;
+  x: number;
+  y: number;
+  glyph: 'peak' | 'dot';
+  side: 'left' | 'right';
+  heightLabel: string | null;
+  facts: readonly {
+    text: string;
+    source: { kind: 'link'; href: string; label: string } | { kind: 'text'; label: string };
+  }[];
+};
+
 /** One photo as every Phase 10 surface shows it. */
 export type PhotoView = Waypoint & {
   /** The capture as the strip prints it: '6 September 2021, 10:48', or '2019' for the film scan. */
@@ -79,6 +96,7 @@ export type PhotoView = Waypoint & {
   prevSlug: string | null;
   nextSlug: string | null;
   strip: StripFields;
+  hotspots: readonly HotspotView[];
 };
 
 type Variant = { longEdge: number; width: number; height: number; avif: string; webp: string };
@@ -255,6 +273,7 @@ export function buildPhotoViews(
         captureLabel,
         altitudeM: w.altitudeM,
       }),
+      hotspots: [],
     };
   });
 }
