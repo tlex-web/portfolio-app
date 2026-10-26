@@ -330,7 +330,38 @@ Gap closure (09-UAT.md, sequential on the main working tree):
      - map-style hotspot callouts with leader lines, operable by tap and keyboard, with a legend on mobile and a toggle that hides them
      - "© {capture year} Tim Lui, all rights reserved", with no download button
 
-**Plans**: TBD
+**Plans**: 13 plans in 8 waves (10-06 and 10-13 carry blocking checkpoints for Tim)
+
+Plans:
+**Wave 1**
+- [ ] 10-01-PLAN.md — Tracer: /photos/[slug] photo page from one view-model, EXIF strip, rights line, 404 for unknown slugs (WR-04)
+- [ ] 10-02-PLAN.md — Phase 8 review carry-overs in the photo pipeline and privacy guard (WR-01..03, WR-05..08)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 10-03-PLAN.md — Viewer layout tiers (lb-scroll/key/gutter), contain-fit stage, two-column strip, loading and error states, gallery contrast pairs
+- [ ] 10-04-PLAN.md — Grid view at ?view=grid: justified rows, slide-mount captions, rewritten GalleryGrid test
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 10-05-PLAN.md — In-site lightbox: @modal slot, intercepted route, native dialog, focus trap and return, scroll lock (G3), Home links to photo pages
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 10-06-PLAN.md — Previous/next without history entries (Tim decides OQ1 vs D-08 first), counter, swipe, grid-to-lightbox morph
+- [ ] 10-07-PLAN.md — Carousel view: capability gate, flat stepper, restyled 3D carousel, no auto-advance, manifest textures
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 10-08-PLAN.md — Map as the default view: deterministic label layout, survey-sheet MapSheet, header band, shared sheet title
+- [ ] 10-10-PLAN.md — Zoom fit/1:1 with drag and key pan and the Escape layer
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 10-09-PLAN.md — Map · Grid · Carousel switcher in the URL; legacy photo UI and bridge deleted, tests rewritten
+- [ ] 10-11-PLAN.md — Hotspot callouts: gutter labels, numbered key, Hide labels (localStorage), strip legend
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 10-12-PLAN.md — Cross-view e2e sweep and visual coverage for the map, grid, carousel, photo page and lightbox
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 10-13-PLAN.md — One CI re-baseline (Tim commits PNGs), CI green twice, ratchet raise, review and deferred records (checkpoints)
+
 **UI hint**: yes
 **Parallelism**: Can run in parallel with Phase 11. They share only the Phase 7 shell and the Phase 8 data.
 **Scope notes**:
