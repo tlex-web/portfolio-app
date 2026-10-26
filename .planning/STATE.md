@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 10
 current_phase_name: Photography
 status: executing
-stopped_at: Completed 10-01-PLAN.md
-last_updated: "2026-10-26T10:31:44.742Z"
+stopped_at: Completed 10-02-PLAN.md
+last_updated: "2026-10-26T10:45:59.141Z"
 last_activity: 2026-10-26
 last_activity_desc: Phase 10 execution started
-state_head: 3ec51f979759d293eeb735c931e6baf9e02945b2
+state_head: a42ee34c1fd8f806f07a39e6a2fe30734f7cdfa0
 progress:
   total_phases: 6
   completed_phases: 9
   total_plans: 75
-  completed_plans: 63
-  percent: 84
+  completed_plans: 64
+  percent: 85
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-25)
 ## Current Position
 
 Phase: 10 (Photography) — EXECUTING
-Plan: 2 of 13
+Plan: 3 of 13
 Status: Ready to execute
 Last activity: 2026-10-26 — Phase 10 execution started
 
-Progress: [████████░░] 84%
+Progress: [█████████░] 85%
 
 ## Performance Metrics
 
@@ -119,6 +119,7 @@ Progress: [████████░░] 84%
 | Phase 09 P21 | 12 min | 2 tasks | 6 files |
 | Phase 09 P22 | 3h 20m | 3 tasks | 17 files |
 | Phase 10 P01 | 15 min | 3 tasks | 12 files |
+| Phase 10 P02 | 10 min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -281,6 +282,8 @@ Recent decisions affecting current work:
 - [Phase 09]: UAT round 2 (2026-10-25, 09-UAT.md): Tim answered "pass" to all four checkpoints, so the portrait-phone summit poster (pin 4 and the triangle past the edges), reduced motion at 375 x 667 (full plaque over the poster pins) and landscape phones (poster pin 3 under the compact plaque, WR-01) are accepted as is, and the real-device 3D and comfort check passed (devices not named). Round 1's gaps G-09-2 to G-09-5 were reconciled as resolved by 09-22 and 09-15
 - [Phase 10]: 10-01: lib/photos/view-model.ts (buildPhotoViews on top of buildWaypoints, never re-sorted) is the one photo source; /photos/[slug] uses generateStaticParams + dynamicParams = false + notFound, and both photo routes export photoMetadata(slug)
 - [Phase 10]: 10-01: strip data comes from stripFields() (missing or invalid facts get no row, D-07); ExifStrip puts the aria-hidden ' ·' separator inside each dd so the dl stays valid; WR-04 fixed in formatExposureTime (seconds from 0.3 s, RangeError for non-positive or non-finite)
+- [Phase 10]: 10-02: Phase 8 warnings WR-01, WR-02, WR-03, WR-05, WR-06, WR-07 and WR-08 fixed (PhotoFacts.uv in [0, 1] and out-of-extent build error; altitude-less GPS kept; OffsetTimeOriginal must match Zurich; corrections positions hand-placed only; photos:derive validates in memory then writes and unlinks stale last; guard scans raw/HEIF; public/images/landscapes/ ignored again; scripts README corrected)
+- [Phase 10]: 10-02: WR-06 pre-commit hook not added (no hook tooling; CI lint is the gate); WR-04 and IN-02 disposition rows left open for 10-13; disposition open count is 10 (generator counts 'open' rows only)
 
 ### Pending Todos
 
@@ -293,7 +296,7 @@ Recent decisions affecting current work:
 
 - [Phase 11] Needs from Tim: CLI_X per-grade content and Medium/Critical demo commands with `riskScore` (not supplied at 08-03, where they were optional), metric sources, roadmap order and dates.
 - [Phase 11, from 08-03; answered by Tim 2026-10-25 at 09-13: "Leave for Phase 11" ("Keep it open; the Phase 11 Engineering/CLI_X rework rewrites demo content anyway.")] Demo command 4 (`pkill -f chrome`) is riskLevel `critical` (score 0.87) and shows a CRITICAL RISK badge, but its explanation in `data/projects.ts` still reads "High-risk operation - requires explicit confirmation". The fix moves to the Phase 11 Engineering/CLI_X rework; it is no longer an open question. data/projects.ts stays unchanged until then (code review IN-07).
-- [Phase 10, from 08 code review; Phase 9 did not fold them in, all 8 still open in 08-REVIEW-DISPOSITION.md] 08-REVIEW-DISPOSITION.md has 8 open warnings, latent for the current four photos: WR-01 out-of-extent photo gets clamped height and UV outside 0–1; WR-02 `gpsOf` drops lat/lon when GPSAltitude is missing; WR-03 offsetTimeOriginal ignored (Europe/Zurich assumed); WR-04 `formatExposureTime` wrong for 0.25–1 s and 0; WR-05 `photos:derive` write mode not atomic; WR-06 guard skips HEIF/raw formats and `.gitignore` lost the `public/images/landscapes/` line; WR-07 scripts/README.md omits `photos:build`; WR-08 corrections can claim `source: exif` for a hand-typed position. Fold into the first Phase 9/10 plan that adds photo data or surfaces (or run `/gsd-code-review 08 --fix`). Also IN-02: the legacy bridge drops `position.approximate` (footer unaffected; Phase 10 must carry it).
+- [Phase 10, from 08 code review; MOSTLY RESOLVED 2026-10-26: WR-04 fixed in code by 10-01 (6bb5fb6); WR-01, WR-02, WR-03, WR-05, WR-06 (hook part accepted), WR-07 and WR-08 fixed and recorded by 10-02 (ae5cf28, 9e3db72); WR-04 and IN-02 disposition rows still open, recorded by 10-13] 08-REVIEW-DISPOSITION.md has 8 open warnings, latent for the current four photos: WR-01 out-of-extent photo gets clamped height and UV outside 0–1; WR-02 `gpsOf` drops lat/lon when GPSAltitude is missing; WR-03 offsetTimeOriginal ignored (Europe/Zurich assumed); WR-04 `formatExposureTime` wrong for 0.25–1 s and 0; WR-05 `photos:derive` write mode not atomic; WR-06 guard skips HEIF/raw formats and `.gitignore` lost the `public/images/landscapes/` line; WR-07 scripts/README.md omits `photos:build`; WR-08 corrections can claim `source: exif` for a hand-typed position. Fold into the first Phase 9/10 plan that adds photo data or surfaces (or run `/gsd-code-review 08 --fix`). Also IN-02: the legacy bridge drops `position.approximate` (footer unaffected; Phase 10 must carry it).
 - [Phase 7; RESOLVED at Phase 07 UAT 2026-10-24, test 3: Tim confirmed the three jobs are Required on main] Required status checks (Visual Regression, Lint and Type Check, Unit Tests) on main are not set yet; until Tim sets them a red visual job does not block merges (07-USER-SETUP.md)
 - [Phase 7] main (Vercel production) lacks the Next 16.4.2 / sharp 0.35.5 security patch until Tim merges gsd/phase-07-foundation-guardrails; GitHub reported 84 Dependabot alerts on the default branch (9 critical). Merge recommended soon. Phase 8 lives on gsd/phase-08-data-terrain-pipeline, stacked on the unmerged Phase 7 tip (39836df) by Tim's choice, so merge Phase 7 first; until Phase 7 is on origin/main, worktree base-check degrades every phase to sequential execution.
 - [Phase 7, from 07-10; RESOLVED by 09-02: `components/Hero3DMountain.tsx` deleted with the Home rebuild] Hero badge `components/Hero3DMountain.tsx:73` (text-snow-50 on from-frost-500 to-frost-600, 18px semibold = not large text) is now 1.42-2.17:1 after the locked v1->v2 alias map (v1 was 2.10-2.93:1, also failing). No Phase 7 plan fixes it explicitly: catch it in the 07-20 contrast guard or the Phase 9 hero rework
@@ -320,6 +323,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-26T10:31:28.136Z
-Stopped at: Completed 10-01-PLAN.md
+Last session: 2026-10-26T10:45:58.685Z
+Stopped at: Completed 10-02-PLAN.md
 Resume file: None
