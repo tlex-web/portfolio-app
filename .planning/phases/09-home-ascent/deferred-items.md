@@ -9,10 +9,11 @@
   **Owner:** Phase 12 (documentation pass, together with `.github/copilot-instructions.md`). Out of scope for 09-02 (scope boundary).
 
 - `e2e/photos.spec.ts` "should switch to 3D carousel view" flaked once under a 54-test parallel dev-server run
-  status: open
+  status: resolved
   **What:** In a combined run of home-ascent, photos, homepage, shell and design-system on chromium, the 3D carousel canvas never attached within 15 s and the browser logged the known React `removeChild ... not a child` error from the /photos grid/3D toggle (STATE, Phase 10 item from 07-19). `e2e/photos.spec.ts` alone passed 18/18 with `--repeat-each=3`, and 7/7 in the 09-03 Task 1 run. 09-03 only adds `id={image.slug}` to the grid buttons, which cannot remove a DOM node.
   **Found by:** 09-03 plan verification.
   **Owner:** Phase 10 (photos/lightbox rework, with the existing removeChild item). Out of scope for 09-03.
+  **Resolved by:** 10-09 deleted the legacy grid/3D toggle and its test ("should switch to 3D carousel view" was rewritten to the map, grid and carousel cases). 10-12 `ebe0569` asserts the error away: `e2e/photos-sweep.spec.ts` "view switches and photo open/close log no removeChild or duplicate-name errors @chromium-only" switches Map -> Grid -> Carousel (the 3D carousel under SwiftShader) -> Grid -> Map and opens and closes a photo, with no console or page error matching `removeChild`, `not a child` or a duplicate view-transition name. It passed on the dev server (3 of 3 with `--repeat-each=3`, 16 workers) and on the production build.
 
 - `e2e/no-webgl.spec.ts` "home keeps its content" times out waiting for "Error creating WebGL context"
   status: resolved
