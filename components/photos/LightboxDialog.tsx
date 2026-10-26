@@ -34,6 +34,10 @@ import { usePathname, useRouter } from 'next/navigation';
  *   in a microtask (once the gallery is no longer inert), focus goes to
  *   `[data-photo-id="{slug shown at close}"]` in the still-mounted view, else
  *   to the opener if it is still in the document, else to the main h1.
+ *   Before going back, close() dispatches LIGHTBOX_CLOSE_EVENT on `document`
+ *   with the slug shown, so a view whose front photo follows the lightbox
+ *   (the carousel, 10-07) can show that photo before focus returns, even
+ *   when usePathname has not caught up with the last replaceState step.
  * - Context: useLightbox() returns `{ close, registerEscape }` inside the
  *   dialog and null outside, so PhotoViewer knows its surface (10-10 zoom and
  *   10-11 callouts register their Escape layers here).
@@ -49,6 +53,12 @@ export type LightboxApi = {
 };
 
 const LightboxContext = createContext<LightboxApi | null>(null);
+
+/**
+ * Dispatched on `document` by close(), before router.back(), with the slug
+ * shown at close as `detail` (a CustomEvent<string>).
+ */
+export const LIGHTBOX_CLOSE_EVENT = 'photos:lightbox-close';
 
 /** The lightbox API inside the dialog; null on the full photo page. */
 export function useLightbox(): LightboxApi | null {
@@ -141,7 +151,10 @@ export default function LightboxDialog({
         // The URL is the latest truth: usePathname can lag a replaceState step
         // that ran while a view transition held React's commits back.
         const slug = slugOf(window.location.pathname);
-        if (slug) shownSlug.current = slug;
+        if (slug) {
+          shownSlug.current = slug;
+          document.dispatchEvent(new CustomEvent<string>(LIGHTBOX_CLOSE_EVENT, { detail: slug }));
+        }
         router.back();
       },
       registerEscape: (handler) => {

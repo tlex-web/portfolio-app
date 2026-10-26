@@ -87,9 +87,10 @@ test.describe('Carousel stepper (reduced motion; PHOTO-02, PHOTO-04, D-12, D-13)
     await expect(openPhoto(page)).toHaveAttribute('data-photo-id', views[0].slug);
     await expect(carousel.locator('[data-carousel-stepper] img')).toHaveAttribute('alt', views[0].alt);
 
-    // Previous at 1 / 4 is ignored; Next steps and announces.
+    // Previous at 1 / 4 is ignored; Next steps and announces. An aria-disabled
+    // button is not "enabled" to Playwright, so the end presses are forced.
     await waitForHydration(next(page));
-    await prev(page).click();
+    await prev(page).click({ force: true });
     await expect(counter(page)).toHaveText(`1 / ${views.length}`);
     await next(page).click();
     await expect(counter(page)).toHaveText(`2 / ${views.length}`);
@@ -110,7 +111,7 @@ test.describe('Carousel stepper (reduced motion; PHOTO-02, PHOTO-04, D-12, D-13)
     for (let n = 3; n <= views.length; n++) await next(page).click();
     await expect(counter(page)).toHaveText(`${views.length} / ${views.length}`);
     await expect(next(page)).toHaveAttribute('aria-disabled', 'true');
-    await next(page).click();
+    await next(page).click({ force: true });
     await expect(counter(page)).toHaveText(`${views.length} / ${views.length}`);
     await expect(next(page)).toBeFocused();
   });
