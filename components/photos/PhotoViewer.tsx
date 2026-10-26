@@ -1,13 +1,20 @@
 'use client';
 
-import { useEffect } from 'react';
-import type { CSSProperties } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { ArrowLeftIcon, XIcon } from '@phosphor-icons/react/dist/ssr';
+import { usePathname, useRouter } from 'next/navigation';
+import {
+  ArrowLeftIcon,
+  CaretLeftIcon,
+  CaretRightIcon,
+  XIcon,
+} from '@phosphor-icons/react/dist/ssr';
 import ExifStrip from '@/components/photos/ExifStrip';
 import { useLightbox } from '@/components/photos/LightboxDialog';
 import StagePhoto from '@/components/photos/StagePhoto';
+import { site } from '@/data/site';
+import { slugFromPath, swipeStep } from '@/lib/photos/stepping';
 import type { PhotoView } from '@/lib/photos/view-model';
 
 /**
@@ -55,9 +62,24 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * none has, Escape navigates to /photos, never a blind browser Back, because
  * a directly loaded page may have no gallery behind it.
  *
- * The other chrome controls are filled by later plans: stepping and the
- * counter in data-chrome-left (10-06), Hide labels and Zoom before Close in
- * data-chrome-right (10-10, 10-11).
+ * Moving between photos (LBOX-02; 10-UI-SPEC "Moving between photos"): the
+ * chrome's left group holds 'Previous photo', the counter 'n / 4' (mono,
+ * aria-hidden; the status line says it in words) and 'Next photo'. The
+ * buttons, the ← and → keys and a horizontal swipe on the fitted photo move
+ * through the canonical order without wrapping (UI-SPEC OQ4): at either end
+ * the control is aria-disabled, stays focusable and does nothing. A step
+ * writes '/photos/{slug}' with history.replaceState on both surfaces (D-08 as
+ * amended at OQ1, Tim's answer "A: replaceState both (Recommended)",
+ * 2026-10-26), so no history entry is added, the page is never intercepted
+ * into a dialog (10-RESEARCH Pitfall 1) and the viewer is never remounted
+ * (Pitfall 2): focus stays on the pressed control and the dialog stays open.
+ * The slug shown comes from usePathname() (Next syncs it with replaceState),
+ * never from the segment params, which keep the stale slug. Each step updates
+ * a polite status line inside the viewer ('Photo 2 of 4: {title}') and the
+ * document title. Once the current photo's large derivative loads, the
+ * neighbours' stage derivatives are fetched at low priority, once per slug.
+ *
+ * Hide labels and Zoom go before Close in data-chrome-right (10-10, 10-11).
  */
 
 /** The stage `sizes`: the gutter tier takes 2 x 216 px from the viewport width. */
@@ -66,9 +88,39 @@ const STAGE_SIZES = '(min-width: 1280px) calc(100vw - 432px), 100vw';
 const BACK_LINK =
   'min-h-11 items-center gap-2 text-base font-semibold text-ink-muted hover:text-ink';
 
-/** The chrome bar buttons (10-UI-SPEC "Chrome bar"): icon-only below 768 px, icon + text from 768 px. */
+/**
+ * The chrome bar buttons (10-UI-SPEC "Chrome bar", Interaction States):
+ * icon-only below 768 px, icon + text from 768 px; cursor-pointer and
+ * touch-action: manipulation on every button.
+ */
 const CHROME_BUTTON =
-  'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-sm border border-line-strong text-ink hover:border-ink-muted md:px-4';
+  'inline-flex min-h-11 min-w-11 cursor-pointer touch-manipulation items-center justify-center gap-2 rounded-sm border border-line-strong text-ink hover:border-ink-muted md:px-4';
+
+/** The ‹ › buttons: icon-only at every width; at an end aria-disabled, dimmed and inert to hover. */
+const STEP_BUTTON =
+  'inline-flex min-h-11 min-w-11 cursor-pointer touch-manipulation items-center justify-center rounded-sm border border-line-strong text-ink hover:border-ink-muted aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:border-line-strong';
+
+const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
+
+/** True when a key press belongs to a text field, where the arrows move the caret. */
+function isEditable(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLElement &&
+    (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))
+  );
+}
+
+/** Fetch a photo's stage derivative at low priority, so a step finds it in the cache. */
+function preloadStage(view: PhotoView): void {
+  const img = new Image();
+  img.fetchPriority = 'low';
+  img.decoding = 'async';
+  img.sizes = STAGE_SIZES;
+  img.srcset = view.stage.srcSetAvif;
+  img.src = view.stage.src;
+}
+
+type Swipe = { id: number; x: number; y: number; follow: boolean };
 
 export default function PhotoViewer({
   variant,
@@ -79,12 +131,45 @@ export default function PhotoViewer({
   photos: readonly PhotoView[];
   initialSlug: string;
 }) {
-  const current = photos.find((p) => p.slug === initialSlug);
-  if (!current) throw new RangeError(`PhotoViewer: no photo with slug ${initialSlug}`);
-  const { aspect } = current;
+  if (!photos.some((p) => p.slug === initialSlug)) {
+    throw new RangeError(`PhotoViewer: no photo with slug ${initialSlug}`);
+  }
   const isPage = variant === 'page';
   const lightbox = useLightbox();
   const router = useRouter();
+  const pathname = usePathname();
+
+  // The photo shown: the pathname's slug once it names a known photo (Next
+  // syncs usePathname with replaceState). While the route leaves (close, Escape
+  // on the page) the pathname no longer names a photo, so the last one stays.
+  const [shownSlug, setShownSlug] = useState(initialSlug);
+  const pathSlug = slugFromPath(pathname);
+  if (pathSlug && pathSlug !== shownSlug && photos.some((p) => p.slug === pathSlug)) {
+    setShownSlug(pathSlug);
+  }
+  const index = photos.findIndex((p) => p.slug === shownSlug);
+  const current = photos[index];
+  const { aspect, prevSlug, nextSlug } = current;
+  const [announcement, setAnnouncement] = useState('');
+
+  // One step: the slug only ever comes from the committed view-model's
+  // prevSlug/nextSlug (T-10-14), and the URL is replaced, never pushed.
+  const stepTo = useCallback(
+    (slug: string | null) => {
+      if (!slug) return;
+      const at = photos.findIndex((p) => p.slug === slug);
+      if (at < 0) return;
+      window.history.replaceState(null, '', `/photos/${slug}`);
+      setShownSlug(slug);
+      setAnnouncement(`Photo ${at + 1} of ${photos.length}: ${photos[at].title}`);
+    },
+    [photos]
+  );
+
+  // The document title follows the shown photo (the metadata only sets it on load).
+  useEffect(() => {
+    document.title = `${current.title} · ${site.name}`;
+  }, [current.title]);
 
   // Page surface only: Escape is the last layer and goes to the gallery (D-08).
   useEffect(() => {
@@ -97,6 +182,85 @@ export default function PhotoViewer({
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [isPage, router]);
+
+  // ← and → step on both surfaces (the page behind a modal dialog is inert, so
+  // only the lightbox's viewer is reachable then). A layer that uses the
+  // arrows itself (10-10 zoomed pan) calls preventDefault first; modified
+  // presses are left alone (Alt+← is the browser's Back).
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (event.shiftKey || isEditable(event.target)) return;
+      event.preventDefault();
+      stepTo(event.key === 'ArrowLeft' ? prevSlug : nextSlug);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [prevSlug, nextSlug, stepTo]);
+
+  // Neighbour preload, once per slug, after the current photo's large layer loads.
+  const preloaded = useRef(new Set<string>());
+  const preloadNeighbours = useCallback(() => {
+    for (const slug of [prevSlug, nextSlug]) {
+      if (!slug || preloaded.current.has(slug)) continue;
+      const view = photos.find((p) => p.slug === slug);
+      if (!view) continue;
+      preloaded.current.add(slug);
+      preloadStage(view);
+    }
+  }, [photos, prevSlug, nextSlug]);
+
+  // Swipe on the fitted photo (touch or pen): the box follows the finger, and
+  // on release a long horizontal drag steps; anything else springs back over
+  // --duration-fast. Under reduced motion the box does not follow and nothing
+  // springs. Vertical drags stay with the browser (touch-action: pan-y
+  // pinch-zoom), which cancels the pointer when it scrolls.
+  const boxRef = useRef<HTMLDivElement>(null);
+  const swipe = useRef<Swipe | null>(null);
+
+  function setOffset(dx: number, animate: boolean) {
+    const box = boxRef.current;
+    if (!box) return;
+    box.style.transition = animate ? 'translate var(--duration-fast) var(--ease-erosion)' : 'none';
+    box.style.translate = dx === 0 ? '' : `${dx}px 0`;
+  }
+
+  function onPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
+    if (!event.isPrimary) return;
+    swipe.current = {
+      id: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      follow: !window.matchMedia(REDUCED_MOTION).matches,
+    };
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // An inactive pointer (a synthetic event) cannot be captured; the swipe still works.
+    }
+  }
+
+  function onPointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+    const start = swipe.current;
+    if (!start || start.id !== event.pointerId || !start.follow) return;
+    setOffset(event.clientX - start.x, false);
+  }
+
+  function endSwipe(event: ReactPointerEvent<HTMLDivElement>, released: boolean) {
+    const start = swipe.current;
+    if (!start || start.id !== event.pointerId) return;
+    swipe.current = null;
+    const step = released ? swipeStep(event.clientX - start.x, event.clientY - start.y) : 0;
+    const target = step === 1 ? nextSlug : step === -1 ? prevSlug : null;
+    if (target) {
+      setOffset(0, false);
+      stepTo(target);
+    } else {
+      setOffset(0, start.follow);
+    }
+  }
 
   const boxStyle = {
     aspectRatio: `${aspect.w} / ${aspect.h}`,
@@ -138,6 +302,31 @@ export default function PhotoViewer({
               All photographs
             </Link>
           )}
+          <button
+            type="button"
+            aria-label="Previous photo"
+            aria-disabled={prevSlug ? undefined : 'true'}
+            className={STEP_BUTTON}
+            onClick={() => stepTo(prevSlug)}
+          >
+            <CaretLeftIcon size={24} aria-hidden="true" />
+          </button>
+          <span
+            data-photo-counter=""
+            aria-hidden="true"
+            className="font-mono text-sm text-ink-muted tabular-nums"
+          >
+            {index + 1} / {photos.length}
+          </span>
+          <button
+            type="button"
+            aria-label="Next photo"
+            aria-disabled={nextSlug ? undefined : 'true'}
+            className={STEP_BUTTON}
+            onClick={() => stepTo(nextSlug)}
+          >
+            <CaretRightIcon size={24} aria-hidden="true" />
+          </button>
         </div>
         <div data-chrome-right="" className="flex items-center gap-2">
           {lightbox && (
@@ -158,14 +347,22 @@ export default function PhotoViewer({
         className="lb-key:flex lb-key:min-h-0 lb-key:flex-1 lb-key:items-center lb-key:justify-center lb-key:[container-type:size] lb-gutter:flex lb-gutter:min-h-0 lb-gutter:flex-1 lb-gutter:items-center lb-gutter:justify-center lb-gutter:px-54 lb-gutter:[container-type:size]"
       >
         <div
+          ref={boxRef}
           data-photo-box=""
-          className="mx-auto bg-gallery lb-scroll:w-[min(100%,calc(70svh*var(--ar)))] lb-key:w-[min(100cqw,calc(100cqh*var(--ar)))] lb-gutter:w-[min(100cqw,calc(100cqh*var(--ar)))]"
+          className="mx-auto bg-gallery [touch-action:pan-y_pinch-zoom] lb-scroll:w-[min(100%,calc(70svh*var(--ar)))] lb-key:w-[min(100cqw,calc(100cqh*var(--ar)))] lb-gutter:w-[min(100cqw,calc(100cqh*var(--ar)))]"
           style={boxStyle}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={(event) => endSwipe(event, true)}
+          onPointerCancel={(event) => endSwipe(event, false)}
         >
-          <StagePhoto view={current} sizes={STAGE_SIZES} />
+          <StagePhoto view={current} sizes={STAGE_SIZES} onLargeLoad={preloadNeighbours} />
         </div>
       </div>
       <ExifStrip view={current} headingLevel={isPage ? 1 : 2} />
+      <p role="status" aria-atomic="true" className="sr-only">
+        {announcement}
+      </p>
     </div>
   );
 }

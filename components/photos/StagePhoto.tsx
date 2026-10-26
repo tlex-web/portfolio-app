@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/ssr';
 import type { PhotoView } from '@/lib/photos/view-model';
 
@@ -27,7 +27,13 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * hashed derivative again. If neither layer has loaded after 1 s, a centred
  * "Loading photo" shows until one does (no spinner, no animation). Load
  * events that fire before hydration are caught by reading `complete` on
- * mount. The state resets when the photo (view.slug) changes.
+ * mount. The state resets when the photo (view.slug) changes, and both layers
+ * remount with the slug, so a step never shows the previous photo's pixels
+ * in the new photo's box while the new one loads.
+ *
+ * onLargeLoad (10-06) fires each time the large layer has loaded, including
+ * a load that finished before hydration; PhotoViewer uses it to preload the
+ * neighbouring photos at low priority.
  *
  * The error state, like every other, renders no download control and no link
  * to an image file (LBOX-07, T-10-09); the chrome and the strip stay usable.
@@ -47,7 +53,15 @@ function failed(img: HTMLImageElement | null): boolean {
   return !!img && img.complete && img.naturalWidth === 0;
 }
 
-export default function StagePhoto({ view, sizes }: { view: PhotoView; sizes: string }) {
+export default function StagePhoto({
+  view,
+  sizes,
+  onLargeLoad,
+}: {
+  view: PhotoView;
+  sizes: string;
+  onLargeLoad?: () => void;
+}) {
   const { slug, stage, alt, openerSrc } = view;
   const [state, setState] = useState<StageState>('opener');
   const [openerLoaded, setOpenerLoaded] = useState(false);
@@ -66,11 +80,16 @@ export default function StagePhoto({ view, sizes }: { view: PhotoView; sizes: st
     setSlow(false);
   }
 
+  const largeLoaded = useEffectEvent(() => {
+    setState('large');
+    onLargeLoad?.();
+  });
+
   // Events that fired before hydration are lost; read the result instead.
   useEffect(() => {
     if (loaded(openerRef.current)) setOpenerLoaded(true);
     const large = largeRef.current;
-    if (loaded(large)) setState('large');
+    if (loaded(large)) largeLoaded();
     else if (failed(large)) setState('error');
   }, [slug, attempt]);
 
@@ -102,6 +121,7 @@ export default function StagePhoto({ view, sizes }: { view: PhotoView; sizes: st
       className="grid h-full w-full grid-cols-1 grid-rows-1 bg-gallery outline-none"
     >
       <picture
+        key={slug}
         data-stage-layer="opener"
         className={`col-start-1 row-start-1 block h-full min-h-0 w-full min-w-0 ${isError ? 'hidden' : ''}`}
       >
@@ -117,7 +137,7 @@ export default function StagePhoto({ view, sizes }: { view: PhotoView; sizes: st
         />
       </picture>
       <picture
-        key={attempt}
+        key={`${slug}:${attempt}`}
         data-stage-layer="large"
         className={`col-start-1 row-start-1 block h-full min-h-0 w-full min-w-0 ${isError ? 'hidden' : ''}`}
       >
@@ -133,7 +153,10 @@ export default function StagePhoto({ view, sizes }: { view: PhotoView; sizes: st
           loading="eager"
           fetchPriority="high"
           decoding="async"
-          onLoad={() => setState('large')}
+          onLoad={() => {
+            setState('large');
+            onLargeLoad?.();
+          }}
           onError={() => setState('error')}
           className="block h-full w-full object-contain"
         />

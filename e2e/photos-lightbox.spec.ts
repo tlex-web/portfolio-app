@@ -447,7 +447,9 @@ test.describe('Moving between photos (LBOX-02)', () => {
     await expect(counter(dialog)).toHaveText(`${views.length} / ${views.length}`);
     await expect(next).toHaveAttribute('aria-disabled', 'true');
     await expect(next).toBeFocused();
-    await expect(status(dialog)).toHaveText(`Photo ${views.length} of ${views.length}: ${last.title}`);
+    await expect(status(dialog)).toHaveText(
+      `Photo ${views.length} of ${views.length}: ${last.title}`
+    );
     await expect(status(dialog)).toHaveAttribute('aria-atomic', 'true');
     await expect(page).toHaveTitle(`${last.title} · Tim Lui`);
     expect(await page.evaluate(() => window.history.length)).toBe(length);
@@ -475,7 +477,8 @@ test.describe('Moving between photos (LBOX-02)', () => {
     await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
     await expect(counter(dialog)).toHaveText(`1 / ${views.length}`);
     await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(first.title);
-    await expect(status(dialog)).toHaveText('');
+    // The ignored presses announce nothing new: the line still names the last real step.
+    await expect(status(dialog)).toHaveText(`Photo 1 of ${views.length}: ${first.title}`);
   });
 
   test('a touch swipe on the photo steps to the next photo @chromium-only', async ({ page }) => {
