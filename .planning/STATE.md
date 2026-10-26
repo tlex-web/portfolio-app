@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 10
 current_phase_name: Photography
 status: executing
-stopped_at: Completed 10-11-PLAN.md
-last_updated: "2026-10-26T15:28:11.923Z"
+stopped_at: Completed 10-12-PLAN.md
+last_updated: "2026-10-26T15:50:26.179Z"
 last_activity: 2026-10-26
 last_activity_desc: Phase 10 execution started
-state_head: bcfe1c98a0406681a2527c36710d26f767a38919
+state_head: efd4ad4c7d068fe8a92eb66c674becbc4fc5a56c
 progress:
   total_phases: 6
   completed_phases: 9
   total_plans: 75
-  completed_plans: 73
-  percent: 97
+  completed_plans: 74
+  percent: 99
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-25)
 ## Current Position
 
 Phase: 10 (Photography) — EXECUTING
-Plan: 12 of 13
+Plan: 13 of 13
 Status: Ready to execute
 Last activity: 2026-10-26 — Phase 10 execution started
 
-Progress: [█████████░] 97%
+Progress: [█████████░] 99%
 
 ## Performance Metrics
 
@@ -129,6 +129,7 @@ Progress: [█████████░] 97%
 | Phase 10 P10 | 21 min | 2 tasks | 5 files |
 | Phase 10 P09 | 25 min | 2 tasks | 20 files |
 | Phase 10 P11 | 29 min | 2 tasks | 13 files |
+| Phase 10 P12 | 18 min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -328,6 +329,8 @@ Recent decisions affecting current work:
 - [Phase 10]: 10-11: Hotspots.tsx exports HotspotMarks (glyphs and dots inside the photo box), HotspotOverlay (gutter labels and leaders over the stage) and HotspotKey (strip key); the stage and photo box are positioned (relative)
 - [Phase 10]: 10-11: the label preference is one 'photos.labels' on/off localStorage value read through useSyncExternalStore (server true), try/catch on every access, a visit-only fallback when storage refuses, storage-event sync
 - [Phase 10]: 10-11: the callout Escape layer runs before zoom: registerEscape from PhotoViewer in the lightbox (newest layer), a window capture listener on the page; photo-ref heights reuse altitudeLabel (IN-02)
+- [Phase 10]: 10-12: visual settle() awaits only rendered images (img.complete or no layout box); the map's hidden lazy hover previews hung every /photos shot since 10-08
+- [Phase 10]: 10-12: the visual matrix is 48 per scheme: photos-grid, photos-carousel (stepper), photo (film scan) and lightbox shots added for the one 10-13 re-baseline
 
 ### Pending Todos
 
@@ -367,6 +370,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-26T15:28:11.282Z
-Stopped at: Completed 10-11-PLAN.md
+Last session: 2026-10-26T15:50:25.699Z
+Stopped at: Completed 10-12-PLAN.md
 Resume file: None
