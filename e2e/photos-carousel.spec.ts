@@ -1,5 +1,6 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
 import { buildPhotoViews } from '@/lib/photos/view-model';
+import { countDraws, readDraws } from './helpers/webgl';
 
 /**
  * The Carousel view at /photos?view=carousel (PHOTO-02, PHOTO-03, PHOTO-04;
@@ -14,6 +15,9 @@ import { buildPhotoViews } from '@/lib/photos/view-model';
  *   no window listener, so a press elsewhere changes nothing.
  * - "Return on close": the front photo follows the lightbox, so Escape puts
  *   focus on "Open photo" for the photo shown at close.
+ * - @chromium-only (SwiftShader passes the gate there): a capable device gets
+ *   the 3D carousel in one canvas, with the same controls; the front frame is
+ *   unchanged after 6 s idle, and the idle float stops in a hidden tab.
  *
  * Every expected value is derived from buildPhotoViews() (the one order).
  */
@@ -193,5 +197,96 @@ test.describe('Carousel stepper (reduced motion; PHOTO-02, PHOTO-04, D-12, D-13)
     expect(scripts.length).toBeGreaterThan(0);
     const three = scripts.filter((s) => s.body.includes('THREE.WebGLRenderer')).map((s) => s.url);
     expect(three, 'scripts containing THREE.WebGLRenderer').toEqual([]);
+  });
+});
+
+/** Waits until the 3D carousel is mounted and its thumbnails are in (the skeleton is gone). */
+async function expect3dReady(page: Page) {
+  await expect(region(page)).toHaveAttribute('data-carousel-mode', '3d', { timeout: 15000 });
+  await expect(region(page).locator('canvas')).toHaveCount(1, { timeout: 15000 });
+  await expect(region(page).locator('[data-carousel-skeleton]')).toHaveCount(0, { timeout: 15000 });
+}
+
+/** Reports the tab as hidden (the flag and the event; frames keep running in the test browser). */
+async function hideTab(page: Page) {
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+}
+
+test.describe('3D carousel (capable device; D-12, PHOTO-04)', () => {
+  test('the 3D carousel renders one canvas and never advances by itself @chromium-only', async ({
+    page,
+  }) => {
+    await page.goto(CAROUSEL_URL);
+    await expect3dReady(page);
+
+    const carousel = region(page);
+    await expect(carousel).toHaveAttribute('aria-roledescription', 'carousel');
+    await expect(carousel.locator('canvas')).toHaveCount(1);
+    await expect(carousel.locator('[data-carousel-stepper]')).toHaveCount(0);
+    await expect(carousel).toHaveAttribute('data-active-slug', views[0].slug);
+    await expect(counter(page)).toHaveText(`1 / ${views.length}`);
+    await expect(prev(page)).toHaveAttribute('aria-disabled', 'true');
+    await expect(openPhoto(page)).toHaveAttribute('data-photo-id', views[0].slug);
+    // The title is DOM text below the canvas, not a drei Html overlay.
+    await expect(carousel.locator('[data-carousel-caption]')).toContainText(views[0].title);
+
+    await page.waitForTimeout(6000);
+    await expect(carousel).toHaveAttribute('data-active-slug', views[0].slug);
+    await expect(counter(page)).toHaveText(`1 / ${views.length}`);
+  });
+
+  test('3D keys step inside the region and the front photo follows the lightbox @chromium-only', async ({
+    page,
+  }) => {
+    await page.goto(CAROUSEL_URL);
+    await expect3dReady(page);
+    await waitForHydration(next(page));
+
+    await next(page).focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(region(page)).toHaveAttribute('data-active-slug', views[1].slug);
+    await expect(counter(page)).toHaveText(`2 / ${views.length}`);
+
+    await waitForHydration(openPhoto(page));
+    await openPhoto(page).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible({ timeout: 20000 });
+    await expect(dialog).toHaveAccessibleName(views[1].title);
+
+    // ArrowRight in the open dialog steps the lightbox (replaceState) and adds no history entry.
+    const historyBefore = await page.evaluate(() => history.length);
+    await page.keyboard.press('ArrowRight');
+    await expect(page).toHaveURL(new RegExp(`/photos/${views[2].slug}$`));
+    expect(await page.evaluate(() => history.length)).toBe(historyBefore);
+    const slugAtClose = new URL(page.url()).pathname.split('/').pop();
+
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(region(page)).toHaveAttribute('data-active-slug', slugAtClose ?? '');
+    await expect(region(page).locator('canvas')).toHaveCount(1);
+    await expect.poll(() => focusedPhotoId(page)).toBe(slugAtClose);
+  });
+
+  test('3D idle float stops in a hidden tab @chromium-only', async ({ page }) => {
+    await countDraws(page);
+    await page.goto(CAROUSEL_URL);
+    await expect3dReady(page);
+    // Let the full-size textures finish their swaps first.
+    await page.waitForTimeout(3000);
+
+    const running = await readDraws(page);
+    await page.waitForTimeout(500);
+    expect(await readDraws(page), 'draws while visible (idle float)').toBeGreaterThan(running);
+
+    await hideTab(page);
+    await page.waitForTimeout(300);
+    const paused = await readDraws(page);
+    await page.waitForTimeout(1000);
+    expect(await readDraws(page), 'draws while hidden').toBe(paused);
+    await expect(region(page)).toHaveAttribute('data-active-slug', views[0].slug);
   });
 });
