@@ -131,7 +131,13 @@ function variant(id: string, variants: readonly Variant[], longEdge: number): Va
   return variants.find((v) => v.longEdge === longEdge) ?? fail(id, `has no ${longEdge} px variant`);
 }
 
-function imageSet(id: string, variants: readonly Variant[], edges: readonly number[], src: number, size: number): PhotoImage {
+function imageSet(
+  id: string,
+  variants: readonly Variant[],
+  edges: readonly number[],
+  src: number,
+  size: number
+): PhotoImage {
   const set = edges.map((edge) => variant(id, variants, edge));
   const sized = variant(id, variants, size);
   return {
@@ -145,7 +151,8 @@ function imageSet(id: string, variants: readonly Variant[], edges: readonly numb
 
 const positive = (v: number | null | undefined): v is number =>
   typeof v === 'number' && Number.isFinite(v) && v > 0;
-const text = (v: string | null | undefined): v is string => typeof v === 'string' && v.trim() !== '';
+const text = (v: string | null | undefined): v is string =>
+  typeof v === 'string' && v.trim() !== '';
 
 /**
  * The strip fields of one photo (D-07). Each EXIF unit is kept only when its
@@ -161,25 +168,42 @@ export function stripFields(source: StripSource): StripFields {
     if (text(exif.camera)) exifRows.push({ line: 1, term: 'Camera', value: exif.camera });
     if (text(exif.lens)) exifRows.push({ line: 1, term: 'Lens', value: exif.lens });
     if (positive(exif.focalLengthMm)) {
-      exifRows.push({ line: 2, term: 'Focal length', value: formatFocalLength(exif.focalLengthMm) });
+      exifRows.push({
+        line: 2,
+        term: 'Focal length',
+        value: formatFocalLength(exif.focalLengthMm),
+      });
     }
-    if (positive(exif.fNumber)) exifRows.push({ line: 2, term: 'Aperture', value: formatAperture(exif.fNumber) });
+    if (positive(exif.fNumber))
+      exifRows.push({ line: 2, term: 'Aperture', value: formatAperture(exif.fNumber) });
     if (positive(exif.exposureTimeS)) {
-      exifRows.push({ line: 2, term: 'Shutter speed', value: formatExposureTime(exif.exposureTimeS) });
+      exifRows.push({
+        line: 2,
+        term: 'Shutter speed',
+        value: formatExposureTime(exif.exposureTimeS),
+      });
     }
-    if (positive(exif.iso)) exifRows.push({ line: 2, term: 'Sensitivity', value: `ISO ${Math.round(exif.iso)}` });
+    if (positive(exif.iso))
+      exifRows.push({ line: 2, term: 'Sensitivity', value: `ISO ${Math.round(exif.iso)}` });
   }
 
   const positionRows: { term: 'Altitude' | 'Position'; value: string }[] = [];
-  if (Number.isFinite(altitudeM)) positionRows.push({ term: 'Altitude', value: formatMetres(altitudeM) });
-  const located = position !== null && Number.isFinite(position.lat) && Number.isFinite(position.lon);
+  if (Number.isFinite(altitudeM))
+    positionRows.push({ term: 'Altitude', value: formatMetres(altitudeM) });
+  const located =
+    position !== null && Number.isFinite(position.lat) && Number.isFinite(position.lon);
   if (located) {
     const coordinates = formatCoordinates(position);
-    positionRows.push({ term: 'Position', value: position.approximate ? `≈ ${coordinates}` : coordinates });
+    positionRows.push({
+      term: 'Position',
+      value: position.approximate ? `≈ ${coordinates}` : coordinates,
+    });
   }
   let approxNote: string | null = null;
   if (located && position.approximate) {
-    approxNote = positive(position.radiusM) ? `±${formatMetres(position.radiusM)} (approx.)` : '(approx.)';
+    approxNote = positive(position.radiusM)
+      ? `±${formatMetres(position.radiusM)} (approx.)`
+      : '(approx.)';
   }
 
   return {
@@ -201,13 +225,14 @@ export function stripFields(source: StripSource): StripFields {
  *   without its 640, 1024, 1600 or 2560 px variant.
  */
 export function buildPhotoViews(
-  input: PhotoViewInput = { photos, editorial, imageManifest },
+  input: PhotoViewInput = { photos, editorial, imageManifest }
 ): readonly PhotoView[] {
   const waypoints = buildWaypoints(input);
 
   return waypoints.map((w, i) => {
     const photo = input.photos.find((p) => p.id === w.id) ?? fail(w.id, 'has no photo facts');
-    const variants = input.imageManifest[w.id]?.variants ?? fail(w.id, 'has no image-manifest entry');
+    const variants =
+      input.imageManifest[w.id]?.variants ?? fail(w.id, 'has no image-manifest entry');
     const largest = variant(w.id, variants, 2560);
     const captureLabel = formatCaptureLabel(photo.capture);
 

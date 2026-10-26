@@ -15,7 +15,8 @@ import { buildPhotoViews, photoViews, type PhotoView } from '@/lib/photos/view-m
 const NBSP = ' ';
 const FILLER = ['—', 'undefined', 'null', 'NaN', 'unknown'];
 
-const viewOf = (id: string, views: readonly PhotoView[] = photoViews) => views.find((v) => v.id === id)!;
+const viewOf = (id: string, views: readonly PhotoView[] = photoViews) =>
+  views.find((v) => v.id === id)!;
 
 function renderStrip(view: PhotoView, headingLevel: 1 | 2 = 1) {
   const { container } = render(<ExifStrip view={view} headingLevel={headingLevel} />);
@@ -30,11 +31,15 @@ function visibleText(el: Element): string {
 }
 
 describe('ExifStrip fields for every photo (D-05, D-07)', () => {
-  it.each(photoViews.map((v) => [v.slug, v] as const))('%s: title, place, story and rights, no filler', (_slug, view) => {
-    const text = renderStrip(view).textContent ?? '';
-    for (const part of [view.title, view.place, view.story, view.rights]) expect(text).toContain(part);
-    for (const filler of FILLER) expect(text).not.toContain(filler);
-  });
+  it.each(photoViews.map((v) => [v.slug, v] as const))(
+    '%s: title, place, story and rights, no filler',
+    (_slug, view) => {
+      const text = renderStrip(view).textContent ?? '';
+      for (const part of [view.title, view.place, view.story, view.rights])
+        expect(text).toContain(part);
+      for (const filler of FILLER) expect(text).not.toContain(filler);
+    }
+  );
 
   it('puts the rights line last in the data column (LBOX-07)', () => {
     for (const view of photoViews) {
@@ -75,14 +80,19 @@ describe('ExifStrip lists (LBOX-04)', () => {
     ]);
 
     const position = strip.querySelector('[data-strip-position]')!;
-    expect(Array.from(position.querySelectorAll('dt'), (dt) => dt.textContent)).toEqual(['Altitude', 'Position']);
+    expect(Array.from(position.querySelectorAll('dt'), (dt) => dt.textContent)).toEqual([
+      'Altitude',
+      'Position',
+    ]);
     expect(visibleText(position)).toBe(`1,617${NBSP}m · 46.0150${NBSP}N 7.7414${NBSP}E`);
     expect(strip.querySelector('[data-strip-film]')).toBeNull();
   });
 
   it('hides every separator from assistive technology', () => {
     const strip = renderStrip(viewOf('img-0605'));
-    const separators = Array.from(strip.querySelectorAll('dl span')).filter((s) => s.textContent?.includes('·'));
+    const separators = Array.from(strip.querySelectorAll('dl span')).filter((s) =>
+      s.textContent?.includes('·')
+    );
     expect(separators.length).toBeGreaterThan(0);
     for (const s of separators) expect(s).toHaveAttribute('aria-hidden', 'true');
   });
@@ -92,13 +102,17 @@ describe('ExifStrip lists (LBOX-04)', () => {
     expect(strip.querySelector('[data-strip-exif]')).toBeNull();
     expect(strip.querySelector('[data-strip-film]')).toHaveTextContent('Film scan · 2019');
     expect(visibleText(strip.querySelector('[data-strip-position]')!)).toBe(
-      `2,760${NBSP}m · ≈ 45.9837${NBSP}N 7.7623${NBSP}E · ±100${NBSP}m (approx.)`,
+      `2,760${NBSP}m · ≈ 45.9837${NBSP}N 7.7623${NBSP}E · ±100${NBSP}m (approx.)`
     );
-    expect(strip.querySelector('[data-strip-rights]')).toHaveTextContent('© 2019 Tim Lui, all rights reserved');
+    expect(strip.querySelector('[data-strip-rights]')).toHaveTextContent(
+      '© 2019 Tim Lui, all rights reserved'
+    );
   });
 
   it('leaves out a missing lens, with no empty separator (D-07)', () => {
-    const fixture = photos.map((p) => (p.id === 'img-0605' ? { ...p, exif: { ...p.exif, lens: null } } : p));
+    const fixture = photos.map((p) =>
+      p.id === 'img-0605' ? { ...p, exif: { ...p.exif, lens: null } } : p
+    );
     const view = viewOf('img-0605', buildPhotoViews({ photos: fixture, editorial, imageManifest }));
     const exif = renderStrip(view).querySelector('[data-strip-exif]')!;
     expect(exif.querySelectorAll('dt')).toHaveLength(5);

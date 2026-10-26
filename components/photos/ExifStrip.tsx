@@ -44,17 +44,27 @@ function ListLine({ rows }: { rows: readonly ListRow[] }) {
   ));
 }
 
-export default function ExifStrip({ view, headingLevel }: { view: PhotoView; headingLevel: 1 | 2 }) {
+export default function ExifStrip({
+  view,
+  headingLevel,
+}: {
+  view: PhotoView;
+  headingLevel: 1 | 2;
+}) {
   const { title, story, rights, strip } = view;
   const Title = headingLevel === 1 ? 'h1' : 'h2';
   const exifLines = ([1, 2] as const)
     .map((line) =>
       strip.exifRows
         .filter((row) => row.line === line)
-        .map((row) => ({ key: row.term, term: row.term, value: row.value })),
+        .map((row) => ({ key: row.term, term: row.term, value: row.value }))
     )
     .filter((rows) => rows.length > 0);
-  const positionRows: ListRow[] = strip.positionRows.map((row) => ({ key: row.term, term: row.term, value: row.value }));
+  const positionRows: ListRow[] = strip.positionRows.map((row) => ({
+    key: row.term,
+    term: row.term,
+    value: row.value,
+  }));
   if (strip.approxNote) positionRows.push({ key: 'approx', value: strip.approxNote });
 
   return (

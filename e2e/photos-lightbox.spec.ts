@@ -20,7 +20,9 @@ const NBSP = String.fromCharCode(0xa0);
 
 test.describe('Photo page (LBOX-01 direct load)', () => {
   for (const view of views) {
-    test(`/photos/${view.slug}: the viewer inside the shell, no dialog (D-08)`, async ({ page }) => {
+    test(`/photos/${view.slug}: the viewer inside the shell, no dialog (D-08)`, async ({
+      page,
+    }) => {
       const response = await page.goto(`/photos/${view.slug}`);
       expect(response?.status()).toBe(200);
 
@@ -32,20 +34,21 @@ test.describe('Photo page (LBOX-01 direct load)', () => {
       const main = page.getByRole('main');
       await expect(main.getByRole('heading', { level: 1 })).toHaveText(view.title);
       await expect(main.getByText(view.rights, { exact: true })).toBeVisible();
-      await expect(main.getByRole('link', { name: 'All photographs', exact: true })).toHaveAttribute(
-        'href',
-        '/photos',
-      );
+      await expect(
+        main.getByRole('link', { name: 'All photographs', exact: true })
+      ).toHaveAttribute('href', '/photos');
       await expect(page).toHaveTitle(`${view.title} · Tim Lui`);
 
       // LBOX-07: no download control anywhere, and only hashed derivatives on the stage.
       await expect(page.locator('[download]')).toHaveCount(0);
       const img = page.locator('[data-photo-viewer] [data-photo-stage] img');
       await expect(img).toHaveAttribute('alt', view.alt);
-      await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(
-        true,
+      await expect
+        .poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0))
+        .toBe(true);
+      const currentSrc = await img.evaluate(
+        (el: HTMLImageElement) => new URL(el.currentSrc).pathname
       );
-      const currentSrc = await img.evaluate((el: HTMLImageElement) => new URL(el.currentSrc).pathname);
       expect(currentSrc).toMatch(DERIVATIVE);
     });
   }

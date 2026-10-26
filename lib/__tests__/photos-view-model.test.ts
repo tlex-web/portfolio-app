@@ -38,7 +38,9 @@ describe('buildPhotoViews order (PHOTO-03)', () => {
 
   it('breaks a tie in DEM height by id', () => {
     const tied = photos.map((p) =>
-      p.id === 'img-0662' || p.id === 'img-0605' ? { ...p, elevation: { ...p.elevation, m: 3000 } } : p,
+      p.id === 'img-0662' || p.id === 'img-0605'
+        ? { ...p, elevation: { ...p.elevation, m: 3000 } }
+        : p
     );
     const views = buildPhotoViews({ ...committed, photos: tied });
     expect(views.map((v) => v.id)).toEqual(['img-0629', 'r004-011', 'img-0605', 'img-0662']);
@@ -55,7 +57,7 @@ describe('buildPhotoViews order (PHOTO-03)', () => {
       'img-0605': { ...entry, variants: entry.variants.filter((v) => v.longEdge !== 2560) },
     };
     expect(() => buildPhotoViews({ ...committed, imageManifest: manifest })).toThrow(
-      /img-0605 has no 2560 px variant/,
+      /img-0605 has no 2560 px variant/
     );
   });
 
@@ -81,7 +83,7 @@ describe('photo images (D-05, T-10-03)', () => {
         expect(srcSet).not.toContain('/images/optimized/');
       }
       const largest = imageManifest[v.id as keyof typeof imageManifest].variants.find(
-        (x) => x.longEdge === 2560,
+        (x) => x.longEdge === 2560
       )!;
       expect(v.stage).toMatchObject({ width: largest.width, height: largest.height });
       expect(v.aspect).toEqual({ w: largest.width, h: largest.height });
@@ -139,10 +141,14 @@ describe('elevationMetres (D-17)', () => {
 /** formatMetres and formatCoordinates keep units and letters on their numbers with U+00A0. */
 const NBSP = '\u00a0';
 const codePoints = (s: string) => Array.from(s, (c) => c.codePointAt(0));
-const viewOf = (views: ReturnType<typeof buildPhotoViews>, id: string) => views.find((v) => v.id === id)!;
+const viewOf = (views: ReturnType<typeof buildPhotoViews>, id: string) =>
+  views.find((v) => v.id === id)!;
 /** The committed photos with one photo's facts replaced, for the D-07 omission cases. */
 const withPhoto = (id: string, patch: Record<string, unknown>) =>
-  buildPhotoViews({ ...committed, photos: photos.map((p) => (p.id === id ? { ...p, ...patch } : p)) });
+  buildPhotoViews({
+    ...committed,
+    photos: photos.map((p) => (p.id === id ? { ...p, ...patch } : p)),
+  });
 
 describe('strip fields (D-07, LBOX-04)', () => {
   it('img-0605: place and date, six EXIF units on two lines, altitude and exact position', () => {
@@ -164,7 +170,9 @@ describe('strip fields (D-07, LBOX-04)', () => {
       ],
       approxNote: null,
     });
-    expect(codePoints(strip.positionRows[1].value)).toEqual(codePoints(`46.0150${NBSP}N 7.7414${NBSP}E`));
+    expect(codePoints(strip.positionRows[1].value)).toEqual(
+      codePoints(`46.0150${NBSP}N 7.7414${NBSP}E`)
+    );
   });
 
   it('r004-011: the film line instead of EXIF, and the position marked approximate with its radius', () => {
@@ -182,14 +190,23 @@ describe('strip fields (D-07, LBOX-04)', () => {
   });
 
   it('keeps only the EXIF units that are present: a camera alone is one row', () => {
-    const { strip } = viewOf(withPhoto('img-0605', { exif: { camera: 'Canon EOS 6D Mark II' } }), 'img-0605');
+    const { strip } = viewOf(
+      withPhoto('img-0605', { exif: { camera: 'Canon EOS 6D Mark II' } }),
+      'img-0605'
+    );
     expect(strip.exifRows).toEqual([{ line: 1, term: 'Camera', value: 'Canon EOS 6D Mark II' }]);
   });
 
   it('drops the shutter speed for an exposure that is not above 0 (WR-04)', () => {
     const exif = { ...photos[0].exif, exposureTimeS: 0 };
     const { strip } = viewOf(withPhoto('img-0605', { exif }), 'img-0605');
-    expect(strip.exifRows.map((r) => r.term)).toEqual(['Camera', 'Lens', 'Focal length', 'Aperture', 'Sensitivity']);
+    expect(strip.exifRows.map((r) => r.term)).toEqual([
+      'Camera',
+      'Lens',
+      'Focal length',
+      'Aperture',
+      'Sensitivity',
+    ]);
   });
 
   it('shows no EXIF rows and no film line for a digital photo without EXIF', () => {
