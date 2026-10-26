@@ -6,10 +6,10 @@ current_phase: 10
 current_phase_name: Photography
 status: executing
 stopped_at: Completed 10-09-PLAN.md
-last_updated: "2026-10-26T14:55:27.489Z"
+last_updated: "2026-10-26T14:56:56.912Z"
 last_activity: 2026-10-26
 last_activity_desc: Phase 10 execution started
-state_head: 4251b89877fa4b41a5d3f6e0b66d2b524b9d2be6
+state_head: 7573c9bc35f7abefe3c93d571078cc92f66b8eda
 progress:
   total_phases: 6
   completed_phases: 9
@@ -322,6 +322,8 @@ Recent decisions affecting current work:
 - [Phase 10]: 10-09: the switcher e2e scrolls the 375 x 600 page by 100 px: the switcher's top is 184 px down under a 64 px sticky header, so a deeper scroll makes Playwright's click scroll it back
 - [Phase 10]: 10-09: /photos wraps the one view section in ViewTransition key={view} name photos-view (share/enter auto, default none); the switch calls router.replace(viewHref(v), { scroll: false }) and the pressed segment returns early
 - [Phase 10]: 10-09: a Jest guard walks app, components and lib for a manifest .legacy read (pattern assembled at run time); data/landscapes.ts, the v1 photo UI and LandscapeImage/ImageAnnotation are deleted
+- [Phase 10]: [orchestrator, after 10-10] Zoomed-photo drag block kept: native image drag-and-drop is suppressed only while zoomed (so a mouse drag pans); right-click and Save image work in both states and fitted drag is native. Tim, asked directly 2026-10-26: "Keep, record exception (Recommended)". 10-13 records it as an approved exception to UI-SPEC line 393 ("no right-click or drag blocking", LBOX-07)
+- [Phase 10]: [orchestrator, after 10-08] Map waypoint clearance is a 16 px square (12 px dot plus its 2 px casing), the reading that reproduces the UI-SPEC 312 px compact floor. Tim, asked directly 2026-10-26: "16 px, as built (Recommended)"; no change to lib/photos/label-layout.ts
 
 ### Pending Todos
 
