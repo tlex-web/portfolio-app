@@ -1,6 +1,11 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
 import { buildPhotoViews } from '@/lib/photos/view-model';
 import { LB_CHROME_PX, LB_GUTTER_PX } from '@/lib/photos/lightbox-tiers';
+import {
+  readViewTransitions,
+  recordViewTransitions,
+  removeViewTransitions,
+} from './helpers/view-transitions';
 
 /**
  * The photo viewer in a browser (LBOX-01, LBOX-04, LBOX-07; D-05, D-08;
@@ -538,5 +543,101 @@ test.describe('Moving between photos (LBOX-02)', () => {
       views[1].title
     );
     await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
+});
+
+test.describe('Morph and motion (LBOX-06)', () => {
+  const first = views[0];
+  /** The morph pair's pseudo-elements for a slug. */
+  const morphPseudos = (slug: string) => [
+    `::view-transition-group(photo-${slug})`,
+    `::view-transition-old(photo-${slug})`,
+    `::view-transition-new(photo-${slug})`,
+  ];
+
+  test('opening from the grid morphs the tile into the lightbox photo @chromium-only', async ({
+    page,
+  }) => {
+    await recordViewTransitions(page);
+    await page.goto('/photos?view=grid');
+    const before = await readViewTransitions(page);
+    await clickTile(page, 0);
+
+    await expect
+      .poll(async () => (await readViewTransitions(page)).count)
+      .toBeGreaterThan(before.count);
+    await expect
+      .poll(async () => (await readViewTransitions(page)).pseudos)
+      .toEqual(expect.arrayContaining(morphPseudos(first.slug)));
+  });
+
+  test('browser Back closes with no view transition @chromium-only', async ({ page }) => {
+    await recordViewTransitions(page);
+    await openFirstTile(page);
+    await expect.poll(async () => (await readViewTransitions(page)).count).toBeGreaterThan(0);
+    // Let the open transition finish before measuring.
+    await page.waitForTimeout(800);
+    const before = (await readViewTransitions(page)).count;
+
+    await page.goBack();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await page.waitForTimeout(500);
+    expect((await readViewTransitions(page)).count).toBe(before);
+  });
+
+  test('a step morphs nothing: no photo-* pseudo-element @chromium-only', async ({ page }) => {
+    await recordViewTransitions(page);
+    const dialog = await openFirstTile(page);
+    await page.waitForTimeout(800);
+    const before = (await readViewTransitions(page)).transitions.length;
+
+    await dialog.getByRole('button', { name: 'Next photo', exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/photos/${views[1].slug}$`));
+    await page.waitForTimeout(800);
+    const after = (await readViewTransitions(page)).transitions.slice(before).flat();
+    expect(after.filter((pseudo) => pseudo.includes('photo-'))).toEqual([]);
+  });
+
+  test('no duplicate view-transition-name across open, three steps and close', async ({ page }) => {
+    const messages: string[] = [];
+    page.on('console', (message) => {
+      if (message.text().includes('view-transition-name')) messages.push(message.text());
+    });
+    const dialog = await openFirstTile(page);
+    const next = dialog.getByRole('button', { name: 'Next photo', exact: true });
+    for (let i = 1; i <= 3; i++) {
+      await next.click();
+      await expect(page).toHaveURL(new RegExp(`/photos/${views[i].slug}$`));
+    }
+    await dialog.getByRole('button', { name: 'Close photo', exact: true }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    expect(messages).toEqual([]);
+  });
+
+  test('under reduced motion the open runs no view-transition animation @chromium-only', async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await recordViewTransitions(page);
+    await page.goto('/photos?view=grid');
+    const before = await readViewTransitions(page);
+    const dialog = await clickTile(page, 0);
+    await expect(dialog.getByRole('button', { name: 'Close photo', exact: true })).toBeFocused();
+    await page.waitForTimeout(500);
+
+    const after = await readViewTransitions(page);
+    const opened = after.transitions.slice(before.transitions.length).flat();
+    expect(opened.filter((pseudo) => pseudo.startsWith('::view-transition'))).toEqual([]);
+  });
+
+  test('without the View Transitions API the tile still opens with focus on Close', async ({
+    page,
+  }) => {
+    await removeViewTransitions(page);
+    await page.goto('/photos?view=grid');
+    expect(await page.evaluate(() => 'startViewTransition' in document)).toBe(false);
+    const dialog = await clickTile(page, 0);
+    await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
+    await expect(dialog.getByRole('button', { name: 'Close photo', exact: true })).toBeFocused();
   });
 });
