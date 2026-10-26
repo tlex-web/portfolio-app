@@ -195,8 +195,7 @@ function Ring({ photos, index, float, snap, onSelect, onOpen, onReady }: RingPro
 /**
  * The restyled 3D carousel (PHOTO-02, PHOTO-04; D-12; 10-UI-SPEC "Carousel
  * View", 3D column; 10-RESEARCH Pitfalls 7 and 8). Built from the legacy
- * components/PhotoCarousel3D.tsx, which stays for the legacy default view
- * until 10-08/10-09.
+ * components/PhotoCarousel3D.tsx (deleted in 10-09 with the v1 photo UI).
  *
  * - Loaded only through CarouselView's `dynamic(..., { ssr: false })` in the
  *   'eligible' branch, so three.js is never requested under the static gate.

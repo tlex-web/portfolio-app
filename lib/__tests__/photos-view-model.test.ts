@@ -5,6 +5,8 @@
  * values come from the committed data; the only literals are the copy the
  * UI-SPEC fixes.
  */
+import fs from 'node:fs';
+import path from 'node:path';
 import { imageManifest } from '@/data/generated/image-manifest';
 import { photos } from '@/data/generated/photos';
 import { editorial } from '@/data/photos/editorial';
@@ -241,5 +243,33 @@ describe('strip fields (D-07, LBOX-04)', () => {
       const json = JSON.stringify(v.strip);
       for (const filler of ['—', 'undefined', 'NaN', 'unknown']) expect(json).not.toContain(filler);
     }
+  });
+});
+
+/**
+ * No image consumer is left on the legacy variants (LBOX-04, T-10-21): with the
+ * v1 photo UI and its bridge deleted in 10-09, nothing under app, components or
+ * lib may read an image-manifest legacy entry (the -large/-thumb files that
+ * Phase 12 deletes). The pattern is assembled at run time so this file does not
+ * match itself.
+ */
+describe('legacy image paths (LBOX-04, T-10-21)', () => {
+  it('no app, components or lib source reads a manifest legacy path', () => {
+    const LEGACY_READ = new RegExp(String.raw`\.` + 'legacy' + String.raw`\b`);
+    const SOURCE = /\.(?:[cm]?[jt]sx?)$/;
+    const walk = (dir: string): string[] =>
+      fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) return entry.name === 'node_modules' ? [] : walk(full);
+        return SOURCE.test(entry.name) ? [full] : [];
+      });
+    const files = ['app', 'components', 'lib'].flatMap((dir) =>
+      walk(path.join(process.cwd(), dir))
+    );
+    expect(files.length).toBeGreaterThan(50);
+    const readers = files
+      .filter((file) => LEGACY_READ.test(fs.readFileSync(file, 'utf8')))
+      .map((file) => path.relative(process.cwd(), file));
+    expect(readers).toEqual([]);
   });
 });

@@ -10,6 +10,7 @@ import ExifStrip from '../ExifStrip';
 import { imageManifest } from '@/data/generated/image-manifest';
 import { photos } from '@/data/generated/photos';
 import { editorial } from '@/data/photos/editorial';
+import { formatCaptureLabel } from '@/lib/photo-format';
 import { buildPhotoViews, photoViews, type PhotoView } from '@/lib/photos/view-model';
 
 const NBSP = ' ';
@@ -143,6 +144,46 @@ describe('ExifStrip heading and controls', () => {
       const strip = renderStrip(view);
       expect(strip.querySelectorAll('a')).toHaveLength(0);
       expect(strip.querySelectorAll('[download]')).toHaveLength(0);
+    }
+  });
+});
+
+/**
+ * The capture label on the strip (D-03, RESEARCH Pitfall 6). Rewritten in
+ * 10-09 from the three ImageDetailModal tests (the v1 modal and its file were
+ * deleted with the legacy photo UI): a year-only capture stays the year and is
+ * never turned into a locale date, an EXIF capture prints exactly as
+ * formatCaptureLabel stored it, and the place and date line joins them once.
+ */
+describe('capture label (rewritten from the ImageDetailModal tests, D-03)', () => {
+  const MONTHS =
+    /January|February|March|April|May|June|July|August|September|October|November|December/;
+  const LOCALE_DATE = /\d{1,2}\/\d{1,2}\/\d{4}/;
+  const dateOf = (container: Element) =>
+    (container.querySelector('[data-strip-date]')!.textContent ?? '').replace(/^ · /, '');
+
+  it("shows the film scan's year-only capture as '2019', never as a locale date", () => {
+    const container = renderStrip(viewOf('r004-011'));
+    const date = dateOf(container);
+    expect(date).toBe('2019');
+    expect(date).not.toMatch(MONTHS);
+    expect(container.textContent).not.toContain('1 January');
+    expect(container.textContent).not.toMatch(LOCALE_DATE);
+  });
+
+  it('shows a digital capture exactly as formatCaptureLabel stored it (wall time, no conversion)', () => {
+    for (const view of photoViews.filter((v) => v.id !== 'r004-011')) {
+      const capture = photos.find((p) => p.id === view.id)!.capture;
+      expect(dateOf(renderStrip(view))).toBe(formatCaptureLabel(capture));
+    }
+  });
+
+  it("joins place and date with exactly one ' · ' for every photo", () => {
+    for (const view of photoViews) {
+      const line = renderStrip(view).querySelector('[data-strip-date]')!.parentElement!;
+      const text = line.textContent ?? '';
+      expect(text.split(' · ')).toHaveLength(2);
+      expect(text).toBe(`${view.strip.placeDate.place} · ${view.strip.placeDate.date}`);
     }
   });
 });

@@ -11,7 +11,7 @@
  *   `exif` (the camera) or `Tim` (the photographer).
  * - An annotation elevation is a reference, never a hand-typed number:
  *   `photo` is the photo's DEM height, `summit` the official summit constant.
- *   The bridge (data/landscapes.ts) formats it with formatMetres.
+ *   lib/photos/view-model.ts resolves it with elevationMetres.
  * - Year and season tags are derived from the capture (D-08), so subject tags
  *   here are lowercase words only and can never be a year.
  *
