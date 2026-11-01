@@ -1,4 +1,16 @@
 import { test, expect, type Page } from '@playwright/test';
+import { projects } from '@/data/projects';
+
+/**
+ * The CLI_X demo command with both a warning and an explanation, and its
+ * 1-based position, read from the data: 11-10 inserts Tim's Medium and High
+ * commands, so the position is never typed in.
+ */
+const clix = projects.find((p) => p.slug === 'clix-cli');
+if (!clix || clix.slug !== 'clix-cli') throw new Error('clix-cli project missing');
+const PKILL_INDEX = clix.demoCommands.findIndex((c) => c.output === 'pkill -f chrome');
+if (PKILL_INDEX < 0) throw new Error('pkill -f chrome demo command missing');
+const PKILL = clix.demoCommands[PKILL_INDEX];
 
 /**
  * The case-study route and its demo terminal (ENG-02 route contract, ENG-05;
@@ -102,6 +114,67 @@ test.describe('Demo (ENG-05)', () => {
     await leaveTerminal(page);
     await expect(region).toHaveAttribute('data-playback', 'playing');
     await expect(region).not.toHaveAttribute('data-command', shown ?? '', { timeout: 8000 });
+  });
+
+  test('hovering pauses for as long as the pointer stays (D-02)', async ({ page }) => {
+    await page.goto('/projects/clix-cli');
+    const region = page.getByRole('region', { name: 'CLI_X demo' });
+    const toggle = region.getByRole('button', { name: 'Pause demo', exact: true });
+    // Offscreen is a pause source too: bring the terminal into view first.
+    await region.scrollIntoViewIfNeeded();
+    await expect(region).toHaveAttribute('data-playback', 'playing');
+
+    await region.hover({ position: { x: 24, y: 80 } });
+    await expect(region).toHaveAttribute('data-playback', 'paused');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+
+    await page.mouse.move(0, 0);
+    await expect(region).toHaveAttribute('data-playback', 'playing');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  test('Tab to the toggle pauses while focus is inside (D-02)', async ({ page }) => {
+    await page.goto('/projects/clix-cli');
+    const region = page.getByRole('region', { name: 'CLI_X demo' });
+    const toggle = region.getByRole('button', { name: 'Pause demo', exact: true });
+    // Offscreen is a pause source too: bring the terminal into view first.
+    await region.scrollIntoViewIfNeeded();
+    await expect(region).toHaveAttribute('data-playback', 'playing');
+
+    let reached = false;
+    for (let i = 0; i < 60 && !reached; i++) {
+      await page.keyboard.press('Tab');
+      reached = await toggle.evaluate((el) => el === document.activeElement);
+    }
+    expect(reached).toBe(true);
+    await expect(region).toHaveAttribute('data-playback', 'paused');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  test('a dot shows its command complete, with both its warning and explanation (D-03)', async ({ page }) => {
+    await page.goto('/projects/clix-cli');
+    const region = page.getByRole('region', { name: 'CLI_X demo' });
+
+    await region.getByRole('button', { name: `Go to command ${PKILL_INDEX + 1}`, exact: true }).click();
+    await expect(region).toHaveAttribute('data-command', String(PKILL_INDEX + 1));
+    await expect(
+      region.getByRole('button', { name: `Go to command ${PKILL_INDEX + 1}`, exact: true })
+    ).toHaveAttribute('aria-current', 'true');
+    await expect(region.getByText(PKILL.output, { exact: true })).toBeVisible();
+    await expect(region.getByText(PKILL.warning ?? '', { exact: true })).toBeVisible();
+    await expect(region.getByText(PKILL.explanation ?? '', { exact: true })).toBeVisible();
+  });
+
+  test('no horizontal scroll at 375 px', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 800 });
+    await page.goto('/projects/clix-cli');
+    await expect(page.getByRole('region', { name: 'CLI_X demo' })).toBeVisible();
+
+    const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    }));
+    expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
   });
 });
 

@@ -101,10 +101,17 @@ function cell(n: number) {
   return el as HTMLElement;
 }
 
+/**
+ * Advances in 10 ms steps, one act each: the island schedules its next
+ * timeout from an effect, which React only runs when an act flushes, so one
+ * long advance would fire a single tick (10 ms is the shortest step).
+ */
 function advance(ms: number) {
-  act(() => {
-    jest.advanceTimersByTime(ms);
-  });
+  for (let t = 0; t < ms; t += 10) {
+    act(() => {
+      jest.advanceTimersByTime(Math.min(10, ms - t));
+    });
+  }
 }
 
 function setup(commands: readonly DemoCommand[] = COMMANDS) {
@@ -227,7 +234,7 @@ describe('DemoTerminal selector dots (D-03)', () => {
     expect(region()).toHaveAttribute('data-playback', 'playing');
     const seen = ['3'];
     for (let t = 0; t < 10000; t += 10) {
-      advance(10);
+      advance(10); // one step at a time, recording the command after each
       const now = region().getAttribute('data-command') ?? '';
       if (now !== seen[seen.length - 1]) seen.push(now);
     }
