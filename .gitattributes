@@ -29,3 +29,8 @@ scripts/guards/__selftest__/served-images/** -text
 
 # Shader colour tokens (09-04): tokens:build --check byte-compares this with a fresh build.
 data/generated/tokens.ts text eol=lf
+
+# Trail profiles (11-04): trails:build --check byte-compares the module with a fresh
+# build, and fetch-trails writes trails.json with LF.
+data/terrain/source/trails.json text eol=lf
+data/generated/trail-profiles.ts text eol=lf
