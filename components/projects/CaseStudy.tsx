@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react';
 import Demo from '@/components/projects/sections/Demo';
+import Pipeline from '@/components/projects/sections/Pipeline';
 import Privacy from '@/components/projects/sections/Privacy';
 import Problem from '@/components/projects/sections/Problem';
+import Safety from '@/components/projects/sections/Safety';
 import type { Project } from '@/data/types';
 
 /**
@@ -49,9 +51,9 @@ export function slotMeta(slot: Slot, project: Project): { id: string; label: str
  * One renderer per slot behind an exhaustive switch: a new slot fails the
  * `never` check at compile time. A renderer returns null when its block has
  * no approved data, so the section, its heading and its index entry are all
- * left out (ENG-02 data-optional rule). Problem and Privacy render here
- * (11-11); Pipeline and box's Safety follow in 11-11, Metrics, Stack and
- * Next steps in 11-13; coin-flip's clip joins Demo in 11-15.
+ * left out (ENG-02 data-optional rule). Problem, Pipeline and the third slot
+ * (Safety on box, Privacy on coin-flip) render since 11-11; Metrics, Stack
+ * and Next steps gain theirs in 11-13; coin-flip's clip joins Demo in 11-15.
  */
 function renderSlot(slot: Slot, project: Project): ReactNode {
   switch (slot) {
@@ -60,14 +62,18 @@ function renderSlot(slot: Slot, project: Project): ReactNode {
         <Problem {...slotMeta(slot, project)} paragraphs={project.problem} />
       ) : null;
     case 'pipeline':
-      return null;
+      return project.pipeline ? (
+        <Pipeline {...slotMeta(slot, project)} name={project.name} block={project.pipeline} />
+      ) : null;
     case 'safety':
       if (project.slug === 'coin-flip') {
         return project.privacy ? (
           <Privacy {...slotMeta(slot, project)} block={project.privacy} />
         ) : null;
       }
-      return null;
+      return project.safety?.intro || project.safety?.capture ? (
+        <Safety {...slotMeta(slot, project)} block={project.safety} />
+      ) : null;
     case 'metrics':
       return null;
     case 'demo':
