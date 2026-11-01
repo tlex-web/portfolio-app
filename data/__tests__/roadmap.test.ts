@@ -55,7 +55,9 @@ describe('RoadmapSchema', () => {
   });
 
   test('accepts a completed row without a confirmed date (it renders "Completed")', () => {
-    const { completedAt: _omit, ...undated } = validRow;
+    const undated: Record<string, unknown> = { ...validRow };
+    delete undated.completedAt;
+    expect('completedAt' in undated).toBe(false);
     expect(RoadmapItemSchema.safeParse(undated).success).toBe(true);
   });
 });
@@ -127,7 +129,10 @@ describe('completion dates (ROUTE-03 empty, D-17)', () => {
   });
 
   test('every completedAt is a real date that formatLogDate accepts', () => {
-    const dates = asLog.flatMap((i) => [i.completedAt, ...(i.phases ?? []).map((p) => p.completedAt)]);
+    const dates = asLog.flatMap((i) => [
+      i.completedAt,
+      ...(i.phases ?? []).map((p) => p.completedAt),
+    ]);
     for (const d of dates.filter((x): x is string => x !== undefined)) {
       expect(d).toMatch(ISO_DATE);
       expect(() => formatLogDate(d)).not.toThrow();
