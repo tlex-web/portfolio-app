@@ -9,9 +9,11 @@ import { Project } from './types';
  * values" (D-16, D-21). An element without an approved value is left out,
  * never filled. Captures (the terminal commands and the Safety preview) are
  * copied byte for byte from "Approved captures (verbatim)"; nothing in them
- * is trimmed or reworded (08 D-22). Prose keeps Tim's wording; the inline-code
- * backticks of the review copy are formatting, and the renderers style the
- * flags themselves.
+ * is trimmed or reworded (08 D-22). Prose keeps Tim's wording and, in box's
+ * Problem paragraph, Output stage, Safety intro and --force line, the review
+ * copy's inline-code backticks exactly as drafted: InlineCode sets each
+ * backticked token as code and never shows the backticks (11-14, Tim's "yes",
+ * 2026-11-01). Backticks appear nowhere else in the prose (data test).
  *
  * coin-flip's repository is private (D-12, D-23): its entry carries only
  * approved public wording, no link and nothing copied from the repository.
@@ -33,7 +35,7 @@ export const projects: Project[] = [
     route: 'hoernliweg-27',
     links: { github: 'https://github.com/tlex-web/box' },
     problem: [
-      'box gathers the small jobs I do in PowerShell 7 on Windows into one command: hashing a file, making a UUID, flattening a folder, renaming a batch of files. v1.0 put 23 tools in one Rust binary. v2.0 made them scriptable: JSON output that ConvertFrom-Json reads, --clip for the clipboard, and defaults in a config file.',
+      'box gathers the small jobs I do in PowerShell 7 on Windows into one command: hashing a file, making a UUID, flattening a folder, renaming a batch of files. v1.0 put 23 tools in one Rust binary. v2.0 made them scriptable: JSON output that `ConvertFrom-Json` reads, `--clip` for the clipboard, and defaults in a config file.',
     ],
     pipeline: {
       stages: [
@@ -46,13 +48,13 @@ export const projects: Project[] = [
         {
           name: 'Output',
           description:
-            'Plain text for people, --json for the next command, --clip for the clipboard.',
+            'Plain text for people, `--json` for the next command, `--clip` for the clipboard.',
         },
       ],
     },
     safety: {
       intro:
-        'Commands that delete, move or rename files run as a preview by default: box shows what it would do and renames, moves or deletes nothing until you add --force. box checks the whole job before it changes the first file.',
+        'Commands that delete, move or rename files run as a preview by default: box shows what it would do and renames, moves or deletes nothing until you add `--force`. box checks the whole job before it changes the first file.',
       capture: {
         command: 'bulk-rename',
         input: "box bulk-rename ./sample '^(.*)\\.txt$' '$1.md'",
@@ -65,7 +67,7 @@ export const projects: Project[] = [
         ].join('\n'),
       },
       forceLine:
-        'With --force, box would rename hut.txt to hut.md and zmutt.txt to zmutt.md, and leave the copies folder alone.',
+        'With `--force`, box would rename `hut.txt` to `hut.md` and `zmutt.txt` to `zmutt.md`, and leave the `copies` folder alone.',
     },
     metrics: {
       releaseLine: 'Measured at v2.0',

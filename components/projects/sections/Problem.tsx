@@ -1,6 +1,9 @@
+import InlineCode from '@/components/InlineCode';
+
 /**
  * The Problem slot (ENG-02, D-16, D-30; 11-UI-SPEC "Problem"). A Server
- * Component: Tim's approved paragraphs, rendered as written, one `<p>` each.
+ * Component: Tim's approved paragraphs, rendered as written, one `<p>` each,
+ * with their backticked code tokens set as inline code (InlineCode, 11-14).
  * Without a paragraph there is no section at all (ENG-02 omit rule).
  */
 export default function Problem({
@@ -22,7 +25,7 @@ export default function Problem({
       </h2>
       {paragraphs.map((text, i) => (
         <p key={i} className="mt-4 max-w-prose text-base text-ink-muted">
-          {text}
+          <InlineCode text={text} />
         </p>
       ))}
     </section>

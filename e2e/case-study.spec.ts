@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { projects } from '@/data/projects';
 import { roadmapItems } from '@/data/roadmap';
 import type { Project } from '@/data/types';
+import { plainText } from '@/lib/inline-code';
 
 /**
  * The two case studies and box's terminal, all read from the data: the region
@@ -366,10 +367,17 @@ test.describe('Case-study sections', () => {
     const pre = figure.locator('pre');
     await expect(pre).toBeVisible();
     expect(await pre.evaluate((el) => el.textContent)).toBe(`❯ ${input}\n${output}`);
-    await expect(section.locator('code', { hasText: '--force' })).toBeVisible();
+    // The intro and the --force line each set the flag as code (11-14); the
+    // line reads as approved, its backticks not rendered.
+    await expect(section.locator('code', { hasText: '--force' })).toHaveCount(
+      box.safety.intro ? 2 : 1
+    );
     if (box.safety.forceLine) {
-      await expect(section.getByText(box.safety.forceLine, { exact: true })).toBeVisible();
+      const line = section.getByText(plainText(box.safety.forceLine), { exact: true });
+      await expect(line).toBeVisible();
+      await expect(line.locator('code').first()).toHaveText('--force');
     }
+    expect(await section.evaluate((el) => el.textContent)).not.toContain('`');
     // Static: nothing in the preview takes focus or acts.
     await expect(figure.getByRole('button')).toHaveCount(0);
     await expect(figure.locator('[tabindex]')).toHaveCount(0);

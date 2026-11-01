@@ -1,30 +1,7 @@
+import InlineCode from '@/components/InlineCode';
 import type { Project } from '@/data/types';
 
 type SafetyBlock = NonNullable<Extract<Project, { slug: 'box' }>['safety']>;
-
-const FLAG = '--force';
-
-/**
- * The approved sentence with its first `--force` set as code. The sentence is
- * stored without markdown (11-07), so the flag is found by its literal text;
- * a sentence without it renders as written.
- */
-function ForceLine({ text }: { text: string }) {
-  const at = text.indexOf(FLAG);
-  return (
-    <p className="mt-4 max-w-prose text-base text-ink-muted">
-      {at === -1 ? (
-        text
-      ) : (
-        <>
-          {text.slice(0, at)}
-          <code className="font-mono text-sm text-ink">{FLAG}</code>
-          {text.slice(at + FLAG.length)}
-        </>
-      )}
-    </p>
-  );
-}
 
 /**
  * box's third slot (D-25; 11-UI-SPEC "Safety — box", E7). A Server Component
@@ -34,6 +11,10 @@ function ForceLine({ text }: { text: string }) {
  * has no copy button (§I #11 default), no controls, no scroll container and
  * is not focusable: long lines wrap inside the frame. Captured text renders as
  * React text children, so it is escaped (T-11-26).
+ *
+ * The intro and the --force line carry Tim's approved code tokens in
+ * backticks (the flag, and the file names in the --force line), set as inline
+ * code by InlineCode (11-14); the backticks never render.
  *
  * Without a capture the intro renders alone (no block, no --force line); with
  * neither an intro nor a capture there is no section at all.
@@ -56,7 +37,11 @@ export default function Safety({
       <h2 id={titleId} className="text-heading text-balance">
         {label}
       </h2>
-      {intro && <p className="mt-4 max-w-prose text-base text-ink-muted">{intro}</p>}
+      {intro && (
+        <p className="mt-4 max-w-prose text-base text-ink-muted">
+          <InlineCode text={intro} />
+        </p>
+      )}
       {capture && (
         <>
           <figure
@@ -80,7 +65,11 @@ export default function Safety({
               <span className="text-ink-muted">{capture.output}</span>
             </pre>
           </figure>
-          {forceLine && <ForceLine text={forceLine} />}
+          {forceLine && (
+            <p className="mt-4 max-w-prose text-base text-ink-muted">
+              <InlineCode text={forceLine} />
+            </p>
+          )}
         </>
       )}
     </section>

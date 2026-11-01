@@ -1,3 +1,4 @@
+import InlineCode from '@/components/InlineCode';
 import type { Project } from '@/data/types';
 
 type PipelineBlock = NonNullable<Project['pipeline']>;
@@ -19,7 +20,8 @@ const COLS: Record<number, string> = {
  * aria-hidden 1 px connectors (vertical below 768, horizontal with a 4 px
  * chevron from 768). The intro (coin-flip's fairness fact) and the In and Out
  * lines render only when approved; a stage without a description shows its
- * name alone.
+ * name alone. A description's backticked code tokens (box's Output stage:
+ * --json, --clip) render as inline code (InlineCode, 11-14).
  */
 export default function Pipeline({
   id,
@@ -55,7 +57,9 @@ export default function Pipeline({
             <p className="font-mono text-sm text-ink-muted">{String(i + 1).padStart(2, '0')}</p>
             <p className="mt-2 text-base font-semibold text-ink">{stage.name}</p>
             {stage.description && (
-              <p className="mt-1 text-sm text-ink-muted">{stage.description}</p>
+              <p className="mt-1 text-sm text-ink-muted">
+                <InlineCode text={stage.description} />
+              </p>
             )}
             {i < n - 1 && (
               <span
