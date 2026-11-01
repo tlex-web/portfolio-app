@@ -392,7 +392,7 @@ Plans:
   4. The terminal demo is styled in tokens v2, stops auto-playing on focus, on hover and under reduced motion, and has a pause button.
   5. `/roadmap` places items in order on a vertical elevation axis: completed items below with their completion dates, in-progress items at the current camp, planned items above. It lists v2.0 as in progress and shows a "last surveyed" date. A segmented control filters by project and status, the filter lives in the URL, and empty filters are removed or disabled.
 
-**Plans**: 12/18 plans executed in 8 waves (re-planned 2026-11-01 for box + coin-flip; 11-02, 11-15, 11-16 and 11-17 carry blocking checkpoints for Tim)
+**Plans**: 13/18 plans executed in 8 waves (re-planned 2026-11-01 for box + coin-flip; 11-02, 11-15, 11-16 and 11-17 carry blocking checkpoints for Tim)
 
 Plans:
 **Wave 1**
@@ -416,7 +416,7 @@ Plans:
 - [x] 11-18-PLAN.md — Trail-grade marker vocabulary without score bands, Home About sentence (D-33), visual route table, last project-side references (ENG-01, ENG-02, ENG-03)
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 11-12-PLAN.md — Trail paint and contrast pairs, TrailGradeMark, RouteProfile, panel metric strip and figure (ENG-01, ENG-04)
+- [x] 11-12-PLAN.md — Trail paint and contrast pairs, TrailGradeMark, RouteProfile, panel metric strip and figure (ENG-01, ENG-04)
 - [ ] 11-13-PLAN.md — Metrics instrument panel, Stack, Next steps linked into the route log (ENG-02, ENG-04, ROUTE-01)
 - [ ] 11-15-PLAN.md — DemoClip wired; Tim records the coin-flip clip (checkpoint); encode and draft description (ENG-02)
 
@@ -497,5 +497,5 @@ Plans:
 | 8. Data & Terrain Pipeline | v2.0 | 13/13 | Complete    | 2026-10-24 |
 | 9. Home Ascent | v2.0 | 22/22 | Complete    | 2026-10-25 |
 | 10. Photography | v2.0 | 13/13 | Complete    | 2026-10-26 |
-| 11. Engineering & Roadmap | v2.0 | 12/18 | In Progress | - |
+| 11. Engineering & Roadmap | v2.0 | 13/18 | In Progress | - |
 | 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 0/TBD | Not started | - |

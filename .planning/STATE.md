@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 11
 current_phase_name: Engineering & Roadmap
 status: executing
-stopped_at: "11-15 Task 2 checkpoint (human-action: Tim records the coin-flip clip or replies none); Task 1 done in 3680049, d9851a7"
-last_updated: "2026-11-01T21:57:59.502Z"
+stopped_at: "Completed 11-12-PLAN.md; 11-15 still paused at its Task 2 checkpoint (human-action: Tim records the coin-flip clip or replies none; Task 1 done in 3680049, d9851a7)"
+last_updated: "2026-11-01T22:14:08.760Z"
 last_activity: 2026-11-01
 last_activity_desc: Phase 11 execution started
-state_head: d9851a75865380ac36e08d988f0b9efc1d6aff74
+state_head: d9a0b27dc9da6f8b1ed966283c4cdd3365ba024b
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 93
-  completed_plans: 87
-  percent: 94
+  completed_plans: 88
+  percent: 95
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-26)
 ## Current Position
 
 Phase: 11 (Engineering & Roadmap) — EXECUTING
-Plan: 13 of 18
+Plan: 14 of 18
 Status: Ready to execute
 Last activity: 2026-11-01 — Phase 11 execution started
 
-Progress: [█████████░] 94%
+Progress: [█████████░] 95%
 
 ## Performance Metrics
 
@@ -144,6 +144,7 @@ Progress: [█████████░] 94%
 | Phase 11 P10 | 15 min | 2 tasks | 7 files |
 | Phase 11 P11 | 8 min | 2 tasks | 8 files |
 | Phase 11 P18 | 4 min | 2 tasks | 8 files |
+| Phase 11 P12 | 13 min | 3 tasks | 20 files |
 
 ## Accumulated Context
 
@@ -378,6 +379,8 @@ Recent decisions affecting current work:
 - [Phase 11]: 11-11: box Safety renders only with an intro or a capture; the preview is static (no copy button, default.11) and only the --force line gets inline code; Problem prose stays plain until Tim answers the --clip/ConvertFrom-Json question
 - [Phase 11]: 11-18: trail-grade suite rewritten as 16 Jest tests (test.each rows count in numTotalTests) so the ratchet does not fall; markerForGrade throws RangeError outside T1..T6
 - [Phase 11]: 11-18: Home About ships the supplied copy.home-about row verbatim (D-33); WINDOWS row 4 fixed since copy.demo-intro-box renders
+- [Phase 11]: 11-12: trail paint is three :root --trail-* primitives with background-only bg-trail-* utilities, measured as ten non-text pairs plus ink-inverse/ink in check-contrast (47 pairs); all §I answers default, so --trail-yellow and Home are unchanged
+- [Phase 11]: 11-12: coin-flip's caption reads 'Zermatt 1,606 m → Zmutt 1,950 m · T1' (generator ends at Zmutt 56, Tim's 11-04 D4), not the UI-SPEC's 1,934 m; 11-17 re-baselines /projects and both trailheads, Home unchanged
 
 ### Pending Todos
 
@@ -422,6 +425,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-01T21:57:59.015Z
-Stopped at: 11-15 Task 2 checkpoint (human-action: Tim records the coin-flip clip or replies none); Task 1 done in 3680049, d9851a7
+Last session: 2026-11-01T22:14:08.283Z
+Stopped at: Completed 11-12-PLAN.md; 11-15 still paused at its Task 2 checkpoint (human-action: Tim records the coin-flip clip or replies none; Task 1 done in 3680049, d9851a7)
 Resume file: .planning/phases/11-engineering-roadmap/11-15-PLAN.md
