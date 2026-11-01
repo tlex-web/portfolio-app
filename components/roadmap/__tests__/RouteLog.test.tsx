@@ -186,6 +186,20 @@ describe('RouteLog', () => {
     for (const item of ITEMS) expect(screen.getByText(item.description)).toBeInTheDocument();
   });
 
+  it('sets a `code` span of a description in one unbroken code element without backticks', () => {
+    const item: RouteLogItem = {
+      ...ITEMS[0],
+      id: 'flag-row',
+      description: 'JSON output, `--clip` and previews.',
+    };
+    const { container } = renderLog([item]);
+    const code = row(container, 'flag-row').querySelector('code');
+    expect(code).toHaveTextContent('--clip');
+    expect(code).toHaveClass('whitespace-nowrap');
+    expect(row(container, 'flag-row').textContent).toContain('JSON output, --clip and previews.');
+    expect(row(container, 'flag-row').textContent).not.toContain('`');
+  });
+
   it('shows no priority, percentage or completion figure', () => {
     const { container } = renderLog();
     expect(container.textContent).not.toMatch(/priority/i);

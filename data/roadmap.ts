@@ -65,7 +65,7 @@ export const roadmapItems: RoadmapItem[] = [
     id: 'box-v2',
     title: 'v2.0 Toolbox → toolkit',
     description:
-      'The tools became scriptable: JSON output, --clip, config-file defaults, BLAKE3 hashing and previews before destructive changes.',
+      'The tools became scriptable: JSON output, `--clip`, config-file defaults, BLAKE3 hashing and previews before destructive changes.',
     area: 'box',
     status: 'completed',
     order: 3,

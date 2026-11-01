@@ -47,6 +47,23 @@ function Units({ units }: { units: readonly string[] }) {
   ));
 }
 
+/**
+ * A description with its `code` spans (a command-line flag such as `--clip`)
+ * set in mono and kept on one line, so a flag never breaks between its
+ * hyphens. The backticks mark the spans and are not rendered.
+ */
+function Description({ text }: { text: string }) {
+  return text.split('`').map((part, i) =>
+    i % 2 === 1 ? (
+      <code key={i} className="font-mono whitespace-nowrap">
+        {part}
+      </code>
+    ) : (
+      part
+    )
+  );
+}
+
 /** `{Project}` · `{target}` (planned or in progress, only if present) or `Completed {date}`. */
 function logMeta(item: RouteLogItem): string[] {
   const units = [PROJECT_LABELS[item.area]];
@@ -130,7 +147,9 @@ export default function RouteRow({
       <p data-route-meta className="mt-1 font-mono text-sm text-ink-muted">
         <Units units={logMeta(item)} />
       </p>
-      <p className="mt-1 max-w-prose text-sm text-ink-muted">{item.description}</p>
+      <p className="mt-1 max-w-prose text-sm text-ink-muted">
+        <Description text={item.description} />
+      </p>
       {item.phases && item.phases.length > 0 ? <Phases phases={item.phases} /> : null}
     </li>
   );

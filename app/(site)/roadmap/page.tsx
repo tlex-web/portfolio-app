@@ -1,198 +1,118 @@
-'use client';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import RouteLog from '@/components/roadmap/RouteLog';
+import { roadmapItems, surveyedAt } from '@/data/roadmap';
+import { formatLogDate } from '@/lib/log-date';
+import {
+  BAND_LABELS,
+  PROJECT_LABELS,
+  STATUS_LABELS,
+  parseProject,
+  parseStatus,
+  routeLogView,
+  type LogFilter,
+} from '@/lib/route-log';
 
-import { useState } from 'react';
-import RoadmapTimeline from '@/components/RoadmapTimeline';
-import RoadmapFilters from '@/components/RoadmapFilters';
-import RoadmapProgress from '@/components/RoadmapProgress';
-import { roadmapItems } from '@/data/roadmap';
-import { motion } from 'motion/react';
+export const metadata: Metadata = { title: 'Roadmap' };
 
-export default function RoadmapPage() {
-  const [selectedArea, setSelectedArea] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('all');
+const INTRO =
+  "What I've finished, what I'm working on and what comes next, for this site, box and coin-flip.";
 
-  // Filter items based on selections
-  const filteredItems = roadmapItems.filter((item) => {
-    const areaMatch = selectedArea === 'all' || item.area === selectedArea;
-    const statusMatch = selectedStatus === 'all' || item.status === selectedStatus;
-    return areaMatch && statusMatch;
-  });
+const CUE =
+  'inline-flex min-h-11 items-center gap-1 text-base text-ink-muted underline decoration-1 underline-offset-4 transition-colors duration-(--duration-fast) ease-erosion hover:text-ink';
 
-  // Sort items: completed last, in-progress first, then planned
-  const sortedItems = [...filteredItems].sort((a, b) => {
-    const statusOrder = { 'in-progress': 0, 'planned': 1, 'completed': 2 };
-    return statusOrder[a.status] - statusOrder[b.status];
-  });
+/** The set filters as their enum labels, never the raw parameter (T-11-17). */
+function filterLabels(filter: LogFilter): string[] {
+  const labels: string[] = [];
+  if (filter.project !== 'all') labels.push(PROJECT_LABELS[filter.project]);
+  if (filter.status !== 'all') labels.push(STATUS_LABELS[filter.status]);
+  return labels;
+}
+
+/**
+ * /roadmap, the route log (ROUTE-01, ROUTE-02 server half, ROUTE-03; D-17 to
+ * D-20; 11-UI-SPEC "/roadmap Route Log"). A Server Component: the URL is the
+ * only source of filter state, so `?project=` and `?status=` come from the
+ * awaited searchParams through the 11-05 whitelists, and anything else
+ * (absent, a wrong case, a retired area, a repeated parameter) means All.
+ *
+ * The header band carries the "Route log surveyed" kicker from Tim's
+ * surveyedAt (D-20), the h1 (the nav label), the approved intro, the status
+ * line (a role=status that stays mounted, so 11-10's filter changes are
+ * announced as one phrase) and jump links to the bands that render, with
+ * their counts. The filters from 11-10 mount between the intro and the status
+ * line. Below it is the elevation axis (RouteLog) of Tim's confirmed rows, or,
+ * for a filter combination with no entries (reachable only by a typed URL),
+ * a dashed plate whose sentence is built from the enum labels only and whose
+ * primary link replaces the history entry and keeps the scroll position.
+ * Nothing on this page animates.
+ */
+export default async function RoadmapPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const filter: LogFilter = { project: parseProject(sp.project), status: parseStatus(sp.status) };
+  const view = routeLogView(roadmapItems, filter);
+  const status =
+    view.shown === view.total
+      ? `Showing ${view.total} entries`
+      : `Showing ${view.shown} of ${view.total} entries`;
 
   return (
-    <>
-      <div className="min-h-screen bg-gradient-to-b from-surface to-surface-raised">
-        {/* Hero Section */}
-        <div className="bg-surface-raised border-y border-line py-20">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="text-center"
-            >
-              <h1 className="text-5xl font-bold text-ink mb-4">Project Roadmap</h1>
-              <p className="text-xl text-ink-muted max-w-3xl mx-auto">
-                Track the evolution of my portfolio, CLI_X tool, and website platform. See what&apos;s
-                been accomplished and what&apos;s coming next.
-              </p>
-            </motion.div>
-          </div>
+    <div className="mx-auto w-full max-w-6xl px-4 pb-12 sm:px-6 md:pb-16 lg:px-8">
+      <div className="flex flex-col gap-4 border-b border-line pt-8 pb-6">
+        <div>
+          <p className="mb-2 font-mono text-sm text-ink-muted">
+            Route log surveyed {formatLogDate(surveyedAt)}
+          </p>
+          <h1>Roadmap</h1>
         </div>
-
-        {/* Main Content */}
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Sidebar - Progress & Filters */}
-            <div className="lg:col-span-1 space-y-8">
-              {/* Progress Overview */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
-                <RoadmapProgress items={roadmapItems} />
-              </motion.div>
-
-              {/* Filters */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="bg-surface-raised rounded-xl p-6 border-2 border-line sticky top-6"
-              >
-                <h2 className="text-2xl font-bold text-ink mb-6">
-                  Filters
-                </h2>
-                <RoadmapFilters
-                  selectedArea={selectedArea}
-                  selectedStatus={selectedStatus}
-                  onAreaChange={setSelectedArea}
-                  onStatusChange={setSelectedStatus}
-                />
-
-                {/* Active Filters Summary */}
-                {(selectedArea !== 'all' || selectedStatus !== 'all') && (
-                  <div className="mt-6 pt-6 border-t border-line">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-semibold text-ink">
-                        Active Filters
-                      </span>
-                      <button
-                        onClick={() => {
-                          setSelectedArea('all');
-                          setSelectedStatus('all');
-                        }}
-                        className="text-xs text-accent hover:underline"
-                      >
-                        Clear All
-                      </button>
-                    </div>
-                    <div className="text-sm text-ink-muted">
-                      Showing {filteredItems.length} of {roadmapItems.length} items
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-            </div>
-
-            {/* Main Content - Timeline */}
-            <div className="lg:col-span-2">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.6 }}
-              >
-                {/* Results Header */}
-                <div className="mb-8">
-                  <h2 className="text-3xl font-bold text-ink mb-2">
-                    Roadmap Timeline
-                  </h2>
-                  <p className="text-ink-muted">
-                    {filteredItems.length === 0
-                      ? 'No items match your filters'
-                      : `Showing ${filteredItems.length} roadmap ${
-                          filteredItems.length === 1 ? 'item' : 'items'
-                        }`}
-                  </p>
-                </div>
-
-                {/* Timeline */}
-                {filteredItems.length > 0 ? (
-                  <RoadmapTimeline items={sortedItems} />
-                ) : (
-                  <div className="bg-surface-raised rounded-xl p-12 text-center border-2 border-dashed border-line">
-                    <svg
-                      className="w-16 h-16 mx-auto mb-4 text-ink-muted"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
-                    <h3 className="text-xl font-semibold text-ink mb-2">
-                      No Results Found
-                    </h3>
-                    <p className="text-ink-muted mb-6">
-                      Try adjusting your filters to see more roadmap items
-                    </p>
-                    <button
-                      onClick={() => {
-                        setSelectedArea('all');
-                        setSelectedStatus('all');
-                      }}
-                      className="px-6 py-3 bg-accent text-ink-inverse rounded-lg hover:bg-accent-hover transition-colors font-semibold"
-                    >
-                      Clear Filters
-                    </button>
-                  </div>
-                )}
-              </motion.div>
-            </div>
-          </div>
-        </div>
-
-        {/* Call to Action */}
-        <div className="bg-surface-raised border-y border-line py-16">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <h2 className="text-3xl font-bold text-ink mb-4">Want to Collaborate?</h2>
-              <p className="text-xl text-ink-muted mb-8 max-w-2xl mx-auto">
-                I&apos;m always open to feedback and collaboration opportunities. Get in touch to discuss
-                any of these projects!
-              </p>
-              <a
-                href="/contact"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-accent text-ink-inverse rounded-lg hover:bg-accent-hover transition-colors font-bold text-lg"
-              >
-                Contact Me
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 8l4 4m0 0l-4 4m4-4H3"
-                  />
-                </svg>
-              </a>
-            </motion.div>
-          </div>
-        </div>
+        <p className="max-w-prose text-base text-ink-muted">{INTRO}</p>
+        <p role="status" aria-atomic="true" className="font-mono text-sm text-ink-muted">
+          {status}
+        </p>
+        {view.bands.length > 0 ? (
+          <ul aria-label="Bands" className="flex flex-wrap gap-x-6">
+            {view.bands.map((band) => (
+              <li key={band.id}>
+                <a href={`#${band.id}`} className={CUE}>
+                  {BAND_LABELS[band.id]} <span className="tabular-nums">{band.items.length}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </div>
-    </>
+
+      {view.shown > 0 ? (
+        <div className="mt-8">
+          <RouteLog bands={view.bands} />
+        </div>
+      ) : (
+        <div className="mt-8 rounded-lg border border-dashed border-line-strong p-8">
+          <h2>No entries on this route yet</h2>
+          <p className="mt-2 max-w-prose text-base text-ink-muted">
+            Nothing matches {filterLabels(filter).join(' and ')}. Show every entry, or pick another
+            filter.
+          </p>
+          <Link
+            href="/roadmap"
+            replace
+            scroll={false}
+            className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-sm bg-accent px-6 text-base font-semibold text-ink-inverse hover:bg-accent-hover"
+          >
+            Show all entries
+          </Link>
+        </div>
+      )}
+
+      <div className="mt-16 border-t border-line pt-8">
+        <p className="text-base text-ink-muted">
+          Want to talk about something on this list? <Link href="/contact">Get in touch</Link>.
+        </p>
+      </div>
+    </div>
   );
 }
