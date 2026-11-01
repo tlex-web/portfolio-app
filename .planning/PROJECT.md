@@ -17,7 +17,7 @@ A portfolio that is visually memorable and distinctive — not another generic T
 - Data & terrain pipeline: swisstopo swissALTIRegio (10 m, cross-border) DEM → 16-bit heightmap + contour SVG (d3-contour) at build time, originals moved out of `/public`, EXIF → typed photo data (exif-reader + sharp), corrected capture dates and waterfall location, typed project highlight schemas
 - Home "ascent": real Matterhorn terrain with contour-line shader (R3F), altimeter rail 1,617 m → 4,478 m, photo waypoints placed by EXIF GPS with DEM-sampled heights (D-17), Swiss trail-sign routes, static fallback for reduced motion / no WebGL
 - Photography: dark light table with Map / Grid / Carousel views, gallery-black lightbox with EXIF strip and hotspot callouts, View Transitions thumbnail → lightbox
-- Engineering & roadmap: project route panels (hex cards retired), case-study template, CLI_X risk bands shown as Swiss trail grades (T1 yellow / T2–T3 white-red-white / T4–T5 white-blue-white / unmarked), terminal restyled to tokens, route-log roadmap
+- Engineering & roadmap: route panels and case studies for box and coin-flip (hex cards retired), a per-project safety slot, trail grades only as the real SAC badges of the profile trails, terminal restyled to tokens, route-log roadmap (CLI_X risk bands dropped with ENG-03, D-24)
 - Contact, edge pages & cleanup: summit-register contact page, "off the marked trail" 404/offline/error, delete `/gradient-mesh` `/particle-buttons` `/transitions`, remove dead code, axe + cross-browser verification
 
 **Reference:** Approved plan with audit, mockups and tooling metrics — https://claude.ai/artifact/GXsHFNbtf7Qp6hPSYxuY8U
@@ -68,7 +68,7 @@ A portfolio that is visually memorable and distinctive — not another generic T
 
 <!-- Current scope. Building toward these in v2.0. -->
 
-- [ ] Engineering case studies with trail-grade risk visualization
+- [ ] Engineering route panels and case studies for box and coin-flip
 - [ ] Route-log roadmap, summit-register contact, designed edge pages
 - [ ] Playground routes and dead code removed (playground routes removed and resolving to the designed 404 in Phase 7; dead code, e.g. the unused `GlassmorphismNav.tsx`, remains for Phase 12)
 - [ ] No visual or functional regressions (screenshot baselines, tests rewritten not deleted, axe clean)

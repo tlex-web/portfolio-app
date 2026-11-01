@@ -35,7 +35,7 @@
 - [x] **Phase 8: Data & Terrain Pipeline** - Build-time swissALTIRegio terrain and EXIF photo data, privacy-safe images, typed highlights, and the footer map legend (completed 2026-10-24)
 - [x] **Phase 9: Home Ascent** - Real Matterhorn hero with a native-scroll ascent, altimeter rail and photo waypoints, plus a static fallback (completed 2026-10-25)
 - [x] **Phase 10: Photography** - Map / Grid / Carousel light table and a deep-linkable gallery-black lightbox with EXIF and hotspots (completed 2026-10-26)
-- [ ] **Phase 11: Engineering & Roadmap** - Route-panel projects, case studies, trail-grade risk scale, tokenized terminal, and a route-log roadmap
+- [ ] **Phase 11: Engineering & Roadmap** - Route-panel projects (box, coin-flip), case studies with a per-project safety slot, a tokenized terminal, and a route-log roadmap
 - [ ] **Phase 12: Contact, Edge Pages, Cleanup & Verification** - Summit-register contact, designed 404/error/offline pages, SEO, dead-code removal, and axe plus cross-browser verification
 
 ## Phase Details
@@ -382,13 +382,13 @@ Plans:
 
 ### Phase 11: Engineering & Roadmap
 
-**Goal**: Visitors read Tim's engineering work as surveyed routes (route-panel projects, case studies with honest metrics, and CLI_X's risk bands as Swiss trail grades) and follow his roadmap as a route log.
+**Goal**: Visitors read Tim's engineering work, box and coin-flip, as surveyed routes (route-panel projects and case studies with honest metrics and a per-project safety slot) and follow his roadmap as a route log.
 **Depends on**: Phase 8
 **Requirements**: ENG-01, ENG-02, ENG-03, ENG-04, ENG-05, ROUTE-01, ROUTE-02, ROUTE-03
 **Success Criteria** (what must be TRUE):
   1. `/projects` shows each project as a full-width route panel with name, pitch, metric strip, trail-grade badge and elevation-profile glyph. No hexagon cards remain anywhere on the site.
   2. Each project page reads as a case study (problem, pipeline diagram, safety, metrics, demo, stack, next steps) and omits any section without data. Metrics appear as an instrument panel in tabular numerals with a context line, and every claim is either sourced or softened.
-  3. CLI_X's four risk bands appear as Swiss trail grades: T1 yellow, T2–T3 white-red-white, T4–T5 white-blue-white, and unmarked. Each has its marker glyph, text label and score range, and an equivalent data table follows, so the scale reads without color.
+  3. Each case study's safety slot is set per project: box's Safety section shows real preview output from a gated destructive command and says what --force would change, and coin-flip's Privacy section lists its approved privacy facts. Trail grades appear only as the real SAC badge of the trail each profile glyph draws, with its marker glyph and text label. ENG-03 is dropped (D-24; see REQUIREMENTS.md).
   4. The terminal demo is styled in tokens v2, stops auto-playing on focus, on hover and under reduced motion, and has a pause button.
   5. `/roadmap` places items in order on a vertical elevation axis: completed items below with their completion dates, in-progress items at the current camp, planned items above. It lists v2.0 as in progress and shows a "last surveyed" date. A segmented control filters by project and status, the filter lives in the URL, and empty filters are removed or disabled.
 
@@ -433,8 +433,8 @@ Plans:
 **Parallelism**: Can run in parallel with Phase 10.
 **Scope notes**:
   - `RoutePanel` replaces the hex cards.
-  - The `CaseStudy` template's data-optional sections are driven by the Phase 8 typed highlights.
-  - `RiskScale` is built on `lib/trail-grade.ts`, with trail yellow kept outside `--color-*` so it can never become a text color.
+  - The `CaseStudy` template's data-optional sections are driven by the box and coin-flip project schema.
+  - TrailGradeMark draws the real SAC grade of each profile trail; trail paint stays outside --color-* so it can never become a text color.
   - `DemoTerminal` is restyled and gains a pause control. Step controls and a transcript are deferred (ENG-F1).
   - `RouteLog` keeps its filter state in the URL via `router.replace`.
   - Project routes stay Server Components that export metadata, so Phase 12 can attach OG images (SEO-02).
@@ -442,10 +442,11 @@ Plans:
 
 **Research**: No research step needed (established patterns), but the phase is gated on content: collect the inputs below before planning.
 **Inputs from Tim**:
-  - CLI_X behavior per trail grade, and Medium and Critical demo commands with a `riskScore`.
-  - Sources for the "95% accuracy" and "40% faster" claims; without them the claims are softened.
-  - Roadmap item order, `completedAt` dates and the "last surveyed" date.
-  - Confirmation that route panels use a generated elevation-profile glyph rather than screenshots.
+  - The claims audit: each box and coin-flip claim marked source, soften or cut (D-09).
+  - The copy, including the box terminal transcript, the box preview capture and the Home About sentence (D-16, D-25, D-26, D-33).
+  - Route-log confirmation and the surveyedAt date (D-17, D-20, D-32).
+  - The UI-SPEC defaults (11-UI-SPEC "Defaults to Confirm at Plan Review").
+  - The coin-flip clip (D-27).
 
 ### Phase 12: Contact, Edge Pages, Cleanup & Verification
 

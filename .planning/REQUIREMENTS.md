@@ -86,7 +86,7 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 
 - [ ] **ENG-01**: `/projects` shows each project as a full-width route panel (name, pitch, metric strip, trail-grade badge, elevation-profile glyph); the hexagon cards and hex-grid code are removed
 - [ ] **ENG-02**: Project pages follow a case-study structure (problem, pipeline diagram, safety, metrics, demo, stack, next steps) and omit any section that has no data
-- [ ] **ENG-03**: CLI_X's four risk bands are shown as Swiss trail grades, each with its marker glyph, text label and score range, plus an equivalent data table
+- [ ] **ENG-03**: ~~CLI_X's four risk bands are shown as Swiss trail grades, each with its marker glyph, text label and score range, plus an equivalent data table~~ **Dropped 2026-11-01 (D-24):** CLI_X is discontinued; neither box nor coin-flip has risk bands. Trail grades appear only as the real SAC badges of the profile trails.
 - [ ] **ENG-04**: Metrics display as an instrument panel with tabular numerals and a context line, and every claim is either sourced or softened
 - [ ] **ENG-05**: The terminal demo uses tokens v2, stops auto-playing on focus, hover and under reduced motion, and has a pause button
 
@@ -216,7 +216,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LBOX-07 | Phase 10 | Complete |
 | ENG-01 | Phase 11 | Pending |
 | ENG-02 | Phase 11 | Pending |
-| ENG-03 | Phase 11 | Pending |
+| ENG-03 | Phase 11 | Dropped (D-24) |
 | ENG-04 | Phase 11 | Pending |
 | ENG-05 | Phase 11 | Pending |
 | ROUTE-01 | Phase 11 | Pending |
@@ -240,8 +240,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 - Mapped to phases: 68
 - Unmapped: 0 ✓
 
-**Per phase:** Phase 7: 20 · Phase 8: 9 · Phase 9: 8 · Phase 10: 11 · Phase 11: 8 · Phase 12: 12
+**Per phase:** Phase 7: 20 · Phase 8: 9 · Phase 9: 8 · Phase 10: 11 · Phase 11: 8 (ENG-03 dropped, D-24) · Phase 12: 12
 
 ---
 *Requirements defined: 2026-10-10*
-*Last updated: 2026-10-10 after v2.0 roadmap creation (traceability mapped to Phases 7-12)*
+*Last updated: 2026-10-10 after v2.0 roadmap creation (traceability mapped to Phases 7-12); 2026-11-01 ENG-03 dropped (D-24)*
