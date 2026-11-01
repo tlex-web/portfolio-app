@@ -79,7 +79,7 @@ describe('SiteChrome', () => {
   });
 
   it('marks only Engineering as current on a project detail page', () => {
-    mockUsePathname.mockReturnValue('/projects/clix-cli');
+    mockUsePathname.mockReturnValue('/projects/box');
     renderChrome();
 
     const nav = screen.getByRole('navigation', { name: 'Primary' });

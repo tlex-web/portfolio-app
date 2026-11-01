@@ -13,7 +13,7 @@ view), `photos-grid` (`/photos?view=grid`), `photos-carousel`
 (`/photos?view=carousel`, the stepper, since every route shot runs under
 reduced motion), `photo` (the film scan's `/photos/{slug}` page, the photo
 with the partial strip; the slug comes from `buildPhotoViews()`), `projects`,
-`clix-cli`, `clix-website`, `roadmap`, `contact`, `offline`, `not-found`; and
+`box`, `coin-flip`, `roadmap`, `contact`, `offline`, `not-found`; and
 the `lightbox` viewport shots.
 
 The Home motion shots switch WebGL off (`disableWebGL` from
