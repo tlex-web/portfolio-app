@@ -87,6 +87,7 @@ coverage:
     verification: []
     human_judgment: true
     rationale: "Route-fidelity judgement: the listing names the end 'Zmutt (1,937 m)' but its 4.3 km track runs past the hamlet centre; whether the 1,950 m DEM end height reads right in the caption is Tim's call"
+    resolved: 'Resolved 2026-11-01: Tim chose A (Zmutt 56) — quote: "1. B 2. A"'
 
 duration: 12min
 completed: 2026-11-01

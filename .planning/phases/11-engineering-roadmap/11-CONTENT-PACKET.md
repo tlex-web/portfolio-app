@@ -1,7 +1,7 @@
 # Phase 11 Content Packet: box and coin-flip (D-21)
 
 **Prepared:** 2026-11-01 by the 11-02 executor. This packet replaces the first-pass CLI_X packet (commit 911a044) entirely. Only the trail table (old §A), the portfolio rows (old §G1) and the UI-SPEC defaults (old §I) are carried over.
-**Status:** waiting for Tim. Nothing in this packet is approved yet. A value counts as approved only when Tim's literal reply is quoted under `## Answers (verbatim)` and the key reads `supplied` under `## Resolved values`.
+**Status:** answered by Tim on 2026-11-01 (sections B to G). A value counts as approved only when Tim's literal reply is quoted under `## Answers (verbatim)` and the key reads `supplied` under `## Resolved values`; the drafts in sections B to G are kept exactly as they were shown to him.
 
 **What this checkpoint collects (D-21 items 1 to 4, plus one CI go-ahead):**
 1. The claims audit (D-09), section B.
@@ -441,9 +441,169 @@ No reply needed here.
 
 ## Answers (verbatim)
 
-_Empty. Tim's replies are pasted here exactly as written, with the date, when they arrive._
+Tim answered sections B to G on 2026-11-01 in five replies: two typed chat messages and three question-dialog selections. Each reply is quoted exactly as he typed or selected it, in a fenced block, under the question it answered. The questions are quoted as they were shown to him; where a dialog showed an option description, that is quoted too, because it states what the selection approves. Section A was answered earlier (D-07), and section H asks nothing.
+
+### Reply 1 · chat message · 2026-11-01 · section B (and 11-04's Zmutt end point)
+
+Asked: "1. 11-02 section B (claims audit) … Reply `B: accept the proposed column` or a per-key list" and "2. Zmutt end point: A 'Zmutt 56' (recommended, 4,291 m) or B hamlet centre".
+
+Tim's reply:
+```text
+1. B 2. A
+```
+
+"1. B" answers section B and is confirmed by Reply 2. "2. A" is not a packet key: it answers 11-04's coverage item D4 (the Zmutt end point is "Zmutt 56", as 11-04 built it) and is recorded in 11-04-SUMMARY.md and STATE.md.
+
+### Reply 2 · question dialog · 2026-11-01 · section B, confirmation
+
+Question: "For 11-02 section B (the claims audit), I read your "1. B" as accepting the proposed column for all 19 claims. Is that right? One row is conditional. box-preflight ("every check passes before the first write") stays as sourced only if you confirm it holds for every destructive box command; otherwise it's softened to "box checks the whole job before it changes the first file"."
+
+Option description shown: "Proposed column for all 19 rows. box-preflight softened (no claim about every command). Safe default: the record only covers the 3 destructive flags."
+
+Tim's selection:
+```text
+Accept all, preflight soft (Recommended)
+```
+
+Meaning: every `claim.*` row takes the value in its "Proposed" column in section B, and `claim.box-preflight` is softened to "box checks the whole job before it changes the first file".
+
+### Reply 3 · question dialog · 2026-11-01 · section C
+
+Question C1: "11-02 section C1: which captured box commands should the terminal on the box case study replay, and in what order? (11-07 needs at least 2. With fewer, box ships with no Demo section.)"
+
+Option description shown: "hash, uuid --json, the du pipeline, color, in that order, each with its drafted note. Shows BLAKE3 by default, JSON for scripts, a real PowerShell pipeline and a human view." The preview showed the C1.1 to C1.4 typed lines and outputs exactly as captured, each followed by its note draft.
+
+Tim's selection:
+```text
+1–4, notes ok (Recommended)
+```
+
+Question C2: "11-02 section C2: the Safety preview on the box case study. The capture is `box bulk-rename` in its default dry-run mode. It changed no file. The delete-duplicates preview can't be used because it prints absolute home paths."
+
+Option description shown: "Ship the preview block with the caption "Preview run · box bulk-rename" and the drafted --force line."
+
+Tim's selection:
+```text
+Approve both (Recommended)
+```
+
+### Reply 4 · chat message · 2026-11-01 · section D
+
+Asked: every section D draft was shown as in this packet, with `copy.tiles-cf` already without the `Network calls` tile (the section B soften) and the `copy.stack-cf` Rendering group marked as needing his words ("Name it, or the group is left out"), followed by: "Reply for D, for example: `D: approve all, Rendering: <renderer>`, or `D: approve all except <key> (edit: "…"), <key> decline`. If you don't name the renderer, the Rendering group is left out."
+
+Tim's reply:
+```text
+approve-all
+```
+
+Meaning: every section D key is approved as drafted. No renderer was named, so the coin-flip `Rendering` Stack group is not supplied and is left out.
+
+### Reply 5 · question dialog · 2026-11-01 · sections E, F and G
+
+Question E1: "11-02 section E1: do the 7 route-log rows on /roadmap, with their titles, statuses, dates and descriptions, look right? Every CLI_X and webshop row, portfolio-3d-gallery and portfolio-blog are retired. box gets no planned row until its next milestone exists."
+
+Option description shown: "All 7 rows, the v2.0 phase lines 7–12 and every description ship as drafted."
+
+Tim's selection:
+```text
+Rows + descriptions ok (Recommended)
+```
+
+Question E2: "11-02 section E2: what "Route log surveyed" date should /roadmap show? It can't be in the future or earlier than the newest completedAt (2026-10-26). Without a date the build fails, so this is the one input with no fallback. Pick Other to give a specific YYYY-MM-DD."
+
+Option description shown: "The kicker reads "Route log surveyed 1 Nov 2026"."
+
+Tim's selection:
+```text
+2026-11-01, today (Recommended)
+```
+
+Question F: "11-02 section F: keep the UI-SPEC defaults? (#4 is void with ENG-03.) Defaults #5 and #7 are already built by 11-06, and any alternative there would be applied in 11-12. Pick Other to list exceptions, e.g. "defaults except 7 alternative, N3 alternative"."
+
+Option description shown: "Every row uses the default shown in the preview." The preview listed #1 to #3, #5 to #11 and N1 to N4 with their defaults and alternatives as in section F.
+
+Tim's selection:
+```text
+All defaults (Recommended)
+```
+
+Question G: "11-02 section G: for Phase 11's re-baseline (plan 11-17), may the executor plain-push the phase HEAD to a new ci/11-17 branch, push fast-forward CI-fix commits there, dispatch one visual-baselines run (then download and compare the PNGs for you), and re-run CI once on your baseline commit? Force pushes, pushes to the phase branch or main, and PNG commits are excluded either way."
+
+Option description shown: "11-17 does those four things without asking again. You still commit and push the baseline PNGs."
+
+Tim's selection:
+```text
+Approve (Recommended)
+```
 
 ## Resolved values
 
+One physical line per key from the key index. `supplied` means a quoted reply above backs the value; `not supplied` means the element is left out. Multi-line values are joined with `<br>`. The exact capture text for `capture.*` is in `## Approved captures (verbatim)` in 11-02-SUMMARY.md.
+
 | key | value | status | quoted from |
 |-----|-------|--------|-------------|
+| claim.box-tools | source: "23" tools; tile context line "Tools in the README at v2.0, plus config and completions" | supplied | Reply 1 "1. B 2. A" and Reply 2 "Accept all, preflight soft (Recommended)", 2026-11-01 |
+| claim.box-tests | source: "507" tests; tile context line "At the v2.0 milestone" | supplied | Reply 1 "1. B 2. A" and Reply 2 "Accept all, preflight soft (Recommended)", 2026-11-01 |
+| claim.box-binary | source: one binary ("1" / "in one Rust binary") | supplied | Reply 1 "1. B 2. A" and Reply 2 "Accept all, preflight soft (Recommended)", 2026-11-01 |
+| claim.box-safe-default | soften: "renames, moves or deletes nothing until you add `--force`" (never "writes nothing") | supplied | Reply 1 "1. B 2. A" and Reply 2 "Accept all, preflight soft (Recommended)", 2026-11-01 |
+| claim.box-preflight | soften: "box checks the whole job before it changes the first file" (no claim about every destructive command) | supplied | Reply 1 "1. B 2. A" and Reply 2 "Accept all, preflight soft (Recommended)", 2026-11-01 |
+| claim.box-blake3 | source: "BLAKE3 is the default hash." | supplied | Reply 1 "1. B 2. A" and Reply 2 "Accept all, preflight soft (Recommended)", 2026-11-01 |
+| claim.box-ps7 | source: "built for PowerShell 7" | supplied | Reply 1 "1. B 2. A" and Reply 2 "Accept all, preflight soft (Recommended)", 2026-11-01 |
+| claim.box-loc-timeline | cut: no LOC, timeline or commit figure appears anywhere | not supplied | Reply 1 "1. B 2. A" and Reply 2 "Accept all, preflight soft (Recommended)", 2026-11-01 |
+| claim.cf-permissions | source: "0" permissions / "No permissions: the release build asks for none."; tile context line "Checked on the release APK" | supplied | Reply 1 "1. B 2. A" and Reply 2 "Accept all, preflight soft (Recommended)", 2026-11-01 |
+| claim.cf-crypto | source: "A cryptographic 50/50 draw picks heads or tails before the toss" | supplied | Reply 1 "1. B 2. A" and Reply 2 "Accept all, preflight soft (Recommended)", 2026-11-01 |
+| claim.cf-5050 | source: "50/50"; tile context line "A cryptographic draw decides each result" | supplied | Reply 1 "1. B 2. A" and Reply 2 "Accept all, preflight soft (Recommended)", 2026-11-01 |
+| claim.cf-offline | source: "Fully offline: no internet permission and no remote services." | supplied | Reply 1 "1. B 2. A" and Reply 2 "Accept all, preflight soft (Recommended)", 2026-11-01 |
+| claim.cf-network-calls | soften: no "0 network calls" figure anywhere (no tile, no strip item; N3 default); the fact is carried only by Privacy fact 2 (claim.cf-offline) | supplied | Reply 1 "1. B 2. A" and Reply 2 "Accept all, preflight soft (Recommended)", 2026-11-01 |
+| claim.cf-no-ads | source: "No ads, no trackers, no accounts." | supplied | Reply 1 "1. B 2. A" and Reply 2 "Accept all, preflight soft (Recommended)", 2026-11-01 |
+| claim.cf-talkback | source: the result is announced by TalkBack ("a TalkBack announcement of the result") | supplied | Reply 1 "1. B 2. A" and Reply 2 "Accept all, preflight soft (Recommended)", 2026-11-01 |
+| claim.cf-reduced-motion | unused: in no approved draft, so it is shown nowhere | not supplied | Reply 1 "1. B 2. A" and Reply 2 "Accept all, preflight soft (Recommended)", 2026-11-01 |
+| claim.cf-font-scaling | unused: in no approved draft, so it is shown nowhere | not supplied | Reply 1 "1. B 2. A" and Reply 2 "Accept all, preflight soft (Recommended)", 2026-11-01 |
+| claim.cf-stage-toss | soften: "The 3D toss is choreographed to land on the drawn result." | supplied | Reply 1 "1. B 2. A" and Reply 2 "Accept all, preflight soft (Recommended)", 2026-11-01 |
+| claim.cf-stage-landing | soften: "The coin comes to rest on the drawn face." | supplied | Reply 1 "1. B 2. A" and Reply 2 "Accept all, preflight soft (Recommended)", 2026-11-01 |
+| capture.box-terminal | four commands in this order: C1.1 `box hash sample/hut.txt`, C1.2 `box uuid --json`, C1.3 the `box du ./sample --json` PowerShell pipeline, C1.4 `box color '#70d5ed'`; C1.5 `tree` is not used. Exact typed lines and outputs: `## Approved captures (verbatim)` in 11-02-SUMMARY.md | supplied | Reply 3 C1 "1–4, notes ok (Recommended)", 2026-11-01 |
+| copy.terminal-notes | C1.1 "BLAKE3 is the default hash."<br>C1.2 "With --json, a command prints one JSON document and nothing else."<br>C1.3 "ConvertFrom-Json reads it, so the rest is plain PowerShell."<br>C1.4 "Hex in; RGB, HSL and a color name out." | supplied | Reply 3 C1 "1–4, notes ok (Recommended)", 2026-11-01 |
+| capture.box-safety | caption `Preview run · box bulk-rename`; typed line `box bulk-rename ./sample '^(.*)\.txt$' '$1.md'` and its 5-line output exactly as in `## Approved captures (verbatim)` in 11-02-SUMMARY.md | supplied | Reply 3 C2 "Approve both (Recommended)", 2026-11-01 |
+| copy.force-line | "With `--force`, box would rename `hut.txt` to `hut.md` and `zmutt.txt` to `zmutt.md`, and leave the `copies` folder alone." | supplied | Reply 3 C2 "Approve both (Recommended)", 2026-11-01 |
+| copy.projects-intro | "Two things I build: box, a command-line toolkit for PowerShell 7 written in Rust, and coin-flip, an Android app that tosses a fair 3D coin. Each route opens a case study." | supplied | Reply 4 "approve-all", 2026-11-01 |
+| copy.pitch-box | "Twenty-three command-line tools in one Rust binary, built for PowerShell 7. Anything destructive previews first." | supplied | Reply 4 "approve-all", 2026-11-01 |
+| copy.pitch-cf | "A 3D coin toss for Android that settles a fair result before the coin leaves your hand, with no permissions and no network." | supplied | Reply 4 "approve-all", 2026-11-01 |
+| copy.status-box | `shipped` (kicker `v2.0 · shipped`) | supplied | Reply 4 "approve-all", 2026-11-01 |
+| copy.release-box | "Measured at v2.0" | supplied | Reply 4 "approve-all", 2026-11-01 |
+| copy.release-cf | "Checked on the v1.0 release build" | supplied | Reply 4 "approve-all", 2026-11-01 |
+| copy.outcome-box | "v2.0 shipped on 14 July 2026: 23 tools in one binary, JSON output for scripts, and a preview before anything destructive." | supplied | Reply 4 "approve-all", 2026-11-01 |
+| copy.outcome-cf | "v1.0 has run on my own device since 9 August 2026. A smoother toss and a Play Store release come next." | supplied | Reply 4 "approve-all", 2026-11-01 |
+| copy.problem-box | "box gathers the small jobs I do in PowerShell 7 on Windows into one command: hashing a file, making a UUID, flattening a folder, renaming a batch of files. v1.0 put 23 tools in one Rust binary. v2.0 made them scriptable: JSON output that `ConvertFrom-Json` reads, `--clip` for the clipboard, and defaults in a config file." | supplied | Reply 4 "approve-all", 2026-11-01 |
+| copy.problem-cf | "coin-flip is an Android app for one job: settling a call with a coin toss you can trust. The result is drawn first, and the 3D toss is choreographed to land on it. It asks for no permissions and works offline, and the result is announced to TalkBack. v1 runs on my own device, but it is not done: smoothing the toss and the camera follow, and then a Play Store release, are still ahead." | supplied | Reply 4 "approve-all", 2026-11-01 |
+| copy.safety-intro-box | "Commands that delete, move or rename files run as a preview by default: box shows what it would do and renames, moves or deletes nothing until you add `--force`. box checks the whole job before it changes the first file." | supplied | Reply 4 "approve-all", 2026-11-01 |
+| copy.privacy-intro-cf | "coin-flip keeps everything on the device." | supplied | Reply 4 "approve-all", 2026-11-01 |
+| copy.privacy-facts-cf | 1. "No permissions: the release build asks for none."<br>2. "Fully offline: no internet permission and no remote services."<br>3. "No ads, no trackers, no accounts." | supplied | Reply 4 "approve-all", 2026-11-01 |
+| copy.pipeline-intro-cf | "The result is decided first. A cryptographic 50/50 draw picks heads or tails before the toss, and the animation is choreographed to land on it." | supplied | Reply 4 "approve-all", 2026-11-01 |
+| copy.pipeline-stages-cf | 1. `Fair draw`: "A cryptographic 50/50 draw picks heads or tails."<br>2. `Choreographed toss`: "The 3D toss is choreographed to land on the drawn result."<br>3. `Landing and settle`: "The coin comes to rest on the drawn face."<br>4. `Haptic pulse and announcement`: "A short pulse, and TalkBack announces the result." | supplied | Reply 4 "approve-all", 2026-11-01 |
+| copy.pipeline-endpoints-cf | "In: a tap"<br>"Out: a fair result, felt and announced" | supplied | Reply 4 "approve-all", 2026-11-01 |
+| copy.pipeline-box | 1. `Settings`: "A flag beats an environment variable, which beats the config file, which beats the built-in default."<br>2. `Command`: "One of the 23 tools runs with those settings."<br>3. `Output`: "Plain text for people, `--json` for the next command, `--clip` for the clipboard." | supplied | Reply 4 "approve-all", 2026-11-01 |
+| copy.tiles-box | `Tools` `23` "Tools in the README at v2.0, plus config and completions" ([Source](https://github.com/tlex-web/box#readme))<br>`Tests` `507` "At the v2.0 milestone" ([Source](https://github.com/tlex-web/box/blob/main/.planning/MILESTONES.md))<br>`Binary` `1` "All tools ship in one executable" ([Source](https://github.com/tlex-web/box#readme)) | supplied | Reply 4 "approve-all", 2026-11-01 |
+| copy.tiles-cf | `Permissions` `0` "Checked on the release APK"<br>`Result split` `50/50` "A cryptographic draw decides each result"<br>No `Network calls` tile (claim.cf-network-calls is softened; N3 default) | supplied | Reply 4 "approve-all", 2026-11-01 |
+| copy.stack-box | `Language`: Rust 2021<br>`Crates`: clap, serde_json, blake3, regex, rayon, chrono, image, crossterm<br>`Platform`: Windows, PowerShell 7 | supplied | Reply 4 "approve-all", 2026-11-01 |
+| copy.stack-cf | `Language`: Kotlin<br>`Platform`: native Android<br>`Rendering`: not supplied (no renderer named), so that group is left out | supplied | Reply 4 "approve-all", 2026-11-01 |
+| copy.demo-intro-box | "Four commands I ran with box, replayed with the output they returned." | supplied | Reply 4 "approve-all", 2026-11-01 |
+| copy.roadmap-intro | "What I've finished, what I'm working on and what comes next, for this site, box and coin-flip." | supplied | Reply 4 "approve-all", 2026-11-01 |
+| copy.home-about | "I'm {name}, a developer and photographer. I build software in Rust, TypeScript and Kotlin, including box, a command-line toolkit for PowerShell, and coin-flip, an Android app that tosses a fair 3D coin. I photograph the mountains around Zermatt, and this site puts each photograph back on the terrain where I took it." | supplied | Reply 4 "approve-all", 2026-11-01 |
+| log.rows | id · title · area · status · order · completedAt:<br>`coin-flip-play-store` · Play Store release · coin-flip · planned · 7 · none<br>`coin-flip-v1-1` · v1.1 Smoother toss · coin-flip · planned · 6 · none<br>`portfolio-v2` · v2.0 Topographic Identity · portfolio · in-progress · 5 · none<br>`coin-flip-v1` · v1.0 First release on device · coin-flip · completed · 4 · 2026-08-09<br>`box-v2` · v2.0 Toolbox → toolkit · box · completed · 3 · 2026-07-14<br>`box-v1` · v1.0 Full toolbox · box · completed · 2 · 2026-06-24<br>`portfolio-v1` · v1.0 Stabilization & Visual Identity · portfolio · completed · 1 · 2026-03-12<br>v2.0 phase lines (phase · name · status · completedAt): 7 · Foundation & guardrails · completed · 2026-10-24; 8 · Data & terrain pipeline · completed · 2026-10-24; 9 · Home ascent · completed · 2026-10-25; 10 · Photography · completed · 2026-10-26; 11 · Engineering & roadmap · in-progress · none; 12 · Contact, edge pages & cleanup · planned · none<br>Retired ids: `portfolio-3d-gallery`, `portfolio-blog`, `cli-conversation-export`, `cli-workflow-scheduling`, `cli-plugin-system`, `cli-autocomplete`, `cli-collaborative-commands`, `cli-web-interface`, `cli-conversation-mode`, `cli-ollama-integration`, `cli-template-analytics`, `webshop-team-management`, `webshop-analytics`, `webshop-api-marketplace`, `webshop-mobile-app`; box has no planned row | supplied | Reply 5 E1 "Rows + descriptions ok (Recommended)", 2026-11-01 |
+| log.descriptions | `coin-flip-play-store` "Releasing the app through the Play Store."<br>`coin-flip-v1-1` "Smoothing the toss and the camera follow."<br>`portfolio-v2` "This redesign: the whole site rebuilt around the real Matterhorn terrain."<br>`coin-flip-v1` "The first release, running on my own device: a fair draw, a 3D toss, no permissions and no network."<br>`box-v2` "The tools became scriptable: JSON output, `--clip`, config-file defaults, BLAKE3 hashing and previews before destructive changes."<br>`box-v1` "All 23 tools in one Rust binary, installed from PowerShell 7."<br>`portfolio-v1` "The first version of this site, stabilized and given its own visual identity." | supplied | Reply 5 E1 "Rows + descriptions ok (Recommended)", 2026-11-01 |
+| log.surveyedAt | 2026-11-01 (kicker "Route log surveyed 1 Nov 2026") | supplied | Reply 5 E2 "2026-11-01, today (Recommended)", 2026-11-01 |
+| default.1 | default: `/roadmap` h1 `Roadmap` (the nav label); "Route log" lives in the kicker `Route log surveyed …` | supplied | Reply 5 F "All defaults (Recommended)", 2026-11-01 |
+| default.2 | default: priority is not shown on route-log rows; `order` carries it | supplied | Reply 5 F "All defaults (Recommended)", 2026-11-01 |
+| default.3 | default: row descriptions always visible; only v2.0 has a disclosure | supplied | Reply 5 F "All defaults (Recommended)", 2026-11-01 |
+| default.5 | default: panels show the verified link (box) and the "Source: private repository" text (coin-flip); "Ask for a walkthrough" is on the trailhead only (already built by 11-06) | supplied | Reply 5 F "All defaults (Recommended)", 2026-11-01 |
+| default.6 | default: primary CTA on the case study is `Ask for a walkthrough` → `/contact` | supplied | Reply 5 F "All defaults (Recommended)", 2026-11-01 |
+| default.7 | default: external project links open in the same tab, with `ArrowSquareOutIcon` (already built by 11-06) | supplied | Reply 5 F "All defaults (Recommended)", 2026-11-01 |
+| default.8 | default: pause toggle with the constant label `Pause` and `aria-pressed` | supplied | Reply 5 F "All defaults (Recommended)", 2026-11-01 |
+| default.9 | default: trail red `oklch(0.60 0.20 27)` and blue `oklch(0.55 0.17 255)`; T1 stays `--trail-yellow` (Home unchanged) | supplied | Reply 5 F "All defaults (Recommended)", 2026-11-01 |
+| default.10 | default: filter tracks show counts and become 2 × 2 below 640 px | supplied | Reply 5 F "All defaults (Recommended)", 2026-11-01 |
+| default.11 | default: no copy button on the terminal or the preview block | supplied | Reply 5 F "All defaults (Recommended)", 2026-11-01 |
+| default.N1 | default: project names as the repos spell them, `box` and `coin-flip` (also the h1 and titles) | supplied | Reply 5 F "All defaults (Recommended)", 2026-11-01 |
+| default.N2 | default: terminal and preview outputs at most 12 lines, by the choice of input and flags; output text never edited | supplied | Reply 5 F "All defaults (Recommended)", 2026-11-01 |
+| default.N3 | default: a metric the audit softens leaves the strip and the panel; its wording lives in the Privacy facts | supplied | Reply 5 F "All defaults (Recommended)", 2026-11-01 |
+| default.N4 | default: "Next steps" lists only planned or in-progress rows, so box has no Next steps section until a next milestone exists | supplied | Reply 5 F "All defaults (Recommended)", 2026-11-01 |
+| ci.approval | approve: 11-17 may (1) plain-push the phase HEAD to a new `ci/11-17`, (2) push fast-forward CI-fix commits there, (3) dispatch one visual-baselines run on it and download and compare the PNGs, (4) re-run CI once on Tim's baseline commit. Excluded: force pushes, pushes to the phase branch or `main`, and PNG commits (Tim commits the baselines) | supplied | Reply 5 G "Approve (Recommended)", 2026-11-01 |
