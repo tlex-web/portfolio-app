@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 11
 current_phase_name: Engineering & Roadmap
 status: executing
-stopped_at: 11-02 paused at Task 3 checkpoint (Tim's content packet answers); Tasks 1-2 committed 059294a, 15ca22d
-last_updated: "2026-11-01T18:26:20.711Z"
+stopped_at: 11-04 complete (a8629da); 11-02 still paused at Task 3 checkpoint (Tim's content packet answers)
+last_updated: "2026-11-01T18:41:40.099Z"
 last_activity: 2026-11-01
 last_activity_desc: Phase 11 execution started
-state_head: 15ca22d64515b2e03b60f18b52c2722351ab9063
+state_head: a8629da6ab0b74c70f723f31859b4faf4580d182
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 93
-  completed_plans: 76
-  percent: 82
+  completed_plans: 77
+  percent: 83
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-26)
 ## Current Position
 
 Phase: 11 (Engineering & Roadmap) — EXECUTING
-Plan: 2 of 18
-Status: Executing Phase 11
+Plan: 3 of 18
+Status: Ready to execute
 Last activity: 2026-11-01 — Phase 11 execution started
 
-Progress: [████████░░] 82%
+Progress: [████████░░] 83%
 
 ## Performance Metrics
 
@@ -133,6 +133,7 @@ Progress: [████████░░] 82%
 | Phase 10 P12 | 18 min | 2 tasks | 4 files |
 | Phase 10 P13 | 1h 52m | 3 tasks | 23 files |
 | Phase 11 P01 | 17 min | 2 tasks | 11 files |
+| Phase 11 P04 | 12 min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -341,6 +342,8 @@ Recent decisions affecting current work:
 - [Phase 11]: 11-01: DemoTerminal draws its lines aria-hidden at all times; the sr-only block (aria-live off while playing, polite while paused) is the single screen-reader source, so a completed command is never read twice. 11-03 adds the grade sentence there
 - [Phase 11]: 11-01: /projects/[slug] is a Server Component with dynamicParams = false, generateStaticParams and generateMetadata ({ title: project.name }); DemoTerminal is imported directly and takes only demoCommands props; three.js never loads on project pages
 - [Phase 11]: 11-01: one pending timeout per terminal state (lib/demo-terminal.ts pure machine); e2e on the terminal scroll it into view and move pointer and focus out after clicks, because offscreen, hover and focus-within are pause sources (D-02)
+- [Phase 11]: 11-04: Zmutt path No. 2 routes station -> via Zen Stecken -> Zmutt 56 (hamlet's western edge), 4,291 m vs 4,300 m; the gazetteer Zmutt centre routes only 3,614 m (-16 %) because the listing track runs past the hamlet (Tim to confirm, 11-04 coverage D4)
+- [Phase 11]: 11-04: profile captions from the DEM (08 D-17): Hörnliweg 2,587 -> 3,262 m (4,316 m); Zmutt path 1,606 -> 1,950 m (4,291 m); trails:build -- --check runs in data:check
 
 ### Pending Todos
 
@@ -385,6 +388,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-01T18:26:20.263Z
-Stopped at: 11-02 paused at Task 3 checkpoint (Tim's content packet answers); Tasks 1-2 committed 059294a, 15ca22d
-Resume file: .planning/phases/11-engineering-roadmap/11-CONTENT-PACKET.md
+Last session: 2026-11-01T18:41:39.675Z
+Stopped at: 11-04 complete (a8629da); 11-02 still paused at Task 3 checkpoint (Tim's content packet answers)
+Resume file: None
