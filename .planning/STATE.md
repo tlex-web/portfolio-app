@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 11
 current_phase_name: Engineering & Roadmap
 status: executing
-stopped_at: 11-04 complete (a8629da); 11-02 still paused at Task 3 checkpoint (Tim's content packet answers)
-last_updated: "2026-11-01T18:41:40.099Z"
+stopped_at: 11-05 complete (9a071fe); 11-02 still paused at Task 3 checkpoint (Tim's content packet answers)
+last_updated: "2026-11-01T18:51:14.513Z"
 last_activity: 2026-11-01
 last_activity_desc: Phase 11 execution started
-state_head: a8629da6ab0b74c70f723f31859b4faf4580d182
+state_head: 9a071fe4b70b59df1141f6b214e06a248b6ee496
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 93
-  completed_plans: 77
-  percent: 83
+  completed_plans: 78
+  percent: 84
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-26)
 ## Current Position
 
 Phase: 11 (Engineering & Roadmap) — EXECUTING
-Plan: 3 of 18
+Plan: 4 of 18
 Status: Ready to execute
 Last activity: 2026-11-01 — Phase 11 execution started
 
-Progress: [████████░░] 83%
+Progress: [████████░░] 84%
 
 ## Performance Metrics
 
@@ -134,6 +134,7 @@ Progress: [████████░░] 83%
 | Phase 10 P13 | 1h 52m | 3 tasks | 23 files |
 | Phase 11 P01 | 17 min | 2 tasks | 11 files |
 | Phase 11 P04 | 12 min | 2 tasks | 10 files |
+| Phase 11 P05 | 9 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -344,6 +345,9 @@ Recent decisions affecting current work:
 - [Phase 11]: 11-01: one pending timeout per terminal state (lib/demo-terminal.ts pure machine); e2e on the terminal scroll it into view and move pointer and focus out after clicks, because offscreen, hover and focus-within are pause sources (D-02)
 - [Phase 11]: 11-04: Zmutt path No. 2 routes station -> via Zen Stecken -> Zmutt 56 (hamlet's western edge), 4,291 m vs 4,300 m; the gazetteer Zmutt centre routes only 3,614 m (-16 %) because the listing track runs past the hamlet (Tim to confirm, 11-04 coverage D4)
 - [Phase 11]: 11-04: profile captions from the DEM (08 D-17): Hörnliweg 2,587 -> 3,262 m (4,316 m); Zmutt path 1,606 -> 1,950 m (4,291 m); trails:build -- --check runs in data:check
+- [Phase 11]: 11-05: compact RouteRow meta is '{Status}' plus ' · {target}' (UI-SPEC Next steps); log rows read '{Project} · …'
+- [Phase 11]: 11-05: only log-variant li carries id = item id; compact li has no id
+- [Phase 11]: 11-05: routeLogHref re-validates whitelist values and drops forged ones (T-11-10)
 
 ### Pending Todos
 
@@ -388,6 +392,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-01T18:41:39.675Z
-Stopped at: 11-04 complete (a8629da); 11-02 still paused at Task 3 checkpoint (Tim's content packet answers)
+Last session: 2026-11-01T18:51:14.082Z
+Stopped at: 11-05 complete (9a071fe); 11-02 still paused at Task 3 checkpoint (Tim's content packet answers)
 Resume file: None
