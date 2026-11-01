@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 2
+open_count: 4
 waived_count: 1
 fixed_count: 2
-total_count: 5
-last_updated: 2026-11-01T20:27:49.330Z
+total_count: 7
+last_updated: 2026-11-01T21:13:56.571Z
 ---
 
 # Broken Windows Ledger
@@ -20,6 +20,8 @@ last_updated: 2026-11-01T20:27:49.330Z
 | 3 | 10 | unrun-verify | e2e/photos-sweep.spec.ts |  | 10-12 E5 composite: the Tab-wrap leg was not run in local WebKit (CSP upgrade-insecure-requests blocks localhost hydration, 10 deferred item); Chromium and Firefox pass, Tim's real-Safari UAT covers it | open |  | 2026-10-26T15:49:04.457Z |  |
 | 4 | 11 | stub | app/(site)/projects/[slug]/page.tsx |  | Demo section has its h2 but no intro paragraph; Tim-approved intro copy (D-16) lands in 11-09 | open |  | 2026-11-01T15:23:59.475Z |  |
 | 5 | 11 | stub | components/projects/DemoTerminal.tsx |  | No D-04 risk badge in the terminal body and no grade sentence in the sr-only text yet; 11-03 adds both | waived | void: D-04 retired by D-24; the D-26 note line replaces the badge (11-03) | 2026-11-01T15:23:59.895Z | 2026-11-01T20:27:49.330Z |
+| 6 | 11 | stub | components/projects/CaseStudy.tsx |  | CaseStudy slots problem, pipeline, safety/privacy, metrics, stack, next-steps return null until 11-11 and 11-13 add renderers (data already complete) | open |  | 2026-11-01T21:13:56.063Z |  |
+| 7 | 11 | stub | components/projects/sections/Demo.tsx |  | Demo returns null for coin-flip until its clip and renderer land in 11-15/11-16 | open |  | 2026-11-01T21:13:56.571Z |  |
 
 ````json
 [
@@ -86,6 +88,32 @@ last_updated: 2026-11-01T20:27:49.330Z
     "reason": "void: D-04 retired by D-24; the D-26 note line replaces the badge (11-03)",
     "recorded_at": "2026-11-01T15:23:59.895Z",
     "resolved_at": "2026-11-01T20:27:49.330Z",
+    "milestone": "v2.0"
+  },
+  {
+    "id": 6,
+    "kind": "stub",
+    "phase": "11",
+    "file": "components/projects/CaseStudy.tsx",
+    "line": null,
+    "description": "CaseStudy slots problem, pipeline, safety/privacy, metrics, stack, next-steps return null until 11-11 and 11-13 add renderers (data already complete)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-01T21:13:56.063Z",
+    "resolved_at": null,
+    "milestone": "v2.0"
+  },
+  {
+    "id": 7,
+    "kind": "stub",
+    "phase": "11",
+    "file": "components/projects/sections/Demo.tsx",
+    "line": null,
+    "description": "Demo returns null for coin-flip until its clip and renderer land in 11-15/11-16",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-11-01T21:13:56.571Z",
+    "resolved_at": null,
     "milestone": "v2.0"
   }
 ]
