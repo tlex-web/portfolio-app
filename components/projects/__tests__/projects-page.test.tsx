@@ -1,29 +1,46 @@
 /**
  * /projects (ENG-01; 11-UI-SPEC "/projects (ENG-01)"). The page is a Server
  * Component; it renders synchronously here with `@/data/projects` mocked, so
- * the empty state, the data order and the count kicker are checked without
- * the real project data (which changes in 11-07).
+ * the empty state, the data order, the count kicker, the intro and the
+ * per-project links are checked without the real project data.
  */
 import { render, screen, within } from '@testing-library/react';
 
 let mockProjects: Array<Record<string, unknown>> = [];
+let mockIntro: string | undefined;
 
 jest.mock('@/data/projects', () => ({
   get projects() {
     return mockProjects;
+  },
+  get projectsIntro() {
+    return mockIntro;
   },
 }));
 
 import ProjectsPage, { metadata } from '@/app/(site)/projects/page';
 
 const fixtures = [
-  { slug: 'route-one', name: 'Route One', version: 'v2.0', tagline: 'The first route.' },
-  { slug: 'route-two', name: 'Route Two', version: 'v1', tagline: 'The second route.' },
+  {
+    slug: 'box',
+    name: 'Route One',
+    kicker: { version: 'v2.0', status: 'shipped' },
+    pitch: 'The first route.',
+    links: { github: 'https://github.com/tlex-web/box' },
+  },
+  {
+    slug: 'coin-flip',
+    name: 'Route Two',
+    kicker: { version: 'v1', status: 'on device' },
+    pitch: 'The second route.',
+    repository: 'private',
+  },
 ];
 
 describe('/projects page', () => {
   afterEach(() => {
     mockProjects = [];
+    mockIntro = undefined;
   });
 
   it('exports the Engineering document title', () => {
@@ -60,11 +77,33 @@ describe('/projects page', () => {
     });
   });
 
-  it('passes no repository link from the interim data', () => {
+  it("passes box's GitHub link and coin-flip's private note, never a coin-flip link (D-12)", () => {
     mockProjects = fixtures;
     render(<ProjectsPage />);
 
-    expect(screen.queryByRole('link', { name: 'GitHub' })).not.toBeInTheDocument();
-    expect(screen.getAllByRole('link')).toHaveLength(fixtures.length);
+    const articles = within(screen.getByRole('list', { name: 'Routes' })).getAllByRole('article');
+    expect(within(articles[0]).getByRole('link', { name: 'GitHub' })).toHaveAttribute(
+      'href',
+      'https://github.com/tlex-web/box'
+    );
+    expect(within(articles[1]).getByText('Source: private repository')).toBeInTheDocument();
+    expect(within(articles[1]).queryByRole('link', { name: 'GitHub' })).not.toBeInTheDocument();
+    expect(within(articles[0]).getByText('v2.0')).toBeInTheDocument();
+    expect(within(articles[0]).getByText('shipped')).toBeInTheDocument();
+    expect(within(articles[1]).getByText('on device')).toBeInTheDocument();
+    expect(within(articles[1]).getByText('The second route.')).toBeInTheDocument();
+  });
+
+  it('shows the approved intro under the h1, and no paragraph without one (D-16)', () => {
+    mockProjects = fixtures;
+    mockIntro = 'Two routes to walk.';
+    const { unmount } = render(<ProjectsPage />);
+    const h1 = screen.getByRole('heading', { level: 1, name: 'Engineering' });
+    expect(h1.nextElementSibling).toHaveTextContent('Two routes to walk.');
+    unmount();
+
+    mockIntro = undefined;
+    render(<ProjectsPage />);
+    expect(screen.getByRole('heading', { level: 1, name: 'Engineering' }).nextElementSibling).toBeNull();
   });
 });

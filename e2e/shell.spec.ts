@@ -24,7 +24,7 @@ const ROUTES: ReadonlyArray<readonly [path: string, current: Label | null]> = [
   // The full photo page (LBOX-01, D-08): under /photos, Photographs stays current.
   ['/photos/' + buildPhotoViews()[0].slug, 'Photographs'],
   ['/projects', 'Engineering'],
-  ['/projects/clix-cli', 'Engineering'],
+  ['/projects/box', 'Engineering'],
   ['/roadmap', 'Roadmap'],
   ['/contact', 'Contact'],
   // Not a nav destination: no link is current.

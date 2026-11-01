@@ -1,24 +1,25 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import RoutePanel, { type RoutePanelProps } from '@/components/projects/RoutePanel';
-import { projects } from '@/data/projects';
+import { projects, projectsIntro } from '@/data/projects';
 import type { Project } from '@/data/types';
 import { countLabel } from '@/lib/home-format';
 
 export const metadata: Metadata = { title: 'Engineering' };
 
 /**
- * Maps one project to the route panel's props. The only place the page reads
- * project fields, so the data swap in 11-07 rewrites this mapper alone. No
- * links are passed: today's repository is private (D-12), and the panel
- * would otherwise expose it.
+ * Maps one project to the route panel's props, the only place the page reads
+ * project fields. box passes its verified GitHub link; coin-flip passes the
+ * private-repository note and never a link (D-12). The kicker is the same
+ * `{version} · {status}` pair the trailhead shows (D-29).
  */
 function toPanelProps(project: Project): RoutePanelProps {
   return {
     slug: project.slug,
     name: project.name,
-    kicker: { version: project.version },
-    pitch: project.tagline,
+    kicker: project.kicker,
+    pitch: project.pitch,
+    links: project.slug === 'box' ? { github: project.links.github } : { privateRepo: true },
   };
 }
 
@@ -27,8 +28,8 @@ function toPanelProps(project: Project): RoutePanelProps {
  * the header band (the route count kicker, the same count as the Home trail
  * sign, and the h1 matching the nav label) above one full-width route panel
  * per project, in data order. With no projects the list is replaced by the
- * empty copy and a text link to the roadmap. The D-16 intro paragraph joins
- * the band in 11-07.
+ * empty copy and a text link to the roadmap. Tim's approved intro paragraph
+ * (D-16) sits under the h1 when there is one.
  */
 export default function ProjectsPage() {
   const kicker = countLabel(projects.length, 'route', 'routes');
@@ -38,6 +39,9 @@ export default function ProjectsPage() {
       <div className="border-b border-line pt-8 pb-6">
         {kicker && <p className="mb-2 font-mono text-sm text-ink-muted">{kicker}</p>}
         <h1>Engineering</h1>
+        {projectsIntro && (
+          <p className="mt-4 max-w-prose text-base text-ink-muted">{projectsIntro}</p>
+        )}
       </div>
       {projects.length === 0 ? (
         <p className="mt-8 text-base text-ink-muted">

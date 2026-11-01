@@ -3,7 +3,7 @@ import { projects } from '@/data/projects';
 import { disableWebGL, expectNoErrorPage, nextFrames, webglFailure } from './helpers/webgl';
 
 /** The demo terminal's region is named after its project (11-03), read from the data. */
-const demoProject = projects.find((p) => 'demoCommands' in p && p.demoCommands?.length);
+const demoProject = projects.find((p) => p.slug === 'box' && p.demo?.commands.length);
 if (!demoProject) throw new Error('no project with demo commands');
 const demoRegionName = `${demoProject.name} demo`;
 
@@ -68,7 +68,7 @@ test.describe('Without WebGL', () => {
   // DemoTerminal replaced the R3F laptop), so there is no WebGL failure to
   // wait for (11-RESEARCH Pitfall 4). It must still be the complete page.
   test('project detail keeps its content', async ({ page }) => {
-    await page.goto('/projects/clix-cli');
+    await page.goto(`/projects/${demoProject.slug}`);
 
     await expectNoErrorPage(page);
     await expect(page.locator('canvas')).toHaveCount(0);

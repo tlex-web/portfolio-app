@@ -1,27 +1,24 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
-import FeatureShowcase from '@/components/FeatureShowcase';
-import TechStackDisplay from '@/components/TechStackDisplay';
-import ProjectHighlights from '@/components/ProjectHighlights';
-import DemoTerminal from '@/components/projects/DemoTerminal';
+import CaseStudy from '@/components/projects/CaseStudy';
+import Trailhead from '@/components/projects/Trailhead';
 import { projects } from '@/data/projects';
-import { toLegacyHighlights } from '@/lib/legacy-highlights';
 
 /**
- * The case-study route (ENG-02 route contract, ENG-05; 11 D-01). A Server
- * Component: only the DemoTerminal island is client code, imported directly
- * (no next/dynamic) and fed `project.name` and `project.demoCommands` as
- * props, so three.js and R3F never load here.
+ * The case-study route (ENG-02 route contract, ENG-05; 11 D-01, D-22). A
+ * Server Component: the Trailhead header band, then the CaseStudy slot
+ * template. Only the DemoTerminal island inside box's Demo section is client
+ * code, imported directly (no next/dynamic), so three.js and R3F never load
+ * here.
  *
- * Only the project slugs exist: generateStaticParams lists them, turning
- * dynamicParams off makes every other slug a 404, and notFound() guards the
- * exact, case-sensitive match (/projects/CLIX-CLI is a 404, as in
- * /photos/[slug]).
+ * Only the project slugs (box, coin-flip) exist: generateStaticParams lists
+ * them, turning dynamicParams off makes every other slug a 404 (the retired
+ * v1 project slugs included, with no redirect), and notFound() guards the exact,
+ * case-sensitive match (/projects/BOX is a 404, as in /photos/[slug]).
  *
  * generateMetadata gives the page '{project.name} · Tim Lui' through the root
- * title template. The description arrives with Tim's approved pitch (11-12),
- * and Phase 12 attaches the OG images here (SEO-02).
+ * title template and Tim's approved pitch as the description; Phase 12
+ * attaches the OG images here (SEO-02).
  */
 
 interface PageProps {
@@ -38,7 +35,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const project = projects.find((p) => p.slug === slug);
   if (!project) return {};
-  return { title: project.name };
+  return project.pitch
+    ? { title: project.name, description: project.pitch }
+    : { title: project.name };
 }
 
 export default async function ProjectDetailPage({ params }: PageProps) {
@@ -49,168 +48,12 @@ export default async function ProjectDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  const statusColors = {
-    active: 'bg-surface-overlay border border-success text-success',
-    beta: 'bg-surface-overlay border border-caution text-caution',
-    complete: 'bg-surface-overlay border border-accent text-accent',
-    archived: 'bg-surface-overlay border border-line-strong text-ink-muted',
-  };
-
   return (
-    <>
-      <div className="min-h-screen bg-gradient-to-b from-surface to-surface-raised">
-        {/* Hero Section - Server Component */}
-        <div className="bg-surface-raised border-y border-line text-ink py-20">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <Link
-              href="/projects"
-              className="text-ink-muted hover:text-ink hover:underline mb-6 inline-flex items-center gap-2"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back to Projects
-            </Link>
-
-            <div className="flex items-start justify-between flex-wrap gap-4">
-              <div className="flex-1">
-                <h1 className="text-5xl font-bold mb-4 text-ink">{project.name}</h1>
-                <p className="text-2xl text-ink mb-6">{project.tagline}</p>
-                <p className="text-lg text-ink-muted max-w-3xl">{project.shortDescription}</p>
-              </div>
-              
-              <div className="flex flex-col gap-3">
-                <span className={`px-4 py-2 text-sm font-semibold rounded-full ${statusColors[project.status]}`}>
-                  {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
-                </span>
-                {project.version && (
-                  <span className="px-4 py-2 text-sm font-semibold rounded-full bg-surface-overlay text-ink border border-line-strong">
-                    {project.version}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="mt-8 flex flex-wrap gap-4">
-              {project.links.github && (
-                <a
-                  href={project.links.github}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-6 py-3 bg-accent text-ink-inverse rounded-lg hover:bg-accent-hover transition-colors font-semibold flex items-center gap-2"
-                >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path
-                      fillRule="evenodd"
-                      d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  View on GitHub
-                </a>
-              )}
-              {project.links.demo && (
-                <a
-                  href={project.links.demo}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-6 py-3 bg-surface-overlay text-ink rounded-lg hover:bg-surface transition-colors font-semibold border border-line-strong flex items-center gap-2"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                  Live Demo
-                </a>
-              )}
-              {project.links.docs && (
-                <a
-                  href={project.links.docs}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-6 py-3 bg-surface-overlay text-ink rounded-lg hover:bg-surface transition-colors font-semibold border border-line-strong flex items-center gap-2"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                  </svg>
-                  Documentation
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-20">
-          {/* Overview */}
-          <section className="max-w-none">
-            <h2 className="text-2xl font-display font-semibold text-ink mb-6 text-center">
-              Overview
-            </h2>
-            <div className="bg-surface-raised rounded-xl p-8 border border-line">
-              {project.longDescription.split('\n\n').map((paragraph, index) => (
-                <p key={index} className="text-ink leading-relaxed mb-4 last:mb-0">
-                  {paragraph}
-                </p>
-              ))}
-            </div>
-          </section>
-
-          {/* Demo (ENG-05, D-01): the flat terminal island; the intro copy lands in 11-09 (D-16) */}
-          {project.demoCommands && project.demoCommands.length > 0 && (
-            <section id="demo" aria-labelledby="demo-title">
-              <h2 id="demo-title" className="text-heading text-balance">
-                Demo
-              </h2>
-              <DemoTerminal name={project.name} commands={project.demoCommands} />
-            </section>
-          )}
-
-          {/* Features */}
-          {project.features && project.features.length > 0 && (
-            <section>
-              <FeatureShowcase features={project.features} />
-            </section>
-          )}
-
-          {/* Highlights/Metrics */}
-          {project.highlights && Object.keys(project.highlights).length > 0 && (
-            <section>
-              <ProjectHighlights highlights={toLegacyHighlights(project.highlights)} />
-            </section>
-          )}
-
-          {/* Tech Stack */}
-          <section>
-            <TechStackDisplay techStack={project.techStack} />
-          </section>
-
-          {/* Related Roadmap Items */}
-          {project.roadmapItems && project.roadmapItems.length > 0 && (
-            <section>
-              <h2 className="text-3xl font-bold mb-8 text-ink text-center">
-                What&apos;s Next?
-              </h2>
-              <div className="bg-surface-raised rounded-xl p-8 border-2 border-line">
-                <p className="text-lg text-ink mb-4 text-center">
-                  Check out the roadmap to see planned features and improvements for this project.
-                </p>
-                <div className="text-center">
-                  <Link
-                    href="/roadmap"
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-ink-inverse rounded-lg hover:bg-accent-hover transition-colors font-semibold"
-                  >
-                    View Roadmap
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </Link>
-                </div>
-              </div>
-            </section>
-          )}
-        </div>
+    <article aria-labelledby="case-title">
+      <Trailhead project={project} />
+      <div className="mx-auto w-full max-w-6xl px-4 pt-16 pb-12 sm:px-6 md:pb-16 lg:px-8">
+        <CaseStudy project={project} />
       </div>
-    </>
+    </article>
   );
 }

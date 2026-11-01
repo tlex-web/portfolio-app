@@ -1,136 +1,130 @@
 /**
- * Project data contract (DATA-07).
+ * Project data contract (DATA-07; Phase 11 D-22, D-24).
  *
- * Projects form a discriminated union on `slug`, one schema per project, and
- * each project's `highlights` is a fixed tuple of typed blocks: the tuple order
- * is the render order. Phase 11's case studies read the blocks directly; until
- * then `lib/legacy-highlights.ts` turns them back into the v1 record that
- * `ProjectHighlights` renders (RESEARCH Pitfall 13).
+ * Projects form a discriminated union on `slug`: box and coin-flip. Each
+ * case-study slot is one optional block, and the slot order lives in code
+ * (`components/projects/CaseStudy.tsx`), never in data. Unapproved content is
+ * simply absent (D-21): there is no "approved" flag that could let a draft
+ * through, and a section without data does not render (ENG-02).
  *
  * Every object is a `z.strictObject`: zod's default `z.object` silently accepts
- * extra keys (RESEARCH Pitfall 5), which would let a misspelt field or a demo
- * command on the wrong project through.
+ * extra keys (RESEARCH Pitfall 5), which would let a misspelt field, a retired
+ * field or a block on the wrong project through.
  *
  * Imports only 'zod' on purpose (RESEARCH Pattern 1), like data/schemas/photo.ts:
  * keep it to erasable TypeScript so Node can type-strip it from scripts.
  */
 import { z } from 'zod';
 
-/** CLI_X risk levels, matching the v1 `DemoCommand.riskLevel` union. */
-export const RiskLevel = z.enum(['low', 'medium', 'high', 'critical']);
-export type RiskLevel = z.infer<typeof RiskLevel>;
-
-const Scalar = z.union([z.string(), z.number(), z.boolean()]);
-
-/** Named scalar metrics, e.g. Performance or Testing. */
-export const MetricsBlock = z.strictObject({
-  kind: z.literal('metrics'),
-  key: z.string(),
-  title: z.string(),
-  metrics: z.array(z.strictObject({ key: z.string(), label: z.string(), value: Scalar })).min(1),
-});
-
-/** The CLI_X safety scale: rule count, the four risk bands and boolean capabilities. */
-export const RiskScaleBlock = z.strictObject({
-  kind: z.literal('risk-scale'),
-  key: z.string(),
-  title: z.string(),
-  rules: z.number().int(),
-  bands: z.array(z.strictObject({ level: RiskLevel, min: z.number(), max: z.number() })).length(4),
-  flags: z.array(z.strictObject({ key: z.string(), label: z.string(), value: z.boolean() })),
-});
-
-/** Pricing tiers, in display order. */
-export const PricingBlock = z.strictObject({
-  kind: z.literal('pricing'),
-  key: z.string(),
-  title: z.string(),
-  tiers: z
-    .array(
-      z.strictObject({
-        key: z.string(),
-        price: z.string(),
-        commands: z.string(),
-        models: z.string(),
-        features: z.array(z.string()),
-      }),
-    )
-    .min(1),
-});
-
-/** A plain bullet list, e.g. Security. */
-export const ListBlock = z.strictObject({
-  kind: z.literal('list'),
-  key: z.string(),
-  title: z.string(),
-  items: z.array(z.string()).min(1),
-});
-
-/** Grouped technology lists, e.g. frontend / backend / deployment. */
-export const StackBlock = z.strictObject({
-  kind: z.literal('stack'),
-  key: z.string(),
-  title: z.string(),
-  groups: z.array(z.strictObject({ key: z.string(), items: z.array(z.string()).min(1) })).min(1),
-});
-
-export const HighlightBlock = z.discriminatedUnion('kind', [
-  MetricsBlock,
-  RiskScaleBlock,
-  PricingBlock,
-  ListBlock,
-  StackBlock,
-]);
-export type HighlightBlock = z.infer<typeof HighlightBlock>;
-
 /**
- * One CLI_X terminal example. `riskLevel` and `riskScore` are required (D-22):
- * every score is the one CLI_X printed for that command, and the level is the
- * band of `lib/trail-grade.ts` the score falls in.
+ * One box terminal command (D-26): the line as typed after the prompt and the
+ * output it printed, both captured verbatim (08 D-22), plus an optional
+ * one-line note Tim approved. There is no risk field (D-24).
  */
 export const DemoCommandSchema = z.strictObject({
   input: z.string(),
   output: z.string(),
-  riskLevel: RiskLevel,
-  riskScore: z.number().min(0).max(1),
-  warning: z.string().optional(),
-  explanation: z.string().optional(),
+  note: z.string().optional(),
 });
 
-/** Fields every project shares (today's v1 `Project` interface minus slug, highlights and demos). */
+/**
+ * One metric tile (D-28, ENG-04). The context line is required: a figure
+ * without it does not ship. `sourceUrl` points at the public evidence.
+ */
+const MetricTile = z.strictObject({
+  key: z.string(),
+  label: z.string(),
+  value: z.string(),
+  context: z.string().min(1),
+  sourceUrl: z.url().optional(),
+});
+
+/** The marked trail each project's route profile follows (D-07). */
+const TrailId = z.enum(['hoernliweg-27', 'zmutt-2']);
+
+/** Slot blocks both projects share; every block is optional. */
 const ProjectBase = z.strictObject({
   name: z.string(),
-  tagline: z.string(),
-  shortDescription: z.string(),
-  longDescription: z.string(),
-  techStack: z.array(z.string()),
-  links: z.strictObject({
-    github: z.string().optional(),
-    demo: z.string().optional(),
-    docs: z.string().optional(),
-  }),
-  status: z.enum(['active', 'beta', 'complete', 'archived']),
-  featured: z.boolean(),
-  thumbnailImage: z.string().optional(),
-  roadmapItems: z.array(z.string()).optional(),
-  version: z.string().optional(),
-  features: z.array(z.string()).optional(),
+  /** The panel pitch, also the case study's meta description. */
+  pitch: z.string().optional(),
+  /** The trailhead outcome line (D-16). */
+  outcome: z.string().optional(),
+  /** `{version} · {status}`; a missing status drops with its separator (D-29). */
+  kicker: z.strictObject({ version: z.string(), status: z.string().optional() }),
+  route: TrailId.optional(),
+  /** Problem paragraphs, first person (D-16). */
+  problem: z.array(z.string()).optional(),
+  pipeline: z
+    .strictObject({
+      intro: z.string().optional(),
+      in: z.string().optional(),
+      out: z.string().optional(),
+      stages: z
+        .array(z.strictObject({ name: z.string(), description: z.string().optional() }))
+        .min(1),
+    })
+    .optional(),
+  metrics: z
+    .strictObject({
+      releaseLine: z.string().optional(),
+      tiles: z.array(MetricTile).min(1),
+    })
+    .optional(),
+  stack: z
+    .strictObject({
+      groups: z
+        .array(z.strictObject({ label: z.string(), items: z.array(z.string()).min(1) }))
+        .min(1),
+    })
+    .optional(),
+  /** Route-log row ids, planned or in progress only (N4, D-32). */
+  nextSteps: z.array(z.string()).optional(),
 });
 
-const ClixCli = ProjectBase.extend({
-  slug: z.literal('clix-cli'),
-  highlights: z.tuple([MetricsBlock, MetricsBlock, RiskScaleBlock, MetricsBlock]),
-  demoCommands: z.array(DemoCommandSchema).min(1),
+const Box = ProjectBase.extend({
+  slug: z.literal('box'),
+  /** The only verified link (D-12). */
+  links: z.strictObject({ github: z.literal('https://github.com/tlex-web/box') }),
+  /**
+   * The third slot on box (D-25): the preview gate in a few sentences, one real
+   * preview run (`command` is the subcommand, `input` the typed line, `output`
+   * what it printed, all verbatim) and the line saying what `--force` would do.
+   */
+  safety: z
+    .strictObject({
+      intro: z.string().optional(),
+      capture: z
+        .strictObject({ command: z.string(), input: z.string(), output: z.string() })
+        .optional(),
+      forceLine: z.string().optional(),
+    })
+    .optional(),
+  /** The terminal demo (D-26): commands in Tim's order. */
+  demo: z
+    .strictObject({
+      intro: z.string().optional(),
+      commands: z.array(DemoCommandSchema).min(1),
+    })
+    .optional(),
 });
 
-const ClixWebsite = ProjectBase.extend({
-  slug: z.literal('clix-website'),
-  highlights: z.tuple([PricingBlock, ListBlock, StackBlock]),
-  // The website has no terminal demo. `never` keeps the key off the data (a
-  // demoCommands array fails to parse) while `project.demoCommands` still
-  // type-checks on the union for the shared ProjectDetailClient.
-  demoCommands: z.never().optional(),
+const CoinFlip = ProjectBase.extend({
+  slug: z.literal('coin-flip'),
+  /** D-12: the repository is private, so there is no link field at all. */
+  repository: z.literal('private'),
+  /** The third slot on coin-flip (D-25). */
+  privacy: z
+    .strictObject({ intro: z.string().optional(), facts: z.array(z.string()).min(1) })
+    .optional(),
+  /** D-27: the clip renders only with its text description. */
+  clip: z
+    .strictObject({
+      id: z.literal('coin-flip-toss'),
+      intro: z.string().optional(),
+      description: z.string(),
+    })
+    .optional(),
 });
 
-export const ProjectSchema = z.discriminatedUnion('slug', [ClixCli, ClixWebsite]);
+export const ProjectSchema = z.discriminatedUnion('slug', [Box, CoinFlip]);
 export type ProjectSchema = z.infer<typeof ProjectSchema>;
