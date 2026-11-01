@@ -10,7 +10,7 @@
 | capability | decision | reason |
 |---|---|---|
 | SearchServer location search (type=locations, sr=2056) | INTEGRATE | |
-| MapServer identify on ch.swisstopo.swisstlm3d-wanderwege (envelope, returnGeometry, geojson) | INTEGRATE | |
+| MapServer identify (ch.swisstopo.swisstlm3d-wanderwege, envelope query) | INTEGRATE | |
 | MapServer find (attribute search) | OPT-OUT | not needed: identify over the trail's envelope returns every segment with its id |
 | MapServer feature by id and htmlPopup | OPT-OUT | not needed: identify already returns geometry and feature ids for provenance |
 | layer metadata, legend and layersConfig | OPT-OUT | not needed: the layer id is fixed and recorded in trails.json provenance |
