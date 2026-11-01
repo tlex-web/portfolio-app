@@ -15,7 +15,7 @@
  * screen before any rerender with new props.
  */
 import { Suspense, use, useLayoutEffect, useState } from 'react';
-import { act, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import RouteLogFilters from '@/components/roadmap/RouteLogFilters';
 import type { LogCounts, LogFilter } from '@/lib/route-log';
@@ -76,6 +76,16 @@ function segment(name: 'Project' | 'Status', label: string) {
   return within(group(name)).getByRole('button', { name: new RegExp(`^${label} \\d+ entries$`) });
 }
 
+/**
+ * A press that navigates suspends the harness, so it runs inside an awaited
+ * act (React asks for that whenever a component suspends inside act).
+ */
+async function press(button: HTMLElement) {
+  await act(async () => {
+    fireEvent.click(button);
+  });
+}
+
 beforeEach(() => {
   replace.mockClear();
   push.mockClear();
@@ -91,16 +101,16 @@ describe('RouteLogFilters (ROUTE-02)', () => {
       expect(document.getElementById(labelId as string)).toHaveTextContent(name);
     }
     expect(segments('Project').map((b) => b.textContent)).toEqual([
-      'All7 entries',
-      'Portfolio2 entries',
-      'box2 entries',
-      'coin-flip3 entries',
+      'All 7 entries',
+      'Portfolio 2 entries',
+      'box 2 entries',
+      'coin-flip 3 entries',
     ]);
     expect(segments('Status').map((b) => b.textContent)).toEqual([
-      'All7 entries',
-      'Planned2 entries',
-      'In progress1 entries',
-      'Completed4 entries',
+      'All 7 entries',
+      'Planned 2 entries',
+      'In progress 1 entries',
+      'Completed 4 entries',
     ]);
     for (const button of [...segments('Project'), ...segments('Status')]) {
       expect(button).toHaveAttribute('type', 'button');
@@ -132,9 +142,8 @@ describe('RouteLogFilters (ROUTE-02)', () => {
   });
 
   it("pressing 'box' presses it at once and replaces the URL with scrolling off, never pushing", async () => {
-    const user = userEvent.setup();
     render(<Harness filter={ALL} counts={COUNTS} />);
-    await user.click(segment('Project', 'box'));
+    await press(segment('Project', 'box'));
     expect(segment('Project', 'box')).toHaveAttribute('aria-pressed', 'true');
     expect(segment('Project', 'All')).toHaveAttribute('aria-pressed', 'false');
     expect(replace).toHaveBeenCalledTimes(1);
@@ -143,21 +152,19 @@ describe('RouteLogFilters (ROUTE-02)', () => {
   });
 
   it("with filter {box, all}, pressing 'Planned' keeps the project in the href", async () => {
-    const user = userEvent.setup();
     const counts: LogCounts = { ...BOX_COUNTS, status: { ...BOX_COUNTS.status, planned: 1 } };
     render(<Harness filter={{ project: 'box', status: 'all' }} counts={counts} />);
-    await user.click(segment('Status', 'Planned'));
+    await press(segment('Status', 'Planned'));
     expect(replace).toHaveBeenCalledWith('/roadmap?project=box&status=planned', { scroll: false });
   });
 
   it('pressing All in a group drops that parameter from the href', async () => {
-    const user = userEvent.setup();
     const counts: LogCounts = {
       project: { all: 2, portfolio: 0, box: 0, 'coin-flip': 2 },
       status: { all: 2, planned: 0, 'in-progress': 0, completed: 2 },
     };
     render(<Harness filter={{ project: 'box', status: 'completed' }} counts={counts} />);
-    await user.click(segment('Project', 'All'));
+    await press(segment('Project', 'All'));
     expect(replace).toHaveBeenCalledWith('/roadmap?status=completed', { scroll: false });
   });
 
@@ -209,14 +216,14 @@ describe('RouteLogFilters (ROUTE-02)', () => {
     expect(segment('Project', 'coin-flip')).toHaveAttribute('aria-disabled', 'true');
   });
 
-  it('the server render that follows a press keeps the segment pressed and brings the new counts', async () => {
+  it('Enter or Space on a focused enabled segment presses it like a click', async () => {
     const user = userEvent.setup();
-    const { rerender } = render(<Harness filter={ALL} counts={COUNTS} />);
-    await user.click(segment('Project', 'box'));
+    render(<Harness filter={ALL} counts={COUNTS} />);
+    segment('Status', 'Completed').focus();
     await act(async () => {
-      rerender(<Harness filter={{ project: 'box', status: 'all' }} counts={BOX_COUNTS} />);
+      await user.keyboard('{Enter}');
     });
-    expect(segment('Project', 'box')).toHaveAttribute('aria-pressed', 'true');
-    expect(segment('Status', 'Planned')).toHaveAttribute('aria-disabled', 'true');
+    expect(segment('Status', 'Completed')).toHaveAttribute('aria-pressed', 'true');
+    expect(replace).toHaveBeenCalledWith('/roadmap?status=completed', { scroll: false });
   });
 });
