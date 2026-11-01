@@ -1,52 +1,43 @@
 /**
- * CLI_X risk bands and their Swiss hiking trail grades (D-22, DATA-07).
+ * SAC hiking-scale trail grades and the waymark painted on each (D-06, D-24).
  *
- * The bands are the four quoted in the clix-cli Safety highlight
- * ('Low (0.0-0.3)' ... 'Critical (0.8-1.0)'). Tim confirmed the boundary rule
- * and the grade mapping at the 08-03 checkpoint: each band is half-open
- * [min, max) except critical, which is closed [0.8, 1.0], so 0.3 is medium and
- * 1.0 is critical. Phase 11's trail-grade scale reads `grade` and `marker`;
- * the colour tokens for the markers live there, not here.
+ * A grade means only "the trail grade" here: the real SAC grade of the trail
+ * a project's profile glyph draws. T1 trails carry a yellow waymark, T2 and
+ * T3 white-red-white, T4 and T5 white-blue-white, and T6 routes are unmarked.
+ * MARKER_NAMES gives each waymark the name the badge's accessible text reads.
+ *
+ * The paint itself is drawn by TrailGradeMark (11-12), never here.
  *
  * Zero imports on purpose: a leaf module both the data tests and client
  * components can use without pulling in zod.
  */
-export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
+export type TrailMarker = 'yellow' | 'white-red-white' | 'white-blue-white' | 'unmarked';
 
-export interface RiskBand {
-  level: RiskLevel;
-  /** Inclusive lower bound. */
-  min: number;
-  /** Exclusive upper bound, except for the last band, where it is inclusive. */
-  max: number;
-  /** SAC hiking scale grade. */
-  grade: string;
-  /** Trail waymark colours. */
-  marker: string;
-}
+export const TRAIL_GRADES = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6'] as const;
 
-export const RISK_BANDS: readonly RiskBand[] = [
-  { level: 'low', min: 0.0, max: 0.3, grade: 'T1', marker: 'yellow' },
-  { level: 'medium', min: 0.3, max: 0.6, grade: 'T2–T3', marker: 'white-red-white' },
-  { level: 'high', min: 0.6, max: 0.8, grade: 'T4–T5', marker: 'white-blue-white' },
-  { level: 'critical', min: 0.8, max: 1.0, grade: 'T6', marker: 'unmarked' },
-];
+export type TrailGrade = (typeof TRAIL_GRADES)[number];
 
-/** The band a riskScore falls in. Throws a RangeError outside [0, 1] (and for NaN). */
-export function bandFor(score: number): RiskBand {
-  const last = RISK_BANDS.length - 1;
-  const band = RISK_BANDS.find(
-    (b, i) => score >= b.min && (score < b.max || (i === last && score === b.max))
-  );
-  if (!band) throw new RangeError(`riskScore ${score} is outside [0, 1]`);
-  return band;
-}
+const MARKER_BY_GRADE: Readonly<Record<TrailGrade, TrailMarker>> = {
+  T1: 'yellow',
+  T2: 'white-red-white',
+  T3: 'white-red-white',
+  T4: 'white-blue-white',
+  T5: 'white-blue-white',
+  T6: 'unmarked',
+};
 
-/** Whether `score` lies in the band of `level`; false for any score outside [0, 1]. */
-export function isScoreInLevel(score: number, level: RiskLevel): boolean {
-  try {
-    return bandFor(score).level === level;
-  } catch {
-    return false;
+/** The waymark for a grade. Throws a RangeError for anything but T1 to T6. */
+export function markerForGrade(grade: string): TrailMarker {
+  if (!(TRAIL_GRADES as readonly string[]).includes(grade)) {
+    throw new RangeError(`"${grade}" is not a trail grade (T1 to T6)`);
   }
+  return MARKER_BY_GRADE[grade as TrailGrade];
 }
+
+/** The accessible name of each waymark ("T4, white-blue-white waymark"). */
+export const MARKER_NAMES: Readonly<Record<TrailMarker, string>> = {
+  yellow: 'yellow waymark',
+  'white-red-white': 'white-red-white waymark',
+  'white-blue-white': 'white-blue-white waymark',
+  unmarked: 'unmarked',
+};

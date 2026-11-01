@@ -3,31 +3,18 @@
 import type { z } from 'zod';
 import type { DemoCommandSchema, ProjectSchema } from './schemas/project';
 
-/** Primitive value types that can appear in project highlights. */
-type HighlightPrimitive = string | number | boolean;
-
-/** Recursive type for nested highlight data structures. */
-export type HighlightValue = HighlightPrimitive | HighlightValue[] | { [key: string]: HighlightValue };
-
 /**
  * A portfolio project, inferred from the zod contract (DATA-07): a discriminated
- * union on `slug` whose `highlights` are typed block tuples. Type-only imports
- * keep zod out of client bundles.
+ * union on `slug`, box | coin-flip, each with its own case-study fields.
+ * Type-only imports keep zod out of client bundles.
  */
 export type Project = z.infer<typeof ProjectSchema>;
 
-/** One CLI_X terminal example (natural-language input -> generated command). */
+/**
+ * One box terminal example: the command line as typed and its captured output,
+ * with an optional approved note (D-26).
+ */
 export type DemoCommand = z.infer<typeof DemoCommandSchema>;
-
-export interface RoadmapItem {
-  id: string; // Unique identifier
-  title: string; // Short title
-  description: string; // Detailed explanation
-  area: 'portfolio' | 'cli' | 'webshop' | 'other'; // Categorization
-  status: 'planned' | 'in-progress' | 'completed';
-  targetRelease?: string; // e.g., 'Q2 2025', 'v2.0'
-  priority?: 'low' | 'medium' | 'high';
-}
 
 /** One primary navigation destination (SHELL-01). */
 export interface NavItem {
