@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 11
 current_phase_name: Engineering & Roadmap
 status: executing
-stopped_at: Completed 11-03-PLAN.md (61e6d97)
-last_updated: "2026-11-01T20:32:46.735Z"
+stopped_at: Completed 11-08-PLAN.md
+last_updated: "2026-11-01T20:46:19.723Z"
 last_activity: 2026-11-01
 last_activity_desc: Phase 11 execution started
-state_head: 61e6d97301a1435f9f523b7353b97eb287fe1435
+state_head: e37f2af888fbe425b471b914900ccb7d8f94ce3d
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 93
-  completed_plans: 81
-  percent: 87
+  completed_plans: 82
+  percent: 88
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-26)
 ## Current Position
 
 Phase: 11 (Engineering & Roadmap) — EXECUTING
-Plan: 7 of 18
+Plan: 8 of 18
 Status: Ready to execute
 Last activity: 2026-11-01 — Phase 11 execution started
 
-Progress: [█████████░] 87%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 
@@ -138,6 +138,7 @@ Progress: [█████████░] 87%
 | Phase 11 P06 | 15 min | 2 tasks | 9 files |
 | Phase 11 P02 | 2h 3m | 3 tasks | 6 files |
 | Phase 11 P03 | 8 min | 2 tasks | 8 files |
+| Phase 11 P08 | 11 min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -360,6 +361,8 @@ Recent decisions affecting current work:
 - [Phase 11]: 11-04 D4 resolved 2026-11-01: Tim chose A, the Zmutt path ends at Zmutt 56 as 11-04 built it (quote "1. B 2. A")
 - [Phase 11]: 11-03: releasing the demo Pause applies releaseSticky (sticky, hover, focusWithin cleared; offscreen and hidden kept) and focus pauses only on entry from outside (D-02 amended)
 - [Phase 11]: 11-03: DemoTerminal takes only name and commands (TerminalCommand with optional note, D-26); §I #8 and #11 stay default (constant Pause label, no copy button)
+- [Phase 11]: 11-08: route-log description code spans (backticks in data) render as nowrap <code>; box v2.0 keeps Tim's quoted --clip span
+- [Phase 11]: 11-08: Phase 11 completion date and next surveyedAt are entered in Phase 12's first data edit with Tim's confirmation (Q3)
 
 ### Pending Todos
 
@@ -404,6 +407,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-01T20:32:46.300Z
-Stopped at: Completed 11-03-PLAN.md (61e6d97)
+Last session: 2026-11-01T20:46:19.237Z
+Stopped at: Completed 11-08-PLAN.md
 Resume file: None
