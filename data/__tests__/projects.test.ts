@@ -110,6 +110,68 @@ describe('Captured strings (D-25, D-26, 08 D-22)', () => {
   });
 });
 
+/**
+ * Tim's approved box copy as the 11-02 packet drafted it, inline-code
+ * backticks included (11-02-SUMMARY "Resolved values": copy.problem-box,
+ * copy.pipeline-box stage 3, copy.safety-intro-box, copy.force-line). The
+ * renderers set each backticked span as code (orchestrator-added task in
+ * 11-14, Tim's "yes", 2026-11-01); the wording is unchanged.
+ */
+const APPROVED_BOX_CODE_COPY = {
+  problem:
+    'box gathers the small jobs I do in PowerShell 7 on Windows into one command: hashing a file, making a UUID, flattening a folder, renaming a batch of files. v1.0 put 23 tools in one Rust binary. v2.0 made them scriptable: JSON output that `ConvertFrom-Json` reads, `--clip` for the clipboard, and defaults in a config file.',
+  output: 'Plain text for people, `--json` for the next command, `--clip` for the clipboard.',
+  safetyIntro:
+    'Commands that delete, move or rename files run as a preview by default: box shows what it would do and renames, moves or deletes nothing until you add `--force`. box checks the whole job before it changes the first file.',
+  forceLine:
+    'With `--force`, box would rename `hut.txt` to `hut.md` and `zmutt.txt` to `zmutt.md`, and leave the `copies` folder alone.',
+};
+
+/** Every string in a value, depth first. */
+const stringsIn = (value: unknown): string[] =>
+  typeof value === 'string'
+    ? [value]
+    : Array.isArray(value)
+      ? value.flatMap(stringsIn)
+      : value && typeof value === 'object'
+        ? Object.values(value).flatMap(stringsIn)
+        : [];
+
+describe('Inline code in approved copy (11-02 packet, 11-14)', () => {
+  test("box's code-bearing copy is byte-identical to the approved packet drafts", () => {
+    expect(box.problem).toEqual([APPROVED_BOX_CODE_COPY.problem]);
+    expect(box.pipeline?.stages.find((s) => s.name === 'Output')?.description).toBe(
+      APPROVED_BOX_CODE_COPY.output
+    );
+    expect(box.safety?.intro).toBe(APPROVED_BOX_CODE_COPY.safetyIntro);
+    expect(box.safety?.forceLine).toBe(APPROVED_BOX_CODE_COPY.forceLine);
+  });
+
+  test('backticks appear only in the copy the renderers set as code, always paired', () => {
+    // The verbatim captures (terminal and preview) are printed as captured,
+    // never tokenized, so they are left out.
+    const coded = projects.flatMap((p) => [
+      ...(p.problem ?? []),
+      ...(p.pipeline?.stages ?? []).flatMap((s) => (s.description ? [s.description] : [])),
+      ...(p.slug === 'box' ? [p.safety?.intro, p.safety?.forceLine] : []).filter(
+        (t): t is string => Boolean(t)
+      ),
+    ]);
+    for (const text of coded) expect((text.match(/`/g) ?? []).length % 2).toBe(0);
+
+    const rest = projects.flatMap((p) =>
+      stringsIn({
+        ...p,
+        problem: undefined,
+        pipeline: p.pipeline && { ...p.pipeline, stages: p.pipeline.stages.map((s) => s.name) },
+        demo: undefined,
+        safety: undefined,
+      })
+    );
+    for (const text of rest) expect(text).not.toContain('`');
+  });
+});
+
 describe('Copy (D-09, D-23, D-30, ENG-04)', () => {
   test('coin-flip copy reveals no internals (D-23)', () => {
     const text = JSON.stringify(coinFlip);

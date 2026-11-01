@@ -19,6 +19,7 @@ import Stack from '../sections/Stack';
 import { projects } from '@/data/projects';
 import { roadmapItems } from '@/data/roadmap';
 import type { Project } from '@/data/types';
+import { plainText } from '@/lib/inline-code';
 
 type CoinFlip = Extract<Project, { slug: 'coin-flip' }>;
 type PrivacyBlock = NonNullable<CoinFlip['privacy']>;
@@ -226,7 +227,7 @@ describe('Safety', () => {
       input: "box bulk-rename ./sample '^(.*)\\.txt$' '$1.md'",
       output: ['  ~ hut.txt -> hut.md', '', 'Dry run: 1 to rename.'].join('\n'),
     },
-    forceLine: 'With --force, box would rename hut.txt to hut.md.',
+    forceLine: 'With `--force`, box would rename `hut.txt` to `hut.md`.',
   };
   /** Text with runs of whitespace collapsed, as the caption is read. */
   const collapsed = (el: Element | null) => (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
@@ -263,7 +264,13 @@ describe('Safety', () => {
     render(<Safety id="safety" label="Safety" block={full} />);
 
     const code = screen.getByText('--force', { selector: 'code' });
-    expect(code.closest('p')?.textContent).toBe(full.forceLine);
+    const line = code.closest('p');
+    expect(line?.textContent).toBe(plainText(full.forceLine ?? ''));
+    expect(Array.from(line?.querySelectorAll('code') ?? []).map((c) => c.textContent)).toEqual([
+      '--force',
+      'hut.txt',
+      'hut.md',
+    ]);
     expect(follows(screen.getByRole('figure'), code)).toBe(true);
   });
 
@@ -491,5 +498,79 @@ describe('Stack and Next steps in the case study (ENG-02, N4)', () => {
 
   it('omits Stack without stack data', () => {
     expect(caseStudySections({ ...box, stack: undefined }).map((s) => s.id)).toEqual(['problem']);
+  });
+});
+
+/**
+ * Inline code in Tim's approved box prose (orchestrator-added task in 11-14;
+ * Tim's "yes", 2026-11-01, to rendering the review copy's code tokens as
+ * code). Read from the real data: each listed token is its own code element,
+ * the paragraph reads exactly as approved, and no backtick reaches the DOM.
+ */
+describe('Inline code in the approved box prose (11-14)', () => {
+  const box = projects.find((p): p is Extract<Project, { slug: 'box' }> => p.slug === 'box');
+  if (!box?.problem || !box.pipeline || !box.safety?.intro || !box.safety.forceLine) {
+    throw new Error('box lacks its approved Problem, Pipeline or Safety copy');
+  }
+  const { problem, pipeline, safety } = box;
+  const codes = (el: Element | null | undefined) =>
+    Array.from(el?.querySelectorAll('code') ?? []).map((c) => c.textContent);
+  /** The paragraph whose text, as read, is the approved sentence. */
+  const paragraph = (container: HTMLElement, approved: string) => {
+    const found = Array.from(container.querySelectorAll('p')).find(
+      (p) => p.textContent === plainText(approved)
+    );
+    if (!found) throw new Error(`no paragraph reads "${plainText(approved)}"`);
+    return found;
+  };
+
+  it('Problem sets ConvertFrom-Json and --clip as code', () => {
+    const { container } = render(<Problem id="problem" label="Problem" paragraphs={problem} />);
+
+    expect(codes(paragraph(container, problem[0]))).toEqual(['ConvertFrom-Json', '--clip']);
+    expect(container.textContent).not.toContain('`');
+  });
+
+  it('Pipeline sets --json and --clip as code in the Output stage', () => {
+    const output = pipeline.stages.find((s) => s.name === 'Output');
+    if (!output?.description) throw new Error('box has no Output stage description');
+    const { container } = render(
+      <Pipeline id="pipeline" label="Pipeline" name={box.name} block={pipeline} />
+    );
+
+    expect(codes(paragraph(container, output.description))).toEqual(['--json', '--clip']);
+    expect(codes(container)).toEqual(['--json', '--clip']);
+    expect(container.textContent).not.toContain('`');
+  });
+
+  it('Safety sets --force in the intro, and the flag and file names in the --force line', () => {
+    const { container } = render(<Safety id="safety" label="Safety" block={safety} />);
+
+    expect(codes(paragraph(container, safety.intro ?? ''))).toEqual(['--force']);
+    expect(codes(paragraph(container, safety.forceLine ?? ''))).toEqual([
+      '--force',
+      'hut.txt',
+      'hut.md',
+      'zmutt.txt',
+      'zmutt.md',
+      'copies',
+    ]);
+    expect(container.textContent).not.toContain('`');
+  });
+
+  it('sets every code span in mono on one line, as the route log does', () => {
+    const { container } = render(
+      <>
+        <Problem id="problem" label="Problem" paragraphs={problem} />
+        <Safety id="safety" label="Safety" block={safety} />
+      </>
+    );
+
+    const spans = Array.from(container.querySelectorAll('code'));
+    expect(spans.length).toBe(9);
+    for (const code of spans) {
+      expect(code).toHaveClass('font-mono');
+      expect(code).toHaveClass('whitespace-nowrap');
+    }
   });
 });
