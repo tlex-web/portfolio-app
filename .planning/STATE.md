@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 11
 current_phase_name: Engineering & Roadmap
 status: executing
-stopped_at: "Completed 11-12-PLAN.md; 11-15 still paused at its Task 2 checkpoint (human-action: Tim records the coin-flip clip or replies none; Task 1 done in 3680049, d9851a7)"
-last_updated: "2026-11-01T22:14:08.760Z"
+stopped_at: "Completed 11-13-PLAN.md; 11-15 still paused at its Task 2 checkpoint (human-action: Tim records the coin-flip clip or replies none; Task 1 done in 3680049, d9851a7)"
+last_updated: "2026-11-01T22:26:59.345Z"
 last_activity: 2026-11-01
 last_activity_desc: Phase 11 execution started
-state_head: d9a0b27dc9da6f8b1ed966283c4cdd3365ba024b
+state_head: c1b0517fbf3c382a1fca470beac375205edcb9fd
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 93
-  completed_plans: 88
-  percent: 95
+  completed_plans: 89
+  percent: 96
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-26)
 ## Current Position
 
 Phase: 11 (Engineering & Roadmap) — EXECUTING
-Plan: 14 of 18
+Plan: 15 of 18
 Status: Ready to execute
 Last activity: 2026-11-01 — Phase 11 execution started
 
-Progress: [█████████░] 95%
+Progress: [█████████░] 96%
 
 ## Performance Metrics
 
@@ -145,6 +145,7 @@ Progress: [█████████░] 95%
 | Phase 11 P11 | 8 min | 2 tasks | 8 files |
 | Phase 11 P18 | 4 min | 2 tasks | 8 files |
 | Phase 11 P12 | 13 min | 3 tasks | 20 files |
+| Phase 11 P13 | 10 min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -381,6 +382,8 @@ Recent decisions affecting current work:
 - [Phase 11]: 11-18: Home About ships the supplied copy.home-about row verbatim (D-33); WINDOWS row 4 fixed since copy.demo-intro-box renders
 - [Phase 11]: 11-12: trail paint is three :root --trail-* primitives with background-only bg-trail-* utilities, measured as ten non-text pairs plus ink-inverse/ink in check-contrast (47 pairs); all §I answers default, so --trail-yellow and Home are unchanged
 - [Phase 11]: 11-12: coin-flip's caption reads 'Zermatt 1,606 m → Zmutt 1,950 m · T1' (generator ends at Zmutt 56, Tim's 11-04 D4), not the UI-SPEC's 1,934 m; 11-17 re-baselines /projects and both trailheads, Home unchanged
+- [Phase 11]: [11-13] Next steps rows (RouteRow compact) are a plain <a>, not next/link: next/link's pushState navigation never sets :target, so the landed /roadmap row lost its target: highlight; cost is no prefetch and a full load of static /roadmap (open for Tim, revert in components/roadmap/RouteRow.tsx if soft navigation is preferred)
+- [Phase 11]: [11-13] Case-study Metrics panel: literal GRID per tile count and a last-tile span from literal maps (odd count: sm:col-span-2; count mod 3: lg span 3/2, or lg:col-span-1 to reset); box 3 tiles (third spans the sm row), coin-flip 2 tiles; releaseLine stays in the route panel strip only
 
 ### Pending Todos
 
@@ -425,6 +428,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-01T22:14:08.283Z
-Stopped at: Completed 11-12-PLAN.md; 11-15 still paused at its Task 2 checkpoint (human-action: Tim records the coin-flip clip or replies none; Task 1 done in 3680049, d9851a7)
-Resume file: .planning/phases/11-engineering-roadmap/11-15-PLAN.md
+Last session: 2026-11-01T22:26:58.865Z
+Stopped at: Completed 11-13-PLAN.md; 11-15 still paused at its Task 2 checkpoint (human-action: Tim records the coin-flip clip or replies none; Task 1 done in 3680049, d9851a7)
+Resume file: None
