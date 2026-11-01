@@ -5,11 +5,11 @@ milestone_name: Topographic Identity
 current_phase: 11
 current_phase_name: Engineering & Roadmap
 status: paused
-stopped_at: Phase 11 paused for re-plan (CLI_X discontinued; box + coin-flip replace both CLI_X projects)
-last_updated: "2026-11-01T15:33:16.263Z"
+stopped_at: Phase 11 context updated for the box + coin-flip re-plan (ENG-03 retired)
+last_updated: "2026-11-01T15:49:13.973Z"
 last_activity: 2026-11-01
 last_activity_desc: Phase 11 paused for re-plan after 11-01; 11-02 checkpoint superseded
-state_head: d16a99239dc20a5e87fc5046d73f95bb61b5acb6
+state_head: fa5172049600cf646fca8af5fc19dfb33a9111b1
 progress:
   total_phases: 6
   completed_phases: 10
@@ -352,7 +352,7 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-- [Phase 11, BLOCKER 2026-11-01] Re-plan required before further execution: CLI_X is discontinued and box (github.com/tlex-web/box, public, Rust CLI toolkit, 23 tools, v2.0 shipped) plus coin-flip (github.com/tlex-web/coin-flip, private, native Android 3D coin toss, Kotlin) replace clix-cli and clix-website. ENG-03 (CLI_X risk bands as trail grades) has no counterpart in either project and needs a decision; ENG-05 terminal demo retargets to box; coin-flip has no terminal (clip/stills, still no three.js on project pages) and shows the private-repo note. Plans 11-02 and 11-03..11-15 embed CLI_X content, slugs and fixtures. Next: /gsd-discuss-phase 11, then /gsd-plan-phase 11 (keep 11-01 as complete).
+- [Phase 11, BLOCKER 2026-11-01] Re-plan required before further execution: CLI_X is discontinued and box (github.com/tlex-web/box, public, Rust CLI toolkit, 23 tools, v2.0 shipped) plus coin-flip (github.com/tlex-web/coin-flip, private, native Android 3D coin toss, Kotlin) replace clix-cli and clix-website. ENG-03 (CLI_X risk bands as trail grades) has no counterpart in either project and needs a decision; ENG-05 terminal demo retargets to box; coin-flip has no terminal (clip/stills, still no three.js on project pages) and shows the private-repo note. Plans 11-02 and 11-03..11-15 embed CLI_X content, slugs and fixtures. [DISCUSSED 2026-11-01: 11-CONTEXT.md updated (fa51720). ENG-03 retired (D-24), box Safety + coin-flip Privacy (D-25), box terminal captured locally (D-26), coin-flip clip (D-27), trails box Hörnliweg T4 / coin-flip Zmutt T1 (D-07), route log per milestone (D-31, D-32), Home About CLI_X sentence rewritten (D-33).] Next: /gsd-ui-phase 11 (revise the CLI_X-heavy UI-SPEC), then /gsd-plan-phase 11 --research (RESEARCH.md is CLI_X-specific; keep 11-01 as complete).
 - [Phase 11; SUPERSEDED 2026-11-01 by the CLI_X discontinuation] Needs from Tim: CLI_X per-grade content and Medium/Critical demo commands with `riskScore` (not supplied at 08-03, where they were optional), metric sources, roadmap order and dates.
 - [Phase 11; SUPERSEDED 2026-11-01: CLI_X data leaves the site] [from 08-03; answered by Tim 2026-10-25 at 09-13: "Leave for Phase 11" ("Keep it open; the Phase 11 Engineering/CLI_X rework rewrites demo content anyway.")] Demo command 4 (`pkill -f chrome`) is riskLevel `critical` (score 0.87) and shows a CRITICAL RISK badge, but its explanation in `data/projects.ts` still reads "High-risk operation - requires explicit confirmation". The fix moves to the Phase 11 Engineering/CLI_X rework; it is no longer an open question. data/projects.ts stays unchanged until then (code review IN-07).
 - [Phase 10, from 08 code review; RESOLVED 2026-10-26: WR-04 fixed in code by 10-01 (6bb5fb6); WR-01, WR-02, WR-03, WR-05, WR-06 (hook part accepted), WR-07 and WR-08 fixed and recorded by 10-02 (ae5cf28, 9e3db72); WR-04 and IN-02 rows recorded fixed by 10-13 (b73b101), 08-REVIEW-DISPOSITION open 10 -> 8 (CR-01 deferred and IN-01, IN-03..IN-09 remain)] 08-REVIEW-DISPOSITION.md has 8 open warnings, latent for the current four photos: WR-01 out-of-extent photo gets clamped height and UV outside 0–1; WR-02 `gpsOf` drops lat/lon when GPSAltitude is missing; WR-03 offsetTimeOriginal ignored (Europe/Zurich assumed); WR-04 `formatExposureTime` wrong for 0.25–1 s and 0; WR-05 `photos:derive` write mode not atomic; WR-06 guard skips HEIF/raw formats and `.gitignore` lost the `public/images/landscapes/` line; WR-07 scripts/README.md omits `photos:build`; WR-08 corrections can claim `source: exif` for a hand-typed position. Fold into the first Phase 9/10 plan that adds photo data or surfaces (or run `/gsd-code-review 08 --fix`). Also IN-02: the legacy bridge drops `position.approximate` (footer unaffected; Phase 10 must carry it). [IN-02 code RESOLVED by 10-09: the bridge is deleted and the view-model carries `approximate` (altitudeLabel, strip ≈ and approx note); the disposition row stays for 10-13.]
@@ -373,7 +373,7 @@ Recent decisions affecting current work:
 - [Phase 9] gsd/phase-09-home-ascent is stacked on the Phase 8 tip (itself stacked on unmerged Phase 7): merge 07, then 08, then 09
 - [Phase 10] gsd/phase-10-photography is stacked on the Phase 9 tip (4a3a69c); of Phases 7-10 is on origin/main yet: merge 07, 08, 09, then 10
 - [Phase 11-12, from Phase 10] 6 open items in `.planning/phases/10-photography/deferred-items.md`: five dev-server e2e flakes under parallel load or after hot reloads (cold `/photos/[slug]` race, the intercepted route stops intercepting twice, G3 scroll-lock and reduced-motion stepper cross-talk), and local Playwright WebKit blocked by the CSP `upgrade-insecure-requests` on localhost (Phase 12 VERIFY-04 needs a WebKit path; Safari passed by hand at Phase 10 UAT)
-- [Phase 11, from 11-01] Open question for Tim (not blocking): with D-02's temporary hover and focus pauses, resuming the demo by mouse leaves it paused until the pointer and focus leave the terminal. Keep as built (A) or let an explicit un-press clear the current temporary pauses (B)? Options table in 11-01-SUMMARY.md
+- [Phase 11, from 11-01; ANSWERED 2026-11-01 at discuss-phase: "Press resumes at once (B)", recorded as amended D-02 in 11-CONTEXT.md] Open question for Tim (not blocking): with D-02's temporary hover and focus pauses, resuming the demo by mouse leaves it paused until the pointer and focus leave the terminal. Keep as built (A) or let an explicit un-press clear the current temporary pauses (B)? Options table in 11-01-SUMMARY.md
 
 ## Deferred Items
 
@@ -385,6 +385,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-01T15:33:16.263Z
-Stopped at: Phase 11 paused for re-plan after 11-01 (11-02 checkpoint superseded by the CLI_X -> box + coin-flip swap)
-Resume file: None
+Last session: 2026-11-01T15:49:13.380Z
+Stopped at: Phase 11 context updated for the box + coin-flip re-plan (ENG-03 retired)
+Resume file: .planning/phases/11-engineering-roadmap/11-CONTEXT.md
