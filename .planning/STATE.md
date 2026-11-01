@@ -4,11 +4,11 @@ milestone: v2.0
 milestone_name: Topographic Identity
 current_phase: 11
 current_phase_name: Engineering & Roadmap
-status: executing
-stopped_at: Completed 11-01-PLAN.md
-last_updated: "2026-11-01T15:25:26.214Z"
+status: paused
+stopped_at: Phase 11 paused for re-plan (CLI_X discontinued; box + coin-flip replace both CLI_X projects)
+last_updated: "2026-11-01T15:33:16.263Z"
 last_activity: 2026-11-01
-last_activity_desc: Phase 11 execution started
+last_activity_desc: Phase 11 paused for re-plan after 11-01; 11-02 checkpoint superseded
 state_head: d16a99239dc20a5e87fc5046d73f95bb61b5acb6
 progress:
   total_phases: 6
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-10-26)
 
 ## Current Position
 
-Phase: 11 (Engineering & Roadmap) — EXECUTING
-Plan: 2 of 15
-Status: Ready to execute
-Last activity: 2026-11-01 — Phase 11 execution started
+Phase: 11 (Engineering & Roadmap) — PAUSED FOR RE-PLAN
+Plan: 11-01 complete; 11-02 stopped at its Task 2 checkpoint (Task 1 packet 911a044 is superseded); 11-03..11-15 not started
+Status: Re-plan Phase 11 around box + coin-flip (discuss-phase, then plan-phase) before executing further
+Last activity: 2026-11-01 — Tim discontinued CLI_X; execution paused after 11-01
 
 Progress: [████████░░] 84%
 
@@ -337,6 +337,7 @@ Recent decisions affecting current work:
 - [Phase 10]: 10-13: wide map plate 240 -> 256 px (w-64, PLATE_WIDE 256 x 48) with nowrap title (wide tier) and altitude, an approved UI-SPEC deviation (Tim: 'A: widen + nowrap (Recommended)'); the Linux CI render of the longest title wrapped inside the old 224 px content box (487e113)
 - [Phase 10]: 10-13: zoomed-photo drag prevention (10-10) kept as a recorded exception to UI-SPEC line 393 / LBOX-07 (Tim: 'Keep, record exception (Recommended)'); map plate clearance stays a 16 px dot square (Tim: '16 px, as built (Recommended)')
 - [Phase 10]: 10-13: Phase 10 re-baseline in Tim's commit 483895b (3 changed photos/*, 12 new; reply 'pushed', no review notes); CI green twice on it (run 40367226761 attempts 1 and 2); test-count ratchet raised to jest 942 / e2e 358 / total 1300
+- [Phase 11]: 2026-11-01 project swap, Tim's literal reply at the 11-02 checkpoint: "A. yes. regarding the other project, there has been a recent development. the cli_x project is discontinued. I would like to replace the clix_x project entirely with this one: https://github.com/tlex-web/box and a private project that you can find here: https://github.com/tlex-web/coin-flip". Follow-up answers: scope "Both CLI_X projects out" (clix-cli and clix-website, and their route-log rows, are removed; box and coin-flip are the two engineering projects); process "Pause and re-plan (Recommended)" (stop after 11-01, update ENG-03/ENG-05 and the CONTEXT decisions, re-plan 11-02 onward; 11-01's DemoTerminal and server route are kept and retargeted to box). "A. yes" is recorded verbatim only: the trail-to-project assignment is re-asked for the new pair.
 - [Phase 11]: 11-01: DemoTerminal draws its lines aria-hidden at all times; the sr-only block (aria-live off while playing, polite while paused) is the single screen-reader source, so a completed command is never read twice. 11-03 adds the grade sentence there
 - [Phase 11]: 11-01: /projects/[slug] is a Server Component with dynamicParams = false, generateStaticParams and generateMetadata ({ title: project.name }); DemoTerminal is imported directly and takes only demoCommands props; three.js never loads on project pages
 - [Phase 11]: 11-01: one pending timeout per terminal state (lib/demo-terminal.ts pure machine); e2e on the terminal scroll it into view and move pointer and focus out after clicks, because offscreen, hover and focus-within are pause sources (D-02)
@@ -351,8 +352,9 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-- [Phase 11] Needs from Tim: CLI_X per-grade content and Medium/Critical demo commands with `riskScore` (not supplied at 08-03, where they were optional), metric sources, roadmap order and dates.
-- [Phase 11, from 08-03; answered by Tim 2026-10-25 at 09-13: "Leave for Phase 11" ("Keep it open; the Phase 11 Engineering/CLI_X rework rewrites demo content anyway.")] Demo command 4 (`pkill -f chrome`) is riskLevel `critical` (score 0.87) and shows a CRITICAL RISK badge, but its explanation in `data/projects.ts` still reads "High-risk operation - requires explicit confirmation". The fix moves to the Phase 11 Engineering/CLI_X rework; it is no longer an open question. data/projects.ts stays unchanged until then (code review IN-07).
+- [Phase 11, BLOCKER 2026-11-01] Re-plan required before further execution: CLI_X is discontinued and box (github.com/tlex-web/box, public, Rust CLI toolkit, 23 tools, v2.0 shipped) plus coin-flip (github.com/tlex-web/coin-flip, private, native Android 3D coin toss, Kotlin) replace clix-cli and clix-website. ENG-03 (CLI_X risk bands as trail grades) has no counterpart in either project and needs a decision; ENG-05 terminal demo retargets to box; coin-flip has no terminal (clip/stills, still no three.js on project pages) and shows the private-repo note. Plans 11-02 and 11-03..11-15 embed CLI_X content, slugs and fixtures. Next: /gsd-discuss-phase 11, then /gsd-plan-phase 11 (keep 11-01 as complete).
+- [Phase 11; SUPERSEDED 2026-11-01 by the CLI_X discontinuation] Needs from Tim: CLI_X per-grade content and Medium/Critical demo commands with `riskScore` (not supplied at 08-03, where they were optional), metric sources, roadmap order and dates.
+- [Phase 11; SUPERSEDED 2026-11-01: CLI_X data leaves the site] [from 08-03; answered by Tim 2026-10-25 at 09-13: "Leave for Phase 11" ("Keep it open; the Phase 11 Engineering/CLI_X rework rewrites demo content anyway.")] Demo command 4 (`pkill -f chrome`) is riskLevel `critical` (score 0.87) and shows a CRITICAL RISK badge, but its explanation in `data/projects.ts` still reads "High-risk operation - requires explicit confirmation". The fix moves to the Phase 11 Engineering/CLI_X rework; it is no longer an open question. data/projects.ts stays unchanged until then (code review IN-07).
 - [Phase 10, from 08 code review; RESOLVED 2026-10-26: WR-04 fixed in code by 10-01 (6bb5fb6); WR-01, WR-02, WR-03, WR-05, WR-06 (hook part accepted), WR-07 and WR-08 fixed and recorded by 10-02 (ae5cf28, 9e3db72); WR-04 and IN-02 rows recorded fixed by 10-13 (b73b101), 08-REVIEW-DISPOSITION open 10 -> 8 (CR-01 deferred and IN-01, IN-03..IN-09 remain)] 08-REVIEW-DISPOSITION.md has 8 open warnings, latent for the current four photos: WR-01 out-of-extent photo gets clamped height and UV outside 0–1; WR-02 `gpsOf` drops lat/lon when GPSAltitude is missing; WR-03 offsetTimeOriginal ignored (Europe/Zurich assumed); WR-04 `formatExposureTime` wrong for 0.25–1 s and 0; WR-05 `photos:derive` write mode not atomic; WR-06 guard skips HEIF/raw formats and `.gitignore` lost the `public/images/landscapes/` line; WR-07 scripts/README.md omits `photos:build`; WR-08 corrections can claim `source: exif` for a hand-typed position. Fold into the first Phase 9/10 plan that adds photo data or surfaces (or run `/gsd-code-review 08 --fix`). Also IN-02: the legacy bridge drops `position.approximate` (footer unaffected; Phase 10 must carry it). [IN-02 code RESOLVED by 10-09: the bridge is deleted and the view-model carries `approximate` (altitudeLabel, strip ≈ and approx note); the disposition row stays for 10-13.]
 - [Phase 7; RESOLVED at Phase 07 UAT 2026-10-24, test 3: Tim confirmed the three jobs are Required on main] Required status checks (Visual Regression, Lint and Type Check, Unit Tests) on main are not set yet; until Tim sets them a red visual job does not block merges (07-USER-SETUP.md)
 - [Phase 7] main (Vercel production) lacks the Next 16.4.2 / sharp 0.35.5 security patch until Tim merges gsd/phase-07-foundation-guardrails; GitHub reported 84 Dependabot alerts on the default branch (9 critical). Merge recommended soon. Phase 8 lives on gsd/phase-08-data-terrain-pipeline, stacked on the unmerged Phase 7 tip (39836df) by Tim's choice, so merge Phase 7 first; until Phase 7 is on origin/main, worktree base-check degrades every phase to sequential execution.
@@ -383,6 +385,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-01T15:25:25.748Z
-Stopped at: Completed 11-01-PLAN.md
+Last session: 2026-11-01T15:33:16.263Z
+Stopped at: Phase 11 paused for re-plan after 11-01 (11-02 checkpoint superseded by the CLI_X -> box + coin-flip swap)
 Resume file: None
