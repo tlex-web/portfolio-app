@@ -1,38 +1,29 @@
 /**
- * The CLI_X demo terminal island (ENG-05; 11 D-02 pause sources, D-03
- * selector dots; 11-UI-SPEC "Demo — DemoTerminal", G2 one command, G3 seven
- * or more; 11-RESEARCH Pitfall 1 single timer).
+ * The project demo terminal island (ENG-05; 11 D-02 amended pause sources and
+ * release, D-03 selector dots, D-26 note line; 11-UI-SPEC "Demo — box:
+ * DemoTerminal", G2 one command, G3 seven or more; 11-RESEARCH Pattern 3 and
+ * Pitfall 1 single timer).
  *
  * Fake timers drive the one pending timeout. State is read from
  * `data-playback` / `data-command` on the region, `aria-pressed` on the Pause
- * toggle, `aria-current` on the dots, `aria-live` on the screen-reader text
- * and the text itself, never from colour classes. Each command is rendered in
- * its own `data-cell` of one shared grid cell, so the current one is read
- * through its cell.
+ * toggle, `aria-current` on the dots, `aria-live` on the screen-reader text,
+ * `data-note` on the note line and the text itself, never from colour
+ * classes. Each command is rendered in its own `data-cell` of one shared grid
+ * cell, so the current one is read through its cell. The island is rendered
+ * with the name 'box', so its region is 'box demo'.
  */
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import DemoTerminal from '@/components/projects/DemoTerminal';
-import type { DemoCommand } from '@/data/types';
+import type { TerminalCommand } from '@/lib/demo-terminal';
 
-const COMMANDS: DemoCommand[] = [
-  { input: 'list files', output: 'ls', riskLevel: 'low', riskScore: 0.05, explanation: 'Read-only listing' },
-  { input: 'show disk', output: 'df -h', riskLevel: 'low', riskScore: 0.15 },
-  {
-    input: 'archive docs',
-    output: 'tar -czf docs.tgz docs',
-    riskLevel: 'low',
-    riskScore: 0.29,
-    explanation: 'Safe backup',
-  },
-  {
-    input: 'kill chrome',
-    output: 'pkill -f chrome',
-    riskLevel: 'critical',
-    riskScore: 0.87,
-    warning: 'This command terminates running processes',
-    explanation: 'High-risk operation',
-  },
+const NOTE = 'BLAKE3 is the default hash.';
+
+const COMMANDS: TerminalCommand[] = [
+  { input: 'box hash notes.txt', output: 'notes.txt af1349b9', note: NOTE },
+  { input: 'show disk', output: 'df -h' },
+  { input: 'archive docs', output: 'tar -czf docs.tgz docs' },
+  { input: 'box epoch 0', output: '1970-01-01T00:00:00Z' },
 ];
 
 /** IntersectionObserver instances created by the island, so a test can report visibility. */
@@ -88,7 +79,7 @@ function setHidden(hidden: boolean) {
 }
 
 function region() {
-  return screen.getByRole('region', { name: 'CLI_X demo' });
+  return screen.getByRole('region', { name: 'box demo' });
 }
 
 function toggle() {
@@ -114,15 +105,28 @@ function advance(ms: number) {
   }
 }
 
-function setup(commands: readonly DemoCommand[] = COMMANDS) {
+function setup(commands: readonly TerminalCommand[] = COMMANDS) {
   const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
   const view = render(
     <>
-      <DemoTerminal commands={commands} />
+      <DemoTerminal name="box" commands={commands} />
       <button type="button">Outside</button>
     </>
   );
   return { user, ...view };
+}
+
+/**
+ * Presses Pause and releases it with the mouse, so the pointer stays over the
+ * region and focus stays on the toggle (the D-02 amendment's case).
+ */
+async function pressAndRelease(user: ReturnType<typeof userEvent.setup>) {
+  await user.hover(region());
+  await user.click(toggle());
+  expect(toggle()).toHaveAttribute('aria-pressed', 'true');
+  expect(region()).toHaveAttribute('data-playback', 'paused');
+  await user.click(toggle());
+  expect(toggle()).toHaveFocus();
 }
 
 beforeEach(() => {
@@ -143,13 +147,13 @@ describe('DemoTerminal autoplay', () => {
     setup();
     expect(region()).toHaveAttribute('data-command', '1');
     expect(region()).toHaveAttribute('data-playback', 'playing');
-    expect(cell(1)).toHaveTextContent('list files');
-    expect(cell(1)).toHaveTextContent('ls');
+    expect(cell(1)).toHaveTextContent('box hash notes.txt');
+    expect(cell(1)).toHaveTextContent('notes.txt af1349b9');
 
     advance(3000);
     expect(region()).toHaveAttribute('data-command', '2');
     advance(50 * 3);
-    // Three characters of 'show disk' typed, the command line still empty.
+    // Three characters of 'show disk' typed, the output still empty.
     expect(cell(2)).toHaveTextContent('sho');
     expect(cell(2)).not.toHaveTextContent('show disk');
     expect(cell(2)).not.toHaveTextContent('df -h');
@@ -213,6 +217,86 @@ describe('DemoTerminal temporary pause sources (D-02)', () => {
   });
 });
 
+describe('DemoTerminal sticky Pause and its release (D-02 amended)', () => {
+  it('keeps Pause pressed and paused after the pointer and focus leave', async () => {
+    const { user } = setup();
+    await user.click(toggle());
+    await user.unhover(region());
+    act(() => screen.getByRole('button', { name: 'Outside' }).focus());
+    expect(toggle()).toHaveAttribute('aria-pressed', 'true');
+    expect(region()).toHaveAttribute('data-playback', 'paused');
+    advance(5000);
+    expect(region()).toHaveAttribute('data-command', '1');
+  });
+
+  it('resumes at once on release with the pointer still over the region and focus on the toggle', async () => {
+    const { user } = setup();
+    await pressAndRelease(user);
+    expect(toggle()).toHaveAttribute('aria-pressed', 'false');
+    expect(region()).toHaveAttribute('data-playback', 'playing');
+    advance(3000);
+    expect(region()).toHaveAttribute('data-command', '2');
+  });
+
+  it('pauses again after a release when the pointer leaves and re-enters', async () => {
+    const { user } = setup();
+    await pressAndRelease(user);
+    expect(region()).toHaveAttribute('data-playback', 'playing');
+
+    await user.unhover(region());
+    expect(region()).toHaveAttribute('data-playback', 'playing');
+    await user.hover(region());
+    expect(region()).toHaveAttribute('data-playback', 'paused');
+  });
+
+  it('pauses again after a release when focus leaves the region and enters it from outside', async () => {
+    const { user } = setup();
+    await pressAndRelease(user);
+    await user.unhover(region());
+    expect(region()).toHaveAttribute('data-playback', 'playing');
+
+    act(() => screen.getByRole('button', { name: 'Outside' }).focus());
+    expect(region()).toHaveAttribute('data-playback', 'playing');
+    await user.tab({ shift: true });
+    expect(region()).toContainElement(document.activeElement as HTMLElement);
+    expect(region()).toHaveAttribute('data-playback', 'paused');
+  });
+
+  it('keeps playing after a release when Tab moves from the toggle to a dot inside', async () => {
+    const { user } = setup();
+    await pressAndRelease(user);
+    await user.unhover(region());
+
+    await user.tab();
+    expect(within(region()).getByRole('button', { name: 'Go to command 1' })).toHaveFocus();
+    expect(region()).toHaveAttribute('data-playback', 'playing');
+  });
+
+  it('stays paused after a release while the region is offscreen, until it is back in view', () => {
+    setup();
+    reportVisibility(false);
+    fireEvent.click(toggle());
+    fireEvent.click(toggle());
+    expect(toggle()).toHaveAttribute('aria-pressed', 'false');
+    expect(region()).toHaveAttribute('data-playback', 'paused');
+
+    reportVisibility(true);
+    expect(region()).toHaveAttribute('data-playback', 'playing');
+  });
+
+  it('stays paused after a release while the tab is hidden, until it is visible', () => {
+    setup();
+    setHidden(true);
+    fireEvent.click(toggle());
+    fireEvent.click(toggle());
+    expect(toggle()).toHaveAttribute('aria-pressed', 'false');
+    expect(region()).toHaveAttribute('data-playback', 'paused');
+
+    setHidden(false);
+    expect(region()).toHaveAttribute('data-playback', 'playing');
+  });
+});
+
 describe('DemoTerminal selector dots (D-03)', () => {
   it('shows the pressed command complete at once without touching the toggle, and runs one timer', async () => {
     const { user } = setup();
@@ -263,11 +347,13 @@ describe('DemoTerminal reduced motion', () => {
     expect(region()).toHaveAttribute('data-command', '1');
   });
 
-  it('advances one complete command per 3000 ms once un-pressed', () => {
+  it('resumes at once on release and advances one complete command per 3000 ms', async () => {
     setReducedMotion(true);
-    setup();
-    fireEvent.click(toggle());
+    const { user } = setup();
+    await user.hover(region());
+    await user.click(toggle());
     expect(toggle()).toHaveAttribute('aria-pressed', 'false');
+    expect(region()).toHaveAttribute('data-playback', 'playing');
     advance(3000);
     expect(region()).toHaveAttribute('data-command', '2');
     expect(cell(2)).toHaveTextContent('show disk');
@@ -282,11 +368,11 @@ describe('DemoTerminal one and many commands (G2, G3)', () => {
     expect(within(region()).queryAllByRole('button', { name: /^Go to command/ })).toHaveLength(0);
     expect(region()).not.toHaveTextContent('1 / 1');
     expect(jest.getTimerCount()).toBe(0);
-    expect(cell(1)).toHaveTextContent('list files');
+    expect(cell(1)).toHaveTextContent('box hash notes.txt');
   });
 
   it('gives seven commands seven dots in a wrapping bar', () => {
-    const seven = Array.from({ length: 7 }, (_, i) => ({ ...COMMANDS[i % 4], input: `request ${i + 1}` }));
+    const seven = Array.from({ length: 7 }, (_, i) => ({ ...COMMANDS[i % 4], input: `box uuid ${i + 1}` }));
     setup(seven);
     const bar = within(region()).getByRole('group', { name: 'Commands' });
     expect(within(bar).getAllByRole('button', { name: /^Go to command/ })).toHaveLength(7);
@@ -294,23 +380,54 @@ describe('DemoTerminal one and many commands (G2, G3)', () => {
   });
 });
 
+describe('DemoTerminal lines (D-26)', () => {
+  it('names the region and the title bar after the project, with no Request label', () => {
+    setup();
+    expect(region()).toBeInTheDocument();
+    expect(
+      within(region()).getByText((_, el) => el?.tagName === 'P' && el.textContent === 'box · 1 / 4')
+    ).toBeInTheDocument();
+    expect(region()).not.toHaveTextContent('Request');
+    // The Pause icon is the only drawn icon: no warning icon line.
+    expect(region().querySelectorAll('svg')).toHaveLength(1);
+  });
+
+  it('draws a note once, under its output, in the hidden body', () => {
+    setup();
+    const notes = region().querySelectorAll('[data-note]');
+    expect(notes).toHaveLength(1);
+    expect(notes[0]).toHaveTextContent(NOTE);
+    expect(cell(1)).toContainElement(notes[0] as HTMLElement);
+    expect(cell(1)).toHaveAttribute('aria-hidden', 'true');
+    expect(cell(1).textContent?.indexOf(NOTE)).toBeGreaterThan(
+      cell(1).textContent?.indexOf('notes.txt af1349b9') ?? Infinity
+    );
+  });
+
+  it('draws no note element for a command without a note', () => {
+    setup();
+    expect(cell(2).querySelector('[data-note]')).toBeNull();
+    expect(cell(3).querySelector('[data-note]')).toBeNull();
+  });
+});
+
 describe('DemoTerminal screen-reader text', () => {
   it('holds the full current command, silent while playing and polite while paused', () => {
     setup();
-    const text = screen.getByText('Command 1 of 4. Request: list files. Command: ls. Read-only listing.');
+    const text = screen.getByText(
+      `Command 1 of 4. Command: box hash notes.txt. Output: notes.txt af1349b9. ${NOTE}`
+    );
     expect(text.closest('[aria-live]')).toHaveAttribute('aria-live', 'off');
 
     fireEvent.click(toggle());
     expect(text.closest('[aria-live]')).toHaveAttribute('aria-live', 'polite');
   });
 
-  it('adds the warning and the explanation when both exist', () => {
+  it('ends at the output when the command has no note', () => {
     setup();
     fireEvent.click(within(region()).getByRole('button', { name: 'Go to command 4' }));
     expect(
-      screen.getByText(
-        'Command 4 of 4. Request: kill chrome. Command: pkill -f chrome. This command terminates running processes. High-risk operation.'
-      )
+      screen.getByText('Command 4 of 4. Command: box epoch 0. Output: 1970-01-01T00:00:00Z.')
     ).toBeInTheDocument();
   });
 });

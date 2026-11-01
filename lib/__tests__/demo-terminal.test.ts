@@ -1,7 +1,8 @@
 /**
- * The demo terminal's pure state machine (ENG-05; 11 D-02, D-03; 11-RESEARCH
- * Pattern 3 and Pitfall 1): the walk through one command, the reduced-motion
- * jump, the v1 timings, the dot jump, the pause sources and the visible text.
+ * The demo terminal's pure state machine (ENG-05; 11 D-02 amended, D-03;
+ * 11-RESEARCH Pattern 3 and Pitfall 1): the walk through one command, the
+ * reduced-motion jump, the v1 timings, the dot jump, the pause sources, the
+ * release of the sticky Pause and the visible text.
  */
 import {
   TIMINGS,
@@ -9,6 +10,7 @@ import {
   goTo,
   initialState,
   isPlaying,
+  releaseSticky,
   tick,
   visibleLines,
   type PauseSources,
@@ -94,6 +96,19 @@ describe('demo terminal state machine', () => {
     expect(isPlaying(NONE, 2)).toBe(true);
     expect(isPlaying(NONE, 1)).toBe(false);
     expect(isPlaying(NONE, 0)).toBe(false);
+  });
+
+  it('releases the sticky Pause together with the hover and focus pauses (D-02 amended)', () => {
+    const held: PauseSources = { sticky: true, hover: true, focusWithin: true, offscreen: false, hidden: false };
+    expect(releaseSticky(held)).toEqual(NONE);
+    expect(isPlaying(releaseSticky(held), 4)).toBe(true);
+  });
+
+  it.each(['offscreen', 'hidden'] as const)('keeps %s through a release, so autoplay stays paused', (source) => {
+    const held: PauseSources = { sticky: true, hover: true, focusWithin: true, offscreen: false, hidden: false };
+    const released = releaseSticky({ ...held, [source]: true });
+    expect(released).toEqual({ ...NONE, [source]: true });
+    expect(isPlaying(released, 4)).toBe(false);
   });
 
   it('shows the typed part of the input while it types', () => {
