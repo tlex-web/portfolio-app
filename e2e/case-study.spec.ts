@@ -155,8 +155,10 @@ test.describe('Case-study route', () => {
       await expect(article.getByText(coinFlip.outcome, { exact: true })).toBeVisible();
     }
     await expect(article.getByText('Source: private repository', { exact: true })).toBeVisible();
+    // Scoped to the trailhead header: the end block (11-14) repeats the words
+    // as the page's primary link, to the same /contact.
     await expect(
-      article.getByRole('link', { name: 'Ask for a walkthrough', exact: true })
+      article.locator('header').getByRole('link', { name: 'Ask for a walkthrough', exact: true })
     ).toHaveAttribute('href', '/contact');
     await expect(article.getByRole('link', { name: 'GitHub', exact: true })).toHaveCount(0);
     await expect(page.locator('a[href*="github.com/tlex-web/coin-flip"]')).toHaveCount(0);

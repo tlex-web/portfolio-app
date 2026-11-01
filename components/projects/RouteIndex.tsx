@@ -19,6 +19,12 @@ function hashSection(ids: readonly string[]): string | null {
   return ids.includes(id) ? id : null;
 }
 
+/** Whether a page that scrolls at all is scrolled to its end. */
+function scrolledToEnd(): boolean {
+  const { scrollHeight } = document.documentElement;
+  return scrollHeight > window.innerHeight && window.innerHeight + window.scrollY >= scrollHeight - 2;
+}
+
 function Links({ sections, current }: { sections: readonly Section[]; current: string | null }) {
   return sections.map(({ id, label }, i) => (
     <li key={id}>
@@ -50,11 +56,16 @@ function Links({ sections, current }: { sections: readonly Section[]; current: s
  * and the 2 px accent bar.
  *
  * Scroll-spy: one IntersectionObserver over the sections (rootMargin
- * '-80px 0px -60% 0px'); the current section is the last one whose top has
- * passed the band's lower line. State is set only in the observer callback
- * and the hashchange handler (React Compiler rules): the first callback
- * prefers a section named in the URL hash, so '/projects/box#safety' lands
- * with Safety current. Without JS the links still work and nothing is
+ * '-80px 0px -60% 0px', a band from below the nav to 40 % of the viewport);
+ * the current section is the first one in that band, else the last one
+ * already scrolled above it, and at the very end of the page the last section
+ * (a short last section never reaches the band's top). An anchor jump puts
+ * its section's top at the band's top (scroll-margin-top), so the jumped-to
+ * section is the one current. State is set only
+ * in the observer callback and the hashchange and scroll handlers (React
+ * Compiler rules; the scroll handler sets state only when the end is reached
+ * or left): the first callback prefers a section named in the URL hash, so
+ * '/projects/box#safety' lands with Safety current. Without JS the links still work and nothing is
  * current; the jump itself is the browser's (scroll-margin-top, no
  * animation under reduced motion). The observer disconnects on unmount
  * (T-11-32).
@@ -65,25 +76,31 @@ export default function RouteIndex({ sections }: { sections: readonly Section[] 
   useEffect(() => {
     if (sections.length < 2 || typeof IntersectionObserver === 'undefined') return;
     const ids = sections.map((s) => s.id);
-    // Whether each section's top has passed the line: it overlaps the band,
-    // or it lies wholly above it.
-    const passed = new Map<string, boolean>();
+    // Where each section sits against the band: in it, wholly above it, or below.
+    const where = new Map<string, 'in' | 'above' | 'below'>();
+    let spied: string | null = null;
+    let fromHash: string | null = null;
     let first = true;
+    let atEnd = false;
+
+    const publish = () => setCurrent(atEnd ? ids[ids.length - 1] : (fromHash ?? spied));
 
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
           const lineTop = entry.rootBounds?.top ?? 0;
-          passed.set(
+          where.set(
             entry.target.id,
-            entry.isIntersecting || entry.boundingClientRect.top < lineTop
+            entry.isIntersecting ? 'in' : entry.boundingClientRect.top < lineTop ? 'above' : 'below'
           );
         }
-        const fromHash = first ? hashSection(ids) : null;
+        const reading = ids.find((id) => where.get(id) === 'in');
+        const passed = ids.filter((id) => where.get(id) === 'above');
+        spied = reading ?? passed[passed.length - 1] ?? null;
+        fromHash = first ? hashSection(ids) : null;
         first = false;
-        let last: string | null = null;
-        for (const id of ids) if (passed.get(id)) last = id;
-        setCurrent(fromHash ?? last);
+        atEnd = scrolledToEnd();
+        publish();
       },
       { rootMargin: ROOT_MARGIN }
     );
@@ -96,10 +113,20 @@ export default function RouteIndex({ sections }: { sections: readonly Section[] 
       const id = hashSection(ids);
       if (id) setCurrent(id);
     };
+    // At the very end of the page a short last section may never reach the
+    // line; reaching the end makes it current, leaving the end gives it back.
+    const onScroll = () => {
+      const end = scrolledToEnd();
+      if (end === atEnd) return;
+      atEnd = end;
+      publish();
+    };
     window.addEventListener('hashchange', onHashChange);
+    window.addEventListener('scroll', onScroll, { passive: true });
     return () => {
       observer.disconnect();
       window.removeEventListener('hashchange', onHashChange);
+      window.removeEventListener('scroll', onScroll);
     };
   }, [sections]);
 

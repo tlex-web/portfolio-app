@@ -160,7 +160,7 @@ describe('RouteIndex', () => {
     expect(observers.every((o) => o.disconnected)).toBe(true);
   });
 
-  it('marks the last section that crossed the line current, and moves on as the next crosses', () => {
+  it('marks the section at the top of the band current, and moves on as the next takes its place', () => {
     renderPage(THREE);
 
     report([
@@ -170,12 +170,39 @@ describe('RouteIndex', () => {
     ]);
     expect(currentNames(stickyList())).toEqual(['Pipeline']);
 
+    // Safety enters the band below Pipeline: Pipeline still leads.
     report([{ id: 'safety', isIntersecting: true, top: 300 }]);
+    expect(currentNames(stickyList())).toEqual(['Pipeline']);
+
+    // Pipeline leaves the band upwards: Safety leads.
+    report([{ id: 'pipeline', isIntersecting: false, top: -200 }]);
     expect(currentNames(stickyList())).toEqual(['Safety']);
 
-    // Scrolling back up: safety drops below the line again.
-    report([{ id: 'safety', isIntersecting: false, top: 500 }]);
+    // Scrolling back up: Pipeline returns to the band and leads again.
+    report([{ id: 'pipeline', isIntersecting: true, top: 40 }]);
     expect(currentNames(stickyList())).toEqual(['Pipeline']);
+  });
+
+  it('keeps the last section above the band current while a gap sits in it', () => {
+    renderPage(THREE);
+
+    report([
+      { id: 'problem', isIntersecting: false, top: -400 },
+      { id: 'pipeline', isIntersecting: false, top: -100 },
+      { id: 'safety', isIntersecting: false, top: 400 },
+    ]);
+    expect(currentNames(stickyList())).toEqual(['Pipeline']);
+  });
+
+  it('marks nothing current while every section is still below the band', () => {
+    renderPage(THREE);
+
+    report([
+      { id: 'problem', isIntersecting: false, top: 500 },
+      { id: 'pipeline', isIntersecting: false, top: 900 },
+      { id: 'safety', isIntersecting: false, top: 1400 },
+    ]);
+    expect(nav().querySelector('[aria-current]')).toBeNull();
   });
 
   it('marks the hash section current when the page loads with one', () => {
@@ -198,6 +225,38 @@ describe('RouteIndex', () => {
       window.dispatchEvent(new HashChangeEvent('hashchange'));
     });
     expect(currentNames(stickyList())).toEqual(['Safety']);
+  });
+
+  it('marks the last section current at the end of the page, and gives it back on leaving', () => {
+    renderPage(THREE);
+    report([
+      { id: 'problem', isIntersecting: false, top: -400 },
+      { id: 'pipeline', isIntersecting: true, top: 120 },
+      { id: 'safety', isIntersecting: false, top: 500 },
+    ]);
+    expect(currentNames(stickyList())).toEqual(['Pipeline']);
+
+    const scrollTo = (y: number) =>
+      act(() => {
+        Object.defineProperty(window, 'scrollY', { configurable: true, value: y });
+        window.dispatchEvent(new Event('scroll'));
+      });
+    Object.defineProperty(document.documentElement, 'scrollHeight', {
+      configurable: true,
+      value: window.innerHeight + 1000,
+    });
+    try {
+      scrollTo(1000);
+      expect(currentNames(stickyList())).toEqual(['Safety']);
+      scrollTo(600);
+      expect(currentNames(stickyList())).toEqual(['Pipeline']);
+    } finally {
+      Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+      Object.defineProperty(document.documentElement, 'scrollHeight', {
+        configurable: true,
+        value: 0,
+      });
+    }
   });
 
   it("holds a closed 'Route stages' disclosure with the same list for narrow screens", () => {
