@@ -22,19 +22,19 @@ export default function TrailGradeMark({ grade }: { grade: string }) {
   const marker = markerForGrade(grade);
 
   return (
-    <span className="inline-flex items-center gap-2 whitespace-nowrap">
+    <span className="inline-flex items-baseline gap-2 whitespace-nowrap">
       {marker === 'yellow' && (
         <span
           aria-hidden="true"
           data-marker={marker}
-          className="mx-0.5 inline-block size-3 shrink-0 bg-trail [clip-path:polygon(50%_0,100%_50%,50%_100%,0_50%)]"
+          className="mx-0.5 inline-block size-3 shrink-0 self-center bg-trail [clip-path:polygon(50%_0,100%_50%,50%_100%,0_50%)]"
         />
       )}
       {marker === 'white-red-white' && (
         <span
           aria-hidden="true"
           data-marker={marker}
-          className="inline-flex h-3 w-4 shrink-0 flex-col"
+          className="inline-flex h-3 w-4 shrink-0 flex-col self-center"
         >
           <span className="h-1 w-full bg-trail-blaze" />
           <span className="h-1 w-full bg-trail-mountain" />
@@ -45,7 +45,7 @@ export default function TrailGradeMark({ grade }: { grade: string }) {
         <span
           aria-hidden="true"
           data-marker={marker}
-          className="inline-flex h-3 w-4 shrink-0 flex-col"
+          className="inline-flex h-3 w-4 shrink-0 flex-col self-center"
         >
           <span className="h-1 w-full bg-trail-blaze" />
           <span className="h-1 w-full bg-trail-alpine" />
@@ -56,7 +56,7 @@ export default function TrailGradeMark({ grade }: { grade: string }) {
         <span
           aria-hidden="true"
           data-marker={marker}
-          className="inline-block h-3 w-4 shrink-0 border border-dashed border-ink-muted"
+          className="inline-block h-3 w-4 shrink-0 self-center border border-dashed border-ink-muted"
         />
       )}
       <span className="font-mono text-sm text-ink">{grade}</span>
