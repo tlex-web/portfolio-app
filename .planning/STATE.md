@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 11
 current_phase_name: Engineering & Roadmap
 status: executing
-stopped_at: Phase 11 UI-SPEC approved
-last_updated: "2026-11-01T14:53:14.563Z"
-last_activity: 2026-10-26
-last_activity_desc: Phase 10 complete, transitioned to Phase 11
-state_head: 8cb187ce91de9f923b49a05e228b38d9b6596867
+stopped_at: Completed 11-01-PLAN.md
+last_updated: "2026-11-01T15:25:26.214Z"
+last_activity: 2026-11-01
+last_activity_desc: Phase 11 execution started
+state_head: d16a99239dc20a5e87fc5046d73f95bb61b5acb6
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 90
-  completed_plans: 75
-  percent: 83
+  completed_plans: 76
+  percent: 84
 ---
 
 # Project State
@@ -29,12 +29,12 @@ See: .planning/PROJECT.md (updated 2026-10-26)
 
 ## Current Position
 
-Phase: 11 (Engineering & Roadmap) — READY TO EXECUTE
-Plan: Not started
+Phase: 11 (Engineering & Roadmap) — EXECUTING
+Plan: 2 of 15
 Status: Ready to execute
-Last activity: 2026-10-26 — Phase 10 complete, transitioned to Phase 11
+Last activity: 2026-11-01 — Phase 11 execution started
 
-Progress: [████████░░] 83%
+Progress: [████████░░] 84%
 
 ## Performance Metrics
 
@@ -132,6 +132,7 @@ Progress: [████████░░] 83%
 | Phase 10 P11 | 29 min | 2 tasks | 13 files |
 | Phase 10 P12 | 18 min | 2 tasks | 4 files |
 | Phase 10 P13 | 1h 52m | 3 tasks | 23 files |
+| Phase 11 P01 | 17 min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -336,6 +337,9 @@ Recent decisions affecting current work:
 - [Phase 10]: 10-13: wide map plate 240 -> 256 px (w-64, PLATE_WIDE 256 x 48) with nowrap title (wide tier) and altitude, an approved UI-SPEC deviation (Tim: 'A: widen + nowrap (Recommended)'); the Linux CI render of the longest title wrapped inside the old 224 px content box (487e113)
 - [Phase 10]: 10-13: zoomed-photo drag prevention (10-10) kept as a recorded exception to UI-SPEC line 393 / LBOX-07 (Tim: 'Keep, record exception (Recommended)'); map plate clearance stays a 16 px dot square (Tim: '16 px, as built (Recommended)')
 - [Phase 10]: 10-13: Phase 10 re-baseline in Tim's commit 483895b (3 changed photos/*, 12 new; reply 'pushed', no review notes); CI green twice on it (run 40367226761 attempts 1 and 2); test-count ratchet raised to jest 942 / e2e 358 / total 1300
+- [Phase 11]: 11-01: DemoTerminal draws its lines aria-hidden at all times; the sr-only block (aria-live off while playing, polite while paused) is the single screen-reader source, so a completed command is never read twice. 11-03 adds the grade sentence there
+- [Phase 11]: 11-01: /projects/[slug] is a Server Component with dynamicParams = false, generateStaticParams and generateMetadata ({ title: project.name }); DemoTerminal is imported directly and takes only demoCommands props; three.js never loads on project pages
+- [Phase 11]: 11-01: one pending timeout per terminal state (lib/demo-terminal.ts pure machine); e2e on the terminal scroll it into view and move pointer and focus out after clicks, because offscreen, hover and focus-within are pause sources (D-02)
 
 ### Pending Todos
 
@@ -365,8 +369,9 @@ Recent decisions affecting current work:
 - [Phase 12 / EDGE-01, from 07-23, pre-existing] notFound() inside /projects/[slug] returns HTTP 404 but the server HTML is an empty <html id="__next_error__">; the shell and 404 UI render client-side from the RSC payload (same with app/(site)/not-found.tsx removed), so that path has no server-rendered 404 without JS. Root unmatched URLs are server-rendered. Investigate before EDGE-01 sign-off
 - [Phase 10-12, from Phase 9] 11 open items in `.planning/phases/09-home-ascent/deferred-items.md`: README tree line for `app/page.tsx`, fflate 0.8.2 advisory in the canvas chunk, R3F 9 `THREE.Clock` deprecation warning, canvas chunk holding the load event back about 1.5 s on the HOME-08 profile, hero scrim switching at `lg:` instead of 768 px, the "2,760 m approx." tick at 4.81:1, a dark wedge in the 1440 px summit frame, Prettier drift in `e2e/home-canvas.spec.ts` and `lib/useAscentMode.ts`, four `delayHeightmap` e2e users bypassed by the production service worker, and a parallel-run e2e flake (no-webgl). [The photos 3D carousel flake is resolved by 10-07/10-09/10-12, recorded by 10-13.]
 - [Phase 9] gsd/phase-09-home-ascent is stacked on the Phase 8 tip (itself stacked on unmerged Phase 7): merge 07, then 08, then 09
-- [Phase 10] gsd/phase-10-photography is stacked on the Phase 9 tip (4a3a69c); none of Phases 7-10 is on origin/main yet: merge 07, 08, 09, then 10
+- [Phase 10] gsd/phase-10-photography is stacked on the Phase 9 tip (4a3a69c); of Phases 7-10 is on origin/main yet: merge 07, 08, 09, then 10
 - [Phase 11-12, from Phase 10] 6 open items in `.planning/phases/10-photography/deferred-items.md`: five dev-server e2e flakes under parallel load or after hot reloads (cold `/photos/[slug]` race, the intercepted route stops intercepting twice, G3 scroll-lock and reduced-motion stepper cross-talk), and local Playwright WebKit blocked by the CSP `upgrade-insecure-requests` on localhost (Phase 12 VERIFY-04 needs a WebKit path; Safari passed by hand at Phase 10 UAT)
+- [Phase 11, from 11-01] Open question for Tim (not blocking): with D-02's temporary hover and focus pauses, resuming the demo by mouse leaves it paused until the pointer and focus leave the terminal. Keep as built (A) or let an explicit un-press clear the current temporary pauses (B)? Options table in 11-01-SUMMARY.md
 
 ## Deferred Items
 
@@ -378,6 +383,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-01T12:53:25.778Z
-Stopped at: Phase 11 UI-SPEC approved
-Resume file: .planning/phases/11-engineering-roadmap/11-UI-SPEC.md
+Last session: 2026-11-01T15:25:25.748Z
+Stopped at: Completed 11-01-PLAN.md
+Resume file: None
