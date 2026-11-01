@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 11
 current_phase_name: Engineering & Roadmap
 status: executing
-stopped_at: "11-16 Task 1 checkpoint: Tim approves, edits or rejects the coin-flip clip, poster and description"
-last_updated: "2026-11-01T22:57:05.640Z"
+stopped_at: Completed 11-16-PLAN.md
+last_updated: "2026-11-01T23:07:27.588Z"
 last_activity: 2026-11-01
 last_activity_desc: Phase 11 execution started
-state_head: ea33cad52e6845b86108daf9f1eb110dcf1b24bb
+state_head: 9f42481c544501ff107d163e761857992bb33e57
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 93
-  completed_plans: 91
-  percent: 98
+  completed_plans: 92
+  percent: 99
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-26)
 ## Current Position
 
 Phase: 11 (Engineering & Roadmap) — EXECUTING
-Plan: 17 of 18
+Plan: 17 of 18 (11-17 is the only plan without a SUMMARY)
 Status: Ready to execute
-Last activity: 2026-11-01 — Phase 11 execution started
+Last activity: 2026-11-01 — 11-16 complete: coin-flip Demo clip approved and live
 
-Progress: [█████████░] 98%
+Progress: [█████████░] 99%
 
 ## Performance Metrics
 
@@ -148,6 +148,7 @@ Progress: [█████████░] 98%
 | Phase 11 P13 | 10 min | 2 tasks | 9 files |
 | Phase 11 P15 | 20 min | 3 tasks | 17 files |
 | Phase 11 P14 | 16 min | 3 tasks | 17 files |
+| Phase 11 P16 | about 7 min (continuation) | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -391,6 +392,7 @@ Recent decisions affecting current work:
 - [Phase 11]: 11-14: case-study primary CTA is 'Ask for a walkthrough' -> /contact (default.6); RouteIndex scroll-spy marks the first section in the band below the nav, else the last above it, and the last section at the page end (the plan's 40 %-line rule mis-marked after anchor jumps)
 - [Phase 11]: 11-14 (orchestrator-added, Tim's verbatim "yes", 2026-11-01): box Problem, Output stage, Safety intro and --force line carry the 11-02 backticks byte-identically; one InlineCode renderer (lib/inline-code.ts + components/InlineCode.tsx, font-mono whitespace-nowrap) serves the route log and case-study prose
 - [Phase 11]: 11-13 open item resolved: Tim chose "A" (verbatim, 2026-11-01), keep the plain <a> in RouteRow's compact Next steps row (:target highlight works; no prefetch); no code change
+- [Phase 11]: 11-16: Tim approved the coin-flip clip, 3.5 s poster, description and intro as drafted ("approve"); the clip block ships verbatim and coin-flip's Demo section and index entry are live
 
 ### Pending Todos
 
@@ -435,6 +437,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-01T22:57:05.124Z
-Stopped at: 11-16 Task 1 checkpoint: Tim approves, edits or rejects the coin-flip clip, poster and description
+Last session: 2026-11-01T23:07:27.022Z
+Stopped at: Completed 11-16-PLAN.md
 Resume file: None
