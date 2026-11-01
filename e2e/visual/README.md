@@ -56,6 +56,11 @@ update run on visual-light would overwrite the dark files with light output.
   and the content above them. Infinite JS-driven animations that Playwright's
   `animations: 'disabled'` cannot reach are pinned in the same file; a new one
   shows up as "Failed to take two consecutive stable screenshots".
+- Native `<video>` controls are hidden in the same file
+  (`video::-webkit-media-controls`): Chromium draws a loading arc over a
+  `preload="none"` poster at a different angle on every load. The poster
+  itself stays in the shot; the control bar is reviewed live, not in
+  baselines.
 
 `<NN>` below is the plan number (`ci/07-05` for plan 07-05). `ci/**` pushes run
 the CI workflow.

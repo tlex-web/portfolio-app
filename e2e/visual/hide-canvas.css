@@ -4,3 +4,10 @@
  * (Contact AnimatedGradientMesh, the Home terrain canvas) and the content above
  * them. visibility keeps layout and shows the deterministic page ground. */
 canvas { visibility: hidden !important; }
+
+/* Chromium's native media controls draw a loading arc over the poster of a
+ * preload="none" <video> (coin-flip's Demo clip, 11-16), at a rotation that
+ * differs on every page load. The arc lives in the UA shadow DOM, out of
+ * reach of animations: 'disabled'. Hide the controls, not the video: the
+ * poster stays in the shot and is deterministic (11-17). */
+video::-webkit-media-controls { display: none !important; }
