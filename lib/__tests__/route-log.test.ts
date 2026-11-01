@@ -22,7 +22,9 @@ import {
   type RouteLogItem,
 } from '@/lib/route-log';
 
-function item(over: Partial<RouteLogItem> & Pick<RouteLogItem, 'id' | 'area' | 'status' | 'order'>): RouteLogItem {
+function item(
+  over: Partial<RouteLogItem> & Pick<RouteLogItem, 'id' | 'area' | 'status' | 'order'>
+): RouteLogItem {
   return { title: `Title ${over.id}`, description: `Description ${over.id}`, ...over };
 }
 
@@ -57,7 +59,11 @@ describe('whitelists and labels', () => {
   });
 
   it('labels projects in the repositories’ spelling, statuses and bands for the log', () => {
-    expect(PROJECT_LABELS).toEqual({ portfolio: 'Portfolio', box: 'box', 'coin-flip': 'coin-flip' });
+    expect(PROJECT_LABELS).toEqual({
+      portfolio: 'Portfolio',
+      box: 'box',
+      'coin-flip': 'coin-flip',
+    });
     expect(STATUS_LABELS).toEqual({
       planned: 'Planned',
       'in-progress': 'In progress',
@@ -111,7 +117,7 @@ describe('routeLogHref (canonical order, All drops the parameter)', () => {
 
   it('puts project before status', () => {
     expect(routeLogHref({ project: 'coin-flip', status: 'planned' })).toBe(
-      '/roadmap?project=coin-flip&status=planned',
+      '/roadmap?project=coin-flip&status=planned'
     );
   });
 
@@ -122,16 +128,26 @@ describe('routeLogHref (canonical order, All drops the parameter)', () => {
       ...STATUSES.map((s) => `/roadmap?status=${s}`),
       ...PROJECTS.flatMap((p) => STATUSES.map((s) => `/roadmap?project=${p}&status=${s}`)),
     ]);
-    const inputs: unknown[] = [...BAD_INPUTS.map(([, v]) => v), ...PROJECTS, ...STATUSES, '<script>', '&status=x'];
+    const inputs: unknown[] = [
+      ...BAD_INPUTS.map(([, v]) => v),
+      ...PROJECTS,
+      ...STATUSES,
+      '<script>',
+      '&status=x',
+    ];
     for (const p of inputs) {
       for (const s of inputs) {
-        expect(allowed.has(routeLogHref({ project: parseProject(p), status: parseStatus(s) }))).toBe(true);
+        expect(
+          allowed.has(routeLogHref({ project: parseProject(p), status: parseStatus(s) }))
+        ).toBe(true);
       }
     }
   });
 
   it('drops a value that bypassed the types instead of echoing it', () => {
-    const forged = { project: 'x&y', status: '<b>' } as unknown as Parameters<typeof routeLogHref>[0];
+    const forged = { project: 'x&y', status: '<b>' } as unknown as Parameters<
+      typeof routeLogHref
+    >[0];
     expect(routeLogHref(forged)).toBe('/roadmap');
   });
 });
@@ -142,7 +158,10 @@ describe('filterItems', () => {
   });
 
   it('keeps the items matching both the project and the status', () => {
-    expect(filterItems(ITEMS, { project: 'box', status: 'completed' }).map((i) => i.id)).toEqual(['b', 'g']);
+    expect(filterItems(ITEMS, { project: 'box', status: 'completed' }).map((i) => i.id)).toEqual([
+      'b',
+      'g',
+    ]);
   });
 });
 
@@ -153,7 +172,11 @@ describe('bands (D-19)', () => {
   });
 
   it('sorts each band by order descending', () => {
-    expect(bands(ITEMS).map((b) => b.items.map((i) => i.order))).toEqual([[7, 4], [1], [6, 5, 3, 2]]);
+    expect(bands(ITEMS).map((b) => b.items.map((i) => i.order))).toEqual([
+      [7, 4],
+      [1],
+      [6, 5, 3, 2],
+    ]);
   });
 
   it('omits a band with no items', () => {
@@ -190,7 +213,7 @@ describe('countsFor (each group counted within the other group’s value)', () =
   it('gives the in-progress box count when status is in progress', () => {
     const counts = countsFor(
       ITEMS.filter((i) => i.area !== 'box'),
-      { project: 'all', status: 'in-progress' },
+      { project: 'all', status: 'in-progress' }
     );
     expect(counts.project.box).toBe(0);
     expect(counts.project.all).toBe(0);
