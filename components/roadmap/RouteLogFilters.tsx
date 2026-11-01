@@ -133,8 +133,7 @@ export default function RouteLogFilters({
                   className={`${SEGMENT} ${s.pressed ? SELECTED : disabled ? DISABLED : UNSELECTED}`}
                   onClick={() => press(s.next, disabled)}
                 >
-                  {s.label}{' '}
-                  <span className="font-mono text-sm">{s.count}</span>
+                  {s.label} <span className="font-mono text-sm">{s.count}</span>
                   <span className="sr-only"> entries</span>
                 </button>
               );

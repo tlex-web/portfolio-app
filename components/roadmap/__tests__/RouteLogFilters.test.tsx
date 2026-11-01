@@ -138,7 +138,9 @@ describe('RouteLogFilters (ROUTE-02)', () => {
     expect(screen.getByRole('button', { name: 'coin-flip 3 entries' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'In progress 1 entries' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Completed 4 entries' })).toBeInTheDocument();
-    expect(within(group('Project')).getByRole('button', { name: 'All 7 entries' })).toBeInTheDocument();
+    expect(
+      within(group('Project')).getByRole('button', { name: 'All 7 entries' })
+    ).toBeInTheDocument();
   });
 
   it("pressing 'box' presses it at once and replaces the URL with scrolling off, never pushing", async () => {

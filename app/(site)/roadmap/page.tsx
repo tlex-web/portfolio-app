@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import RouteLog from '@/components/roadmap/RouteLog';
+import RouteLogFilters from '@/components/roadmap/RouteLogFilters';
 import { roadmapItems, surveyedAt } from '@/data/roadmap';
 import { formatLogDate } from '@/lib/log-date';
 import {
@@ -40,8 +41,8 @@ function filterLabels(filter: LogFilter): string[] {
  * surveyedAt (D-20), the h1 (the nav label), the approved intro, the status
  * line (a role=status that stays mounted, so 11-10's filter changes are
  * announced as one phrase) and jump links to the bands that render, with
- * their counts. The filters from 11-10 mount between the intro and the status
- * line. Below it is the elevation axis (RouteLog) of Tim's confirmed rows, or,
+ * their counts. The RouteLogFilters island (11-10) mounts between the intro
+ * and the status line and receives only the parsed filter and the counts. Below it is the elevation axis (RouteLog) of Tim's confirmed rows, or,
  * for a filter combination with no entries (reachable only by a typed URL),
  * a dashed plate whose sentence is built from the enum labels only and whose
  * primary link replaces the history entry and keeps the scroll position.
@@ -70,6 +71,7 @@ export default async function RoadmapPage({
           <h1>Roadmap</h1>
         </div>
         <p className="max-w-prose text-base text-ink-muted">{INTRO}</p>
+        <RouteLogFilters filter={filter} counts={view.counts} />
         <p role="status" aria-atomic="true" className="font-mono text-sm text-ink-muted">
           {status}
         </p>

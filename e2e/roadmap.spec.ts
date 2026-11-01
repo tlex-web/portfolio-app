@@ -1,4 +1,5 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 import { roadmapItems, surveyedAt } from '@/data/roadmap';
 import { formatLogDate } from '@/lib/log-date';
 import {
@@ -8,7 +9,9 @@ import {
   STATUSES,
   STATUS_LABELS,
   countsFor,
+  routeLogHref,
   routeLogView,
+  type LogFilter,
   type LogProject,
   type LogStatus,
 } from '@/lib/route-log';
@@ -22,6 +25,10 @@ import {
  * entries (reachable only by a typed URL) shows the dashed empty plate.
  * Expected values come from roadmapItems, surveyedAt, routeLogView, countsFor
  * and formatLogDate, never hand-typed.
+ *
+ * The filters (ROUTE-02, 10 D-14; 11-UI-SPEC "RouteLogFilters") are the
+ * RouteLogFilters island: Project and Status toggle groups whose presses flip
+ * aria-pressed at once and replace the URL, so they add no history entry.
  */
 const all = routeLogView(roadmapItems, { project: 'all', status: 'all' });
 const total = all.total;
@@ -180,6 +187,223 @@ test.describe('/roadmap filters from the URL (ROUTE-02 server half)', () => {
       await expect(statusLine(page)).toHaveText(`Showing ${total} entries`);
       const value = query.split('=')[1];
       await expect(page.getByRole('main')).not.toContainText(`matches ${value}`);
+    });
+  }
+});
+
+/** A segment of the 'Project' or 'Status' group, by its label ('box 2 entries'). */
+function segment(page: Page, group: 'Project' | 'Status', label: string): Locator {
+  return page
+    .getByRole('group', { name: group })
+    .getByRole('button', { name: new RegExp(`^${label} \\d+ entries$`) });
+}
+
+function projectLabel(p: LogFilter['project']): string {
+  return p === 'all' ? 'All' : PROJECT_LABELS[p];
+}
+
+function statusLabel(s: LogFilter['status']): string {
+  return s === 'all' ? 'All' : STATUS_LABELS[s];
+}
+
+/** Wait until React has hydrated the island, so a press is handled client-side. */
+async function hydrated(page: Page) {
+  const first = segment(page, 'Project', 'All');
+  await expect
+    .poll(() => first.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))), {
+      timeout: 15000,
+    })
+    .toBe(true);
+}
+
+/** The URL path plus query, for comparing against routeLogHref. */
+function pathAndQuery(page: Page): string {
+  const url = new URL(page.url());
+  return `${url.pathname}${url.search}`;
+}
+
+/** The project the round-trip tests press (the plan's 'box'); it must hold some entries. */
+const FILTER_PROJECT: LogProject = 'box';
+
+/** Under {project, all}: the first status with entries (Planned if it has any) and the first without. */
+function statusesUnder(project: LogProject): { enabled: LogStatus; zero: LogStatus | undefined } {
+  const counts = countsFor(roadmapItems, { project, status: 'all' });
+  const enabled =
+    counts.status.planned > 0 ? 'planned' : STATUSES.find((s) => counts.status[s] > 0)!;
+  return { enabled, zero: STATUSES.find((s) => counts.status[s] === 0) };
+}
+
+test.describe('/roadmap filters (ROUTE-02)', () => {
+  test('two toggle groups carry every segment with its count, and All is pressed', async ({
+    page,
+  }) => {
+    await page.goto('/roadmap');
+    const counts = countsFor(roadmapItems, { project: 'all', status: 'all' });
+    const projects = page.getByRole('group', { name: 'Project' }).getByRole('button');
+    const statuses = page.getByRole('group', { name: 'Status' }).getByRole('button');
+    await expect(projects).toHaveCount(PROJECTS.length + 1);
+    await expect(statuses).toHaveCount(STATUSES.length + 1);
+    for (const [i, p] of (['all', ...PROJECTS] as const).entries()) {
+      await expect(projects.nth(i)).toHaveAccessibleName(
+        `${projectLabel(p)} ${counts.project[p]} entries`
+      );
+      await expect(projects.nth(i)).toHaveAttribute('aria-pressed', p === 'all' ? 'true' : 'false');
+    }
+    for (const [i, s] of (['all', ...STATUSES] as const).entries()) {
+      await expect(statuses.nth(i)).toHaveAccessibleName(
+        `${statusLabel(s)} ${counts.status[s]} entries`
+      );
+      await expect(statuses.nth(i)).toHaveAttribute('aria-pressed', s === 'all' ? 'true' : 'false');
+    }
+  });
+
+  test('pressing a project then a status replaces the URL, presses at once and recounts', async ({
+    page,
+  }) => {
+    expect(
+      routeLogView(roadmapItems, { project: FILTER_PROJECT, status: 'all' }).shown
+    ).toBeGreaterThan(0);
+    await page.goto('/roadmap');
+    await hydrated(page);
+    const status = statusLine(page);
+    await status.evaluate((el) => {
+      (el as HTMLElement & { __mounted?: boolean }).__mounted = true;
+    });
+
+    const project = segment(page, 'Project', PROJECT_LABELS[FILTER_PROJECT]);
+    await project.click();
+    await expect(project).toHaveAttribute('aria-pressed', 'true');
+    await expect(page).toHaveURL(new RegExp(`\\?project=${FILTER_PROJECT}$`));
+    const byProject = routeLogView(roadmapItems, { project: FILTER_PROJECT, status: 'all' });
+    await expect(status).toHaveText(`Showing ${byProject.shown} of ${total} entries`);
+
+    const { enabled } = statusesUnder(FILTER_PROJECT);
+    const next: LogFilter = { project: FILTER_PROJECT, status: enabled };
+    const statusSegment = segment(page, 'Status', STATUS_LABELS[enabled]);
+    await expect(statusSegment).not.toHaveAttribute('aria-disabled', 'true');
+    await statusSegment.click();
+    await expect(statusSegment).toHaveAttribute('aria-pressed', 'true');
+    await expect.poll(() => pathAndQuery(page)).toBe(routeLogHref(next));
+    const both = routeLogView(roadmapItems, next);
+    await expect(status).toHaveText(`Showing ${both.shown} of ${total} entries`);
+
+    // The status line stayed mounted, so the new count is announced as one phrase.
+    expect(
+      await status.evaluate((el) => (el as HTMLElement & { __mounted?: boolean }).__mounted)
+    ).toBe(true);
+  });
+
+  test('Back leaves /roadmap instead of undoing a filter (no history entries)', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await page.goto('/roadmap');
+    await hydrated(page);
+    await segment(page, 'Project', PROJECT_LABELS[FILTER_PROJECT]).click();
+    await expect(page).toHaveURL(new RegExp(`\\?project=${FILTER_PROJECT}$`));
+    const { enabled } = statusesUnder(FILTER_PROJECT);
+    await segment(page, 'Status', STATUS_LABELS[enabled]).click();
+    await expect
+      .poll(() => pathAndQuery(page))
+      .toBe(routeLogHref({ project: FILTER_PROJECT, status: enabled }));
+    await page.goBack();
+    await expect.poll(() => new URL(page.url()).pathname).toBe('/');
+  });
+
+  test('a zero-count segment is aria-disabled, focusable and does nothing', async ({ page }) => {
+    const { zero } = statusesUnder(FILTER_PROJECT);
+    expect(zero).toBeDefined();
+    await page.goto(`/roadmap?project=${FILTER_PROJECT}`);
+    await hydrated(page);
+    const dead = segment(page, 'Status', STATUS_LABELS[zero!]);
+    await expect(dead).toHaveAttribute('aria-disabled', 'true');
+    await expect(dead).toHaveAccessibleName(`${STATUS_LABELS[zero!]} 0 entries`);
+    await dead.focus();
+    await expect(dead).toBeFocused();
+    await page.keyboard.press('Enter');
+    await dead.click({ force: true });
+    // An accepted press would flip aria-pressed at once; a disabled one never does.
+    await expect(dead).toHaveAttribute('aria-pressed', 'false');
+    expect(pathAndQuery(page)).toBe(`/roadmap?project=${FILTER_PROJECT}`);
+    const byProject = routeLogView(roadmapItems, { project: FILTER_PROJECT, status: 'all' });
+    await expect(statusLine(page)).toHaveText(`Showing ${byProject.shown} of ${total} entries`);
+  });
+
+  test('a typed zero combination keeps both pressed segments enabled and shows the plate', async ({
+    page,
+  }) => {
+    const zero = zeroCombination();
+    expect(zero).not.toBeNull();
+    const { project, status } = zero!;
+    await page.goto(`/roadmap?project=${project}&status=${status}`);
+    for (const pressed of [
+      segment(page, 'Project', PROJECT_LABELS[project]),
+      segment(page, 'Status', STATUS_LABELS[status]),
+    ]) {
+      await expect(pressed).toHaveAttribute('aria-pressed', 'true');
+      await expect(pressed).not.toHaveAttribute('aria-disabled', 'true');
+    }
+    await expect(
+      page.getByRole('main').getByRole('heading', { name: 'No entries on this route yet' })
+    ).toBeVisible();
+  });
+
+  for (const query of ['project=cli', 'project=webshop&status=other']) {
+    test(`retired values (?${query}) press All in both groups`, async ({ page }) => {
+      await page.goto(`/roadmap?${query}`);
+      await expect(segment(page, 'Project', 'All')).toHaveAttribute('aria-pressed', 'true');
+      await expect(segment(page, 'Status', 'All')).toHaveAttribute('aria-pressed', 'true');
+      await expect(statusLine(page)).toHaveText(`Showing ${total} entries`);
+    });
+  }
+
+  test('a row anchor still resolves with a filter set', async ({ page }) => {
+    const row = roadmapItems.find((i) => i.area === 'coin-flip' && i.status === 'planned');
+    expect(row).toBeDefined();
+    await page.goto(`/roadmap?project=${row!.area}#${row!.id}`);
+    const li = page.locator(`li[id="${row!.id}"]`);
+    await expect(li).toContainText(row!.title);
+    expect(await li.evaluate((el) => el.matches(':target'))).toBe(true);
+  });
+
+  test('@375: each track is two columns and nothing scrolls sideways', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 800 });
+    await page.goto('/roadmap');
+    for (const name of ['Project', 'Status'] as const) {
+      const xs = await page
+        .getByRole('group', { name })
+        .getByRole('button')
+        .evaluateAll((buttons) => buttons.map((b) => Math.round(b.getBoundingClientRect().left)));
+      expect(new Set(xs).size).toBe(2);
+    }
+    const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    }));
+    expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+  });
+
+  test('@1280: each track is one row and the groups sit side by side', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/roadmap');
+    const tops: number[] = [];
+    for (const name of ['Project', 'Status'] as const) {
+      const group = page.getByRole('group', { name });
+      const ys = await group
+        .getByRole('button')
+        .evaluateAll((buttons) => buttons.map((b) => Math.round(b.getBoundingClientRect().top)));
+      expect(new Set(ys).size).toBe(1);
+      tops.push(Math.round((await group.boundingBox())!.y));
+    }
+    expect(tops[0]).toBe(tops[1]);
+  });
+
+  for (const url of ['/roadmap', '/roadmap?project=coin-flip&status=planned']) {
+    test(`axe finds no WCAG A or AA violations on ${url}`, async ({ page }) => {
+      await page.goto(url);
+      await page.evaluate(() => document.fonts.ready);
+      const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+      expect(results.violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
     });
   }
 });
