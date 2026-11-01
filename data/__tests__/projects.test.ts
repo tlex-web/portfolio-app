@@ -9,6 +9,7 @@
  * coin-flip's public copy reveals nothing from its private repository.
  */
 import { projects } from '@/data/projects';
+import { roadmapItems } from '@/data/roadmap';
 import { DemoCommandSchema, ProjectSchema } from '@/data/schemas/project';
 
 const box = projects.find((p) => p.slug === 'box');
@@ -144,5 +145,33 @@ describe('Copy (D-09, D-23, D-30, ENG-04)', () => {
   test('a metric tile without a context line fails the parse', () => {
     const tiles = [{ key: 'x', label: 'X', value: '1', context: '' }];
     expect(ProjectSchema.safeParse({ ...box, metrics: { tiles } }).success).toBe(false);
+  });
+
+  test('no coin-flip metric tile links to a source (D-23)', () => {
+    expect(coinFlip.metrics?.tiles.length).toBeGreaterThan(0);
+    for (const tile of coinFlip.metrics?.tiles ?? []) expect(tile.sourceUrl).toBeUndefined();
+  });
+});
+
+describe('Next steps against the route log (N4, D-30, D-32)', () => {
+  const steps = projects.flatMap((p) => (p.nextSteps ?? []).map((id) => [p.slug, id] as const));
+
+  test('coin-flip names its remaining work as next steps (D-30)', () => {
+    expect(coinFlip.nextSteps?.length).toBeGreaterThan(0);
+  });
+
+  test.each(steps)(
+    '%s next step %s is a planned or in-progress row of that project in roadmapItems',
+    (slug, id) => {
+      const row = roadmapItems.find((r) => r.id === id);
+      expect(row).toBeDefined();
+      expect(['planned', 'in-progress']).toContain(row?.status);
+      expect(row?.area).toBe(slug);
+    }
+  );
+
+  test('box lists no next step while it has no planned row, so the section is omitted (N4)', () => {
+    const ahead = roadmapItems.filter((r) => r.area === 'box' && r.status !== 'completed');
+    expect(box.nextSteps ?? []).toHaveLength(ahead.length);
   });
 });

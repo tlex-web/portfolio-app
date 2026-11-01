@@ -1,17 +1,23 @@
 /**
  * The case-study section renderers (ENG-02, D-25, D-30; 11-UI-SPEC "Problem",
- * "Pipeline", "Safety — box" and "Privacy — coin-flip", edge cases E6-E8).
+ * "Pipeline", "Safety — box", "Privacy — coin-flip", "Stack" and "Next steps",
+ * edge cases E6-E8, E11 and E12).
  * Fixtures follow the 11-07 schema types, so the omit and partial rules are
  * covered independently of today's data; the real data is read only where
  * the contract is about it (no fairness wording under Privacy).
  * Assertions use roles, names, ids, order and text, never colour classes.
  */
+import type { ReactNode } from 'react';
 import { render, screen, within } from '@testing-library/react';
+import { caseStudySections } from '../CaseStudy';
+import NextSteps from '../sections/NextSteps';
 import Pipeline from '../sections/Pipeline';
 import Problem from '../sections/Problem';
 import Privacy from '../sections/Privacy';
 import Safety from '../sections/Safety';
+import Stack from '../sections/Stack';
 import { projects } from '@/data/projects';
+import { roadmapItems } from '@/data/roadmap';
 import type { Project } from '@/data/types';
 
 type CoinFlip = Extract<Project, { slug: 'coin-flip' }>;
@@ -293,5 +299,197 @@ describe('Safety', () => {
     );
 
     expect(container).toBeEmptyDOMElement();
+  });
+});
+
+describe('Stack', () => {
+  const groups = [
+    { label: 'Language', items: ['Rust 2021'] },
+    { label: 'Crates', items: ['clap', 'serde_json', 'blake3'] },
+  ];
+
+  it('renders an h2 Stack labelling a section with the stack id', () => {
+    render(<Stack id="stack" label="Stack" groups={groups} />);
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Stack' })).toHaveAttribute(
+      'id',
+      'stack-title'
+    );
+    expect(screen.getByRole('region', { name: 'Stack' })).toHaveAttribute('id', 'stack');
+  });
+
+  it('renders one h3 per group and its chips, both in data order', () => {
+    render(<Stack id="stack" label="Stack" groups={groups} />);
+
+    const h3s = screen.getAllByRole('heading', { level: 3 });
+    expect(h3s.map((h) => h.textContent)).toEqual(['Language', 'Crates']);
+    const lists = screen.getAllByRole('list');
+    expect(lists).toHaveLength(2);
+    expect(
+      within(lists[0])
+        .getAllByRole('listitem')
+        .map((li) => li.textContent)
+    ).toEqual(['Rust 2021']);
+    expect(
+      within(lists[1])
+        .getAllByRole('listitem')
+        .map((li) => li.textContent)
+    ).toEqual(['clap', 'serde_json', 'blake3']);
+    expect(follows(h3s[1], within(lists[1]).getByText('clap'))).toBe(true);
+  });
+
+  it('renders a single group as chips with no h3', () => {
+    render(<Stack id="stack" label="Stack" groups={[groups[1]]} />);
+
+    expect(screen.queryByRole('heading', { level: 3 })).toBeNull();
+    expect(screen.getAllByRole('listitem').map((li) => li.textContent)).toEqual([
+      'clap',
+      'serde_json',
+      'blake3',
+    ]);
+  });
+
+  it('keeps the chips non-interactive: no link, button or tabindex', () => {
+    const { container } = render(<Stack id="stack" label="Stack" groups={groups} />);
+
+    expect(screen.queryByRole('link')).toBeNull();
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(container.querySelector('[tabindex]')).toBeNull();
+  });
+
+  it('renders nothing without a group', () => {
+    const { container } = render(<Stack id="stack" label="Stack" groups={[]} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+});
+
+describe('NextSteps', () => {
+  const byId = (id: string) => {
+    const row = roadmapItems.find((r) => r.id === id);
+    if (!row) throw new Error(`no roadmap row ${id}`);
+    return row;
+  };
+  const rows = [byId('coin-flip-v1-1'), byId('coin-flip-play-store')];
+
+  it('renders an h2 Next steps labelling a section with the next-steps id', () => {
+    render(<NextSteps id="next-steps" label="Next steps" slug="coin-flip" rows={rows} />);
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Next steps' })).toHaveAttribute(
+      'id',
+      'next-steps-title'
+    );
+    expect(screen.getByRole('region', { name: 'Next steps' })).toHaveAttribute('id', 'next-steps');
+  });
+
+  it('links each row into the filtered route log at its id, in the given order', () => {
+    render(<NextSteps id="next-steps" label="Next steps" slug="coin-flip" rows={rows} />);
+
+    const rowLinks = within(screen.getByRole('list')).getAllByRole('link');
+    expect(rowLinks.map((a) => a.getAttribute('href'))).toEqual([
+      '/roadmap?project=coin-flip#coin-flip-v1-1',
+      '/roadmap?project=coin-flip#coin-flip-play-store',
+    ]);
+    expect(rowLinks[0]).toHaveTextContent('v1.1 Smoother toss');
+    expect(rowLinks[0]).toHaveTextContent('Planned');
+  });
+
+  it('ends with a Full route log link to the project filter', () => {
+    render(<NextSteps id="next-steps" label="Next steps" slug="coin-flip" rows={rows} />);
+
+    const links = screen.getAllByRole('link');
+    const full = screen.getByRole('link', { name: 'Full route log' });
+    expect(links[links.length - 1]).toBe(full);
+    expect(full).toHaveAttribute('href', '/roadmap?project=coin-flip');
+  });
+
+  it("drops the ' · {target}' unit for a row without a target release (G7)", () => {
+    render(
+      <NextSteps
+        id="next-steps"
+        label="Next steps"
+        slug="coin-flip"
+        rows={[
+          { ...rows[0], targetRelease: undefined },
+          { ...rows[1], targetRelease: 'v1.2' },
+        ]}
+      />
+    );
+
+    const [first, second] = within(screen.getByRole('list')).getAllByRole('link');
+    expect(first.textContent).not.toContain('·');
+    expect(second).toHaveTextContent(/Planned\s*·\s*v1\.2/);
+  });
+
+  it('renders nothing without a row', () => {
+    const { container } = render(
+      <NextSteps id="next-steps" label="Next steps" slug="coin-flip" rows={[]} />
+    );
+    expect(container).toBeEmptyDOMElement();
+  });
+});
+
+describe('Stack and Next steps in the case study (ENG-02, N4)', () => {
+  const coinFlip: Project = {
+    slug: 'coin-flip',
+    name: 'coin-flip',
+    kicker: { version: 'v1', status: 'on device' },
+    repository: 'private',
+    problem: ['A problem paragraph.'],
+    stack: { groups: [{ label: 'Language', items: ['Kotlin'] }] },
+    nextSteps: ['coin-flip-play-store', 'coin-flip-v1-1'],
+  };
+  const box: Project = {
+    slug: 'box',
+    name: 'box',
+    kicker: { version: 'v2.0', status: 'shipped' },
+    problem: ['A box problem paragraph.'],
+    stack: { groups: [{ label: 'Language', items: ['Rust 2021'] }] },
+  };
+
+  /** The row hrefs of a next-steps section node, in order. */
+  function rowHrefs(node: ReactNode): (string | null)[] {
+    render(<>{node}</>);
+    return within(screen.getByRole('list'))
+      .getAllByRole('link')
+      .map((a) => a.getAttribute('href'));
+  }
+
+  it('puts Stack then Next steps last, after the other slots', () => {
+    expect(caseStudySections(coinFlip).map((s) => s.id)).toEqual([
+      'problem',
+      'stack',
+      'next-steps',
+    ]);
+  });
+
+  it('keeps the next steps in the order the project lists them', () => {
+    const next = caseStudySections(coinFlip).find((s) => s.id === 'next-steps');
+    expect(rowHrefs(next?.node)).toEqual([
+      '/roadmap?project=coin-flip#coin-flip-play-store',
+      '/roadmap?project=coin-flip#coin-flip-v1-1',
+    ]);
+  });
+
+  it('omits Next steps on a project without next steps (box, N4)', () => {
+    expect(caseStudySections(box).map((s) => s.id)).toEqual(['problem', 'stack']);
+  });
+
+  it('drops an unknown or completed id from Next steps', () => {
+    const mixed = caseStudySections({
+      ...coinFlip,
+      nextSteps: ['no-such-row', 'coin-flip-v1', 'coin-flip-v1-1'],
+    }).find((s) => s.id === 'next-steps');
+    expect(rowHrefs(mixed?.node)).toEqual(['/roadmap?project=coin-flip#coin-flip-v1-1']);
+  });
+
+  it('omits Next steps when no listed id is planned or in progress', () => {
+    const ids = caseStudySections({ ...coinFlip, nextSteps: ['coin-flip-v1', 'no-such-row'] }).map(
+      (s) => s.id
+    );
+    expect(ids).not.toContain('next-steps');
+  });
+
+  it('omits Stack without stack data', () => {
+    expect(caseStudySections({ ...box, stack: undefined }).map((s) => s.id)).toEqual(['problem']);
   });
 });
