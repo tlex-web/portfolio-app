@@ -18,18 +18,22 @@ function hasAtMost3Decimals(v: number): boolean {
 
 describe('polylineLength', () => {
   test('a 3-4-5 segment is 5 m long', () => {
-    expect(polylineLength([
-      [0, 0],
-      [3, 4],
-    ])).toBe(5);
+    expect(
+      polylineLength([
+        [0, 0],
+        [3, 4],
+      ])
+    ).toBe(5);
   });
 
   test('sums every segment of a multi-vertex line', () => {
-    expect(polylineLength([
-      [0, 0],
-      [3, 4],
-      [3, 10],
-    ])).toBe(11);
+    expect(
+      polylineLength([
+        [0, 0],
+        [3, 4],
+        [3, 10],
+      ])
+    ).toBe(11);
   });
 
   test('a single point throws a RangeError', () => {
