@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 11
 current_phase_name: Engineering & Roadmap
 status: executing
-stopped_at: 11-05 complete (9a071fe); 11-02 still paused at Task 3 checkpoint (Tim's content packet answers)
-last_updated: "2026-11-01T18:51:14.513Z"
+stopped_at: 11-06 complete (0633a84); 11-02 still paused at Task 3 checkpoint (Tim's content packet answers)
+last_updated: "2026-11-01T19:09:08.683Z"
 last_activity: 2026-11-01
 last_activity_desc: Phase 11 execution started
-state_head: 9a071fe4b70b59df1141f6b214e06a248b6ee496
+state_head: 0633a8470a6c13bfe2021bff1e0db4d9371a579b
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 93
-  completed_plans: 78
-  percent: 84
+  completed_plans: 79
+  percent: 85
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-26)
 ## Current Position
 
 Phase: 11 (Engineering & Roadmap) — EXECUTING
-Plan: 4 of 18
+Plan: 5 of 18
 Status: Ready to execute
 Last activity: 2026-11-01 — Phase 11 execution started
 
-Progress: [████████░░] 84%
+Progress: [█████████░] 85%
 
 ## Performance Metrics
 
@@ -135,6 +135,7 @@ Progress: [████████░░] 84%
 | Phase 11 P01 | 17 min | 2 tasks | 11 files |
 | Phase 11 P04 | 12 min | 2 tasks | 10 files |
 | Phase 11 P05 | 9 min | 2 tasks | 7 files |
+| Phase 11 P06 | 15 min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -348,6 +349,8 @@ Recent decisions affecting current work:
 - [Phase 11]: 11-05: compact RouteRow meta is '{Status}' plus ' · {target}' (UI-SPEC Next steps); log rows read '{Project} · …'
 - [Phase 11]: 11-05: only log-variant li carries id = item id; compact li has no id
 - [Phase 11]: 11-05: routeLogHref re-validates whitelist values and drops forged ones (T-11-10)
+- [Phase 11]: 11-06: RoutePanel keeps one min-w-0 content column inside its lg 3fr/2fr grid; 11-12 adds the profile figure as the second child
+- [Phase 11]: 11-06: /projects reads project fields only through toPanelProps(project); 11-07 rewrites that mapper for the new schema
 
 ### Pending Todos
 
@@ -392,6 +395,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-01T18:51:14.082Z
-Stopped at: 11-05 complete (9a071fe); 11-02 still paused at Task 3 checkpoint (Tim's content packet answers)
+Last session: 2026-11-01T19:09:08.178Z
+Stopped at: 11-06 complete (0633a84); 11-02 still paused at Task 3 checkpoint (Tim's content packet answers)
 Resume file: None
