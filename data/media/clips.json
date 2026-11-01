@@ -1,1 +1,13 @@
-{ "clips": [] }
+{
+  "clips": [
+    {
+      "id": "coin-flip-toss",
+      "sourceSha256": "9445ed117114ed0c51c8322ee544900ed48d2c70602e03b56809143d993970f3",
+      "start": 0,
+      "duration": 4.421,
+      "posterAt": 3.5,
+      "crf": 26,
+      "fps": 60
+    }
+  ]
+}

@@ -10,7 +10,7 @@
 4. The UI-SPEC defaults, section F.
 5. The CI go-ahead for the phase re-baseline branch `ci/11-17`, section G.
 
-The coin-flip clip (D-27, item 5) is not collected here. Section H is the brief for it; plan 11-15 asks for the file.
+The coin-flip clip (D-27, item 5) is not collected here. Section H is the brief for it; plan 11-15 asks for the file. Section I (added by 11-15) holds the clip's description draft, which 11-16 puts to Tim.
 
 **Privacy note (D-23, T-11-03).** This repository and its `.planning/` folder are public. coin-flip is a private repository, and it was not opened for this packet. Every coin-flip line below is written in Claude's own words from the phase research summaries and the D-23 fact list. Nothing in it is copied from the coin-flip repository: no source, file paths, identifiers, defect or backlog IDs, test evidence or internal measurements. box is public, so its README and milestone record are cited and linked.
 
@@ -436,6 +436,43 @@ Not asked now. Plan 11-15 asks for the file at its own checkpoint. This is so yo
 - **If no clip arrives:** coin-flip ships with **no Demo section**: no placeholder, no still, no "coming soon".
 
 No reply needed here.
+
+---
+
+## I. Clip description draft (D-16, D-27)
+
+Added by the 11-15 executor on 2026-11-01. **Nothing here is approved yet.** Plan 11-16 asks Tim to approve, edit or reject the clip, its poster and these words together. Until then `data/projects.ts` has no coin-flip clip block, so coin-flip shows no Demo section, even though the encoded clip and poster are committed.
+
+**The recording.** Tim's final one-flip screen recording, `assets/clips-original/coin-flip-toss.mp4` (gitignored, never committed): 4.4209 s, 1066 x 2102, about 108 fps on average (120 fps nominal), with an audio track that the encode drops. D-27's length rule became 4–10 s for this clip (Tim, 2026-11-01, in 11-15). The footage ships as recorded: no trim, no padding and no held frames.
+
+**What the frames show** (viewed from the encoded clip at 0.5, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.6, 3.5 and 4.3 s, plus a 10 fps contact sheet): a coin lies flat on a dark screen with only a small settings gear in the top corner. At about 1.5 s it is flipped. It rises toward the viewer and turns over several times, showing both faces, then drops back and lands flat at about 2.4 s. From about 2.5 s it rests face up and the word HEADS appears below it, until the clip ends.
+
+**Description draft** (`clip.description`, the figcaption):
+
+> A coin lies flat on a dark screen. About a second and a half in, it is flipped: it rises toward the viewer, turns over several times, then drops back and lands flat. It comes to rest face up, and the word HEADS appears below it.
+
+**Intro draft, optional** (`clip.intro`, the sentence above the clip):
+
+> One toss, recorded from the screen of my own device.
+
+The wording follows the claims audit: no polish words, and nothing about the camera following the coin (claim.cf-stage-toss, claim.cf-stage-landing, Pitfall 9). It describes only what the clip shows.
+
+**Encode record**
+
+| Setting | Value |
+|---------|-------|
+| Source sha256 | `9445ed117114ed0c51c8322ee544900ed48d2c70602e03b56809143d993970f3` |
+| start | 0 s (the whole recording) |
+| duration | 4.421 s in the sidecar; the encoded clip runs 4.417 s (mvhd) |
+| posterAt | 3.5 s: the coin at rest with HEADS shown |
+| frame rate | 60 fps (`fps: 60`, the source rate capped at 60) |
+| CRF | 26 |
+| Clip | `public/media/coin-flip-toss.9b55947b70.mp4`, 512 x 1010, **211,784 bytes** (budget 1,572,864), H.264, one video track, no audio, metadata stripped |
+| Poster | `public/media/coin-flip-toss-poster.8519b0dca7.webp`, 512 x 1010, 6,604 bytes |
+
+Checks: `npm run clip:derive -- --check` prints `clips: OK` and `npm run guard:images` prints `served-images: OK`.
+
+Reply (in 11-16): approve, edit the words, ask for a different poster time, or reject the clip.
 
 ---
 

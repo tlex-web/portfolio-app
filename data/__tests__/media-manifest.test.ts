@@ -15,6 +15,7 @@ import path from 'node:path';
 import { mediaManifest } from '@/data/generated/media-manifest';
 import {
   ClipsSidecar,
+  MediaManifest,
   MAX_CLIP_BYTES,
   MAX_CLIP_SECONDS,
   MIN_CLIP_SECONDS,
@@ -102,24 +103,36 @@ describe('generated media manifest', () => {
     expect(text).toMatch(/^export const mediaManifest\b/m);
   });
 
-  test('is empty while the sidecar holds no clip', () => {
-    const sidecar = JSON.parse(fs.readFileSync(path.join(ROOT, SIDECAR_REL), 'utf8'));
-    expect(sidecar).toEqual({ clips: [] });
-    expect(mediaManifest).toEqual({});
+  test('lists exactly the sidecar clips, each a valid entry within the budget and 4-10 s', () => {
+    const sidecar = ClipsSidecar.parse(JSON.parse(fs.readFileSync(path.join(ROOT, SIDECAR_REL), 'utf8')));
+    expect(Object.keys(mediaManifest).sort()).toEqual(sidecar.clips.map((c) => c.id).sort());
+    expect(MediaManifest.safeParse(mediaManifest).success).toBe(true);
+    for (const entry of Object.values(mediaManifest)) {
+      expect(entry.bytes).toBeLessThanOrEqual(MAX_CLIP_BYTES);
+      expect(entry.durationS).toBeGreaterThanOrEqual(MIN_CLIP_SECONDS);
+      expect(entry.durationS).toBeLessThanOrEqual(MAX_CLIP_SECONDS);
+      expect(fs.statSync(path.join(ROOT, 'public', entry.src)).size).toBe(entry.bytes);
+    }
   });
 
-  test('equals what write mode produces from an empty sidecar, byte for byte', () => {
+  test('has the header and interface write mode produces (empty sidecar, throwaway root), byte for byte', () => {
     const dir = tempRoot({ [SIDECAR_REL]: '{ "clips": [] }\n' });
     roots.push(dir);
     const { status, out } = run(['--root', dir]);
     expect(out).toContain('clips: OK');
     expect(status).toBe(0);
-    expect(fs.readFileSync(path.join(dir, MANIFEST_REL), 'utf8')).toBe(text);
+    // Only the object literal depends on the clips; the --check tests below prove it against the files.
+    const marker = 'MediaClipEntry>> = ';
+    const head = (t: string) => t.slice(0, t.indexOf(marker) + marker.length);
+    const empty = fs.readFileSync(path.join(dir, MANIFEST_REL), 'utf8');
+    expect(empty.endsWith(`${marker}{};\n`)).toBe(true);
+    expect(text).toContain(marker);
+    expect(head(text)).toBe(head(empty));
   });
 });
 
 describe('clip:derive --check', () => {
-  test('passes on the repo with no clip yet', () => {
+  test('passes on the repo: the committed clip, poster and manifest match the sidecar', () => {
     const { status, out } = run(['--check']);
     expect(out).toContain('clips: OK');
     expect(status).toBe(0);

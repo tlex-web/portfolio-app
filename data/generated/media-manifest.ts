@@ -11,4 +11,18 @@ export interface MediaClipEntry {
   poster: { src: string; width: number; height: number };
 }
 
-export const mediaManifest: Partial<Record<'coin-flip-toss', MediaClipEntry>> = {};
+export const mediaManifest: Partial<Record<'coin-flip-toss', MediaClipEntry>> = {
+  "coin-flip-toss": {
+    "src": "/media/coin-flip-toss.9b55947b70.mp4",
+    "type": "video/mp4",
+    "width": 512,
+    "height": 1010,
+    "durationS": 4.417,
+    "bytes": 211784,
+    "poster": {
+      "src": "/media/coin-flip-toss-poster.8519b0dca7.webp",
+      "width": 512,
+      "height": 1010
+    }
+  }
+};
