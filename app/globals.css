@@ -47,7 +47,7 @@
 
   /* Swiss trail yellow (09-UI-SPEC "Trail yellow"): outside the --color-* namespace
      on purpose, so no text utility exists. Painted only through bg-trail below;
-     Phase 11's T1 "Low risk" reads the same primitive */
+     Phase 11's T1 trail badge (coin-flip's Zmutt path) reads the same primitive */
   --trail-yellow: var(--caution-400);
 }
 
@@ -454,7 +454,7 @@ html {
 
 /* ===================================================================
    Phase 4: Crystalline Design System
-   Glow utilities, hex grid, stratified depth, contour animation
+   Glow utilities, stratified depth, contour animation
    =================================================================== */
 
 /* Ambient glow with scroll-responsive intensity */
@@ -499,52 +499,6 @@ html {
     0 0 calc(6px * var(--glow-intensity, 0.5)) var(--color-ember-glow),
     0 0 calc(16px * var(--glow-intensity, 0.5)) var(--color-ember-glow);
   transition: box-shadow 0.35s ease;
-}
-
-/* Hexagonal clip-path for crystalline cards */
-.hex-clip {
-  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
-}
-
-/* Focus visibility for clipped elements (outline is clipped, use drop-shadow) */
-.hex-clip:focus-visible {
-  filter: drop-shadow(0 0 3px var(--color-accent));
-}
-
-/* Hex grid layout (flexbox-based with mobile fallback) */
-.hex-grid {
-  --hex-size: 340px;
-  --hex-gap: 12px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--hex-gap);
-  justify-content: center;
-  padding: 0 calc(var(--hex-size) / 4);
-}
-
-.hex-grid > * {
-  width: var(--hex-size);
-  flex-shrink: 0;
-}
-
-/* Offset items in even rows for honeycomb effect -- JS adds .hex-offset class */
-.hex-grid > .hex-offset {
-  margin-top: calc(var(--hex-gap) * -2);
-  margin-left: calc(var(--hex-size) / 2);
-}
-
-/* Responsive: single column on mobile with crystalline shapes preserved */
-@media (max-width: 767px) {
-  .hex-grid {
-    --hex-size: min(100%, 400px);
-    padding: 0 1rem;
-    flex-direction: column;
-    align-items: center;
-  }
-  .hex-grid > .hex-offset {
-    margin-top: 0;
-    margin-left: 0;
-  }
 }
 
 /* Geological strata depth -- increasing shadow layers */
