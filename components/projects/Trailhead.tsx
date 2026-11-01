@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeftIcon,
@@ -7,6 +6,7 @@ import {
   LockKeyIcon,
 } from '@phosphor-icons/react/dist/ssr';
 import type { Project } from '@/data/types';
+import RouteProfile from './RouteProfile';
 
 /**
  * The case-study header band (11-UI-SPEC "Trailhead"; D-12, D-16, D-29). A
@@ -19,10 +19,11 @@ import type { Project } from '@/data/types';
  * secondary GitHub button (same tab, §I #7 default) or coin-flip's private
  * repository note with the 'Ask for a walkthrough' link to /contact; with
  * neither it is not rendered (G9). From 1024 px the band is a 3fr / 2fr grid
- * whose right column takes the optional `figure` (11-12 passes the route
- * profile there).
+ * whose right column holds the project's RouteProfile (D-05, D-07; the same
+ * figure as the route panel). Below 1024 px the figure is not rendered here,
+ * keeping the first viewport for text; a project without a route has none.
  */
-export default function Trailhead({ project, figure }: { project: Project; figure?: ReactNode }) {
+export default function Trailhead({ project }: { project: Project }) {
   const units = [project.kicker.version, project.kicker.status].filter((unit): unit is string =>
     Boolean(unit)
   );
@@ -86,7 +87,7 @@ export default function Trailhead({ project, figure }: { project: Project; figur
             </div>
           )}
         </div>
-        {figure && <div className="hidden min-w-0 lg:block">{figure}</div>}
+        {project.route && <RouteProfile id={project.route} className="hidden min-w-0 lg:block" />}
       </header>
     </div>
   );
