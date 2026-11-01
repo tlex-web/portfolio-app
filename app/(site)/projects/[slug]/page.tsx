@@ -1,14 +1,44 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import FeatureShowcase from '@/components/FeatureShowcase';
 import TechStackDisplay from '@/components/TechStackDisplay';
 import ProjectHighlights from '@/components/ProjectHighlights';
-import ProjectDetailClient from '@/components/ProjectDetailClient';
+import DemoTerminal from '@/components/projects/DemoTerminal';
 import { projects } from '@/data/projects';
 import { toLegacyHighlights } from '@/lib/legacy-highlights';
 
+/**
+ * The case-study route (ENG-02 route contract, ENG-05; 11 D-01). A Server
+ * Component: only the DemoTerminal island is client code, imported directly
+ * (no next/dynamic) and fed `project.demoCommands` as props, so three.js and
+ * R3F never load here.
+ *
+ * Only the project slugs exist: generateStaticParams lists them, turning
+ * dynamicParams off makes every other slug a 404, and notFound() guards the
+ * exact, case-sensitive match (/projects/CLIX-CLI is a 404, as in
+ * /photos/[slug]).
+ *
+ * generateMetadata gives the page '{project.name} · Tim Lui' through the root
+ * title template. The description arrives with Tim's approved pitch (11-12),
+ * and Phase 12 attaches the OG images here (SEO-02).
+ */
+
 interface PageProps {
   params: Promise<{ slug: string }>;
+}
+
+export const dynamicParams = false;
+
+export function generateStaticParams() {
+  return projects.map((p) => ({ slug: p.slug }));
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const project = projects.find((p) => p.slug === slug);
+  if (!project) return {};
+  return { title: project.name };
 }
 
 export default async function ProjectDetailPage({ params }: PageProps) {
@@ -112,11 +142,30 @@ export default async function ProjectDetailPage({ params }: PageProps) {
 
         {/* Main Content */}
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-20">
-          {/* Client-side interactive components */}
-          <ProjectDetailClient project={project} />
+          {/* Overview */}
+          <section className="max-w-none">
+            <h2 className="text-2xl font-display font-semibold text-ink mb-6 text-center">
+              Overview
+            </h2>
+            <div className="bg-surface-raised rounded-xl p-8 border border-line">
+              {project.longDescription.split('\n\n').map((paragraph, index) => (
+                <p key={index} className="text-ink leading-relaxed mb-4 last:mb-0">
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          </section>
 
-          {/* Static server-rendered sections */}
-          
+          {/* Demo (ENG-05, D-01): the flat terminal island; the intro copy lands in 11-09 (D-16) */}
+          {project.demoCommands && project.demoCommands.length > 0 && (
+            <section id="demo" aria-labelledby="demo-title">
+              <h2 id="demo-title" className="text-heading text-balance">
+                Demo
+              </h2>
+              <DemoTerminal commands={project.demoCommands} />
+            </section>
+          )}
+
           {/* Features */}
           {project.features && project.features.length > 0 && (
             <section>

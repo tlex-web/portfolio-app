@@ -58,13 +58,15 @@ test.describe('Without WebGL', () => {
     await expectNoErrorPage(page);
   });
 
+  // The case study mounts no canvas at all since 11-01 (D-01: the flat
+  // DemoTerminal replaced the R3F laptop), so there is no WebGL failure to
+  // wait for (11-RESEARCH Pitfall 4). It must still be the complete page.
   test('project detail keeps its content', async ({ page }) => {
-    const failed = webglFailure(page);
     await page.goto('/projects/clix-cli');
-    await failed;
-    await nextFrames(page);
 
     await expectNoErrorPage(page);
-    await expect(page.getByRole('heading', { name: /Experience CLI_X in 3D/i })).toBeVisible();
+    await expect(page.locator('canvas')).toHaveCount(0);
+    await expect(page.getByRole('heading', { level: 2, name: 'Demo', exact: true })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'CLI_X demo' })).toBeVisible();
   });
 });
