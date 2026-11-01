@@ -4,8 +4,8 @@ type PipelineBlock = NonNullable<Project['pipeline']>;
 
 /**
  * Column classes per stage count, written out literally so Tailwind finds
- * them (G11): never build `md:grid-cols-${n}`. A new approved stage count adds
- * its own entry here; an unlisted count stays one column at every width.
+ * them (G11): never interpolate the count into the class. A new approved
+ * stage count adds its own entry here; an unlisted count stays one column.
  */
 const COLS: Record<number, string> = {
   3: 'md:grid-cols-3',
