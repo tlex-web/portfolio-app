@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import Demo from '@/components/projects/sections/Demo';
+import Demo, { hasDemo } from '@/components/projects/sections/Demo';
 import Pipeline from '@/components/projects/sections/Pipeline';
 import Privacy from '@/components/projects/sections/Privacy';
 import Problem from '@/components/projects/sections/Problem';
@@ -53,7 +53,8 @@ export function slotMeta(slot: Slot, project: Project): { id: string; label: str
  * no approved data, so the section, its heading and its index entry are all
  * left out (ENG-02 data-optional rule). Problem, Pipeline and the third slot
  * (Safety on box, Privacy on coin-flip) render since 11-11; Metrics, Stack
- * and Next steps gain theirs in 11-13; coin-flip's clip joins Demo in 11-15.
+ * and Next steps gain theirs in 11-13; coin-flip's clip joins Demo in 11-15
+ * (shown only with a manifest entry and an approved description, D-27).
  */
 function renderSlot(slot: Slot, project: Project): ReactNode {
   switch (slot) {
@@ -77,9 +78,7 @@ function renderSlot(slot: Slot, project: Project): ReactNode {
     case 'metrics':
       return null;
     case 'demo':
-      return project.slug === 'box' && project.demo?.commands.length ? (
-        <Demo project={project} />
-      ) : null;
+      return hasDemo(project) ? <Demo project={project} /> : null;
     case 'stack':
       return null;
     case 'next-steps':
