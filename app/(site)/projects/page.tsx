@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import RoutePanel, { type RoutePanelProps } from '@/components/projects/RoutePanel';
+import RouteProfile from '@/components/projects/RouteProfile';
 import { projects, projectsIntro } from '@/data/projects';
 import type { Project } from '@/data/types';
 import { countLabel } from '@/lib/home-format';
@@ -11,7 +12,10 @@ export const metadata: Metadata = { title: 'Engineering' };
  * Maps one project to the route panel's props, the only place the page reads
  * project fields. box passes its verified GitHub link; coin-flip passes the
  * private-repository note and never a link (D-12). The kicker is the same
- * `{version} · {status}` pair the trailhead shows (D-29).
+ * `{version} · {status}` pair the trailhead shows (D-29). The strip is the
+ * audited metric tiles as label and value with their release line (D-28; only
+ * `source` claims are in the data), and the figure is the project's trail
+ * profile (D-05, D-07), rendered here on the server.
  */
 function toPanelProps(project: Project): RoutePanelProps {
   return {
@@ -20,6 +24,9 @@ function toPanelProps(project: Project): RoutePanelProps {
     kicker: project.kicker,
     pitch: project.pitch,
     links: project.slug === 'box' ? { github: project.links.github } : { privateRepo: true },
+    strip: project.metrics?.tiles.map(({ key, label, value }) => ({ key, label, value })),
+    releaseLine: project.metrics?.releaseLine,
+    figure: project.route ? <RouteProfile id={project.route} /> : undefined,
   };
 }
 

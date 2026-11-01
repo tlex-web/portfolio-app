@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { ArrowRightIcon, ArrowSquareOutIcon, LockKeyIcon } from '@phosphor-icons/react/dist/ssr';
 
@@ -7,6 +8,12 @@ export interface RoutePanelProps {
   kicker: { version?: string; status?: string };
   pitch?: string;
   links?: { github?: string; privateRepo?: boolean };
+  /** Audited metric items (D-28): only `source` claims reach the data, so only they render. */
+  strip?: readonly { key: string; label: string; value: string }[];
+  /** The release the strip's figures describe; rendered only with the strip. */
+  releaseLine?: string;
+  /** The route profile (11-12 passes `<RouteProfile id={project.route} />`). */
+  figure?: ReactNode;
 }
 
 /**
@@ -17,16 +24,29 @@ export interface RoutePanelProps {
  * missing unit dropped with its separator; status is a word, never a pill),
  * the h2 block link (the title link stretches over the whole panel through
  * its ::after, so the accessible name stays the project name and the panel
- * has one link target), the pitch, and the links row. The row sits above the
+ * has one link target), the pitch, the metric strip with its release line,
+ * the links row and the figure. The strip (D-28) is a dl of up to three
+ * label-over-value items that wrap; values are final on first paint, Mono and
+ * tabular, with no count-up (ENG-04). A strip with no item is not rendered and
+ * takes its release line with it. The links row sits above the
  * stretched link (`relative z-10`) and holds either a same-tab GitHub text
  * link (§I #7 default) or the private-repository note as plain text with no
  * link (D-12); with neither it is not rendered. The panel draws the focus
  * ring when its title link is keyboard-focused, so only one ring shows.
- * From 1024 px the panel is a 3fr / 2fr grid; the right column takes the
- * route profile figure in 11-12, and the metric strip and release line join
- * between the pitch and the links row there too.
+ * From 1024 px the panel is a 3fr / 2fr grid and the figure sits in the right
+ * column, vertically centred; below 1024 px everything is one column in DOM
+ * order, the figure last.
  */
-export default function RoutePanel({ slug, name, kicker, pitch, links }: RoutePanelProps) {
+export default function RoutePanel({
+  slug,
+  name,
+  kicker,
+  pitch,
+  links,
+  strip,
+  releaseLine,
+  figure,
+}: RoutePanelProps) {
   const units = [kicker.version, kicker.status].filter((unit): unit is string => Boolean(unit));
   const github = links?.github;
   const privateRepo = !github && links?.privateRepo === true;
@@ -55,6 +75,21 @@ export default function RoutePanel({ slug, name, kicker, pitch, links }: RoutePa
           </Link>
         </h2>
         {pitch && <p className="mt-2 max-w-prose text-base text-ink-muted">{pitch}</p>}
+        {strip && strip.length > 0 && (
+          <>
+            <dl className="mt-6 flex flex-wrap gap-x-8 gap-y-4">
+              {strip.map((item) => (
+                <div key={item.key} className="min-w-0">
+                  <dt className="text-sm text-ink-muted">{item.label}</dt>
+                  <dd className="mt-1 font-mono text-heading font-semibold text-ink tabular-nums">
+                    {item.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            {releaseLine && <p className="mt-2 text-sm text-ink-muted">{releaseLine}</p>}
+          </>
+        )}
         {(github || privateRepo) && (
           <div className="relative z-10 mt-6 flex flex-wrap items-center gap-x-6 gap-y-2">
             {github ? (
@@ -74,6 +109,11 @@ export default function RoutePanel({ slug, name, kicker, pitch, links }: RoutePa
           </div>
         )}
       </div>
+      {figure && (
+        <div className="mt-6 min-w-0 lg:col-start-2 lg:row-span-full lg:mt-0 lg:self-center">
+          {figure}
+        </div>
+      )}
     </article>
   );
 }

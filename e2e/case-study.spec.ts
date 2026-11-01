@@ -161,6 +161,25 @@ test.describe('Case-study route', () => {
     await expect(page.locator('a[href*="github.com/tlex-web/coin-flip"]')).toHaveCount(0);
   });
 
+  for (const project of [box, coinFlip]) {
+    test(`the ${project.slug} trailhead shows its route profile beside the title from 1024 px only (D-05, D-07)`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.goto(`/projects/${project.slug}`);
+      const article = page.getByRole('article', { name: project.name, exact: true });
+      const figure = article.locator('header').getByRole('figure');
+      await expect(figure).toBeVisible();
+      const title = await article.getByRole('heading', { level: 1 }).boundingBox();
+      const fig = await figure.boundingBox();
+      if (!title || !fig) throw new Error('title or figure has no layout box');
+      expect(fig.x).toBeGreaterThan(title.x + title.width);
+
+      await page.setViewportSize({ width: 375, height: 800 });
+      await expect(figure).toBeHidden();
+    });
+  }
+
   for (const path of [BOX, COIN_FLIP]) {
     test(`${path} has no horizontal scroll at 375 px`, async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 800 });
