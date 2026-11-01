@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 11
 current_phase_name: Engineering & Roadmap
 status: executing
-stopped_at: Completed 11-08-PLAN.md
-last_updated: "2026-11-01T20:46:19.723Z"
+stopped_at: Completed 11-09-PLAN.md
+last_updated: "2026-11-01T21:00:58.934Z"
 last_activity: 2026-11-01
 last_activity_desc: Phase 11 execution started
-state_head: e37f2af888fbe425b471b914900ccb7d8f94ce3d
+state_head: fc693e69e9ddc1f513ed268eaf7536d58167fafd
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 93
-  completed_plans: 82
-  percent: 88
+  completed_plans: 83
+  percent: 89
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-26)
 ## Current Position
 
 Phase: 11 (Engineering & Roadmap) — EXECUTING
-Plan: 8 of 18
+Plan: 9 of 18
 Status: Ready to execute
 Last activity: 2026-11-01 — Phase 11 execution started
 
-Progress: [█████████░] 88%
+Progress: [█████████░] 89%
 
 ## Performance Metrics
 
@@ -139,6 +139,7 @@ Progress: [█████████░] 88%
 | Phase 11 P02 | 2h 3m | 3 tasks | 6 files |
 | Phase 11 P03 | 8 min | 2 tasks | 8 files |
 | Phase 11 P08 | 11 min | 2 tasks | 10 files |
+| Phase 11 P09 | 12 min | 3 tasks | 30 files |
 
 ## Accumulated Context
 
@@ -363,6 +364,9 @@ Recent decisions affecting current work:
 - [Phase 11]: 11-03: DemoTerminal takes only name and commands (TerminalCommand with optional note, D-26); §I #8 and #11 stay default (constant Pause label, no copy button)
 - [Phase 11]: 11-08: route-log description code spans (backticks in data) render as nowrap <code>; box v2.0 keeps Tim's quoted --clip span
 - [Phase 11]: 11-08: Phase 11 completion date and next surveyedAt are entered in Phase 12's first data edit with Tim's confirmation (Q3)
+- [Phase 11]: 11-09 Q4: clip budget MAX_CLIP_BYTES = 1,572,864 bytes (1.5 MiB) in data/schemas/media-manifest.ts; the served-asset guard holds the same literal for every MP4 under public/
+- [Phase 11]: 11-09: MP4 track handlers are read from hdlr boxes whose parent is mdia (not depth 3, which also matches udta>meta>hdlr 'mdir'); the walker also enforces the RESEARCH C box-tree whitelist
+- [Phase 11]: 11-09: mediaManifest is {} until 11-15 commits Tim's clip; the Demo slot (11-16) must handle a missing coin-flip-toss entry
 
 ### Pending Todos
 
@@ -407,6 +411,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-01T20:46:19.237Z
-Stopped at: Completed 11-08-PLAN.md
+Last session: 2026-11-01T21:00:58.461Z
+Stopped at: Completed 11-09-PLAN.md
 Resume file: None
