@@ -392,43 +392,42 @@ Plans:
   4. The terminal demo is styled in tokens v2, stops auto-playing on focus, on hover and under reduced motion, and has a pause button.
   5. `/roadmap` places items in order on a vertical elevation axis: completed items below with their completion dates, in-progress items at the current camp, planned items above. It lists v2.0 as in progress and shows a "last surveyed" date. A segmented control filters by project and status, the filter lives in the URL, and empty filters are removed or disabled.
 
-**Plans**: 1/15 plans executed in 10 waves (11-02 and 11-15 carry blocking checkpoints for Tim)
+**Plans**: 1/18 plans executed in 8 waves (re-planned 2026-11-01 for box + coin-flip; 11-02, 11-15, 11-16 and 11-17 carry blocking checkpoints for Tim)
 
 Plans:
 **Wave 1**
 - [x] 11-01-PLAN.md — Tracer: flat DemoTerminal on the server-rendered case-study route, sticky Pause and every pause source, no three.js (ENG-05)
-- [ ] 11-02-PLAN.md — Content checkpoint: Tim answers the packet (trail pair, claims, Medium/High commands, behaviour lines, links, copy, route-log data, surveyedAt)
+- [ ] 11-02-PLAN.md — ENG-03 retired in the planning docs (D-24); box v2.0 built and real output captured (D-34); new content packet; one checkpoint for Tim (claims, copy, route-log rows, surveyedAt, UI defaults) (ENG-03, ENG-04)
+- [ ] 11-04-PLAN.md — Trail geometry for Hörnliweg No. 27 and Zmutt path No. 2 fetched once with provenance; offline build-trails --check in data:check (ENG-01)
+- [ ] 11-05-PLAN.md — Route-log pure functions and formatLogDate; RouteLog and RouteRow on the elevation axis (ROUTE-01, ROUTE-02, ROUTE-03)
+- [ ] 11-06-PLAN.md — Route panels on a server /projects page; hexagon cards and hex code removed (ENG-01)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 11-03-PLAN.md — Trail paint primitives, TRAIL contrast pairs, grade vocabulary, TrailGradeMark and the terminal risk badge (D-04)
-- [ ] 11-05-PLAN.md — Route-log functions and log dates; RouteLog and RouteRow on the elevation axis with the v2.0 phase disclosure (ROUTE-01, ROUTE-03)
+- [ ] 11-03-PLAN.md — Terminal ready for box: releasing Pause resumes at once (D-02), optional note line (D-26) (ENG-05)
+- [ ] 11-08-PLAN.md — Roadmap zod contract, confirmed rows and surveyedAt; /roadmap as a Server Component (ROUTE-01, ROUTE-02, ROUTE-03)
+- [ ] 11-09-PLAN.md — Video guard (MP4 box walker and selftest), clip:derive with --check, service-worker media bypass, /media headers (ENG-02)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 11-04-PLAN.md — Trail profiles: official swisstopo geometry, offline DEM generator with --check, RouteProfile glyph (D-05, D-07)
-- [ ] 11-06-PLAN.md — Roadmap data contract with Tim's rows, dates and surveyedAt; /roadmap as a Server Component on the route log (ROUTE-01, ROUTE-03)
-- [ ] 11-08-PLAN.md — Case-study template with the fixed section map; Demo and Stack through it; v1 highlights and the legacy adapter retire (ENG-02)
+- [ ] 11-07-PLAN.md — Atomic swap to the box and coin-flip schema and data from Tim's answers; CaseStudy skeleton, Trailhead and Demo slot; old project tests rewritten (ENG-01 to ENG-05)
+- [ ] 11-10-PLAN.md — RouteLogFilters in the URL (optimistic, router.replace); roadmap e2e and axe (ROUTE-02)
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 11-07-PLAN.md — Route-log filters in the URL, status line, band jumps, empty state, roadmap e2e (ROUTE-02)
-- [ ] 11-09-PLAN.md — Tim's content in the project data; Problem and instrument-panel Metrics sections (ENG-02, ENG-04)
+- [ ] 11-11-PLAN.md — Problem, Pipeline, Safety (box) and Privacy (coin-flip) sections (ENG-02)
+- [ ] 11-18-PLAN.md — Trail-grade marker vocabulary without score bands, Home About sentence (D-33), visual route table, last project-side references (ENG-01, ENG-02, ENG-03)
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 11-10-PLAN.md — Safety: risk scale, grade and examples tables, Tim's commands and behaviour lines (ENG-03)
+- [ ] 11-12-PLAN.md — Trail paint and contrast pairs, TrailGradeMark, RouteProfile, panel metric strip and figure (ENG-01, ENG-04)
+- [ ] 11-13-PLAN.md — Metrics instrument panel, Stack, Next steps linked into the route log (ENG-02, ENG-04, ROUTE-01)
+- [ ] 11-15-PLAN.md — DemoClip wired; Tim records the coin-flip clip (checkpoint); encode and draft description (ENG-02)
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 11-11-PLAN.md — Pipeline, Next steps and the end block; total section registry; Safety and case-study e2e (ENG-02, ENG-03, ENG-04)
+- [ ] 11-14-PLAN.md — RouteIndex island, end block, case-study page e2e (index, filler scan, axe) (ENG-02)
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 11-12-PLAN.md — Trailhead, route index, final page composition and metadata description; case-study route e2e (ENG-02)
+- [ ] 11-16-PLAN.md — Tim approves or rejects the clip; the description goes live or the media is removed (ENG-02)
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 11-13-PLAN.md — Route panels on a server /projects page; hexagon cards and hex code removed (ENG-01)
-
-**Wave 9** *(blocked on Wave 8 completion)*
-- [ ] 11-14-PLAN.md — v1 project fields dropped; every stack is a StackBlock; whole-data banned-phrase test (ENG-02, ENG-04)
-
-**Wave 10** *(blocked on Wave 9 completion)*
-- [ ] 11-15-PLAN.md — CI on ci/11-15, one Tim-reviewed visual re-baseline, ratchet raised
+- [ ] 11-17-PLAN.md — CI on ci/11-17, one Tim-reviewed visual re-baseline (old project folders removed), CI green twice, ratchet raised
 
 **UI hint**: yes
 **Parallelism**: Can run in parallel with Phase 10.
@@ -497,5 +496,5 @@ Plans:
 | 8. Data & Terrain Pipeline | v2.0 | 13/13 | Complete    | 2026-10-24 |
 | 9. Home Ascent | v2.0 | 22/22 | Complete    | 2026-10-25 |
 | 10. Photography | v2.0 | 13/13 | Complete    | 2026-10-26 |
-| 11. Engineering & Roadmap | v2.0 | 1/15 | In Progress | - |
+| 11. Engineering & Roadmap | v2.0 | 1/18 | In Progress | - |
 | 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 0/TBD | Not started | - |
