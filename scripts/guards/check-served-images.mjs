@@ -1,22 +1,27 @@
 #!/usr/bin/env node
 
 /**
- * Guard (DATA-05, PITFALLS 12): every tracked image is metadata-free, and every
- * served image is resized, pre-rotated, content-hashed and listed
+ * Guard (DATA-05, PITFALLS 12, D-27): every tracked image and video is
+ * metadata-free, and every served image or clip is resized (or within budget),
+ * pre-rotated, content-hashed and listed
  *
  * A photo original carries GPS in its EXIF (and Lightroom can write it into XMP),
  * and a full-resolution file is a copy of the original. This guard fails before
  * deploy when either could become fetchable again, including an original added
  * anywhere with `git add -f`, because the metadata rule covers the whole repo.
+ * A phone recording carries its creation time and location the same way, so
+ * video is checked by walking the MP4's boxes (scripts/guards/lib/mp4-boxes.mjs):
+ * verify the artifact, not the script's flags.
  *
  * Scope:
  *   repo mode (no --root):  git ls-files of *.jpg *.jpeg *.jfif *.png *.webp *.avif
  *                           *.gif *.tif *.tiff *.heic *.heif *.jxl *.bmp *.svg and
- *                           the camera raws *.dng *.cr2 *.cr3 *.nef *.arw
+ *                           the camera raws *.dng *.cr2 *.cr3 *.nef *.arw, and
+ *                           the video files *.mp4 *.m4v *.mov *.webm *.mkv *.3gp
  *                           (case-insensitive) anywhere in the repo, minus
  *                           scripts/guards/__selftest__/**; the
- *                           metadata-call rule reads tracked scripts/photos and
- *                           scripts/terrain sources
+ *                           metadata-call rule reads tracked scripts/photos,
+ *                           scripts/terrain and scripts/media sources
  *   fixture mode (--root):  recursive walk of <dir> (fixtures are not a git repo)
  *
  * Rules (each violation prints one line `<posix rel path> <rule>: <detail>`):
@@ -28,18 +33,29 @@
  *                    (D-13; e2e/ screenshots are metadata-scanned but size-exempt)
  *   - orientation:   an image under public/ has an orientation tag (served
  *                    files must be rotated at build time)
- *   - hash-name:     a file in public/terrain/ or public/images/photos/ is not
- *                    named <name>.<10 hex>.<png|svg|avif|webp|jpg>, or the hex is
+ *   - video-format:  a .m4v, .mov, .webm, .mkv or .3gp file anywhere (only MP4
+ *                    is served; any other container is a raw recording)
+ *   - video:         an MP4 fails the box walker: moov after mdat, a uuid, XMP_,
+ *                    ©xyz or loci box, a box outside the whitelist, metadata
+ *                    items in ilst, non-zero mvhd/tkhd/mdhd times, anything but
+ *                    exactly one video track; under public/ also a size above
+ *                    1,572,864 bytes (MAX_CLIP_BYTES, 1.5 MiB). An MP4 holding
+ *                    the XMP byte markers fails the metadata rule
+ *   - hash-name:     a file in public/terrain/, public/images/photos/ or
+ *                    public/media/ is not named
+ *                    <name>.<10 hex>.<png|svg|avif|webp|jpg|mp4>, or the hex is
  *                    not the first 10 of sha256 over its bytes
- *   - orphan:        a file in those two directories that no generated manifest
- *                    lists (data/generated/image-manifest.ts, terrain.ts)
+ *   - orphan:        a file in those directories that no generated manifest
+ *                    lists (data/generated/image-manifest.ts, terrain.ts,
+ *                    media-manifest.ts)
  *   - missing:       a manifest URL whose file is not in the scanned set (URLs
  *                    are read from quoted strings only, so a header comment that
  *                    names a directory is not an entry)
  *   - svg-content:   an SVG under public/ contains a script element, an on*=
  *                    event-handler attribute, an href or a foreignObject (these
  *                    SVGs are served same-origin without a CSP)
- *   - metadata-call: a script under scripts/photos/ or scripts/terrain/ calls a
+ *   - metadata-call: a script under scripts/photos/, scripts/terrain/ or
+ *                    scripts/media/ calls a
  *                    sharp method that keeps or writes metadata (withMetadata,
  *                    keepMetadata, keepExif, withExif, withExifMerge, keepXmp,
  *                    withXmp)
@@ -56,19 +72,26 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
+import { checkMp4 } from './lib/mp4-boxes.mjs';
 
 const MAX_LONG_EDGE = 2560;
 // Raw and HEIF originals carry the full GPS IFD; sharp cannot read most raw formats, so they fail as unreadable (08-REVIEW WR-06).
 const IMAGE_EXT = new Set(['.jpg', '.jpeg', '.jfif', '.png', '.webp', '.avif', '.gif', '.tif', '.tiff', '.heic', '.heif', '.jxl', '.dng', '.cr2', '.cr3', '.nef', '.arw', '.bmp', '.svg']);
-const PATHSPECS = [...IMAGE_EXT].map((ext) => `:(icase)*${ext}`);
+// Video (D-27): only MP4 is served; every other container fails wherever it is tracked.
+const VIDEO_EXT = new Set(['.mp4', '.m4v', '.mov', '.webm', '.mkv', '.3gp']);
+const SERVED_VIDEO_EXT = '.mp4';
+// Equal to MAX_CLIP_BYTES in data/schemas/media-manifest.ts (1.5 MiB, 11-RESEARCH Q4).
+const MAX_CLIP_BYTES = 1_572_864;
+const PATHSPECS = [...IMAGE_EXT, ...VIDEO_EXT].map((ext) => `:(icase)*${ext}`);
 const SELFTEST_PREFIX = 'scripts/guards/__selftest__/';
-const HASHED_DIRS = ['public/terrain/', 'public/images/photos/'];
-const HASH_NAME = /^[a-z0-9-]+\.([0-9a-f]{10})\.(png|svg|avif|webp|jpg)$/;
-const SCRIPT_DIRS = ['scripts/photos/', 'scripts/terrain/'];
+const HASHED_DIRS = ['public/terrain/', 'public/images/photos/', 'public/media/'];
+const HASH_NAME = /^[a-z0-9-]+\.([0-9a-f]{10})\.(png|svg|avif|webp|jpg|mp4)$/;
+const SCRIPT_DIRS = ['scripts/photos/', 'scripts/terrain/', 'scripts/media/'];
 const SCRIPT_EXT = /\.(m|c)?[jt]s$/;
 const MANIFESTS = [
   { file: 'data/generated/image-manifest.ts', regex: /(?<=['"])\/images\/photos\/[^'"]+(?=['"])/g },
   { file: 'data/generated/terrain.ts', regex: /(?<=['"])\/terrain\/[^'"]+(?=['"])/g },
+  { file: 'data/generated/media-manifest.ts', regex: /(?<=['"])\/media\/[^'"]+(?=['"])/g },
 ];
 const METADATA_CALL = /\.\s*(withMetadata|keepMetadata|keepExif|withExif|withExifMerge|keepXmp|withXmp)\s*\(/g;
 const METADATA_MARKERS = [
@@ -78,6 +101,8 @@ const METADATA_MARKERS = [
   { label: 'IPTC (Photoshop 3.0)', bytes: Buffer.from('Photoshop 3.0\0', 'latin1') },
   { label: 'raw profile', bytes: Buffer.from('Raw profile type', 'latin1') },
 ];
+// Compressed video is scanned for the XMP markers only (the video-metadata risk).
+const VIDEO_MARKERS = METADATA_MARKERS.filter(({ label }) => label.startsWith('XMP'));
 const SVG_RULES = [
   { label: 'script element', regex: /<script/i },
   { label: 'event-handler attribute', regex: /\son[a-z]+\s*=/i },
@@ -122,18 +147,24 @@ function gitLsFiles(root, pathspecs) {
   return out.split('\0').filter(Boolean);
 }
 
-/** Image and script paths in scope, relative to root. Throws when git fails (never a silent pass). */
+const isImage = (rel) => IMAGE_EXT.has(path.extname(rel).toLowerCase());
+const isVideo = (rel) => VIDEO_EXT.has(path.extname(rel).toLowerCase());
+
+/** Image, video and script paths in scope, relative to root. Throws when git fails (never a silent pass). */
 function collect(root, fixture) {
   if (fixture) {
     const all = walk(root).map((full) => toPosix(path.relative(root, full)));
     return {
-      images: all.filter((rel) => IMAGE_EXT.has(path.extname(rel).toLowerCase())),
+      images: all.filter(isImage),
+      videos: all.filter(isVideo),
       scripts: all.filter((rel) => SCRIPT_DIRS.some((d) => rel.startsWith(d)) && SCRIPT_EXT.test(rel)),
     };
   }
   const inScope = (rel) => !rel.startsWith(SELFTEST_PREFIX) && fs.existsSync(path.join(root, rel));
+  const tracked = gitLsFiles(root, PATHSPECS).filter(inScope);
   return {
-    images: gitLsFiles(root, PATHSPECS).filter(inScope),
+    images: tracked.filter(isImage),
+    videos: tracked.filter(isVideo),
     scripts: gitLsFiles(root, SCRIPT_DIRS).filter((rel) => SCRIPT_EXT.test(rel) && inScope(rel)),
   };
 }
@@ -175,12 +206,24 @@ function checkSvg(rel, bytes, violations) {
   }
 }
 
+/** Format, box-walker, budget and XMP-marker rules for one video file. */
+function checkVideo(rel, bytes, violations) {
+  if (path.extname(rel).toLowerCase() !== SERVED_VIDEO_EXT) {
+    violations.push(`${rel} video-format: only MP4 is served (${path.extname(rel)})`);
+    return;
+  }
+  const opts = underPublic(rel) ? { maxBytes: MAX_CLIP_BYTES } : {};
+  for (const problem of checkMp4(bytes, opts)) violations.push(`${rel} video: ${problem}`);
+  const found = VIDEO_MARKERS.filter(({ bytes: marker }) => bytes.includes(marker)).map(({ label }) => `${label} marker in bytes`);
+  if (found.length) violations.push(`${rel} metadata: ${found.join(', ')}`);
+}
+
 /** Content-hash name rule for one file in a hashed directory. */
 function checkHashName(rel, bytes, violations) {
   const name = path.posix.basename(rel);
   const m = name.match(HASH_NAME);
   if (!m) {
-    violations.push(`${rel} hash-name: name is not <name>.<10 hex>.<png|svg|avif|webp|jpg>`);
+    violations.push(`${rel} hash-name: name is not <name>.<10 hex>.<png|svg|avif|webp|jpg|mp4>`);
     return;
   }
   const actual = crypto.createHash('sha256').update(bytes).digest('hex').slice(0, 10);
@@ -222,7 +265,9 @@ async function main() {
     process.exit(1);
   }
   const images = [...scope.images].sort();
-  const imageSet = new Set(images);
+  const videos = [...scope.videos].sort();
+  const served = [...images, ...videos].sort();
+  const servedSet = new Set(served);
 
   for (const rel of images) {
     const bytes = fs.readFileSync(path.join(root, rel));
@@ -234,13 +279,19 @@ async function main() {
     if (hashedDir(rel)) checkHashName(rel, bytes, violations);
   }
 
-  // Orphans and missing files: the two hashed directories versus the generated manifests
+  for (const rel of videos) {
+    const bytes = fs.readFileSync(path.join(root, rel));
+    checkVideo(rel, bytes, violations);
+    if (hashedDir(rel)) checkHashName(rel, bytes, violations);
+  }
+
+  // Orphans and missing files: the hashed directories versus the generated manifests
   const listed = manifestEntries(root);
-  for (const rel of images) {
+  for (const rel of served) {
     if (hashedDir(rel) && !listed.has(rel)) violations.push(`${rel} orphan: not listed in ${MANIFESTS.map((m) => m.file).join(' or ')}`);
   }
   for (const [rel, file] of [...listed].sort(([a], [b]) => a.localeCompare(b))) {
-    if (!imageSet.has(rel)) violations.push(`${rel} missing: listed in ${file} but not ${fixture ? 'present' : 'tracked'}`);
+    if (!servedSet.has(rel)) violations.push(`${rel} missing: listed in ${file} but not ${fixture ? 'present' : 'tracked'}`);
   }
 
   for (const rel of [...scope.scripts].sort()) {
