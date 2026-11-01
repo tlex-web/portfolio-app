@@ -34,3 +34,9 @@ data/generated/tokens.ts text eol=lf
 # build, and fetch-trails writes trails.json with LF.
 data/terrain/source/trails.json text eol=lf
 data/generated/trail-profiles.ts text eol=lf
+
+# Clip pipeline (11-09): clip:derive --check byte-compares the manifest with a rebuild
+# from disk and the sidecar; the clip and poster are hashed by their bytes, never normalised.
+data/media/clips.json text eol=lf
+data/generated/media-manifest.ts text eol=lf
+public/media/* binary
