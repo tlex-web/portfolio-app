@@ -29,6 +29,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { evaluate, pickRun } from '../ci/check-visual-run.mjs';
 import { evaluateSnapshotChanges } from '../ci/check-snapshot-commit.mjs';
+import { checkMp4 } from './lib/mp4-boxes.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '..', '..');
@@ -45,6 +46,8 @@ const SERVED = path.join(here, 'check-served-images.mjs');
 const con = (name) => path.join(fixtures, 'contrast', name);
 const idf = (name) => path.join(fixtures, 'identity', name);
 const si = (name) => path.join(fixtures, 'served-images', name);
+/** The clean 0.2 s fixture clip (see served-images/good-mp4/README.md). */
+const goodMp4 = () => fs.readFileSync(path.join(si('good-mp4'), 'public', 'media', 'coin-flip-toss.d423c62633.mp4'));
 const tc = (...parts) => path.join(fixtures, 'test-count', ...parts);
 const pal = (...parts) => path.join(fixtures, 'palette', ...parts);
 const sc = (...parts) => path.join(fixtures, 'same-classnames', ...parts);
@@ -601,6 +604,53 @@ const cases = [
     args: ['--root', si('bad-metadata-call')],
     expectExit: 1,
     expectOutput: ['scripts/photos/x.mjs metadata-call: line 2 calls .withMetadata()'],
+  },
+  {
+    name: 'served-images: a clean faststart MP4 and its WebP poster, hashed and listed in the media manifest, pass',
+    guard: SERVED,
+    args: ['--root', si('good-mp4')],
+    expectExit: 0,
+    expectOutput: ['served-images: OK'],
+  },
+  {
+    name: 'served-images: an MP4 with a planted creation_time and location fails the video rule',
+    guard: SERVED,
+    args: ['--root', si('bad-mp4-metadata')],
+    expectExit: 1,
+    expectOutput: [
+      'public/media/coin-flip-toss.59f6287d49.mp4 video: mvhd timestamps not zero',
+      'public/media/coin-flip-toss.59f6287d49.mp4 video: forbidden box loci',
+      'public/media/coin-flip-toss.59f6287d49.mp4 video: metadata items in ilst',
+    ],
+  },
+  {
+    name: 'served-images: an MP4 with an AAC audio track fails the video rule',
+    guard: SERVED,
+    args: ['--root', si('bad-mp4-audio')],
+    expectExit: 1,
+    expectOutput: ['public/media/coin-flip-toss.4c95121c6a.mp4 video: tracks: vide,soun'],
+  },
+  {
+    name: 'served-images: an MP4 without +faststart (mdat before moov) fails the video rule',
+    guard: SERVED,
+    args: ['--root', si('bad-mp4-order')],
+    expectExit: 1,
+    expectOutput: ['public/media/coin-flip-toss.08507707c1.mp4 video: moov must precede mdat'],
+  },
+  {
+    name: 'served-images: a WebM under public/media fails as a non-MP4 video',
+    guard: SERVED,
+    args: ['--root', si('bad-video-format')],
+    expectExit: 1,
+    expectOutput: ['public/media/coin-flip-toss.eebff415df.webm video-format: only MP4 is served'],
+  },
+  {
+    name: 'mp4-boxes: checkMp4 finds no violation in the clean fixture clip',
+    fn: () => expectEqual('violations', checkMp4(goodMp4()).join('; '), ''),
+  },
+  {
+    name: 'mp4-boxes: checkMp4 with a 100-byte budget reports the size',
+    fn: () => expectEqual('violations', checkMp4(goodMp4(), { maxBytes: 100 }).join('; '), `size ${goodMp4().length} B over 100 B`),
   },
   {
     name: 'contrast: the real app/globals.css passes all 36 pairs (28 UI-SPEC + 4 accent-strong + 4 gallery) in table order',
