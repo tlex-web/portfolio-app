@@ -1,518 +1,449 @@
-# Phase 11 Content Packet (D-21)
+# Phase 11 Content Packet: box and coin-flip (D-21)
 
-Drafts for Tim's approval. Nothing here ships until Tim's answer is recorded below.
+**Prepared:** 2026-11-01 by the 11-02 executor. This packet replaces the first-pass CLI_X packet (commit 911a044) entirely. Only the trail table (old §A), the portfolio rows (old §G1) and the UI-SPEC defaults (old §I) are carried over.
+**Status:** waiting for Tim. Nothing in this packet is approved yet. A value counts as approved only when Tim's literal reply is quoted under `## Answers (verbatim)` and the key reads `supplied` under `## Resolved values`.
 
-This packet collects every input that only Tim can give for Phase 11, in one checkpoint: the trail pair (D-07), the Medium and High demo commands (D-10), the behaviour lines (D-11), the claims audit (D-09), the links (D-12), the new copy (D-16), the route log, its dates, order and survey date (D-17, D-18, D-20), the project facts, and the UI-SPEC defaults. Claude drafted everything that could be drafted. For each item Tim can approve, edit, choose an option, or decline. Anything he does not answer is recorded as "not supplied". The "If not supplied" line in each section says what the site does in that case: the element is left out, never filled with a draft.
+**What this checkpoint collects (D-21 items 1 to 4, plus one CI go-ahead):**
+1. The claims audit (D-09), section B.
+2. The copy (D-16): the box terminal transcript and the box Safety preview (D-25, D-26, D-34) in section C, and every other draft line, including the Home About sentence (D-33), in section D.
+3. Route-log confirmation and `surveyedAt` (D-17, D-20, D-31, D-32), section E.
+4. The UI-SPEC defaults, section F.
+5. The CI go-ahead for the phase re-baseline branch `ci/11-17`, section G.
 
-How to answer: reply per section, for example "A: option A, names approved. B: medium = … D: 1 cut, 2 soften, …". Short answers work. "approve" means the draft ships word for word.
+The coin-flip clip (D-27, item 5) is not collected here. Section H is the brief for it; plan 11-15 asks for the file.
 
-Privacy note: the portfolio repo is public. The CLI_X behaviour below is a summary in Claude's own words from a read-only reading during research. No code, file paths, identifiers or configuration names from the private repo appear here.
+**Privacy note (D-23, T-11-03).** This repository and its `.planning/` folder are public. coin-flip is a private repository, and it was not opened for this packet. Every coin-flip line below is written in Claude's own words from the phase research summaries and the D-23 fact list. Nothing in it is copied from the coin-flip repository: no source, file paths, identifiers, defect or backlog IDs, test evidence or internal measurements. box is public, so its README and milestone record are cited and linked.
+
+**Path note.** `<scratchpad>` stands for the session scratch folder used for the build and the captures. No absolute, home-directory or user path appears in this file or in any capture.
+
+**How to reply.** Answer section by section, in any order, in your own words. Short forms work, for example:
+`B: tools source, tests source, loc cut, network-calls soften "Offline" …` · `C: commands 1, 2, 3, 4 in that order, notes ok; safety approve` · `D: approve all except problem-box (my edit: "…")` · `E: rows ok, descriptions ok, surveyedAt 2026-11-02` · `F: defaults` · `G: approve`.
+Anything you do not answer is recorded as **not supplied**, and the consequence stated next to it applies: the element is left out, never filled with something invented (UI-SPEC "Content Gates, Both Cases"). "content done" closes the packet with every open item marked not supplied.
+
+---
 
 ## Key index
 
-- `trail.clix-cli` (A)
-- `trail.clix-website` (A)
-- `trail.caption-names` (A)
-- `demo.medium` (B)
-- `demo.high` (B)
-- `demo.explanations` (B)
-- `behaviour.low` (C)
-- `behaviour.medium` (C)
-- `behaviour.high` (C)
-- `behaviour.critical` (C)
-- `capabilities` (C)
-- `claim.1` (D)
-- `claim.2` (D)
-- `claim.3` (D)
-- `claim.4` (D)
-- `claim.5` (D)
-- `claim.6` (D)
-- `claim.7` (D)
-- `claim.8` (D)
-- `claim.9` (D)
-- `claim.10` (D)
-- `claim.11` (D)
-- `claim.12` (D)
-- `claim.13` (D)
-- `claim.14` (D)
-- `claim.15` (D)
-- `claim.16` (D)
-- `claim.17` (D)
-- `strip.clix-cli` (D)
-- `home.line` (D)
-- `link.clix-cli.github` (E)
-- `link.clix-cli.docs` (E)
-- `link.clix-website.demo` (E)
-- `link.clix-website.github` (E)
-- `link.clix-website.docs` (E)
-- `repo.clix-cli` (E)
-- `repo.clix-website` (E)
-- `copy.projects-intro` (F)
-- `copy.pitch.clix-cli` (F)
-- `copy.pitch.clix-website` (F)
-- `copy.outcome.clix-cli` (F)
-- `copy.outcome.clix-website` (F)
-- `copy.problem.clix-cli` (F)
-- `copy.problem.clix-website` (F)
-- `copy.pipeline.clix-cli` (F)
-- `copy.pipeline.clix-website` (F)
-- `copy.safety-intro` (F)
-- `copy.demo-intro` (F)
-- `copy.metrics-prose` (F)
-- `stack.clix-cli` (F)
-- `copy.roadmap-intro` (F)
-- `copy.log-entries` (F)
-- `fold.features` (F)
-- `log.portfolio` (G)
-- `log.stale` (G)
-- `log.clix-cli` (G)
-- `log.clix-website` (G)
-- `log.order` (G)
-- `log.surveyedAt` (G)
-- `fact.clix-cli.version` (H)
-- `fact.clix-cli.active` (H)
-- `fact.clix-website.status` (H)
-- `fact.clix-website.version` (H)
-- `default.1` (I)
-- `default.2` (I)
-- `default.3` (I)
-- `default.4` (I)
-- `default.5` (I)
-- `default.6` (I)
-- `default.7` (I)
-- `default.8` (I)
-- `default.9` (I)
-- `default.10` (I)
-- `default.11` (I)
+Every key that later plans read from 11-02-SUMMARY.md, with the section that asks for it.
 
-## A. Trail pair (D-07)
+| Key | Section | What it decides |
+|-----|---------|-----------------|
+| `claim.box-tools` | B | "23 tools" |
+| `claim.box-tests` | B | "507 tests" |
+| `claim.box-binary` | B | "single static binary" / "1 binary" |
+| `claim.box-safe-default` | B | "safe by default" / preview before any destructive write |
+| `claim.box-preflight` | B | "every check passes before the first write" |
+| `claim.box-blake3` | B | "BLAKE3 by default" |
+| `claim.box-ps7` | B | "built for Windows PowerShell 7" |
+| `claim.box-loc-timeline` | B | LOC, timeline and commit figures |
+| `claim.cf-permissions` | B | "zero permissions" |
+| `claim.cf-crypto` | B | "cryptographic randomness" |
+| `claim.cf-5050` | B | "exactly 50/50" |
+| `claim.cf-offline` | B | "fully offline" |
+| `claim.cf-network-calls` | B | "0 network calls" (the metric tile) |
+| `claim.cf-no-ads` | B | "no ads, no trackers, no accounts" |
+| `claim.cf-talkback` | B | "TalkBack support" |
+| `claim.cf-reduced-motion` | B | "reduced-motion support" |
+| `claim.cf-font-scaling` | B | "system font scaling" |
+| `claim.cf-stage-toss` | B | the "Choreographed toss" stage description |
+| `claim.cf-stage-landing` | B | the "Landing and settle" stage description |
+| `capture.box-terminal` | C1 | which captured commands the box terminal replays, and in what order |
+| `copy.terminal-notes` | C1 | the optional one-line note under each terminal command |
+| `capture.box-safety` | C2 | the Safety preview block (`box bulk-rename`) |
+| `copy.force-line` | C2 | the sentence after the preview saying what `--force` would do |
+| `copy.projects-intro` | D | `/projects` intro |
+| `copy.pitch-box` | D | box panel pitch |
+| `copy.pitch-cf` | D | coin-flip panel pitch |
+| `copy.status-box` | D | box status word in the kicker |
+| `copy.release-box` | D | box release line |
+| `copy.release-cf` | D | coin-flip release line |
+| `copy.outcome-box` | D | box outcome line |
+| `copy.outcome-cf` | D | coin-flip outcome line |
+| `copy.problem-box` | D | box Problem paragraph |
+| `copy.problem-cf` | D | coin-flip Problem paragraph |
+| `copy.safety-intro-box` | D | box Safety intro |
+| `copy.privacy-intro-cf` | D | coin-flip Privacy intro (optional) |
+| `copy.privacy-facts-cf` | D | coin-flip Privacy facts (three lines) |
+| `copy.pipeline-intro-cf` | D | coin-flip Pipeline intro |
+| `copy.pipeline-stages-cf` | D | coin-flip stage names and descriptions |
+| `copy.pipeline-endpoints-cf` | D | coin-flip "In:" and "Out:" lines (optional) |
+| `copy.pipeline-box` | D | box Pipeline (optional, Discretion) |
+| `copy.tiles-box` | D | box metric tiles with context lines |
+| `copy.tiles-cf` | D | coin-flip metric tiles with context lines |
+| `copy.stack-box` | D | box Stack groups |
+| `copy.stack-cf` | D | coin-flip Stack groups |
+| `copy.demo-intro-box` | D | box Demo intro |
+| `copy.roadmap-intro` | D | `/roadmap` intro |
+| `copy.home-about` | D | Home About sentence (D-33) |
+| `log.rows` | E | the seven route-log rows, their status, order and dates, and the v2.0 phase lines |
+| `log.descriptions` | E | the one-line description of each row |
+| `log.surveyedAt` | E | the "Route log surveyed" date |
+| `default.1` to `default.3`, `default.5` to `default.11` | F | UI-SPEC defaults (#4 is void) |
+| `default.N1` to `default.N4` | F | UI-SPEC defaults added in the re-plan |
+| `ci.approval` | G | the `ci/11-17` push and visual-baselines dispatch |
 
-Keys: `trail.clix-cli`, `trail.clix-website`, `trail.caption-names`.
+---
 
-Each project panel and case-study trailhead gets an elevation profile of one real marked trail inside the 11 km map sheet. Its badge is that trail's real SAC grade (D-05, D-06). Research checked four official Zermatt listings. Every endpoint lies inside the sheet. The DEM heights were sampled from the committed heightmap (08 D-17: DEM heights, not brochure heights).
+## A. Trail pair (D-07, answered)
 
-| Trail (official listing) | SAC grade (source) | Waymark | Official start → end | DEM start → end | Geometry check |
-|--------------------------|--------------------|---------|----------------------|-----------------|----------------|
-| Hörnliweg No. 27: Schwarzsee → Hörnlihütte | T4 "Alpine Hiking Trail" ([listing](https://zermatt.swiss/en/p/hoernliweg-no-27-01tVj000005EwSkIAK)) | white-blue-white | 2,583 m → 3,260 m, 4.3 km, ↑693 m | 2,587 m → 3,262 m | 4,316 m routed, matches 4.3 km with no via points |
-| Zmutt path No. 2: Zermatt station → Zmutt | T1 "Hiking trail" ([listing](https://zermatt.swiss/en/p/zmuttweg-no-2-01tVj00000H69zjIAB)) | yellow | 1,620 m → 1,937 m, 4.3 km, ↑339 m | 1,606 m → 1,934 m | 3,645 m shortest path; needs 1–2 via points to follow the official 4.3 km line |
-| Riffelseeweg No. 21: Rotenboden → Riffelberg | T2 "Mountain Hiking Trail" ([listing](https://zermatt.swiss/en/p/riffelseeweg-no-21-01tVj000005Ew9KIAS)) | white-red-white | 2,815 m → 2,582 m, 2.9 km, ↓267 m | 2,806 m → 2,582 m | 2.2 km via the lake shore; needs via points; the trail descends |
-| Matterhorn Glacier Trail No. 26: Trockener Steg → Schwarzsee | T3 "Thematic trail" ([listing](https://zermatt.swiss/en/Media/Planning-hikes-tours/Matterhorn-Glacier-Trail-Nr.-26)) | white-red-white | 2,939 m → 2,583 m, 6.6 km | 2,926 m → 2,583 m | not probed; listing showed "Closed" (seasonal) on 2026-11-01 |
+Recorded for reference. Tim answered this in the phase discussion (D-07), so it is not asked again. The official zermatt.swiss listings are the source of record; the DEM heights were sampled from the committed heightmap (08 D-17).
 
-Some third-party sites list the Hörnliweg as T3 and the Glacier Trail as T2. The official zermatt.swiss listings above are the source of record.
+| Project | Trail (official listing) | SAC grade (source) | Waymark | Official start → end | DEM start → end | Geometry check |
+|---------|--------------------------|--------------------|---------|----------------------|-----------------|----------------|
+| box | Hörnliweg No. 27: Schwarzsee → Hörnlihütte | T4 "Alpine Hiking Trail" ([listing](https://zermatt.swiss/en/p/hoernliweg-no-27-01tVj000005EwSkIAK)) | white-blue-white | 2,583 m → 3,260 m, 4.3 km, ↑693 m | 2,587 m → 3,262 m | 4,316 m routed, matches 4.3 km with no via points |
+| coin-flip | Zmutt path No. 2: Zermatt station → Zmutt | T1 "Hiking trail" ([listing](https://zermatt.swiss/en/p/zmuttweg-no-2-01tVj00000H69zjIAB)) | yellow | 1,620 m → 1,937 m, 4.3 km, ↑339 m | 1,606 m → 1,934 m | 3,645 m shortest path; needs 1–2 via points to follow the official 4.3 km line |
 
-Options (choose one, or name another pair from the table):
-
-| Option | CLI_X | Website | Pros | Cons |
-|--------|-------|---------|------|------|
-| Option A (recommended) | Hörnliweg No. 27, T4 | Zmutt path No. 2, T1 | The most distinct glyphs (bars vs diamond); both trails climb; the Hörnliweg line already matches its official length; the trail to the Matterhorn's base suits the larger project | The CLI_X badge is white-blue-white, the same paint as the High band in its own risk scale (D-06 keeps the meanings apart, but a skim reader may link them); the Zmutt line needs 1–2 via points |
-| Option B | Riffelseeweg No. 21, T2 | Zmutt path No. 2, T1 | Ties CLI_X to the Riffelsee photo waypoint on Home; neither glyph shares a paint with a High or Critical band | The Riffelseeweg descends (the profile falls left to right); both lines need via points |
-| Option C | Hörnliweg No. 27, T4 | Riffelseeweg No. 21, T2 | Both are mountain or alpine trails near the summit | The website glyph descends; both badges use bar waymarks |
-
-Caption place names (Option A, final heights come from the generator's end points):
+Captions (D-07; the final heights come from the generator's DEM endpoints):
 
 - `Schwarzsee 2,587 m → Hörnlihütte 3,262 m · T4`
 - `Zermatt 1,606 m → Zmutt 1,934 m · T1`
 
-For Option B or C the names would be `Rotenboden … → Riffelberg …` for the Riffelseeweg. Tim can rename any place (for example "Zermatt station" instead of "Zermatt").
+Plan 11-04 picks the Zmutt via points so the routed line stays within 10 percent of 4.3 km and records them in its SUMMARY. Tim sees the glyphs in the visual review. No reply needed.
+
+---
+
+## B. Claims audit (D-09)
+
+Mark each row `source` (shown as drafted), `soften` (your wording, no figure) or `cut` (removed everywhere it appears). A softened claim never keeps a figure. Under the default for N3 (section F), a softened metric leaves the strip and the panel, and its wording lives in prose.
+
+**About the box sources.** The README cited here is the one on box's `main` branch, which is what a visitor sees on GitHub. `main` is three commits ahead of the `v2.0` tag, and those commits change only documentation (the README rewrite for v2.0 and the human-UAT records under `.planning/`), so the v2.0 build in section C runs the same code. The README stored at the `v2.0` tag is the older one ("~23 command-line tools" and a stale Phase 1 status line), so the links point at `main`. Links: [README](https://github.com/tlex-web/box#readme), [MILESTONES](https://github.com/tlex-web/box/blob/main/.planning/MILESTONES.md).
+
+| Key | Claim | Where it appears | Current wording (draft) | Proposed soft wording | Source | Proposed | Reply |
+|-----|-------|------------------|-------------------------|-----------------------|--------|----------|-------|
+| claim.box-tools | 23 tools | box strip and tile, pitch, Problem, route-log row | "23" / "Twenty-three command-line tools in one Rust binary" | "A few dozen command-line tools in one binary" | README "One tiny binary. 23 command-line tools."; MILESTONES v2.0 "the shipped 23-command `box` binary". `box --help` on the v2.0 build lists 25 subcommands: the 23 tools plus `config` and `completions` (research found the README lists those two apart, under "Meta"). The tile's context line says so (D-28, Pitfall 5) | source, with the context line "Tools in the README at v2.0, plus config and completions" | `source` / `soften` / `cut` |
+| claim.box-tests | 507 tests | box strip and tile | "507" | "A test suite that passed at release" | MILESTONES v2.0 Stats: "Tests: 507 passing, 0 failed". Not re-run for this packet | source, context "At the v2.0 milestone" | `source` / `soften` / `cut` |
+| claim.box-binary | single static binary / 1 binary | box strip and tile, pitch | "1" / "in one Rust binary" | "One executable" (no "static") | README badge "single static .exe" and install notes "a static, MSVC release binary"; MILESTONES v1.0 "A single Rust binary bundling all 23 command-line tools". The v2.0 build here produced one `box.exe` | source | `source` / `soften` / `cut` |
+| claim.box-safe-default | safe by default; writes nothing without `--force` | Safety intro, pitch, box Pipeline | "box shows what it would do and writes nothing" (UI-SPEC draft) | "renames, moves or deletes nothing until you add `--force`" | README "Safe by default: every destructive tool (`flatten --move`, `dupes --delete`, `bulk-rename`) previews as a dry-run first and only writes with `--force`". The `bulk-rename` preview in C2 changed no file. Research found that a `flatten` preview creates its empty output folder, so "writes nothing" is not true of every preview (Pitfall 3) | soften, to the wording on the left | `source` / `soften` / `cut` |
+| claim.box-preflight | every check passes before the first write | Safety intro | "every check has to pass before the first write" | "box checks the whole job before it changes the first file" | MILESTONES v2.0: the three destructive flags (`flatten --move`, `dupes --delete`, `bulk-rename --backup`) share "dry-run default, `--force`, abort-all-before-any pre-flight". Recorded for those flags; not checked separately for a plain `bulk-rename --force` | source if you confirm it holds for every destructive command, else soften | `source` / `soften` / `cut` |
+| claim.box-blake3 | BLAKE3 by default | terminal note under `box hash` | "BLAKE3 is the default hash." | "box hashes with BLAKE3 unless told otherwise" | MILESTONES v2.0 "BLAKE3-default `hash`"; the v2.0 build's `box hash sample/hut.txt --json` reports `"algo": "blake3"` | source | `source` / `soften` / `cut` |
+| claim.box-ps7 | built for Windows PowerShell 7 | pitch, Problem, Stack | "built for PowerShell 7" | "made for PowerShell on Windows" | README "built for **Windows PowerShell 7**"; install steps run in PowerShell 7 | source | `source` / `soften` / `cut` |
+| claim.box-loc-timeline | LOC, timeline, commit counts | nowhere in the drafts | not used | none | MILESTONES v2.0 Stats: 15,649 Rust LOC, 2026-06-25 → 2026-07-14 (about 20 days), 198 commits. The UI-SPEC voice rule bans these unless you source them | cut (not used anywhere) | `source` / `cut` |
+| claim.cf-permissions | zero permissions | coin-flip strip and tile, pitch, Privacy fact 1, route-log row | "0" / "No permissions: the release build asks for none." | "Asks for no special permissions" | Project record, summarised: the permission count is checked on the built release APK (D-23 fact list, D-28) | source, context "Checked on the release APK" | `source` / `soften` / `cut` |
+| claim.cf-crypto | cryptographic randomness | Pipeline intro, stage 1, tile context | "A cryptographic 50/50 draw picks heads or tails before the toss" | "A random draw picks the result before the toss" | Project record, summarised: a cryptographic random source decides each result before the animation starts (D-23 fact list) | source | `source` / `soften` / `cut` |
+| claim.cf-5050 | exactly 50/50 | coin-flip strip and tile, Pipeline intro | "50/50" | "An even draw between heads and tails" | Project record, summarised: the draw is an exact 50/50 (D-23 fact list, D-28) | source, context "A cryptographic draw decides each result" | `source` / `soften` / `cut` |
+| claim.cf-offline | fully offline | Privacy fact 2, pitch ("no network"), coin-flip-v1 description | "Fully offline: no internet permission and no remote services." | "Works without a connection" | Project record, summarised: no internet permission and no remote services (D-23 fact list) | source | `source` / `soften` / `cut` |
+| claim.cf-network-calls | 0 network calls | coin-flip strip and tile | "0" with "No internet permission, no remote services" | "Offline" (as a word, under N3) or left to Privacy fact 2 | The record states no internet permission and no remote services. "0 calls" is a measurement the record does not state as such. Without the internet permission an Android app cannot open network sockets (research assumption A3) | soften: drop the tile, keep the fact under Privacy | `source` / `soften` / `cut` |
+| claim.cf-no-ads | no ads, trackers or accounts | Privacy fact 3 | "No ads, no trackers, no accounts." | "No ads and no sign-in" | Project record, summarised; the app's own About screen says the same, per the record (D-23 fact list) | source | `source` / `soften` / `cut` |
+| claim.cf-talkback | TalkBack support | Pipeline stage 4, Problem | "a TalkBack announcement of the result" | "the result is announced to screen readers" | Project record, summarised: delivered in v1 (D-23 fact list) | source | `source` / `soften` / `cut` |
+| claim.cf-reduced-motion | reduced-motion support | not in the drafts; available for Problem | not used | "respects the system's reduce-motion setting" | Project record, summarised: delivered in v1 (D-23 fact list) | source if you want it in the Problem paragraph, else leave unused | `source` / `cut` |
+| claim.cf-font-scaling | system font scaling | not in the drafts; available for Problem | not used | "text follows the system font size" | Project record, summarised: delivered in v1 (D-23 fact list) | source if you want it in the Problem paragraph, else leave unused | `source` / `cut` |
+| claim.cf-stage-toss | "Choreographed toss (the camera follows the coin)" | Pipeline stage 2 description | "The coin is tossed in 3D and the camera follows it." | "The 3D toss is choreographed to land on the drawn result." | Project record, summarised: the toss is choreographed to the drawn result; the camera follow is among the work still open after v1 (D-30, Pitfall 9) | soften, to the wording on the left (no polish words) | `source` / `soften` / `cut` |
+| claim.cf-stage-landing | "Landing and settle" | Pipeline stage 3 description | "The coin lands and settles on the drawn face." | "The coin comes to rest on the drawn face." | Project record, summarised: the landing-and-settle polish is among the work still open after v1 (Pitfall 9) | soften, to the wording on the left | `source` / `soften` / `cut` |
+
+**If not supplied:** the claim is left out wherever it appears (strip item, tile, prose sentence, chip). A sentence that needs an unsupplied claim is left out with it.
+
+Reply: `B: <key> source|soften "<your wording>"|cut, …` or `B: accept the proposed column`.
+
+---
+
+## C. Captures (D-25, D-26, D-34)
+
+### Build record (D-34)
+
+| Item | Value |
+|------|-------|
+| Repository | github.com/tlex-web/box (public) |
+| Tag | `v2.0` |
+| Commit | `61afb3d9fb73647e991ab5f4a0322dddbc9ee98f` (2026-07-14, "chore: remove REQUIREMENTS.md for v2.0 milestone") |
+| Clone | `gh repo clone tlex-web/box <scratchpad>/box -- --branch v2.0 --depth 1` |
+| Build | `CARGO_TARGET_DIR=<scratchpad>/box-target cargo build --release --locked` (run inside `<scratchpad>/box`) |
+| Toolchain | cargo 1.98.1; finished in 1 m 05 s |
+| Check before capturing | `box --help` lists `config` and `completions` (Pitfall 1 passed) |
+| Binary | `<scratchpad>/box-target/release/box.exe`; it reports `box 0.1.0`, so no capture runs `--version` (D-29) |
+| Tim's installed box | not run, not updated, not touched |
+
+**Capture session.** Each capture ran in its own `pwsh -NoProfile` session (PowerShell 7.6.9) with `$env:NO_COLOR = '1'`, `$PSStyle.OutputRendering = 'PlainText'`, `Set-Alias box <scratchpad>/box-target/release/box.exe` and the working directory `<scratchpad>/cap`. That folder was created fresh for these captures and holds only:
+
+- `sample/hut.txt` (20 bytes, the text `Hoernli hut, 3260 m`)
+- `sample/zmutt.txt` (14 bytes, the text `Zmutt, 1936 m`)
+- `sample/copies/hut.txt` (an exact copy of `sample/hut.txt`)
+
+Every typed line below is the exact line that ran. Every output is exactly what box printed: nothing was trimmed, redacted or reworded. All commands are read-only, use relative paths, make no network call and do not run `--version`. Each output is at most 12 lines (N2). Research recorded that Tim's box config matches the built-in defaults; no capture prints the config.
+
+### C1. Terminal candidates (D-26)
+
+Five read-only, time-independent candidates. The UUID in C1.2 is random and stays exactly as captured.
+
+**C1.1 `hash`** (1 line)
+
+Typed line:
+```text
+box hash sample/hut.txt
+```
+Output:
+```text
+a113912ef20f332e35c86601e1c90df90a110e260827f0ae9f861611927ecf1d  sample/hut.txt
+```
+Note draft: "BLAKE3 is the default hash." (needs `claim.box-blake3`)
+
+**C1.2 `uuid --json`** (9 lines)
+
+Typed line:
+```text
+box uuid --json
+```
+Output:
+```text
+{
+  "results": [
+    {
+      "uuid": "e8487bbf-77c8-4aa7-86c6-76bf11e8c9e2",
+      "version": "v4"
+    }
+  ],
+  "count": 1
+}
+```
+Note draft: "With --json, a command prints one JSON document and nothing else."
+
+**C1.3 `du` into a PowerShell pipeline** (7 lines)
+
+Typed line:
+```text
+box du ./sample --json | ConvertFrom-Json | Select-Object -ExpandProperty results | Sort-Object size -Descending | Select-Object -First 3 name, size
+```
+Output:
+```text
 
-Notes:
-- The CONTEXT example caption `Start 2,583 m → End 3,260 m · T3` is this Hörnliweg, with brochure heights and an unofficial T3. The DEM heights above replace it.
-- Plan 11-04 chooses the via points so that the routed length is within 10 percent of the official length, and records them in its SUMMARY. Tim sees the resulting glyphs in the visual review, so no via-point approval is needed now.
+name      size
+----      ----
+copies      20
+hut.txt     20
+zmutt.txt   14
+
+```
+Note draft: "ConvertFrom-Json reads it, so the rest is plain PowerShell."
+Format note: PowerShell's table formatter printed one blank line before and one after the table, and wrote Windows line ends. The blank lines are kept as captured; the line ends are stored as plain newlines like the rest of this file. The typed line is long and wraps over several lines in the terminal on a phone (about 37 characters per line at 375 px).
+
+**C1.4 `color`** (7 lines)
+
+Typed line:
+```text
+box color '#70d5ed'
+```
+Output:
+```text
+  Hex   : #70D5ED
+  RGB   : rgb(112, 213, 237)
+  Tuple : 112 213 237
+  HSL   : hsl(192, 78%, 68%)
+  Name  : ~skyblue
+
+  ██████████
+```
+Note draft: "Hex in; RGB, HSL and a color name out."
+Format note: the last line is a swatch of ten block characters. With `NO_COLOR` set it has no color, so on the site it renders as a solid bar in the terminal's text color.
+
+**C1.5 `tree`** (7 lines; Claude's extra read-only pick)
+
+Typed line:
+```text
+box tree ./sample
+```
+Output:
+```text
+./sample
+├── copies
+│   └── hut.txt
+├── hut.txt
+└── zmutt.txt
+
+1 directories, 3 files
+```
+Note draft: "tree only reads; it changes nothing."
+
+Rejected candidate (not shown): `box dupes ./sample` (the read-only duplicate finder). Its output names each file by its full absolute path from the drive root, which includes the home folder, so it cannot ship unedited (same reason as C3).
+
+**Proposed transcript:** four commands in this order: C1.1 `hash`, C1.2 `uuid --json`, C1.3 the `du` pipeline, C1.4 `color`. Together they show what v2.0 is about: BLAKE3 by default, JSON for scripts, a real PowerShell pipeline and a plain human view. C1.5 `tree` can be a fifth if you want five.
+
+11-07 needs at least two approved commands. With fewer, box ships with no Demo section, and 11-07 stops to ask how to keep the terminal end-to-end suite.
+
+**If not supplied:** box ships with **no Demo section**; no invented command or output. A command without an approved note has no note line.
+
+Reply: `C1: commands 1, 2, 3, 4 (in that order), notes ok` or name the commands, the order and any note edits.
+
+### C2. Safety preview (D-25)
+
+Recommended (open question Q2): `box bulk-rename` in its default preview mode. It prints names relative to the folder, so it can ship unedited, and the run changed no file (checked after the capture: all three files kept their names).
+
+Caption: `Preview run · box bulk-rename`
+
+Typed line:
+```text
+box bulk-rename ./sample '^(.*)\.txt$' '$1.md'
+```
+Output (5 lines):
+```text
+  - copies (skipped: directory)
+  ~ hut.txt   -> hut.md
+  ~ zmutt.txt -> zmutt.md
 
-Questions: (1) Which pair? (2) Which project gets which trail? (3) Are the caption place names right?
+Dry run: 2 to rename, 0 unchanged, 1 skipped. Re-run with --force to apply.
+```
 
-Reply: "A: option A / B / C (or name the pair and assignment); names approve, or the names to use"
-If not supplied: no profile glyph and no grade badge are rendered for that project, on the panel or the trailhead; the panel ships complete without them, with no placeholder line and no generic mountain (UI-SPEC "Input absent (D-07 not approved)").
+`--force` line draft (`copy.force-line`), written from exactly this run:
+"With `--force`, box would rename `hut.txt` to `hut.md` and `zmutt.txt` to `zmutt.md`, and leave the `copies` folder alone."
 
-## B. Medium and High demo commands (D-10)
+**If not supplied:** no preview block and no `--force` line. The approved Safety intro renders on its own; with no approved intro, the Safety section is omitted.
 
-Keys: `demo.medium`, `demo.high`, `demo.explanations`.
+Reply: `C2: approve` (capture and `--force` line), or `C2: capture approve, force line "<your wording>"`, or `C2: decline`.
 
-Why this is needed: the four demo commands you supplied at 08-03 score 0.05, 0.15 and 0.29 (all Low) and 0.87 (Critical). The Medium band (0.3 up to 0.6) and the High band (0.6 up to 0.8) have no example. Only a real CLI_X run can fill them (08 D-22: nothing invented).
+### C3. Why the delete-duplicates preview is not used
 
-Please run one request you expect to land in each band, and paste these five things verbatim for each: the request, the command CLI_X returned, the riskScore (two decimals), the warning (if any) and the explanation.
+D-25 suggested a duplicate-deletion preview (`box dupes --delete`). Research ran it and found that box resolves every file it lists to a full absolute path, starting at the drive root and running through the user's home folder and its temporary-files folder, even when the command is given a relative folder. The read-only `box dupes ./sample` run for this packet prints the same kind of path. The site may not show home or absolute paths, and captured output may not be edited to remove them (UI-SPEC N2, 08 D-22). So the preview cannot ship, and `bulk-rename` is recommended instead. The output itself is deliberately not reproduced here.
 
-Suggested requests (suggestions only, research's guess at the band; your real output decides where each lands):
+---
 
-| Band | Suggested request |
-|------|-------------------|
-| Medium (0.3 ≤ score < 0.6) | "delete the build folder in this project and everything in it" |
-| High (0.6 ≤ score < 0.8) | "make this script readable and writable by everyone" |
+## D. Copy (D-16)
 
-If a score lands in a different band, it is recorded under the band it falls in, with a note.
+First person, short, factual, sentence case, no exclamation marks. Each row: approve, edit (give your wording) or decline. The "Needs" column names claims from section B; if one of them is cut, the line is reworded or left out.
 
-The existing explanation lines (`demo.explanations`): keep or edit each.
+| Key | Element | Draft | Needs | If not supplied |
+|-----|---------|-------|-------|-----------------|
+| copy.projects-intro | `/projects` intro | "Two things I build: box, a command-line toolkit for PowerShell 7 written in Rust, and coin-flip, an Android app that tosses a fair 3D coin. Each route opens a case study." | box-ps7 | The intro paragraph is left out |
+| copy.pitch-box | box panel pitch | "Twenty-three command-line tools in one Rust binary, built for PowerShell 7. Anything destructive previews first." | box-tools, box-binary, box-ps7, box-safe-default | The panel shows no pitch |
+| copy.pitch-cf | coin-flip panel pitch | "A 3D coin toss for Android that settles a fair result before the coin leaves your hand, with no permissions and no network." | cf-crypto, cf-permissions, cf-offline | The panel shows no pitch |
+| copy.status-box | box status word | `shipped` (kicker `v2.0 · shipped`) | none | Kicker reads `v2.0` |
+| copy.release-box | box release line | "Measured at v2.0" | none | Release line left out |
+| copy.release-cf | coin-flip release line | "Checked on the v1.0 release build" | none | Release line left out |
+| copy.outcome-box | box outcome line | "v2.0 shipped on 14 July 2026: 23 tools in one binary, JSON output for scripts, and a preview before anything destructive." | box-tools, box-binary, box-safe-default | Outcome line left out |
+| copy.outcome-cf | coin-flip outcome line | "v1.0 has run on my own device since 9 August 2026. A smoother toss and a Play Store release come next." | none | Outcome line left out |
+| copy.problem-box | box Problem paragraph | "box gathers the small jobs I do in PowerShell 7 on Windows into one command: hashing a file, making a UUID, flattening a folder, renaming a batch of files. v1.0 put 23 tools in one Rust binary. v2.0 made them scriptable: JSON output that `ConvertFrom-Json` reads, `--clip` for the clipboard, and defaults in a config file." | box-tools, box-binary, box-ps7 | Problem section omitted for box |
+| copy.problem-cf | coin-flip Problem paragraph | "coin-flip is an Android app for one job: settling a call with a coin toss you can trust. The result is drawn first, and the 3D toss is choreographed to land on it. It asks for no permissions and works offline, and the result is announced to TalkBack. v1 runs on my own device, but it is not done: smoothing the toss and the camera follow, and then a Play Store release, are still ahead." | cf-crypto, cf-permissions, cf-offline, cf-talkback | Problem section omitted for coin-flip |
+| copy.safety-intro-box | box Safety intro | "Commands that delete, move or rename files run as a preview by default: box shows what it would do and renames, moves or deletes nothing until you add `--force`. box checks the whole job before it changes the first file." (softened from the UI-SPEC draft, which said "writes nothing") | box-safe-default, box-preflight | Intro left out; with no approved preview either, the Safety section is omitted |
+| copy.privacy-intro-cf | coin-flip Privacy intro (optional) | "coin-flip keeps everything on the device." | cf-offline | No intro; the facts list stands alone |
+| copy.privacy-facts-cf | coin-flip Privacy facts | 1. "No permissions: the release build asks for none." 2. "Fully offline: no internet permission and no remote services." 3. "No ads, no trackers, no accounts." | cf-permissions, cf-offline, cf-no-ads | Unapproved facts left out; with none, the Privacy section is omitted |
+| copy.pipeline-intro-cf | coin-flip Pipeline intro | "The result is decided first. A cryptographic 50/50 draw picks heads or tails before the toss, and the animation is choreographed to land on it." | cf-crypto, cf-5050 | Intro left out |
+| copy.pipeline-stages-cf | coin-flip stages (name, then description) | 1. `Fair draw`: "A cryptographic 50/50 draw picks heads or tails." 2. `Choreographed toss`: "The 3D toss is choreographed to land on the drawn result." 3. `Landing and settle`: "The coin comes to rest on the drawn face." 4. `Haptic pulse and announcement`: "A short pulse, and TalkBack announces the result." | cf-crypto, cf-5050, cf-stage-toss, cf-stage-landing, cf-talkback | An unapproved description shows the stage name only; unapproved stage names omit the Pipeline section |
+| copy.pipeline-endpoints-cf | coin-flip "In:" and "Out:" lines (optional) | "In: a tap" / "Out: a fair result, felt and announced" | cf-talkback | Not rendered |
+| copy.pipeline-box | box Pipeline (optional, Discretion, 3 stages) | 1. `Settings`: "A flag beats an environment variable, which beats the config file, which beats the built-in default." 2. `Command`: "One of the 23 tools runs with those settings." 3. `Output`: "Plain text for people, `--json` for the next command, `--clip` for the clipboard." Source: README "precedence is CLI › env › config › built-in" | box-tools | box has no Pipeline section |
+| copy.tiles-box | box metric tiles (label, value, context line) | `Tools` `23` "Tools in the README at v2.0, plus config and completions" ([Source](https://github.com/tlex-web/box#readme)) · `Tests` `507` "At the v2.0 milestone" ([Source](https://github.com/tlex-web/box/blob/main/.planning/MILESTONES.md)) · `Binary` `1` "All tools ship in one executable" ([Source](https://github.com/tlex-web/box#readme)) | box-tools, box-tests, box-binary | A tile without an approved context line does not ship; with no tile, the Metrics section is omitted |
+| copy.tiles-cf | coin-flip metric tiles (no links, private repo) | `Permissions` `0` "Checked on the release APK" · `Result split` `50/50` "A cryptographic draw decides each result" · `Network calls` `0` "No internet permission, no remote services" (B proposes softening this one; under the N3 default it then leaves the strip) | cf-permissions, cf-5050, cf-crypto, cf-network-calls | Same as box |
+| copy.stack-box | box Stack groups | `Language`: Rust 2021 · `Crates`: clap, serde_json, blake3, regex, rayon, chrono, image, crossterm · `Platform`: Windows, PowerShell 7. Source: the public Cargo.toml at v2.0 and the README badges | box-ps7 | Unapproved group left out; with none, Stack is omitted |
+| copy.stack-cf | coin-flip Stack groups | `Language`: Kotlin · `Platform`: native Android · `Rendering`: **your words needed**. Claude did not name the 3D renderer, because that would mean reading the private repository; name it, or leave the group out | none | Unapproved group left out; with none, Stack is omitted |
+| copy.demo-intro-box | box Demo intro | "Four commands I ran with box, replayed with the output they returned." (the number follows the commands you approve in C1) | none | Intro left out; the terminal still renders if C1 is approved |
+| copy.roadmap-intro | `/roadmap` intro | "What I've finished, what I'm working on and what comes next, for this site, box and coin-flip." | none | Intro left out |
+| copy.home-about | Home About body (D-33) | "I'm {name}, a developer and photographer. I build software in Rust, TypeScript and Kotlin, including box, a command-line toolkit for PowerShell, and coin-flip, an Android app that tosses a fair 3D coin. I photograph the mountains around Zermatt, and this site puts each photograph back on the terrain where I took it." | none | The CLI_X clause is removed and nothing replaces it: "I'm {name}, a developer and photographer. I build software in Rust and TypeScript. I photograph the mountains around Zermatt, …" |
 
-| # | Request | Command | Score | Current explanation | Note |
-|---|---------|---------|-------|---------------------|------|
-| 1 | show me all Python files larger than 1MB | `find . -name "*.py" -size +1M -ls` | 0.05 | Safe file search operation with no modifications | Uses "Safe"; fine if this is CLI_X's own output |
-| 2 | check how much disk space is available | `df -h` | 0.15 | Read-only system information query | — |
-| 3 | create a backup of my documents folder | `tar -czf documents_backup_$(date +%Y%m%d).tar.gz ~/Documents/` | 0.29 | Safe backup operation with timestamped filename | Uses "Safe" |
-| 4 | kill all Chrome processes | `pkill -f chrome` | 0.87 | High-risk operation - requires explicit confirmation | Says "High-risk", but 0.87 shows as T6 Critical; consider "Critical-risk operation: requires explicit confirmation" or keep if it is CLI_X's verbatim output |
+Fixed interface copy (labels, headings, the clip fallback sentence, document titles) is set by the UI-SPEC and is not asked here.
 
-Warning line for #4 (kept as is unless you edit it): "This command terminates running processes".
+Reply: `D: approve all`, or `D: approve all except <key> (edit: "…"), <key> decline`.
 
-Reply: "B: medium = request / command / score / warning / explanation; high = …; explanations keep, or edits per #"
-If not supplied: the Medium or High band shows its stripe, grade and score range with no example tick, it gets no row in the examples table and no step in the terminal loop, and nothing says "no example" (UI-SPEC "Medium/High examples (D-10)"). Unanswered explanation lines ship unchanged as they are in the data today.
+---
 
-## C. Behaviour lines (D-11)
+## E. Route log (D-17, D-18, D-20, D-31, D-32)
 
-Keys: `behaviour.low`, `behaviour.medium`, `behaviour.high`, `behaviour.critical`, `capabilities`.
+### E1. Rows (`log.rows`, `log.descriptions`)
 
-What research found (its own words, from CLI_X main at its last push, 2026-06-08; RESEARCH A6, please correct anything that has changed):
-- After CLI_X writes a command, it prints the command and its explanation and asks whether to run it. Nothing runs without that prompt unless the user passes an explicit opt-in flag that skips it. A dry-run mode never runs anything.
-- The score runs from 0 to 1 and has three parts. The most severe of the 11 rules the command matches counts most. Next comes the context it would run in (elevated privileges, a sensitive system folder, little free disk space). Last comes the command's shape (risky words such as force, recursive or delete, chained commands, piping into a shell, wildcards). The 11 rules fall into four severities.
-- Below 0.3: no warning, and the prompt's default answer is yes.
-- 0.3 up to 0.6: with the shipped default setting (confirmation required), CLI_X prints a warning with the message of every rule it matched, and the prompt's default answer becomes no. A user setting can turn this off, and then Medium behaves like Low.
-- 0.6 and above: always treated as not safe, whatever the settings: the same warning, the matched rules and a default of no.
-- **High and Critical behave the same in the current CLI_X run path, and nothing is hard-blocked.** CLI_X's own safety document describes Critical as blocked; the code does not (RESEARCH Pitfall 9).
-- At any grade, a command judged destructive gets a "back up first" recommendation, and a safer alternative is suggested when CLI_X knows one.
+Seven rows: two for this site, two for box, three for coin-flip (one row per milestone, D-31). `order` runs from the bottom of the climb (1) to the top (7). The id is stable once shipped, because it appears in shareable URLs and in the case-study Next steps links.
 
-Draft lines for the grade table's "What CLI_X does" column:
+| id | Title (draft) | area | status | order | completedAt | Description (draft, `log.descriptions`) | Evidence |
+|----|---------------|------|--------|-------|-------------|------------------------------------------|----------|
+| `coin-flip-play-store` | Play Store release | coin-flip | planned | 7 | — | "Releasing the app through the Play Store." | coin-flip's record has the store release as a separate later milestone (summarised) |
+| `coin-flip-v1-1` | v1.1 Smoother toss | coin-flip | planned | 6 | — | "Smoothing the toss and the camera follow." | coin-flip's record has a v1.1 follow-up for the remaining toss work (summarised) |
+| `portfolio-v2` | v2.0 Topographic Identity | portfolio | in-progress | 5 | — | "This redesign: the whole site rebuilt around the real Matterhorn terrain." | commit 383a4f9, 2026-10-10, "docs: start milestone v2.0 Topographic Identity" |
+| `coin-flip-v1` | v1.0 First release on device | coin-flip | completed | 4 | 2026-08-09 | "The first release, running on my own device: a fair draw, a 3D toss, no permissions and no network." | coin-flip's record closes v1.0 on 2026-08-09 (summarised); the repository has a `v1.0` tag |
+| `box-v2` | v2.0 Toolbox → toolkit | box | completed | 3 | 2026-07-14 | "The tools became scriptable: JSON output, `--clip`, config-file defaults, BLAKE3 hashing and previews before destructive changes." | box MILESTONES "Shipped: 2026-07-14"; tag `v2.0` on a commit dated 2026-07-14 |
+| `box-v1` | v1.0 Full toolbox | box | completed | 2 | 2026-06-24 | "All 23 tools in one Rust binary, installed from PowerShell 7." | box MILESTONES "Shipped: 2026-06-24" |
+| `portfolio-v1` | v1.0 Stabilization & Visual Identity | portfolio | completed | 1 | 2026-03-12 | "The first version of this site, stabilized and given its own visual identity." | `.planning/MILESTONES.md` "Shipped: 2026-03-12"; commit 1cb6e91 "v1.0", 2026-03-12 |
 
-| Grade | Score | Draft line |
-|-------|-------|-----------|
-| T1 · Low | 0–0.3 | Shows the command and asks before running it; the answer defaults to yes. |
-| T2–T3 · Medium | 0.3–0.6 | Warns, lists the rules the command matched, and asks you to confirm; the answer defaults to no. |
-| T4–T5 · High | 0.6–0.8 | Warns, lists the matched rules and suggests a safer command when it knows one; the answer defaults to no. |
-| T6 · Critical | 0.8–1.0 | Option (a) or (c) below. |
+The coin-flip-v1 description needs `claim.cf-crypto`, `claim.cf-permissions` and `claim.cf-offline`; box-v2 needs `claim.box-blake3` and `claim.box-safe-default`; box-v1 needs `claim.box-tools` and `claim.box-ps7`. A description whose claim is cut is reworded or left out.
 
-Decision for the Critical line (High and Critical behave the same):
+v2.0 phase lines inside the `portfolio-v2` disclosure (D-18, git-verified, carried over from the first-pass packet):
 
-| Option | Critical line | Pros | Cons |
-|--------|---------------|------|------|
-| (a) Ship both near-identical lines | "Same as High: a warning and a default of no. It does not block the command outright." | Exactly matches the code; honest | Two adjacent rows say almost the same thing; a reader may ask why the grade exists |
-| (b) Change CLI_X first | (Critical gets a real block or a typed confirmation in CLI_X, then the line says so) | The scale would mean something different at T6 | Outside this repo's scope; delays the line until CLI_X ships the change |
-| (c) Word Critical to say why it is graded higher, without promising another action | "Matches the most severe rules. CLI_X warns, lists them and defaults to no; the final decision stays with you." | Explains the higher grade; promises nothing the code does not do | Still no different action, just stated more gently |
+| Phase | Name | Status | completedAt | Evidence |
+|-------|------|--------|-------------|----------|
+| 7 | Foundation & guardrails | completed | 2026-10-24 | commit b147f20, 2026-10-24 |
+| 8 | Data & terrain pipeline | completed | 2026-10-24 | commit a413b69, 2026-10-24 |
+| 9 | Home ascent | completed | 2026-10-25 | commit 6500ae2, 2026-10-25 |
+| 10 | Photography | completed | 2026-10-26 | commit ae887f0, 2026-10-26 |
+| 11 | Engineering & roadmap | in-progress | — | current phase |
+| 12 | Contact, edge pages & cleanup | planned | — | ROADMAP.md |
 
-Optional wording tweak for Medium: append "(with the default settings)", because a user setting can turn the Medium warning off.
+Phase 11's own completion date is not written during Phase 11 (decided in 11-08): Phase 12's first data edit or the v2.0 milestone close records it, with your confirmation.
 
-Capability sentences (`capabilities`, these replace the v1 true/false flags "Context aware", "Impact analysis" and "Alternatives"; keep, edit or cut each):
+Retired rows (D-32): `portfolio-3d-gallery` (Phase 10 shipped that work), `portfolio-blog` (no plan behind it), and every CLI_X and webshop row now in `data/roadmap.ts`: `cli-conversation-export`, `cli-workflow-scheduling`, `cli-plugin-system`, `cli-autocomplete`, `cli-collaborative-commands`, `cli-web-interface`, `cli-conversation-mode`, `cli-ollama-integration`, `cli-template-analytics`, `webshop-team-management`, `webshop-analytics`, `webshop-api-marketplace`, `webshop-mobile-app`. box gets no planned row, because its next milestone is not defined yet.
 
-1. "The context a command would run in, such as elevated privileges, a sensitive system folder or low free disk space, raises its score."
-2. "A command judged destructive comes with a recommendation to back up first."
-3. "When CLI_X knows a safer command for the same task, it suggests it."
-4. (optional) "A dry run shows the command and its score without running anything."
+Expected filter counts with these rows: All 7; Portfolio 2, box 2, coin-flip 3; Planned 2, In progress 1, Completed 4. Combinations with no entries: box with Planned, box with In progress, coin-flip with In progress, Portfolio with Planned. coin-flip's Next steps are `coin-flip-v1-1` and `coin-flip-play-store`; box has none, so its Next steps section is omitted (N4 default).
 
-Reply: "C: low approve/edit; medium approve/edit (with or without the settings note); high approve/edit; critical (a)/(b)/(c) or your line; capabilities keep 1–4 / edits / cut n"
-If not supplied: the "What CLI_X does" column is not rendered at all (no empty cells) and the grade table shows grade and score only (UI-SPEC grade table "Lines not approved"); capability sentences that are not kept are not rendered, and the v1 true/false flags never render.
+**If not supplied:** an unconfirmed row does not ship. A confirmed row without a confirmed date reads `Completed` with no date. An unapproved description is left out (the title stands alone).
 
-## D. Claims audit (D-09)
+Reply: `E1: rows ok, descriptions ok`, or name the rows, titles, dates or descriptions to change.
 
-Keys: `claim.1` to `claim.17`, `strip.clix-cli`, `home.line`.
+### E2. surveyedAt (`log.surveyedAt`)
 
-Every CLI_X figure below comes from the author's own README or CHANGELOG in the private repo, none with a stated method or environment. Mark each row **source: <link or how measured>**, **soften** or **cut**. A softened claim ships as the soft wording, with no figure. A sourced metric also needs its context line (see below the table).
+Proposed: **2026-11-01** (today). It renders as the `/roadmap` kicker "Route log surveyed 1 Nov 2026".
+Rule (D-20, unit-tested): the date may not be in the future and may not be earlier than the newest `completedAt` in the data (now 2026-10-26, Phase 10). You may prefer the date the new `/roadmap` ships.
 
-| # | Claim | Where it appears | Current wording | Finding | Proposed soft wording | What would source it | Tim: source / soften / cut |
-|---|-------|------------------|-----------------|---------|-----------------------|----------------------|----------------------------|
-| 1 | 95% accuracy | data/projects.ts:31 features | "Natural language to shell command conversion (95% accuracy)" | Misattributed: CLI_X docs give "~95% accuracy" for the response-parsing stage, not end-to-end conversion | "Turns plain-English requests into commands for PowerShell, Bash, sh and cmd." | An evaluation set (N requests, a correctness rule, model, version) | |
-| 2 | ~90ms (40% faster) | :52 Performance tile; :10 longDescription "a 90ms startup" | "~90ms (40% faster)" | README "~90ms (40% faster than baseline)"; the baseline is unnamed | Drop "40% faster"; keep ~90 ms only with your measurement | e.g. hyperfine on a named version, machine and OS | |
-| 3 | 40-60% API cost reduction | :42 features | "Intelligent caching (40-60% API cost reduction)" | CLI_X docs give 40–60% as a typical cache hit rate and estimate cost from it | "Caches responses, so a repeated request skips the API call." (Metrics prose) | Hit-rate logs over a stated period | |
-| 4 | <100ms startup | :43 features | "Async context loading (<100ms startup)" | Changelog "Startup latency: <100ms (from ~2s)"; overlaps #2 | "Loads project context in the background, so the prompt appears straight away." | Same measurement as #2 | |
-| 5 | enterprise-grade safety | :9 shortDescription | "…using LLM technology with enterprise-grade safety." | No standard behind it | "…and scores every command for risk before it runs." | Not sourceable; cut the phrase | |
-| 6 | ML-inspired | :10 longDescription; :34 features | "an ML-inspired risk scorer"; "ML-inspired safety system with 11 comprehensive rules" | The scorer is a weighted, rule-based formula with no learned model | "a rule-based risk score built from 11 rules" | — (soften) | |
-| 7 | Accessibility compliant (WCAG 2.1) | :177 website features | "Accessibility compliant (WCAG 2.1)" | No audit evidence; the site is offline | Cut | An audit report | |
-| 8 | PCI-compliant payments | :214 website security list | "PCI-compliant payments" | PCI scope sits with Stripe when hosted Checkout or Elements is used (research assumption A2) | "Card payments run through Stripe; card details never reach my server." (only if true) | You confirm the Stripe integration type | |
-| 9 | 850+ tests / 100% pass rate | :64-65 Testing tiles; :10 "Over 850 tests" | "850+", "100%" | v2.4.0 changelog figure; stale: v2.4.1 says 900+ | "{N} automated tests, run in CI on every push" (only if CI runs them) | A test count on a tagged version; drop "100% pass rate" (a moment-in-time state) | |
-| 10 | +90 new tests | :66 Testing tile | "+90 from v2.3.0" | Changelog trivia | Cut | — | |
-| 11 | Docs line counts | :67-68 Testing tiles | "6,700+ lines", "3,200+ for v2.4.0" | Changelog; the docs site is offline | Cut | — | |
-| 12 | Memory / binary / cache / overhead | :53-56 Performance tiles; :10 "36MB footprint" | "~36MB typical", "4-6MB stripped", "~1.5ms lookup", "~28ms" | README performance list and changelog, no method | Keep only those you measure (mark each of the four) | A measurement each, with version | |
-| 13 | Feature counts | :93-97 Features tiles | Providers 4, Templates 60+, Commands 40+, Intent types 17, Context sources 5 | Docs counts; the README lists 5 providers (including "Local") | Providers is derived from the Stack data; the others only if you confirm them | A count from the code at a version | |
-| 14 | "safe" commands | :7 tagline "safe, executable shell commands" | "Transform natural language into safe, executable shell commands" | CLI_X grades risk; it does not guarantee safety | "…graded for risk before you run it" (the panel pitch draft already says this) | — | |
-| 15 | Website security list | :212-217 | Bcrypt password hashing, Cryptographically signed licenses, PCI-compliant payments (#8), Input sanitization, Rate limiting, HTTPS/TLS 1.3 | Not verifiable (no repo, site down); TLS 1.3 would be the host's default (assumption A3) | Keep the items you confirm, without "HTTPS/TLS 1.3" | You (mark each item) | |
-| 16 | Model versions | :10 "GPT-4, Claude…"; :14-16 techStack "OpenAI GPT-4", "Anthropic Claude 3.5", "Groq Llama 3.3" | as quoted | Model names date quickly | The Stack lists providers (OpenAI, Anthropic, Groq, Ollama), not models | — | |
-| 17 | Website platform claims | :136-140 short and longDescription | "interactive demo playground", "try CLI_X in-browser", "Next.js 14" | The site is offline; cannot be checked | Past tense or cut, your call | You | |
+**If not supplied:** the build fails (`surveyedAt` is required), so the new `/roadmap` cannot ship. This is the one input with no fallback.
 
-Context lines (only you can supply them): for every metric you mark **source**, give the context line that sits under its tile, for example "Measured on v2.4.1, release build" or "Counted on v2.4.1". A tile without an approved context line does not ship (UI-SPEC Metrics "Context line (required)").
+Reply: `E2: surveyedAt YYYY-MM-DD`.
 
-CLI_X panel strip (`strip.clix-cli`, 2–3 items, no context line on the panel):
+---
 
-| Option | Items | When it applies |
-|--------|-------|-----------------|
-| Proposed | Startup (~90 ms) · Tests ({N}) · Providers (4) | Startup and Tests only if #2 and #9 are sourced; Providers is derived from the Stack providers group |
-| Fallback | Providers (4) | Neither Startup nor Tests is sourced |
+## F. UI-SPEC defaults
 
-Home line (`home.line`): the Phase 9-approved Home copy (data/home.ts) says CLI_X "turns plain language into safe shell commands". That is the same "safe" wording as claim #14.
+From the UI-SPEC "Defaults to Confirm at Plan Review". Numbering is kept from the first-pass packet. **#4 (risk-scale ticks) is void** with ENG-03 and is not asked.
 
-| Option | What happens | Pros | Cons |
-|--------|--------------|------|------|
-| now | Change it in Phase 11, for example to "turns plain language into shell commands and grades their risk" | One consistent claim across the site, sooner | Touches approved Phase 9 copy and its baselines in this phase |
-| Phase 12 | Leave it now and fix it in the Phase 12 cleanup | Keeps Phase 11 to its own pages | The Home and project pages disagree until Phase 12 |
-| keep | Leave it as is | No change | Overclaims compared with claim #14 |
+| # | Key | Default | Alternative | Applied by |
+|---|-----|---------|-------------|------------|
+| 1 | `default.1` | `/roadmap` h1 `Roadmap` (the nav label); "Route log" lives in the kicker `Route log surveyed …` | h1 `Route log` (stronger metaphor, differs from the nav label) | the route-log plans |
+| 2 | `default.2` | Priority is not shown on route-log rows; `order` carries it | Keep priority as text (`High priority`) in the meta line | the route-log plans |
+| 3 | `default.3` | Row descriptions always visible; only v2.0 has a disclosure | Every description behind a `<details>` (shorter page, 7 more controls) | the route-log plans |
+| 5 | `default.5` | Panels show the verified link (box) and the "Source: private repository" text (coin-flip); "Ask for a walkthrough" is on the trailhead only | Also put "Ask for a walkthrough" on the coin-flip panel | **already built to the default by 11-06**; the alternative is applied in 11-12 |
+| 6 | `default.6` | Primary CTA on the case study: `Ask for a walkthrough` → `/contact` | `Get in touch`, or no primary fill | the case-study end-block plan |
+| 7 | `default.7` | External project links open in the same tab, with `ArrowSquareOutIcon` | `target="_blank"` with sr-only "(opens in a new tab)" (the Phase 10 hotspot-source pattern) | **already built to the default by 11-06**; the alternative is applied in 11-12 |
+| 8 | `default.8` | Pause toggle: constant label `Pause` with `aria-pressed` | Label swaps between `Pause` and `Play`, without `aria-pressed` | 11-03 reads this answer |
+| 9 | `default.9` | Trail red `oklch(0.60 0.20 27)` and blue `oklch(0.55 0.17 255)`; T1 stays `--trail-yellow` (Home unchanged) | Retune T1 to a more saturated signage yellow (changes Home's sign tips and baselines) | the trail-paint plan |
+| 10 | `default.10` | Filter tracks show counts and become 2 × 2 below 640 px | No counts (narrower, one row at 375 px), or a native `<select>` on phones | the filter plan |
+| 11 | `default.11` | No copy button on the terminal or the preview block | Copy button announcing "Copied" | 11-11 reads this answer |
+| N1 | `default.N1` | Project names as the repos spell them: `box`, `coin-flip` (also the h1 and titles) | Title case `Box`, `Coin Flip` | the data plan |
+| N2 | `default.N2` | Terminal and preview outputs kept to 12 lines or fewer by the choice of input and flags; output text never edited (every capture in section C follows this) | Allow longer outputs (taller terminal, more empty space on short commands) | the captures above |
+| N3 | `default.N3` | A metric the audit softens (for example "0 network calls" → "Offline") leaves the strip and the panel; the word lives in the Privacy facts | Show it as a word value in the strip (`Network` / `Offline`, Inter 600), breaking the Mono-is-data rule once | the metrics plans |
+| N4 | `default.N4` | "Next steps" lists only planned or in-progress rows, so box has no Next steps section until a next milestone exists | List box's completed milestones under a different label (for example "Route so far") | the Next steps plan |
 
-Phase 12 note (no answer needed now): the portfolio's own README.md (lines 31 and 405) claims WCAG 2.1 AA. That is not on the site; it is logged for the Phase 12 audit.
+**If not supplied:** the row is recorded as not supplied and the default applies, as the approved UI-SPEC already specifies. These are design choices, not content, so nothing is invented.
 
-Reply: "D: 1 cut/soften/source …; 2 …; … 17 …; context lines for sourced rows; strip proposed/fallback/your items; home now/Phase 12/keep"
-If not supplied: an unanswered claim is treated as not sourced: its figure and phrase do not ship anywhere (panel strip, prose, tiles, tables or chips). Its soft wording also does not ship unless you approve it, because softening is a choice only you can make (UI-SPEC Metrics "Claim states"; a Metrics group with no shippable tile is not rendered). If `strip.clix-cli` is not supplied, the strip uses the fallback (Providers alone). If `home.line` is not supplied, the Home copy stays unchanged.
+Reply: `F: defaults`, or `F: defaults except 7 alternative, N3 alternative`.
 
-## E. Links (D-12)
+---
 
-Keys: `link.clix-cli.github`, `link.clix-cli.docs`, `link.clix-website.demo`, `link.clix-website.github`, `link.clix-website.docs`, `repo.clix-cli`, `repo.clix-website`.
+## G. CI go-ahead (`ci.approval`)
 
-Finding on 2026-11-01: all four project URLs were dead to the public.
+The standing CI approvals end at `ci/10-13` and are given phase by phase, so this asks once for Phase 11's re-baseline, which plan 11-17 runs.
 
-| Key | URL | 2026-11-01 finding | Tim: live / not live |
-|-----|-----|--------------------|----------------------|
-| `link.clix-cli.github` | https://github.com/tlex-web/cli_x | 404 to the public: the repo is private | |
-| `link.clix-cli.docs` | https://docs.cli-x.com | Did not resolve | |
-| `link.clix-website.demo` | https://cli-x.com | Did not resolve | |
-| `link.clix-website.github` | https://github.com/tlex-web/cli_x-website | Does not exist | |
-| `link.clix-website.docs` | https://docs.cli-x.com | Did not resolve (same URL as the CLI_X docs link) | |
+May the executor of 11-17:
+1. push the phase HEAD to a **new** branch `ci/11-17` (plain push, not a force push);
+2. push fast-forward commits to `ci/11-17` that fix CI on that branch;
+3. dispatch **one** visual-baselines run on `ci/11-17`, then download and compare its PNGs for you;
+4. re-run the CI run on your baseline commit **once**?
 
-Please open each URL in a private browser window and answer "live" or "not live". Only live links render.
+Excluded either way: force pushes, pushes to the phase branch or to `main`, and committing PNGs (only you commit baselines).
 
-Source repository note (`repo.*`): is each project's source repository private? A private repository renders as plain text "Source: private repository" plus an "Ask for a walkthrough →" link to /contact on the trailhead.
+**If not supplied:** 11-17 does not push or dispatch anything. It hands you the exact commands to run yourself.
 
-| Key | Question | Options |
-|-----|----------|---------|
-| `repo.clix-cli` | Is the CLI_X source private? | private (shows the note) / public (then the GitHub link must be live) / no note |
-| `repo.clix-website` | Is there a website source repository, and is it private? | private (shows the note) / no repository, no note |
+Reply: `G: approve` or `G: decline`.
 
-Reply: "E: each URL live / not live; repo.clix-cli private/public/no note; repo.clix-website private/no note"
-If not supplied: the link is treated as dead and is not rendered, and a data-level test keeps the four known-dead URLs out. An unanswered repo question shows no repository note; if a project then has no link and no note, its links row is not rendered (UI-SPEC links row "No link and no repo note").
+---
 
-## F. Copy (D-16)
+## H. Clip brief (D-27)
 
-Keys: `copy.projects-intro`, `copy.pitch.clix-cli`, `copy.pitch.clix-website`, `copy.outcome.clix-cli`, `copy.outcome.clix-website`, `copy.problem.clix-cli`, `copy.problem.clix-website`, `copy.pipeline.clix-cli`, `copy.pipeline.clix-website`, `copy.safety-intro`, `copy.demo-intro`, `copy.metrics-prose`, `stack.clix-cli`, `copy.roadmap-intro`, `copy.log-entries`, `fold.features`.
+Not asked now. Plan 11-15 asks for the file at its own checkpoint. This is so you can record it when convenient.
 
-Rules every draft follows: first person, short, factual, sentence case, no exclamation marks, no figure you have not sourced in D, and none of the UI-SPEC banned phrases ("95% accuracy", "40% faster", "40-60% API cost reduction", "enterprise-grade", "ML-inspired", "WCAG 2.1 compliant", "PCI-compliant", "100% pass rate", docs line counts, "Experience CLI_X in 3D", "holographic", "Programming Projects").
+- **What:** one coin flip on the device, 5 to 10 seconds, screen recording. No debug overlays, no notifications in view. How it ends (which face, how long it rests) is your pick. The app is silent, so the clip has no audio track.
+- **Where:** drop the original file in `assets/clips-original/` in this repository. That folder is gitignored; the original never enters git or the site.
+- **What happens next:** Claude trims, encodes, strips the metadata and extracts the poster frame. The served clip must fit **1,572,864 bytes (1.5 MiB)**. It is muted, never autoplays, does not loop, shows controls and has a poster.
+- **If no clip arrives:** coin-flip ships with **no Demo section**: no placeholder, no still, no "coming soon".
 
-### F1. UI-SPEC drafts (verbatim from the UI-SPEC Copywriting Contract)
+No reply needed here.
 
-| Key | Where | Draft |
-|-----|-------|-------|
-| `copy.projects-intro` | /projects intro | "Two things I build and maintain: CLI_X, a command-line tool that turns plain English into shell commands, and the website that licenses and ships it. Each route opens a case study." |
-| `copy.pitch.clix-cli` | CLI_X panel pitch | "Type what you want in plain English and get a command for your shell, graded for risk before you run it." |
-| `copy.pitch.clix-website` | Website panel pitch | "Licences, payments and downloads for CLI_X, in one Next.js app." |
-| `copy.safety-intro` | CLI_X Safety intro | "CLI_X scores every command it writes from 0 to 1 against 11 rules. I show the score as a Swiss hiking grade: the higher the grade, the more care the route needs." |
-| `copy.demo-intro` | Demo intro (replaces "Experience CLI_X in 3D") | "Four requests I ran through CLI_X, replayed with the commands and scores it returned." (the count follows the data: "Six requests…" if B adds two) |
-| `copy.roadmap-intro` | /roadmap intro | "What I've finished, what I'm working on and what comes next, for this site, CLI_X and its website." |
+---
 
-Note on `copy.projects-intro`: "build and maintain" depends on H (is CLI_X still active, is the website still running). If the website is archived, a variant: "Two things I built: CLI_X, a command-line tool that turns plain English into shell commands, and the website that licensed and shipped it. Each route opens a case study."
+## Answers (verbatim)
 
-### F2. Outcome lines (one line under each case-study title)
+_Empty. Tim's replies are pasted here exactly as written, with the date, when they arrive._
 
-| Key | Draft |
-|-----|-------|
-| `copy.outcome.clix-cli` | "Describe a task in plain English; CLI_X writes the shell command, explains it and grades its risk before it runs." |
-| `copy.outcome.clix-website` | "A Next.js app I built to sell CLI_X licences and ship its downloads for Windows, macOS and Linux." |
+## Resolved values
 
-### F3. Problem sections
-
-`copy.problem.clix-cli` (three short paragraphs):
-
-> Shell syntax is a second language I keep half-forgetting: the flags for find, the quoting rules in PowerShell, the one option that makes a command destructive. I built CLI_X so I could say what I want in plain English and get a command for the shell I'm in, whether that is PowerShell, Bash, sh or cmd.
->
-> A request passes through four stages on its way to a language model and back. CLI_X is written in Rust and works with OpenAI, Anthropic and Groq, or with local models through Ollama.
->
-> A generated command can still do damage. So by default CLI_X shows the command, explains it, scores it from 0 to 1 against 11 rules and asks before it runs anything.
-
-`copy.problem.clix-website` (three short paragraphs; the second is the one pricing sentence, no figures, D-13):
-
-> CLI_X needed somewhere to be sold and downloaded. I built one Next.js app that handles accounts, payments, licence keys and downloads for Windows, macOS and Linux.
->
-> There are two ways to use CLI_X: a free bring-your-own-key tier and a Pro subscription, sold through Stripe.
->
-> Sign-in runs through NextAuth.js with OAuth, data lives in PostgreSQL through Prisma, and the sensitive logic stays in server-side route handlers.
-
-(If H says the website is archived, the tense moves to the past: "There were two ways…", "Sign-in ran through…".)
-
-### F4. Pipelines
-
-`copy.pipeline.clix-cli`: stage names are fixed from the data (Intent analysis, Context enrichment, Prompt optimisation, Response parsing). Descriptions and the In and Out lines are drafts:
-
-| # | Stage | Draft description |
-|---|-------|-------------------|
-| 01 | Intent analysis | "Works out what kind of task the request describes." |
-| 02 | Context enrichment | "Adds details about where the command will run, such as the shell and the operating system." |
-| 03 | Prompt optimisation | "Builds the prompt the model receives from the request and that context." |
-| 04 | Response parsing | "Pulls the command and its explanation out of the model's reply." |
-
-Optional endpoint lines: "In: a plain-English request" and "Out: a shell command and its risk score".
-
-`copy.pipeline.clix-website` (Claude's discretion: offered because every step is a fact already in data/projects.ts: Stripe subscriptions, payment webhook processing, signed licence keys, licence emails, cross-platform downloads from the dashboard):
-
-| # | Stage | Draft description |
-|---|-------|-------------------|
-| 01 | Checkout | "A visitor picks a plan and pays through Stripe." |
-| 02 | Payment webhook | "Stripe tells the server the payment went through." |
-| 03 | Licence signing | "The server signs a licence key and emails it to the buyer." |
-| 04 | Download | "The dashboard offers the build for Windows, macOS or Linux." |
-
-| Option | Pros | Cons |
-|--------|------|------|
-| ship the website pipeline | Gives the website case study a real section between Problem and Safety; every step is in the data | Describes a flow nobody can try while the site is down |
-| omit | Shorter, safer page | The website case study is mostly prose and lists |
-
-### F5. Metrics prose and Stack
-
-`copy.metrics-prose` (only for claims you mark **soften** in D; each sentence ships only if its claim is softened):
-
-> CLI_X caches model responses, so a repeated request skips the API call. It loads project context in the background, so the prompt appears straight away.
-
-(First sentence = claim #3, second = claim #4.)
-
-`stack.clix-cli` (groups from the data's techStack; providers named without model versions, claim #16):
-
-| Group label | Items |
-|-------------|-------|
-| Core | Rust, Tokio, Clap, Serde |
-| LLM providers | OpenAI, Anthropic, Groq, Ollama |
-| Storage | SQLite |
-| Tooling | Docker |
-
-Alternative: merge Storage and Tooling into one group "Storage and tooling: SQLite, Docker".
-
-### F6. Route-log entry texts (`copy.log-entries`)
-
-| Entry | Title draft | Description draft |
-|-------|-------------|-------------------|
-| v1.0 | v1.0 Stabilization & Visual Identity | "Fixed the dependency tree, hardened security with a nonce-based CSP and persistent rate limiting, and gave the site its first design system." |
-| v2.0 | v2.0 Topographic Identity | "Rebuilding the site around real terrain data from the Matterhorn: a new shell, a scroll ascent on Home, photographs placed on the map, and this route log." |
-
-v2.0 disclosure lines (format `Phase {n} · {name} · {date | In progress | Planned}`; names shortened from ROADMAP.md):
-
-| Phase | Short name |
-|-------|-----------|
-| 7 | Foundation & guardrails |
-| 8 | Data & terrain pipeline |
-| 9 | Home ascent |
-| 10 | Photography |
-| 11 | Engineering & roadmap |
-| 12 | Contact, edge pages & cleanup |
-
-### F7. Features fold map (`fold.features`, D-15)
-
-The `features` lists leave the data. Each line either moves into a section or is cut. Approve the map or change rows.
-
-CLI_X:
-
-| # | Feature line today | Proposed destination |
-|---|--------------------|---------------------|
-| 1 | Natural language to shell command conversion (95% accuracy) | Problem, without the figure (claim #1) |
-| 2 | 4-stage intelligence pipeline (…) | Pipeline |
-| 3 | Multi-provider LLM support (OpenAI, Anthropic, Groq, Ollama) | Stack (LLM providers group) |
-| 4 | ML-inspired safety system with 11 comprehensive rules | Safety intro ("11 rules"), without "ML-inspired" (claim #6) |
-| 5 | Cross-platform command generation (PowerShell, Bash, Sh, Cmd) | Problem |
-| 6 | Conversation mode with persistent context retention | Route log (cli-conversation-mode, completed) |
-| 7 | Workflow automation with pattern detection and recommendations | Cut (scheduling is on the route log as cli-workflow-scheduling) |
-| 8 | Template system with 60+ pre-built templates and interactive TUI | Cut (count is claim #13) |
-| 9 | Ollama integration for complete local model management | Route log (cli-ollama-integration) and Stack (Ollama) |
-| 10 | Template analytics with usage tracking and effectiveness scoring | Route log (cli-template-analytics) |
-| 11 | Command suggestions with proactive assistance | Cut |
-| 12 | Intelligent caching (40-60% API cost reduction) | Metrics prose, without the figure (claim #3) |
-| 13 | Async context loading (<100ms startup) | Metrics prose or a tile (claim #4) |
-| 14 | Comprehensive audit logging and command history | Cut (alternative: one Safety sentence "Every command it runs is logged.", only if you confirm it) |
-
-Website:
-
-| # | Feature line today | Proposed destination |
-|---|--------------------|---------------------|
-| 1 | Interactive demo playground with live command generation | Cut (claim #17; the site is offline) |
-| 2 | Subscription management with Stripe integration | Problem (pricing sentence) and Pipeline 01 |
-| 3 | Secure license key generation and validation | Pipeline 03 |
-| 4 | Cross-platform binary distribution (Windows, macOS, Linux) | Pipeline 04, Problem, and the panel strip fact "Platforms 3" |
-| 5 | User authentication with NextAuth.js and OAuth | Problem and Stack |
-| 6 | PostgreSQL database with Prisma ORM | Stack |
-| 7 | Responsive, modern UI with dark theme | Cut |
-| 8 | Rate limiting and abuse prevention | Safety (already in the security list, claim #15) |
-| 9 | Download analytics and tracking | Cut |
-| 10 | Email notifications for licenses | Pipeline 03 |
-| 11 | User dashboard for license management | Pipeline 04 |
-| 12 | Real-time payment webhook processing | Pipeline 02 |
-| 13 | SEO optimized with meta tags and sitemaps | Cut |
-| 14 | Accessibility compliant (WCAG 2.1) | Cut (claim #7) |
-
-If you omit the website pipeline, lines 2, 3, 10, 11 and 12 move to Problem prose where the approved Problem copy already covers them, and are cut otherwise.
-
-Reply: "F: approve all, or per key: approve / edit (your text) / omit"
-If not supplied: unapproved copy does not ship. An unapproved intro, pitch or outcome line is left out, and its element ships complete without it. An unapproved Problem section means the section is not rendered. A pipeline stage without an approved description shows its name only, and the In and Out lines are left out. An unapproved website pipeline is omitted. Unapproved metrics prose is left out. If the CLI_X stack groups are not approved, the flat stack list renders as one group with no heading (UI-SPEC Stack "Flat list only"). If the log entry texts are not approved, the v1.0 and v2.0 entries keep only their titles, which come from MILESTONES.md and ROADMAP.md. If the fold map is not approved, every feature line is cut, except the four stages, the 11 rules, caching and the providers, which D-15 already places.
-
-## G. Route log (D-17, D-18, D-20)
-
-Keys: `log.portfolio`, `log.stale`, `log.clix-cli`, `log.clix-website`, `log.order`, `log.surveyedAt`.
-
-### G1. Portfolio rows (`log.portfolio`, git-verified; confirm)
-
-| id (proposed) | Title | Status | completedAt | Evidence |
-|---------------|-------|--------|-------------|----------|
-| portfolio-v1 | v1.0 Stabilization & Visual Identity | completed | 2026-03-12 | MILESTONES.md "Shipped: 2026-03-12"; commit 1cb6e91 "v1.0" dated 2026-03-12 |
-| portfolio-v2 | v2.0 Topographic Identity | in-progress | — | commit 383a4f9 "docs: start milestone v2.0 Topographic Identity", 2026-10-10 |
-| ↳ Phase 7 | Foundation & guardrails | completed | 2026-10-24 | commit b147f20, 2026-10-24 |
-| ↳ Phase 8 | Data & terrain pipeline | completed | 2026-10-24 | commit a413b69, 2026-10-24 |
-| ↳ Phase 9 | Home ascent | completed | 2026-10-25 | commit 6500ae2, 2026-10-25 |
-| ↳ Phase 10 | Photography | completed | 2026-10-26 | commit ae887f0, 2026-10-26 |
-| ↳ Phase 11 | Engineering & roadmap | in-progress | — | current phase |
-| ↳ Phase 12 | Contact, edge pages & cleanup | planned | — | ROADMAP.md |
-
-### G2. Stale portfolio items (`log.stale`)
-
-| Current item | Proposal | Alternative | Reason |
-|--------------|----------|-------------|--------|
-| portfolio-3d-gallery "3D Image Gallery Enhancement" (planned, v1.1.0) | Retire | Keep as completed 2026-10-26, rewritten: "3D carousel, map and grid for the photographs" | Phase 10 shipped the 3D carousel, map and grid (parallax was dropped by design); a separate row would repeat the v2.0 Phase 10 line; no project links to this id |
-| portfolio-blog "Photography Blog" (planned, v1.2.0) | You decide | Keep as planned with the target removed (v1.x is over), or retire | No evidence either way in git or the planning docs |
-
-### G3. CLI_X rows (`log.clix-cli`, needs you)
-
-Evidence from the CLI_X changelog and roadmap, for confirmation only:
-
-| id | Current data | What the CLI_X repo suggests | You supply |
-|----|--------------|------------------------------|------------|
-| cli-conversation-mode, cli-ollama-integration, cli-template-analytics | completed, v2.4.0, no date | The changelog dates v2.4.0 2025-11-11 and lists these features | completedAt = 2025-11-11, or the real ship date |
-| cli-conversation-export | in-progress, v2.5.0 | v2.4.1 (2025-12-18) added export to text, Markdown and JSON; PDF and syntax highlighting are not mentioned | (a) completed 2025-12-18 with the description "Export conversations to text, Markdown and JSON."; (b) split into a completed row and an in-progress PDF row; (c) keep in progress |
-| cli-workflow-scheduling | in-progress, v2.5.0 | v2.4.1 added persistent workflows and schedules, file-watch triggers and new conditions; cron with timezones and retries is unclear | Status, and date if completed |
-| cli-plugin-system (v3.0.0), cli-autocomplete (v2.6.0), cli-collaborative-commands (v3.0.0), cli-web-interface (v3.1.0) | planned | CLI_X's own roadmap puts collaboration and a plugin system in a later major version than the portfolio data does | Keep, retarget (new version) or retire, each |
-
-### G4. Website rows (`log.clix-website`, needs you)
-
-webshop-team-management (v1.1.0), webshop-analytics (v1.2.0), webshop-api-marketplace (v1.3.0) and webshop-mobile-app (v2.0.0) are all planned. There is no website repository and cli-x.com does not resolve. For each: still planned (keep), retarget, or retire.
-
-### G5. Order (`log.order`)
-
-Proposal, read from the bottom of the climb (Base) to the top (Summit). Completed items run oldest to newest, then in-progress items with v2.0 at the top of the camp, then planned items from the next likely one upward:
-
-1. Base (completed): cli-conversation-mode → cli-ollama-integration → cli-template-analytics (2025-11-11, if confirmed) → cli-conversation-export / cli-workflow-scheduling (2025-12-18, only if you mark them completed) → portfolio-v1 (2026-03-12)
-2. Current camp (in progress): any CLI_X items you keep in progress → portfolio-v2 (top of the camp)
-3. Summit (planned, lowest first): portfolio-blog (if kept) → cli-autocomplete → webshop-team-management → webshop-analytics → cli-plugin-system → cli-collaborative-commands → webshop-api-marketplace → cli-web-interface → webshop-mobile-app
-
-### G6. Survey date (`log.surveyedAt`)
-
-The /roadmap kicker reads "Route log surveyed {date}". Rule (D-20, unit-tested): it must not be in the future, and it must not be earlier than the newest completedAt, including the v2.0 phase dates (today 2026-10-26). Proposal: 2026-11-01, the date of this survey.
-
-Reply: "G: portfolio approve/edits; 3d-gallery retire/keep; blog keep/retire; CLI_X rows status + dates + keep/retarget/retire; website rows …; order approve/edits; surveyedAt YYYY-MM-DD"
-If not supplied: the portfolio rows ship only as you confirm them. A CLI_X or website row without a confirmed status keeps its current data and shows no date: a completed row without a confirmed date reads "{Project} · Completed" (UI-SPEC row meta). An unanswered stale item keeps its current row. Without an approved order, the log keeps the current data order inside each band; the proposal above ships only if you approve it. surveyedAt is a required field: without it the route-log build fails, so the /roadmap rewrite cannot ship until you give a date (UI-SPEC E16).
-
-## H. Project facts
-
-Keys: `fact.clix-cli.version`, `fact.clix-cli.active`, `fact.clix-website.status`, `fact.clix-website.version`.
-
-| Key | Question | Current data | Evidence | Options |
-|-----|----------|--------------|----------|---------|
-| `fact.clix-cli.version` | Which version does the CLI_X kicker show? | v2.4.0 | The changelog's latest entry is v2.4.1 (2025-12-18) | v2.4.0 / v2.4.1 / other |
-| `fact.clix-cli.active` | Is CLI_X still in active development? | status active | The repo was last pushed 2026-06-08 (RESEARCH open question 2) | yes (kicker "Active") / no (give the status word) |
-| `fact.clix-website.status` | What is the website's status? | active | No repository found and cli-x.com does not resolve (RESEARCH open question 3) | active / complete / archived |
-| `fact.clix-website.version` | Which version does the website kicker show? | v1.0.0 | No evidence either way | v1.0.0 / other / none |
-
-Reply: "H: CLI_X version …; active yes/no; website status …; website version …"
-If not supplied: the kicker keeps the current status word, and the version is left out (the kicker drops " · {version}", UI-SPEC E1/E4). The website panel strip then has no Version item.
-
-## I. UI-SPEC defaults
-
-Keys: `default.1` to `default.11`.
-
-| # | Default (researcher) | Alternative |
-|---|----------------------|-------------|
-| 1 | /roadmap h1 "Roadmap" (nav label); "Route log" lives in the kicker "Route log surveyed …" | h1 "Route log" (stronger metaphor, differs from the nav label) |
-| 2 | Priority is not shown on route-log rows; order carries it | Keep priority as text ("High priority") in the meta line |
-| 3 | Row descriptions always visible; only v2.0 has a disclosure | Every description behind a disclosure (shorter page, 16 more controls) |
-| 4 | Risk-scale ticks are numbered links to their table rows, no hover popover | Hover and focus popovers with Escape to dismiss (needs a client island and WCAG 1.4.13 handling) |
-| 5 | Panels show verified links and the "Source: private repository" text; "Ask for a walkthrough" is on the trailhead only | Also put "Ask for a walkthrough" on each panel |
-| 6 | Primary CTA on the case study: "Ask for a walkthrough" → /contact | "Get in touch", or no primary fill |
-| 7 | External project links open in the same tab, with an external-link icon | Open in a new tab with sr-only "(opens in a new tab)" (the Phase 10 hotspot-source pattern) |
-| 8 | Pause toggle: constant label "Pause" with aria-pressed | Label swaps between "Pause" and "Play" without aria-pressed |
-| 9 | Trail red oklch(0.60 0.20 27) and blue oklch(0.55 0.17 255); T1 stays the current trail yellow (Home unchanged) | Retune T1 to a more saturated signage yellow (changes Home's sign tips and baselines) |
-| 10 | Filter tracks show counts and become 2 × 2 below 640 px | No counts (narrower, one row at 375 px), or a native select on phones |
-| 11 | No terminal copy button | Copy button announcing "Copied" |
-
-Reply: "I: accept all, or per row: n default / n alternative"
-If not supplied: the row is recorded as not supplied, and the UI-SPEC default in the left column applies, as the approved UI-SPEC already specifies. These are design choices, not content, so no wording or figure is invented.
+| key | value | status | quoted from |
+|-----|-------|--------|-------------|
