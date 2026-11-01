@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import Demo, { hasDemo } from '@/components/projects/sections/Demo';
+import Metrics from '@/components/projects/sections/Metrics';
 import Pipeline from '@/components/projects/sections/Pipeline';
 import Privacy from '@/components/projects/sections/Privacy';
 import Problem from '@/components/projects/sections/Problem';
@@ -76,7 +77,9 @@ function renderSlot(slot: Slot, project: Project): ReactNode {
         <Safety {...slotMeta(slot, project)} block={project.safety} />
       ) : null;
     case 'metrics':
-      return null;
+      return project.metrics?.tiles.length ? (
+        <Metrics {...slotMeta(slot, project)} tiles={project.metrics.tiles} />
+      ) : null;
     case 'demo':
       return hasDemo(project) ? <Demo project={project} /> : null;
     case 'stack':
