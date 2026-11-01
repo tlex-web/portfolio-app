@@ -388,7 +388,7 @@ coin-flip has no terminal. Its Demo is a short device screen recording of one fl
 | Reduced motion | Identical by construction: nothing plays until the visitor plays it, so under `prefers-reduced-motion: reduce` the poster stays until the visitor plays it. No script changes behaviour by media query [UUPM `reduced-motion`] |
 | Audio and captions | The app is silent and the clip has no audio track, so there is nothing to caption and no `<track>`. The visible text description is the media alternative for this video-only clip (WCAG 1.2.1) |
 | Text description | `<figcaption id="demo-clip-description" class="max-w-prose text-base text-ink-muted">`: 1–3 sentences saying exactly what happens in the clip (tap, the toss with the camera following, landing and settle, the result). D-16 draft written after the clip arrives, from the clip itself |
-| Native controls | Unstyled browser controls (keyboard and screen-reader support come with them) [NEXT videos guide; UUPM `system-controls`]. Focus shows the global 2 px ring [07]. Playback length 5–10 s, so it ends on its own; it does not loop |
+| Native controls | Unstyled browser controls (keyboard and screen-reader support come with them) [NEXT videos guide; UUPM `system-controls`]. Focus shows the global 2 px ring [07]. Playback length 4–10 s (D-27, changed 2026-11-01, Tim, 11-15), so it ends on its own; it does not loop |
 | Asset (D-27) | Same-origin, metadata stripped, content-hashed names, about 1.5 MB budget, poster extracted from the clip; committed by a local derive script (the Phase 8 `photos:derive` pattern). CSP `default-src 'self'` already allows it (no `media-src`) [REPO `proxy.ts`]. The served-asset guard is extended to video (research decides how) |
 | Visual tests | Capture the poster (no playback), so screenshots are deterministic |
 
@@ -521,7 +521,7 @@ All durations and easings are 07 tokens [07 DSGN-08]. At most one element moves 
 | Element | Motion | Reduced motion |
 |---------|--------|----------------|
 | Terminal typing (box) | Character typing at 50 / 10 ms, pauses as specified | None: full text, paused at start |
-| Clip (coin-flip) | Plays only when the visitor presses play; 5–10 s; no loop | Same: the poster stays until the visitor plays it |
+| Clip (coin-flip) | Plays only when the visitor presses play; 4–10 s (D-27, changed 2026-11-01); no loop | Same: the poster stays until the visitor plays it |
 | Panel, row, segment, link hover | Colour over `--duration-fast` `ease-erosion` (colour is not motion) | Same |
 | Disclosures (`<details>`), caret rotation | Instant | Instant |
 | Filter change | None (the server re-render swaps content in place) | None |

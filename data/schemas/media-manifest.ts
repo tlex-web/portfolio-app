@@ -22,8 +22,12 @@ import { z } from 'zod';
 /** The largest MP4 any clip may be, in bytes (1.5 MiB, Q4). */
 export const MAX_CLIP_BYTES = 1_572_864;
 
-/** Shortest and longest clip, in seconds (D-27: a 5-10 s loop of the real thing). */
-export const MIN_CLIP_SECONDS = 5;
+/**
+ * Shortest and longest clip, in seconds (D-27: 4-10 s of the real thing; the
+ * minimum was 5 s until Tim lowered it to 4 s on 2026-11-01 in 11-15, so his
+ * one-flip recording ships as recorded).
+ */
+export const MIN_CLIP_SECONDS = 4;
 export const MAX_CLIP_SECONDS = 10;
 
 /** The clips the site can show; one per case-study demo slot. */

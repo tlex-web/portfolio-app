@@ -4,7 +4,7 @@
  * Clip derive (D-27): a screen recording -> one hashed, metadata-free H.264 MP4,
  * a WebP poster and data/generated/media-manifest.ts
  *
- * The coin-flip case study shows a 5-10 s clip of the real toss. The recording
+ * The coin-flip case study shows a 4-10 s clip of the real toss. The recording
  * lives in the gitignored assets/clips-original/ (a device recording carries its
  * creation time, location and device tags), the clip is generated here, on Tim's
  * machine, with ffmpeg, and committed. CI only checks it, without ffmpeg and
@@ -34,13 +34,13 @@
  *   (default)  needs ffmpeg and the originals (assets/clips-original/<id>.*, one
  *              file per clip, sha256 equal to the sidecar's sourceSha256). Encodes
  *              every clip to a temp file, validates (walker, 1.5 MiB budget,
- *              5-10 s from mvhd, one video track, poster), then writes the files
+ *              4-10 s from mvhd, one video track, poster), then writes the files
  *              and the manifest and deletes stale files in public/media/ last.
  *              Any failure before the write exits 1 with nothing written.
  *              With no clips it only writes the empty manifest (no ffmpeg).
  *   --check    needs neither (CI). Fails on a missing or duplicate file, a name
  *              hash that does not match the bytes, a size over budget, a duration
- *              outside 5-10 s or away from the sidecar's, an audio track or any
+ *              outside 4-10 s or away from the sidecar's, an audio track or any
  *              other walker violation, a poster that is not a clean WebP of the
  *              clip's size, a file in public/media/ no clip owns, or a manifest
  *              whose text differs from a rebuild from disk and the sidecar.

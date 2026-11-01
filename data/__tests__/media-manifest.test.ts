@@ -65,9 +65,9 @@ const validClip = {
 };
 
 describe('clip sidecar schema and budget (D-27)', () => {
-  test('the budget is 1.5 MiB and clips run 5 to 10 seconds', () => {
+  test('the budget is 1.5 MiB and clips run 4 to 10 seconds (D-27, 4 s minimum since 11-15)', () => {
     expect(MAX_CLIP_BYTES).toBe(1572864);
-    expect(MIN_CLIP_SECONDS).toBe(5);
+    expect(MIN_CLIP_SECONDS).toBe(4);
     expect(MAX_CLIP_SECONDS).toBe(10);
   });
 
@@ -81,9 +81,11 @@ describe('clip sidecar schema and budget (D-27)', () => {
     expect(ClipsSidecar.safeParse({ clips: [{ ...validClip, location: 'Zermatt' }] }).success).toBe(false);
   });
 
-  test('rejects a duration of 4 or 11 seconds', () => {
-    expect(ClipsSidecar.safeParse({ clips: [{ ...validClip, duration: 4 }] }).success).toBe(false);
-    expect(ClipsSidecar.safeParse({ clips: [{ ...validClip, duration: 11 }] }).success).toBe(false);
+  test('accepts 4 and 10 seconds and rejects 3.9 or 10.1 seconds', () => {
+    expect(ClipsSidecar.safeParse({ clips: [{ ...validClip, duration: 4, posterAt: 3 }] }).success).toBe(true);
+    expect(ClipsSidecar.safeParse({ clips: [{ ...validClip, duration: 10 }] }).success).toBe(true);
+    expect(ClipsSidecar.safeParse({ clips: [{ ...validClip, duration: 3.9, posterAt: 3 }] }).success).toBe(false);
+    expect(ClipsSidecar.safeParse({ clips: [{ ...validClip, duration: 10.1 }] }).success).toBe(false);
   });
 
   test('rejects an id other than coin-flip-toss', () => {
