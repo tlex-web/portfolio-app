@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { mediaManifest } from '@/data/generated/media-manifest';
 import { projects } from '@/data/projects';
 import { roadmapItems } from '@/data/roadmap';
 import type { Project } from '@/data/types';
@@ -116,10 +117,18 @@ test.describe('Case-study route', () => {
     });
   }
 
-  test('coin-flip has no Demo section and no terminal (UI-SPEC E10)', async ({ page }) => {
+  test("coin-flip's Demo is its approved clip, never a terminal (UI-SPEC E10, E18)", async ({
+    page,
+  }) => {
+    // Tim approved the clip and its description in 11-16; without both the
+    // section is left out (D-27), and either way coin-flip has no terminal.
+    const clipShown = Boolean(mediaManifest['coin-flip-toss'] && coinFlip.clip?.description);
     await page.goto(COIN_FLIP);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await expect(page.getByRole('heading', { level: 2, name: 'Demo', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('heading', { level: 2, name: 'Demo', exact: true })).toHaveCount(
+      clipShown ? 1 : 0
+    );
+    await expect(page.locator('section#demo video')).toHaveCount(clipShown ? 1 : 0);
     await expect(page.getByRole('region', { name: `${coinFlip.name} demo` })).toHaveCount(0);
   });
 
@@ -231,7 +240,13 @@ test.describe('Case-study sections', () => {
       project.pipeline ? 'Pipeline' : null,
       third,
       project.metrics?.tiles.length ? 'Metrics' : null,
-      project.slug === 'box' && project.demo ? 'Demo' : null,
+      (
+        project.slug === 'box'
+          ? project.demo
+          : mediaManifest['coin-flip-toss'] && project.clip?.description
+      )
+        ? 'Demo'
+        : null,
       project.stack ? 'Stack' : null,
       aheadRows(project).length ? 'Next steps' : null,
     ].filter((label): label is string => label !== null);

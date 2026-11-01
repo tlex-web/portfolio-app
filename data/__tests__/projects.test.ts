@@ -8,6 +8,7 @@
  * strict parse. The captured strings carry no machine paths or escapes, and
  * coin-flip's public copy reveals nothing from its private repository.
  */
+import { mediaManifest } from '@/data/generated/media-manifest';
 import { projects } from '@/data/projects';
 import { roadmapItems } from '@/data/roadmap';
 import { DemoCommandSchema, ProjectSchema } from '@/data/schemas/project';
@@ -153,8 +154,8 @@ describe('Inline code in approved copy (11-02 packet, 11-14)', () => {
     const coded = projects.flatMap((p) => [
       ...(p.problem ?? []),
       ...(p.pipeline?.stages ?? []).flatMap((s) => (s.description ? [s.description] : [])),
-      ...(p.slug === 'box' ? [p.safety?.intro, p.safety?.forceLine] : []).filter(
-        (t): t is string => Boolean(t)
+      ...(p.slug === 'box' ? [p.safety?.intro, p.safety?.forceLine] : []).filter((t): t is string =>
+        Boolean(t)
       ),
     ]);
     for (const text of coded) expect((text.match(/`/g) ?? []).length % 2).toBe(0);
@@ -169,6 +170,37 @@ describe('Inline code in approved copy (11-02 packet, 11-14)', () => {
       })
     );
     for (const text of rest) expect(text).not.toContain('`');
+  });
+});
+
+/**
+ * coin-flip's clip (D-16, D-21, D-27): Tim approved the clip, its poster, the
+ * description and the intro exactly as packet section I drafted them
+ * (11-16-SUMMARY, his reply "approve", 2026-11-01).
+ */
+const APPROVED_CLIP_COPY = {
+  intro: 'One toss, recorded from the screen of my own device.',
+  description:
+    'A coin lies flat on a dark screen. About a second and a half in, it is flipped: it rises toward the viewer, turns over several times, then drops back and lands flat. It comes to rest face up, and the word HEADS appears below it.',
+};
+
+describe('coin-flip clip (D-27)', () => {
+  test('coin-flip clip id exists in the media manifest', () => {
+    // Passes trivially when coin-flip carries no clip block.
+    if (!coinFlip.clip) return;
+    const entry = mediaManifest[coinFlip.clip.id];
+    expect(entry).toBeDefined();
+    expect(entry?.src).toMatch(/^\/media\/coin-flip-toss\.[0-9a-f]{10}\.mp4$/);
+    expect(entry?.poster.src).toMatch(/^\/media\/coin-flip-toss-poster\.[0-9a-f]{10}\.webp$/);
+  });
+
+  test("a clip id other than 'coin-flip-toss' fails the strict parse", () => {
+    const clip = { id: 'coin-flip-other', description: 'x' };
+    expect(ProjectSchema.safeParse({ ...coinFlip, clip }).success).toBe(false);
+  });
+
+  test("coin-flip's clip copy is byte-identical to the approved packet drafts", () => {
+    expect(coinFlip.clip).toEqual({ id: 'coin-flip-toss', ...APPROVED_CLIP_COPY });
   });
 });
 

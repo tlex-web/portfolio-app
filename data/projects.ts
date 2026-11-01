@@ -215,6 +215,12 @@ export const projects: Project[] = [
         },
       ],
     },
+    clip: {
+      id: 'coin-flip-toss',
+      intro: 'One toss, recorded from the screen of my own device.',
+      description:
+        'A coin lies flat on a dark screen. About a second and a half in, it is flipped: it rises toward the viewer, turns over several times, then drops back and lands flat. It comes to rest face up, and the word HEADS appears below it.',
+    },
     stack: {
       groups: [
         { label: 'Language', items: ['Kotlin'] },
