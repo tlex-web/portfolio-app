@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 11
 current_phase_name: Engineering & Roadmap
 status: executing
-stopped_at: 11-06 complete (0633a84); 11-02 still paused at Task 3 checkpoint (Tim's content packet answers)
-last_updated: "2026-11-01T19:09:08.683Z"
+stopped_at: Completed 11-02-PLAN.md (8a8b231); Tim's content answers are in 11-02-SUMMARY.md
+last_updated: "2026-11-01T20:21:02.075Z"
 last_activity: 2026-11-01
 last_activity_desc: Phase 11 execution started
-state_head: 0633a8470a6c13bfe2021bff1e0db4d9371a579b
+state_head: 8a8b23145fe5feff83f45e873662248e874f63e3
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 93
-  completed_plans: 79
-  percent: 85
+  completed_plans: 80
+  percent: 86
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-26)
 ## Current Position
 
 Phase: 11 (Engineering & Roadmap) — EXECUTING
-Plan: 5 of 18
+Plan: 6 of 18
 Status: Ready to execute
 Last activity: 2026-11-01 — Phase 11 execution started
 
-Progress: [█████████░] 85%
+Progress: [█████████░] 86%
 
 ## Performance Metrics
 
@@ -136,6 +136,7 @@ Progress: [█████████░] 85%
 | Phase 11 P04 | 12 min | 2 tasks | 10 files |
 | Phase 11 P05 | 9 min | 2 tasks | 7 files |
 | Phase 11 P06 | 15 min | 2 tasks | 9 files |
+| Phase 11 P02 | 2h 3m | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -351,6 +352,11 @@ Recent decisions affecting current work:
 - [Phase 11]: 11-05: routeLogHref re-validates whitelist values and drops forged ones (T-11-10)
 - [Phase 11]: 11-06: RoutePanel keeps one min-w-0 content column inside its lg 3fr/2fr grid; 11-12 adds the profile figure as the second child
 - [Phase 11]: 11-06: /projects reads project fields only through toPanelProps(project); 11-07 rewrites that mapper for the new schema
+- [Phase 11]: 11-02: section B, Tim accepted the Proposed column for all 19 claims (reply "1. B", confirmed "Accept all, preflight soft (Recommended)"): box-preflight softened to "box checks the whole job before it changes the first file", box-loc-timeline cut, cf-network-calls softened (no tile; the fact stays as Privacy fact 2), cf-reduced-motion and cf-font-scaling unused (not supplied)
+- [Phase 11]: 11-02: box terminal replays C1.1 hash, C1.2 uuid --json, C1.3 the du pipeline and C1.4 color with their drafted notes ("1–4, notes ok (Recommended)"); the box Safety block is the bulk-rename preview with caption "Preview run · box bulk-rename" and the drafted --force line ("Approve both (Recommended)"); exact captures in 11-02-SUMMARY.md
+- [Phase 11]: 11-02: section D approved as drafted ("approve-all"); the coin-flip Rendering stack group is not supplied and is left out; coin-flip tiles are Permissions and Result split only
+- [Phase 11]: 11-02: route log ships the 7 drafted rows, the v2.0 phase lines 7-12 and every description ("Rows + descriptions ok (Recommended)"), surveyedAt 2026-11-01 ("2026-11-01, today (Recommended)"); all UI-SPEC defaults ("All defaults (Recommended)"); ci/11-17 go-ahead for 11-17 ("Approve (Recommended)"; force, phase-branch, main and PNG commits excluded)
+- [Phase 11]: 11-04 D4 resolved 2026-11-01: Tim chose A, the Zmutt path ends at Zmutt 56 as 11-04 built it (quote "1. B 2. A")
 
 ### Pending Todos
 
@@ -395,6 +401,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-01T19:09:08.178Z
-Stopped at: 11-06 complete (0633a84); 11-02 still paused at Task 3 checkpoint (Tim's content packet answers)
+Last session: 2026-11-01T20:21:01.488Z
+Stopped at: Completed 11-02-PLAN.md (8a8b231); Tim's content answers are in 11-02-SUMMARY.md
 Resume file: None
