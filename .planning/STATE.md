@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 11
 current_phase_name: Engineering & Roadmap
 status: executing
-stopped_at: Completed 11-15-PLAN.md
-last_updated: "2026-11-01T22:35:27.079Z"
+stopped_at: Completed 11-14-PLAN.md
+last_updated: "2026-11-01T22:54:36.184Z"
 last_activity: 2026-11-01
 last_activity_desc: Phase 11 execution started
-state_head: ceeb84343062093c05446d77a7e0985dbf3dc55b
+state_head: 7d4017fe7a7743743aca6f930df6f27d3b54cae7
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 93
-  completed_plans: 90
-  percent: 97
+  completed_plans: 91
+  percent: 98
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-26)
 ## Current Position
 
 Phase: 11 (Engineering & Roadmap) — EXECUTING
-Plan: 16 of 18
+Plan: 17 of 18
 Status: Ready to execute
 Last activity: 2026-11-01 — Phase 11 execution started
 
-Progress: [█████████░] 97%
+Progress: [█████████░] 98%
 
 ## Performance Metrics
 
@@ -147,6 +147,7 @@ Progress: [█████████░] 97%
 | Phase 11 P12 | 13 min | 3 tasks | 20 files |
 | Phase 11 P13 | 10 min | 2 tasks | 9 files |
 | Phase 11 P15 | 20 min | 3 tasks | 17 files |
+| Phase 11 P14 | 16 min | 3 tasks | 17 files |
 
 ## Accumulated Context
 
@@ -387,6 +388,9 @@ Recent decisions affecting current work:
 - [Phase 11]: [11-13] Case-study Metrics panel: literal GRID per tile count and a last-tile span from literal maps (odd count: sm:col-span-2; count mod 3: lg span 3/2, or lg:col-span-1 to reset); box 3 tiles (third spans the sm row), coin-flip 2 tiles; releaseLine stays in the route panel strip only
 - [Phase 11]: 11-15: D-27 clip length is 4-10 s, MIN_CLIP_SECONDS = 4 (Tim, 2026-11-01, verbatim: "Lower minimum to 4 s (Recommended)"); his 4.42 s one-flip recording ships unedited
 - [Phase 11]: 11-15: coin-flip clip committed (public/media/coin-flip-toss.9b55947b70.mp4, 211,784 B, 4.417 s, posterAt 3.5, CRF 26, 60 fps); description draft in packet section I is NOT approved, data/projects.ts has no clip block until 11-16
+- [Phase 11]: 11-14: case-study primary CTA is 'Ask for a walkthrough' -> /contact (default.6); RouteIndex scroll-spy marks the first section in the band below the nav, else the last above it, and the last section at the page end (the plan's 40 %-line rule mis-marked after anchor jumps)
+- [Phase 11]: 11-14 (orchestrator-added, Tim's verbatim "yes", 2026-11-01): box Problem, Output stage, Safety intro and --force line carry the 11-02 backticks byte-identically; one InlineCode renderer (lib/inline-code.ts + components/InlineCode.tsx, font-mono whitespace-nowrap) serves the route log and case-study prose
+- [Phase 11]: 11-13 open item resolved: Tim chose "A" (verbatim, 2026-11-01), keep the plain <a> in RouteRow's compact Next steps row (:target highlight works; no prefetch); no code change
 
 ### Pending Todos
 
@@ -431,6 +435,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-01T22:35:26.573Z
-Stopped at: Completed 11-15-PLAN.md
+Last session: 2026-11-01T22:54:35.318Z
+Stopped at: Completed 11-14-PLAN.md
 Resume file: None
