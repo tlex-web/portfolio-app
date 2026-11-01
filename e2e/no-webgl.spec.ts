@@ -1,5 +1,11 @@
 import { test, expect } from '@playwright/test';
+import { projects } from '@/data/projects';
 import { disableWebGL, expectNoErrorPage, nextFrames, webglFailure } from './helpers/webgl';
+
+/** The demo terminal's region is named after its project (11-03), read from the data. */
+const demoProject = projects.find((p) => 'demoCommands' in p && p.demoCommands?.length);
+if (!demoProject) throw new Error('no project with demo commands');
+const demoRegionName = `${demoProject.name} demo`;
 
 /**
  * Every route with a react-three-fiber canvas must still render without WebGL (hardware
@@ -67,6 +73,6 @@ test.describe('Without WebGL', () => {
     await expectNoErrorPage(page);
     await expect(page.locator('canvas')).toHaveCount(0);
     await expect(page.getByRole('heading', { level: 2, name: 'Demo', exact: true })).toBeVisible();
-    await expect(page.getByRole('region', { name: 'CLI_X demo' })).toBeVisible();
+    await expect(page.getByRole('region', { name: demoRegionName })).toBeVisible();
   });
 });

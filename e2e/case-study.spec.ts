@@ -2,27 +2,29 @@ import { test, expect, type Page } from '@playwright/test';
 import { projects } from '@/data/projects';
 
 /**
- * The CLI_X demo command with both a warning and an explanation, and its
- * 1-based position, read from the data: 11-10 inserts Tim's Medium and High
- * commands, so the position is never typed in.
+ * The project with the demo terminal, its region name and its last command,
+ * all read from the data: the region is named '{project name} demo', so
+ * 11-07's swap to box changes only the route paths here, never these names.
  */
-const clix = projects.find((p) => p.slug === 'clix-cli');
-if (!clix || clix.slug !== 'clix-cli') throw new Error('clix-cli project missing');
-const PKILL_INDEX = clix.demoCommands.findIndex((c) => c.output === 'pkill -f chrome');
-if (PKILL_INDEX < 0) throw new Error('pkill -f chrome demo command missing');
-const PKILL = clix.demoCommands[PKILL_INDEX];
+const demoProject = projects.find((p) => 'demoCommands' in p && p.demoCommands?.length);
+if (!demoProject || !demoProject.demoCommands) throw new Error('no project with demo commands');
+const regionName = `${demoProject.name} demo`;
+const LAST_N = demoProject.demoCommands.length;
+const LAST = demoProject.demoCommands[LAST_N - 1];
 
 /**
  * The case-study route and its demo terminal (ENG-02 route contract, ENG-05;
- * 11 D-01 flat terminal, D-02 pause sources).
+ * 11 D-01 flat terminal, D-02 amended pause sources and release, D-03 dots,
+ * D-26 note line).
  *
  * /projects/[slug] is a Server Component with generateStaticParams,
  * dynamicParams = false and generateMetadata: the title comes from the
  * project name, and any other slug, including a wrong-case one, is the
  * designed 404. three.js and R3F never load on project pages (D-01).
  *
- * The terminal's state is asserted through `aria-pressed` on the Pause toggle
- * and `data-playback` / `data-command` on the region, never through classes.
+ * The terminal's state is asserted through `aria-pressed` on the Pause toggle,
+ * `data-playback` / `data-command` on the region, `data-cell` / `data-note` in
+ * the body and `aria-current` on the dots, never through classes.
  * Reduced motion is pinned per describe, because the terminal starts paused
  * under it.
  */
@@ -45,7 +47,12 @@ async function loadedScriptBodies(page: Page): Promise<{ url: string; body: stri
   );
 }
 
-/** Moves the pointer off the terminal and focus out of it, clearing both temporary pauses. */
+/**
+ * Moves the pointer off the terminal and focus out of it, clearing both
+ * temporary pauses. Needed after a dot or a Pause press, which leave the
+ * pointer over the region and focus inside it; never after a release, which
+ * clears both pauses itself (D-02 amended).
+ */
 async function leaveTerminal(page: Page) {
   await page.mouse.move(0, 0);
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
@@ -69,7 +76,7 @@ test.describe('Case-study route', () => {
 
   test('loads no THREE.WebGLRenderer script and no canvas (D-01)', async ({ page }) => {
     await page.goto('/projects/clix-cli');
-    await expect(page.getByRole('region', { name: 'CLI_X demo' })).toBeVisible();
+    await expect(page.getByRole('region', { name: regionName })).toBeVisible();
     await page.waitForTimeout(3000);
 
     const scripts = await loadedScriptBodies(page);
@@ -91,7 +98,7 @@ test.describe('Demo (ENG-05)', () => {
 
   test('Pause is sticky: nothing advances until it is pressed again (D-02)', async ({ page }) => {
     await page.goto('/projects/clix-cli');
-    const region = page.getByRole('region', { name: 'CLI_X demo' });
+    const region = page.getByRole('region', { name: regionName });
     const toggle = region.getByRole('button', { name: 'Pause demo', exact: true });
 
     await expect(toggle).toHaveAttribute('aria-pressed', 'false');
@@ -111,14 +118,74 @@ test.describe('Demo (ENG-05)', () => {
 
     await toggle.click();
     await expect(toggle).toHaveAttribute('aria-pressed', 'false');
-    await leaveTerminal(page);
     await expect(region).toHaveAttribute('data-playback', 'playing');
     await expect(region).not.toHaveAttribute('data-command', shown ?? '', { timeout: 8000 });
   });
 
+  test('releasing Pause resumes at once with the pointer still over the terminal (D-02 amended)', async ({
+    page,
+  }) => {
+    await page.goto('/projects/clix-cli');
+    const region = page.getByRole('region', { name: regionName });
+    const toggle = region.getByRole('button', { name: 'Pause demo', exact: true });
+    // Offscreen is a pause source too: bring the terminal into view first.
+    await region.scrollIntoViewIfNeeded();
+
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await expect(region).toHaveAttribute('data-playback', 'paused');
+    const shown = await region.getAttribute('data-command');
+
+    // The pointer stays on the toggle and focus stays on it: no move, no blur.
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    await expect(toggle).toBeFocused();
+    await expect(region).toHaveAttribute('data-playback', 'playing');
+    await expect(region).not.toHaveAttribute('data-command', shown ?? '', { timeout: 8000 });
+  });
+
+  test('after a release, leaving and re-entering pauses again (D-02 amended)', async ({ page }) => {
+    await page.goto('/projects/clix-cli');
+    const region = page.getByRole('region', { name: regionName });
+    const toggle = region.getByRole('button', { name: 'Pause demo', exact: true });
+    await region.scrollIntoViewIfNeeded();
+
+    await toggle.click();
+    await toggle.click();
+    await expect(region).toHaveAttribute('data-playback', 'playing');
+
+    await page.mouse.move(0, 0);
+    await expect(region).toHaveAttribute('data-playback', 'playing');
+    await region.hover({ position: { x: 24, y: 80 } });
+    await expect(region).toHaveAttribute('data-playback', 'paused');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  test('Tab from the toggle to a dot after a release keeps playing (D-02 amended)', async ({ page }) => {
+    await page.goto('/projects/clix-cli');
+    const region = page.getByRole('region', { name: regionName });
+    const toggle = region.getByRole('button', { name: 'Pause demo', exact: true });
+    await region.scrollIntoViewIfNeeded();
+    await page.mouse.move(0, 0);
+
+    // Focus enters from outside, which pauses; Space presses, Space releases.
+    await toggle.focus();
+    await expect(region).toHaveAttribute('data-playback', 'paused');
+    await page.keyboard.press('Space');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await page.keyboard.press('Space');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    await expect(region).toHaveAttribute('data-playback', 'playing');
+
+    // Moving between the region's own controls is not an entry.
+    await page.keyboard.press('Tab');
+    await expect(region.getByRole('button', { name: 'Go to command 1', exact: true })).toBeFocused();
+    await expect(region).toHaveAttribute('data-playback', 'playing');
+  });
+
   test('hovering pauses for as long as the pointer stays (D-02)', async ({ page }) => {
     await page.goto('/projects/clix-cli');
-    const region = page.getByRole('region', { name: 'CLI_X demo' });
+    const region = page.getByRole('region', { name: regionName });
     const toggle = region.getByRole('button', { name: 'Pause demo', exact: true });
     // Offscreen is a pause source too: bring the terminal into view first.
     await region.scrollIntoViewIfNeeded();
@@ -135,7 +202,7 @@ test.describe('Demo (ENG-05)', () => {
 
   test('Tab to the toggle pauses while focus is inside (D-02)', async ({ page }) => {
     await page.goto('/projects/clix-cli');
-    const region = page.getByRole('region', { name: 'CLI_X demo' });
+    const region = page.getByRole('region', { name: regionName });
     const toggle = region.getByRole('button', { name: 'Pause demo', exact: true });
     // Offscreen is a pause source too: bring the terminal into view first.
     await region.scrollIntoViewIfNeeded();
@@ -151,24 +218,34 @@ test.describe('Demo (ENG-05)', () => {
     await expect(toggle).toHaveAttribute('aria-pressed', 'false');
   });
 
-  test('a dot shows its command complete, with both its warning and explanation (D-03)', async ({ page }) => {
+  test('a dot shows its command complete without touching the toggle, and a command without a note has no note line (D-03, D-26)', async ({
+    page,
+  }) => {
     await page.goto('/projects/clix-cli');
-    const region = page.getByRole('region', { name: 'CLI_X demo' });
+    const region = page.getByRole('region', { name: regionName });
+    const toggle = region.getByRole('button', { name: 'Pause demo', exact: true });
+    const dot = region.getByRole('button', { name: `Go to command ${LAST_N}`, exact: true });
 
-    await region.getByRole('button', { name: `Go to command ${PKILL_INDEX + 1}`, exact: true }).click();
-    await expect(region).toHaveAttribute('data-command', String(PKILL_INDEX + 1));
-    await expect(
-      region.getByRole('button', { name: `Go to command ${PKILL_INDEX + 1}`, exact: true })
-    ).toHaveAttribute('aria-current', 'true');
-    await expect(region.getByText(PKILL.output, { exact: true })).toBeVisible();
-    await expect(region.getByText(PKILL.warning ?? '', { exact: true })).toBeVisible();
-    await expect(region.getByText(PKILL.explanation ?? '', { exact: true })).toBeVisible();
+    await dot.click();
+    await expect(region).toHaveAttribute('data-command', String(LAST_N));
+    await expect(dot).toHaveAttribute('aria-current', 'true');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    const cell = region.locator(`[data-cell="${LAST_N}"]`);
+    await expect(cell).toBeVisible();
+    await expect(cell).toContainText(LAST.output);
+    // The CLI_X data has no notes, so no command draws a note line.
+    await expect(region.locator('[data-note]')).toHaveCount(0);
+
+    // A dot press keeps the hover and focus pauses: only leaving resumes.
+    await expect(region).toHaveAttribute('data-playback', 'paused');
+    await leaveTerminal(page);
+    await expect(region).toHaveAttribute('data-playback', 'playing');
   });
 
   test('no horizontal scroll at 375 px', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 800 });
     await page.goto('/projects/clix-cli');
-    await expect(page.getByRole('region', { name: 'CLI_X demo' })).toBeVisible();
+    await expect(page.getByRole('region', { name: regionName })).toBeVisible();
 
     const { scrollWidth, clientWidth } = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,
@@ -183,7 +260,7 @@ test.describe('Demo under reduced motion', () => {
 
   test('starts paused with the toggle pressed (D-02)', async ({ page }) => {
     await page.goto('/projects/clix-cli');
-    const region = page.getByRole('region', { name: 'CLI_X demo' });
+    const region = page.getByRole('region', { name: regionName });
 
     // The server renders it unpressed; the client flips it after hydration (Pitfall 3).
     await expect(region.getByRole('button', { name: 'Pause demo', exact: true })).toHaveAttribute(
