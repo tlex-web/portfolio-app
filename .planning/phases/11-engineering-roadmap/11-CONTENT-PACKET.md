@@ -474,6 +474,8 @@ Checks: `npm run clip:derive -- --check` prints `clips: OK` and `npm run guard:i
 
 Reply (in 11-16): approve, edit the words, ask for a different poster time, or reject the clip.
 
+**Status (11-16, 2026-11-01):** approved as drafted, poster at 3.5 s, description and intro unchanged (Reply 6 in the answers log). The drafts above now ship in `data/projects.ts`.
+
 ---
 
 ## Answers (verbatim)
@@ -571,6 +573,15 @@ Option description shown: "11-17 does those four things without asking again. Yo
 Tim's selection:
 ```text
 Approve (Recommended)
+```
+
+### Reply 6 · chat message · 2026-11-01 · section I (plan 11-16)
+
+Question: "Should coin-flip ship this clip, poster and description?" Shown with it: the served clip `public/media/coin-flip-toss.9b55947b70.mp4` (4.4 s, 512x1010, no audio, no metadata, 212 KB, untrimmed), the poster (the frame at 3.5 s, coin at rest with HEADS below), the contact sheet, and the description and intro drafts of section I, word for word. Options offered: "approve" (clip, poster, description and intro ship as above), "edit: …", "edit: no intro", "edit: poster at X s", "reject".
+
+Tim's message:
+```text
+approve
 ```
 
 ## Resolved values
