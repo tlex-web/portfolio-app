@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 11
 current_phase_name: Engineering & Roadmap
 status: executing
-stopped_at: Completed 11-10-PLAN.md
-last_updated: "2026-11-01T21:32:55.395Z"
+stopped_at: Completed 11-11-PLAN.md
+last_updated: "2026-11-01T21:45:17.404Z"
 last_activity: 2026-11-01
 last_activity_desc: Phase 11 execution started
-state_head: 807a6af4967dd85eb1ac141966a838ff153cbc44
+state_head: 4c923cdbe1bbc142b1321fac13c77adb93cfb6ba
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 93
-  completed_plans: 85
-  percent: 91
+  completed_plans: 86
+  percent: 92
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-26)
 ## Current Position
 
 Phase: 11 (Engineering & Roadmap) — EXECUTING
-Plan: 11 of 18
+Plan: 12 of 18
 Status: Ready to execute
 Last activity: 2026-11-01 — Phase 11 execution started
 
-Progress: [█████████░] 91%
+Progress: [█████████░] 92%
 
 ## Performance Metrics
 
@@ -142,6 +142,7 @@ Progress: [█████████░] 91%
 | Phase 11 P09 | 12 min | 3 tasks | 30 files |
 | Phase 11 P07 | 11 min | 1 tasks | 17 files |
 | Phase 11 P10 | 15 min | 2 tasks | 7 files |
+| Phase 11 P11 | 8 min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -372,6 +373,8 @@ Recent decisions affecting current work:
 - [Phase 11]: 11-07: approved prose ships without the review copy's inline-code backticks; renderers style flags (11-11 splits forceLine on '--force')
 - [Phase 11]: 11-07: /projects intro lives in data/projects.ts as projectsIntro; Trailhead owns its container and takes an optional figure (11-12)
 - [Phase 11]: 11-10: §I #10 default applied (counts shown, 2 x 2 tracks below 640 px); RouteLogFilters uses useOptimistic in startTransition around router.replace, zero-count segments aria-disabled but focusable, per-state class constants used exclusively
+- [Phase 11]: 11-11: Section renderers take ({ id, label, ...data }) from slotMeta, heading id '{id}-title', and return null when nothing is approved; Pipeline columns come from a literal COLS record (3 and 4 only, G11)
+- [Phase 11]: 11-11: box Safety renders only with an intro or a capture; the preview is static (no copy button, default.11) and only the --force line gets inline code; Problem prose stays plain until Tim answers the --clip/ConvertFrom-Json question
 
 ### Pending Todos
 
@@ -416,6 +419,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-01T21:32:54.907Z
-Stopped at: Completed 11-10-PLAN.md
+Last session: 2026-11-01T21:45:05.969Z
+Stopped at: Completed 11-11-PLAN.md
 Resume file: None
