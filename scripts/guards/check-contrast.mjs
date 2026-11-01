@@ -23,7 +23,12 @@
  * need 4.5:1, non-text pairs 3:1. After the 07 table and the 08-05 accent-strong
  * pairs come the four gallery pairs of the photo viewer (10-03; 10-UI-SPEC
  * "Color"): accent/gallery and gallery/ink as text, focus/gallery and
- * line-strong/gallery as non-text. Ratios are compared as raw floats with >=, so a
+ * line-strong/gallery as non-text. Phase 11 (11-UI-SPEC "Color") adds one text pair,
+ * ink-inverse/ink (the pressed Pause toggle), and the TRAIL primitives: the waymark
+ * paint declared in :root outside the --color-* namespace (--trail-blaze,
+ * --trail-mountain, --trail-alpine, --trail-yellow), measured as ten non-text pairs
+ * (each bar against its white neighbour and the surfaces it sits on) and labelled
+ * by their own names (trail-alpine/trail-blaze). Ratios are compared as raw floats with >=, so a
  * ratio exactly at the threshold passes and one 0.01 below fails. A pair whose
  * token is missing fails, as does a measured token with alpha below 1.
  *
@@ -58,6 +63,9 @@ const SEMANTIC = [
   'contour',
 ];
 const DECORATIVE = new Set(['line', 'contour']);
+// 11-UI-SPEC "Trail paint": L1 primitives in :root, read by their own name (--trail-*)
+const TRAIL = ['trail-blaze', 'trail-mountain', 'trail-alpine', 'trail-yellow'];
+const tokenName = (token) => (TRAIL.includes(token) ? `--${token}` : `--color-${token}`);
 const ALIAS = /^--color-(alpine|granite|snow|frost|ember|pine|rust)-/;
 
 const TEXT = 4.5;
@@ -78,6 +86,13 @@ const PAIRS = [
   ...pairs(['accent'], ['gallery'], TEXT),
   ...pairs(['gallery'], ['ink'], TEXT),
   ...pairs(['focus', 'line-strong'], ['gallery'], NON_TEXT),
+  // 11-UI-SPEC "New GUARD-05 text pair": the pressed Pause toggle (bg-ink text-ink-inverse)
+  ...pairs(['ink-inverse'], ['ink'], TEXT),
+  // 11-UI-SPEC "Trail paint" non-text pairs, in table order: each bar against its
+  // white neighbours, the bars on every surface, the white and yellow paint on the panel
+  ...pairs(['trail-mountain', 'trail-alpine'], ['trail-blaze'], NON_TEXT),
+  ...pairs(['trail-mountain', 'trail-alpine'], SURFACES, NON_TEXT),
+  ...pairs(['trail-blaze', 'trail-yellow'], ['surface-raised'], NON_TEXT),
 ];
 
 const BLOCK = /(:root|@theme(?:\s+(?:inline|static))*)\s*\{([^{}]*)\}/g;
@@ -150,8 +165,8 @@ function main() {
     if (colors.has(token)) return colors.get(token);
     let color = null;
     try {
-      color = new Color(resolve(tokens, `--color-${token}`));
-      if (color.alpha < 1) throw new Error(`--color-${token} has alpha ${color.alpha}; alpha tokens are decorative, never measured`);
+      color = new Color(resolve(tokens, tokenName(token)));
+      if (color.alpha < 1) throw new Error(`${tokenName(token)} has alpha ${color.alpha}; alpha tokens are decorative, never measured`);
     } catch (err) {
       color = { error: err.message };
     }
@@ -162,7 +177,7 @@ function main() {
   for (const { fg, bg, min } of PAIRS) {
     if (DECORATIVE.has(fg) || DECORATIVE.has(bg)) throw new Error(`decorative token in PAIRS: ${fg}/${bg}`);
     const label = `${fg}/${bg}`;
-    if (!tokens.has(`--color-${fg}`) || !tokens.has(`--color-${bg}`)) {
+    if (!tokens.has(tokenName(fg)) || !tokens.has(tokenName(bg))) {
       console.log(`${label} - ${min} FAIL`);
       failures.push(`missing token for pair ${label}`);
       continue;

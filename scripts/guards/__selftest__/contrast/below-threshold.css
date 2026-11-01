@@ -1,6 +1,12 @@
 /* Fixture: ink-muted at 4.49:1 (luminance 0.848 on 0.15) must fail: 0.01 below the threshold */
 :root {
   --base-bg: color(xyz-d65 0.15 0.15 0.15);
+  /* Trail paint (11-UI-SPEC): every trail pair passes on these 0.15 surfaces, so the
+     case still tests only what its name says */
+  --trail-blaze: #000;
+  --trail-mountain: #fff;
+  --trail-alpine: #fff;
+  --trail-yellow: #fff;
 }
 
 @theme inline {

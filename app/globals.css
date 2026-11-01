@@ -49,6 +49,15 @@
      on purpose, so no text utility exists. Painted only through bg-trail below;
      Phase 11's T1 trail badge (coin-flip's Zmutt path) reads the same primitive */
   --trail-yellow: var(--caution-400);
+
+  /* Trail paint (11-UI-SPEC "Trail paint"): the bars of the SAC waymarks drawn by
+     TrailGradeMark. Outside the --color-* namespace like --trail-yellow, so no text
+     or border utility exists: background-only, painted through bg-trail-blaze,
+     bg-trail-mountain and bg-trail-alpine below, always beside the grade text.
+     check-contrast.mjs measures every bar against its neighbours and the surfaces */
+  --trail-blaze: var(--firn-50);
+  --trail-mountain: oklch(0.6 0.2 27);
+  --trail-alpine: oklch(0.55 0.17 255);
 }
 
 /* Font families (DSGN-07): Schibsted Grotesk display, Inter body, JetBrains Mono data only */
@@ -326,9 +335,25 @@ html {
 }
 
 /* The only way to paint trail yellow (09-UI-SPEC "Trail yellow"). Phase 9 uses it
-   on the decorative trail-sign tip only */
+   on the decorative trail-sign tip; Phase 11 adds exactly two uses (11-UI-SPEC
+   "Trail paint"): the T1 waymark glyph and the tip of the case study's "Next route"
+   sign */
 @utility bg-trail {
   background-color: var(--trail-yellow);
+}
+
+/* The only way to paint the waymark bars (11-UI-SPEC "Trail paint"): background
+   only, white-red-white for T2-T3 and white-blue-white for T4-T5 */
+@utility bg-trail-blaze {
+  background-color: var(--trail-blaze);
+}
+
+@utility bg-trail-mountain {
+  background-color: var(--trail-mountain);
+}
+
+@utility bg-trail-alpine {
+  background-color: var(--trail-alpine);
 }
 
 @layer utilities {

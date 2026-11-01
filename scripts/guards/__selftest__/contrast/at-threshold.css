@@ -6,6 +6,12 @@
   --base-bg: color(xyz-d65 0.15 0.15 0.15);
   --base-fg: #fff;
   --edge: color(xyz-d65 0.85 0.85 0.85);
+  /* Trail paint (11-UI-SPEC): every trail pair passes on these 0.15 surfaces, so the
+     case still tests only what its name says */
+  --trail-blaze: #000;
+  --trail-mountain: #fff;
+  --trail-alpine: #fff;
+  --trail-yellow: #fff;
 }
 
 @theme {

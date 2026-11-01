@@ -71,16 +71,19 @@ describe('TrailGradeMark', () => {
     expect(container.textContent).toBe('T6, unmarked');
   });
 
-  it.each(TRAIL_GRADES)('keeps the %s glyph and its grade text together in one nowrap unit', (grade) => {
-    const { container } = render(<TrailGradeMark grade={grade} />);
+  it.each(TRAIL_GRADES)(
+    'keeps the %s glyph and its grade text together in one nowrap unit',
+    (grade) => {
+      const { container } = render(<TrailGradeMark grade={grade} />);
 
-    const glyph = glyphOf(container);
-    expect(glyph).toHaveAttribute('data-marker', markerForGrade(grade));
-    const unit = glyph.parentElement as HTMLElement;
-    expect(unit).toHaveClass('whitespace-nowrap');
-    expect(unit).toContainElement(screen.getByText(grade));
-    expect(unit.firstElementChild).toBe(glyph);
-  });
+      const glyph = glyphOf(container);
+      expect(glyph).toHaveAttribute('data-marker', markerForGrade(grade));
+      const unit = glyph.parentElement as HTMLElement;
+      expect(unit).toHaveClass('whitespace-nowrap');
+      expect(unit).toContainElement(screen.getByText(grade));
+      expect(unit.firstElementChild).toBe(glyph);
+    }
+  );
 
   it('throws for a grade outside T1 to T6', () => {
     jest.spyOn(console, 'error').mockImplementation(() => {});
