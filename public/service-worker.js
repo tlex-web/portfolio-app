@@ -117,6 +117,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Media goes straight to the network: Range requests need real 206 responses,
+  // and Cache.put rejects partial responses (Pitfall 6)
+  if (
+    request.headers.has('range') ||
+    request.destination === 'video' ||
+    request.destination === 'audio'
+  ) {
+    return;
+  }
+
   // Skip chrome-extension protocol
   if (url.protocol === 'chrome-extension:') {
     return;

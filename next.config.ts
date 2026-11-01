@@ -40,6 +40,18 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // Media (11-09, D-27): every file under public/media/ (clips and their
+        // posters) has a content hash in its name (<id>.<10 hex>.<ext>), so it
+        // never changes in place and can be cached forever.
+        source: '/media/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
         source: '/_next/static/:path*',
         headers: [
           {
