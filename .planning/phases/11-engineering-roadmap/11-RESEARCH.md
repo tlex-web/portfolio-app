@@ -1,148 +1,218 @@
 # Phase 11: Engineering & Roadmap - Research
 
-**Researched:** 2026-11-01
-**Domain:** Next 16.4 Server Components with small client islands; typed project/roadmap data (zod 4); a build-time DEM trail-profile generator; content gating (claims, dates, CLI_X behaviour)
-**Confidence:** HIGH for the codebase map, the Next patterns and the trail data. MEDIUM for the CLI_X behaviour lines (they come from reading code and need Tim's confirmation). The route-log dates and the claim dispositions depend on Tim by design.
+**Researched:** 2026-11-01 (re-research for the box + coin-flip swap; replaces the CLI_X version of this file wholesale)
+**Domain:** Next.js 16.4 Server Components + small client islands; typed project/roadmap data; a build-time DEM trail-profile generator; a same-origin muted video asset with a pure-Node guard; real captured CLI output from box v2.0
+**Confidence:** HIGH for the stack, patterns, Next.js APIs, box facts and the video pipeline (each probed this session); MEDIUM for the Zmutt via-point routing and the final clip size (depend on inputs not yet in hand)
 
-> **PUBLIC-REPO NOTICE.** This file is committed to a public repository. The CLI_X sections below are written in my own words from a read-only look at the private `tlex-web/cli_x` repo through `gh`. They contain no source code, file paths, identifiers, rule IDs, weights or configuration names from that repo. Version numbers and release dates are included only as evidence for Tim to confirm or strike before they become site data.
+> **Privacy (D-23).** This file is committed to a public repo. Everything about `tlex-web/coin-flip` (private) below is a summary in my own words of a read-only `gh` look at its planning record. No source, file path, identifier, defect or backlog ID, test evidence or internal measurement is reproduced. box is public; its README and `.planning/` are cited and linked.
 
 <user_constraints>
 ## User Constraints (from CONTEXT.md)
 
 ### Locked Decisions
+(Copied verbatim from `11-CONTEXT.md` `## Implementation Decisions`.)
 
-#### Terminal demo (ENG-05)
-- **D-01: Flat token terminal; the 3D laptop is retired.** The terminal becomes a 2D panel: mono text in a `surface-raised` frame with a title bar. `HologramTerminal.tsx` (R3F laptop, drei `<Html>`, `ParticleField`) and `HologramTerminalDemo.tsx` are replaced by a `DemoTerminal` client island. three.js and R3F never load on project pages. The heading "Experience CLI_X in 3D" and its copy are rewritten under the copy checkpoint (D-21).
-- **D-02: Pause behaviour.** Hover and focus-within pause autoplay *temporarily*, and leaving resumes it. The Pause/Play button (`aria-pressed`) is *sticky*: after the visitor presses Pause, nothing resumes until they press Play. Autoplay also pauses offscreen (IntersectionObserver) and when the tab is hidden (`visibilitychange`). Under reduced motion there is no typing animation and the demo starts paused with full text, as it does today. Tests assert state (`aria-pressed`, the paused/playing state), not classes.
-- **D-03: Keep the existing per-command selector dots** (`aria-label="Go to command N"`), restyled. They are current functionality, and removing them would be a regression. Previous/next step buttons and the transcript remain ENG-F1 (deferred).
-- **D-04: Risk badge = marker glyph + grade + level + score**, e.g. `[yellow marker] T1 · Low · 0.05`, followed by the command's `explanation` or `warning` line. It uses the same wording, glyphs and order as the risk scale and its table (D-11), so the terminal and the safety section read as one system. It replaces the `riskColors` pills.
+Decision IDs from the first pass are kept, so 11-01's code comments and SUMMARY (D-02, D-03) stay valid. A retired ID is never reused. New decisions start at D-22.
+
+#### Project swap
+- **D-22: box and coin-flip replace clix-cli and clix-website entirely** (Tim, 2026-11-01, at the 11-02 checkpoint: "Both CLI_X projects out"). box is github.com/tlex-web/box: public, Rust, a CLI toolkit for Windows PowerShell 7 with 23 tools in one binary. coin-flip is github.com/tlex-web/coin-flip: private, a native Android app (Kotlin) built around a 3D coin toss. The slugs are `box` and `coin-flip`. The old `cli-*` and `webshop-*` roadmap rows, CLI_X demo commands, fixtures and tests leave. Tests that referenced them are rewritten for the new projects and never deleted (test-count ratchet). The visual baseline folders `clix-cli` and `clix-website` are replaced by `box` and `coin-flip` in the phase re-baseline. — **Reversibility:** costly — once shipped, the slugs are shared URLs and visual-baseline folder names.
+- **D-23: The private-repo constraint now covers coin-flip** (it carries forward D-11's rule, which originally covered CLI_X). Research may read `tlex-web/coin-flip` read-only through Tim's authenticated `gh`. The portfolio repo and its `.planning/` docs are **public**, so RESEARCH.md, plans, commits and the site summarise in Claude's own words. They must not copy source, file paths, identifiers, defect or backlog IDs, test evidence or internal measurements. The site may state, in approved wording, what the app is, its sourced feature facts (zero permissions, fully offline, no ads, trackers or accounts, a cryptographic 50/50 result decided before the toss, TalkBack support, reduced-motion support, system font scaling) and its milestone dates. box is public, so its README and `.planning/` docs may be cited and linked.
+
+#### Safety slot (ENG-03 retired)
+- **D-04: Retired** (the CLI_X risk badge in the terminal). D-26's optional note line takes its place.
+- **D-10: Retired** (CLI_X Medium/High demo commands).
+- **D-11: Retired** (CLI_X per-grade behaviour lines). Its privacy rule lives on in D-23.
+- **D-24: ENG-03 is retired, because CLI_X is discontinued.** REQUIREMENTS.md marks ENG-03 as dropped with the reason. The ROADMAP Phase 11 goal and success criterion 3 are rewritten without risk bands, and the traceability row is updated. No `RiskScale` component is built. Trail grades appear only as the real SAC badges of the panel and trailhead trails (D-06), so the grade vocabulary has one meaning across the site. The CLI_X-only code goes: the score-band logic in `lib/trail-grade.ts` (`RISK_BANDS` score ranges, `bandFor`, `isScoreInLevel`), and `RiskLevel`, `RiskScaleBlock` and `riskLevel`/`riskScore` in `data/schemas/project.ts`. The marker-glyph vocabulary the badges need stays: T1 yellow, T2–T3 white-red-white, T4–T5 white-blue-white, T6 unmarked. Which plan edits REQUIREMENTS.md and ROADMAP.md is the planner's call; it should be early. — **Reversibility:** reversible — a planning-doc change, plus code that is not yet shipped in its v2 form.
+- **D-25: The safety slot keeps its position, and its heading is set per project:** "Safety" for box, "Privacy" for coin-flip.
+  - **box Safety:** two or three sentences of prose about the gate: destructive commands preview by default, nothing is written without `--force`, and every check passes before any write. Then one static block of **real** preview output. Claude captures it with the locally installed box 0.1.0, running a destructive command in preview mode (e.g. `box dupes`) against a throwaway folder in the scratchpad. A line follows it saying what `--force` would do. Tim approves the capture at the copy checkpoint.
+  - **coin-flip Privacy:** zero permissions (checked on the release APK), fully offline, no ads, trackers or accounts.
+  - **Fairness goes in coin-flip's Pipeline, not under Privacy:** a cryptographic 50/50 draw decides the result before the toss, and the animation is choreographed to land on it.
+
+#### Demos (ENG-05)
+- **D-01: Kept** (flat token terminal; three.js never loads on project pages; built in 11-01). The terminal heading copy is rewritten for box under D-16.
+- **D-02: Amended. Releasing the Pause toggle now resumes at once.** Tim chose option B for the 11-01 open question. Hover and focus-within still pause temporarily, and leaving resumes. Pressing Pause is still sticky. When the visitor releases the toggle, it clears the current hover and focus pauses until the pointer or focus next enters the terminal (the WAI carousel's explicit start). Offscreen (IntersectionObserver) and hidden-tab (`visibilitychange`) pauses are unchanged. Reduced motion still starts paused with full text. The UI-SPEC, `lib/demo-terminal.ts`, its Jest suite, `DemoTerminal.test.tsx` and `e2e/case-study.spec.ts` (including its `leaveTerminal()` helper assumptions) change together. Tests assert state (`aria-pressed`, `data-playback`), not classes.
+- **D-03: Kept** (per-command selector dots, restyled; already built in 11-01).
+- **D-26: The box terminal loop shows box as a scriptable toolkit, with real captured output.** It has 4–5 commands that show what v2.0 is about. Examples: `box hash <file>` (BLAKE3 by default), `box uuid --json`, `box epoch …`, and a `box du --json | ConvertFrom-Json` style pipeline line. Claude captures them with the installed `box 0.1.0` (`%LOCALAPPDATA%\Programs\box\box.exe`):
+  - with `NO_COLOR` set;
+  - read-only commands only, with inputs in the scratchpad;
+  - no home-directory paths, no network (`weather` is excluded), and no `--version` (D-29).
+
+  The exact command lines go in the SUMMARY, and Tim approves the transcript at the copy checkpoint. Output is captured once and frozen (a random value such as a UUID stays as captured), so nothing is invented (08 D-22). Each command may carry an optional one-line note under its output, in place of the D-04 badge line. `DemoCommandSchema` drops `riskLevel` and `riskScore` and gains the optional note field.
+- **D-27: coin-flip's Demo is a short, muted clip.** It is a 5–10 s device screen recording of one flip, served same-origin. The `<video>` element:
+  - is muted, does not loop, shows controls and has a poster frame;
+  - never autoplays, so the visitor clicks to play. Under reduced motion the poster stays until the visitor plays it.
+
+  Metadata is stripped, and the size budget is about 1.5 MB. Formats and encoding are research's call. Visual tests capture the poster, so screenshots are deterministic. The app is silent, so the clip has no audio track. It gets an accessible name and a short text description of what happens.
+
+  **Source:** Tim records a fresh, clean clip on the device at a human-action checkpoint (no debug overlays; the finish is his pick) and drops the file in a folder the plan names. Claude trims, encodes, strips metadata and extracts the poster. If no clip arrives, coin-flip ships **without** a Demo section, never with a placeholder (10 D-07).
+
+  Video is a new served-asset type. The CSP has no `media-src`, so `default-src 'self'` already allows same-origin video. The served-asset guard (`guard:images`) does not yet check video for metadata, size or hash names, so research decides how to extend it.
 
 #### Route panels (ENG-01)
-- **D-05: The glyph is a real DEM trail profile.** It is a build-time SVG elevation profile sampled from the Phase 8 heightmap along a real marked trail inside the 11 km sheet extent (08 D-14), with zero client JS and deterministic output. Generate it in the terrain or data pipeline, with an offline `--check` like the other generated data, rather than at request time. The glyph is decorative (`aria-hidden`), and its meaning is carried by the caption text (D-07). No screenshots (this answers the roadmap's "Inputs from Tim" glyph question).
-- **D-06: A project's trail-grade badge is the real SAC grade of the trail its glyph draws.** The profile and the badge describe one real route, so nothing is invented, and the badge makes no claim about the code. It therefore cannot collide with CLI_X's command-risk meaning of the same scale. The badge uses the same marker glyph set as D-04 and D-11.
-- **D-07: Claude proposes the two trails, and Tim approves them at a checkpoint.** Research picks two real marked hiking trails inside the sheet. Each needs a sourced SAC grade (swisstopo, SAC, or the official Zermatt trail listings, with the URL quoted) and start and end heights sampled from the DEM (D-17 rule from Phase 8: DEM heights, not brochure heights). Tim approves the pair and the project-to-trail assignment, like the Riffelsee pin at 08-10. Each glyph gets a caption in the form `Start 2,583 m → End 3,260 m · T3`. These numbers are illustrative only; research supplies the real ones.
-- **D-08: The website panel's metric strip uses countable facts already in the data**, e.g. version, number of platforms and number of technologies, in the same tabular-numeral style as CLI_X's strip (startup, tests, providers). No new claims, and no input from Tim. If D-15 removes the `features` field, the counts must come from fields that remain, or from a small typed field added for the purpose.
+- **D-05: Kept** (a build-time DEM trail-profile glyph with an offline `--check`, `aria-hidden`, and its meaning carried by the caption).
+- **D-06: Kept.** A project's badge is the real SAC grade of the trail its glyph draws. With ENG-03 retired, the grade vocabulary means only "trail grade" everywhere on the site.
+- **D-07: Answered for the new pair** (Tim, this discussion). **box → Hörnliweg No. 27**, Schwarzsee → Hörnlihütte, **T4** (white-blue-white). **coin-flip → Zmutt path No. 2**, Zermatt → Zmutt, **T1** (yellow). The sources are the official zermatt.swiss listings quoted in `11-CONTENT-PACKET.md` §A. The captions are `Schwarzsee 2,587 m → Hörnlihütte 3,262 m · T4` and `Zermatt 1,606 m → Zmutt 1,934 m · T1`, with place names as shown. The final heights come from the generator's DEM endpoints (08 D-17). The Zmutt line needs 1–2 via points to stay within 10% of the official 4.3 km, and the plan records them in its SUMMARY. No trail checkpoint is needed: Tim sees the glyphs in the visual review.
+- **D-08: Replaced by D-28** (the clix-website metric strip).
+- **D-28: Metric strips use the proposed sets.** box: **23 tools · 507 tests · 1 binary**, sourced from box `.planning/MILESTONES.md` (v2.0 stats) and the README. coin-flip: **0 permissions · 50/50 · 0 network calls**, sourced from coin-flip's project record: the permission count is asserted on the release APK, there is no internet permission and no remote services, and the result is an exact 50/50. The context line names the release (e.g. "measured at v2.0"). Every value still goes through the D-09 audit; the audit may soften "0 network calls" to "Offline". Values are in tabular numerals, render final at once, and have no count-up.
+- **D-29: Version and status words.** box's kicker shows **v2.0**, matching the git tag and milestone a visitor finds on GitHub. The binary prints `box 0.1.0` because Cargo.toml was never bumped, so the terminal loop never shows `--version`. box's status word is drafted under D-16 (e.g. "Shipped"). coin-flip's status is **"v1 · on device"**, and its repo shows as text under D-12.
+- **D-30: coin-flip candor is honest, in general terms.** v1 runs on Tim's device but is not finished: smoothing the toss and the camera follow, and then a Play Store release, are still ahead. Next steps and the route log name that work in plain words, without defect or backlog IDs, internals or test evidence (D-23). Nothing on the page claims the app is finished, polished or store-ready.
 
 #### Claims & case-study content (ENG-02, ENG-04)
-- **D-09: Claims audit at a checkpoint.** Claude drafts a table: claim · where it appears · current wording · proposed soft wording · what would source it. It covers at least "95% accuracy", "~90ms (40% faster)", "40-60% API cost reduction", "<100ms startup", "enterprise-grade safety", "ML-inspired", "Accessibility compliant (WCAG 2.1)", "PCI-compliant payments", "850+ tests / 100% pass rate" and the docs line counts. Tim marks each row `source: <link or how measured>`, `soften` or `cut`. A context line such as "measured on v2.4.0" appears only where Tim confirms it, so no provenance is invented. Values render final immediately, with no count-up.
-- **D-10: Medium and High demo commands come from Tim at a human-action checkpoint**, following the 08-03 pattern. The real scores are 0.05, 0.15, 0.29 (all Low) and 0.87 (Critical), so T2–T3 and T4–T5 have no example. (The roadmap's "Medium and Critical" wording predates 08-03's rescoring: Critical is already covered by `pkill -f chrome`, and the gap is Medium and High.) Tim runs one medium-risk and one high-risk request through CLI_X and pastes the input, output, `riskScore` and the warning or explanation verbatim. The new commands join the scale ticks, the table and the terminal loop. Nothing is invented (08 D-22). If Tim cannot supply one, its band shows range and label with no tick.
-- **D-11: Per-grade behaviour lines are drafted from the CLI_X source and confirmed by Tim.** Research reads the private `tlex-web/cli_x` repo through Tim's authenticated `gh` (read-only) to learn what CLI_X does at each band (e.g. runs, warns, asks for confirmation, blocks) and how the 11 rules feed the score. It drafts one line per grade, and Tim corrects them at the same checkpoint as D-10. **Constraint:** the portfolio repo and its `.planning/` docs are **public**. Research must summarise behaviour in its own words and must not paste private CLI_X source, file paths or internals into RESEARCH.md, plans or commits. Only the Tim-approved lines ship.
-- **D-12: Links render only if Tim has verified them; a private repo is shown as text.** On 2026-11-01 all four project URLs were dead to the public: `github.com/tlex-web/cli_x` returned 404 (the repo is private), `github.com/tlex-web/cli_x-website` doesn't exist, and `cli-x.com` and `docs.cli-x.com` did not resolve. At the checkpoint, Tim confirms which URLs are live, and only those render, on the trailhead and the panels. A private repo shows as plain text, "Source: private repository", with an "Ask for a walkthrough →" link to `/contact`. A data-level check (a unit test or schema, with no network calls in CI) stops a known-dead URL coming back by accident. — **Reversibility:** reversible — each link is a data edit once its target goes live.
-- **D-13: Pricing becomes one line in the Problem copy, with no price figures.** For example: "a free bring-your-own-key tier and a Pro subscription, sold through Stripe". The `$9.99/mo`, `$99/yr` and `10/day` figures are dropped, because they go stale, they are sales copy for another site, and with cli-x.com down there is nothing to link them to. The `pricing` block leaves the website case study, and the schema tuple changes to match.
-- **D-14: Pricing is not a case-study section.** The ENG-02 order is fixed: problem → pipeline → safety → metrics → demo → stack → next steps. For clix-website, the `security` list maps to Safety and the `techStack` groups map to Stack. Pipeline and Demo appear only if the data supports them (see Claude's Discretion).
-- **D-15: The 14-item `features` lists are folded into their sections, and the rest is cut.** Each feature that matters moves into its section: the 4 pipeline stages into Pipeline, the 11 rules into Safety, caching into Metrics, providers into Stack. Duplicates and unbacked claims go through the D-09 audit. No separate features list remains, `FeatureShowcase` is retired, and the `features` field leaves the data and schema. Tests that read it are rewritten, not deleted.
-- **D-16: Claude drafts all new copy and Tim approves it** before it ships (carried forward from 08 D-05). The copy is first person, short and factual. It covers the problem/outcome statements for both projects, the section intros, the terminal heading, the panel pitches, and the route-log page copy.
+- **D-09: Kept, with a new claim list.** Claude drafts the audit table (claim · where it appears · current wording · proposed soft wording · source). box claims: 23 tools, 507 tests, "single static binary", "safe by default", "BLAKE3 by default", "built for Windows PowerShell 7", and any LOC or timeline figure used. coin-flip claims: zero permissions, cryptographic randomness, exactly 50/50, fully offline, ad- and tracker-free, TalkBack, system font scaling. Tim marks each row `source`, `soften` or `cut`. The CLI_X claims list is void.
+- **D-12: Kept.** `github.com/tlex-web/box` is public (checked with `gh repo view` on 2026-11-01) and renders as a link. coin-flip is private and shows as "Source: private repository · Ask for a walkthrough →" (to `/contact`). The data-level check (no network calls in CI) stops a known-dead or private URL from rendering as a link. Every CLI_X URL leaves with the data. — **Reversibility:** reversible — each link is a data edit once its target goes public.
+- **D-13 and D-14: Retired** (pricing; clix-website is gone).
+- **D-15: Kept.** The new project data is written without a `features` field, `FeatureShowcase` retires, and the schema drops `features`. Tests that read it are rewritten, not deleted.
+- **D-16: Kept.** Claude drafts all new copy, and Tim approves it before it ships (first person, short, factual). It covers:
+  - for both projects: problem and outcome statements, the panel pitches, and the section intros, including Safety and Privacy;
+  - the box terminal heading;
+  - coin-flip's Pipeline: fair draw → choreographed toss with the camera following → landing and settle → haptic pulse and a TalkBack announcement;
+  - the route-log row titles and page copy;
+  - the rewritten Home About sentence (D-33).
 
 #### Route log (ROUTE-01 to ROUTE-03)
-- **D-17: Claude drafts the portfolio entries, and Tim fills in CLI_X and the website at a checkpoint.** Claude drafts the portfolio rows from git, `.planning/MILESTONES.md` and `.planning/PROJECT.md`, with real `completedAt` dates: v1.0 shipped 2026-03-12, and Phases 7 and 8 completed on 2026-10-24, Phase 9 on 2026-10-25 and Phase 10 on 2026-10-26, according to their completion and transition commits. Claude also proposes keeping, rewriting or retiring each stale item (e.g. "3D Image Gallery Enhancement v1.1.0", which Phase 10 effectively shipped, and "Photography Blog v1.2.0"). Tim confirms, and supplies status, order and `completedAt` for the CLI_X and website items, which only he knows (whether the current "in progress" items are still in progress, and when the "completed" v2.4.0 items shipped). Only Tim-confirmed dates ship.
-- **D-18: v2.0 is one in-progress entry with its phases inside it.** v1.0 is a completed entry dated 2026-03-12. "v2.0 Topographic Identity" sits at the current camp, and its disclosure lists Phases 7–12, each with its completion date or status. This keeps the log balanced across the three projects while still showing dated progress.
-- **D-19: The axis has three labelled bands and order ticks, with no metre figures.** The bands are Base (completed, at the bottom), Current camp (in progress, in the middle, emphasised) and Summit (planned, at the top). Each item gets one tick in data order, and completed items show their completion dates. There are no altitude numbers (false precision, against the real-data rule), no Gantt or time scale, and no percent bars. DOM order equals visual order (planned → in progress → completed, top to bottom; research FEATURES §ROUTE).
-- **D-20: "Last surveyed" is a manual `surveyedAt` constant in the roadmap data**, labelled "Route log surveyed <date>", so it can't be confused with the footer's terrain "Last surveyed" date (Phase 8). A unit test fails if it is in the future or earlier than the newest `completedAt`. Tim sets the value at the D-17 checkpoint.
+- **D-17: Amended. Claude drafts every row from documented sources, and Tim confirms them at the checkpoint.**
+  - **Portfolio:** the `11-CONTENT-PACKET.md` §G1 rows, which are git-verified: v1.0 completed 2026-03-12, and v2.0 in progress with Phases 7–10 completed 2026-10-24, 2026-10-24, 2026-10-25 and 2026-10-26.
+  - **box:** "v1.0 Full toolbox", completed 2026-06-24; "v2.0 Toolbox → toolkit", completed 2026-07-14 (box `.planning/MILESTONES.md`).
+  - **coin-flip:** "v1.0 First release on device", completed 2026-08-09 (its milestone record).
+  - Titles are drafts for Tim's approval. Only confirmed rows and dates ship.
+- **D-31: box and coin-flip get one row per milestone.** They sit at the same level as portfolio v1.0 and v2.0, so the three projects read evenly. Only portfolio v2.0 keeps a phase disclosure (D-18).
+- **D-32: The Summit holds only what the repos record.** coin-flip: "v1.1 Smoother toss" and "Play Store release", both planned. box gets no planned row, because its next milestone is not yet defined. The stale portfolio rows are **retired**: `portfolio-3d-gallery` (Phase 10 shipped that work) and `portfolio-blog` (no plan behind it). The Summit will be sparse, and that is honest.
+- **D-18: Kept** (v1.0 completed 2026-03-12; "v2.0 Topographic Identity" at the current camp with Phases 7–12 in its disclosure).
+- **D-19: Kept** (three labelled bands, order ticks, no metre figures, DOM order equals visual order).
+- **D-20: Kept** (a manual `surveyedAt` labelled "Route log surveyed <date>", unit-tested to be neither in the future nor earlier than the newest `completedAt`; Tim sets it at the checkpoint).
+- **Data shape:** `RoadmapItem.area` becomes `'portfolio' | 'box' | 'coin-flip'`, and `'other'`, `'cli'` and `'webshop'` go. Portfolio v2.0 is the only in-progress row, so box or coin-flip combined with "In progress" yields zero items. The existing discretion rule applies (disabled with `aria-disabled` and still announced, or hidden).
+
+#### Cross-phase copy
+- **D-33: Home's About copy loses its CLI_X sentence.** `data/home.ts` (approved in Phase 9) says Tim builds "CLI_X, a command-line tool that turns plain language into safe shell commands". CLI_X is discontinued, so the sentence is rewritten under D-16 to name box and/or coin-flip, and Tim approves it with the other copy. The `home` visual baselines re-baseline in the phase re-baseline. `components/Footer.tsx` still links to `/projects/clix-*`. It is a v1 legacy file with no importer, and Phase 12 deletes it. Leave it unless a guard flags it.
 
 #### Checkpoints (gating inputs)
-- **D-21: Tim's content inputs gate planning output, so collect them early and in as few checkpoints as possible.** They are: the D-10 demo commands, the D-11 behaviour lines, the D-09 claims audit, the D-12 link verification, the D-17 and D-20 route-log data and `surveyedAt`, the D-07 trail pair, and the D-16 copy. Before execution reaches each consumer, its input arrives as quoted text in a SUMMARY, so nothing ships invented. Grouping and order are the planner's call.
+- **D-21: Amended. The remaining inputs from Tim, grouped into as few checkpoints as possible:**
+  1. the claims audit (D-09);
+  2. the copy (D-16), including the box terminal transcript (D-26), the box dry-run capture (D-25) and the Home sentence (D-33);
+  3. route-log confirmation and `surveyedAt` (D-17, D-20, D-32);
+  4. the unanswered UI-SPEC defaults from packet §I that still apply: #1 roadmap h1, #2 priority, #3 descriptions, #5 panel walkthrough link, #6 primary CTA, #7 external-link behaviour, #8 pause-toggle label, #9 trail red and blue paint, #10 filter counts, #11 copy button (#4 risk-scale ticks is void);
+  5. the coin-flip clip (D-27), a separate human-action checkpoint because it needs the device. Only the Demo section depends on it, so it can arrive late.
+
+  Already answered in this discussion, so not re-asked: the trail pair and assignment (D-07), the metric picks (D-28, still audited), the box version (D-29), coin-flip candor (D-30), and the stale rows (D-32). Each input arrives as quoted text in a SUMMARY before its consumer runs, so nothing ships invented.
 
 ### Claude's Discretion
-- Whether clix-website gets a Pipeline section (e.g. checkout → Stripe webhook → licence signing → download) built from its existing data. Include it only if the drafted copy is factual, and Tim approves it at the D-16 copy checkpoint; otherwise the section is left out.
-- The URL parameter names and values for the route-log filter (research used `?area=cli`; the requirement says "project and status"), using `router.replace` with no history entries and `{ scroll: false }` (10 D-14 pattern). The "Next steps" rows on the case study link to the filtered log and to `#<item-id>` anchors. Once shipped these URLs are shareable, so pick stable names.
-- Segment counts and the disabling logic. "Other" (zero items) is removed. Segments that would return zero items under the other filter's current value are disabled (`aria-disabled`, still announced) or hidden. A polite live region announces the result count.
-- The marker glyph set (yellow T1, white-red-white, white-blue-white, unmarked as a dashed outline that doesn't look broken). Trail yellow is painted only through the existing `bg-trail` utility and `--trail-yellow`, which stays outside `--color-*` (09-UI-SPEC "Trail yellow"). Extending `bg-trail` beyond the Phase 9 trail-sign tip is allowed and should be recorded in the UI-SPEC.
-- The risk scale form (a horizontal 0–1 bar split into bands with demo ticks that are keyboard-focusable, per research FEATURES §RISK), the on-page route index or scroll-spy, the trailhead block, the "Next route" link and the contact CTA. These go to the UI-SPEC.
-- Which 2–3 CLI_X metrics go in its panel strip (after the D-09 audit).
-- Terminal layout details: wrapping long output on narrow screens, the live-region wording and the copy button (optional).
+(Copied verbatim from `11-CONTEXT.md` `### Claude's Discretion`.)
+
+- Whether box gets a Pipeline section, built from public facts. One example is config precedence (CLI › env › config › built-in) feeding the command, then human output, `--json` or `--clip`. Include it only if the drafted copy is factual and Tim approves it at the copy checkpoint; otherwise the section is left out.
+- Stack groups: box from its public `Cargo.toml` and README (Rust 2021 and the main crates). coin-flip in Claude's own words from its project record (Kotlin, native Android, the renderer as Tim approves). Only approved wording ships.
+- Which box command the Safety dry-run uses, and how the transcript is trimmed for narrow screens.
+- The order of the 4–5 terminal commands and the wording of each optional note.
+- Panel order on `/projects` (box first is the natural default: public, larger, linkable).
+- The URL parameter names and values for the route-log filter (`router.replace`, no history entries, `{ scroll: false }`; 10 D-14). Use stable names, since the URLs become shareable.
+- Segment counts and the disabling logic, as before. "Other" is removed, and zero-result combinations are disabled (`aria-disabled`) or hidden, with a polite live region for the count.
+- The marker glyph set, as before. Trail yellow is painted only through `bg-trail` and `--trail-yellow`, outside `--color-*`. T4 white-blue-white needs the trail blue paint (§I #9).
+- Clip encoding (codecs, bitrate, poster frame choice) within the ~1.5 MB budget, and how the asset guard is extended for video.
+- Terminal layout details: wrapping long output on narrow screens, live-region wording, and the optional copy button (§I #11).
 
 ### Deferred Ideas (OUT OF SCOPE)
-- **Terminal step controls and static transcript (ENG-F1):** these were already deferred and stay that way.
-- **Fixing the project link targets** (making the `cli_x` repo public, publishing a website repo, getting `cli-x.com` and `docs.cli-x.com` live): Tim's own work outside this codebase. Once a target is live, enabling its link is a data edit under D-12.
-- **OG images for project pages (SEO-02):** Phase 12, which needs the `generateMetadata` export added here.
+(Copied verbatim from `11-CONTEXT.md` `<deferred>`.)
+
+- **Terminal step controls and static transcript (ENG-F1):** still deferred.
+- **Bump box's `Cargo.toml` version to match the v2.0 tag:** Tim's work in the box repo, outside this codebase. Once done, the terminal could show `--version`.
+- **A defined next box milestone:** if Tim defines one, adding a planned route-log row is a data edit.
+- **Making coin-flip public:** once the repo is public, enabling its link is a data edit under D-12.
+- **OG images for project pages (SEO-02):** Phase 12, using the `generateMetadata` export already added in 11-01.
+- **Deleting `components/Footer.tsx`** (v1 legacy, still links to `/projects/clix-*`, no importer): Phase 12 dead-code cleanup.
 </user_constraints>
 
 <phase_requirements>
 ## Phase Requirements
 
-| ID | Description | Research Support |
-|----|-------------|------------------|
-| ENG-01 | `/projects` shows each project as a full-width route panel (name, pitch, metric strip, trail-grade badge, elevation-profile glyph); the hexagon cards and hex-grid code are removed | §Codebase Map (hex retire list), §D-07 Trail Proposal + Generator, Pattern 1 (Server page), Pattern 4 (profile glyph), D-08 strip sources |
-| ENG-02 | Project pages follow a case-study structure (problem, pipeline diagram, safety, metrics, demo, stack, next steps) and omit any section that has no data | Pattern 2 (schema changes + exhaustive section map), §Codebase Map (`[slug]` conversion), Pitfalls 4, 7 |
-| ENG-03 | CLI_X's four risk bands are shown as Swiss trail grades, each with its marker glyph, text label and score range, plus an equivalent data table | `lib/trail-grade.ts` quote, §D-11 Behaviour Lines, D-10 command suggestions, Pitfall 9 |
-| ENG-04 | Metrics display as an instrument panel with tabular numerals and a context line, and every claim is either sourced or softened | §D-09 Claims Audit Draft (17 rows, with where each claim came from), schema `context` field |
-| ENG-05 | The terminal demo uses tokens v2, stops auto-playing on focus, hover and under reduced motion, and has a pause button | Pattern 3 (DemoTerminal reducer), Pitfalls 1, 2, 3 (v1 timer leak, React Compiler lint, hydration of reduced motion) |
-| ROUTE-01 | The roadmap shows items on a vertical elevation axis: completed below, in-progress at the current camp, planned above | Pattern 5 (sort/band pure functions), §D-17 Route-Log Draft |
-| ROUTE-02 | A visitor can filter by project and status with a segmented control; the filter lives in the URL, and filters with no items are removed or disabled | Pattern 1 (`searchParams` on the server + `useOptimistic` island), Next docs quotes, Pitfall 5 |
-| ROUTE-03 | Roadmap data includes an order and completion dates, lists v2.0 as in progress, and shows a "last surveyed" date | §D-17 Route-Log Draft (git-verified portfolio dates), new `RoadmapItem` shape, the `surveyedAt` test |
+| ID | Description (REQUIREMENTS.md) | Research Support |
+|----|-------------------------------|------------------|
+| ENG-01 | `/projects` shows each project as a full-width route panel (name, pitch, metric strip, trail-grade badge, elevation-profile glyph); the hexagon cards and hex-grid code are removed | Pattern 4 (trail-profile generator, geo.admin.ch layer re-probed live), Pattern 5 (schema), removal map (§CLI_X and v1 removal map), `TrailGradeMark` marker map kept in `lib/trail-grade.ts` |
+| ENG-02 | Project pages follow a case-study structure (problem, pipeline diagram, safety, metrics, demo, stack, next steps) and omit any section that has no data | Pattern 2 (slot-keyed sections + exhaustive switch), Pattern 5 (schema), existing 11-01 server route kept |
+| ENG-03 | CLI_X's four risk bands as Swiss trail grades | **Retired by D-24.** Addressed by: (1) REQUIREMENTS.md marks ENG-03 dropped with the reason, ROADMAP goal and SC3 rewritten, traceability row updated; (2) the score-band code leaves `lib/trail-grade.ts` and `data/schemas/project.ts`; (3) no `RiskScale` component. Verification is a doc check plus `git grep` (Validation Architecture) |
+| ENG-04 | Metrics display as an instrument panel with tabular numerals and a context line, and every claim is either sourced or softened | §Claims audit seed (box sources verified; coin-flip summarised), "context line required" schema rule, Pitfalls 4, 5, 9 |
+| ENG-05 | The terminal demo uses tokens v2, stops auto-playing on focus, hover and under reduced motion, and has a pause button | 11-01 island kept; Pattern 3 (D-02 amendment, with the focus-entry subtlety); §box capture procedure (v2.0 build, verified commands) |
+| ROUTE-01 | Vertical elevation axis: completed below, in progress at the current camp, planned above | Pattern 6 (route-log pure functions), §Route-log draft rows |
+| ROUTE-02 | Segmented project and status filter; filter in the URL; empty filters removed or disabled | Pattern 1 (server-parsed `searchParams` + optimistic island), Next.js citations re-verified |
+| ROUTE-03 | Order and completion dates; v2.0 in progress; "last surveyed" date | Pattern 6, roadmap zod schema, D-20 test (must include v2.0 phase dates) |
 </phase_requirements>
 
-## Project Constraints (from CLAUDE.md / AGENTS.md / PROJECT.md / memory)
+## Project Constraints (from AGENTS.md / global CLAUDE.md / PROJECT.md / memory)
 
 | Source | Directive | Effect on plans |
 |--------|-----------|-----------------|
-| `AGENTS.md` | "This is NOT the Next.js you know … Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices." The block is re-added by `next dev`; committing it keeps the tree clean | Executors read the guides cited in §Next.js 16.4 Specifics before writing pages. If `AGENTS.md` shows up in a diff, commit it |
-| Global `CLAUDE.md` (developer profile) | Present options in comparison tables and let Tim choose; diagnose before fixing; flag regression risks explicitly; lead with working examples | Checkpoints present options as tables (trail pair, stale-item dispositions). Plans carry a test-contract table (Pitfall 6) |
-| Memory: ui-ux-pro-max | Tim requires the `ui-ux-pro-max` skill for all UI/UX work | **Every executor of a UI task (RoutePanel, CaseStudy blocks, TrailGradeMark, RiskScale, DemoTerminal, RouteLog, RouteLogFilters) must invoke the `ui-ux-pro-max` skill (`.claude/skills/ui-ux-pro-max/`) before writing markup** |
-| `PROJECT.md` §Constraints | Dark only; same-origin assets; ui-ux-pro-max for all UI | No `dark:` variants; the trail profile is inline SVG, with no external asset |
-| Memory: visual re-baseline via gh | Claude dispatches the CI visual workflow, downloads the results and compares them; **Tim commits and pushes the PNGs**; threshold 0.01 | Re-baselining the 12 PNGs is a human-action checkpoint (see §Codebase Map) |
-| Memory: Phase 07 worktrees / branching | Phases run sequentially and stack on the previous tip; force isolation "none" before each executor dispatch | Phase 11 builds on `gsd/phase-10-photography`, the current branch |
-| Memory: CI push approval | Standing approval for plan-commit pushes to `ci/<phase>-NN` branches; force pushes and main pushes excluded | Visual baseline runs go through a `ci/11-NN` branch |
-| Memory: verify approval before briefing | Never tell a subagent "Tim approved X" without his literal reply | Each D-21 input is recorded as Tim's quoted text in a SUMMARY |
-| `eslint.config.mjs` | React Compiler rules (`react-hooks/purity`, `immutability`, `set-state-in-effect`, `refs`) are errors for every file not in `LEGACY_COMPILER_FILES`; never add a file to that list | `DemoTerminal`, `RouteIndex` and `RouteLogFilters` must pass at error level (Pitfall 2) |
-| Guards | GUARD-03 ratchet (jest 942, e2e 358, total 1300); GUARD-04 palette (no stock colours, no `dark:`); GUARD-05 contrast pairs; identity guard | See §Validation Architecture |
+| `AGENTS.md` | "This is NOT the Next.js you know … Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices." The block is re-added by `next dev`; committing it keeps the tree clean | Executors read the guides cited in §Next.js 16.4 specifics before writing pages or the clip element. If `AGENTS.md` appears in a diff, commit it |
+| Global `CLAUDE.md` | Options as comparison tables, Tim decides; diagnose before fixing; flag regression risks explicitly; lead with working examples | Checkpoints present choices as tables (e.g. Open Question 1). Plans carry a test-contract table |
+| Memory: ui-ux-pro-max | Required for all UI/UX work | **Every UI executor (RoutePanel, RouteProfile, TrailGradeMark, CaseStudy sections, DemoTerminal retarget, clip figure, RouteLog, RouteLogFilters, RouteIndex) invokes `.claude/skills/ui-ux-pro-max` before writing markup** |
+| `PROJECT.md` §Constraints | Dark only; same-origin assets; ui-ux-pro-max | No `dark:` variants; the clip and poster are committed same-origin files |
+| Memory: visual re-baseline via gh | Claude dispatches the CI visual workflow, downloads, compares; **Tim commits and pushes PNGs**; threshold 0.01 | Re-baseline is a human-action checkpoint. Deleting the `clix-cli`/`clix-website` snapshot folders is also a PNG change, so Tim does it in his PNG commit |
+| Memory: CI push approval | Standing approval for `ci/<phase>-NN` branch pushes and baseline dispatches; force, phase or main pushes and PNG commits excluded | Visual runs go through a `ci/11-NN` branch |
+| Memory: verify approval before briefing | Never tell a subagent "Tim approved X" without his literal reply | Every D-21 input is recorded as Tim's quoted text in a SUMMARY before its consumer runs |
+| Memory: Phase 07 worktrees | Phases sequential; force isolation "none" before each executor dispatch | Phase 11 stays on `gsd/phase-11-engineering-roadmap` |
+| `eslint.config.mjs` | React Compiler rules are errors outside `LEGACY_COMPILER_FILES`; never add a file to that list | `DemoTerminal`, `RouteIndex`, `RouteLogFilters` pass at error level |
+| Guards | GUARD-03 ratchet (baseline file total 1300; 1349 after 11-01); GUARD-04 palette; GUARD-05 contrast; identity; served images | See Validation Architecture. Policy: never let the count fall below the current 1349, even though the guard's floor is 1300 |
 
 ## Summary
 
-Phase 11 is mostly a rewrite of existing v1 surfaces onto patterns this repo has already proven. `/photos` (Phase 10) shows how a Server page reads `searchParams`, parses them through an import-free whitelist module and hands the result to a small `'use client'` segmented control that calls `router.replace(href, { scroll: false })`. `/photos/[slug]` shows `generateStaticParams` + `dynamicParams = false` + `generateMetadata`. The Phase 8 terrain pipeline shows how to build data from a committed source with an offline `--check`. Phase 11 reuses all three without change. It adds no npm packages.
+Phase 11 is a rewrite of v1 surfaces onto patterns Phases 8–10 already proved: `/photos` (server page reads `searchParams`, import-free whitelist parser, small `'use client'` segmented control calling `router.replace(href, { scroll: false })`), `/photos/[slug]` (`generateStaticParams` + `dynamicParams = false` + `generateMetadata`, which 11-01 already applied to `/projects/[slug]`), the Phase 8 terrain pipeline (committed source, offline `--check` in `data:check`), and the Phase 8 photo-derivative pattern (gitignored originals, local derive script, committed hashed files, `--check` in CI). No npm package is added. The one new tool is the system `ffmpeg` (9.0.1, already installed) used only in the clip's local write mode.
 
-The hard parts are content and two pieces of new engineering. **Content:** almost every CLI_X metric on the site traces back to the author's own README and CHANGELOG in the private CLI_X repo, with no stated method. One claim is misattributed: the site says "95% accuracy" for plain-English-to-command conversion, but the CLI_X docs give ~95% only for one *parsing stage*. Several figures are stale: the site says 850+ tests and v2.4.0, while CLI_X's changelog has a later v2.4.1 with 900+. These go to Tim through the D-09 table. CLI_X's real behaviour also differs from its own docs. In the run path I read, nothing is hard-blocked: at Medium and above CLI_X warns, lists the matched rules and defaults the "Execute?" prompt to **No**, and High and Critical behave the same. The D-11 lines must therefore not say "blocks". **Engineering:** (1) a deterministic trail-profile generator that turns committed swisstopo trail geometry into DEM-sampled profiles, and (2) a `DemoTerminal` whose pause logic (sticky toggle + temporary hover/focus/offscreen/hidden) must be written so that it passes the React Compiler lint rules and does not repeat the v1 timer leak.
+This session's probes changed four things the plans must reflect. (1) **The installed box binary is not v2.0.** `%LOCALAPPDATA%\Programs\box\box.exe` (dated 25 Jun) lacks `config`, `completions` and `dupes --delete`, and ignores `--json` on `epoch`. I built the `v2.0` tag into the scratchpad (`cargo build --release --locked`, 1 min 26 s, prints `box 0.1.0`) and it has the full v2.0 surface. D-25/D-26 name the installed binary, so this is Open Question 1 for Tim. (2) **`box dupes --delete` previews print absolute paths** (the scratchpad path under `C:\Users\…\AppData`), even for a relative argument. That breaks the UI-SPEC capture rule, and the output may not be edited. `box bulk-rename` previews print relative names and end with "Re-run with --force to apply", so it is the Safety capture to use. `flatten --move` and `flatten --dry-run` previews **create the empty output folder**, so "writes nothing" needs softening in the audit. (3) **The site's service worker would mishandle video.** It caches any `response.ok` response, which includes 206 partial responses, and a cached 200 served to a Range request breaks playback in Safari. The worker must bypass media requests. (4) **React's client renderer sets `muted` as a property, not an attribute** (verified with jsdom), so component tests assert `video.muted`, not the attribute.
 
-I probed the trail data live. The swisstopo `ch.swisstopo.swisstlm3d-wanderwege` layer returns LV95 LineStrings through the geo.admin.ch identify API. Stitching them and routing between the stations reproduces the official Hörnliweg length (4,316 m vs 4.3 km listed), and the project's own DEM sampler reproduces the committed Matterhorn `demM` (4,473 m). The pipeline works end to end. Note that the CONTEXT example caption ("Start 2,583 m → End 3,260 m · T3") is the Hörnliweg, but the official Zermatt listing grades it **T4**, not T3.
+The coin-flip clip pipeline is settled: a single H.264 MP4 at 512 px wide, made with `ffmpeg` flags verified this session to leave no metadata (no format tags, no encoder string, zeroed `mvhd`/`tkhd`/`mdhd` timestamps, `moov` before `mdat`), plus a WebP poster from the encoded clip. A synthetic 8 s high-entropy 540×1200 clip came out at 594 KB, so the 1.5 MB budget has room, probably even at 60 fps. The guard extension needs no ffprobe in CI: a ~80-line ISO-BMFF box walker whitelists the box tree, requires one video track and no audio, and checks size, hash names and the manifest.
 
-**Primary recommendation:** Collect every Tim input at one early content checkpoint (trail pair, claims table, behaviour lines, Medium/High commands, link verification, route-log rows + `surveyedAt`, copy). Then build in this order: data and schemas → pure libs + generator → Server components → islands → the e2e/visual rewrite. Every v1 test is rewritten in the same commit that deletes its component.
+**Primary recommendation:** Plan an early content wave that rewrites REQUIREMENTS/ROADMAP for D-24 and collects every Tim input (claims audit, copy, the box captures from a v2.0 build, route-log rows + `surveyedAt`, §I defaults) at one checkpoint. Then build data/schemas (with the CLI_X data and tests rewritten in the same commits) → trail generator → server components → islands (D-02 amendment) → route log → clip pipeline (independent; its human-action checkpoint can land late) → visual re-baseline. Delete or overwrite the stale `11-02`…`11-15-PLAN.md` files, which embed CLI_X content.
 
 ## Architectural Responsibility Map
 
 | Capability | Primary Tier | Secondary Tier | Rationale |
 |------------|-------------|----------------|-----------|
-| Route panels, case study, risk scale, tables, route log | Frontend Server (RSC) | — | Static typed data and zero JS (UI-SPEC "Server boundaries") |
-| Trail profile geometry and DEM heights | Build time (`scripts/terrain/*`, committed output) | Frontend Server (renders inline SVG) | D-05: deterministic, offline `--check`, never at request time |
-| Trail geometry acquisition | Manual networked script (one-off, like `fetch-dem.mjs`) | — | T-08-09 pattern: CI and Vercel never touch the network |
+| Route panels, case studies, route log, profile SVGs, trail badges | Frontend Server (RSC) | — | Static typed data and zero JS (UI-SPEC "Server boundaries") |
+| Trail profile geometry and DEM heights | Build time (`scripts/terrain/*`, committed output) | RSC renders inline SVG | D-05: deterministic, offline `--check`, never at request time |
+| Trail geometry acquisition | Manual networked script (once, like `fetch-dem.mjs`) | — | CI and Vercel never touch the network (T-08-09) |
 | Terminal autoplay and pause state | Browser (client island `DemoTerminal`) | RSC (first command server-rendered complete) | Timers, IntersectionObserver, `visibilitychange`, matchMedia |
-| Route-log filter state | URL (`searchParams`, parsed on the server) | Browser (`RouteLogFilters` optimistic `aria-pressed`) | ROUTE-02: the URL is the only state; the server filters and counts |
-| Scroll-spy current section | Browser (tiny island) | RSC renders the index list | Works without JS; only `aria-current` needs the client |
-| Claim/link/date honesty checks | Data tests (jest, no network) | zod schemas | D-12 and D-20 data-level checks |
-| Page metadata (titles, SEO-02 hook) | Frontend Server (`metadata` / `generateMetadata`) | — | Phase 12 attaches OG images |
+| coin-flip clip playback | Browser native `<video>` (no island) | CDN/Static (committed hashed MP4 + poster) | Click-to-play with native controls; RSC renders the element |
+| Clip encoding, trimming, metadata stripping | Build time, local only (`ffmpeg` write mode) | CI runs a pure-Node `--check` | Mirrors `photos:derive`; ffmpeg is not in CI |
+| Media request handling offline | Browser service worker (bypass) | — | Range/206 requests must go to the network untouched |
+| Route-log filter state | URL (`searchParams`, parsed on the server) | Browser (`RouteLogFilters` optimistic `aria-pressed`) | ROUTE-02: the URL is the only state |
+| Scroll-spy current section | Browser (tiny island) | RSC renders the index | Works without JS |
+| Claim, link, date, privacy and captured-path checks | Data tests (jest, no network) | zod schemas | D-09, D-12, D-20, D-23 data-level checks |
+| Page metadata (SEO-02 hook) | RSC (`metadata` / `generateMetadata`) | — | Phase 12 attaches OG images |
 
 ## Standard Stack
 
-No new dependency. Everything below is already installed and pinned in `package.json` [VERIFIED: package.json read this session].
+No new npm dependency. Everything below is already installed.
 
 ### Core
 | Library | Version (installed) | Purpose | Why Standard |
 |---------|---------|---------|--------------|
-| next | 16.4.2 (`node -p "require('next/package.json').version"`) | App Router, RSC, `generateMetadata`, `generateStaticParams` | The project framework |
-| react / react-dom | ^19.3.1 | `useOptimistic`, `startTransition`, `useSyncExternalStore` | `useOptimistic` is present in `node_modules/react` [VERIFIED: grep of react.production.js] |
-| zod | ^4.4.3 | Project and roadmap data contracts (`z.strictObject`, discriminated union) | Existing DATA-07 pattern |
-| tailwindcss | 4.3.0 | CSS-first tokens; `target:` and `wrap-anywhere` exist [VERIFIED: grep `node_modules/tailwindcss/dist/lib.js` for `"target",["&:target"]` and `wrap-anywhere`] | Existing design system |
+| next | 16.4.2 (`node -p "require('next/package.json').version"`) [VERIFIED: local install] | App Router, RSC, `generateMetadata`, `generateStaticParams` | The project framework |
+| react / react-dom | 19.3.1 [VERIFIED: local install] | `useOptimistic`, `startTransition`, `useSyncExternalStore` | `useOptimistic` present in `node_modules/react/cjs/react.production.js` [VERIFIED: grep] |
+| zod | ^4.4.3 [VERIFIED: package.json] | Project and roadmap contracts (`z.strictObject`, discriminated union) | Existing DATA-07 pattern |
+| tailwindcss | 4.3.0 [VERIFIED: local install] | `wrap-anywhere`, `target:` variant both present in `dist/lib.js` [VERIFIED: grep] | Existing design system |
 | @phosphor-icons/react | 2.1.10 (`dist/ssr` only) | Icons listed in UI-SPEC | DSGN-10 lint rule |
 
-### Supporting (build-time / test)
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| sharp | ^0.35.5 | Decode the committed 16-bit DEM PNG in the trail generator, exactly as `build-terrain.mjs` does | Trail profile build only (scripts/**) |
-| Node built-in `fetch` | Node 24 (engines) | One-off trail geometry fetch from geo.admin.ch | `scripts/terrain/fetch-trails.mjs` only, manual |
-| jest 30 + @testing-library/react 16 + user-event 14 | installed | Unit/component tests | Every pure lib and component |
-| @playwright/test 1.64.0 | installed | e2e, visual (CI container only) | Route, a11y, overflow, no-three checks |
+### Supporting (build-time / test / system)
+| Tool | Version | Purpose | When to Use |
+|------|---------|---------|-------------|
+| sharp | ^0.35.5 | DEM decode in the trail generator (as `build-terrain.mjs`); poster WebP encode | Build scripts only |
+| ffmpeg / ffprobe (system) | 9.0.1 essentials build (Gyan, via winget) with libx264, libvpx, libaom [VERIFIED: `ffmpeg -version`] | Trim, scale, encode, strip metadata, extract poster frame | `clip:derive` write mode on Tim's machine only; never in CI |
+| cargo / rustc | 1.98.1, `stable-x86_64-pc-windows-msvc` [VERIFIED: `cargo --version`] | Build box at the `v2.0` tag for the captures | Capture task only (scratchpad) |
+| PowerShell | 7.6.9 [VERIFIED: `pwsh -v`] | The `ConvertFrom-Json` pipeline capture | Capture task only |
+| Node built-in `fetch` | Node 24 (engines) | One-off trail geometry fetch from geo.admin.ch | `scripts/terrain/fetch-trails.mjs`, manual |
+| jest 30, RTL 16, user-event 14, Playwright 1.64, @axe-core/playwright 4.13.0 | installed | Unit, component, e2e, a11y | Every new lib, component, route |
 
 ### Alternatives Considered
 | Instead of | Could Use | Tradeoff |
 |------------|-----------|----------|
-| swisstopo swissTLM3D Wanderwege geometry | Hand-digitised waypoints, a zermatt.swiss GPX, OpenStreetMap | Hand points are not "a real marked trail". The GPX licence is unclear. OSM adds an ODbL attribution. swisstopo is already credited in the footer and is the same authority as the DEM |
-| Server-parsed `searchParams` passed as props | `useSearchParams()` in the island | `useSearchParams` makes a prerendered route need a `<Suspense>` boundary and client-renders the subtree (docs quote below). Props avoid both, as in the Phase 10 precedent |
-| Reducer + one timeout per step for the terminal | v1 nested `setInterval`/`setTimeout` chain | v1 leaks timers (Pitfall 1) |
+| One H.264 MP4 (`<source type="video/mp4">`) | AV1 or VP9 WebM first + H.264 fallback | ~30–50% smaller, but two files to encode, guard and keep in step; the single MP4 already fits the budget. Safari needs the H.264 fallback anyway |
+| Pure-Node ISO-BMFF walker in the guard | ffprobe in the guard | ffprobe is not in CI (`.github/workflows/ci.yml` has no ffmpeg step) [VERIFIED: grep]; adding it means an apt step and a new trust surface |
+| `public/media/` for the clip and poster | `public/images/projects/` | `/images/` already has the immutable header and proxy exclusion, but the name misleads and the service-worker rule still has to change. `/media/` costs two one-line config edits |
+| Build box `v2.0` in the scratchpad for captures | Capture with the installed pre-v2.0 binary (D-26 literal) | The installed build lacks the v2.0 features the kicker claims; see Open Question 1 |
+| Server-parsed `searchParams` as props | `useSearchParams()` in the island | A prerendered page using `useSearchParams` needs `<Suspense>` or the build fails [CITED: use-search-params.md:181]; props avoid it, as in Phase 10 |
 
-**Installation:** none.
+**Installation:** none (no npm changes). ffmpeg is already on Tim's PATH.
 
 ## Package Legitimacy Audit
 
-No external packages are installed in this phase. All libraries above are existing dependencies (`package.json`), so the legitimacy gate does not apply.
+No external packages are installed in this phase. ffmpeg is a system binary already installed from the Gyan build via winget, and cargo builds Tim's own public repo with its committed `Cargo.lock` (`--locked`).
 
 | Package | Registry | Age | Downloads | Source Repo | Verdict | Disposition |
 |---------|----------|-----|-----------|-------------|---------|-------------|
@@ -156,550 +226,667 @@ No external packages are installed in this phase. All libraries above are existi
 ### System Architecture Diagram
 
 ```
- BUILD TIME (manual, networked, once)              BUILD TIME (offline, CI --check)
- ┌──────────────────────────────┐                  ┌───────────────────────────────────────────┐
- │ trails spec (committed):     │   geo.admin.ch   │ build-trails.mjs                          │
- │ id, zermatt.swiss URL, SAC   │──identify API──▶│  dem-10m.png (sha256 ✓) ──decode──┐       │
- │ grade, start/end + via pts   │  (Wanderwege     │  trail polyline (committed) ──────┤       │
- └──────────────────────────────┘   LineStrings)   │  resample N stations → sampleAtLv95│      │
-        fetch-trails.mjs: stitch segments,         │  normalise 0–1, 3 dp ──────────────┘      │
-        shortest path via waypoints → polyline ──▶ │  → data/generated/trail-profiles.ts       │
-                                                    │  --check: regenerate + byte compare       │
-                                                    └──────────────────┬────────────────────────┘
-                                                                       │ imported by RSC only
- REQUEST TIME                                                          ▼
- Visitor ─▶ /projects ───────────────▶ RSC page ── projects data ── RoutePanel ×2 (RouteProfile SVG, TrailGradeMark)
-        ─▶ /projects/[slug] ─(static params; unknown → 404)─▶ CaseStudy
-               │   sections = map(blocks) in fixed order, omit empty ──▶ Problem │ Pipeline │ Safety(RiskScale+tables)
-               │                                                        │ Metrics │ Demo ◀── DemoTerminal island
-               │                                                        │ Stack │ Next steps ─▶ /roadmap?project=…#id
-               └── RouteIndex island (scroll-spy → aria-current)
+ TIM'S MACHINE (manual, once)                                CI / every lint (offline)
+ ┌──────────────────────────────┐   geo.admin.ch            ┌───────────────────────────────────────────┐
+ │ fetch-trails.mjs             │──identify API───────────▶│ build-trails.mjs --check                   │
+ │ (Hörnliweg 27, Zmutt 2 +vias)│  (Wanderwege LineStrings) │  dem-10m.png (sha256) + trails.json        │
+ └──────────────────────────────┘                           │  → data/generated/trail-profiles.ts        │
+ ┌──────────────────────────────┐                           └───────────────────────────────────────────┘
+ │ box v2.0 built in scratchpad │──NO_COLOR captures──▶ SUMMARY quote ──Tim approves──▶ data/projects.ts
+ │ (bulk-rename preview; hash,  │                                                     (demo commands,
+ │  uuid --json, du | pwsh)     │                                                      safety capture)
+ └──────────────────────────────┘
+ ┌──────────────────────────────┐   ffmpeg (write mode)     ┌───────────────────────────────────────────┐
+ │ assets/clips-original/*.mp4  │──trim/scale/strip/H.264──▶│ public/media/coin-flip-toss.<hash>.mp4     │
+ │ (gitignored device capture)  │──frame → sharp WebP──────▶│ public/media/coin-flip-toss-poster.<h>.webp│
+ └──────────────────────────────┘                           │ data/generated/media-manifest.ts           │
+                                                             │ clip:derive --check + guard:images (MP4    │
+                                                             │ box walker: no metadata, 1 video trak,     │
+                                                             │ no audio, size, hash name, manifest)       │
+                                                             └───────────────────────────────────────────┘
+ REQUEST TIME
+ Visitor ─▶ /projects ──RSC──▶ projects data ─▶ RoutePanel ×2 (kicker, h2 link, pitch, strip, links, RouteProfile + TrailGradeMark)
+        ─▶ /projects/box | /projects/coin-flip ─(static params; anything else, incl. clix-*, → designed 404)─▶ CaseStudy
+               SECTION_ORDER.map(slot) → render if data present:
+               problem │ pipeline │ safety(box: prose + <pre> capture + --force line) | privacy(coin-flip facts)
+               │ metrics (tiles need a context line) │ demo: box → DemoTerminal island ; coin-flip → <video> (no island)
+               │ stack │ next-steps ─▶ /roadmap?project=coin-flip#coin-flip-v1-1
+               └── RouteIndex island (scroll-spy → aria-current) ; end block (Next route sign, walkthrough CTA)
         ─▶ /roadmap?project=&status= ─▶ RSC: await searchParams → parseProject/parseStatus (whitelist)
                → filter + counts (pure) → bands Summit / Current camp / Base (order desc)
-               → RouteLogFilters island ── press ─▶ startTransition{ setOptimistic; router.replace(href,{scroll:false}) }
-                                                         └──▶ RSC re-render with new searchParams ─▶ status line announces
+               → RouteLogFilters island: press → startTransition{ setOptimistic; router.replace(href,{scroll:false}) }
+                                                └──▶ RSC re-render ─▶ role=status line announces once
+ Media fetch (play pressed) ─▶ service worker: Range/video ⇒ return (no respondWith) ─▶ network 206 (send supports Range)
 ```
 
 ### Recommended Project Structure
 ```
 app/(site)/projects/page.tsx            # RSC, metadata { title: 'Engineering' }
-app/(site)/projects/[slug]/page.tsx     # RSC, generateStaticParams, dynamicParams=false, generateMetadata
+app/(site)/projects/[slug]/page.tsx     # RSC (11-01): generateStaticParams, dynamicParams=false, generateMetadata (+ description)
 app/(site)/roadmap/page.tsx             # RSC, metadata { title: 'Roadmap' }, awaits searchParams
 components/projects/RoutePanel.tsx      # Server
 components/projects/RouteProfile.tsx    # Server, inline SVG from generated data
 components/projects/TrailGradeMark.tsx  # Server, waymark glyph
-components/projects/CaseStudy.tsx       # Server, section map
-components/projects/sections/*.tsx      # Problem, Pipeline, Safety (RiskScale, tables), Metrics, Demo, Stack, NextSteps
-components/projects/RiskScale.tsx       # Server
-components/projects/DemoTerminal.tsx    # 'use client'
+components/projects/CaseStudy.tsx       # Server, SECTION_ORDER + exhaustive switch
+components/projects/sections/*.tsx      # Problem, Pipeline, Safety, Privacy, Metrics, Demo (terminal | clip), Stack, NextSteps
+components/projects/DemoTerminal.tsx    # 'use client' (11-01; retarget + D-02 amendment)
+components/projects/DemoClip.tsx        # Server: <figure><video …></figure> from the media manifest
 components/projects/RouteIndex.tsx      # 'use client' (scroll-spy only)
 components/roadmap/RouteLog.tsx         # Server
 components/roadmap/RouteRow.tsx         # Server (variant "compact" shared with Next steps)
 components/roadmap/RouteLogFilters.tsx  # 'use client'
-lib/trail-grade.ts                      # + markerForGrade(), stays import-free
-lib/risk-scale.ts                       # pure: band widths, tick lanes (first-fit), axis label offsets
-lib/demo-terminal.ts                    # pure reducer + timings
-lib/route-log.ts                        # pure: parseProject/parseStatus, filter, counts, band sort, href builder
+lib/trail-grade.ts                      # marker map only (score bands leave, D-24), import-free
+lib/demo-terminal.ts                    # + releaseSticky() for D-02 (pure, import-free)
+lib/route-log.ts                        # parseProject/parseStatus, filter, counts, bands, href, newestCompletedAt
 lib/log-date.ts                         # formatLogDate('2026-10-24') → '24 Oct 2026'
-lib/trail-profile.ts                    # pure: resample polyline, normalise, SVG path builder
-scripts/terrain/fetch-trails.mjs        # manual, networked
+lib/trail-profile.ts                    # resample, normalise, profilePath()
+scripts/terrain/fetch-trails.mjs        # manual, networked (COVERAGE.md matrix stays valid)
 scripts/terrain/build-trails.mjs        # offline, --check; added to data:check
+scripts/media/build-clip.mjs            # write (ffmpeg, local) / --check (pure Node); added to data:check
+scripts/guards/lib/mp4-boxes.mjs        # pure ISO-BMFF walker, imported by the guard and the selftest
 data/terrain/source/trails.json         # spec + committed polylines + provenance
+data/media/clips.json                   # sidecar: id, source sha256, trim start/duration, poster time
 data/generated/trail-profiles.ts        # generated; RSC-only import
-data/roadmap.ts                         # new RoadmapItem shape + surveyedAt
-data/schemas/roadmap.ts                 # zod contract (recommended, mirrors project.ts)
+data/generated/media-manifest.ts        # generated; src/type/width/height/duration/bytes + poster
+data/schemas/project.ts                 # box | coin-flip union
+data/schemas/roadmap.ts                 # new zod contract
+data/roadmap.ts                         # 7 rows + surveyedAt
+assets/clips-original/                  # gitignored (device recording may carry metadata)
 ```
-Pure `lib/*.ts` modules follow the repo's "import-free, erasable TypeScript" rule (`lib/geo.ts` header), so scripts can type-strip them and jest can test them directly.
+Pure `lib/*.ts` modules follow the repo's "import-free, erasable TypeScript" rule (see the `lib/demo-terminal.ts` and `lib/photos/view-param.ts` headers), so scripts can type-strip them and jest tests them directly.
 
 ### Pattern 1: Server page + whitelist parser + optimistic segmented island (ROUTE-02)
-**What:** The page awaits `searchParams`, parses both params through exact-match whitelists (unknown → All), computes the filtered list and the counts on the server, and passes `project`, `status` and the counts to the island. The island never reads the URL itself.
-**When:** `/roadmap`. It mirrors `/photos` + `ViewSwitcher` + `lib/photos/view-param.ts` [VERIFIED: read this session], with UI-SPEC's optimistic `aria-pressed` change.
+**What:** The page awaits `searchParams`, parses both params through exact-match whitelists (unknown, empty, wrong-case or array → All), computes the filtered list and counts on the server, and passes `project`, `status` and counts to the island. The island never reads the URL.
+**When:** `/roadmap`. It mirrors `/photos` + `ViewSwitcher` + `lib/photos/view-param.ts` [VERIFIED: read this session], with the UI-SPEC's optimistic `aria-pressed`.
 ```tsx
-// app/(site)/roadmap/page.tsx — Source: repo precedent app/(site)/photos/page.tsx; NEXT 03-file-conventions/page.md
+// app/(site)/roadmap/page.tsx — repo precedent app/(site)/photos/page.tsx; NEXT 03-file-conventions/page.md
 export const metadata: Metadata = { title: 'Roadmap' };
 export default async function RoadmapPage({
   searchParams,
 }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
-  const project = parseProject(sp.project); // 'all' | 'portfolio' | 'clix-cli' | 'clix-website'
-  const status = parseStatus(sp.status);    // 'all' | 'planned' | 'in-progress' | 'completed'
-  const view = routeLogView(roadmapItems, { project, status }); // bands, counts, total
-  return (/* header band */ <RouteLogFilters project={project} status={status} counts={view.counts} />);
+  const filter = { project: parseProject(sp.project), status: parseStatus(sp.status) }; // 'all' | enum values
+  const view = routeLogView(roadmapItems, filter); // bands, counts, shown, total
+  return (/* header band … */ <RouteLogFilters filter={filter} counts={view.counts} />);
 }
 
 // components/roadmap/RouteLogFilters.tsx
 'use client';
-export default function RouteLogFilters({ project, status, counts }: Props) {
+export default function RouteLogFilters({ filter, counts }: Props) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const [optimistic, setOptimistic] = useOptimistic({ project, status });
-  const press = (next: Filter) => {
-    if (sameFilter(next, optimistic)) return;              // pressing the pressed segment does nothing
+  const [, startTransition] = useTransition();
+  const [optimistic, setOptimistic] = useOptimistic(filter);
+  const press = (next: Filter, disabled: boolean) => {
+    if (disabled || sameFilter(next, optimistic)) return;   // zero-count and pressed segments do nothing
     startTransition(() => {
       setOptimistic(next);                                  // aria-pressed flips at once
       router.replace(routeLogHref(next), { scroll: false }); // no history entry, scroll kept
     });
   };
-  /* render groups with aria-pressed={optimistic.project === v}; zero-count → aria-disabled, no-op */
+  /* groups: aria-pressed={optimistic.project === v}; zero count → aria-disabled="true" (never on the pressed one) */
 }
 ```
-`routeLogHref` builds the URL only from whitelisted values, in canonical order (`?project=…&status=…`), and drops a param when it is All. This keeps any untrusted string away from `router.replace`, as the docs warn (see the Next.js quotes).
+`routeLogHref` builds URLs only from whitelisted enum values in canonical order (`?project=…&status=…`) and drops a param set to All, so no visitor string reaches `router.replace` (the docs' XSS warning, quoted below).
 
-### Pattern 2: Typed project data → fixed section order with omit-if-empty (ENG-02)
-**What:** Replace `features`/`pricing`/legacy adapter with typed blocks the CaseStudy maps to its seven fixed sections; each section function returns `null` when it has nothing.
-Recommended schema deltas (`data/schemas/project.ts`; the current shape is quoted below):
-
-> [VERIFIED: data/schemas/project.ts:101-133] `const ProjectBase = z.strictObject({ name: z.string(), tagline: z.string(), shortDescription: z.string(), longDescription: z.string(), techStack: z.array(z.string()), links: z.strictObject({ github: z.string().optional(), demo: z.string().optional(), docs: z.string().optional(), }), status: z.enum(['active', 'beta', 'complete', 'archived']), featured: z.boolean(), thumbnailImage: z.string().optional(), roadmapItems: z.array(z.string()).optional(), version: z.string().optional(), features: z.array(z.string()).optional(), });` … `highlights: z.tuple([MetricsBlock, MetricsBlock, RiskScaleBlock, MetricsBlock]),` … `highlights: z.tuple([PricingBlock, ListBlock, StackBlock]),`
-
-| Change | Why | Decision |
-|--------|-----|----------|
-| Remove `features` | D-15 | locked |
-| Remove `PricingBlock` from the website tuple and from the union (it has no other user) | D-13, D-14 | locked |
-| Add `PipelineBlock { kind:'pipeline', stages: [{ name, description? }] }` (CLI_X: the 4 stages named at `data/projects.ts:32`) | D-15 → Pipeline | locked by D-15; descriptions are D-16 copy |
-| Add `StackBlock` to the CLI_X tuple (providers folded in, D-15) | Stack section | locked by D-15 |
-| `MetricsBlock.metrics[]` gains `context?: string` and `source?: string` (URL); renderer drops a tile with no `context` | ENG-04 / D-09 | Claude's design |
-| Add `pitch`, `outcome`, `problem: string[]` (D-16 copy) | Panel and trailhead | Claude's design |
-| Add `route?: TrailId` (the D-07 assignment) | Profile + badge | Claude's design |
-| `links` → keep the keys; add `repository?: 'private'` | D-12 private note | Claude's design |
-| Website countable fields for D-08: `platforms: string[]` (from `data/projects.ts:167` "Windows, macOS, Linux") | `features` leaves | D-08 permits a small typed field |
-| Drop the `Features` MetricsBlock (`key: 'features'`), or keep only the audited counts | D-09 audit | Tim |
-
-Render map (exhaustive, with a `never` check):
+### Pattern 2: Fixed slot order with omit-if-empty (ENG-02)
+**What:** The project schema holds one optional field per slot. `CaseStudy` maps a constant `SECTION_ORDER` through an exhaustive `switch (slot)` with a `never` check; each renderer returns `null` when its data is absent. Order lives in code, never in data; each slot appears at most once. This meets the UI-SPEC's intent ("one section renderer per block kind behind an exhaustive switch … with a never check").
 ```ts
-// components/projects/CaseStudy.tsx — Source: ARCHITECTURE.md §CaseStudy composition
+// components/projects/CaseStudy.tsx
 const SECTION_ORDER = ['problem', 'pipeline', 'safety', 'metrics', 'demo', 'stack', 'next-steps'] as const;
-function sectionOf(block: HighlightBlock): SectionId {
-  switch (block.kind) {
-    case 'pipeline': return 'pipeline';
-    case 'risk-scale': return 'safety';
-    case 'list': return 'safety';      // website security list (D-14)
-    case 'metrics': return 'metrics';
-    case 'stack': return 'stack';
-    default: { const _exhaustive: never = block; return _exhaustive; }
+type Slot = (typeof SECTION_ORDER)[number];
+function renderSlot(slot: Slot, p: Project): ReactNode | null {
+  switch (slot) {
+    case 'problem': return p.problem?.length ? <Problem paragraphs={p.problem} /> : null;
+    case 'pipeline': return p.pipeline ? <Pipeline block={p.pipeline} name={p.name} /> : null;
+    case 'safety': return p.slug === 'box' ? (p.safety ? <Safety block={p.safety} /> : null)
+                                           : (p.privacy ? <Privacy block={p.privacy} /> : null);
+    case 'metrics': { const tiles = p.metrics?.tiles.filter((t) => t.context) ?? []; return tiles.length ? <Metrics tiles={tiles} /> : null; }
+    case 'demo': return renderDemo(p);          // box: terminal if commands; coin-flip: clip if manifest entry + description
+    case 'stack': return p.stack ? <Stack block={p.stack} /> : null;
+    case 'next-steps': return nextStepRows(p).length ? <NextSteps rows={nextStepRows(p)} slug={p.slug} /> : null;
+    default: { const never: never = slot; return never; }
   }
 }
-// sections = SECTION_ORDER.map(id => render(id, project)).filter(Boolean); RouteIndex gets the rendered ids (G6: hide if < 2)
+// sections = SECTION_ORDER.map((s) => [s, renderSlot(s, project)]).filter(([, n]) => n); RouteIndex gets the ids (hidden if < 2, G6)
 ```
+The third slot's id and label come from the project (`safety`/`Safety` on box, `privacy`/`Privacy` on coin-flip), per D-25.
 
-### Pattern 3: DemoTerminal as a pure reducer plus one timer per step (ENG-05)
-**What:** `lib/demo-terminal.ts` exports `initial(commands, reduced)`, `reducer(state, action)` and `delayFor(state)`. The island holds `{ index, phase: 'input'|'gap'|'output'|'shown', chars }` and `stickyPaused`. The temporary pause sources (`hover`, `focusWithin`, `offscreen`, `hidden`) are kept separately, and `playing = !stickyPaused && !hover && !focusWithin && !offscreen && !hidden && commands.length > 1`.
-One effect, keyed on `[state, playing]`, schedules a single `setTimeout(() => dispatch({type:'tick'}), delayFor(state))` and clears it in cleanup. `setState`/`dispatch` therefore runs only inside timer and event callbacks, never synchronously in an effect body, which is the `react-hooks/set-state-in-effect` rule.
-Timings, unchanged from v1 [VERIFIED: components/HologramTerminalDemo.tsx read this session]: input 50 ms/char, 500 ms gap, output 10 ms/char, 3000 ms before the next command. Under reduced motion `tick` jumps straight to `shown` and waits 3000 ms between commands.
-Sticky toggle: `aria-pressed={stickyPaused}` with a constant label (UI-SPEC). Initial `stickyPaused = null → reduced` (the v1 `playOverride ?? …` pattern). `data-playback` reports the effective state.
-Dots: `dispatch({ type: 'goto', index })` sets `phase: 'shown'` (complete text) and leaves `stickyPaused` alone.
-Observers: `IntersectionObserver` (threshold 0) sets `offscreen`; `document.addEventListener('visibilitychange')` sets `hidden`; region `onPointerEnter/Leave` and `onFocus/onBlur` set the hover and focus flags. For `onBlur`, check `e.currentTarget.contains(e.relatedTarget)` so moving focus inside the region does not resume.
+### Pattern 3: DemoTerminal retarget + D-02 amendment (ENG-05)
+The 11-01 machine and island stay: one pending timeout, `isPlaying` over five pause sources, `override ?? reduced` for the sticky toggle [VERIFIED: lib/demo-terminal.ts:113-124 `export interface PauseSources { sticky: boolean; hover: boolean; focusWithin: boolean; offscreen: boolean; hidden: boolean; }` and `return count >= 2 && !p.sticky && !p.hover && !p.focusWithin && !p.offscreen && !p.hidden;`]. Timings stay [VERIFIED: lib/demo-terminal.ts:37-42 `inputCharMs: 50, gapMs: 500, outputCharMs: 10, holdMs: 3000`].
 
-### Pattern 4: Trail profile generator (D-05, D-07)
-See §D-07 for the data. Generator rules:
-1. **Source (committed):** `data/terrain/source/trails.json`, holding per trail `{ id, name, number, listingUrl, sacGrade, start:{name,lv95}, end:{name,lv95}, via:[lv95…], polyline:[[e,n]…], provenance:{ layer:'ch.swisstopo.swisstlm3d-wanderwege', featureIds:[…], fetchedAt } }`, plus a sha256 of the polyline. Only `fetch-trails.mjs` (manual, networked, never in CI) writes it.
-2. **Build (offline):** decode the DEM exactly like `build-terrain.mjs` (`sharp(png).toColourspace('grey16').raw({ depth: 'ushort' })`, ×`heightScale`, sha256 checked against `source.json`). Resample the polyline at `N = 128` equal arc-length stations and sample each with `sampleAtLv95(metres, W, H, extent, p)` from `lib/terrain/dem-sample.ts`. Fail if any station falls outside `source.json` `extent`. Normalise to `x = s/L`, `y = (h − min)/(max − min)` and round to 3 dp. Start/end heights are `Math.round(sampleAtLv95(first/last vertex))`.
-3. **Output:** `data/generated/trail-profiles.ts` with a header `// AUTO-GENERATED by scripts/terrain/build-trails.mjs … Do not edit.` and, per trail, `{ id, name, number, sacGrade, start:{name,heightM}, end:{name,heightM}, lengthM, points }`. **Do not add path data to `data/generated/terrain.ts`**: its test asserts no path data and a size under 4 KB (T-08-12) [VERIFIED: .planning/phases/08-data-terrain-pipeline/08-SECURITY.md:60 "Module holds only scalars and URLs; test asserts no import, no path data, size under 4 KB"]. Import `trail-profiles.ts` only from Server Components, and add a test that no `'use client'` file imports it.
-4. **`--check`:** regenerate in memory and compare bytes. Fail on a polyline whose sha256 does not match, and on a DEM sha256 mismatch. Print `trails: OK` or `trails: N stale` (the `terrain:` output convention). Add `npm run trails:build -- --check` to the `data:check` chain in `package.json`.
-5. **Path drawing:** a pure `profilePath(points, { w: 320, h: 96, inset: 8 })` in `lib/trail-profile.ts` returns the line `d` and the area `d`, and is unit-tested. The SVG holds no text or circles (UI-SPEC).
-6. **Marker for a single grade:** add `markerForGrade('T4') → 'white-blue-white'` to `lib/trail-grade.ts` and keep the file import-free. A test asserts it agrees with `RISK_BANDS` for T1, T2, T3, T4, T5 and T6.
+**Retarget:** the machine types `input` then `output` [VERIFIED: lib/demo-terminal.ts:31-34 `export interface TerminalCommand { input: string; output: string; }`]. For box, `input` is the command line (typed at 50 ms after `❯`) and `output` is the captured output (10 ms per character). Keep the field names so `TerminalCommand` still matches structurally and the 11 lib tests need no rename; document "input = the command line" in the schema JSDoc. `CommandLines` drops the "Request" label line, the warning and the explanation, and adds the optional `note` line once complete. `spokenCommand` becomes "Command {n} of {total}. Command: {input}. Output: {output}. {note}". The region's name becomes `box demo` and the title bar text `box`.
 
-### Pattern 5: Route-log pure functions (ROUTE-01/03)
-`lib/route-log.ts` provides `parseProject`, `parseStatus`, `filterItems`, `countsFor(items, filter)` (each segment counted under the *other* group's value), `bands(items)` (Summit = planned, Current camp = in-progress, Base = completed, each sorted by `order` descending), `routeLogHref`, and `newestCompletedAt(items)`, which includes the nested v2.0 phase dates. All are unit-tested, so the RSC page stays thin.
+**Amendment (D-02 option B), two changes:**
+1. **Release clears the temporary hover and focus pauses.** Pressing the toggle while it is pressed sets `override = false` **and** `hover = false`, `focusWithin = false` in the same handler. The pointer is still inside, but `pointerenter` does not refire until it leaves and re-enters, so playback starts at once. Add a pure helper so the rule is unit-tested without React:
+   ```ts
+   // lib/demo-terminal.ts
+   /** D-02 (amended): releasing the sticky Pause also drops the hover and focus pauses until the next entry. */
+   export function releaseSticky(p: PauseSources): PauseSources {
+     return { ...p, sticky: false, hover: false, focusWithin: false }; // offscreen and hidden survive
+   }
+   ```
+2. **Focus counts only when it enters from outside.** Today `onFocus={() => setFocusWithin(true)}` fires for every focus move inside the region [VERIFIED: components/projects/DemoTerminal.tsx:181]. After a release, Tab from the toggle to a dot would re-pause, which the UI-SPEC forbids ("Moving focus between the region's own controls does not count as entering"). Mirror the existing `onBlur` check:
+   ```tsx
+   function onFocus(e: FocusEvent<HTMLDivElement>) {
+     if (e.currentTarget.contains(e.relatedTarget as Node | null)) return; // moving between its own controls
+     setFocusWithin(true);
+   }
+   ```
+Tests (state only): after a mouse release with the pointer still inside and focus on the button, `data-playback="playing"` immediately; a fresh `pointerenter` (leave, then enter) pauses again; Shift+Tab out and Tab back in pauses again; Tab from the toggle to a dot after a release stays playing; offscreen and `document.hidden` still pause after a release. In e2e, the `leaveTerminal()` helper is no longer needed after a *release* click, but is still needed after a *dot* click (a dot press does not clear hover/focus).
 
-New `RoadmapItem` (the current shape is quoted below):
-> [VERIFIED: data/types.ts:22-30] `export interface RoadmapItem { id: string; … area: 'portfolio' | 'cli' | 'webshop' | 'other'; status: 'planned' | 'in-progress' | 'completed'; targetRelease?: string; priority?: 'low' | 'medium' | 'high'; }`
+### Pattern 4: Trail profile generator (D-05, D-07) — project-agnostic, re-verified
+The layer `ch.swisstopo.swisstlm3d-wanderwege` still returns LV95 LineStrings through `api3.geo.admin.ch/rest/services/api/MapServer/identify` (probed live 2026-11-01: an envelope near the Hörnli path returned `"layerBodId": "ch.swisstopo.swisstlm3d-wanderwege"` with `paths` in EPSG:2056) [VERIFIED: live probe]. The sheet extent and DEM are unchanged [VERIFIED: data/terrain/source/source.json:12-23 `"west": 2616000, "south": 1088000, "east": 2627000, "north": 1099000`, `"cellM": 10`, `"width": 1100`, `"height": 1100`, `"heightScale": 0.1`, `"file": "dem-10m.png"`]. `COVERAGE.md` in this phase directory already records the API surface decision and stays valid.
+1. **Source (committed):** `data/terrain/source/trails.json`: per trail `{ id: 'hoernliweg-27' | 'zmutt-2', name, number, listingUrl, sacGrade, start:{name,lv95}, end:{name,lv95}, via:[lv95…], polyline:[[e,n]…], provenance:{ layer, featureIds, fetchedAt }, polylineSha256 }`. Only `fetch-trails.mjs` writes it (manual, networked, never in CI).
+2. **Build (offline):** decode the DEM like `build-terrain.mjs` (sharp grey16 raw, × `heightScale`, sha256 checked against `source.json`). Resample at 128 equal arc-length stations and sample each with `sampleAtLv95(grid, W, H, extent, p)` [VERIFIED: lib/terrain/dem-sample.ts:48-58 signature `sampleAtLv95(grid: ArrayLike<number>, W: number, H: number, extent: Bbox, p: Lv95): number`]. Fail when a station leaves the extent. Normalise `x = s/L`, `y = (h − min)/(max − min)`, 3 dp. Endpoint heights = rounded samples at the first/last vertex.
+3. **Output:** `data/generated/trail-profiles.ts` with an AUTO-GENERATED header; `{ id, name, number, sacGrade, start:{name,heightM}, end:{name,heightM}, lengthM, points }`. Do **not** add path data to `data/generated/terrain.ts` (its test caps it at 4 KB with no path data). Import only from Server Components; a test asserts no `'use client'` module imports it.
+4. **`--check`:** regenerate in memory, byte-compare, fail on polyline or DEM sha256 mismatch; print `trails: OK`. Add `npm run trails:build -- --check` to `data:check`.
+5. **Path:** pure `profilePath(points, { w: 320, h: 96, inset: 8 })` in `lib/trail-profile.ts` returns line and area `d` strings, unit-tested.
+6. **Lengths:** Hörnliweg routes to 4,316 m with no via points (official 4.3 km); Zmutt's shortest path is 3,645 m and needs 1–2 via points to land within 10% of 4.3 km [CITED: 11-CONTENT-PACKET.md §A, probe of the first research pass; geometry not re-fetched this session]. The SUMMARY records the via points and the routed length.
 
-Recommended: `project: 'portfolio' | 'clix-cli' | 'clix-website'` (renames `area`, removes `'other'`, matching the UI-SPEC URL values), `order: number` (unique, rising from bottom to top), `completedAt?: string` (ISO date, required when `status === 'completed'` only if Tim supplied it; otherwise absent and rendered as "Completed" with no date), `phases?: { n: number; name: string; status; completedAt? }[]` (v2.0 only), and `priority` dropped from the UI (UI-SPEC default 2). Keep the `cli-*`/`webshop-*` ids stable, because `data/projects.ts` `roadmapItems` references them. Add `export const surveyedAt = 'YYYY-MM-DD'` (required). Validate with a zod schema `data/schemas/roadmap.ts`.
+### Pattern 5: Project schema for box | coin-flip (D-15, D-24–D-29)
+Current shape to replace [VERIFIED: data/schemas/project.ts:91-98 `export const DemoCommandSchema = z.strictObject({ input: z.string(), output: z.string(), riskLevel: RiskLevel, riskScore: z.number().min(0).max(1), warning: z.string().optional(), explanation: z.string().optional(), });`] and [VERIFIED: data/schemas/project.ts:120-135 `slug: z.literal('clix-cli')` … `slug: z.literal('clix-website')` … `export const ProjectSchema = z.discriminatedUnion('slug', [ClixCli, ClixWebsite]);`].
+
+Recommended (sketch; names are Claude's design, values only from approved inputs):
+```ts
+export const DemoCommandSchema = z.strictObject({
+  input: z.string(),                 // the command line as typed after ❯ (captured verbatim)
+  output: z.string(),                // captured output, unedited
+  note: z.string().optional(),       // D-26, Tim-approved one-liner
+});
+const MetricTile = z.strictObject({ key: z.string(), label: z.string(), value: z.string(),
+  context: z.string(), sourceUrl: z.url().optional() });           // no context → no tile (ENG-04, D-09)
+const TrailId = z.enum(['hoernliweg-27', 'zmutt-2']);
+const Base = z.strictObject({
+  name: z.string(), pitch: z.string().optional(), outcome: z.string().optional(),
+  kicker: z.strictObject({ version: z.string(), status: z.string().optional() }),
+  route: TrailId.optional(),
+  problem: z.array(z.string()).optional(),
+  pipeline: z.strictObject({ intro: z.string().optional(), in: z.string().optional(), out: z.string().optional(),
+    stages: z.array(z.strictObject({ name: z.string(), description: z.string().optional() })).min(1) }).optional(),
+  metrics: z.strictObject({ releaseLine: z.string().optional(), tiles: z.array(MetricTile).min(1) }).optional(),
+  stack: z.strictObject({ groups: z.array(z.strictObject({ label: z.string(), items: z.array(z.string()).min(1) })).min(1) }).optional(),
+  nextSteps: z.array(z.string()).optional(),                         // RoadmapItem ids (planned/in-progress only)
+});
+const Box = Base.extend({
+  slug: z.literal('box'),
+  links: z.strictObject({ github: z.literal('https://github.com/tlex-web/box') }),
+  safety: z.strictObject({ intro: z.string().optional(),
+    capture: z.strictObject({ command: z.string(), input: z.string(), output: z.string() }).optional(),
+    forceLine: z.string().optional() }).optional(),
+  demo: z.strictObject({ intro: z.string().optional(), commands: z.array(DemoCommandSchema).min(1) }).optional(),
+});
+const CoinFlip = Base.extend({
+  slug: z.literal('coin-flip'),
+  repository: z.literal('private'),                                  // D-12: never a link
+  privacy: z.strictObject({ intro: z.string().optional(), facts: z.array(z.string()).min(1) }).optional(),
+  clip: z.strictObject({ id: z.literal('coin-flip-toss'), intro: z.string().optional(), description: z.string() }).optional(),
+});
+export const ProjectSchema = z.discriminatedUnion('slug', [Box, CoinFlip]);
+```
+Rules this encodes: no `features`, `riskLevel`, `riskScore`, `RiskScaleBlock`, `PricingBlock` (D-15, D-24); unapproved content is simply absent, so there are no "approved" flags that could leak a draft; the clip renders only when the manifest has the id **and** the description exists (UI-SPEC "the clip does not ship without it"); coin-flip cannot carry a link field at all. `lib/trail-grade.ts` keeps only the grade → marker map (`T1 → yellow`, `T2/T3 → white-red-white`, `T4/T5 → white-blue-white`, `T6 → unmarked`); the bands to remove are [VERIFIED: lib/trail-grade.ts:28-33 `{ level: 'low', min: 0.0, max: 0.3, grade: 'T1', marker: 'yellow' }`, `{ level: 'medium', min: 0.3, max: 0.6, grade: 'T2–T3', marker: 'white-red-white' }`, `{ level: 'high', min: 0.6, max: 0.8, grade: 'T4–T5', marker: 'white-blue-white' }`, `{ level: 'critical', min: 0.8, max: 1.0, grade: 'T6', marker: 'unmarked' }`] plus `bandFor` and `isScoreInLevel`.
+
+### Pattern 6: Route-log pure functions and schema (ROUTE-01, ROUTE-03)
+Current type [VERIFIED: data/types.ts:26 `area: 'portfolio' | 'cli' | 'webshop' | 'other'; // Categorization`]. New contract in `data/schemas/roadmap.ts` (zod, mirrors project.ts): `area: z.enum(['portfolio', 'box', 'coin-flip'])` (CONTEXT keeps the field name `area`; the URL param is `project`), `status`, `order: z.number().int()` (unique, rising bottom → top), `completedAt?: ISO date` (only on completed rows, and only when Tim confirmed it), `targetRelease?`, `phases?` (portfolio v2.0 only, `{ n, name, status, completedAt? }`), `description`. `priority` leaves (UI-SPEC default #2). `export const surveyedAt = 'YYYY-MM-DD'` is required.
+`lib/route-log.ts`: `parseProject`, `parseStatus`, `filterItems`, `countsFor(items, filter)` (each segment counted under the *other* group's current value), `bands(items)` (Summit = planned, Current camp = in-progress, Base = completed, each sorted by `order` descending), `routeLogHref`, `newestCompletedAt(items)` **including nested phase dates**.
 
 ### Anti-Patterns to Avoid
-- **`next/dynamic(..., { ssr: false })` inside a Server Component.** It is not allowed in RSC. Import `DemoTerminal` directly; it is a client module with its own `'use client'`.
-- **Computed Tailwind classes** (`md:grid-cols-${n}`). Tailwind cannot detect them. Use literal class maps (UI-SPEC G1, G11).
-- **Colour-class assertions in tests.** Assert `aria-pressed`, `data-playback`, `aria-current`, `aria-disabled` and text instead (ROADMAP scope note).
-- **Putting the profile, roadmap or claim provenance into `'use client'` modules.** It grows the client bundle and breaks the T-08-12 discipline.
-- **Writing "blocks" for Critical** (see §D-11). It is false in the current CLI_X run path.
+- **`next/dynamic(..., { ssr: false })` in a Server Component.** Import `DemoTerminal` directly (11-01 does).
+- **Computed Tailwind classes** (`md:grid-cols-${n}`). Use literal class maps (UI-SPEC G1, G11).
+- **Colour-class assertions in tests.** Assert `aria-pressed`, `data-playback`, `aria-current`, `aria-disabled`, text, and `video.muted`.
+- **Profile, roadmap or claim provenance inside `'use client'` modules** (bundle growth; breaks T-08-12 discipline).
+- **"Approved" booleans in data.** Write only approved text into data; drafts live in the content packet.
+- **Editing captured output** to remove a path or shorten it. Pick a different command or input instead (UI-SPEC N2).
+- **Committing the raw device recording.** It goes in a gitignored folder; only the derived, metadata-free MP4 is committed.
 
 ## Don't Hand-Roll
 
 | Problem | Don't Build | Use Instead | Why |
 |---------|-------------|-------------|-----|
-| DEM sampling | a new bilinear sampler | `lib/terrain/dem-sample.ts` `sampleAtLv95` | Already pixel-centre correct; it reproduced the committed `demM` 4,473 in this session's probe |
-| DEM decoding | geotiff/sharp resize in the new script | the `decodeGrey16` approach from `build-terrain.mjs` (sharp grey16 raw) | Same bytes give the same heights; resizing a float raster with sharp is banned (build-terrain header) |
-| Generated-data check | an ad-hoc diff | the `--check` structure of `build-terrain.mjs` (regenerate in memory, byte compare, one line per problem) | CI parity with `data:check` |
-| Count nouns | template strings | `countLabel` (`lib/home-format.ts:121`) | Zero returns `''`, as the Home trail sign does |
-| Heights | `toLocaleString` | `formatMetres` from **`lib/photo-format.ts`** (the UI-SPEC's "[08]" tag points there; it is imported by `components/home/AltimeterRail.tsx:7`) | No locale APIs (UI-SPEC typography) |
-| Dates | `Intl.DateTimeFormat` | new pure `formatLogDate` (the `formatCaptureMonth` month-table pattern) | Deterministic SSR/CSR output |
-| Segmented control styling | new classes | the `ViewSwitcher` `SEGMENT`/`SELECTED`/`UNSELECTED` constants pattern | Phase 10 precedent, already contrast-checked |
-| Trail geometry | hand-digitised points | swisstopo `swisstlm3d-wanderwege` via identify API + shortest path | "Real marked trail" (D-05); authoritative |
-| Disclosure (v2.0 phases, mobile route index) | a JS accordion | native `<details>` | Works without JS, instant (UI-SPEC) |
+| DEM sampling | a new sampler | `sampleAtLv95` (`lib/terrain/dem-sample.ts`) | Pixel-centre correct; reproduced the committed summit height in the first pass |
+| DEM decoding | geotiff/resize in the new script | the `build-terrain.mjs` grey16 decode | Same bytes, same heights |
+| Generated-data checks | ad-hoc diffs | the `--check` structure of `build-terrain.mjs` / `build-derivatives.mjs` | CI parity with `data:check` |
+| Video encoding and metadata stripping | a JS encoder or manual atom editing | ffmpeg with `-map_metadata -1 -map_chapters -1 -fflags +bitexact -flags:v +bitexact -metadata:s:v:0 encoder=` (verified) | Strips container and stream tags and the encoder string; timestamps come out 0 |
+| Video verification in CI | ffprobe | the pure-Node box walker (Code Examples) | No new CI dependency; whitelist is stricter than a tag check |
+| Range requests for video | custom route handlers | Next's static serving (`next/dist/compiled/send`, which emits `Accept-Ranges`) and Vercel's CDN | Already supports 206 [VERIFIED: `serve-static.js` uses `send`; `Accept-Ranges` present in `compiled/send/index.js`] |
+| Count nouns | template strings | `countLabel` (`lib/home-format.ts:121`) | `0` → `''`, matching the Home trail sign |
+| Heights | `toLocaleString` | `formatMetres` (`lib/photo-format.ts:108`) | No locale APIs; U+00A0 before `m` |
+| Dates | `Intl.DateTimeFormat` | new pure `formatLogDate` (month-table pattern) | Deterministic SSR/CSR |
+| Segment styling | new classes | `ViewSwitcher`'s `SEGMENT`/`SELECTED`/`UNSELECTED` constants | Already contrast-checked |
+| Disclosures | a JS accordion | native `<details>` | Works without JS, instant |
+| Player controls | a custom player | native `<video controls>` | Keyboard and screen-reader support built in [CITED: videos.md:65] |
 
-**Key insight:** every new module here has a twin in Phases 8–10. Copying their structure, including the header comments that explain the rules, is what keeps the guards (`data:check`, palette, contrast, ratchet) passing on the first CI run.
+**Key insight:** every new module has a twin from Phases 8–10. Copy their structure, including the header comments that explain the rules; that is what keeps `data:check`, palette, contrast, served-asset and ratchet guards green on the first CI run.
 
 ## Runtime State Inventory
 
-This phase renames data fields (`area` → `project`, `webshop`/`cli` values → slugs) and retires components, so this section is included.
+This phase removes a project (CLI_X) and renames data values (`area` values, slugs), so the inventory applies.
 
 | Category | Items Found | Action Required |
 |----------|-------------|------------------|
-| Stored data | None. Roadmap and project data are committed TS modules; no database or CMS | Code edit only |
-| Live service config | None found. No external service stores these names (Vercel analytics records URLs, and the old `/roadmap` URL with no params still works) | None |
-| OS-registered state | None (no tasks or services reference these files) | None |
-| Secrets/env vars | None reference project/roadmap names | None |
-| Build artifacts | `.next/` caches the old routes (regenerated on build). The 12 committed visual PNGs for `projects`, `clix-cli`, `clix-website`, `roadmap` go stale by design. `graphify-out/` (untracked) still lists the old components until it is rebuilt | Re-baseline the PNGs through CI (Tim commits). Rebuilding graphify is optional |
+| Stored data | None. Project and roadmap data are committed TS modules; no database, CMS or KV holds slugs. Upstash Redis is used only for contact rate limiting [VERIFIED: package.json deps; no project keys] | Code edit only |
+| Live service config | Search engines and visitors may hold `/projects/clix-cli` and `/projects/clix-website` URLs. D-22 says designed 404, no redirects. Vercel Analytics keeps historical paths (read-only, harmless) | None beyond the 404 e2e. No redirect config |
+| OS-registered state | None in the portfolio. Note: Tim's machine has a **pre-v2.0** `box.exe` in `%LOCALAPPDATA%\Programs\box` on his PATH [VERIFIED: `box dupes --help` shows no `--delete`; no `config` subcommand]. Not a portfolio artifact, but it decides what the captures show (Open Question 1) | Capture from a v2.0 build; reinstalling is Tim's choice |
+| Secrets/env vars | None reference project or roadmap names | None |
+| Build artifacts | `.next/` (regenerated). Visitors' service-worker caches are keyed by build hash and purged on activate [VERIFIED: public/service-worker.js:95-103], so old CLI_X HTML clears on the next deploy. Visual snapshot folders `e2e/visual/routes.spec.ts-snapshots/clix-cli` and `clix-website` go stale [VERIFIED: ls]. `graphify-out/` (untracked) lists old components | Re-baseline through CI; Tim's PNG commit deletes the two `clix-*` folders and adds `box`/`coin-flip`. Graphify rebuild optional |
 
-**Shareable URLs:** v1 `/roadmap` had no params, so no shipped URL breaks. The new `?project=&status=` names become a public contract once shipped (UI-SPEC "stable once shipped").
+**Shareable URL contracts created by this phase:** `/projects/box`, `/projects/coin-flip`, `/roadmap?project=portfolio|box|coin-flip&status=planned|in-progress|completed`, section anchors (`#problem` … `#next-steps`, `#safety`/`#privacy`) and route-log row ids. Pick ids once (§Route-log draft rows).
 
 ## Common Pitfalls
 
-### Pitfall 1: Porting the v1 terminal's timer chain leaks timers
-**What goes wrong:** in v1 the effect cleanup clears only the input `setInterval`. The nested output interval and the two `setTimeout`s keep running after an index change or unmount, so commands can double-advance and text can type into a stale command [VERIFIED: components/HologramTerminalDemo.tsx read this session, cleanup is `return () => { clearInterval(inputInterval); };`].
-**How to avoid:** use Pattern 3, one pending timer that the effect cleanup always clears.
-**Warning signs:** a jest fake-timer test that presses a dot during typing and then advances 10 s sees the index skip.
+### Pitfall 1: Capturing "v2.0" output from a pre-v2.0 binary
+**What goes wrong:** D-26 names the installed `box.exe`, but that build predates most of v2.0: no `config`/`completions`, no `dupes --delete`, and `epoch 0 --json` prints human text [VERIFIED: probes this session]. The kicker says v2.0, so the transcript would misrepresent the release.
+**How to avoid:** build the tag: `gh repo clone tlex-web/box <scratch>/box -- --branch v2.0 --depth 1`, then `cargo build --release --locked` with `CARGO_TARGET_DIR` in the scratchpad (verified: 1 m 26 s, `box 0.1.0`, `config` and `completions` present, `dupes --delete/--force` present). Capture through a session alias so the typed line reads `box …`. Tim confirms this route (Open Question 1).
+**Warning signs:** `box --help` lacks `config` and `completions`.
 
-### Pitfall 2: React Compiler lint errors in new islands
-**What goes wrong:** `react-hooks/set-state-in-effect`, `refs` and `purity` are errors outside `LEGACY_COMPILER_FILES`. The v1 terminal only passes because it is on that list.
-> [VERIFIED: eslint.config.mjs:9-15] `const LEGACY_COMPILER_FILES = [ 'components/HologramTerminal.tsx', 'components/HologramTerminalDemo.tsx', 'components/AnimatedGradientMesh.tsx', 'components/GlassmorphismNav.tsx', 'lib/useProgressiveTextures.ts', ];`
-**How to avoid:** call `dispatch` only inside callbacks; derive values instead of storing them; read refs only in effects and handlers. When the two terminal files are deleted, remove both entries in the same commit; the comment says "never add a new file".
+### Pitfall 2: Preview output that leaks absolute paths
+**What goes wrong:** `box dupes --delete ./sample` prints `keep C:\Users\…\AppData\Local\Temp\…\sample\hut.txt` (canonicalised paths) even with a relative argument [VERIFIED: probe]. The UI-SPEC bans absolute, home and `AppData` paths, and the output may not be edited.
+**How to avoid:** use `box bulk-rename ./sample '<regex>' '<replacement>'` for the Safety block. Its preview prints relative names and ends `Dry run: 2 to rename, 0 unchanged, 1 skipped. Re-run with --force to apply.` [VERIFIED: probe]. `hash`, `hash --json`, `uuid --json`, `du`, `du --json` print the relative path as given or names only [VERIFIED: probes]. A data test rejects absolute paths anyway (Code Examples).
+**Warning signs:** a colon after a drive letter, `\Users\`, `AppData` in any captured string.
 
-### Pitfall 3: Reduced-motion hydration flip
-**What goes wrong:** `useReducedMotion` uses `useSyncExternalStore` with `getServerSnapshot() → false` [VERIFIED: lib/useReducedMotion.ts read this session]. The server renders `aria-pressed="false"` and the client flips it to `"true"` after hydration. A test that reads `aria-pressed` immediately can see `false`.
-**How to avoid:** autoplay advances only after 3000 ms, so nothing types before the flip. In e2e use `await expect(toggle).toHaveAttribute('aria-pressed','true')` (auto-retry), never a one-shot read.
+### Pitfall 3: "Writes nothing" is not true for every preview
+**What goes wrong:** `box flatten --move ./sample ./out` (preview) and `box flatten --dry-run …` both **create the empty output directory** [VERIFIED: ran twice in the scratchpad; the folder appeared with 0 entries]. The UI-SPEC Safety draft says "writes nothing", and the README says destructive tools "only write with `--force`".
+**How to avoid:** add a D-09 row for the "writes nothing" wording. A safe soft form is "renames, moves or deletes nothing until you add `--force`" (true for `bulk-rename`, `dupes --delete` and `flatten --move`, all verified). Do not use `flatten` for the capture. Mention the empty-folder behaviour to Tim as a box issue (his repo, outside scope).
 
-### Pitfall 4: The no-WebGL e2e waits for a WebGL failure that no longer happens
-**What goes wrong:** `e2e/no-webgl.spec.ts` "project detail keeps its content" does `const failed = webglFailure(page); … await failed;` and asserts the heading `/Experience CLI_X in 3D/i` [VERIFIED: e2e/no-webgl.spec.ts:60-68 read this session]. Once D-01 removes the canvas, no WebGL failure is logged, so the test hangs or times out, and the heading is gone.
-**How to avoid:** rewrite it like the Home case in the same spec: no `webglFailure`, assert `canvas` count 0, `expectNoErrorPage`, and the new Demo h2 plus the terminal region.
+### Pitfall 4: Frozen output that goes stale
+**What goes wrong:** `box epoch <ts>` prints a relative age ("3 months ago") and the capturing machine's local offset [VERIFIED: probe]. Frozen in the transcript, the age becomes false within weeks.
+**How to avoid:** choose time-independent commands: `box hash <file>` (BLAKE3, shows `--json`'s `"algo": "blake3"` if wanted), `box uuid --json`, `box du ./sample --json | ConvertFrom-Json | …` (PowerShell 7 with `$PSStyle.OutputRendering='PlainText'`, verified to emit no ANSI), `box color '#70d5ed'`, `box json --sort-keys`. If Tim insists on `epoch`, it needs his approval with the staleness stated.
 
-### Pitfall 5: `useSearchParams` without Suspense breaks the production build
-**What goes wrong:** the build fails for a prerendered page whose client island calls `useSearchParams` outside `<Suspense>` (docs quote below), even though dev mode "may appear to work".
-**How to avoid:** pass the parsed values as props (Pattern 1) and never call `useSearchParams` in `RouteLogFilters`.
+### Pitfall 5: "23 tools" versus what `box --help` lists
+**What goes wrong:** the v2.0 binary lists 25 subcommands plus `help` (the 23 tools, `config`, `completions`) [VERIFIED: v2.0 build]. The README frames it as "23 command-line tools" with `config`/`completions` under "Meta" [CITED: github.com/tlex-web/box README]. A visitor who counts the help output sees 25.
+**How to avoid:** keep the tile's context line explicit, e.g. "Tools in the README at v2.0, plus config and completions" (D-16 draft), and list it as a D-09 row.
 
-### Pitfall 6: Ratchet drops when a component and its tests leave in different commits
-**What goes wrong:** deleting `ProjectCard.tsx` with its test before `RoutePanel.test` exists drops jest below 942 for that commit.
-**How to avoid:** the plan carries the test-contract table in §Codebase Map. Each row's successor test lands in the commit that deletes the predecessor. `npm run guard:tests` needs `jest --json --outputFile=jest-results.json` first.
+### Pitfall 6: Service worker vs video
+**What goes wrong:** the worker's `cacheFirst`/`networkFirst` call `cache.put` whenever `response.ok` [VERIFIED: public/service-worker.js:24-26 and 70-72 `if (response && response.ok) { … cache.put(request, response.clone()); }`]. A 206 is "ok", and `Cache.put` rejects partial responses, which logs an unhandled rejection [ASSUMED: Cache API spec behaviour]. Worse, a cached full 200 answering a later Range request is a known way to break Safari playback [ASSUMED]. `/images/` paths are cache-first [VERIFIED: :134], and anything else falls to `networkFirst`.
+**How to avoid:** early in the fetch handler: `if (request.headers.has('range') || request.destination === 'video' || request.destination === 'audio') return;` (no `respondWith`, so the browser fetches natively). The poster is an `image` request and keeps its image caching. The worker registers only in production [VERIFIED: components/ServiceWorkerRegistration.tsx `process.env.NODE_ENV === 'production'`], so test with `PW_PROD=1`.
 
-### Pitfall 7: `generateStaticParams` + `dynamicParams=false` must match the data slugs exactly
-**What goes wrong:** with `dynamicParams = false`, a slug missing from `generateStaticParams` returns 404 (the docs at `03-file-conventions/02-route-segment-config/dynamicParams.md`). `e2e/shell.spec.ts` already asserts that `/projects/no-such-slug` renders the designed 404.
-**How to avoid:** `generateStaticParams = () => projects.map(p => ({ slug: p.slug }))`, plus `notFound()` on an exact match, as the photo page does.
+### Pitfall 7: `muted` is a property on client renders
+**What goes wrong:** React SSR emits `muted=""` [VERIFIED: `renderToString` gives `<video controls="" muted="" playsInline="" preload="none" …>`], but a client render sets only the property (jsdom: `hasAttribute('muted')` is false) [VERIFIED: jsdom probe]. A component test asserting the attribute fails.
+**How to avoid:** component tests assert `(video as HTMLVideoElement).muted === true` or render with `renderToString`; Playwright uses `toHaveJSProperty('muted', true)`. Write `muted` as a bare attribute so `jsx-a11y/media-has-caption` passes (the rule accepts a literal-true `muted`) [VERIFIED: node_modules/eslint-plugin-jsx-a11y/lib/rules/media-has-caption.js:60-62].
 
-### Pitfall 8: Profile data into `terrain.ts`, or the generator touching the network in CI
-**How to avoid:** use a separate generated module and a separate manual fetch script, and never run the fetch in `prebuild`/`lint`/CI (T-08-09).
+### Pitfall 8: Playwright's Chromium cannot play H.264
+**What goes wrong:** the bundled Chromium lacks proprietary codecs; Playwright points to stock Chrome or Edge for those [CITED: node_modules/playwright-core/types/types.d.ts:17598 "Stock browsers like Google Chrome and Microsoft Edge are suitable for tests that require proprietary media codecs"]. An e2e that plays the clip fails in the `chromium` and visual projects.
+**How to avoid:** e2e asserts attributes, the poster URL, `preload="none"`, no `autoplay`/`loop`, and that **no `.mp4` request happens before play** (`page.on('request')`). Never press play in CI. The visual run shows the poster; warm it first (`new Image()` load in `page.evaluate`) so the screenshot never races it [ASSUMED: poster paint timing].
 
-### Pitfall 9: Overclaiming in the behaviour lines and the scale copy
-**What goes wrong:** CLI_X's own safety doc says Critical commands are "BLOCKED". The run path I read does not block. It warns, lists the rules and defaults the prompt to No, and an opt-in flag skips the prompt entirely.
-**How to avoid:** ship only Tim-approved lines (D-11). The drafts below are already written to match the code.
+### Pitfall 9: Overclaiming coin-flip's toss
+**What goes wrong:** the UI-SPEC's Pipeline stages name "Choreographed toss (the camera follows the coin)" and "Landing and settle". coin-flip's project record lists the camera follow and the final landing-and-settle polish among the work still open after v1, which D-30 already says ("smoothing the toss and the camera follow … still ahead").
+**How to avoid:** add the two stage descriptions to the D-09 audit as claims. Describe the design ("the animation is choreographed to land on the drawn result") and leave polish words out. Never write "smooth", "seamless" or "stutter-free".
 
-### Pitfall 10: Two different "technologies" counts on the website panel
-**What goes wrong:** the flat `techStack` has 12 entries [VERIFIED: data/projects.ts:141-154], while the stack block groups hold 5 + 5 + 3 = 13 [VERIFIED: data/projects.ts:224-231 `{ key: 'frontend', items: ['Next.js 14', 'React 18', 'TypeScript', 'Tailwind CSS', 'shadcn/ui'] }`, `{ key: 'backend', items: ['Next.js API Routes', 'NextAuth.js', 'Prisma', 'PostgreSQL', 'Stripe'] }`, `{ key: 'deployment', items: ['Vercel', 'Edge Network', 'Serverless Functions'] }`], and the two lists differ (the groups add "Next.js API Routes", "Edge Network" and "Serverless Functions"; the flat list adds "Zod" and "React Hook Form", and spells two entries differently: "Prisma ORM" vs "Prisma", "NextAuth.js v5" vs "NextAuth.js"). A strip count could disagree with the Stack section.
-**How to avoid:** derive the D-08 count from the one source the Stack section renders (the groups, deduplicated), and test that the strip equals the rendered chip count.
+### Pitfall 10: The test-filler scan versus real output
+**What goes wrong:** the UI-SPEC's e2e scans route text for `—`, `N/A`, `TBD`, `undefined`, `null`, `NaN`, "coming soon". Real captured JSON can legitimately contain `null`; a preview might contain an em dash.
+**How to avoid:** scope the scan to exclude `pre` and the terminal region, or verify each approved capture contains none of the tokens (the probed `du --json` and `hash --json` outputs contain none).
 
-### Pitfall 11: Contrast/palette guards on new trail primitives
-**How to avoid:** add `--trail-blaze`, `--trail-mountain`, `--trail-alpine` and the three utilities in the commit that adds the `TRAIL` list to `check-contrast.mjs` (UI-SPEC). The names avoid `red`/`blue`/`white` (palette stock regex).
+### Pitfall 11: Ratchet drops when a component and its tests leave in different commits
+**How to avoid:** each successor test lands in the commit that deletes its predecessor (test-contract table below). `npm run guard:tests` needs `npx jest --json --outputFile=jest-results.json` first. The guard counts Playwright tests once per file + title path, not per project.
+
+### Pitfall 12: `generateStaticParams` and slugs must match exactly
+`dynamicParams = false` makes any slug outside `generateStaticParams` a 404 [CITED: dynamicParams.md:17]. The 11-01 route already maps `projects.map((p) => ({ slug: p.slug }))`; the e2e must cover `/projects/box`, `/projects/coin-flip`, `/projects/clix-cli`, `/projects/clix-website` and `/projects/BOX` (case).
+
+### Pitfall 13: The route log goes stale at phase close
+**What goes wrong:** the v2.0 disclosure says `Phase 11 · Engineering & roadmap · In progress`. When Phase 11 merges, that line is already false.
+**How to avoid:** the last data task (or phase transition) sets Phase 11's completion date, and `surveyedAt` moves to that date or later (the D-20 test enforces `surveyedAt ≥ newestCompletedAt`, which must include phase dates). Open Question 3.
+
+### Pitfall 14: Stale plan files in the phase directory
+**What goes wrong:** `11-02-PLAN.md` … `11-15-PLAN.md` still exist and embed CLI_X slugs, commands and fixtures [VERIFIED: ls of the phase directory]. `execute-phase` would pick them up.
+**How to avoid:** the planner deletes or overwrites all of them. Also close the two 11-01 stubs in `.planning/WINDOWS.md` (rows 4 and 5); the "D-04 risk badge … 11-03 adds both" stub is void under D-04's retirement [VERIFIED: .planning/WINDOWS.md:21-22].
 
 ## Research Focus Answers
 
-### D-07 Trail Proposal (for Tim's checkpoint)
+### A. box capture procedure (D-25, D-26)
 
-**Sheet extent** [VERIFIED: data/terrain/source/source.json:12-17] `"extent": { "west": 2616000, "south": 1088000, "east": 2627000, "north": 1099000 }` (LV95, 10 m cells, `"heightScale": 0.1`).
+Run in a fresh scratchpad folder with small, neutral inputs (no personal file names). Proven this session with the v2.0 build:
+```powershell
+# Session setup (PowerShell 7.6.9). $BoxV2 = the v2.0 build in the scratchpad (see Pitfall 1)
+$env:NO_COLOR = '1'; $PSStyle.OutputRendering = 'PlainText'
+Set-Alias box $BoxV2
+Set-Location <scratchpad>\cap           # contains .\sample\ with 2–3 tiny text files, one duplicate
+# Safety (preview, writes nothing):
+box bulk-rename ./sample '^(.*)\.txt$' '$1.md'
+# Terminal loop candidates (read-only, no network, no --version):
+box hash sample/hut.txt
+box uuid --json
+box du ./sample --json | ConvertFrom-Json | Select-Object -ExpandProperty results | Sort-Object size -Descending | Select-Object -First 3 name, size
+box color '#70d5ed'
+```
+Observed outputs (shape only; the plan captures fresh and Tim approves): `bulk-rename` lists `~ hut.txt -> hut.md`, a skipped directory line and the summary `Dry run: … Re-run with --force to apply.`; `hash` prints `<64 hex>  sample/hut.txt`; `uuid --json` prints `{ "results": [ { "uuid": …, "version": "v4" } ], "count": 1 }`; the pipeline prints a three-row `name size` table; `color` prints Hex, RGB, Tuple, HSL and Name lines [VERIFIED: probes]. All are under 12 lines (UI-SPEC N2) and contain no absolute path.
 
-All four candidates are official Zermatt Tourism trail listings. Every endpoint lies inside the extent. DEM heights were sampled this session with `lib/terrain/dem-sample.ts` `sampleAtLv95` on the committed `dem-10m.png`, decoded the way `build-terrain.mjs` decodes it. The probe reproduced the committed summit `demM` 4,473, which validates the method. Coordinates come from the swisstopo gazetteer and stop search (`api3.geo.admin.ch SearchServer`); "trail node" means the snapped end vertex of the stitched swisstopo trail geometry.
+Box config: the v2.0 binary reads `%APPDATA%\box\config.toml`; Tim's effective config is `hash.default_algo = blake3`, `weather.location = (not set)`, `weather.units = metric` [VERIFIED: `box config show`], so outputs match built-in defaults. Never capture `box config path` (it prints the home path).
 
-| Trail (official) | SAC grade (sourced) | Waymark | Official start → end | DEM start → end (station coord / trail node) | Trail geometry probe |
-|------------------|--------------------|---------|----------------------|----------------------------------------------|---------------------|
-| **Hörnliweg (No. 27)**: Schwarzsee → Hörnlihütte | **T4** "Alpine Hiking Trail", "Demanding" [CITED: https://zermatt.swiss/en/p/hoernliweg-no-27-01tVj000005EwSkIAK]; the Zermatters guided-hike page also says "T4 – Alpine hike" [CITED: https://zermatt.swiss/en/p/hike-to-the-hoernli-hut-01tVj000004sJoIIAU] | white-blue-white | 2,583 m → 3,260 m, 4.3 km, ↑693 m | 2,583 / 2,587 m → 3,262 / 3,262 m | 13 segments, 5 edges, **4,316 m** (matches 4.3 km with no via points) |
-| **Zmutt path (No. 2)**: Zermatt station → Zmutt | **T1** "Hiking trail", "Easy" [CITED: https://zermatt.swiss/en/p/zmuttweg-no-2-01tVj00000H69zjIAB] | yellow | 1,620 m → 1,937 m, 4.3 km, ↑339 m | 1,605 / 1,606 m → 1,924 / 1,934 m | 109 segments, 3,645 m shortest path (**needs via points** to follow the official 4.3 km line) |
-| **Riffelseeweg (No. 21)**: Rotenboden → Riffelberg (past Riffelsee, the Home photo waypoint) | **T2** "Mountain Hiking Trail", "Moderate" [CITED: https://zermatt.swiss/en/p/riffelseeweg-no-21-01tVj000005Ew9KIAS] | white-red-white | 2,815 m → 2,582 m, 2.9 km, ↓267 m | 2,816 / 2,806 m → 2,582 / 2,582 m | 2.2 km via the lake shore (**needs via points**; official 2.9 km). The trail descends |
-| **Matterhorn Glacier Trail (No. 26)**: Trockener Steg → Schwarzsee | **T3** "Thematic trail", "Moderate" [CITED: https://zermatt.swiss/en/Media/Planning-hikes-tours/Matterhorn-Glacier-Trail-Nr.-26]; the page showed "Closed" (seasonal) on 2026-11-01 | white-red-white | 2,939 m → 2,583 m, 6.6 km | 2,926 m (station) → 2,583 m | not probed |
+`--force` line for the Safety block, from this capture: "With `--force`, box would rename `hut.txt` to `hut.md` and `zmutt.txt` to `zmutt.md`." (D-16 draft, rewritten from whatever capture Tim approves.)
 
-Grade disagreement noted: some third-party sites list the Hörnliweg as T3 and the Glacier Trail as T2 (a 2020 Atupri factsheet). The official zermatt.swiss listings above are the source of record, as D-07 allows.
+### B. coin-flip clip pipeline (D-27)
 
-**Recommended pairs (Tim chooses):**
+**Format decision:** one MP4, H.264 High profile, `yuv420p`, no audio, `+faststart`. Every target browser plays it natively, it is one file to guard, and it fits the budget. Width 512 px (2× the 256 px CSS frame), height from the recording's aspect ratio rounded to even (`scale=512:-2`). Keep the source frame rate (≤ 60 fps) because smoothness is the product, and drop to 30 fps only if the file exceeds the budget. Start at CRF 26, `-preset slow`.
 
-| Option | CLI_X | Website | Pros | Cons |
-|--------|-------|---------|------|------|
-| **A (recommended)** | Hörnliweg No. 27, T4 | Zmutt path No. 2, T1 | The most distinct glyphs (bars vs diamond); both trails climb; Hörnliweg geometry already matches the official length; the trail to the Matterhorn's base suits the larger project | The CLI_X badge shows white-blue-white, the same paint as the High band in its own risk scale (D-06 says these cannot collide, but a skim reader may link them). The Zmutt line needs 1–2 via points |
-| B | Riffelseeweg No. 21, T2 | Zmutt path No. 2, T1 | Ties CLI_X to the Riffelsee photo waypoint; no glyph shares a paint with a High/Critical band | The Riffelseeweg descends (the profile falls left to right); both routes need via points |
-| C | Hörnliweg No. 27, T4 | Riffelseeweg No. 21, T2 | Both are mountain/alpine trails near the summit | The website glyph descends; both routes use bar waymarks |
+**Verified flags** (synthetic 8 s source with planted `creation_time`, `location` and `title` tags plus an audio track): the output had no format tags beyond brands, stream tags only `language=und` and `handler_name=VideoHandler`, no `Lavf`/`Lavc`/`x264` strings, `mvhd`/`tkhd`/`mdhd` creation and modification times `0`, box order `ftyp, moov, free, mdat`, one video track, 594,360 bytes at 540×1200/30 fps/CRF 26 [VERIFIED: ffprobe + box dump this session]. A real dark-background screen recording compresses far better than `testsrc2`.
 
-**Caption with real numbers (Option A, final numbers come from the generator's end vertices):** `Schwarzsee 2,587 m → Hörnlihütte 3,262 m · T4` and `Zermatt 1,606 m → Zmutt 1,934 m · T1`. The DEM values differ from the brochure (3,262 vs 3,260; 1,606 vs 1,620) by design (08 D-17). Note: the CONTEXT example caption `Start 2,583 m → End 3,260 m · T3` is this Hörnliweg, with the brochure heights and an unofficial grade.
+**Poster:** extract from the *encoded* clip (same size and colours), `ffmpeg -ss <t> -i out.mp4 -frames:v 1 -f image2pipe -c:v png -`, then sharp → WebP quality 82 (sharp's default output keeps no metadata, as in `photos:derive`). Poster time is in the sidecar (Discretion: a frame with the coin at rest and the result visible reads best as a still).
 
-**Checkpoint asks:** (1) pick a pair and the assignment; (2) approve the via points the fetch script uses (shown as a list of named LV95 points); (3) confirm the place names in the caption.
+**Files and names:** `public/media/coin-flip-toss.<10 hex>.mp4` and `public/media/coin-flip-toss-poster.<10 hex>.webp` (first 10 hex of sha256 over bytes, the existing convention [VERIFIED: scripts/guards/check-served-images.mjs:66 `const HASH_NAME = /^[a-z0-9-]+\.([0-9a-f]{10})\.(png|svg|avif|webp|jpg)$/;`]). Manifest `data/generated/media-manifest.ts`. Sidecar `data/media/clips.json` `{ id, sourceSha256, start, duration, posterAt, crf, fps }`. Raw input folder `assets/clips-original/` added to `.gitignore` next to `assets/photos-original/`.
 
-### D-11 Behaviour Lines (drafted from a read-only reading of the CLI_X source)
+**Script modes** (`scripts/media/build-clip.mjs`, `npm run clip:derive`): write mode needs ffmpeg and the original (sha256 must equal the sidecar), encodes to memory/temp, validates (box walker, size, 5–10 s duration from `mvhd`), then writes and deletes stale files. `--check` needs neither: it rebuilds the manifest from disk and fails on a missing file, a hash mismatch, a size over budget, a duration outside 5–10 s, an audio track or a box-walker violation. Add `npm run clip:derive -- --check` to `data:check`. With no clip yet, the manifest exports an empty object and `--check` passes, so the pipeline can land before the clip.
 
-**What I found, in my own words:**
-- After CLI_X writes a command, it prints the command and its explanation and then asks whether to run it. Nothing runs without that prompt unless the user passes an explicit opt-in flag that skips it. A dry-run mode never runs anything.
-- The score runs from 0 to 1 and is made of three parts. The most severe of the 11 rules the command matches counts most. Next comes the context it would run in (elevated privileges, a sensitive system folder, little free disk space). Last comes the command's shape (risky words such as force, recursive or delete, chained commands, piping into a shell, wildcards). The result is clamped to 0–1. The 11 rules fall into four severities.
-- **Below 0.3:** no warning, and the prompt's default answer is *yes*.
-- **0.3 up to 0.6:** with the shipped default setting (confirmation required), the command counts as not safe. CLI_X prints a warning with the message of every rule it matched, and the prompt's default answer becomes *no*. A user setting can turn this off, and then Medium behaves like Low.
-- **0.6 and above:** always counts as not safe, whatever the settings: the same warning, the matched rules and a default of *no*. **In this code path High and Critical are handled identically, and nothing is hard-blocked.** CLI_X's own safety document describes Critical as blocked; the code does not.
-- At any grade, a command judged destructive gets a "back up first" recommendation, and a safer alternative is suggested when CLI_X knows one.
+**Serving:** CSP already allows it [VERIFIED: proxy.ts:7-10 `default-src 'self';` … `img-src 'self' blob: data:;` and no `media-src`]. Add `media/` to the proxy matcher exclusion next to `images/|terrain/` [VERIFIED: proxy.ts:49 `'/((?!api|_next/static|_next/image|favicon.ico|service-worker.js|images/|terrain/).*)'`] and a `/media/:path*` `Cache-Control: public, max-age=31536000, immutable` header in `next.config.ts` (the `/terrain/:path*` precedent). Service-worker bypass per Pitfall 6. Do not add the clip to `precache.json`.
 
-**Draft lines for the grade table's "What CLI_X does" column (Tim edits or approves):**
+**Element** (Server Component, UI-SPEC "Demo — coin-flip"): `controls muted preload="none" playsInline`, `poster`, `width`/`height` from the manifest, `aria-label`, `aria-describedby`, one `<source type="video/mp4">`, a fallback `<p>`; no `autoPlay`, no `loop`, no `<track>` (video-only clip, text description is the alternative) [CITED: node_modules/next/dist/docs/01-app/02-guides/videos.md:61-65 "Dimensions", "Poster Image", "Fallback Content", "Accessible Controls"].
 
-| Grade | Score | Draft line |
-|-------|-------|-----------|
-| T1 · Low | 0–0.3 | Shows the command and asks before running it; the answer defaults to yes. |
-| T2–T3 · Medium | 0.3–0.6 | Warns, lists the rules the command matched, and asks you to confirm; the answer defaults to no. |
-| T4–T5 · High | 0.6–0.8 | Warns, lists the matched rules and suggests a safer command when it knows one; the answer defaults to no. |
-| T6 · Critical | 0.8–1.0 | Same as High: a warning and a default of no. It does not block the command outright. |
+### C. Guard extension for video (D-27)
 
-**Decision for Tim:** the code gives High and Critical the same behaviour. Either (a) ship two near-identical lines as drafted, (b) change CLI_X first (out of scope for this repo), or (c) word the Critical line to stress *why* it is graded higher without promising a different action. The Safety intro's draft "against 11 rules" is accurate.
+Extend `scripts/guards/check-served-images.mjs` (one served-asset guard, already in `lint` and the selftest) rather than adding a second guard:
+- Scope: add `.mp4 .m4v .mov .webm .mkv .3gp` to the tracked-file pathspecs, so a raw recording committed anywhere fails (the photo-original precedent) [current set VERIFIED: :62 `const IMAGE_EXT = new Set(['.jpg', … '.svg']);`].
+- Hashed dirs: add `public/media/` [VERIFIED current: :65 `const HASHED_DIRS = ['public/terrain/', 'public/images/photos/'];`]; widen `HASH_NAME`'s extension group to include `mp4`.
+- Manifests: add `{ file: 'data/generated/media-manifest.ts', regex: /(?<=['"])\/media\/[^'"]+(?=['"])/g }` [current list VERIFIED: :69-72].
+- Video rule (via `scripts/guards/lib/mp4-boxes.mjs`): `.mov/.webm/.mkv/.3gp/.m4v` anywhere → `video-format: only MP4 is served`; for MP4: box-tree whitelist (top level `ftyp, moov, free, mdat` with `moov` before `mdat`; inside `moov` only `mvhd, trak, udta`; `udta` may hold only `meta → hdlr + empty ilst`), no `uuid`/`XMP_`/`©xyz`/`loci` boxes anywhere, zero creation/modification times, exactly one `trak` whose `hdlr` is `vide` and none `soun`, a byte scan for the XMP markers already listed, and under `public/` a size budget (1,572,864 bytes = 1.5 MiB; Tim can set the exact number).
+- Selftest: fixtures `scripts/guards/__selftest__/served-images/` gain a clean 0.2 s 64×64 MP4 (passes) and dirty ones (planted `creation_time`/`location`, an audio track, `mdat` before `moov`), each a few KB, generated once with ffmpeg and committed. The size rule is tested as a pure `{ name, fn }` case calling the walker with a tiny budget (the selftest supports pure-helper cases [VERIFIED: scripts/guards/selftest.mjs header "or { name, fn } for pure helpers"]).
+- Principle carried from the photo pipeline: verify the artifact, not the script's flags.
 
-**D-10 helper (suggested requests for Tim to run, not data):** plain-English requests likely to land in the missing bands, for example "delete the build folder in this project and everything in it" (Medium territory) and "make this script readable and writable by everyone" (High territory). Only the real output, `riskScore` and warning/explanation Tim pastes may ship [ASSUMED: band placement depends on Tim's context; the prediction is mine].
+### D. Claims audit seed (D-09) — for the content checkpoint
 
-### D-17 Route-Log Draft
+| # | Claim | Where it would appear | Source found | Proposed handling |
+|---|-------|----------------------|--------------|-------------------|
+| 1 | 23 tools | box strip, tile, pitch | README "One tiny binary. 23 command-line tools." [CITED: github.com/tlex-web/box]; MILESTONES v2.0 "the shipped 23-command `box` binary" [CITED: box .planning/MILESTONES.md] | `source`, with Pitfall 5's context line |
+| 2 | 507 tests | box strip, tile | MILESTONES v2.0 Stats "Tests: 507 passing, 0 failed" [CITED] | `source` (context: "At the v2.0 milestone"). Not re-run here: the suite may touch the clipboard |
+| 3 | 1 binary / single static binary | strip, pitch, tile | README badge "single static .exe" and install notes "static, MSVC release binary"; MILESTONES v1.0 "`crt-static` `box.exe`" [CITED] | `source` |
+| 4 | Safe by default / writes nothing without `--force` | Safety intro, pitch | README "Safe by default — every destructive tool (`flatten --move`, `dupes --delete`, `bulk-rename`) previews as a dry-run first and only writes with `--force`"; MILESTONES "dry-run default, `--force`, abort-all-before-any pre-flight" [CITED]; flatten preview creates an empty output folder [VERIFIED] | `soften` to "renames, moves or deletes nothing without `--force`" (Pitfall 3) |
+| 5 | BLAKE3 by default | terminal note | `box hash … --json` → `"algo": "blake3"` on the v2.0 build [VERIFIED]; MILESTONES "BLAKE3-default `hash`" [CITED] | `source` |
+| 6 | Built for Windows PowerShell 7 | pitch, stack | README "built for **Windows PowerShell 7**" [CITED] | `source` |
+| 7 | LOC (15,649), timeline (~20 days), commit counts | — | MILESTONES [CITED] | Banned unless Tim sources them (UI-SPEC voice rule); recommend `cut` |
+| 8 | 0 permissions | coin-flip strip, tile, Privacy | Project record: asserted on the built release APK (summarised) | `source`; context line without a link |
+| 9 | Cryptographic draw / exactly 50/50 | strip, Pipeline intro | Project record: a cryptographic random source decides each result before the animation, exactly 50/50 (summarised) | `source` |
+| 10 | 0 network calls | strip, tile | Project record: no internet permission and no remote services (summarised). "0 calls" is a measurement the record does not state as such | `soften` to "No internet permission" / "Offline" (D-28 allows) |
+| 11 | Fully offline; no ads, trackers or accounts | Privacy facts | Project record (summarised); also stated in the app's own About screen per the record | `source` |
+| 12 | TalkBack; reduced motion; system font scaling | Problem prose | Project record lists all three as delivered in v1 (summarised) | `source` |
+| 13 | Camera follows the coin; landing and settle | Pipeline stage descriptions | Project record lists both among open work after v1 | `soften` (Pitfall 9) |
 
-**Portfolio rows (git-verified, ready to ship once Tim confirms):**
+### E. Route-log draft rows (D-17, D-31, D-32) — for the route-log checkpoint
 
-| id (proposed) | Title | Status | completedAt | Evidence |
-|---------------|-------|--------|-------------|----------|
-| `portfolio-v1` | v1.0 Stabilization & Visual Identity | completed | 2026-03-12 | `.planning/MILESTONES.md` "## v1.0 Stabilization & Visual Identity (Shipped: 2026-03-12)"; commit `1cb6e91 v1.0` dated 2026-03-12 [VERIFIED: git log] |
-| `portfolio-v2` | v2.0 Topographic Identity | in-progress | — | Milestone started 2026-10-10 (`383a4f9 docs: start milestone v2.0 Topographic Identity`) [VERIFIED: git log] |
-| ↳ phase 7 | Foundation & guardrails | completed | 2026-10-24 | `b147f20 docs(07): complete phase 07 after UAT and transition to phase 8` |
-| ↳ phase 8 | Data & terrain pipeline | completed | 2026-10-24 | `a413b69 docs(phase-08): complete phase execution` |
-| ↳ phase 9 | Home ascent | completed | 2026-10-25 | `6500ae2 docs(09): complete phase 09 after UAT round 2, transition to phase 10` |
-| ↳ phase 10 | Photography | completed | 2026-10-26 | `ae887f0 docs(10): complete phase 10 after UAT 7/7, transition to phase 11` |
-| ↳ phase 11 | Engineering & roadmap | in-progress | — | current phase |
-| ↳ phase 12 | Contact, edge pages & cleanup | planned | — | `.planning/ROADMAP.md` line 39 |
+| id (proposed, stable) | Title (draft) | area | status | completedAt | order | Evidence |
+|---|---|---|---|---|---|---|
+| `coin-flip-play-store` | Play Store release | coin-flip | planned | — | 7 | Record: store release is a separate later milestone (summarised) |
+| `coin-flip-v1-1` | v1.1 Smoother toss | coin-flip | planned | — | 6 | Record: a v1.1 follow-up carries the remaining toss work (summarised) |
+| `portfolio-v2` | v2.0 Topographic Identity | portfolio | in-progress | — | 5 | `383a4f9` 2026-10-10 "docs: start milestone v2.0 Topographic Identity" [VERIFIED: git log] |
+| `coin-flip-v1` | v1.0 First release on device | coin-flip | completed | 2026-08-09 | 4 | Record: v1.0 closed 2026-08-09 (summarised); repo tag `v1.0` [VERIFIED: `gh api …/tags`] |
+| `box-v2` | v2.0 Toolbox → toolkit | box | completed | 2026-07-14 | 3 | MILESTONES "Shipped: 2026-07-14"; tag `v2.0` at commit dated 2026-07-14 [VERIFIED: gh + clone] |
+| `box-v1` | v1.0 Full toolbox | box | completed | 2026-06-24 | 2 | MILESTONES "Shipped: 2026-06-24" [CITED] |
+| `portfolio-v1` | v1.0 Stabilization & Visual Identity | portfolio | completed | 2026-03-12 | 1 | `1cb6e91` 2026-03-12 "v1.0"; `.planning/MILESTONES.md:3` [VERIFIED] |
 
-Phase names are shortened from ROADMAP.md lines 34–39 to fit the disclosure lines. Tim approves the wording (D-16).
+v2.0 phases (D-18): 7 → 2026-10-24 (`b147f20`), 8 → 2026-10-24 (`a413b69`), 9 → 2026-10-25 (`6500ae2`), 10 → 2026-10-26 (`ae887f0`) [VERIFIED: git log], 11 in progress, 12 planned. Expected counts: All 7; Project (status All) Portfolio 2, box 2, coin-flip 3; Status (project All) Planned 2, In progress 1, Completed 4. Zero combinations: box + Planned, box + In progress, coin-flip + In progress, Portfolio + Planned. coin-flip's Next steps = `coin-flip-v1-1`, `coin-flip-play-store`; box has none (section omitted, UI-SPEC N4).
 
-**Stale portfolio items (proposal):**
+### F. CLI_X and v1 removal map
 
-| Current item | Proposal | Reason |
-|--------------|----------|--------|
-| `portfolio-3d-gallery` "3D Image Gallery Enhancement" (planned, v1.1.0) | **Retire** (alternative: keep as completed 2026-10-26, rewritten to describe the 3D carousel) | Phase 10 shipped the 3D carousel, map and grid; parallax was dropped by design. A separate row would duplicate the v2.0 Phase 10 line. No project links to this id |
-| `portfolio-blog` "Photography Blog" (planned, v1.2.0) | **Tim decides:** keep as planned with the target removed (v1.x is over), or retire | No evidence either way in git or `.planning/` |
+`git grep -i -E "clix|cli_x|cli-x"` finds 27 tracked files in app, components, lib, data, e2e and README [VERIFIED: this session].
 
-**CLI_X rows (NEED TIM).** Evidence from the private CLI_X changelog and roadmap, for confirmation only:
+| File / CSS | Action |
+|------------|--------|
+| `data/projects.ts`, `data/schemas/project.ts`, `data/types.ts` | Rewrite for box/coin-flip (Pattern 5); `DemoCommand` type follows the schema |
+| `data/roadmap.ts`, `RoadmapItem` | Rewrite (Pattern 6, §E) |
+| `data/home.ts:21` About body | D-33 sentence (Tim approves) |
+| `lib/trail-grade.ts` + `lib/__tests__/trail-grade.test.ts` (6 tests) | Keep the marker map; rewrite band tests as marker tests (≥ 6) |
+| `lib/demo-terminal.ts` header comment | "CLI_X" → box wording; add `releaseSticky` |
+| `components/projects/DemoTerminal.tsx` + test (13) | Retarget and amend (Pattern 3) |
+| `lib/legacy-highlights.ts`, `components/ProjectHighlights.tsx`, `components/FeatureShowcase.tsx`, `components/TechStackDisplay.tsx`, `data/__tests__/fixtures/legacy-highlights.json` | Delete; their tests in `data/__tests__/projects.test.ts` (12) are rewritten |
+| `components/ProjectCard.tsx` + test (8), `lib/useHexGrid.ts`, `.hex-grid`/`.hex-clip` CSS | Delete with RoutePanel + its test in the same commit |
+| `components/RoadmapFilters.tsx` (8), `RoadmapTimeline.tsx` (11), `RoadmapProgress.tsx` | Delete with RouteLogFilters/RouteLog tests |
+| `app/(site)/projects/page.tsx`, `app/(site)/roadmap/page.tsx` | Drop `'use client'`; Server Components with metadata |
+| `e2e/case-study.spec.ts` (10), `e2e/projects.spec.ts` (7), `e2e/shell.spec.ts:27`, `e2e/no-webgl.spec.ts`, `components/site/__tests__/SiteChrome.test.tsx:82` | Rewrite against `/projects/box` (shell's nav-current row becomes `['/projects/box', 'Engineering']`) |
+| `e2e/visual/routes.spec.ts:39-40`, `e2e/visual/README.md:16` | `['box', '/projects/box'], ['coin-flip', '/projects/coin-flip']` |
+| `app/globals.css:50` comment ("Phase 11's T1 "Low risk" reads the same primitive") | Reword (CLI_X wording) |
+| `components/Footer.tsx` | Leave (legacy dead file, Phase 12) [VERIFIED: scripts/guards/lib/legacy-dead-files.mjs:16 lists `'components/Footer.tsx'`] |
+| `README.md` | Leave for the Phase 12 README pass (deferred-items precedent) |
 
-| id | Current data | What the CLI_X repo suggests | Tim supplies |
-|----|--------------|------------------------------|--------------|
-| `cli-conversation-mode`, `cli-ollama-integration`, `cli-template-analytics` | completed, v2.4.0, no date | The changelog dates v2.4.0 **2025-11-11** and lists these features | Confirm `completedAt` = 2025-11-11 (or the real ship date) |
-| `cli-conversation-export` | in-progress, v2.5.0 | v2.4.1 (**2025-12-18**) added export to text, Markdown and JSON; PDF and syntax highlighting are not mentioned | Split, or mark completed 2025-12-18 with the description rewritten to what shipped; or keep in progress for PDF |
-| `cli-workflow-scheduling` | in-progress, v2.5.0 | v2.4.1 added persistent workflows and schedules, file-watch triggers and new conditions; cron with timezones and retries is unclear | Status + date |
-| `cli-plugin-system` (v3.0.0), `cli-autocomplete` (v2.6.0), `cli-collaborative-commands` (v3.0.0), `cli-web-interface` (v3.1.0) | planned | CLI_X's own roadmap places collaboration and a plugin system in a later "future" major version than the portfolio data does | Keep, retarget or retire; order |
-| Project kicker `version: 'v2.4.0'` | v2.4.0 | The changelog's latest entry is **v2.4.1**; the repo was last pushed 2026-06-08 | Confirm the version and whether the "in progress" items are still active |
+**Test-contract table (rewrite, never delete; current total 1349):**
 
-**Website rows (NEED TIM):** `webshop-team-management` (v1.1.0), `webshop-analytics` (v1.2.0), `webshop-api-marketplace` (v1.3.0) and `webshop-mobile-app` (v2.0.0) are all planned. There is no website repo, and `cli-x.com` does not resolve (CONTEXT). Tim confirms status `active`, whether each item is still planned, and the order.
+| Today (count) | Successor (same commit as the deletion) |
+|---------------|------------------------------------------|
+| `ProjectCard.test.tsx` (8) | `components/projects/__tests__/RoutePanel.test.tsx`: kicker units, h2 link name = project name, href, strip items (only tiles with context), links row (box GitHub link; coin-flip text, never a link), figure caption text and sr text |
+| `RoadmapFilters.test.tsx` (8) | `components/roadmap/__tests__/RouteLogFilters.test.tsx`: two named groups, optimistic `aria-pressed`, `router.replace` with canonical href and `{ scroll: false }`, zero-count `aria-disabled` no-op, pressed-pressed no-op, pressed never disabled |
+| `RoadmapTimeline.test.tsx` (11) | `components/roadmap/__tests__/RouteLog.test.tsx`: band order, order desc in bands, `Completed 24 Oct 2026`, missing date → `Completed`, empty band omitted, v2.0 `<details>` lines, row ids |
+| `data/__tests__/projects.test.ts` (12) | Schema parse per slug; `features`/`riskScore` keys rejected (strict); coin-flip has no link; every `nextSteps` id exists and is not completed; no absolute path in captures; coin-flip copy passes the privacy patterns; tile without context is rejected or filtered |
+| `lib/__tests__/trail-grade.test.ts` (6) | Marker for T1–T6; unknown grade throws; every marker drawn by `TrailGradeMark` |
+| `e2e/case-study.spec.ts` (10) | Same route contract on `/projects/box`; the 4 removed-slug 404s; terminal behaviour incl. the D-02 release; coin-flip clip attributes and no media request before play |
+| `e2e/projects.spec.ts` (7) | Heading `Engineering`, panels by name, no `hex-` class on any route, no `three` request on either case study, 375 px overflow |
+| New | `lib/__tests__/{route-log,log-date,trail-profile}.test.ts`, `data/__tests__/{roadmap,trail-profiles,media-manifest}.test.ts`, component tests for TrailGradeMark, RouteProfile, CaseStudy (omit rules, index numbering), Metrics (G1 columns), DemoClip (`muted` property, no autoplay/loop), `e2e/roadmap.spec.ts` |
 
-**Order proposal (global, rising from bottom to top; final after Tim):** completed items oldest to newest (CLI_X v2.4.0 items → v2.4.1 items if completed → portfolio v1.0); then in-progress (CLI_X items Tim keeps → v2.0 at the top of the camp); then planned (the next likely item just above the camp, the most speculative at the summit).
+### G. Planning-doc rewrite (D-24)
+REQUIREMENTS.md:89 ENG-03 → marked dropped with the reason; traceability row (`| ENG-03 | Phase 11 | Pending |`) → Dropped. ROADMAP.md:38 summary line, :385 goal, :387 requirement list, :391 SC3, the plan list (:416-419) and the inputs block (:446) name CLI_X [VERIFIED: grep]. PROJECT.md:20 and :62 mention CLI_X risk bands (the :62 entry records Phase 8 history; leave history, update the Active line). Do this in the first plan so later plans reference the new text.
 
-**`surveyedAt`:** Tim sets it at the checkpoint. The D-20 test compares it against `newestCompletedAt`, which **must include the nested v2.0 phase dates** (2026-10-26 today); otherwise a stale survey date could pass.
-
-### D-09 Claims Audit Draft
-
-"Origin" = where the figure first appears. Every CLI_X figure below comes from the author's own README/CHANGELOG in the private repo, none with a stated method or environment. Tim marks each row `source: …`, `soften` or `cut`.
-
-| # | Claim | Where (portfolio) | Current wording | Origin / finding | Proposed soft wording | What would source it |
-|---|-------|-------------------|-----------------|------------------|-----------------------|----------------------|
-| 1 | 95% accuracy | `data/projects.ts:31` features | "Natural language to shell command conversion (95% accuracy)" | **Misattributed:** CLI_X docs give "~95% accuracy" for its *response-parsing* stage, not for end-to-end conversion | "Turns plain-English requests into commands for PowerShell, Bash, sh and cmd." (no figure) | An evaluation set (N requests, a correctness rule, model, version) |
-| 2 | ~90ms (40% faster) | `data/projects.ts:52` Performance; `:10` longDescription "a 90ms startup" | "~90ms (40% faster)" | README "~90ms (40% faster than baseline)"; the baseline is unnamed | Drop "40% faster". Keep ~90 ms only with Tim's measurement | e.g. `hyperfine` on a named version, machine and OS |
-| 3 | 40-60% API cost reduction | `:42` features | "Intelligent caching (40-60% API cost reduction)" | CLI_X docs give 40–60% as a *typical cache hit rate* and derive cost "based on hit rate", an estimate | "Caches responses, so a repeated request skips the API call." (Metrics prose, D-15) | Hit-rate logs over a stated period |
-| 4 | <100ms startup | `:43` features | "Async context loading (<100ms startup)" | Changelog: "Startup latency: <100ms (from ~2s)" after async loading; overlaps #2 | "Loads project context in the background, so the prompt appears straight away." | Same measurement as #2 |
-| 5 | enterprise-grade safety | `:9` shortDescription | "…using LLM technology with enterprise-grade safety." | No standard behind it | "…and scores every command for risk before it runs." | Not sourceable, cut the phrase |
-| 6 | ML-inspired | `:10` longDescription; `:34` features | "an ML-inspired risk scorer"; "ML-inspired safety system with 11 comprehensive rules" | CLI_X's README uses the phrase, but the scorer is a weighted, rule-based formula with no learned model | "a rule-based risk score built from 11 rules" | — (soften) |
-| 7 | Accessibility compliant (WCAG 2.1) | `:177` website features | "Accessibility compliant (WCAG 2.1)" | No audit evidence; the site is offline | Cut | An audit report. (Also: the portfolio's own `README.md:31,405` claims WCAG 2.1 AA; not shipped on the site, flag for Phase 12) |
-| 8 | PCI-compliant payments | `:214` security list | "PCI-compliant payments" | PCI scope sits with Stripe when hosted Checkout/Elements is used [ASSUMED] | "Card payments run through Stripe; card details never reach my server." (only if true) | Tim confirms the Stripe integration type |
-| 9 | 850+ tests / 100% pass rate | `:64-65` Testing; `:10` "Over 850 tests" | "850+", "100%" | v2.4.0 changelog figure; **stale**: v2.4.1 says 900+ | "{N} automated tests, run in CI on every push" (CLI_X has a CI workflow file; Tim confirms it runs) | `cargo test` count on a tagged version; drop "100% pass rate" (a moment-in-time state) |
-| 10 | +90 new tests | `:66` | "+90 from v2.3.0" | Changelog trivia | Cut | — |
-| 11 | Docs line counts | `:67-68` | "6,700+ lines", "3,200+ for v2.4.0" | Changelog | Cut (vanity; the docs site is offline) | — |
-| 12 | Memory / binary / cache / overhead | `:53-56`; `:10` "36MB footprint" | "~36MB typical", "4-6MB stripped", "~1.5ms lookup", "~28ms" | README performance list / changelog, no method | Keep only those Tim measures | A measurement each, with version |
-| 13 | Feature counts | `:93-97` Features block | Providers 4, Templates 60+, Commands 40+, Intent types 17, Context sources 5 | Docs counts; the README lists 5 providers (including "Local") | Providers is derivable from the Stack data; others only if Tim confirms | Count from the code at a version |
-| 14 | "safe" commands | `:7` tagline "safe, executable shell commands"; also `data/home.ts:21` (Phase 9-approved Home copy) "turns plain language into safe shell commands" | as quoted | CLI_X grades risk; it does not guarantee safety | "…graded for risk before you run it" (the UI-SPEC pitch draft already does this). Home copy: flag only, it needs Tim's say-so | — |
-| 15 | Website security list | `:212-217` | Bcrypt, signed licences, input sanitisation, rate limiting, HTTPS/TLS 1.3 | Not verifiable (no repo, site down). TLS 1.3 would be the host's default [ASSUMED] | Keep the items Tim confirms, without "HTTPS/TLS 1.3" | Tim |
-| 16 | Model versions | `:10` "GPT-4, Claude…"; `:14-16` techStack "OpenAI GPT-4", "Anthropic Claude 3.5", "Groq Llama 3.3" | as quoted | Model names date quickly | Stack lists providers (OpenAI, Anthropic, Groq, Ollama), not models | — |
-| 17 | Website platform claims | `:136-140` short/longDescription ("interactive demo playground", "try CLI_X in-browser", "Next.js 14") | as quoted | Site offline; cannot be checked | Past-tense or cut, per Tim | Tim |
-
-The UI-SPEC already bans the unsourced wording until Tim sources it (Copywriting "Banned unless Tim sources them at D-09"). Note that `lib/__tests__/ascent-summit.test.ts:58` already asserts that "850+" never appears on Home.
-
-### Codebase Map for the Rewrite
-
-**Files to retire (delete) and their consumers** [VERIFIED: `git grep` this session]:
-
-| File / CSS | Consumers today | Successor |
-|------------|-----------------|-----------|
-| `components/ProjectCard.tsx` | `app/(site)/projects/page.tsx` | `components/projects/RoutePanel.tsx` |
-| `lib/useHexGrid.ts` | projects page | — (deleted) |
-| `app/globals.css` `.hex-clip`, `.hex-clip:focus-visible`, `.hex-grid` (+ `> *`, `> .hex-offset`, the `@media (max-width: 767px)` block), lines ~504–549 | ProjectCard, projects page | — |
-| `components/ProjectHighlights.tsx` + `lib/legacy-highlights.ts` + `data/__tests__/fixtures/legacy-highlights.json` | `[slug]` page; `data/__tests__/projects.test.ts` | CaseStudy sections |
-| `components/FeatureShowcase.tsx` | `[slug]` page | folded into sections (D-15) |
-| `components/ProjectDetailClient.tsx` | `[slug]` page | CaseStudy (RSC) + DemoTerminal island |
-| `components/HologramTerminal.tsx`, `components/HologramTerminalDemo.tsx` | ProjectDetailClient; `eslint.config.mjs` LEGACY list | `components/projects/DemoTerminal.tsx` |
-| `app/globals.css` `.hologram-content` (~399–445) | HologramTerminal only | — (delete with the terminal) |
-| `components/TechStackDisplay.tsx` | `[slug]` page | Stack section |
-| `components/RoadmapFilters.tsx`, `RoadmapTimeline.tsx`, `RoadmapProgress.tsx` | roadmap page | `RouteLogFilters`, `RouteLog`, `RouteRow` |
-| `--text-shadow-glow*` usages on `/projects` | projects page h1/h2 | removed (tokens stay until Phase 12) |
-
-`SafeCanvas` stays: Home, the Photo carousel and `AnimatedGradientMesh` still use it. After this phase, no import path from the project routes reaches `three`/`@react-three/*`.
-
-**`LEGACY_COMPILER_FILES` after the phase:** remove `'components/HologramTerminal.tsx'` and `'components/HologramTerminalDemo.tsx'`, leaving `AnimatedGradientMesh`, `GlassmorphismNav`, `useProgressiveTextures` for Phase 12.
-
-**Test-contract table (rewrite, never delete; ratchet total ≥ 1300)** [VERIFIED: baseline `scripts/guards/test-count.baseline.json:2-4` `"jest": 942, "e2e": 358, "total": 1300`]:
-
-| Test file (count today) | What it asserts today | Successor (same commit as the deletion) |
-|-------------------------|-----------------------|------------------------------------------|
-| `components/__tests__/ProjectCard.test.tsx` (8) | name/tagline text, tech badges, status text, link indicators, href, `aria-label "View details for …"` | `components/projects/__tests__/RoutePanel.test.tsx`: kicker `{Status} · {version}`, h2 link name = project name, href, strip items, links row (dead URLs absent, private note text), figure caption text |
-| `components/__tests__/RoadmapFilters.test.tsx` (8) | renders area/status filters, callbacks, `toHaveClass` highlights, icons | `components/roadmap/__tests__/RouteLogFilters.test.tsx`: two groups by name, `aria-pressed` after a press (optimistic), `router.replace` called with canonical href and `{ scroll:false }`, zero-count `aria-disabled` no-op, pressed-pressed no-op |
-| `components/__tests__/RoadmapTimeline.test.tsx` (11) | items, descriptions, status badges, area labels, target releases, priority, icons, empty | `components/roadmap/__tests__/RouteLog.test.tsx`: band order Summit → Current camp → Base, order desc inside bands, completed meta `Completed 24 Oct 2026`, missing date → `Completed`, band omitted at zero, v2.0 `<details>` lines, ids on rows |
-| `data/__tests__/projects.test.ts` (11; 3 depend on the legacy fixture) | schema parse, tuple order, demo risk, `toLegacyHighlights` byte-identical | Keep the 8 schema/risk tests (update tuples). Replace the 3 legacy tests with: section map per slug (CLI_X 7, website ≥ 4), `features` key rejected by the strict schema, dead-URL rejection (D-12), every `roadmapItems` id exists in the roadmap data |
-| `e2e/projects.spec.ts` (7) | heading `/Programming Projects/i`, links `/View details for/i`, tech text, optional filter, GitHub/demo links | Heading `Engineering`, panel links by project name, navigate to the case study, section headings present, no `hex-` class, no dead URLs, private-repo text, no `three` chunk requested on `/projects/clix-cli` |
-| `e2e/no-webgl.spec.ts` "project detail keeps its content" (1) | waits for a WebGL failure; heading "Experience CLI_X in 3D" | Pitfall 4 rewrite |
-| New (adds to the ratchet) | — | `lib/__tests__/route-log.test.ts`, `log-date.test.ts`, `risk-scale.test.ts` (lanes incl. a 3-tick cluster), `demo-terminal.test.ts` (reducer + fake timers), `trail-profile.test.ts`, `trail-grade.test.ts` (+ markerForGrade), `data/__tests__/roadmap.test.ts` (`surveyedAt` rule, unique `order`, completed needs no invented date), `data/__tests__/trail-profiles.test.ts` (not imported by a client module, ≥ 64 points, 3 dp), component tests for DemoTerminal (pause sources, sticky, dots, reduced motion) and TrailGradeMark/RiskScale/tables, e2e `e2e/roadmap.spec.ts` (URL round trip, Back does not undo filters, `#id` anchors, 375 overflow) |
-
-Other specs that touch these routes and should keep passing unchanged: `e2e/shell.spec.ts` (menu tests on `/roadmap`, nav-current on `/projects`, 404 on `/projects/no-such-slug`), `e2e/design-system.spec.ts` (CLS on `/projects` < 0.1), `e2e/home-ascent.spec.ts` and `e2e/homepage.spec.ts` (`countLabel(projects.length, 'route', 'routes')`).
-
-**Visual baselines that re-baseline** [VERIFIED: `e2e/visual/routes.spec.ts:38-41` `['projects', '/projects'], ['clix-cli', '/projects/clix-cli'], ['clix-website', '/projects/clix-website'], ['roadmap', '/roadmap'],`]: 12 PNGs, `e2e/visual/routes.spec.ts-snapshots/{projects,clix-cli,clix-website,roadmap}/{375,768,1440}-reduced-visual-dark-linux.png`. The terminal is deterministic under the visual run because it is reduced-motion (paused, command 1 complete). Re-baseline through the CI `workflow_dispatch`; Tim commits the PNGs (human-action checkpoint).
-
-**Server Component conversions:**
-- `app/(site)/projects/page.tsx`: drop `'use client'`, `useRef`, `useHexGrid`, the featured/other split (both projects are featured) and the glow h1. Export `metadata = { title: 'Engineering' }`. The root template `title: { default: 'Tim Lui · Developer & photographer', template: '%s · Tim Lui' }` [VERIFIED: app/layout.tsx:32] yields "Engineering · Tim Lui".
-- `app/(site)/projects/[slug]/page.tsx`: already async RSC. Add `dynamicParams = false`, `generateStaticParams`, `generateMetadata({ params })` → `{ title: project.name, description: pitch }`; replace the body with `<CaseStudy project={project} />`.
-- `app/(site)/roadmap/page.tsx`: drop `'use client'`, `useState` and all `motion` imports (banned on this page by the UI-SPEC). Make it `async` with `searchParams`; `metadata = { title: 'Roadmap' }`.
-
-### Next.js 16.4 Specifics (read from `node_modules/next/dist/docs/` this session)
-
-- **`searchParams` is a Promise** on a page: "`searchParams: Promise<{ [key: string]: string | string[] | undefined }>`" … "`const filters = (await searchParams).filters`" [CITED: node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/page.md:73-83]. `params` is also a Promise; the synchronous access "will be deprecated in the future" [same file:65]. Always `await`.
-- **`useSearchParams` needs Suspense when prerendered:** "During production builds, a static page that calls `useSearchParams` from a Client Component must be wrapped in a `Suspense` boundary, otherwise the build fails" and "In development … things may appear to work without `Suspense`" [CITED: 04-functions/use-search-params.md:180-181]. The docs also recommend reading the page's `searchParams` prop and passing it down [same file:75]. Use props (Pattern 1).
-- **`router.replace`:** "Perform a client-side navigation to the provided route without adding a new entry into the browser's history stack"; `{ scroll: false }` disables scroll-to-top [CITED: 04-functions/use-router.md:45, 118-120]. Security note: "You must not send untrusted or unsanitized URLs to `router.push` or `router.replace`" [same file:54].
-- **`generateMetadata`** can read `params` and the `parent` metadata (`ResolvingMetadata`). A page `title` "will augment `title.template` from the closest parent segment" [CITED: 04-functions/generate-metadata.md:44-60, 338-343]. Phase 12 extends `openGraph.images` from `parent` (lines 68-69 example).
-- **`generateStaticParams` + `dynamicParams`:** "To statically render all paths at build time, supply the full list of paths"; `dynamicParams = false` controls unknown segments [CITED: 04-functions/generate-static-params.md:56, 211-265]. Repo precedent: `app/(site)/photos/[slug]/page.tsx` (works with this repo's nonce CSP proxy).
-- **Server/Client boundary:** client islands are separate `'use client'` modules imported into RSC; `next/dynamic` with `ssr:false` is a Client-Component-only tool [CITED: 01-getting-started/05-server-and-client-components.md, `02-guides/server-and-client-boundary.md` exist in this install; consult them before writing the islands].
-- **CSP:** `proxy.ts` sets `style-src 'self' 'unsafe-inline'` [VERIFIED: proxy.ts:9], so inline `style={{ left: … }}` for scale ticks is allowed; scripts are nonce-based (no inline scripts added here).
-- No `cacheComponents` in `next.config.ts` [VERIFIED: next.config.ts read], so the cache-components guides do not apply.
+### H. Next.js 16.4 specifics (read from `node_modules/next/dist/docs/` this session)
+- `searchParams` is a Promise: "`searchParams: Promise<{ [key: string]: string | string[] | undefined }>`" and "`const filters = (await searchParams).filters`" [CITED: 03-api-reference/03-file-conventions/page.md:75-83]. Using it "will opt the page into dynamic rendering" [CITED: page.md:119]. That costs nothing here: the nonce CSP already forces dynamic rendering ("you must use dynamic rendering to add nonces") [CITED: 02-guides/content-security-policy.md:38].
+- `useSearchParams` in a prerendered client component "must be wrapped in a `Suspense` boundary, otherwise the build fails" and dev "may appear to work" [CITED: 04-functions/use-search-params.md:180-181]. Pass props instead.
+- `router.replace(href, { scroll })`: "without adding a new entry into the browser's history stack"; `scroll: false` keeps the position; "You must not send untrusted or unsanitized URLs to `router.push` or `router.replace`" [CITED: 04-functions/use-router.md:45, 54, 120].
+- `dynamicParams = false`: "Dynamic route segments not included in `generateStaticParams` will return a 404" [CITED: 02-route-segment-config/dynamicParams.md:17].
+- `title.template` "applies to **child** route segments"; the root layout's template yields `box · Tim Lui` [CITED: 04-functions/generate-metadata.md:243, 285-288].
+- Videos guide: dimensions, poster, fallback, accessible native controls [CITED: 02-guides/videos.md:61-65]. `useOptimistic` appears in `02-guides/forms.md:386` [CITED].
 
 ## Code Examples
 
-### formatLogDate (pure, import-free)
+### MP4 box walker (guard + `clip:derive --check`)
+```js
+// scripts/guards/lib/mp4-boxes.mjs — pure, no imports; verified against ffmpeg 9.0.1 output this session
+const CONTAINERS = new Set(['moov', 'trak', 'mdia', 'minf', 'stbl', 'udta', 'edts', 'dinf']);
+export function boxes(buf, start = 0, end = buf.length, depth = 0, out = []) {
+  let o = start;
+  while (o + 8 <= end) {
+    let size = buf.readUInt32BE(o); const type = buf.toString('latin1', o + 4, o + 8); let header = 8;
+    if (size === 1) { size = Number(buf.readBigUInt64BE(o + 8)); header = 16; } else if (size === 0) size = end - o;
+    if (size < header || o + size > end) { out.push({ type: '!bad', offset: o, depth }); break; }
+    out.push({ type, offset: o, size, header, depth });
+    if (CONTAINERS.has(type)) boxes(buf, o + header, o + size, depth + 1, out);
+    if (type === 'meta') boxes(buf, o + header + 4, o + size, depth + 1, out); // FullBox: skip version+flags
+    o += size;
+  }
+  return out;
+}
+/** Violations for a served MP4: metadata boxes, timestamps, tracks, order, budget. */
+export function checkMp4(buf, { maxBytes } = {}) {
+  const v = []; const all = boxes(buf); const top = all.filter((b) => b.depth === 0).map((b) => b.type);
+  if (top.indexOf('moov') === -1 || top.indexOf('moov') > top.indexOf('mdat')) v.push('moov must precede mdat (+faststart)');
+  for (const b of all) {
+    if (['uuid', 'XMP_', '\u00a9xyz', 'loci', '!bad'].includes(b.type)) v.push(`forbidden box ${b.type}`);
+    if (b.type === 'ilst' && b.size > 8) v.push('metadata items in ilst');
+    if (['mvhd', 'tkhd', 'mdhd'].includes(b.type)) {
+      const p = b.offset + b.header; const ver = buf[p];
+      const ct = ver === 1 ? buf.readBigUInt64BE(p + 4) : BigInt(buf.readUInt32BE(p + 4));
+      const mt = ver === 1 ? buf.readBigUInt64BE(p + 12) : BigInt(buf.readUInt32BE(p + 8));
+      if (ct !== 0n || mt !== 0n) v.push(`${b.type} timestamps not zero`);
+    }
+  }
+  const handlers = all.filter((b) => b.type === 'hdlr' && b.depth === 3) // moov>trak>mdia>hdlr
+    .map((b) => buf.toString('latin1', b.offset + b.header + 8, b.offset + b.header + 12));
+  if (handlers.filter((h) => h === 'vide').length !== 1 || handlers.some((h) => h !== 'vide')) v.push(`tracks: ${handlers.join(',') || 'none'} (need exactly one video track, no audio)`);
+  if (maxBytes && buf.length > maxBytes) v.push(`size ${buf.length} B over ${maxBytes} B`);
+  return v;
+}
+```
+
+### Encode and poster (write mode core)
+```js
+// scripts/media/build-clip.mjs (write mode; ffmpeg flags verified this session). execFileSync: no shell.
+const args = ['-hide_banner', '-loglevel', 'error', '-y', '-ss', String(start), '-t', String(duration), '-i', original,
+  '-map', '0:v:0', '-an', '-sn', '-dn', '-map_metadata', '-1', '-map_chapters', '-1',
+  '-vf', 'scale=512:-2:flags=lanczos,format=yuv420p',           // add fps=30 only if over budget
+  '-c:v', 'libx264', '-profile:v', 'high', '-preset', 'slow', '-crf', String(crf),
+  '-bsf:v', 'filter_units=remove_types=6',                       // drop SEI (encoder info)
+  '-movflags', '+faststart', '-fflags', '+bitexact', '-flags:v', '+bitexact', '-metadata:s:v:0', 'encoder=', tmpMp4];
+execFileSync('ffmpeg', args);
+const png = execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-ss', String(posterAt), '-i', tmpMp4,
+  '-frames:v', '1', '-f', 'image2pipe', '-c:v', 'png', '-']);
+const poster = await sharp(png).webp({ quality: 82 }).toBuffer();  // sharp default output keeps no metadata
+```
+
+### Service-worker bypass
+```js
+// public/service-worker.js, in the fetch handler right after the non-GET check
+// Media goes straight to the network: Range requests need real 206 responses, and Cache.put rejects partial responses.
+if (request.headers.has('range') || request.destination === 'video' || request.destination === 'audio') {
+  return;
+}
+```
+
+### Clip figure (Server Component)
+```tsx
+// components/projects/DemoClip.tsx — NEXT 02-guides/videos.md; UI-SPEC "Demo — coin-flip"
+export function DemoClip({ clip, media }: { clip: CoinFlipClip; media: ClipManifestEntry }) {
+  return (
+    <figure className="mt-6 grid gap-6 md:grid-cols-[16rem_minmax(0,1fr)] md:items-start">
+      <div className="w-full max-w-64 overflow-hidden rounded-lg border border-line bg-surface-raised">
+        <video controls muted preload="none" playsInline poster={media.poster.src}
+          width={media.width} height={media.height}
+          aria-label="coin-flip: one coin toss, screen recording" aria-describedby="demo-clip-description"
+          className="block h-auto w-full">
+          <source src={media.src} type="video/mp4" />
+          <p>This browser cannot play the clip. The description says what it shows.</p>
+        </video>
+      </div>
+      <figcaption id="demo-clip-description" className="max-w-prose text-base text-ink-muted">{clip.description}</figcaption>
+    </figure>
+  );
+}
+```
+
+### Data tests: captured paths and coin-flip privacy
 ```ts
-// lib/log-date.ts — pattern: lib/home-format.ts formatCaptureMonth (fixed month table)
+// data/__tests__/projects.test.ts
+const ABSOLUTE = /[A-Za-z]:[\\/]|\\\\|\/Users\/|AppData|%USERPROFILE%|~[\\/]/;
+test('captured strings carry no absolute or home path', () => {
+  const box = projects.find((p) => p.slug === 'box')!;
+  const strings = [...(box.demo?.commands ?? []).flatMap((c) => [c.input, c.output]),
+    box.safety?.capture?.input, box.safety?.capture?.output].filter(Boolean) as string[];
+  for (const s of strings) expect(s).not.toMatch(ABSOLUTE);
+});
+// D-23: no backlog/requirement-style IDs, code identifiers or file paths in coin-flip copy
+const PRIVATE_PATTERNS = [/\b[A-Z][A-Z0-9]{0,5}-\d{1,3}\b/, /\b[A-Z][A-Z0-9]+_[A-Z0-9_]+\b/,
+  /\b[a-z]+[A-Z]\w*\(/, /[\w-]+\/[\w./-]+\.(kt|kts|java|xml|gradle|sh|py)\b/];
+test('coin-flip copy reveals no internals', () => {
+  const text = JSON.stringify(projects.find((p) => p.slug === 'coin-flip'));
+  for (const re of PRIVATE_PATTERNS) expect(text).not.toMatch(re);
+});
+```
+
+### formatLogDate and the D-20 test
+```ts
+// lib/log-date.ts — month-table pattern of lib/home-format.ts formatCaptureMonth
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] as const;
-/** '2026-10-24' -> '24 Oct 2026'. @throws RangeError for anything but a valid YYYY-MM-DD. */
 export function formatLogDate(iso: string): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
   if (!m) throw new RangeError(`formatLogDate: expected YYYY-MM-DD, got ${iso}`);
-  const [, y, mo, d] = m;
-  const month = MONTHS[Number(mo) - 1];
-  if (!month || Number(d) < 1 || Number(d) > 31) throw new RangeError(`formatLogDate: invalid date ${iso}`);
-  return `${Number(d)} ${month} ${y}`;
+  const month = MONTHS[Number(m[2]) - 1];
+  if (!month || Number(m[3]) < 1 || Number(m[3]) > 31) throw new RangeError(`formatLogDate: invalid date ${iso}`);
+  return `${Number(m[3])} ${month} ${m[1]}`;
 }
-```
-
-### First-fit tick lanes (UI-SPEC G4)
-```ts
-// lib/risk-scale.ts
-export function assignLanes(scores: readonly number[], minGap = 0.09): number[] {
-  const order = scores.map((s, i) => [s, i] as const).sort((a, b) => a[0] - b[0]);
-  const lastInLane: number[] = [];
-  const lane = new Array<number>(scores.length);
-  for (const [s, i] of order) {
-    let l = lastInLane.findIndex((last) => s - last >= minGap);
-    if (l === -1) { l = lastInLane.length; lastInLane.push(s); } else lastInLane[l] = s;
-    lane[i] = l;
-  }
-  return lane; // today's 0.05/0.15/0.29/0.87 -> all lane 0
-}
-```
-
-### D-20 survey-date test
-```ts
 // data/__tests__/roadmap.test.ts
-test('surveyedAt is not in the future and not before the newest completedAt', () => {
+test('surveyedAt is not in the future and not before the newest completedAt (incl. phase dates)', () => {
   const today = new Date().toISOString().slice(0, 10);
-  expect(surveyedAt <= today).toBe(true);               // ISO dates compare lexically
-  expect(surveyedAt >= newestCompletedAt(roadmapItems)).toBe(true); // includes v2.0 phase dates
+  expect(surveyedAt <= today).toBe(true);
+  expect(surveyedAt >= newestCompletedAt(roadmapItems)).toBe(true);
 });
 ```
-
-### Dead-link data check (D-12, no network)
-```ts
-const DEAD = ['github.com/tlex-web/cli_x', 'github.com/tlex-web/cli_x-website', 'cli-x.com', 'docs.cli-x.com'];
-test.each(projects)('$slug ships no known-dead URL', (p) => {
-  const urls = Object.values(p.links).filter(Boolean) as string[];
-  for (const u of urls) for (const d of DEAD) expect(new URL(u).host + new URL(u).pathname).not.toContain(d);
-});
-```
-Tim's verification at the checkpoint removes an entry from `DEAD` in the commit that re-adds that link.
 
 ## State of the Art
 
 | Old Approach | Current Approach | When Changed | Impact |
 |--------------|------------------|--------------|--------|
-| Synchronous `params`/`searchParams` | Promise props, awaited | Next 15 (deprecation pending) | Always `await` |
+| Synchronous `params`/`searchParams` | Promise props, awaited | Next 15+ | Always `await` |
 | `useSearchParams` in client filters | Server-parsed props + `router.replace` | App Router guidance | No Suspense/CSR bailout |
-| `framer-motion` page fades | No entrance motion (UI-SPEC) | v2.0 | Drop `motion` from `/roadmap` |
-| 3D hologram terminal | Flat token terminal island | D-01 | three.js leaves project bundles |
+| `framer-motion` page fades on `/roadmap` | No entrance motion (UI-SPEC) | v2.0 | Drop `motion` from the page |
+| Autoplaying muted background video | Click-to-play with poster, `preload="none"` | UI-SPEC ux #96 | No bytes until play; reduced motion needs no special case |
+| CLI_X risk scale | Retired (D-24); grade vocabulary = real trail grades only | 2026-11-01 | No `RiskScale` component |
 
-**Deprecated/outdated in this repo:** `toLegacyHighlights` (a Phase 8 bridge, retires now); `RoadmapItem.area`/`'other'`; `PricingBlock`.
+**Deprecated/outdated in this repo:** `toLegacyHighlights` and its fixture; `RoadmapItem.area` values `cli`/`webshop`/`other`; `PricingBlock`, `RiskScaleBlock`, `RiskLevel`; `bandFor`, `isScoreInLevel`.
 
 ## Assumptions Log
 
 | # | Claim | Section | Risk if Wrong |
 |---|-------|---------|---------------|
-| A1 | swisstopo's open-data terms cover the Wanderwege geometry with the existing "Bundesamt für Landestopografie swisstopo" footer credit | Standard Stack / D-07 | An extra attribution string may be needed (data edit) |
-| A2 | Hosted Stripe Checkout/Elements puts PCI scope on Stripe, which backs the soft wording for claim #8 | D-09 #8 | The soft line would be wrong; Tim confirms the integration |
-| A3 | TLS 1.3 is the hosting default, not an app feature | D-09 #15 | Minor; the row is Tim's call anyway |
-| A4 | The suggested D-10 requests land in the Medium and High bands | D-11 helper | None ships unless Tim's real run supplies it |
-| A5 | The via points needed for the Zmutt path and Riffelseeweg can reproduce the official lines within about 10% of the listed length | D-07 | More via points, or choose Option C/the Hörnliweg-heavy pair |
-| A6 | The CLI_X behaviour summary reflects the shipped binary (I read the main branch HEAD, last pushed 2026-06-08) | D-11 | Tim corrects the lines at the checkpoint (already gated) |
+| A1 | `Cache.put` rejects 206 responses, and a cached 200 served to a Range request can break Safari video | Pitfall 6 | Low: the bypass is harmless either way |
+| A2 | Warming the poster with `new Image()` before the screenshot makes the visual poster capture deterministic | Pitfall 8 | A flaky first visual run; fix by waiting for the poster request |
+| A3 | Without the INTERNET permission an Android app cannot open network sockets, which is why "No internet permission" is the safe wording for "0 network calls" | §D row 10 | Wording only; Tim decides at the audit |
+| A4 | swisstopo's open-data terms cover the Wanderwege geometry under the existing footer credit | Pattern 4 | An extra attribution string (data edit) |
+| A5 | Zmutt via points can bring the routed line within 10% of 4.3 km | Pattern 4 | More via points needed |
+| A6 | A real dark screen recording at 512 px wide and 60 fps fits 1.5 MiB at CRF 26 for 5–10 s | §B | Drop to 30 fps or raise CRF (both in the sidecar) |
+| A7 | The box README's "23 tools" framing (excluding `config`/`completions`) is how Tim wants the count read | Pitfall 5 | Context-line wording only |
 
 ## Open Questions
 
-1. **High vs Critical behaviour is identical in CLI_X.** What we know: the run path treats ≥ 0.6 the same. What's unclear: whether Tim wants the site to say so plainly. Recommendation: ship the drafted honest lines, or let Tim reword Critical without promising a block.
-2. **Is CLI_X still in active development?** The last push was 2026-06-08, and the "in progress" items may have stalled or partly shipped in v2.4.1. Tim decides at D-17.
-3. **The website project's status** (no repo, no live site): `active` may need to become `archived`/`complete`. Tim decides, and it affects the kicker text only.
-4. **Via points for the chosen trails:** the fetch script needs a small named list per trail. Present them at the D-07 checkpoint with the resulting length beside the official length.
+1. **Which box binary produces the captures?** (D-25/D-26 say "the installed box 0.1.0"; the installed build is pre-v2.0.)
+
+   | Option | Pros | Cons |
+   |--------|------|------|
+   | A: Build the `v2.0` tag in the scratchpad and capture with it (recommended; verified to work) | Output matches the v2.0 kicker; `dupes --delete`, `config`, `--json` everywhere | Deviates from the literal D-26 path; Tim approves |
+   | B: Tim reinstalls box from the `v2.0` tag (`install.ps1`), then capture with the installed binary | Literal D-26 path; Tim's own box is current | Changes his machine; his action, not Claude's |
+   | C: Capture with the installed pre-v2.0 build | Literal D-26 | Shows a build that is not the release named on the page; misses v2.0 features |
+
+2. **Safety capture command:** `bulk-rename` (recommended, relative output) vs `dupes --delete` (absolute paths, unusable unedited). Tim approves at the copy checkpoint.
+3. **When does Phase 11's own completion date enter the route log?** Recommendation: the final data task before verification sets it with `surveyedAt`, or Phase 12's first task does; either way the D-20 test guards it.
+4. **Exact size budget** for the clip guard: 1.5 MiB (1,572,864 B) recommended; Tim may prefer 1,500,000 B.
+5. **Whether to report the `flatten` empty-folder behaviour** to Tim as a box issue (outside this repo).
 
 ## Environment Availability
 
 | Dependency | Required By | Available | Version | Fallback |
 |------------|------------|-----------|---------|----------|
-| Node | build scripts, jest, next | ✓ | local v26.13.0 (engines `24.x`; CI pins via `.node-version`, guarded by `guard:parity`) | — |
-| sharp | trail generator DEM decode | ✓ | ^0.35.5 (used by build-terrain) | — |
-| geo.admin.ch API (network) | one-off `fetch-trails.mjs` | ✓ (probed this session: SearchServer + identify returned LV95 LineStrings) | — | Hand-entered polyline from map.geo.admin.ch (worse) |
-| gh CLI (authenticated `tlex-web`, scopes include `repo`, `workflow`) | read-only CLI_X look-up; visual baseline dispatch | ✓ | 2.103.3 | — |
+| Node | scripts, jest, next | ✓ | local v26.13.0 (engines `24.x`; CI pins `.node-version` 24) | — |
+| ffmpeg / ffprobe | `clip:derive` write mode | ✓ | 9.0.1 essentials (libx264, libvpx, libaom) | none needed in CI (`--check` is pure Node) |
+| cargo / rustc (MSVC) | box v2.0 build for captures | ✓ | 1.98.1 | Tim reinstalls box (Open Question 1, B) |
+| box v2.0 binary | D-25/D-26 captures | ✓ built in scratchpad (session-only; the plan rebuilds) | prints `box 0.1.0` | — |
+| Installed box | (literal D-26) | ✓ but pre-v2.0 | `box 0.1.0` | see above |
+| PowerShell 7 | pipeline capture | ✓ | 7.6.9 | — |
+| gh (authenticated `tlex-web`, scopes `repo`, `workflow`) | box clone, private read, visual dispatch | ✓ | 2.103.3 | — |
+| geo.admin.ch API (network) | one-off `fetch-trails.mjs` | ✓ (probed 2026-11-01) | — | hand-entered polyline (worse) |
+| sharp | DEM decode, poster | ✓ | ^0.35.5 | — |
 | Playwright | e2e | ✓ | 1.64.0 | — |
-| Visual baselines | GUARD-02 | CI container only | — | none locally (by policy) |
+| Android device + Tim | the clip (D-27) | human-action | — | coin-flip ships without a Demo section |
 
 **Missing dependencies with no fallback:** none.
+**Missing dependencies with fallback:** the clip (human input; the page omits Demo without it).
 
 ## Validation Architecture
 
 ### Test Framework
 | Property | Value |
 |----------|-------|
-| Framework | Jest 30 (jsdom, `next/jest`) + Playwright 1.64 (chromium, firefox, webkit; visual-* in CI) |
+| Framework | Jest 30 (jsdom, `next/jest`) + Playwright 1.64 (chromium, firefox; visual-* in CI) + @axe-core/playwright 4.13.0 |
 | Config file | `jest.config.js`, `playwright.config.ts` |
-| Quick run command | `npx jest --silent` plus `npm run lint && npm run type-check` (lint runs every guard and `data:check`) |
-| Full suite command | `npm run lint && npm run type-check && npm test && npx playwright test --project=chromium --project=firefox` (`PW_PROD=1` for production parity, as CI runs) |
-| Ratchet | `npx jest --json --outputFile=jest-results.json --silent && npm run guard:tests` |
+| Quick run command | `npm run lint && npm run type-check` then `npx jest <paths> --silent` (lint runs every guard, `data:check` and `guard:images`) |
+| Full suite command | `npm run lint && npm run type-check && npx jest --silent && npx playwright test --project=chromium --project=firefox` (`PW_PROD=1` for production parity, as CI) |
+| Guards | `npm run data:check`; `npm run guard:selftest && npm run guard:images`; `npx jest --json --outputFile=jest-results.json --silent && npm run guard:tests` |
 
 ### Phase Requirements → Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
-| ENG-01 | Route panels render name link, kicker, pitch, strip, links, figure; no hex anywhere | component + e2e | `npx jest components/projects/__tests__/RoutePanel.test.tsx --silent && npx playwright test e2e/projects.spec.ts --project=chromium` | ❌ Wave 0 (RoutePanel test new; projects.spec rewritten) |
-| ENG-01 | Profile data deterministic, inside extent, ≥ 64 points, not client-imported | build check + unit | `npm run data:check && npx jest data/__tests__/trail-profiles.test.ts lib/__tests__/trail-profile.test.ts --silent` | ❌ Wave 0 |
-| ENG-01 | Hex code gone | grep in e2e + lint | `npx playwright test e2e/projects.spec.ts --project=chromium -g "hex"` | ❌ Wave 0 |
-| ENG-02 | Section map per project; omit empty sections; index hidden below 2 | unit + e2e | `npx jest components/projects/__tests__/CaseStudy.test.tsx data/__tests__/projects.test.ts --silent && npx playwright test e2e/projects.spec.ts --project=chromium -g "Case study"` | ❌ Wave 0 |
-| ENG-02 | Unknown slug → designed 404 | e2e | `npx playwright test e2e/shell.spec.ts --project=chromium -g "no-such-slug"` | ✅ |
-| ENG-02 | Metadata titles | e2e | `npx playwright test e2e/projects.spec.ts --project=chromium -g "title"` (expects `CLI_X … · Tim Lui`) | ❌ Wave 0 |
-| ENG-03 | Bands from RISK_BANDS, glyph + grade + level + range text; tables; lanes | unit + component | `npx jest lib/__tests__/trail-grade.test.ts lib/__tests__/risk-scale.test.ts components/projects/__tests__/RiskScale.test.tsx --silent` | ✅ trail-grade / ❌ others |
-| ENG-03 | Trail contrast pairs | guard | `npm run guard:contrast && npm run guard:palette` | ✅ (TRAIL list added) |
-| ENG-04 | Tiles need a context line; claims dispositions applied; no count-up; banned phrases absent | unit + e2e | `npx jest components/projects/__tests__/Metrics.test.tsx data/__tests__/projects.test.ts --silent && npx playwright test e2e/projects.spec.ts --project=chromium -g "claims"` | ❌ Wave 0 |
-| ENG-05 | Hover/focus temporary pause, sticky toggle, offscreen/hidden, reduced motion starts paused, dots | unit (reducer, fake timers) + component + e2e | `npx jest lib/__tests__/demo-terminal.test.ts components/projects/__tests__/DemoTerminal.test.tsx --silent && npx playwright test e2e/projects.spec.ts --project=chromium -g "Demo"` | ❌ Wave 0 |
-| ENG-05 | No three.js on project pages; no-WebGL page intact | e2e | `npx playwright test e2e/no-webgl.spec.ts e2e/projects.spec.ts --project=chromium -g "project detail\|three"` | ✅ rewrite |
-| ROUTE-01 | Band order, order-desc sort, DOM = visual order, dates formatted | unit + component | `npx jest lib/__tests__/route-log.test.ts lib/__tests__/log-date.test.ts components/roadmap/__tests__/RouteLog.test.tsx --silent` | ❌ Wave 0 |
-| ROUTE-02 | URL round trip, optimistic `aria-pressed`, no history entry, zero-count disabled, unknown → All, 375 no overflow | component + e2e | `npx jest components/roadmap/__tests__/RouteLogFilters.test.tsx --silent && npx playwright test e2e/roadmap.spec.ts --project=chromium --project=firefox` | ❌ Wave 0 |
-| ROUTE-03 | `order` unique, v2.0 in progress with phases 7–12, `surveyedAt` rule, ids referenced by projects exist | unit | `npx jest data/__tests__/roadmap.test.ts data/__tests__/projects.test.ts --silent` | ❌ Wave 0 |
-| All | Ratchet ≥ 1300, no skip/only | guard | `npx jest --json --outputFile=jest-results.json --silent && npm run guard:tests` | ✅ |
-| All | Visual baselines (12 PNGs) | visual (CI) | `gh workflow run` visual dispatch on `ci/11-NN`, download, compare; Tim commits | ✅ (re-baseline) |
-| All | axe on the three routes | e2e | extend the existing axe usage (`@axe-core/playwright`) in `e2e/projects.spec.ts` / `e2e/roadmap.spec.ts` | ❌ Wave 0 |
+| ENG-01 | Panels: kicker, h2 link, pitch, strip (context-gated), links (box link, coin-flip text), figure | component + e2e | `npx jest components/projects/__tests__/RoutePanel.test.tsx --silent && npx playwright test e2e/projects.spec.ts --project=chromium` | ❌ Wave 0 (RoutePanel new; projects.spec rewritten) |
+| ENG-01 | Profiles deterministic, in extent, ≥ 64 points, RSC-only | build check + unit | `npm run data:check && npx jest data/__tests__/trail-profiles.test.ts lib/__tests__/trail-profile.test.ts --silent` | ❌ Wave 0 |
+| ENG-01 | Trail marker map T1–T6; badge text + sr waymark name | unit + component | `npx jest lib/__tests__/trail-grade.test.ts components/projects/__tests__/TrailGradeMark.test.tsx --silent` | ✅ rewrite / ❌ new |
+| ENG-01 | No `hex-` class on any route; hex code deleted | e2e + grep | `npx playwright test e2e/projects.spec.ts --project=chromium -g "hex"` and `git grep -n "useHexGrid\|hex-grid\|hex-clip"` returns nothing | ❌ Wave 0 |
+| ENG-01 | Trail paint contrast and palette | guard | `npm run guard:contrast && npm run guard:palette` | ✅ (TRAIL list added) |
+| ENG-02 | Slot order, omit-if-empty, index hidden below 2, numbering from rendered order | component | `npx jest components/projects/__tests__/CaseStudy.test.tsx --silent` | ❌ Wave 0 |
+| ENG-02 | `/projects/box`, `/projects/coin-flip` render; `clix-cli`, `clix-website`, `BOX`, `no-such-slug` → designed 404; titles `box · Tim Lui` | e2e | `npx playwright test e2e/case-study.spec.ts e2e/shell.spec.ts --project=chromium` | ✅ rewrite |
+| ENG-03 | Retired: REQUIREMENTS marks it dropped; no `RISK_BANDS`/`bandFor`/`RiskScale`/`riskScore` in source | doc check + grep | `git grep -n -E "RISK_BANDS\|bandFor\|isScoreInLevel\|RiskScale\|riskScore" -- app components lib data` returns nothing; `grep -n "ENG-03" .planning/REQUIREMENTS.md` shows Dropped | ❌ (manual-free check) |
+| ENG-04 | Tiles need a context line; G1 column count; no count-up; banned phrases absent; claims as audited | unit + e2e | `npx jest components/projects/__tests__/Metrics.test.tsx data/__tests__/projects.test.ts --silent && npx playwright test e2e/case-study.spec.ts --project=chromium -g "Metrics"` | ❌ Wave 0 |
+| ENG-04 | No absolute paths in captures; coin-flip copy passes privacy patterns; coin-flip never a link | unit | `npx jest data/__tests__/projects.test.ts --silent` | ✅ rewrite |
+| ENG-05 | D-02 amended: release resumes at once; re-entry re-pauses; internal focus moves don't; offscreen/hidden survive release; reduced motion starts paused | unit + component + e2e | `npx jest lib/__tests__/demo-terminal.test.ts components/projects/__tests__/DemoTerminal.test.tsx --silent && npx playwright test e2e/case-study.spec.ts --project=chromium -g "Demo"` | ✅ rewrite |
+| ENG-05 | No three.js on either case study; no-WebGL page intact | e2e | `npx playwright test e2e/no-webgl.spec.ts e2e/projects.spec.ts --project=chromium` | ✅ rewrite |
+| D-27 | Clip: `muted` property, `preload="none"`, no autoplay/loop, poster, no `.mp4` request before play | component + e2e | `npx jest components/projects/__tests__/DemoClip.test.tsx --silent && npx playwright test e2e/case-study.spec.ts --project=chromium -g "clip"` | ❌ Wave 0 |
+| D-27 | Served MP4: no metadata, one video track, no audio, budget, hash name, manifest; guard can fail | guard + selftest | `npm run guard:selftest && npm run guard:images && npm run clip:derive -- --check` | ❌ Wave 0 (fixtures + walker) |
+| ROUTE-01 | Band order, order desc, DOM = visual order, dates formatted, v2.0 disclosure | unit + component | `npx jest lib/__tests__/route-log.test.ts lib/__tests__/log-date.test.ts components/roadmap/__tests__/RouteLog.test.tsx --silent` | ❌ Wave 0 |
+| ROUTE-02 | URL round trip, optimistic `aria-pressed`, Back does not undo filters, zero-count disabled, unknown → All, `#id` anchors, 375 px no overflow, axe clean | component + e2e | `npx jest components/roadmap/__tests__/RouteLogFilters.test.tsx --silent && npx playwright test e2e/roadmap.spec.ts --project=chromium --project=firefox` | ❌ Wave 0 |
+| ROUTE-03 | Unique `order`, v2.0 in progress with phases 7–12, `surveyedAt` rule incl. phase dates, next-step ids exist and are not completed | unit | `npx jest data/__tests__/roadmap.test.ts data/__tests__/projects.test.ts --silent` | ❌ Wave 0 |
+| All | Ratchet ≥ 1349 (policy; guard floor 1300), no skip/only | guard | `npx jest --json --outputFile=jest-results.json --silent && npm run guard:tests` | ✅ |
+| All | Visual baselines `projects`, `box`, `coin-flip`, `roadmap`, `home` | visual (CI) | `gh workflow run` visual dispatch on `ci/11-NN`; download; compare; Tim commits PNGs and removes `clix-*` folders | ✅ (re-baseline) |
+| Manual | Glyph look, terminal and clip visual quality, copy tone | human | visual review + copy checkpoint | — (judgement) |
 
 ### Sampling Rate
 - **Per task commit:** `npm run lint && npm run type-check && npx jest <touched paths> --silent`
-- **Per wave merge:** `npx jest --silent && npx playwright test e2e/projects.spec.ts e2e/roadmap.spec.ts e2e/no-webgl.spec.ts e2e/shell.spec.ts --project=chromium`
-- **Phase gate:** full suite + `npm run guard:tests` green, then the visual re-baseline is accepted, before `/gsd-verify-work`
+- **Per wave merge:** `npx jest --silent && npx playwright test e2e/projects.spec.ts e2e/case-study.spec.ts e2e/roadmap.spec.ts e2e/no-webgl.spec.ts e2e/shell.spec.ts --project=chromium`
+- **Phase gate:** full suite (chromium + firefox, `PW_PROD=1`) + `npm run guard:tests` green, then the visual re-baseline accepted, before `/gsd-verify-work`
 
 ### Wave 0 Gaps
-- [ ] `lib/__tests__/{route-log,log-date,risk-scale,demo-terminal,trail-profile}.test.ts`
-- [ ] `data/__tests__/{roadmap,trail-profiles}.test.ts`
-- [ ] `components/projects/__tests__/{RoutePanel,CaseStudy,RiskScale,Metrics,DemoTerminal,TrailGradeMark}.test.tsx`
+- [ ] `lib/__tests__/{route-log,log-date,trail-profile}.test.ts`
+- [ ] `data/__tests__/{roadmap,trail-profiles,media-manifest}.test.ts`
+- [ ] `components/projects/__tests__/{RoutePanel,RouteProfile,TrailGradeMark,CaseStudy,Metrics,DemoClip}.test.tsx`
 - [ ] `components/roadmap/__tests__/{RouteLog,RouteLogFilters}.test.tsx` (successors of the v1 tests)
-- [ ] `e2e/roadmap.spec.ts` (new); `e2e/projects.spec.ts` and `e2e/no-webgl.spec.ts` rewritten
-- [ ] `scripts/terrain/build-trails.mjs --check` wired into `data:check`
+- [ ] `e2e/roadmap.spec.ts` (new); `e2e/projects.spec.ts`, `e2e/case-study.spec.ts` rewritten
+- [ ] `scripts/guards/__selftest__/served-images/` MP4 fixtures + selftest cases; `scripts/guards/lib/mp4-boxes.mjs`
+- [ ] `scripts/terrain/build-trails.mjs --check` and `scripts/media/build-clip.mjs --check` wired into `data:check`
 
 ## Security Domain
 
@@ -711,46 +898,50 @@ Tim's verification at the checkpoint removes an entry from `DEAD` in the commit 
 |---------------|---------|-----------------|
 | V2 Authentication | no | — |
 | V3 Session Management | no | — |
-| V4 Access Control | no | — (all public, static data) |
-| V5 Input Validation | yes | Exact-match whitelists for `?project`/`?status` (the `parseView` pattern); slugs matched exactly, then `notFound()`; zod strict schemas for data |
-| V6 Cryptography | no | — (sha256 integrity of committed sources reuses Node `crypto`) |
-| V12/V14 Files & Config | yes | Generator never networked in CI; committed sources sha256-checked |
+| V4 Access Control | no | All public, static data |
+| V5 Input Validation | yes | Exact-match whitelists for `?project`/`?status` (the `parseView` pattern); exact slug match then `notFound()`; zod strict schemas |
+| V6 Cryptography | no | sha256 integrity of committed sources via Node `crypto` |
+| V8 Data Protection | yes | Metadata stripped from the clip and poster (device recordings can carry creation time and location); raw recording gitignored; guard verifies the artifact |
+| V12/V14 Files & Config | yes | Generators never networked in CI; committed sources sha256-checked; `execFileSync` with arg arrays (no shell) for ffmpeg |
 
 ### Known Threat Patterns for this stack
 
 | Pattern | STRIDE | Standard Mitigation |
 |---------|--------|---------------------|
-| Visitor-controlled URL reaches `router.replace` (e.g. `javascript:`) | Tampering / XSS | Build hrefs only from whitelisted enum values (`routeLogHref`); never echo raw params |
-| Reflected param text in the page (empty-state copy names the filters) | XSS | Render labels from the enum → label map, never the raw value; React escapes text |
-| Private CLI_X internals leaking into the public repo | Information disclosure | Only Tim-approved behaviour lines ship; no code, paths, identifiers or weights in data, plans or commits; reviewers grep the diffs for rule-ID-like strings |
-| Dead or hijackable external links (expired domains `cli-x.com`) | Spoofing | D-12 data test rejects known-dead hosts; links only after Tim verifies |
-| Network fetch in CI (supply chain / nondeterminism) | Tampering | Manual `fetch-trails.mjs` only; `build-trails --check` offline with sha256 |
-| Large generated data in client bundles | Information disclosure / perf | `trail-profiles.ts` imported only by RSC; test enforces it |
+| Visitor-controlled URL reaches `router.replace` (`javascript:`) | Tampering / XSS | Hrefs built only from enum values (`routeLogHref`) |
+| Reflected filter text in the empty state | XSS | Labels from an enum → label map, never raw params |
+| coin-flip internals leaking into the public repo, plans or commits | Information disclosure | Summaries in own words; privacy-pattern data test; reviewers grep diffs; Tim approves all copy (D-23) |
+| Device or encoder metadata in the served clip (location, creation time, device) | Information disclosure | ffmpeg strip flags + box-walker guard + gitignored originals |
+| Home-directory paths in captured CLI output | Information disclosure | Relative inputs, `bulk-rename` not `dupes --delete`, absolute-path data test |
+| Private repo rendered as a link | Information disclosure / broken trust | Schema gives coin-flip no link field; data test (D-12) |
+| Network fetch in CI | Tampering | Manual `fetch-trails.mjs`; offline `--check` with sha256 |
+| Large generated data in client bundles | Perf / disclosure | `trail-profiles.ts` RSC-only, test-enforced |
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- Repo files read this session: `lib/trail-grade.ts`, `data/schemas/project.ts`, `data/types.ts`, `data/projects.ts`, `data/roadmap.ts`, `app/(site)/{projects,projects/[slug],roadmap,photos,photos/[slug]}/page.tsx`, `components/HologramTerminalDemo.tsx`, `components/ProjectDetailClient.tsx`, `components/photos/ViewSwitcher.tsx`, `lib/photos/view-param.ts`, `lib/terrain/dem-sample.ts`, `lib/geo.ts`, `lib/useReducedMotion.ts`, `scripts/terrain/build-terrain.mjs`, `scripts/terrain/fetch-dem.mjs`, `eslint.config.mjs`, `scripts/guards/test-count.mjs` + baseline, `e2e/{projects,no-webgl,shell,design-system}.spec.ts`, `e2e/visual/routes.spec.ts`, `proxy.ts`, `next.config.ts`, `app/globals.css`
-- Next 16.4.2 docs in `node_modules/next/dist/docs/01-app/`: `03-api-reference/03-file-conventions/page.md`, `04-functions/use-search-params.md`, `use-router.md`, `generate-metadata.md`, `generate-static-params.md`, `02-route-segment-config/dynamicParams.md`
-- swisstopo geo.admin.ch API (SearchServer, MapServer identify on `ch.swisstopo.swisstlm3d-wanderwege`), probed live this session
-- Official Zermatt Tourism trail listings: [Hörnliweg No. 27](https://zermatt.swiss/en/p/hoernliweg-no-27-01tVj000005EwSkIAK), [Zmutt path No. 2](https://zermatt.swiss/en/p/zmuttweg-no-2-01tVj00000H69zjIAB), [Riffelseeweg No. 21](https://zermatt.swiss/en/p/riffelseeweg-no-21-01tVj000005Ew9KIAS), [Matterhorn Glacier Trail No. 26](https://zermatt.swiss/en/Media/Planning-hikes-tours/Matterhorn-Glacier-Trail-Nr.-26), [Hike to the Hörnli hut (Zermatters)](https://zermatt.swiss/en/p/hike-to-the-hoernli-hut-01tVj000004sJoIIAU)
-- Private `tlex-web/cli_x` (read-only via `gh api`, summarised in my own words only)
+- Repo files read this session: `lib/demo-terminal.ts`, `components/projects/DemoTerminal.tsx`, `lib/trail-grade.ts`, `data/schemas/project.ts`, `data/types.ts`, `proxy.ts`, `next.config.ts`, `public/service-worker.js`, `scripts/guards/check-served-images.mjs`, `scripts/guards/test-count.mjs` + baseline, `scripts/guards/selftest.mjs`, `scripts/guards/lib/legacy-dead-files.mjs`, `scripts/photos/build-derivatives.mjs` (header), `lib/photos/view-param.ts`, `components/photos/ViewSwitcher.tsx`, `lib/terrain/dem-sample.ts`, `data/terrain/source/source.json`, `app/(site)/projects/[slug]/page.tsx`, `package.json`, `app/globals.css`, `.gitignore`, `e2e/visual/routes.spec.ts`, `.planning/WINDOWS.md`
+- Next 16.4.2 docs in `node_modules/next/dist/docs/01-app/`: `02-guides/videos.md`, `02-guides/content-security-policy.md`, `02-guides/forms.md`, `03-api-reference/03-file-conventions/page.md`, `02-route-segment-config/dynamicParams.md`, `04-functions/use-router.md`, `use-search-params.md`, `generate-metadata.md`
+- Probes this session: box v2.0 build from tag `v2.0` (commit `61afb3d`, 2026-07-14) and the installed build; ffmpeg 9.0.1 encode + ffprobe + box dump; React 19.3.1 `renderToString` and jsdom client render; geo.admin.ch identify on `ch.swisstopo.swisstlm3d-wanderwege`; `gh repo view` for both repos; git log dates
+- github.com/tlex-web/box: [README](https://github.com/tlex-web/box), [.planning/MILESTONES.md](https://github.com/tlex-web/box/blob/main/.planning/MILESTONES.md), `Cargo.toml` (version 0.1.0, edition 2021)
+- `tlex-web/coin-flip` (private, read-only via `gh`; summarised only): project record, roadmap, state, tags
 
 ### Secondary (MEDIUM confidence)
-- [matterhornparadise.ch Hörnlihütte](https://matterhornparadise.ch/en/experience/hiking/hoernlihuette) ("Advanced", 8.5 km round trip, 2 h 15)
-- [wandersite.ch Oberwallis](https://wandersite.ch/Tageswanderung/621_Oberwallis.html) (T4 for Hörnli)
+- `11-CONTENT-PACKET.md` §A (official zermatt.swiss trail listings and the first-pass geometry probe), §G1, §I
+- Playwright type docs on proprietary codecs (`node_modules/playwright-core/types/types.d.ts:17598`)
 
 ### Tertiary (LOW confidence, not relied on)
-- deine-berge.de (T3 Hörnli), Atupri 2020 factsheet (T2 Glacier Trail), Trailforks (T1 Z'Mutt), blog guides
+- General knowledge on Cache API 206 handling and Safari Range behaviour (A1)
 
 ## Metadata
 
 **Confidence breakdown:**
-- Standard stack: HIGH (no new packages; versions read from the install)
-- Architecture: HIGH (every pattern has an in-repo precedent from Phases 8–10)
-- Trail data: HIGH for grades (official listings) and DEM heights (probe reproduces the committed summit); MEDIUM for the via-point routing of the Zmutt path and Riffelseeweg
-- CLI_X behaviour: MEDIUM (read from source; Tim confirms)
-- Pitfalls: HIGH (each one observed in the code)
+- Standard stack: HIGH (no new packages; versions read from the install; ffmpeg and cargo probed)
+- Architecture: HIGH (every pattern has an in-repo precedent; the clip pipeline mirrors `photos:derive`)
+- box facts and captures: HIGH (public sources plus a working v2.0 build)
+- coin-flip facts: MEDIUM-HIGH (private record read directly; wording gated by Tim)
+- Pitfalls: HIGH (1–4, 6–8, 14 observed directly this session)
+- Trail geometry: HIGH for grades and DEM method; MEDIUM for Zmutt via points
 
 **Research date:** 2026-11-01
-**Valid until:** 2026-12-01 (Next minor releases and the zermatt.swiss listings can change; re-check the grade URLs at the checkpoint)
+**Valid until:** 2026-12-01 (stable stack); re-check box if Tim tags a new release
