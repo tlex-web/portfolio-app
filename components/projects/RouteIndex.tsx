@@ -43,7 +43,7 @@ function Links({ sections, current }: { sections: readonly Section[]; current: s
  * only) never leave a gap for an omitted section. Below two sections it
  * renders nothing (G6).
  *
- * One `<nav aria-label="Route stages">` holds two copies of the same list:
+ * One nav named Route stages holds two copies of the same list:
  * below 1024 px a closed `<details>` disclosure, from 1024 px a sticky list in
  * the 192 px left column of the page grid, beside the content, so it never
  * covers focus. The current link carries `aria-current="location"`, ink text
