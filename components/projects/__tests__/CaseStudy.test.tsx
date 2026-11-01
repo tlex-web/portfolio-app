@@ -24,6 +24,20 @@ const coinFlipBase: Project = {
   repository: 'private',
 };
 
+const boxSafety = {
+  intro: 'Destructive commands preview first.',
+  capture: { command: 'tidy', input: 'box tidy ./sample', output: 'Dry run: 1 to move.' },
+  forceLine: 'With --force, box would move one file.',
+};
+
+const boxFull: Project = {
+  ...boxBase,
+  problem: ['A box problem paragraph.'],
+  pipeline: { stages: [{ name: 'Settings' }, { name: 'Command' }, { name: 'Output' }] },
+  safety: boxSafety,
+  demo: { commands: [{ input: 'box uuid', output: '0f8f-...' }] },
+};
+
 const coinFlipFull: Project = {
   ...coinFlipBase,
   problem: ['A first paragraph about the problem.'],
@@ -54,6 +68,29 @@ describe('caseStudySections (ENG-02)', () => {
     expect(sections.map((s) => s.id)).toEqual(['problem', 'privacy']);
     expect(sections.map((s) => s.label)).toEqual(['Problem', 'Privacy']);
     expect(sections.map((s) => s.label)).not.toContain('Safety');
+  });
+
+  it('returns Problem, Safety then Demo for box, with the safety id and label', () => {
+    const sections = caseStudySections({ ...boxFull, pipeline: undefined });
+
+    expect(sections.map((s) => s.id)).toEqual(['problem', 'safety', 'demo']);
+    expect(sections.map((s) => s.label)).toEqual(['Problem', 'Safety', 'Demo']);
+    expect(sections.map((s) => s.label)).not.toContain('Privacy');
+  });
+
+  it('puts Pipeline between Problem and the third slot on both projects', () => {
+    const coinFlip = caseStudySections({
+      ...coinFlipFull,
+      pipeline: { stages: [{ name: 'Fair draw' }] },
+    });
+
+    expect(caseStudySections(boxFull).map((s) => s.id)).toEqual([
+      'problem',
+      'pipeline',
+      'safety',
+      'demo',
+    ]);
+    expect(coinFlip.map((s) => s.id)).toEqual(['problem', 'pipeline', 'privacy']);
   });
 
   it('leaves out a slot whose block is absent', () => {
@@ -95,6 +132,21 @@ describe('CaseStudy omit rule (ENG-02)', () => {
     expect(container.textContent).not.toMatch(/N\/A|coming soon/i);
   });
 
+  it('renders no Safety heading for a box project without safety', () => {
+    render(<CaseStudy project={{ ...boxBase, problem: ['Text.'] }} />);
+
+    expect(screen.queryByRole('heading', { level: 2, name: 'Safety' })).not.toBeInTheDocument();
+  });
+
+  it('renders no Safety heading when box safety has neither intro nor capture', () => {
+    render(
+      <CaseStudy project={{ ...boxBase, problem: ['Text.'], safety: { forceLine: 'Alone.' } }} />
+    );
+
+    expect(screen.queryByRole('heading', { level: 2, name: 'Safety' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Alone.')).not.toBeInTheDocument();
+  });
+
   it('rejects a coin-flip privacy block with no facts at the schema', () => {
     const parsed = ProjectSchema.safeParse({ ...coinFlipBase, privacy: { facts: [] } });
 
@@ -112,6 +164,13 @@ describe('CaseStudy order (ENG-02)', () => {
     render(<CaseStudy project={shuffled} />);
 
     expect(h2Texts()).toEqual(['Problem', 'Privacy']);
+  });
+
+  it('renders Problem, Pipeline and Safety on box in slot order, never Privacy', () => {
+    render(<CaseStudy project={{ ...boxFull, demo: undefined }} />);
+
+    expect(h2Texts()).toEqual(['Problem', 'Pipeline', 'Safety']);
+    expect(screen.getByRole('region', { name: 'Safety' })).toHaveAttribute('id', 'safety');
   });
 
   it('gives each section the id that follows its label', () => {
