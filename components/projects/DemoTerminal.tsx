@@ -1,15 +1,16 @@
 'use client';
 
-import { useEffect, useRef, useState, useSyncExternalStore, type FocusEvent } from 'react';
-import { PauseIcon, WarningIcon } from '@phosphor-icons/react/dist/ssr';
-import type { DemoCommand } from '@/data/types';
+import { Fragment, useEffect, useRef, useState, useSyncExternalStore, type FocusEvent } from 'react';
+import { PauseIcon } from '@phosphor-icons/react/dist/ssr';
 import {
   delayFor,
   goTo,
   initialState,
   isPlaying,
+  releaseSticky,
   tick,
   visibleLines,
+  type TerminalCommand,
   type TerminalState,
   type VisibleLines,
 } from '@/lib/demo-terminal';
@@ -36,14 +37,17 @@ function sentence(text: string): string {
   return /[.!?]$/.test(text) ? text : `${text}.`;
 }
 
-/** The full current command for screen readers (11-UI-SPEC "Screen readers"). */
-function spokenCommand(command: DemoCommand, n: number, total: number): string {
+/**
+ * The full current command for screen readers (11-UI-SPEC "Screen readers"):
+ * 'Command {n} of {total}. Command: {input}. Output: {output}.' and the note
+ * after it only when the command has one.
+ */
+function spokenCommand(command: TerminalCommand, n: number, total: number): string {
   return [
     `Command ${n} of ${total}.`,
-    `Request: ${sentence(command.input)}`,
-    `Command: ${sentence(command.output)}`,
-    command.warning && sentence(command.warning),
-    command.explanation && sentence(command.explanation),
+    `Command: ${sentence(command.input)}`,
+    `Output: ${sentence(command.output)}`,
+    command.note && sentence(command.note),
   ]
     .filter(Boolean)
     .join(' ');
@@ -55,44 +59,42 @@ function Caret() {
 }
 
 /**
- * One command's lines in DOM = visual order (11-UI-SPEC "Lines"): the
- * request, the command, then the warning and the explanation once the
- * command is complete (each only when present, both when both exist).
+ * One command's lines in DOM = visual order (11-UI-SPEC "Lines", D-26): the
+ * prompt and the command line, the captured output, then the note once the
+ * command is complete (only when it has one; it replaces the retired risk
+ * badge line and reads as Inter commentary, not output).
  */
-function CommandLines({ command, lines }: { command: DemoCommand; lines: VisibleLines }) {
+function CommandLines({ command, lines }: { command: TerminalCommand; lines: VisibleLines }) {
   return (
     <>
-      <p className="wrap-anywhere">
-        <span className="mr-2 font-sans text-ink-muted">Request</span>
-        <span className="text-ink">{lines.input}</span>
-        {lines.typing === 'input' && <Caret />}
-      </p>
-      <p className="mt-1 flex gap-2">
+      <p className="flex gap-2">
         <span className="text-ink-muted">❯</span>
         <span className="min-w-0 whitespace-pre-wrap wrap-anywhere text-ink">
-          {lines.output}
-          {lines.typing === 'output' && <Caret />}
+          {lines.input}
+          {lines.typing === 'input' && <Caret />}
         </span>
       </p>
-      {lines.complete && command.warning && (
-        <p className="mt-1 flex items-start gap-2 text-ink">
-          <WarningIcon size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
-          <span className="min-w-0 wrap-anywhere">{command.warning}</span>
+      <p className="mt-1 whitespace-pre-wrap wrap-anywhere text-ink-muted">
+        {lines.output}
+        {lines.typing === 'output' && <Caret />}
+      </p>
+      {lines.complete && command.note && (
+        <p data-note className="mt-2 font-sans text-sm text-ink">
+          {command.note}
         </p>
-      )}
-      {lines.complete && command.explanation && (
-        <p className="mt-1 wrap-anywhere text-ink-muted">{command.explanation}</p>
       )}
     </>
   );
 }
 
 /**
- * The CLI_X demo as a flat token terminal (ENG-05; 11 D-01, D-02, D-03;
- * 11-UI-SPEC "Demo — DemoTerminal", G2, G3). A client island fed by the
- * server page's props: it imports only the DemoCommand type, the pure state
- * machine in lib/demo-terminal.ts, the reduced-motion hook and icons, never
- * data/projects (T-11-01). three.js and R3F never load on project pages.
+ * A project's demo as a flat token terminal, box first (ENG-05; 11 D-01,
+ * D-02 amended, D-03, D-26; 11-UI-SPEC "Demo — box: DemoTerminal", G2, G3).
+ * A client island fed by the server page's props, `name` and `commands`
+ * only: it imports the pure state machine in lib/demo-terminal.ts (and its
+ * TerminalCommand type), the reduced-motion hook and an icon, never a data
+ * module (T-11-01, T-11-07). The region is named '{name} demo' and the title
+ * bar reads '{name}'. three.js and R3F never load on project pages.
  *
  * Timer: one effect schedules a single timeout of `delayFor(state)` that
  * applies `tick`, and clears it in cleanup, so exactly one timer is pending
@@ -100,21 +102,27 @@ function CommandLines({ command, lines }: { command: DemoCommand; lines: Visible
  * leaves nothing running (11-RESEARCH Pitfall 1). State changes only in that
  * timer callback, the observer callback and event handlers.
  *
- * Pausing (D-02): autoplay runs only when no pause source is set. The Pause
- * toggle is sticky: after a press nothing resumes until it is pressed again.
+ * Pausing (D-02 amended): autoplay runs only when no pause source is set.
+ * The Pause toggle is sticky: after a press nothing resumes until it is
+ * released. Releasing it resumes at once: it also clears the current hover
+ * and focus pauses (releaseSticky), although the pointer is still over the
+ * region and focus is still on the button; those re-arm only on the next
+ * pointerenter or the next time focus enters the region from outside.
  * It starts pressed under reduced motion (`override ?? reduced`); the server
  * renders it unpressed and the client flips it after hydration, before
  * anything can advance, because the first command is server-rendered complete
  * and holds for 3000 ms (11-RESEARCH Pitfall 3). Its label never changes;
  * aria-pressed carries the state. The temporary sources clear on their own:
- * the pointer over the region, focus anywhere inside it (moving between its
- * controls keeps it), the region offscreen (IntersectionObserver, threshold
- * 0) and a hidden tab (visibilitychange). A pause mid-line freezes it, and
+ * the pointer entering the region, focus entering it from outside (moving
+ * between its own controls is not an entry), the region offscreen
+ * (IntersectionObserver, threshold 0) and a hidden tab (visibilitychange);
+ * a release never clears the last two. A pause mid-line freezes it, and
  * resuming continues from the same character.
  *
  * Layout: every command is rendered in one shared grid cell, the others
  * `invisible`, so the body is as tall as the tallest command and nothing
- * below moves when commands change. With one command (G2) only the body
+ * below moves when commands change. While the current command types, an
+ * invisible complete copy of it (note included) holds its full height too. With one command (G2) only the body
  * renders: no toggle, counter, dots or timer. With seven or more (G3) the
  * dot bar wraps.
  *
@@ -125,7 +133,13 @@ function CommandLines({ command, lines }: { command: DemoCommand; lines: Visible
  * carousel pattern). `data-playback` reports the effective state and
  * `data-command` the 1-based current command, for tests.
  */
-export default function DemoTerminal({ commands }: { commands: readonly DemoCommand[] }) {
+export default function DemoTerminal({
+  name,
+  commands,
+}: {
+  name: string;
+  commands: readonly TerminalCommand[];
+}) {
   const count = commands.length;
   const regionRef = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<TerminalState>(initialState);
@@ -159,6 +173,24 @@ export default function DemoTerminal({ commands }: { commands: readonly DemoComm
     return () => observer.disconnect();
   }, []);
 
+  function onFocus(e: FocusEvent<HTMLDivElement>) {
+    // Focus moving between the toggle and the dots is not an entry (D-02 amended).
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+    setFocusWithin(true);
+  }
+
+  /** Press: sticky pause. Release: releaseSticky's rule, in this one handler. */
+  function onToggle() {
+    if (!sticky) {
+      setOverride(true);
+      return;
+    }
+    const released = releaseSticky({ sticky, hover, focusWithin, offscreen, hidden });
+    setOverride(released.sticky);
+    setHover(released.hover);
+    setFocusWithin(released.focusWithin);
+  }
+
   function onBlur(e: FocusEvent<HTMLDivElement>) {
     // Focus moving between the toggle and the dots stays inside: keep the pause.
     if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
@@ -172,19 +204,19 @@ export default function DemoTerminal({ commands }: { commands: readonly DemoComm
     <div
       ref={regionRef}
       role="region"
-      aria-label="CLI_X demo"
+      aria-label={`${name} demo`}
       data-playback={playing ? 'playing' : 'paused'}
       data-command={state.index + 1}
       className="mt-6 rounded-lg border border-line bg-surface-raised"
       onPointerEnter={() => setHover(true)}
       onPointerLeave={() => setHover(false)}
-      onFocus={() => setFocusWithin(true)}
+      onFocus={onFocus}
       onBlur={onBlur}
     >
       {count > 1 && (
         <div className="flex h-12 items-center justify-between gap-4 border-b border-line px-4">
           <p className="font-mono text-sm text-ink-muted">
-            CLI_X{' '}
+            {name}{' '}
             <span aria-hidden="true">
               · {state.index + 1} / {count}
             </span>
@@ -194,7 +226,7 @@ export default function DemoTerminal({ commands }: { commands: readonly DemoComm
             aria-pressed={sticky}
             aria-label="Pause demo"
             className={TOGGLE}
-            onClick={() => setOverride(!sticky)}
+            onClick={onToggle}
           >
             <PauseIcon size={20} aria-hidden="true" />
             Pause
@@ -205,16 +237,23 @@ export default function DemoTerminal({ commands }: { commands: readonly DemoComm
       <div className="grid p-4 font-mono text-sm">
         {commands.map((command, i) => {
           const isCurrent = i === state.index;
-          const lines = visibleLines(isCurrent ? shownState : { index: i, phase: 'shown', chars: 0 }, command);
+          const complete = visibleLines({ index: i, phase: 'shown', chars: 0 }, command);
+          const lines = isCurrent ? visibleLines(shownState, command) : complete;
           return (
-            <div
-              key={i}
-              data-cell={i + 1}
-              aria-hidden="true"
-              className={`col-start-1 row-start-1 min-w-0${isCurrent ? '' : ' invisible'}`}
-            >
-              <CommandLines command={command} lines={lines} />
-            </div>
+            <Fragment key={i}>
+              <div
+                data-cell={i + 1}
+                aria-hidden="true"
+                className={`col-start-1 row-start-1 min-w-0${isCurrent ? '' : ' invisible'}`}
+              >
+                <CommandLines command={command} lines={lines} />
+              </div>
+              {isCurrent && !lines.complete && (
+                <div aria-hidden="true" className="invisible col-start-1 row-start-1 min-w-0">
+                  <CommandLines command={command} lines={complete} />
+                </div>
+              )}
+            </Fragment>
           );
         })}
       </div>

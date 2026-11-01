@@ -1,6 +1,7 @@
 /**
- * The CLI_X demo terminal's state machine (ENG-05; 11 D-01, D-02, D-03;
- * 11-RESEARCH Pattern 3 and Pitfall 1; 11-UI-SPEC "Demo — DemoTerminal").
+ * The project demo terminal's state machine, box first (ENG-05; 11 D-01,
+ * D-02 amended, D-03, D-26; 11-RESEARCH Pattern 3 and Pitfall 1; 11-UI-SPEC
+ * "Demo — box: DemoTerminal").
  * Pure and import-free: keep it to erasable TypeScript and never add an import.
  *
  * The island holds one TerminalState and schedules exactly one timer at a
@@ -10,9 +11,10 @@
  * or an unmount (Pitfall 1). Every transition is a pure function here, so the
  * timings and the walk through a command are unit-tested without React.
  *
- * Phases of one command: 'input' types the request one character per tick,
- * 'gap' is the pause before the command, 'output' types the command, and
- * 'shown' holds the complete command before the next one starts. The timings
+ * Phases of one command: 'input' types the command line one character per
+ * tick, 'gap' is the pause before the output, 'output' types the captured
+ * output, and 'shown' holds the complete command (and its note, D-26) before
+ * the next one starts. The timings
  * are the v1 ones (TIMINGS). Under reduced motion `tick` skips typing and
  * moves from one complete command straight to the next.
  */
@@ -27,10 +29,14 @@ export interface TerminalState {
   chars: number;
 }
 
-/** The two strings the terminal types; DemoCommand satisfies it structurally. */
+/** One demo command; DemoCommand satisfies it structurally. */
 export interface TerminalCommand {
+  /** The command line, typed after the prompt. */
   input: string;
+  /** The captured output, typed exactly as captured. */
   output: string;
+  /** D-26: a one-line, Tim-approved note shown under the output. */
+  note?: string;
 }
 
 /** v1 timings, unchanged (11-UI-SPEC "Typing"). */
@@ -109,6 +115,7 @@ export function delayFor(state: TerminalState): number {
  * Everything that can stop autoplay (D-02). `sticky` is the Pause toggle and
  * only the toggle clears it; the other four are temporary and clear on their
  * own (pointer leaves, focus leaves, scrolled back into view, tab visible).
+ * Releasing the toggle also clears hover and focusWithin (releaseSticky).
  */
 export interface PauseSources {
   sticky: boolean;
@@ -123,10 +130,21 @@ export function isPlaying(p: PauseSources, count: number): boolean {
   return count >= 2 && !p.sticky && !p.hover && !p.focusWithin && !p.offscreen && !p.hidden;
 }
 
+/**
+ * D-02 (amended): releasing the sticky Pause also drops the hover and focus
+ * pauses until the next entry; offscreen and hidden survive. The release
+ * resumes at once although the pointer is still over the region and focus is
+ * still on the toggle (the WAI carousel's explicit start); the next
+ * pointerenter, or focus entering from outside, pauses again.
+ */
+export function releaseSticky(p: PauseSources): PauseSources {
+  return { ...p, sticky: false, hover: false, focusWithin: false };
+}
+
 export interface VisibleLines {
   input: string;
   output: string;
-  /** Both lines are complete (the warning and explanation may show). */
+  /** Both lines are complete (the note may show). */
   complete: boolean;
   /** The line that is typing right now, which carries the caret. */
   typing: 'input' | 'output' | null;

@@ -11,8 +11,8 @@ import { toLegacyHighlights } from '@/lib/legacy-highlights';
 /**
  * The case-study route (ENG-02 route contract, ENG-05; 11 D-01). A Server
  * Component: only the DemoTerminal island is client code, imported directly
- * (no next/dynamic) and fed `project.demoCommands` as props, so three.js and
- * R3F never load here.
+ * (no next/dynamic) and fed `project.name` and `project.demoCommands` as
+ * props, so three.js and R3F never load here.
  *
  * Only the project slugs exist: generateStaticParams lists them, turning
  * dynamicParams off makes every other slug a 404, and notFound() guards the
@@ -162,7 +162,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
               <h2 id="demo-title" className="text-heading text-balance">
                 Demo
               </h2>
-              <DemoTerminal commands={project.demoCommands} />
+              <DemoTerminal name={project.name} commands={project.demoCommands} />
             </section>
           )}
 
