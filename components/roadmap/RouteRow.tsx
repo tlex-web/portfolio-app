@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { CaretDownIcon } from '@phosphor-icons/react/dist/ssr';
 import { formatLogDate } from '@/lib/log-date';
 import {
@@ -117,9 +116,13 @@ export default function RouteRow({
   variant: 'log' | 'compact';
 }) {
   if (variant === 'compact') {
+    // A plain anchor, not next/link: a client-side navigation sets the URL
+    // with history.pushState, which never updates the document's target
+    // element, so the row would land without its `target:` highlight. A
+    // document navigation to the static /roadmap makes the row the :target.
     return (
       <li>
-        <Link
+        <a
           href={`${routeLogHref({ project: item.area, status: 'all' })}#${item.id}`}
           className="flex min-h-11 flex-col justify-center border-b border-line py-4 hover:bg-surface-raised"
         >
@@ -127,7 +130,7 @@ export default function RouteRow({
           <span data-route-meta className="mt-1 font-mono text-sm text-ink-muted">
             <Units units={compactMeta(item)} />
           </span>
-        </Link>
+        </a>
       </li>
     );
   }

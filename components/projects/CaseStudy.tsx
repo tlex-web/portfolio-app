@@ -1,11 +1,15 @@
 import type { ReactNode } from 'react';
 import Demo, { hasDemo } from '@/components/projects/sections/Demo';
 import Metrics from '@/components/projects/sections/Metrics';
+import NextSteps from '@/components/projects/sections/NextSteps';
 import Pipeline from '@/components/projects/sections/Pipeline';
 import Privacy from '@/components/projects/sections/Privacy';
 import Problem from '@/components/projects/sections/Problem';
 import Safety from '@/components/projects/sections/Safety';
+import Stack from '@/components/projects/sections/Stack';
+import { roadmapItems } from '@/data/roadmap';
 import type { Project } from '@/data/types';
+import type { RouteLogItem } from '@/lib/route-log';
 
 /**
  * The case-study slot order (ENG-02; RESEARCH Pattern 2). Order lives here,
@@ -49,13 +53,26 @@ export function slotMeta(slot: Slot, project: Project): { id: string; label: str
 }
 
 /**
+ * A project's next steps resolved against the route log (N4, D-32): only
+ * rows of this project that are planned or in progress, in the order the
+ * project lists them. An unknown or completed id is dropped here, and the
+ * data test forbids one in the first place.
+ */
+function nextStepRows(project: Project): RouteLogItem[] {
+  return (project.nextSteps ?? []).flatMap((id) => {
+    const row = roadmapItems.find((r) => r.id === id);
+    return row && row.area === project.slug && row.status !== 'completed' ? [row] : [];
+  });
+}
+
+/**
  * One renderer per slot behind an exhaustive switch: a new slot fails the
  * `never` check at compile time. A renderer returns null when its block has
  * no approved data, so the section, its heading and its index entry are all
  * left out (ENG-02 data-optional rule). Problem, Pipeline and the third slot
  * (Safety on box, Privacy on coin-flip) render since 11-11; Metrics, Stack
- * and Next steps gain theirs in 11-13; coin-flip's clip joins Demo in 11-15
- * (shown only with a manifest entry and an approved description, D-27).
+ * and Next steps since 11-13; coin-flip's clip joins Demo in 11-15 (shown
+ * only with a manifest entry and an approved description, D-27).
  */
 function renderSlot(slot: Slot, project: Project): ReactNode {
   switch (slot) {
@@ -83,9 +100,15 @@ function renderSlot(slot: Slot, project: Project): ReactNode {
     case 'demo':
       return hasDemo(project) ? <Demo project={project} /> : null;
     case 'stack':
-      return null;
-    case 'next-steps':
-      return null;
+      return project.stack ? (
+        <Stack {...slotMeta(slot, project)} groups={project.stack.groups} />
+      ) : null;
+    case 'next-steps': {
+      const rows = nextStepRows(project);
+      return rows.length > 0 ? (
+        <NextSteps {...slotMeta(slot, project)} slug={project.slug} rows={rows} />
+      ) : null;
+    }
     default: {
       const unreachable: never = slot;
       return unreachable;

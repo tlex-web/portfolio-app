@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { projects } from '@/data/projects';
+import { roadmapItems } from '@/data/roadmap';
 import type { Project } from '@/data/types';
 
 /**
@@ -195,13 +196,23 @@ test.describe('Case-study route', () => {
   }
 });
 
+/** A project's next steps that the route log holds as planned or in progress (N4). */
+const aheadRows = (project: Project) =>
+  (project.nextSteps ?? []).flatMap((id) => {
+    const row = roadmapItems.find((r) => r.id === id);
+    return row && row.area === project.slug && row.status !== 'completed' ? [row] : [];
+  });
+
 /**
- * The case-study sections Problem, Pipeline and the third slot (ENG-02, D-25;
- * 11-UI-SPEC "Safety — box" and "Privacy — coin-flip"). Every expected
- * string comes from data/projects.ts, so the rendered text is checked
- * against the approved data itself.
+ * The case-study sections (ENG-02, ENG-04, D-25; 11-UI-SPEC "Safety — box",
+ * "Privacy — coin-flip", "Metrics", "Stack" and "Next steps"). Every expected
+ * string comes from data/projects.ts or data/roadmap.ts, so the rendered text
+ * is checked against the approved data itself.
  */
 test.describe('Case-study sections', () => {
+  /** The section id of a label: 'Next steps' is #next-steps. */
+  const sectionId = (label: string) => label.toLowerCase().replace(/ /g, '-');
+
   /** The labels each page should render, in slot order, from what its data holds. */
   const expectedLabels = (project: Project): string[] => {
     const third =
@@ -216,7 +227,10 @@ test.describe('Case-study sections', () => {
       project.problem?.length ? 'Problem' : null,
       project.pipeline ? 'Pipeline' : null,
       third,
+      project.metrics?.tiles.length ? 'Metrics' : null,
       project.slug === 'box' && project.demo ? 'Demo' : null,
+      project.stack ? 'Stack' : null,
+      aheadRows(project).length ? 'Next steps' : null,
     ].filter((label): label is string => label !== null);
   };
 
@@ -230,6 +244,13 @@ test.describe('Case-study sections', () => {
 
       const labels = expectedLabels(project);
       expect(labels.slice(0, 1)).toEqual(['Problem']);
+      // Metrics follows the third slot and precedes Demo; Stack and Next
+      // steps come after Demo (box has no next step today, N4).
+      const third = project.slug === 'box' ? 'Safety' : 'Privacy';
+      const at = (label: string) => labels.indexOf(label);
+      expect(at('Metrics')).toBe(at(third) + 1);
+      expect(at('Stack')).toBeGreaterThan(Math.max(at('Metrics'), at('Demo')));
+      if (at('Next steps') >= 0) expect(at('Next steps')).toBe(labels.length - 1);
       const rendered = (await article.getByRole('heading', { level: 2 }).allTextContents()).filter(
         (text) => labels.includes(text)
       );
@@ -240,10 +261,97 @@ test.describe('Case-study sections', () => {
         article.getByRole('heading', { level: 2, name: other, exact: true })
       ).toHaveCount(0);
       for (const label of labels) {
-        await expect(page.locator(`section#${label.toLowerCase()}`)).toHaveCount(1);
+        await expect(page.locator(`section#${sectionId(label)}`)).toHaveCount(1);
       }
     });
   }
+
+  for (const project of [box, coinFlip]) {
+    test(`Metrics tiles show the audited values with their context lines on /projects/${project.slug} (ENG-04)`, async ({
+      page,
+    }) => {
+      const tiles = project.metrics?.tiles ?? [];
+      expect(tiles.length).toBeGreaterThan(0);
+      const path = `/projects/${project.slug}`;
+
+      // First paint: the server HTML already holds every final value (no count-up).
+      const html = await (await page.request.get(path)).text();
+      for (const tile of tiles) expect(html).toContain(`>${tile.value}</dd>`);
+
+      await page.goto(path);
+      const cells = page.locator('section#metrics dl > div');
+      await expect(cells).toHaveCount(tiles.length);
+      for (const [i, tile] of tiles.entries()) {
+        const cell = cells.nth(i);
+        await expect(cell.locator('dt')).toHaveText(tile.label);
+        const dds = cell.locator('dd');
+        await expect(dds.nth(0)).toHaveText(tile.value);
+        await expect(dds.nth(1)).toHaveText(
+          tile.sourceUrl ? `${tile.context} Source` : tile.context
+        );
+        const source = dds.nth(1).getByRole('link', { name: 'Source', exact: true });
+        if (tile.sourceUrl) {
+          await expect(source).toHaveAttribute('href', tile.sourceUrl);
+          await expect(source).not.toHaveAttribute('target', /.*/);
+        } else {
+          await expect(source).toHaveCount(0);
+        }
+      }
+      // coin-flip's context lines never link anywhere (D-23).
+      if (project.slug === 'coin-flip') {
+        await expect(page.locator('section#metrics a')).toHaveCount(0);
+      }
+    });
+  }
+
+  test('Stack lists each approved group and its chips', async ({ page }) => {
+    for (const project of [box, coinFlip]) {
+      const groups = project.stack?.groups ?? [];
+      await page.goto(`/projects/${project.slug}`);
+      const section = page.locator('section#stack');
+      const h3s = section.getByRole('heading', { level: 3 });
+      if (groups.length > 1) {
+        await expect(h3s).toHaveText(groups.map((g) => g.label));
+      } else {
+        await expect(h3s).toHaveCount(0);
+      }
+      await expect(section.getByRole('listitem')).toHaveText(groups.flatMap((g) => g.items));
+      await expect(section.getByRole('link')).toHaveCount(0);
+    }
+  });
+
+  test('coin-flip Next steps link into the filtered route log (ROUTE-01)', async ({ page }) => {
+    const rows = aheadRows(coinFlip);
+    expect(rows.length).toBeGreaterThan(0);
+    await page.goto(COIN_FLIP);
+    const section = page.locator('section#next-steps');
+
+    const rowLinks = section.getByRole('list').getByRole('link');
+    await expect(rowLinks).toHaveCount(rows.length);
+    for (const [i, row] of rows.entries()) {
+      await expect(rowLinks.nth(i)).toHaveAttribute('href', `/roadmap?project=coin-flip#${row.id}`);
+      await expect(rowLinks.nth(i)).toContainText(row.title);
+    }
+    await expect(
+      section.getByRole('link', { name: 'Full route log', exact: true })
+    ).toHaveAttribute('href', '/roadmap?project=coin-flip');
+
+    await rowLinks.first().click();
+    await expect(page).toHaveURL(`/roadmap?project=coin-flip#${rows[0].id}`);
+    const target = page.locator(`li[id="${rows[0].id}"]`);
+    await expect(target).toContainText(rows[0].title);
+    await expect.poll(() => target.evaluate((el) => el.matches(':target'))).toBe(true);
+  });
+
+  test('box has no Next steps section (N4)', async ({ page }) => {
+    expect(aheadRows(box)).toEqual([]);
+    await page.goto(BOX);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 2, name: 'Next steps', exact: true })
+    ).toHaveCount(0);
+    await expect(page.locator('section#next-steps')).toHaveCount(0);
+  });
 
   test('box Safety shows the real preview output (D-25)', async ({ page }) => {
     if (box.slug !== 'box' || !box.safety?.capture) throw new Error('box has no approved capture');
