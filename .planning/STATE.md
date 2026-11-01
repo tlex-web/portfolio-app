@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 11
 current_phase_name: Engineering & Roadmap
 status: executing
-stopped_at: Completed 11-09-PLAN.md
-last_updated: "2026-11-01T21:00:58.934Z"
+stopped_at: Completed 11-07-PLAN.md
+last_updated: "2026-11-01T21:15:16.031Z"
 last_activity: 2026-11-01
 last_activity_desc: Phase 11 execution started
-state_head: fc693e69e9ddc1f513ed268eaf7536d58167fafd
+state_head: c0f5ea79c07c67e5f2f858d27e76cde843daca4f
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 93
-  completed_plans: 83
-  percent: 89
+  completed_plans: 84
+  percent: 90
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-26)
 ## Current Position
 
 Phase: 11 (Engineering & Roadmap) — EXECUTING
-Plan: 9 of 18
+Plan: 10 of 18
 Status: Ready to execute
 Last activity: 2026-11-01 — Phase 11 execution started
 
-Progress: [█████████░] 89%
+Progress: [█████████░] 90%
 
 ## Performance Metrics
 
@@ -140,6 +140,7 @@ Progress: [█████████░] 89%
 | Phase 11 P03 | 8 min | 2 tasks | 8 files |
 | Phase 11 P08 | 11 min | 2 tasks | 10 files |
 | Phase 11 P09 | 12 min | 3 tasks | 30 files |
+| Phase 11 P07 | 11 min | 1 tasks | 17 files |
 
 ## Accumulated Context
 
@@ -367,6 +368,8 @@ Recent decisions affecting current work:
 - [Phase 11]: 11-09 Q4: clip budget MAX_CLIP_BYTES = 1,572,864 bytes (1.5 MiB) in data/schemas/media-manifest.ts; the served-asset guard holds the same literal for every MP4 under public/
 - [Phase 11]: 11-09: MP4 track handlers are read from hdlr boxes whose parent is mdia (not depth 3, which also matches udta>meta>hdlr 'mdir'); the walker also enforces the RESEARCH C box-tree whitelist
 - [Phase 11]: 11-09: mediaManifest is {} until 11-15 commits Tim's clip; the Demo slot (11-16) must handle a missing coin-flip-toss entry
+- [Phase 11]: 11-07: approved prose ships without the review copy's inline-code backticks; renderers style flags (11-11 splits forceLine on '--force')
+- [Phase 11]: 11-07: /projects intro lives in data/projects.ts as projectsIntro; Trailhead owns its container and takes an optional figure (11-12)
 
 ### Pending Todos
 
@@ -411,6 +414,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-01T21:00:58.461Z
-Stopped at: Completed 11-09-PLAN.md
+Last session: 2026-11-01T21:15:15.531Z
+Stopped at: Completed 11-07-PLAN.md
 Resume file: None
