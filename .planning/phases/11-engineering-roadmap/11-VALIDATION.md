@@ -55,8 +55,6 @@ created: "2026-11-01"
 | 11-06-01 | 06 | 1 | ENG-01 | T-11-11 | per plan threat register | unit/component (TDD) | inline check, see 11-06 Task 1 verify | created in task | ⬜ pending |
 | 11-06-02 | 06 | 1 | ENG-01 | T-11-12 | per plan threat register | auto | `npx playwright test e2e/projects.spec.ts e2e/design-system.spec.ts --project=chromium` | created in task | ⬜ pending |
 | 11-07-01 | 07 | 3 | ENG-01, ENG-02, ENG-03, ENG-04, ENG-05 | T-11-13 | per plan threat register | tracer (unit + e2e) | `npx jest data/__tests__/projects.test.ts components/projects --silent && npm run lint && npm run type-check` | created in task | ⬜ pending |
-| 11-07-02 | 07 | 3 | ENG-01, ENG-02, ENG-03, ENG-04, ENG-05 | T-11-14 | per plan threat register | unit/component (TDD) | `npx jest lib/__tests__/trail-grade.test.ts --silent && npm run type-check` | created in task | ⬜ pending |
-| 11-07-03 | 07 | 3 | ENG-01, ENG-02, ENG-03, ENG-04, ENG-05 | T-11-15 | per plan threat register | auto | `npx jest components/site/__tests__/SiteChrome.test.tsx components/home --silent && npm run lint && npm run type-check` | created in task | ⬜ pending |
 | 11-08-01 | 08 | 2 | ROUTE-01, ROUTE-02, ROUTE-03 | T-11-17 | per plan threat register | unit/component (TDD) | `npx jest data/__tests__/roadmap.test.ts --silent && npm run type-check` | created in task | ⬜ pending |
 | 11-08-02 | 08 | 2 | ROUTE-01, ROUTE-02, ROUTE-03 | T-11-18 | per plan threat register | auto | `npm run lint && npm run type-check && npx jest components/roadmap data/__tests__/roadmap.test.ts --silent` | created in task | ⬜ pending |
 | 11-09-01 | 09 | 2 | ENG-02 | T-11-19 | per plan threat register | unit/component (TDD) | `npm run guard:selftest && npm run guard:images` | created in task | ⬜ pending |
@@ -66,25 +64,27 @@ created: "2026-11-01"
 | 11-10-02 | 10 | 3 | ROUTE-02 | T-11-24 | per plan threat register | auto | `npx playwright test e2e/roadmap.spec.ts e2e/shell.spec.ts --project=chromium --project=firefox` | created in task | ⬜ pending |
 | 11-11-01 | 11 | 4 | ENG-02 | T-11-25 | per plan threat register | unit/component (TDD) | inline check, see 11-11 Task 1 verify | created in task | ⬜ pending |
 | 11-11-02 | 11 | 4 | ENG-02 | T-11-26 | per plan threat register | unit/component (TDD) | inline check, see 11-11 Task 2 verify | created in task | ⬜ pending |
-| 11-12-01 | 12 | 4 | ENG-01, ENG-04 | T-11-27 | per plan threat register | unit/component (TDD) | `npm run guard:contrast && npm run guard:palette && npm run guard:selftest` | created in task | ⬜ pending |
-| 11-12-02 | 12 | 4 | ENG-01, ENG-04 | T-11-28 | per plan threat register | unit/component (TDD) | inline check, see 11-12 Task 2 verify | created in task | ⬜ pending |
-| 11-12-03 | 12 | 4 | ENG-01, ENG-04 | T-11-28 | per plan threat register | unit/component (TDD) | inline check, see 11-12 Task 3 verify | created in task | ⬜ pending |
+| 11-12-01 | 12 | 5 | ENG-01, ENG-04 | T-11-27 | per plan threat register | unit/component (TDD) | `npm run guard:contrast && npm run guard:palette && npm run guard:selftest` | created in task | ⬜ pending |
+| 11-12-02 | 12 | 5 | ENG-01, ENG-04 | T-11-28 | per plan threat register | unit/component (TDD) | inline check, see 11-12 Task 2 verify | created in task | ⬜ pending |
+| 11-12-03 | 12 | 5 | ENG-01, ENG-04 | T-11-28 | per plan threat register | unit/component (TDD) | inline check, see 11-12 Task 3 verify | created in task | ⬜ pending |
 | 11-13-01 | 13 | 5 | ENG-02, ENG-04, ROUTE-01 | T-11-29 | per plan threat register | unit/component (TDD) | inline check, see 11-13 Task 1 verify | created in task | ⬜ pending |
 | 11-13-02 | 13 | 5 | ENG-02, ENG-04, ROUTE-01 | T-11-30 | per plan threat register | unit/component (TDD) | `npx jest components/projects data/__tests__/projects.test.ts --silent && npm run lint && npm run type-check` | created in task | ⬜ pending |
-| 11-14-01 | 14 | 5 | ENG-02 | T-11-31 | per plan threat register | unit/component (TDD) | inline check, see 11-14 Task 1 verify | created in task | ⬜ pending |
-| 11-14-02 | 14 | 5 | ENG-02 | T-11-32 | per plan threat register | auto | `npx playwright test e2e/case-study-page.spec.ts e2e/case-study.spec.ts --project=chromium --project=firefox` | created in task | ⬜ pending |
+| 11-14-01 | 14 | 6 | ENG-02 | T-11-31 | per plan threat register | unit/component (TDD) | inline check, see 11-14 Task 1 verify | created in task | ⬜ pending |
+| 11-14-02 | 14 | 6 | ENG-02 | T-11-32 | per plan threat register | auto | `npx playwright test e2e/case-study-page.spec.ts e2e/case-study.spec.ts --project=chromium --project=firefox` | created in task | ⬜ pending |
 | 11-15-01 | 15 | 5 | ENG-02 | T-11-33 | per plan threat register | unit/component (TDD) | `npx jest components/projects/__tests__/DemoClip.test.tsx --silent && npm run lint && npm run type-check` | created in task | ⬜ pending |
 | 11-15-02 | 15 | 5 | ENG-02 | — | per plan threat register | manual (checkpoint) | checkpoint: Tim's quoted reply recorded in the SUMMARY | created in task | ⬜ pending |
 | 11-15-03 | 15 | 5 | ENG-02 | T-11-34 | per plan threat register | auto | `npm run clip:derive -- --check && npm run guard:images && npx jest data/__tests__/media-manifest.test.ts --silent` | created in task | ⬜ pending |
-| 11-16-01 | 16 | 6 | ENG-02 | — | per plan threat register | manual (checkpoint) | checkpoint: Tim's quoted reply recorded in the SUMMARY | created in task | ⬜ pending |
-| 11-16-02 | 16 | 6 | ENG-02 | T-11-36 | per plan threat register | auto | inline check, see 11-16 Task 2 verify | created in task | ⬜ pending |
-| 11-17-01 | 17 | 7 | ENG-01, ENG-02, ENG-04, ENG-05, ROUTE-01, ROUTE-02, ROUTE-03 | T-11-37 | per plan threat register | auto | `git ls-remote origin refs/heads/ci/11-17` | created in task | ⬜ pending |
-| 11-17-02 | 17 | 7 | ENG-01, ENG-02, ENG-04, ENG-05, ROUTE-01, ROUTE-02, ROUTE-03 | — | per plan threat register | manual (checkpoint) | checkpoint: Tim's quoted reply recorded in the SUMMARY | created in task | ⬜ pending |
-| 11-17-03 | 17 | 7 | ENG-01, ENG-02, ENG-04, ENG-05, ROUTE-01, ROUTE-02, ROUTE-03 | T-11-39 | per plan threat register | auto | inline check, see 11-17 Task 3 verify | created in task | ⬜ pending |
+| 11-16-01 | 16 | 7 | ENG-02 | — | per plan threat register | manual (checkpoint) | checkpoint: Tim's quoted reply recorded in the SUMMARY | created in task | ⬜ pending |
+| 11-16-02 | 16 | 7 | ENG-02 | T-11-36 | per plan threat register | auto | inline check, see 11-16 Task 2 verify | created in task | ⬜ pending |
+| 11-17-01 | 17 | 8 | ENG-01, ENG-02, ENG-04, ENG-05, ROUTE-01, ROUTE-02, ROUTE-03 | T-11-37 | per plan threat register | auto | `git ls-remote origin refs/heads/ci/11-17` | created in task | ⬜ pending |
+| 11-17-02 | 17 | 8 | ENG-01, ENG-02, ENG-04, ENG-05, ROUTE-01, ROUTE-02, ROUTE-03 | — | per plan threat register | manual (checkpoint) | checkpoint: Tim's quoted reply recorded in the SUMMARY | created in task | ⬜ pending |
+| 11-17-03 | 17 | 8 | ENG-01, ENG-02, ENG-04, ENG-05, ROUTE-01, ROUTE-02, ROUTE-03 | T-11-39 | per plan threat register | auto | inline check, see 11-17 Task 3 verify | created in task | ⬜ pending |
+| 11-18-01 | 18 | 4 | ENG-01, ENG-02, ENG-03 | — | per plan threat register | unit/component (TDD) | `npx jest lib/__tests__/trail-grade.test.ts --silent && npm run type-check` | created in task | ⬜ pending |
+| 11-18-02 | 18 | 4 | ENG-01, ENG-02, ENG-03 | T-11-40, T-11-41 | per plan threat register | auto (unit + e2e) | `npx jest components/site/__tests__/SiteChrome.test.tsx components/home --silent && npm run lint && npm run type-check` | created in task | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
-*Requirement-level command seeds live in `11-RESEARCH.md` §"Validation Architecture → Phase Requirements → Test Map"; the rows above bind them to the 11-02 to 11-17 tasks (plan-phase re-plan, 2026-11-01). Each TDD task creates its own test file before the implementation, so no task depends on a missing test.*
+*Requirement-level command seeds live in `11-RESEARCH.md` §"Validation Architecture → Phase Requirements → Test Map"; the rows above bind them to the 11-02 to 11-18 tasks (11-18 holds the former 11-07 Tasks 2 and 3, split off at plan-check revision 1) (plan-phase re-plan, 2026-11-01). Each TDD task creates its own test file before the implementation, so no task depends on a missing test.*
 
 ---
 

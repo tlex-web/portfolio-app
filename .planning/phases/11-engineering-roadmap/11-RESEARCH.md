@@ -805,9 +805,9 @@ test('surveyedAt is not in the future and not before the newest completedAt (inc
 | A6 | A real dark screen recording at 512 px wide and 60 fps fits 1.5 MiB at CRF 26 for 5–10 s | §B | Drop to 30 fps or raise CRF (both in the sidecar) |
 | A7 | The box README's "23 tools" framing (excluding `config`/`completions`) is how Tim wants the count read | Pitfall 5 | Context-line wording only |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Which box binary produces the captures?** (D-25/D-26 say "the installed box 0.1.0"; the installed build is pre-v2.0.)
+1. **Which box binary produces the captures?** (D-25/D-26 say "the installed box 0.1.0"; the installed build is pre-v2.0.) **RESOLVED:** option A, by D-34 (Tim, 2026-11-01): every capture uses a scratchpad build of the `v2.0` tag (`cargo build --release --locked`); 11-02 Task 2 builds it and its SUMMARY records the tag, commit and command.
 
    | Option | Pros | Cons |
    |--------|------|------|
@@ -815,10 +815,10 @@ test('surveyedAt is not in the future and not before the newest completedAt (inc
    | B: Tim reinstalls box from the `v2.0` tag (`install.ps1`), then capture with the installed binary | Literal D-26 path; Tim's own box is current | Changes his machine; his action, not Claude's |
    | C: Capture with the installed pre-v2.0 build | Literal D-26 | Shows a build that is not the release named on the page; misses v2.0 features |
 
-2. **Safety capture command:** `bulk-rename` (recommended, relative output) vs `dupes --delete` (absolute paths, unusable unedited). Tim approves at the copy checkpoint.
-3. **When does Phase 11's own completion date enter the route log?** Recommendation: the final data task before verification sets it with `surveyedAt`, or Phase 12's first task does; either way the D-20 test guards it.
-4. **Exact size budget** for the clip guard: 1.5 MiB (1,572,864 B) recommended; Tim may prefer 1,500,000 B.
-5. **Whether to report the `flatten` empty-folder behaviour** to Tim as a box issue (outside this repo).
+2. **Safety capture command:** `bulk-rename` (recommended, relative output) vs `dupes --delete` (absolute paths, unusable unedited). Tim approves at the copy checkpoint. **RESOLVED:** 11-02 recommends `bulk-rename` in packet §C and explains in words (never pasting the output) why the delete preview is unusable; Tim makes the final call at the 11-02 checkpoint and only his quoted choice ships.
+3. **When does Phase 11's own completion date enter the route log?** Recommendation: the final data task before verification sets it with `surveyedAt`, or Phase 12's first task does; either way the D-20 test guards it. **RESOLVED (11-08):** Phase 11's completion date is not written during Phase 11 (a date before verify-work would claim unverified completion); Phase 12's first data edit or the v2.0 milestone close records it and moves `surveyedAt`, with Tim's confirmation, and 11-17 lists it as a Phase 12 carry-over.
+4. **Exact size budget** for the clip guard: 1.5 MiB (1,572,864 B) recommended; Tim may prefer 1,500,000 B. **RESOLVED (11-09):** 1,572,864 B (1.5 MiB), within D-27's "about 1.5 MB", recorded as `MAX_CLIP_BYTES`; the 11-02 clip brief states it.
+5. **Whether to report the `flatten` empty-folder behaviour** to Tim as a box issue (outside this repo). **RESOLVED:** yes, as a note for Tim in 11-02-SUMMARY.md (an issue for his box repository); no work is planned in this repo.
 
 ## Environment Availability
 
