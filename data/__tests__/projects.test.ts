@@ -18,8 +18,12 @@ const coinFlip = projects.find((p) => p.slug === 'coin-flip');
 if (!box || box.slug !== 'box') throw new Error('no box project');
 if (!coinFlip || coinFlip.slug !== 'coin-flip') throw new Error('no coin-flip project');
 
-/** Drive letters, UNC prefixes, home directories and AppData (RESEARCH "Data tests"). */
-const ABSOLUTE = /[A-Za-z]:[\\/]|\\\\|\/Users\/|AppData|%USERPROFILE%|~[\\/]/;
+/**
+ * Drive letters, UNC prefixes, home directories and AppData (RESEARCH "Data
+ * tests"). `\Users\` also catches a driveless Windows home path such as
+ * `..\Users\tim` (T-11-15, secure-phase).
+ */
+const ABSOLUTE = /[A-Za-z]:[\\/]|\\\\|\\Users\\|\/Users\/|AppData|%USERPROFILE%|~[\\/]/;
 
 /** D-23: issue-style IDs, constant identifiers, method calls and source paths. */
 const PRIVATE_PATTERNS = [
@@ -105,6 +109,13 @@ describe('Captured strings (D-25, D-26, 08 D-22)', () => {
     expect(strings.length).toBeGreaterThan(0);
     for (const s of strings) expect(s).not.toMatch(ABSOLUTE);
   });
+
+  test.each(['..\\Users\\tim\\box', '\\Users\\tim', 'C:\\Users\\x', '/Users/tim', '~/box'])(
+    'the path check rejects %s (T-11-15)',
+    (sample) => {
+      expect(sample).toMatch(ABSOLUTE);
+    }
+  );
 
   test('no captured string carries an ANSI escape', () => {
     for (const s of capturedStrings()) expect(s).not.toContain('\u001b');

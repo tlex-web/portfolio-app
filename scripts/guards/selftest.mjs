@@ -638,6 +638,23 @@ const cases = [
     expectOutput: ['public/media/coin-flip-toss.08507707c1.mp4 video: moov must precede mdat'],
   },
   {
+    name: 'served-images: an MP4 with a top-level uuid box fails the video rule',
+    guard: SERVED,
+    args: ['--root', si('bad-mp4-uuid')],
+    expectExit: 1,
+    expectOutput: ['public/media/coin-flip-toss.fe7f168ef1.mp4 video: forbidden box uuid'],
+  },
+  {
+    name: 'served-images: an MP4 with an XMP packet in a udta XMP_ box fails the video and metadata rules',
+    guard: SERVED,
+    args: ['--root', si('bad-mp4-xmp')],
+    expectExit: 1,
+    expectOutput: [
+      'public/media/coin-flip-toss.41c2fd1ba3.mp4 video: forbidden box XMP_',
+      'public/media/coin-flip-toss.41c2fd1ba3.mp4 metadata: XMP packet marker in bytes, XMP namespace marker in bytes',
+    ],
+  },
+  {
     name: 'served-images: a WebM under public/media fails as a non-MP4 video',
     guard: SERVED,
     args: ['--root', si('bad-video-format')],
@@ -651,6 +668,14 @@ const cases = [
   {
     name: 'mp4-boxes: checkMp4 with a 100-byte budget reports the size',
     fn: () => expectEqual('violations', checkMp4(goodMp4(), { maxBytes: 100 }).join('; '), `size ${goodMp4().length} B over 100 B`),
+  },
+  {
+    name: 'mp4-boxes: checkMp4 reports only the forbidden uuid box in the bad-mp4-uuid clip',
+    fn: () => expectEqual('violations', checkMp4(fs.readFileSync(path.join(si('bad-mp4-uuid'), 'public', 'media', 'coin-flip-toss.fe7f168ef1.mp4'))).join('; '), 'forbidden box uuid'),
+  },
+  {
+    name: 'mp4-boxes: checkMp4 reports only the forbidden XMP_ box in the bad-mp4-xmp clip',
+    fn: () => expectEqual('violations', checkMp4(fs.readFileSync(path.join(si('bad-mp4-xmp'), 'public', 'media', 'coin-flip-toss.41c2fd1ba3.mp4'))).join('; '), 'forbidden box XMP_'),
   },
   {
     name: 'contrast: the real app/globals.css passes all 47 pairs (28 UI-SPEC + 4 accent-strong + 4 gallery + 1 toggle + 10 trail) in table order',

@@ -1,0 +1,1 @@
+The good-mp4 clip with a 310-byte `XMP_` box holding an XMP packet (`<x:xmpmeta`, the `http://ns.adobe.com/xap/1.0/` namespace, an xmp:CreateDate) inserted at the end of moov/udta by a Node script (no ffmpeg); the moov and udta sizes and the stco chunk offset grow by 310 B. Fails: forbidden box XMP_, XMP packet and namespace markers.

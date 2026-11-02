@@ -1,0 +1,1 @@
+The good-mp4 clip with a 39-byte top-level `uuid` box (usertype 5ca1ab1e-0d0c-4e5f-a0b1-c2d3e4f50617, payload `device=selftest`) appended after mdat by a Node `Buffer.concat` (no ffmpeg). Fails: forbidden box uuid.
