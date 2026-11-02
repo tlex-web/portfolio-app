@@ -5,7 +5,8 @@
  * rotated, metadata-free derivatives + data/generated/image-manifest.ts
  *
  * Replaces scripts/optimize-images.mjs. That script read full-resolution copies
- * from public/images/optimized/ at build time; those copies are gone (D-11), so
+ * from public/images/optimized/ at build time; that folder is gone (D-11, and the
+ * last v1 -large / -thumb variants in Phase 12, VERIFY-01), so
  * derivatives are generated here, on Tim's machine, from the gitignored originals
  * in assets/photos-original/ (D-09) and committed. CI only checks them.
  *
@@ -46,7 +47,7 @@
  *              its name hash does not match its bytes, its format or size
  *              differs from the manifest, or it carries EXIF/XMP/IPTC/ICC or an
  *              orientation tag; when a file in public/images/photos/ is not in
- *              the manifest; when a legacy path is missing; when a sourceSha256
+ *              the manifest; when a sourceSha256
  *              differs from the sidecar's sha256 (derivatives built from an older
  *              original); or when the manifest text differs from a rebuild from
  *              disk and the sidecar.
@@ -79,7 +80,6 @@ const ORIGINALS_DIR = path.join(ROOT, ORIGINALS_REL);
 const SIDECAR_PATH = path.join(ROOT, SIDECAR_REL);
 const OUT_DIR = path.join(ROOT, OUT_REL);
 const MANIFEST_PATH = path.join(ROOT, MANIFEST_REL);
-const PUBLIC_DIR = path.join(ROOT, 'public');
 const URL_PREFIX = '/images/photos/';
 const NAME = 'photos:derive';
 
@@ -121,16 +121,6 @@ function orientedSize(p) {
   return p.orientation !== null && p.orientation >= 5
     ? { width: p.height, height: p.width }
     : { width: p.width, height: p.height };
-}
-
-/** The legacy v1 variants of an original, reached through the manifest until Phase 12. */
-function legacyOf(p) {
-  const base = p.file.replace(/\.jpe?g$/i, '');
-  return {
-    largeWebp: `/images/optimized/${base}-large.webp`,
-    largeJpg: `/images/optimized/${base}-large.jpg`,
-    thumbWebp: `/images/optimized/${base}-thumb.webp`,
-  };
 }
 
 /** Sorted file names in public/images/photos/ (empty when the folder is absent). */
@@ -177,7 +167,6 @@ async function assembleManifest(sidecar, one, problems) {
       ...orientedSize(p),
       variants,
       jpeg: jpg && { longEdge: JPEG_LONG_EDGE, width: jpg.width, height: jpg.height, src: jpg.url },
-      legacy: legacyOf(p),
     };
   }
   if (problems.length > before) return null;
@@ -413,9 +402,6 @@ async function check() {
       const why = await inspect(url, ext, w, h);
       if (why) problems.push(`${id}: ${OUT_REL}${url.slice(URL_PREFIX.length)} ${why}`);
     }
-    for (const url of Object.values(e.legacy))
-      if (!fs.existsSync(path.join(PUBLIC_DIR, url)))
-        problems.push(`${id}: legacy file public${url} is missing`);
   }
 
   // Orphans: nothing in public/images/photos/ outside the manifest.

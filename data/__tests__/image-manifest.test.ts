@@ -50,9 +50,9 @@ describe('image manifest (DATA-08)', () => {
     }
   });
 
-  test('every legacy -large / -thumb path exists under public/', () => {
-    for (const [, e] of entries)
-      for (const url of Object.values(e.legacy)) expect(fs.existsSync(publicFile(url))).toBe(true);
+  test('no entry has a legacy field and public/images/optimized/ does not exist (VERIFY-01)', () => {
+    for (const [, e] of entries) expect(Object.keys(e)).not.toContain('legacy');
+    expect(fs.existsSync(path.join(ROOT, 'public/images/optimized'))).toBe(false);
   });
 
   test("each entry's sourceSha256 equals the sidecar sha256 for that id", () => {

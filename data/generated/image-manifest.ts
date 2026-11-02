@@ -40,11 +40,6 @@ export const imageManifest = {
       "width": 1200,
       "height": 800,
       "src": "/images/photos/img-0605-1200.40262b8d24.jpg"
-    },
-    "legacy": {
-      "largeWebp": "/images/optimized/IMG_0605-Enhanced (2022_02_01 09_47_03 UTC)-large.webp",
-      "largeJpg": "/images/optimized/IMG_0605-Enhanced (2022_02_01 09_47_03 UTC)-large.jpg",
-      "thumbWebp": "/images/optimized/IMG_0605-Enhanced (2022_02_01 09_47_03 UTC)-thumb.webp"
     }
   },
   "img-0629": {
@@ -86,11 +81,6 @@ export const imageManifest = {
       "width": 1200,
       "height": 800,
       "src": "/images/photos/img-0629-1200.9627e85c85.jpg"
-    },
-    "legacy": {
-      "largeWebp": "/images/optimized/IMG_0629-Enhanced (2022_07_29 07_19_54 UTC)-large.webp",
-      "largeJpg": "/images/optimized/IMG_0629-Enhanced (2022_07_29 07_19_54 UTC)-large.jpg",
-      "thumbWebp": "/images/optimized/IMG_0629-Enhanced (2022_07_29 07_19_54 UTC)-thumb.webp"
     }
   },
   "img-0662": {
@@ -132,11 +122,6 @@ export const imageManifest = {
       "width": 1200,
       "height": 800,
       "src": "/images/photos/img-0662-1200.f5d9c77044.jpg"
-    },
-    "legacy": {
-      "largeWebp": "/images/optimized/IMG_0662-Enhanced (2022_07_29 07_19_54 UTC)-large.webp",
-      "largeJpg": "/images/optimized/IMG_0662-Enhanced (2022_07_29 07_19_54 UTC)-large.jpg",
-      "thumbWebp": "/images/optimized/IMG_0662-Enhanced (2022_07_29 07_19_54 UTC)-thumb.webp"
     }
   },
   "r004-011": {
@@ -178,11 +163,6 @@ export const imageManifest = {
       "width": 1200,
       "height": 818,
       "src": "/images/photos/r004-011-1200.a4109053fa.jpg"
-    },
-    "legacy": {
-      "largeWebp": "/images/optimized/R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC)-large.webp",
-      "largeJpg": "/images/optimized/R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC)-large.jpg",
-      "thumbWebp": "/images/optimized/R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC)-thumb.webp"
     }
   }
 } as const;

@@ -9,9 +9,9 @@
  *
  * - D-13: the largest served derivative is 2560 px on the long edge.
  * - D-11: derivatives are generated locally and committed; CI only checks them.
- * - DATA-08: components receive every image path through this manifest; the
- *   legacy -large / -thumb files (public/images/optimized/) stay until Phase 12
- *   and are reached through `legacy`.
+ * - DATA-08: components receive every image path through this manifest, and the
+ *   manifest knows only the hashed derivatives (the v1 -large / -thumb files in
+ *   public/images/optimized/ were deleted in Phase 12, VERIFY-01).
  *
  * Imports only 'zod' on purpose (RESEARCH Pattern 1): Node 24 type-strips this
  * file when a scripts/*.mjs generator imports it, and Node cannot resolve `@/`
@@ -36,9 +36,6 @@ const photoUrl = (ext: 'avif' | 'webp' | 'jpg') =>
       new RegExp(`^/images/photos/[a-z0-9-]+-\\d{3,4}\\.[0-9a-f]{10}\\.${ext}$`),
       `hashed /images/photos/<id>-<edge>.<hash>.${ext} URL`
     );
-
-/** A legacy v1 variant, kept on disk until Phase 12. */
-const LegacyUrl = z.string().regex(/^\/images\/optimized\/[^/]+$/, 'legacy /images/optimized/ URL');
 
 const Px = z.number().int().positive().max(MAX_LONG_EDGE);
 const LongEdge = z.number().int().positive().max(MAX_LONG_EDGE);
@@ -74,7 +71,7 @@ export const ImageJpeg = z
   .refine((j) => namesEdge(j.src, j.longEdge), 'URL does not name the long edge');
 export type ImageJpeg = z.infer<typeof ImageJpeg>;
 
-/** One photo: source hash, oriented original size, hashed variants, legacy paths. */
+/** One photo: source hash, oriented original size, hashed variants and JPEG. */
 export const ImageManifestEntry = z.strictObject({
   /** sha256 of the original's bytes, equal to the EXIF sidecar's `sha256`. */
   sourceSha256: z.string().regex(/^[0-9a-f]{64}$/),
@@ -90,11 +87,6 @@ export const ImageManifestEntry = z.strictObject({
       `variants must be exactly ${VARIANT_LONG_EDGES.join(', ')} in order`
     ),
   jpeg: ImageJpeg,
-  legacy: z.strictObject({
-    largeWebp: LegacyUrl,
-    largeJpg: LegacyUrl,
-    thumbWebp: LegacyUrl,
-  }),
 });
 export type ImageManifestEntry = z.infer<typeof ImageManifestEntry>;
 

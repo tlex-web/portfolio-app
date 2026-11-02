@@ -126,8 +126,6 @@ describe('editorial copy (DATA-03, D-05, D-07)', () => {
 });
 
 describe('photo view-model (replaces the legacy bridge, DATA-08)', () => {
-  /** Every legacy path the manifest still records (-large/-thumb under /images/optimized/). */
-  const legacyPaths = Object.values(imageManifest).flatMap((entry) => Object.values(entry.legacy));
   const DERIVATIVE = /^\/images\/photos\/[a-z0-9-]+\.[0-9a-f]{10}\.(avif|webp)$/;
   const urls = (srcSet: string) => srcSet.split(', ').map((part) => part.split(' ')[0]);
 
@@ -135,8 +133,11 @@ describe('photo view-model (replaces the legacy bridge, DATA-08)', () => {
     expect(views.map((v) => v.id)).toEqual(['img-0605', 'img-0629', 'img-0662', 'r004-011']);
   });
 
-  it('builds stage and tile only from hashed /images/photos/ derivatives, never a legacy path', () => {
-    expect(legacyPaths.length).toBeGreaterThan(0);
+  it('builds stage and tile only from hashed /images/photos/ derivatives; the manifest has no legacy paths', () => {
+    // The v1 -large / -thumb variants were deleted in Phase 12 (VERIFY-01); no
+    // manifest entry may point at them again.
+    for (const entry of Object.values(imageManifest))
+      expect(Object.keys(entry)).not.toContain('legacy');
     for (const view of views) {
       const all = [view.tile, view.stage].flatMap((image) => [
         ...urls(image.srcSetAvif),
@@ -144,8 +145,8 @@ describe('photo view-model (replaces the legacy bridge, DATA-08)', () => {
         image.src,
       ]);
       for (const url of [...all, view.openerSrc]) {
+        expect(url.startsWith('/images/photos/')).toBe(true);
         expect(url).toMatch(DERIVATIVE);
-        expect(legacyPaths).not.toContain(url);
       }
     }
   });
