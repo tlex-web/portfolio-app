@@ -392,7 +392,7 @@ Plans:
   4. The terminal demo is styled in tokens v2, stops auto-playing on focus, on hover and under reduced motion, and has a pause button.
   5. `/roadmap` places items in order on a vertical elevation axis: completed items below with their completion dates, in-progress items at the current camp, planned items above. It lists v2.0 as in progress and shows a "last surveyed" date. A segmented control filters by project and status, the filter lives in the URL, and empty filters are removed or disabled.
 
-**Plans**: 18/18 plans executed in 8 waves (re-planned 2026-11-01 for box + coin-flip; 11-02, 11-15, 11-16 and 11-17 carry blocking checkpoints for Tim)
+**Plans**: 18/19 plans executed: 18/18 in 8 waves (re-planned 2026-11-01 for box + coin-flip; 11-02, 11-15, 11-16 and 11-17 carry blocking checkpoints for Tim), plus 1 gap-closure plan (11-19, wave 9) for UAT gap G-11-4
 
 Plans:
 **Wave 1**
@@ -428,6 +428,11 @@ Plans:
 
 **Wave 8** *(blocked on Wave 7 completion)*
 - [x] 11-17-PLAN.md — CI on ci/11-17, one Tim-reviewed visual re-baseline (old project folders removed), CI green twice, ratchet raised
+
+Gap closure (11-UAT.md):
+
+**Wave 9** *(gap closure, blocked on Wave 8 completion)*
+- [ ] 11-19-PLAN.md — G-11-4: each box metric Source link gets an sr-only suffix from its tile label ('Source (Tools)'), visible text and pixels unchanged (proved at 375/768/1440), no re-baseline (ENG-04)
 
 **UI hint**: yes
 **Parallelism**: Can run in parallel with Phase 10.
