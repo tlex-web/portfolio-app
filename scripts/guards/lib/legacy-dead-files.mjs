@@ -1,19 +1,20 @@
 /**
  * Shared dead-file list for the identity (SHELL-03) and emoji (DSGN-10) rules
  *
- * v1 files with no importers since 07-22; deleted in Phase 12 (VERIFY-01).
- * They still hold v1 placeholders (My Portfolio, example.com addresses, the
- * split P + ortfolio wordmark, bare profile hrefs, a heart emoji), so the
- * identity guard and the palette emoji rule skip them, but only while nothing
- * imports them. assertNoImporters() is the condition: the moment any file in
- * app/, components/ or lib/ imports one again, the exemption is void and the
- * calling guard fails with the offending importer.
+ * The list is empty since Phase 12 (VERIFY-01): every v1 file it exempted has
+ * been deleted, so the identity guard and the palette emoji and v1names rules
+ * scan every file the same way. No file is ever added back; a file holding v1
+ * placeholders is fixed or deleted, never exempted.
+ *
+ * isLegacyDeadFile() and assertNoImporters() stay so the guards keep one call
+ * shape; on an empty list the first is always false and the second finds no
+ * importer.
  */
 
 import fs from 'fs';
 import path from 'path';
 
-export const LEGACY_DEAD_FILES = ['components/Header.tsx', 'components/Footer.tsx', 'components/GlassmorphismNav.tsx'];
+export const LEGACY_DEAD_FILES = [];
 
 const IMPORTER_DIRS = ['app', 'components', 'lib'];
 const SOURCE_EXT = new Set(['.ts', '.tsx', '.mjs', '.js', '.jsx']);

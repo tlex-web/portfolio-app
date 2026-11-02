@@ -1,4 +1,4 @@
-// Fixture: legacy dead v1 footer, imported by components/Shell.tsx
+// Fixture: v1 placeholder text fails in every scanned file
 export default function Footer() {
   return <footer>My Portfolio</footer>;
 }

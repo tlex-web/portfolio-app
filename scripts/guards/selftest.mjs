@@ -30,6 +30,7 @@ import { fileURLToPath } from 'url';
 import { evaluate, pickRun } from '../ci/check-visual-run.mjs';
 import { evaluateSnapshotChanges } from '../ci/check-snapshot-commit.mjs';
 import { checkMp4 } from './lib/mp4-boxes.mjs';
+import { LEGACY_DEAD_FILES, assertNoImporters, isLegacyDeadFile } from './lib/legacy-dead-files.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '..', '..');
@@ -395,18 +396,18 @@ const cases = [
     expectOutput: ['components/Badge.tsx:3 emoji ❤'],
   },
   {
-    name: 'palette: the same emoji in an unimported legacy components/Footer.tsx passes',
+    name: 'palette: the same emoji in an unimported components/Footer.tsx fails (no dead-file exemption)',
     guard: PALETTE,
-    args: ['--root', pal('emoji-legacy-dead')],
-    expectExit: 0,
-    expectOutput: ['palette: OK'],
+    args: ['--root', pal('bad-emoji-former-dead')],
+    expectExit: 1,
+    expectOutput: ['components/Footer.tsx:3 emoji ❤', 'palette: 1 violations'],
   },
   {
-    name: 'palette: importing the legacy Footer voids its emoji exemption and fails',
+    name: 'palette: an imported components/Footer.tsx fails on its emoji alone, with no importer line',
     guard: PALETTE,
-    args: ['--root', pal('bad-emoji-legacy-imported')],
+    args: ['--root', pal('bad-emoji-former-dead-imported')],
     expectExit: 1,
-    expectOutput: ['app/page.tsx:2 emoji imported legacy file components/Footer.tsx', 'components/Footer.tsx:3 emoji ❤'],
+    expectOutput: ['components/Footer.tsx:3 emoji ❤', 'palette: 1 violations'],
   },
   {
     name: 'palette: @custom-variant dark and a stock class in CSS @apply fail',
@@ -430,11 +431,11 @@ const cases = [
     expectOutput: ['components/Card.tsx:1 v1names frost-500'],
   },
   {
-    name: 'palette: a v1 alias name in an unimported LEGACY_DEAD_FILES file passes',
+    name: 'palette: a v1 alias name in an unimported components/Header.tsx fails (no dead-file exemption)',
     guard: PALETTE,
-    args: ['--root', pal('v1names-dead-exempt')],
-    expectExit: 0,
-    expectOutput: ['palette: OK'],
+    args: ['--root', pal('bad-v1names-former-dead')],
+    expectExit: 1,
+    expectOutput: ['components/Header.tsx:3 v1names snow-50', 'palette: 1 violations'],
   },
   {
     name: 'palette: the --color-<v1>-NNN alias definition lines in app/globals.css pass',
@@ -476,7 +477,7 @@ const cases = [
     },
   },
   {
-    name: 'identity: real record, derived author, in-word Portfolio and an unimported legacy Footer with placeholders pass',
+    name: 'identity: real record, derived author, in-word Portfolio and a record-driven components/Footer.tsx pass',
     guard: IDENTITY,
     args: ['--root', idf('good')],
     expectExit: 0,
@@ -518,15 +519,24 @@ const cases = [
     expectOutput: ['data/site.ts: email "hello@example.com" is not a real address'],
   },
   {
-    name: 'identity: importing a legacy v1 file (alias or relative) voids its exemption and fails',
+    name: 'identity: v1 placeholders in components/Header.tsx and Footer.tsx fail like any file; their importers add nothing',
     guard: IDENTITY,
-    args: ['--root', idf('bad-dead-import')],
+    args: ['--root', idf('bad-former-dead-files')],
     expectExit: 1,
     expectOutput: [
-      'app/page.tsx:2 legacy file is imported again: components/Header.tsx',
-      'components/Shell.tsx:2 legacy file is imported again: components/Footer.tsx',
+      'components/Footer.tsx:3 forbidden My Portfolio',
       'components/Header.tsx:6 forbidden split wordmark',
+      'identity: 2 violations',
     ],
+  },
+  {
+    name: 'legacy-dead-files: the list stays empty and the repository has no dead-file importer (VERIFY-01)',
+    fn: () =>
+      LEGACY_DEAD_FILES.length !== 0
+        ? `LEGACY_DEAD_FILES must stay empty, got ${JSON.stringify(LEGACY_DEAD_FILES)}`
+        : isLegacyDeadFile('components/Header.tsx') || assertNoImporters(repoRoot).length !== 0
+          ? 'an empty list must exempt no file and report no importer'
+          : null,
   },
   {
     name: 'served-images: a listed hashed WebP and strip SVG, both manifests and a clean derivative script pass',

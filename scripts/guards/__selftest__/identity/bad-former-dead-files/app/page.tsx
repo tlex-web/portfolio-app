@@ -1,4 +1,4 @@
-// Fixture: importing a legacy v1 file must fail ("legacy file is imported again")
+// Fixture: an import of a file with v1 placeholders adds no violation of its own
 import Header from '@/components/Header';
 
 export default function Page() {

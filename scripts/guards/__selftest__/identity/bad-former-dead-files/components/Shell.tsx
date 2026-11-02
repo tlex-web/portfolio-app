@@ -1,4 +1,4 @@
-// Fixture: a relative import of a legacy v1 file counts as well
+// Fixture: a relative import adds no violation of its own either
 import Footer from './Footer';
 
 export default function Shell() {

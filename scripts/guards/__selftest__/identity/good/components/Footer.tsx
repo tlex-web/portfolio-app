@@ -1,10 +1,12 @@
-// Fixture: a legacy dead v1 file with placeholders passes while nothing imports it
+// Fixture: every path is scanned; a footer that takes its links from the identity record passes
+import { site } from '@/data/site';
+
 export default function Footer() {
   return (
     <footer>
-      <span>My Portfolio</span>
-      <a href="mailto:contact@example.com">Email</a>
-      <a href="https://github.com">GitHub</a>
+      <span>{site.name}</span>
+      <a href={`mailto:${site.email}`}>Email</a>
+      <a href={site.links.github}>GitHub</a>
     </footer>
   );
 }

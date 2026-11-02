@@ -1,4 +1,4 @@
-// Fixture: './SiteFooter' must not count as an import of the legacy components/Footer.tsx
+// Fixture: a shell component that composes the identity-record footer
 import SiteFooter from './SiteFooter';
 
 export default function SiteChrome({ children }: { children: React.ReactNode }) {

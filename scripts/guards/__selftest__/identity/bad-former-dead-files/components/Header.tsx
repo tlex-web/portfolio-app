@@ -1,4 +1,4 @@
-// Fixture: a legacy dead v1 file loses its exemption once something imports it
+// Fixture: the split wordmark fails in every scanned file, whatever its path
 export default function Header() {
   return (
     <a href="/">
