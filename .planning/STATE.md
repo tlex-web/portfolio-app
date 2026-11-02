@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 12
 current_phase_name: Contact, Edge Pages, Cleanup & Verification
 status: executing
-stopped_at: Phase 12 UI-SPEC approved
-last_updated: "2026-11-02T16:08:45.745Z"
+stopped_at: Completed 12-02-PLAN.md
+last_updated: "2026-11-02T16:37:49.473Z"
 last_activity: 2026-11-02
-last_activity_desc: Phase 11 complete, transitioned to Phase 12
-state_head: 9fa605686cbde024000a71dc7235d3f208bad8cb
+last_activity_desc: Phase 12 execution started
+state_head: a8ccbf027c12b73b9f5969507d3d70965daea6f9
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 120
-  completed_plans: 94
-  percent: 78
+  completed_plans: 95
+  percent: 79
 ---
 
 # Project State
@@ -29,12 +29,12 @@ See: .planning/PROJECT.md (updated 2026-11-02)
 
 ## Current Position
 
-Phase: 12 (Contact, Edge Pages, Cleanup & Verification) — READY TO EXECUTE
-Plan: Not started
+Phase: 12 (Contact, Edge Pages, Cleanup & Verification) — EXECUTING
+Plan: 2 of 26
 Status: Ready to execute
-Last activity: 2026-11-02 — Phase 11 complete, transitioned to Phase 12
+Last activity: 2026-11-02 — Phase 12 execution started
 
-Progress: [████████░░] 78%
+Progress: [████████░░] 79%
 
 ## Performance Metrics
 
@@ -152,6 +152,7 @@ Progress: [████████░░] 78%
 | Phase 11 P16 | about 7 min (continuation) | 2 tasks | 5 files |
 | Phase 11 P17 | 1h 55m | 3 tasks | 7 files |
 | Phase 11 P19 | 9 min | 2 tasks | 3 files |
+| Phase 12 P02 | 17 min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -399,6 +400,9 @@ Recent decisions affecting current work:
 - [Phase 11]: 11-17: Tim chose option B ("B. Fix first ... run **one more** visual-baselines dispatch"): RouteIndex's scroll handler re-measures every section against the band, so a jump back to the top after a sweep leaves no stale current stage; the extra dispatch is used (41366534214), the CI re-run on Tim's baseline commit stays reserved for Task 3
 - [Phase 11]: 11-17: native video controls hidden in visual shots (hide-canvas.css) so the coin-flip Demo poster is deterministic; RouteIndex re-measures on scroll (Tim's option B); ratchet raised 1300 -> 1749 at Tim's baseline commit e511d7a; CI green twice (run 41367381672 attempts 1 and 2)
 - [Phase 11]: [11-19] G-11-4 closed: box Metrics source links are named 'Source (Tools)', 'Source (Tests)', 'Source (Binary)' via an sr-only ' ({tile label})' suffix (FactSource pattern, no new words; Tim's reply 'yes change to a suffix on each link' approved a suffix, not a wording). New e2e proves zero geometry change at 375/768/1440 in chromium + firefox; no PNG changed, no re-baseline dispatched; CI Visual Regression on the next push is the remaining gate. Counts jest 1307 + e2e 462 = 1769 (baseline 1749 not raised)
+- [Phase 12]: 12-02: A1 holds - proxy rewrite of unknown photo/project slugs to /__missing yields a server-rendered root 404 (HTTP 404, h1, one main); D-11 context labels via the x-edge-section header
+- [Phase 12]: 12-02: 'unsafe-eval' removed from the production CSP (0 eval chunks in a fresh build; WebGL/carousel specs green); connect-src 'self'; upgrade-insecure-requests dropped only for http on loopback (D-17). Tim can veto via info.csp in 12-01
+- [Phase 12]: 12-02: no-slug-echo is asserted on rendered markup, body text and title; the Next flight payload's canonical URL and the Speed Insights data-route attribute carry the path as escaped script data (flagged for review)
 
 ### Pending Todos
 
@@ -445,6 +449,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-02T13:00:07.536Z
-Stopped at: Phase 12 UI-SPEC approved
-Resume file: .planning/phases/12-contact-edge-pages-cleanup-verification/12-UI-SPEC.md
+Last session: 2026-11-02T16:37:48.808Z
+Stopped at: Completed 12-02-PLAN.md
+Resume file: None
