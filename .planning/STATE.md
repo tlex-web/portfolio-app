@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 12
 current_phase_name: Contact, Edge Pages, Cleanup & Verification
 status: executing
-stopped_at: Completed 12-25-PLAN.md
-last_updated: "2026-11-02T22:12:33.075Z"
+stopped_at: Completed 12-15-PLAN.md
+last_updated: "2026-11-02T22:34:10.057Z"
 last_activity: 2026-11-02
 last_activity_desc: Phase 12 execution started
-state_head: 3e2f26032443ffb2dd0fc10ea4db0f12964023a8
+state_head: 7f5ebc75cd29ac0d1858016fa0142bdca0959b5b
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 120
-  completed_plans: 109
-  percent: 91
+  completed_plans: 110
+  percent: 92
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-11-02)
 ## Current Position
 
 Phase: 12 (Contact, Edge Pages, Cleanup & Verification) — EXECUTING
-Plan: 16 of 26
+Plan: 17 of 26
 Status: Ready to execute
 Last activity: 2026-11-02 — Phase 12 execution started
 
-Progress: [█████████░] 91%
+Progress: [█████████░] 92%
 
 ## Performance Metrics
 
@@ -167,6 +167,7 @@ Progress: [█████████░] 91%
 | Phase 12 P13 | 16 min | 2 tasks | 10 files |
 | Phase 12 P14 | 12 min | 2 tasks | 4 files |
 | Phase 12 P25 | 8 min | 2 tasks | 18 files |
+| Phase 12 P15 | 12 min | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -449,6 +450,9 @@ Recent decisions affecting current work:
 - [Phase 12]: 12-14: per-slug OG cards keep per-slug alt (generateImageMetadata) and drop generateStaticParams/dynamicParams; Next 16.4 cannot list the slug of such a route, so cards render on first request and are cached (dynamicParams=false made every card 404; the duplicate export broke next dev)
 - [Phase 12]: 12-25: guard:identity url rule is host-agnostic (https origin, no trailing slash/path/port, no localhost/example.com), so the deferred www.tlui.de switch needs no guard change; site.url unchanged
 - [Phase 12]: 12-25: site.location = Zürich 47.37 / 8.54 from the 12-01 geo.location row (Tim: B confirm); 2 decimals max, pinned by data/__tests__/site.test.ts (D-01)
+- [Phase 12]: 12-15: savedPageRows(urls, catalog) takes a server-built catalog (site.nav, photoViews, projects) so the /offline client island ships no data modules
+- [Phase 12]: 12-15: a cached URL with a query string never makes a saved-pages row on its own (the SW matches offline navigations by exact URL); it collapses into its bare path's row
+- [Phase 12]: 12-15: saved-page rows and the global-error Report this error link are plain anchors (offline document navigations hit the SW cache; global-error must not depend on the router)
 
 ### Pending Todos
 
@@ -495,6 +499,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-02T22:12:31.839Z
-Stopped at: Completed 12-25-PLAN.md
+Last session: 2026-11-02T22:34:08.712Z
+Stopped at: Completed 12-15-PLAN.md
 Resume file: None
