@@ -42,6 +42,13 @@ export interface Site {
     linkedin: string;
   };
   nav: readonly NavItem[];
+  /**
+   * Optional: Tim's contact location (D-01, CONTACT-01), written only as he
+   * confirmed it. `lat` and `lon` carry 2 decimals at most (about 1 km), never
+   * more; `source` cites where the coordinates come from. When absent, the
+   * Contact panel leaves out its Location row.
+   */
+  location?: { name: string; lat: number; lon: number; source: string };
   /** Required: the swissALTIRegio source reference (D-15); removing it fails tsc. */
   attribution: { terrain: string };
 }
