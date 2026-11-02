@@ -59,10 +59,22 @@ const nextConfig: NextConfig = {
             value: 'public, max-age=31536000, immutable',
           },
         ],
+      },
+      {
+        // The service worker script (12-08, EDGE-02): no-cache makes the
+        // browser revalidate it on every registration update, so a new deploy's
+        // worker is picked up at once rather than after the HTTP cache expires.
+        source: '/service-worker.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache',
+          },
+        ],
       }
     );
 
-    // Security headers (CSP moved to middleware.ts for nonce-based approach)
+    // Security headers (the CSP is set per request, with a nonce, in proxy.ts)
     headers.push({
       source: '/:path*',
       headers: [
