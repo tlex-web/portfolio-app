@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 12
 current_phase_name: Contact, Edge Pages, Cleanup & Verification
 status: executing
-stopped_at: Completed 12-17-PLAN.md
-last_updated: "2026-11-02T23:30:53.325Z"
+stopped_at: Completed 12-18-PLAN.md
+last_updated: "2026-11-02T23:43:28.635Z"
 last_activity: 2026-11-02
 last_activity_desc: Phase 12 execution started
-state_head: 8ebcf76c78a9dcf7c86a4195d1dafd061d9d6410
+state_head: c5629939c0158785b7efcc6b67bf97f47ffb5082
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 120
-  completed_plans: 113
-  percent: 94
+  completed_plans: 114
+  percent: 95
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-11-02)
 ## Current Position
 
 Phase: 12 (Contact, Edge Pages, Cleanup & Verification) — EXECUTING
-Plan: 20 of 26
+Plan: 21 of 26
 Status: Ready to execute
 Last activity: 2026-11-02 — Phase 12 execution started
 
-Progress: [█████████░] 94%
+Progress: [█████████░] 95%
 
 ## Performance Metrics
 
@@ -171,6 +171,7 @@ Progress: [█████████░] 94%
 | Phase 12 P16 | 13min | 2 tasks | 9 files |
 | Phase 12 P26 | 17 min | 2 tasks | 3 files |
 | Phase 12 P17 | 8min | 2 tasks | 3 files |
+| Phase 12 P18 | 10 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -464,6 +465,8 @@ Recent decisions affecting current work:
 - [Phase 12]: 12-17: the simulated SW deploy rewrites every copy of the title (head and flight data); hydration resets document.title from the flight payload, so a <title>-only edit is undone after load
 - [Phase 12]: 12-17: A5 holds - context.setOffline(true) cuts the service worker's own fetches in Chromium
 - [Phase 12]: 12-17: hero-contour precache stays deferred (fix in scripts/terrain/build-terrain.mjs precacheText + regenerated data/generated/precache.json; no service-worker.js change)
+- [Phase 12]: 12-18: useProgressiveTextures keeps textures in state (empty until every thumbnail settles) and one effect run per source count owns its loader, slots and cancelled flag; a source-count change resets the hook in the same render
+- [Phase 12]: 12-18: LEGACY_COMPILER_FILES removed; the React Compiler rules apply at error to every file (07-02 rule reached zero)
 
 ### Pending Todos
 
@@ -510,6 +513,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-02T23:30:51.998Z
-Stopped at: Completed 12-17-PLAN.md
+Last session: 2026-11-02T23:43:27.374Z
+Stopped at: Completed 12-18-PLAN.md
 Resume file: None
