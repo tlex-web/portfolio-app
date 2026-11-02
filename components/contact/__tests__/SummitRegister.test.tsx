@@ -390,6 +390,143 @@ describe('SummitRegister', () => {
   });
 });
 
+/**
+ * Validation timing (12-26; Claude's discretion "per field on blur, then live
+ * once a field has shown an error"): a field the visitor typed in validates
+ * when it loses focus; a field that has shown an error revalidates on every
+ * input and clears the moment its value is valid. Nothing typed is ever
+ * cleared or altered by validation.
+ */
+describe('SummitRegister validation timing (CONTACT-02, 12-26)', () => {
+  beforeEach(() => {
+    fetchMock.mockReset();
+  });
+
+  it('errors a field on blur once the visitor has typed in it and cleared it again', async () => {
+    const user = userEvent.setup();
+    render(<SummitRegister />);
+
+    await user.type(nameField(), 'Tim');
+    await user.clear(nameField());
+    await user.tab();
+
+    expect(nameField()).toHaveAttribute('aria-invalid', 'true');
+    expect(nameField()).toHaveAccessibleDescription('Error: Enter your name.');
+    expect(nameField()).toHaveClass('border-danger');
+    expect(emailField()).not.toHaveAttribute('aria-invalid');
+    expect(messageField()).not.toHaveAttribute('aria-invalid');
+  });
+
+  it('revalidates a field live once it has shown an error and clears it the moment it is valid', async () => {
+    const user = userEvent.setup();
+    render(<SummitRegister />);
+
+    await user.type(emailField(), 'tim');
+    await user.tab();
+    expect(emailField()).toHaveAccessibleDescription(
+      'Error: Enter a full email address, with an @ and a domain.',
+    );
+
+    await user.type(emailField(), '@');
+    expect(emailField()).toHaveFocus();
+    expect(emailField()).toHaveAttribute('aria-invalid', 'true');
+
+    await user.type(emailField(), 'example.com');
+    expect(emailField()).toHaveFocus();
+    expect(emailField()).not.toHaveAttribute('aria-invalid');
+    expect(emailField()).not.toHaveAccessibleDescription(/Error/);
+    expect(emailField()).toHaveValue('tim@example.com');
+  });
+
+  it('follows the message count live while its error shows', () => {
+    render(<SummitRegister />);
+
+    fireEvent.change(messageField(), { target: { value: 'x'.repeat(5) } });
+    fireEvent.blur(messageField());
+    expect(messageField()).toHaveAccessibleDescription(
+      'Error: Write at least 10 characters (now 5). 10 to 2,000 characters',
+    );
+
+    fireEvent.change(messageField(), { target: { value: 'x'.repeat(9) } });
+    expect(messageField()).toHaveAccessibleDescription(
+      'Error: Write at least 10 characters (now 9). 10 to 2,000 characters',
+    );
+
+    fireEvent.change(messageField(), { target: { value: 'x'.repeat(10) } });
+    expect(messageField()).not.toHaveAttribute('aria-invalid');
+    expect(messageField()).toHaveAccessibleDescription('10 to 2,000 characters');
+  });
+
+  it('accepts exactly 10 and 2,000 characters on blur and rejects 9 and 2,001 with the count', () => {
+    render(<SummitRegister />);
+    const blurWith = (length: number) => {
+      fireEvent.change(messageField(), { target: { value: 'x'.repeat(length) } });
+      fireEvent.blur(messageField());
+    };
+
+    blurWith(10);
+    expect(messageField()).not.toHaveAttribute('aria-invalid');
+    blurWith(2000);
+    expect(messageField()).not.toHaveAttribute('aria-invalid');
+
+    blurWith(9);
+    expect(messageField()).toHaveAccessibleDescription(
+      'Error: Write at least 10 characters (now 9). 10 to 2,000 characters',
+    );
+    blurWith(2001);
+    expect(messageField()).toHaveAccessibleDescription(
+      'Error: Shorten the message to 2,000 characters (now 2,001). 10 to 2,000 characters',
+    );
+    expect(messageField()).toHaveValue('x'.repeat(2001));
+  });
+
+  it('errors only the invalid fields and keeps every typed value after a blur error and an invalid submit', async () => {
+    const user = userEvent.setup();
+    render(<SummitRegister />);
+
+    await user.type(nameField(), 'John Doe');
+    await user.type(emailField(), 'john@');
+    await user.tab();
+    expect(emailField()).toHaveAttribute('aria-invalid', 'true');
+    expect(nameField()).not.toHaveAttribute('aria-invalid');
+    expect(emailField()).toHaveValue('john@');
+
+    await user.type(messageField(), 'Too short');
+    await user.click(sendButton());
+
+    expect(nameField()).not.toHaveAttribute('aria-invalid');
+    expect(emailField()).toHaveAttribute('aria-invalid', 'true');
+    expect(messageField()).toHaveAttribute('aria-invalid', 'true');
+    expect(nameField()).toHaveValue('John Doe');
+    expect(emailField()).toHaveValue('john@');
+    expect(messageField()).toHaveValue('Too short');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('lands a server validation answer on the inline email error, which then follows typing', async () => {
+    fetchMock.mockResolvedValueOnce(
+      answer(400, { code: 'validation', fields: { email: 'invalid_email' } }),
+    );
+    const user = userEvent.setup();
+    render(<SummitRegister />);
+
+    fillValid();
+    await user.click(sendButton());
+
+    await waitFor(() => expect(emailField()).toHaveAttribute('aria-invalid', 'true'));
+    expect(emailField()).toHaveAccessibleDescription(
+      'Error: Enter a full email address, with an @ and a domain.',
+    );
+    expect(nameField()).not.toHaveAttribute('aria-invalid');
+    expect(messageField()).not.toHaveAttribute('aria-invalid');
+    expectFieldsKept();
+
+    fireEvent.change(emailField(), { target: { value: 'john@example.org' } });
+    expect(emailField()).not.toHaveAttribute('aria-invalid');
+    expect(emailField()).toHaveValue('john@example.org');
+  });
+});
+
 describe('validateField (CONTACT-02, FEEDBACK_LIMITS)', () => {
   it.each([
     ['name', '', 'Enter your name.'],
