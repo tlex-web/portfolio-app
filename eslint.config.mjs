@@ -4,14 +4,6 @@ import nextTs from 'eslint-config-next/typescript';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import prettier from 'eslint-config-prettier/flat';
 
-// Legacy v1 files replaced or deleted in Phases 9-12: the React Compiler rules
-// only warn here. The list shrinks to zero by Phase 12; never add a new file.
-const LEGACY_COMPILER_FILES = [
-  'components/AnimatedGradientMesh.tsx',
-  'components/GlassmorphismNav.tsx',
-  'lib/useProgressiveTextures.ts',
-];
-
 // Banned everywhere, scripts included. Shared by the global block and the
 // scripts/**/*.mjs block below, because flat config REPLACES no-restricted-imports
 // options per matching object instead of merging them (RESEARCH Pitfall 8).
@@ -42,15 +34,6 @@ export default defineConfig([
     // GUARD-06: every jsx-a11y recommended rule at error level (Next alone ships 6 rules at warn)
     files: ['**/*.{jsx,tsx}'],
     rules: { ...jsxA11y.flatConfigs.recommended.rules },
-  },
-  {
-    files: LEGACY_COMPILER_FILES,
-    rules: {
-      'react-hooks/purity': 'warn',
-      'react-hooks/immutability': 'warn',
-      'react-hooks/set-state-in-effect': 'warn',
-      'react-hooks/refs': 'warn',
-    },
   },
   {
     files: ['**/*.config.js', '**/*.cjs'],
