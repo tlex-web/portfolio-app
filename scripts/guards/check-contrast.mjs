@@ -16,8 +16,10 @@
  *                 (08-05: the v2 name for v1 frost-600, gradient stops and badge fills)
  *   - ALIAS:      v1 names (alpine, granite, snow, frost, ember, pine, rust), skipped
  *   - DECORATIVE: line and contour, exempt from measurement (UI-SPEC "Exempt")
- *   Any other `--color-*` name fails as unknown. Adding a semantic token means
- *   adding it here and its pairs to PAIRS in the same commit.
+ *   Any other `--color-*` name fails as unknown; a namespace reset such as
+ *   `--color-*: initial` (the colour backstop) declares no token and is skipped.
+ *   Adding a semantic token means adding it here and its pairs to PAIRS in the
+ *   same commit.
  *
  * PAIRS follow the UI-SPEC table order, so the report is deterministic: text pairs
  * need 4.5:1, non-text pairs 3:1. After the 07 table and the 08-05 accent-strong
@@ -123,6 +125,8 @@ function readTokens(source) {
       const colon = decl.indexOf(':');
       if (colon === -1) continue;
       const name = decl.slice(0, colon).trim();
+      // A Tailwind namespace reset (`--color-*: initial`) clears defaults; it declares no token
+      if (name.endsWith('-*')) continue;
       if (name.startsWith('--')) tokens.set(name, decl.slice(colon + 1).trim());
     }
   }

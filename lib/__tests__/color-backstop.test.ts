@@ -1,8 +1,8 @@
 /**
  * VERIFY-01: the compile-time colour backstop and the end of the v1 colour names.
  *
- * `@theme { --color-*: initial; }` removes Tailwind's default palette, so a stock
- * colour utility (bg-red-500, text-white) no longer compiles and only the L2
+ * `@theme { --color-*: initial; }` removes Tailwind's default palette, so no stock
+ * palette, white or black colour utility compiles any more and only the L2
  * semantic tokens produce colour utilities. Tailwind clears every --color-* key
  * present when the reset runs (12-RESEARCH Pitfall 7), so the reset must come
  * before the first --color-* definition or it would delete the L2 tokens too.

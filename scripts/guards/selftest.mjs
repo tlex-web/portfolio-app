@@ -438,11 +438,16 @@ const cases = [
     expectOutput: ['components/Header.tsx:3 v1names snow-50', 'palette: 1 violations'],
   },
   {
-    name: 'palette: the --color-<v1>-NNN alias definition lines in app/globals.css pass',
+    name: 'palette: a --color-<v1>-NNN alias definition line in app/globals.css fails (no alias exemption)',
     guard: PALETTE,
-    args: ['--root', pal('v1names-alias-defs')],
-    expectExit: 0,
-    expectOutput: ['palette: OK'],
+    args: ['--root', pal('bad-v1names-alias-defs')],
+    expectExit: 1,
+    expectOutput: [
+      'app/globals.css:3 v1names alpine-950',
+      'app/globals.css:4 v1names frost-600',
+      'app/globals.css:5 v1names rust-400',
+      'palette: 3 violations',
+    ],
   },
   {
     name: 'palette: --update refuses a raise and leaves the ratchet unchanged',

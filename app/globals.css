@@ -7,6 +7,12 @@
 @source not "../graphify-out";
 @source not "../scripts";
 
+/* Remove Tailwind's default palette: only the L2 semantic tokens below compile to
+   colour utilities. Must precede every --color-* definition (12-RESEARCH Pitfall 7) */
+@theme {
+  --color-*: initial;
+}
+
 /* Tokens v2 -- L1 primitives (DSGN-06). Always emitted, readable from JS and
    shaders, generate no utilities. New code uses the L2 semantic tokens below. */
 :root {
@@ -64,7 +70,6 @@
 @theme inline {
   --font-display: var(--font-schibsted);
   --font-body: var(--font-inter);
-  --font-heading: var(--font-schibsted); /* @deprecated v1 alias, removed in Phase 12 */
   --font-mono: var(--font-jetbrains);
 }
 
@@ -113,54 +118,8 @@
   --ease-descent: cubic-bezier(0.4, 0, 1, 1);
 }
 
-/* L3 v1 aliases: @deprecated v1 alias, removed in Phase 12 */
-@theme inline {
-  --color-alpine-950: var(--night-950); /* @deprecated v1 alias, removed in Phase 12 */
-  --color-alpine-900: var(--night-950); /* @deprecated v1 alias, removed in Phase 12 */
-  --color-alpine-800: var(--night-900); /* @deprecated v1 alias, removed in Phase 12 */
-  --color-alpine-700: var(--night-850); /* @deprecated v1 alias, removed in Phase 12 */
-  --color-alpine-600: var(--night-700); /* @deprecated v1 alias, removed in Phase 12 */
-
-  --color-granite-500: var(--mist-300); /* @deprecated v1 alias, removed in Phase 12 */
-  --color-granite-400: var(--mist-300); /* @deprecated v1 alias, removed in Phase 12 */
-  --color-granite-300: var(--mist-300); /* @deprecated v1 alias, removed in Phase 12 */
-
-  --color-snow-50: var(--firn-50); /* @deprecated v1 alias, removed in Phase 12 */
-  --color-snow-100: var(--firn-50); /* @deprecated v1 alias, removed in Phase 12 */
-  --color-snow-200: var(--mist-300); /* @deprecated v1 alias, removed in Phase 12 */
-
-  --color-frost-600: var(--glacier-500); /* @deprecated v1 alias, removed in Phase 12 */
-  --color-frost-500: var(--glacier-400); /* @deprecated v1 alias, removed in Phase 12 */
-  --color-frost-400: var(--glacier-400); /* @deprecated v1 alias, removed in Phase 12 */
-  --color-frost-300: var(--glacier-300); /* @deprecated v1 alias, removed in Phase 12 */
-  --color-frost-glow: oklch(0.82 0.10 215 / 0.3); /* @deprecated v1 alias, removed in Phase 12 */
-
-  --color-ember-600: var(--caution-400); /* @deprecated v1 alias, removed in Phase 12 */
-  --color-ember-500: var(--caution-400); /* @deprecated v1 alias, removed in Phase 12 */
-  --color-ember-400: var(--caution-400); /* @deprecated v1 alias, removed in Phase 12 */
-  --color-ember-300: var(--caution-400); /* @deprecated v1 alias, removed in Phase 12 */
-  --color-ember-glow: oklch(0.84 0.13 85 / 0.3); /* @deprecated v1 alias, removed in Phase 12 */
-
-  --color-pine-600: var(--meadow-400); /* @deprecated v1 alias, removed in Phase 12 */
-  --color-pine-500: var(--meadow-400); /* @deprecated v1 alias, removed in Phase 12 */
-  --color-pine-400: var(--meadow-400); /* @deprecated v1 alias, removed in Phase 12 */
-
-  --color-rust-600: var(--signal-400); /* @deprecated v1 alias, removed in Phase 12 */
-  --color-rust-500: var(--signal-400); /* @deprecated v1 alias, removed in Phase 12 */
-  --color-rust-400: var(--signal-400); /* @deprecated v1 alias, removed in Phase 12 */
-}
-
-/* Legacy glow tokens: kept until Phase 12, built on the deprecated glow aliases above */
-@theme {
-  /* Text shadow glow tokens (Tailwind v4.1 native text-shadow utilities) */
-  --text-shadow-glow: 0 0 10px var(--color-frost-glow), 0 0 25px var(--color-frost-glow);
-  --text-shadow-glow-lg: 0 0 20px var(--color-frost-glow), 0 0 40px var(--color-frost-glow);
-  --text-shadow-glow-ember: 0 0 10px var(--color-ember-glow), 0 0 25px var(--color-ember-glow);
-}
-
-/* Base element styles (DSGN-07, UI-SPEC "Base element styles"). Headings carry
-   no text-shadow: the --text-shadow-glow* tokens above are legacy and no base
-   rule references them. Size utilities on a heading still win (utilities layer). */
+/* Base element styles (DSGN-07, UI-SPEC "Base element styles"). Size utilities
+   on a heading still win (utilities layer). */
 @layer base {
   body {
     font-family: var(--font-body);
@@ -420,158 +379,8 @@ html {
   }
 }
 
-/* Hologram Terminal Content Responsiveness */
-.hologram-content {
-  width: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-/* Extra small screens (<450px) */
-@media (max-width: 449px) {
-  .hologram-content {
-    padding: 8px;
-    font-size: 0.75rem;
-    max-height: 300px;
-    border: 1px solid rgba(0, 255, 255, 0.3);
-  }
-}
-
-/* Small screens (450-639px) */
-@media (min-width: 450px) and (max-width: 639px) {
-  .hologram-content {
-    padding: 12px;
-    font-size: 0.8125rem;
-    max-height: 350px;
-    border: 1px solid rgba(0, 255, 255, 0.4);
-  }
-}
-
-/* Medium screens (640-767px) */
-@media (min-width: 640px) and (max-width: 767px) {
-  .hologram-content {
-    padding: 16px;
-    font-size: 0.875rem;
-    max-height: 400px;
-    border: 1px solid rgba(0, 255, 255, 0.5);
-  }
-}
-
-/* Tablet screens (768-1023px) - Critical for 770px issue */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .hologram-content {
-    padding: 20px;
-    font-size: 0.9375rem;
-    max-height: 450px;
-    border: 1px solid rgba(0, 255, 255, 0.6);
-  }
-}
-
-/* Desktop screens (1024px+) */
-@media (min-width: 1024px) {
-  .hologram-content {
-    padding: 24px;
-    font-size: 1rem;
-    max-height: 500px;
-    border: 1px solid rgba(0, 255, 255, 0.7);
-  }
-}
-
-/* ===================================================================
-   Phase 4: Crystalline Design System
-   Glow utilities, stratified depth, contour animation
-   =================================================================== */
-
-/* Ambient glow with scroll-responsive intensity */
-.ambient-glow {
-  position: relative;
-}
-
-.ambient-glow::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  box-shadow:
-    0 0 calc(8px * var(--glow-intensity, 0.5)) var(--color-frost-glow),
-    0 0 calc(20px * var(--glow-intensity, 0.5)) var(--color-frost-glow);
-  opacity: 0.6;
-  transition: opacity 0.35s ease;
-}
-
-.ambient-glow:hover::after {
-  opacity: 1;
-}
-
-/* Direct glow for non-clipped elements */
-.glow-frost {
-  box-shadow:
-    0 0 calc(8px * var(--glow-intensity, 0.5)) var(--color-frost-glow),
-    0 0 calc(20px * var(--glow-intensity, 0.5)) var(--color-frost-glow);
-  transition: box-shadow 0.35s ease;
-}
-
-.glow-frost:hover {
-  box-shadow:
-    0 0 calc(12px * var(--glow-intensity, 0.5)) var(--color-frost-glow),
-    0 0 calc(30px * var(--glow-intensity, 0.5)) var(--color-frost-glow);
-}
-
-/* Ember variant (sparingly used) */
-.glow-ember {
-  box-shadow:
-    0 0 calc(6px * var(--glow-intensity, 0.5)) var(--color-ember-glow),
-    0 0 calc(16px * var(--glow-intensity, 0.5)) var(--color-ember-glow);
-  transition: box-shadow 0.35s ease;
-}
-
-/* Geological strata depth -- increasing shadow layers */
-.stratum-1 {
-  box-shadow:
-    0 1px 2px oklch(0.13 0.015 155 / 0.4),
-    0 4px 8px oklch(0.13 0.015 155 / 0.2);
-}
-
-.stratum-2 {
-  box-shadow:
-    0 2px 4px oklch(0.13 0.015 155 / 0.4),
-    0 8px 16px oklch(0.13 0.015 155 / 0.2),
-    0 16px 32px oklch(0.13 0.015 155 / 0.1);
-}
-
-.stratum-3 {
-  box-shadow:
-    0 4px 8px oklch(0.13 0.015 155 / 0.4),
-    0 12px 24px oklch(0.13 0.015 155 / 0.2),
-    0 24px 48px oklch(0.13 0.015 155 / 0.15),
-    0 48px 96px oklch(0.13 0.015 155 / 0.08);
-}
-
-/* Contour line animation keyframes (for nav background) */
-@keyframes contour-drift {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-.contour-animate {
-  animation: contour-drift 25s linear infinite;
-}
-
-/* Reduced motion guards for all Phase 4 animations */
+/* Reduced motion guards */
 @media (prefers-reduced-motion: reduce) {
-  /* Phase 4 guards */
-  .contour-animate {
-    animation: none;
-  }
-  .ambient-glow::after {
-    transition: none;
-  }
-  .glow-frost,
-  .glow-ember {
-    transition: none;
-  }
-
   /* Phase 5: Tailwind animation utilities */
   .animate-pulse,
   .animate-spin,

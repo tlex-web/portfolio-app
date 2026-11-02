@@ -1,0 +1,6 @@
+/* Fixture: v1 alias definitions fail like any other v1 name; no globals.css line is exempt */
+@theme inline {
+  --color-alpine-950: var(--night-950);
+  --color-frost-600: var(--glacier-500);
+  --color-rust-400: var(--signal-400);
+}

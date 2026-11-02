@@ -16,18 +16,14 @@
  *               entry (no entry means 0); a count below the entry also fails
  *               until `--update` records it, so the ratchet only tightens
  *   - png:      any .png under <root>/e2e whose name does not end in -linux.png
- *   - v1names:  a v1 alias name (frost-500, alpine-900, ...) in any scanned file
- *               (08-05: every live use was codemodded to its v2 name), except
- *               the --color-<v1>-NNN alias definition lines in app/globals.css
- *               (deleted in Phase 12) and LEGACY_DEAD_FILES while
- *               assertNoImporters() finds no importer (the emoji exemption below)
+ *   - v1names:  a v1 alias name (frost-500, alpine-900, ...) in any scanned file,
+ *               CSS included (08-05 codemodded every live use to its v2 name; Phase 12
+ *               deleted the alias definitions, so no app/globals.css line is exempt)
  *   - emoji:    Extended_Pictographic in .ts/.tsx/.js/.mjs files, except the
  *               copyright, registered and trademark signs, plus the check marks
  *               U+2713, U+2714, U+2717 and U+2718 (the prompt glyph U+276F is allowed).
- *               LEGACY_DEAD_FILES (scripts/guards/lib/legacy-dead-files.mjs) are
- *               skipped only while assertNoImporters() finds no importer; once one
- *               is imported again its emoji count and an "imported legacy file"
- *               violation are reported
+ *               LEGACY_DEAD_FILES (scripts/guards/lib/legacy-dead-files.mjs) is empty
+ *               since Phase 12, so the emoji and v1names rules check every file
  *
  * Without --update the script only reads, so parallel or interrupted runs can
  * never corrupt the ratchet. --update writes the current per-file white/black
@@ -54,8 +50,6 @@ const WB = new RegExp(`(?<![\\w-])(?:[\\w-]+:)*(?:${PRE})-(?:white|black)(?:\\/\
 
 const VARIANT = /@custom-variant\s+dark\b/g;
 const V1NAMES = /(?<![A-Za-z0-9])(alpine|granite|snow|frost|ember|pine|rust)-[0-9]+/g;
-// The L3 alias definitions in app/globals.css, the one place v1 names may stay until Phase 12
-const V1_ALIAS_DEF = /^\s*--color-(alpine|granite|snow|frost|ember|pine|rust)-\d+:/;
 // Extended_Pictographic minus (c), (r) and TM, plus the check and cross marks it misses
 const EMOJI = /(?![©®™])\p{Extended_Pictographic}|[✓✔✗✘]/gu;
 
@@ -166,11 +160,7 @@ function main() {
     if (on('stock')) for (const h of hits(lines, STOCK)) report(rel, h.line, 'stock', h.match);
     if (on('variant') && ext === '.css') for (const h of hits(lines, VARIANT)) report(rel, h.line, 'variant', h.match);
     if (on('v1names') && !deadExempt.has(rel)) {
-      const aliasDefs = rel === 'app/globals.css';
-      for (const h of hits(lines, V1NAMES)) {
-        if (aliasDefs && V1_ALIAS_DEF.test(lines[h.line - 1])) continue;
-        report(rel, h.line, 'v1names', h.match);
-      }
+      for (const h of hits(lines, V1NAMES)) report(rel, h.line, 'v1names', h.match);
     }
     if (on('emoji') && SCRIPT_EXT.has(ext) && !deadExempt.has(rel)) for (const h of hits(lines, EMOJI)) report(rel, h.line, 'emoji', h.match);
     const wb = hits(lines, WB);
