@@ -5,16 +5,16 @@ milestone_name: Topographic Identity
 current_phase: 12
 current_phase_name: Contact, Edge Pages, Cleanup & Verification
 status: executing
-stopped_at: Completed 12-16-PLAN.md
-last_updated: "2026-11-02T22:51:41.471Z"
+stopped_at: Completed 12-26-PLAN.md
+last_updated: "2026-11-02T23:15:06.626Z"
 last_activity: 2026-11-02
 last_activity_desc: Phase 12 execution started
-state_head: 7015aeb4977767b33a859f96bce2bd603e01cb7c
+state_head: 31dbc8319a5af8a55fc513f8dd3d3a968d1f812d
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 120
-  completed_plans: 111
+  completed_plans: 112
   percent: 93
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-02)
 ## Current Position
 
 Phase: 12 (Contact, Edge Pages, Cleanup & Verification) — EXECUTING
-Plan: 18 of 26
+Plan: 19 of 26
 Status: Ready to execute
 Last activity: 2026-11-02 — Phase 12 execution started
 
@@ -169,6 +169,7 @@ Progress: [█████████░] 93%
 | Phase 12 P25 | 8 min | 2 tasks | 18 files |
 | Phase 12 P15 | 12 min | 2 tasks | 12 files |
 | Phase 12 P16 | 13min | 2 tasks | 9 files |
+| Phase 12 P26 | 17 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -456,6 +457,9 @@ Recent decisions affecting current work:
 - [Phase 12]: 12-15: saved-page rows and the global-error Report this error link are plain anchors (offline document navigations hit the SW cache; global-error must not depend on the router)
 - [Phase 12]: 12-16: default.2 and default.3 shipped as defaults (form then panel, order-first below 1024; quiet select-the-address fallback when the clipboard fails)
 - [Phase 12]: 12-16: WebKit e2e checks Tab order up to Copy only; Playwright WebKit never Tabs onto links (Safari default)
+- [Phase 12]: 12-26: the error summary closes when no field is left to fix; after the first fix it sets aria-live=off so updates are not re-announced; each invalid submit mounts a fresh focused alert
+- [Phase 12]: 12-26: a field blur during a pointer press inside the contact form waits until the press is over, so a blur error never swallows the Send click
+- [Phase 12]: 12-26: counterStatus over the limit is singular only for exactly one character (1 character over the limit), matching Check 1 field / Check {n} fields
 
 ### Pending Todos
 
@@ -502,6 +506,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-02T22:51:40.222Z
-Stopped at: Completed 12-16-PLAN.md
+Last session: 2026-11-02T23:15:05.338Z
+Stopped at: Completed 12-26-PLAN.md
 Resume file: None
