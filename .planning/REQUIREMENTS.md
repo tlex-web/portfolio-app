@@ -109,9 +109,9 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 
 ### SEO
 
-- [ ] **SEO-01**: Every route has its own title, description and canonical URL
-- [ ] **SEO-02**: Every photo and project page has its own Open Graph image
-- [ ] **SEO-03**: The site serves a generated `sitemap.xml` and `robots.txt`
+- [x] **SEO-01**: Every route has its own title, description and canonical URL
+- [x] **SEO-02**: Every photo and project page has its own Open Graph image
+- [x] **SEO-03**: The site serves a generated `sitemap.xml` and `robots.txt`
 
 ### Verification & Cleanup
 
@@ -227,9 +227,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONTACT-03 | Phase 12 | Complete |
 | EDGE-01 | Phase 12 | Pending |
 | EDGE-02 | Phase 12 | Pending |
-| SEO-01 | Phase 12 | Pending |
-| SEO-02 | Phase 12 | Pending |
-| SEO-03 | Phase 12 | Pending |
+| SEO-01 | Phase 12 | Complete |
+| SEO-02 | Phase 12 | Complete |
+| SEO-03 | Phase 12 | Complete |
 | VERIFY-01 | Phase 12 | Pending |
 | VERIFY-02 | Phase 12 | Pending |
 | VERIFY-03 | Phase 12 | Pending |
