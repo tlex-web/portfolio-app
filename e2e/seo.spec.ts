@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { projects } from '@/data/projects';
 import { site } from '@/data/site';
 import { photoSlugs } from '@/lib/photos/view-model';
+import { ROUTES } from './routes';
 
 /**
  * Search metadata contract (SEO-01, SEO-03; D-13).
@@ -40,6 +41,50 @@ test.describe('Roadmap head (SEO-01, D-13)', () => {
       'content',
       'summary_large_image'
     );
+  });
+});
+
+/**
+ * The server-rendered content routes. /contact and /offline are client pages
+ * until 12-13 and 12-15 rewrite them; 12-17 then loops over every route.
+ */
+const SEO_ROUTES = ROUTES.map(([path]) => path).filter(
+  (path) => path !== '/contact' && path !== '/offline'
+);
+
+test.describe('Own head per content route (SEO-01)', () => {
+  test('each route names one absolute canonical, one description and a title, all unique', async ({
+    page,
+  }) => {
+    const titles: string[] = [];
+    const descriptions: string[] = [];
+
+    for (const path of SEO_ROUTES) {
+      await page.goto(path);
+      await expect(canonical(page), path).toHaveCount(1);
+      await expect(canonical(page), path).toHaveAttribute(
+        'href',
+        path === '/' ? site.url : `${site.url}${path}`
+      );
+      await expect(description(page), path).toHaveCount(1);
+
+      const content = (await description(page).getAttribute('content')) ?? '';
+      expect(content.trim(), `${path} description`).not.toBe('');
+      const title = await page.title();
+      expect(title.trim(), `${path} title`).not.toBe('');
+
+      titles.push(title);
+      descriptions.push(content);
+    }
+
+    expect(new Set(titles).size, titles.join(' | ')).toBe(SEO_ROUTES.length);
+    expect(new Set(descriptions).size, descriptions.join(' | ')).toBe(SEO_ROUTES.length);
+  });
+
+  test('/photos?view=grid canonicalises to /photos', async ({ page }) => {
+    await page.goto('/photos?view=grid');
+    await expect(canonical(page)).toHaveCount(1);
+    await expect(canonical(page)).toHaveAttribute('href', `${site.url}/photos`);
   });
 });
 

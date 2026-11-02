@@ -5,10 +5,18 @@ import JustifiedGrid from '@/components/photos/JustifiedGrid';
 import MapSheet from '@/components/photos/MapSheet';
 import PhotosHeader from '@/components/photos/PhotosHeader';
 import ViewSwitcher from '@/components/photos/ViewSwitcher';
+import { pageMetadata } from '@/lib/metadata';
 import { photoViews } from '@/lib/photos/view-model';
 import { VIEW_LABELS, parseView } from '@/lib/photos/view-param';
 
-export const metadata: Metadata = { title: 'Photographs' };
+// SEO-01: own title, description (12-01 meta.photos) and canonical. Every
+// ?view= value canonicalises to /photos: the view is a presentation of one page.
+export const metadata: Metadata = pageMetadata({
+  title: 'Photographs',
+  description:
+    'Landscape photographs from around Zermatt, each placed on the terrain where Tim took it.',
+  path: '/photos',
+});
 
 /**
  * /photos (PHOTO-02, PHOTO-03; D-14, D-15; 10-UI-SPEC "Page Structure").

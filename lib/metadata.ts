@@ -1,6 +1,13 @@
 import type { Metadata } from 'next';
 
 /**
+ * The root description: the default every route inherits from app/layout.tsx
+ * and Home's own description, kept in one place so the two cannot drift.
+ */
+export const SITE_DESCRIPTION =
+  'Tim Lui is a developer and photographer. Landscape photographs from the Matterhorn region and software projects.';
+
+/**
  * One route's own head fields (SEO-01; 12-RESEARCH Pattern 2 and finding 2).
  *
  * Returns the title only when one is given (Home keeps the root default),

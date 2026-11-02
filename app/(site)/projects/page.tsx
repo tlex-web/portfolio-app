@@ -5,8 +5,15 @@ import RouteProfile from '@/components/projects/RouteProfile';
 import { projects, projectsIntro } from '@/data/projects';
 import type { Project } from '@/data/types';
 import { countLabel } from '@/lib/home-format';
+import { pageMetadata } from '@/lib/metadata';
 
-export const metadata: Metadata = { title: 'Engineering' };
+// SEO-01: own title, description (12-01 meta.projects) and canonical.
+export const metadata: Metadata = pageMetadata({
+  title: 'Engineering',
+  description:
+    'What Tim builds: box, a command-line toolkit for PowerShell, and coin-flip, a fair 3D coin toss for Android.',
+  path: '/projects',
+});
 
 /**
  * Maps one project to the route panel's props, the only place the page reads

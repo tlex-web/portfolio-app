@@ -22,8 +22,8 @@ import { projects } from '@/data/projects';
  * case-sensitive match (/projects/BOX is a 404, as in /photos/[slug]).
  *
  * generateMetadata gives the page '{project.name} · Tim Lui' through the root
- * title template and Tim's approved pitch as the description; Phase 12
- * attaches the OG images here (SEO-02).
+ * title template, Tim's approved pitch as the description and its own
+ * canonical (SEO-01); Phase 12 attaches the OG images here (SEO-02).
  */
 
 interface PageProps {
@@ -40,9 +40,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const project = projects.find((p) => p.slug === slug);
   if (!project) return {};
+  // SEO-01: the relative canonical resolves against metadataBase (site.url, D-13).
+  const alternates = { canonical: `/projects/${project.slug}` };
   return project.pitch
-    ? { title: project.name, description: project.pitch }
-    : { title: project.name };
+    ? { title: project.name, description: project.pitch, alternates }
+    : { title: project.name, alternates };
 }
 
 export default async function ProjectDetailPage({ params }: PageProps) {

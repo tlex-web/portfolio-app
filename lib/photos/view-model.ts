@@ -378,13 +378,20 @@ export function photoBySlug(slug: string): PhotoView | undefined {
  * page and the intercepted lightbox can never disagree on the title. The root
  * template turns the title into '{title} · Tim Lui'. An unknown slug gets {}:
  * the route renders the 404 anyway. Phase 12 attaches OG images here (SEO-02).
+ *
+ * The description follows Tim's approved template (SEO-01, 12-01
+ * meta.photo-slug): "{title}: a photograph by Tim Lui from {short place} at
+ * {altitude}[ approx.], {Mon YYYY | YYYY}." altitudeLabel already carries
+ * ' approx.' for a hand-placed position and captureMonth is the year alone for
+ * a year-precision scan, so neither is re-derived here. The canonical is
+ * relative and resolves against metadataBase (site.url, D-13).
  */
 export function photoMetadata(slug: string): Metadata {
   const view = photoBySlug(slug);
   if (!view) return {};
   return {
     title: view.title,
-    description: view.story,
+    description: `${view.title}: a photograph by ${site.name} from ${view.shortPlace} at ${view.altitudeLabel}, ${view.captureMonth}.`,
     alternates: { canonical: `/photos/${view.slug}` },
   };
 }

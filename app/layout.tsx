@@ -5,6 +5,7 @@ import { Analytics } from '@vercel/analytics/next';
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration';
 import SpeedInsightsRoute from '@/components/SpeedInsightsRoute';
 import { site } from '@/data/site';
+import { SITE_DESCRIPTION } from '@/lib/metadata';
 import './globals.css';
 
 // Display face (DSGN-07): h1, h2 and the wordmark. Variable wght 400-900;
@@ -34,8 +35,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   // SHELL-03: identity from data/site.ts (name, role); child segments render "<page> · Tim Lui"
   title: { default: 'Tim Lui · Developer & photographer', template: '%s · Tim Lui' },
-  description:
-    'Tim Lui is a developer and photographer. Landscape photographs from the Matterhorn region and software projects.',
+  description: SITE_DESCRIPTION,
   // Inherited by every route: pages set no openGraph or twitter of their own
   // (lib/metadata.ts), so these and the file-based OG images survive the
   // shallow merge. No canonical here: every route would inherit it (SEO-01).
