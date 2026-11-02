@@ -92,3 +92,15 @@ After the production build I ran `git restore public/service-worker.js`, so the 
 _Fixed: 2026-11-02T02:07:39Z_
 _Fixer: Claude (gsd-code-fixer)_
 _Iteration: 1_
+
+## Tim's sign-off on the WR-02 behaviour (2026-11-02)
+
+Question (verbatim): "WR-02 fix on the /roadmap filters: while a press is pending (until the server render lands, usually a few hundred ms), the OTHER filter group's unpressed segments now dim and ignore presses. They stay in the tab order and still show the old counts while dimmed. Nothing changes at rest. Keep this?"
+
+Tim's selected answer, verbatim:
+
+```
+Keep it (Recommended)
+```
+
+The alternative offered and declined: recount on the client from a 9-number area × status tally prop.
