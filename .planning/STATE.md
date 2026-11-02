@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 12
 current_phase_name: Contact, Edge Pages, Cleanup & Verification
 status: executing
-stopped_at: Completed 12-12-PLAN.md
-last_updated: "2026-11-02T21:22:55.722Z"
+stopped_at: Completed 12-13-PLAN.md
+last_updated: "2026-11-02T21:45:35.467Z"
 last_activity: 2026-11-02
 last_activity_desc: Phase 12 execution started
-state_head: 7c449e0f602489dfa8fa08e285f6cd42f6489fe1
+state_head: f17f68a786bd96705093b19b93fe0636490635a3
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 120
-  completed_plans: 106
-  percent: 88
+  completed_plans: 107
+  percent: 89
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-11-02)
 ## Current Position
 
 Phase: 12 (Contact, Edge Pages, Cleanup & Verification) — EXECUTING
-Plan: 13 of 26
+Plan: 14 of 26
 Status: Ready to execute
 Last activity: 2026-11-02 — Phase 12 execution started
 
-Progress: [█████████░] 88%
+Progress: [█████████░] 89%
 
 ## Performance Metrics
 
@@ -164,6 +164,7 @@ Progress: [█████████░] 88%
 | Phase 12 P06 | 11 min | 3 tasks | 7 files |
 | Phase 12 P11 | 41 min | 3 tasks | 4 files |
 | Phase 12 P12 | 10min | 2 tasks | 11 files |
+| Phase 12 P13 | 16 min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -439,6 +440,10 @@ Recent decisions affecting current work:
 - [Phase 12]: 12-06: TerrainStage's idle arm waits for the window load event on Tim's "Canvas fix"; loadEventStart now precedes the three/R3F chunk on the HOME-08 profile, LCP unchanged
 - [Phase 12]: [12-11] Round 1 re-baseline closed: only roadmap/{375,768,1440}-reduced changed (kicker 1 Nov -> 2 Nov 2026), Tim committed them in a046347 (reply "pushed"); check-snapshot-commit --some --allow roadmap OK (3 changed); 45 byte-identical shots prove 12-02..12-06 and 12-08..12-10 zero-diff, and the box/coin-flip D-24 fixes zero-pixel; CI run 41522964315 green (Visual, E2E, Unit, Lint)
 - [Phase 12]: [12-12] Marked-trail 404 shipped with the square edge sheet (default #7 kept by Tim): EdgeLayout + zero-JS EdgeArt (7-point switchback, dot 72.4 units off), Tim's 404 sentences, title 'Page not found · Tim Lui'; round 2 expects not-found 375/768/1440 diffs
+- [Phase 12]: 12-13: Task 1 tracer ships validateField with the approved copy (its e2e/a11y verify needs field errors); Task 2 RED/GREEN on the Error prefix, error-then-hint, entry timestamp and formatters
+- [Phase 12]: 12-13: rate-limit minutes read Retry-After, falling back to body retryAfterS; neither gives 'Try again later'
+- [Phase 12]: 12-13: until 12-26's summary, an invalid submit focuses the first invalid field
+- [Phase 12]: 12-13: the register form declares method=post so a pre-hydration submit never puts visitor text in a URL (D-04)
 
 ### Pending Todos
 
@@ -485,6 +490,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-02T21:22:54.526Z
-Stopped at: Completed 12-12-PLAN.md
+Last session: 2026-11-02T21:45:34.269Z
+Stopped at: Completed 12-13-PLAN.md
 Resume file: None
