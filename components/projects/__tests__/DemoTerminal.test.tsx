@@ -9,7 +9,9 @@
  * toggle, `aria-current` on the dots, `aria-live` on the screen-reader text,
  * `data-note` on the note line and the text itself, never from colour
  * classes. Each command is rendered in its own `data-cell` of one shared grid
- * cell, so the current one is read through its cell. The island is rendered
+ * cell, so the current one is read through its cell; the body-height tests
+ * may assert that layout contract (`grid`, `[grid-area:1/1]`, `invisible`;
+ * 12-UI-SPEC D-24). The island is rendered
  * with the name 'box', so its region is 'box demo'.
  */
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
@@ -132,7 +134,8 @@ async function pressAndRelease(user: ReturnType<typeof userEvent.setup>) {
 beforeEach(() => {
   jest.useFakeTimers();
   observers = [];
-  window.IntersectionObserver = CapturingIntersectionObserver as unknown as typeof IntersectionObserver;
+  window.IntersectionObserver =
+    CapturingIntersectionObserver as unknown as typeof IntersectionObserver;
   setReducedMotion(false);
   Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
 });
@@ -372,7 +375,10 @@ describe('DemoTerminal one and many commands (G2, G3)', () => {
   });
 
   it('gives seven commands seven dots in a wrapping bar', () => {
-    const seven = Array.from({ length: 7 }, (_, i) => ({ ...COMMANDS[i % 4], input: `box uuid ${i + 1}` }));
+    const seven = Array.from({ length: 7 }, (_, i) => ({
+      ...COMMANDS[i % 4],
+      input: `box uuid ${i + 1}`,
+    }));
     setup(seven);
     const bar = within(region()).getByRole('group', { name: 'Commands' });
     expect(within(bar).getAllByRole('button', { name: /^Go to command/ })).toHaveLength(7);
@@ -408,6 +414,46 @@ describe('DemoTerminal lines (D-26)', () => {
     setup();
     expect(cell(2).querySelector('[data-note]')).toBeNull();
     expect(cell(3).querySelector('[data-note]')).toBeNull();
+  });
+});
+
+describe('DemoTerminal body height (12-UI-SPEC D-24, E13)', () => {
+  /** Every drawn cell of the body: the commands and the typing command's reservation copy. */
+  function drawnCells(): HTMLElement[] {
+    const body = cell(1).parentElement as HTMLElement;
+    return Array.from(body.children) as HTMLElement[];
+  }
+
+  it('renders every command in one shared grid cell, only the current one visible', () => {
+    setup();
+    const body = cell(1).parentElement as HTMLElement;
+    // The layout contract: a grid body, each entry placed in grid-area 1 / 1.
+    expect(body).toHaveClass('grid');
+    const cells = drawnCells();
+    expect(cells).toHaveLength(COMMANDS.length);
+    cells.forEach((el) => expect(el).toHaveClass('[grid-area:1/1]'));
+    COMMANDS.forEach((c, i) => {
+      // Every entry's full text is present, so the tallest one sizes the body.
+      expect(cell(i + 1)).toHaveTextContent(c.input);
+      expect(cell(i + 1)).toHaveTextContent(c.output);
+      expect(cell(i + 1)).toHaveAttribute('aria-hidden', 'true');
+      if (i === 0) expect(cell(i + 1)).not.toHaveClass('invisible');
+      else expect(cell(i + 1)).toHaveClass('invisible');
+    });
+  });
+
+  it('holds the typing command at full height in the same cell, so typing shifts nothing', () => {
+    setup();
+    advance(3000 + 50 * 3); // command 2 is typing
+    const cells = drawnCells();
+    // The commands plus one invisible complete copy of the typing command.
+    expect(cells).toHaveLength(COMMANDS.length + 1);
+    cells.forEach((el) => expect(el).toHaveClass('[grid-area:1/1]'));
+    const copy = cells.find((el) => !el.hasAttribute('data-cell')) as HTMLElement;
+    expect(copy).toHaveClass('invisible');
+    expect(copy).toHaveAttribute('aria-hidden', 'true');
+    expect(copy).toHaveTextContent('show disk');
+    expect(copy).toHaveTextContent('df -h');
   });
 });
 

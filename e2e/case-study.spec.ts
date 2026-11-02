@@ -304,13 +304,13 @@ test.describe('Case-study sections', () => {
         await expect(cell.locator('dt')).toHaveText(tile.label);
         const dds = cell.locator('dd');
         await expect(dds.nth(0)).toHaveText(tile.value);
-        // textContent includes the sr-only suffix, so the line ends with the tile's name (G-11-4).
+        // The tile's name is in the link's aria-label only, so the line reads as on screen (12 D-24).
         await expect(dds.nth(1)).toHaveText(
-          tile.sourceUrl ? `${tile.context} Source (${tile.label})` : tile.context
+          tile.sourceUrl ? `${tile.context} Source` : tile.context
         );
         if (tile.sourceUrl) {
           const source = dds.nth(1).getByRole('link', {
-            name: `Source (${tile.label})`,
+            name: `Source for ${tile.label}`,
             exact: true,
           });
           await expect(source).toHaveAttribute('href', tile.sourceUrl);
@@ -333,13 +333,14 @@ test.describe('Case-study sections', () => {
   }
 
   /**
-   * The G-11-4 suffixes add a name, never a pixel: at the visual-baseline
-   * widths and height (e2e/visual/routes.spec.ts) every suffix box is at most
-   * 1 x 1 px, and removing the suffixes moves no dl, tile, dd or link and
-   * changes neither document scroll size. Fails if the sr-only class is lost,
-   * since the suffix would then become a flex item and widen its link.
+   * The G-11-4 tile names add a name, never a pixel (12 D-24): each source
+   * link's accessible name is its aria-label 'Source for {label}', which
+   * begins with the visible word (label in name), and the link holds no
+   * hidden text. At the visual-baseline widths and height
+   * (e2e/visual/routes.spec.ts) every link's text is exactly 'Source' and the
+   * page does not scroll sideways.
    */
-  test('box Metrics source suffixes are screen-reader-only: removing them moves nothing at 375, 768 and 1440 px (G-11-4)', async ({
+  test('box Metrics source links carry their tile name in the accessible name only, at 375, 768 and 1440 px (G-11-4, 12 D-24)', async ({
     page,
   }) => {
     const tiles = box.metrics?.tiles ?? [];
@@ -352,42 +353,27 @@ test.describe('Case-study sections', () => {
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
       await page.evaluate(() => document.fonts.ready);
 
-      // One synchronous evaluate, so no font swap or frame lands between the two measurements.
-      const m = await page.locator('section#metrics').evaluate((section) => {
-        const rect = (el: Element) => {
-          const r = el.getBoundingClientRect();
-          return { x: r.x, y: r.y, width: r.width, height: r.height };
-        };
-        const all = (selector: string) => Array.from(section.querySelectorAll(selector));
-        const layout = () => ({
-          rects: [...all('dl'), ...all('dl > div'), ...all('dd'), ...all('a')].map(rect),
-          scrollWidth: document.documentElement.scrollWidth,
-          scrollHeight: document.documentElement.scrollHeight,
-        });
-        const before = layout();
-        const suffixes = all('.sr-only');
-        const suffixRects = suffixes.map(rect);
-        suffixes.forEach((el) => el.remove());
-        const after = layout();
-        const contexts = all('dl > div').map((cell) =>
-          (cell.querySelectorAll('dd')[1]?.textContent ?? '').replace(/\s+/g, ' ').trim()
-        );
-        return { before, after, suffixCount: suffixes.length, suffixRects, contexts };
-      });
-
-      expect(m.suffixCount, `suffixes at ${width} px`).toBe(sourced.length);
-      for (const r of m.suffixRects) {
-        expect(r.width, `suffix width at ${width} px`).toBeLessThanOrEqual(1);
-        expect(r.height, `suffix height at ${width} px`).toBeLessThanOrEqual(1);
+      const metrics = page.locator('section#metrics');
+      const links = metrics.getByRole('link', { name: /^Source for / });
+      await expect(links, `links at ${width} px`).toHaveCount(sourced.length);
+      for (const tile of sourced) {
+        const link = metrics.getByRole('link', { name: `Source for ${tile.label}`, exact: true });
+        await expect(link).toHaveAttribute('aria-label', `Source for ${tile.label}`);
+        await expect(link).toHaveText('Source');
       }
-      expect(m.before.rects.length).toBe(1 + tiles.length * 3 + sourced.length);
-      expect(m.after.rects, `layout at ${width} px`).toEqual(m.before.rects);
-      expect(m.after.scrollWidth, `scrollWidth at ${width} px`).toBe(m.before.scrollWidth);
-      expect(m.after.scrollHeight, `scrollHeight at ${width} px`).toBe(m.before.scrollHeight);
-      // Without the suffixes each line reads as it did before G-11-4.
+      const m = await metrics.evaluate((section) => ({
+        hidden: section.querySelectorAll('.sr-only').length,
+        contexts: Array.from(section.querySelectorAll('dl > div')).map((cell) =>
+          (cell.querySelectorAll('dd')[1]?.textContent ?? '').replace(/\s+/g, ' ').trim()
+        ),
+        scrollWidth: document.documentElement.scrollWidth,
+        clientWidth: document.documentElement.clientWidth,
+      }));
+      expect(m.hidden, `sr-only text at ${width} px`).toBe(0);
       expect(m.contexts).toEqual(
         tiles.map((tile) => (tile.sourceUrl ? `${tile.context} Source` : tile.context))
       );
+      expect(m.scrollWidth, `scrollWidth at ${width} px`).toBeLessThanOrEqual(m.clientWidth);
     }
   });
 
@@ -673,6 +659,48 @@ test.describe('Demo (ENG-05)', () => {
       clientWidth: document.documentElement.clientWidth,
     }));
     expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+  });
+
+  /**
+   * 12-UI-SPEC D-24 and E13 long-text: the body is as tall as the longest
+   * command wrapped at the current width, so typing never moves anything
+   * below it. Samples the body height every frame from load until the first
+   * typed command (command 2) has been typing for a while; the typing
+   * command's invisible reservation copy marks that phase.
+   */
+  test('the body height does not change while the first command types, at 375 px (E13)', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 800 });
+    await page.goto(BOX);
+    const region = page.getByRole('region', { name: regionName });
+    // Offscreen and hover are pause sources: bring it into view, pointer away.
+    await region.scrollIntoViewIfNeeded();
+    await page.mouse.move(0, 0);
+    await expect(region).toHaveAttribute('data-playback', 'playing');
+
+    const m = await region.evaluate(
+      (el, commandCount) =>
+        new Promise<{ heights: number[]; typed: number }>((resolve) => {
+          const body = el.querySelector('[data-cell="1"]')?.parentElement as HTMLElement;
+          const heights: number[] = [];
+          let typed = 0;
+          const step = () => {
+            heights.push(body.getBoundingClientRect().height);
+            const typing =
+              el.getAttribute('data-command') === '2' && body.children.length > commandCount;
+            if (typing) typed += 1;
+            if (typed >= 30) resolve({ heights, typed });
+            else requestAnimationFrame(step);
+          };
+          requestAnimationFrame(step);
+        }),
+      box.demo?.commands.length ?? 0
+    );
+
+    expect(m.typed).toBeGreaterThanOrEqual(30);
+    expect(m.heights[0]).toBeGreaterThan(0);
+    expect(Math.max(...m.heights) - Math.min(...m.heights)).toBe(0);
   });
 });
 

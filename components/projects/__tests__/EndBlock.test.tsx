@@ -2,7 +2,8 @@
  * The case-study end block (ENG-02; 11-UI-SPEC "End block", E13; §I #6
  * default: Tim's "All defaults (Recommended)", 11-02 default.6).
  * The Next route sign points at the other project and the one primary link
- * asks for a walkthrough. Assertions use roles, names and hrefs only.
+ * asks for a walkthrough. Assertions use roles, names and hrefs, plus the
+ * sign's height contract (min-h-14, no py-3; 12-UI-SPEC D-24), never colour.
  */
 import { render, screen } from '@testing-library/react';
 import EndBlock from '../EndBlock';
@@ -47,5 +48,16 @@ describe('EndBlock', () => {
 
     expect(screen.getAllByRole('link')).toHaveLength(2);
     expect(screen.queryByRole('heading')).not.toBeInTheDocument();
+  });
+
+  it('takes its height from min-h-14 (the 09 TrailSigns height), not from 12 px padding (12 D-24)', () => {
+    render(<EndBlock current={project('box')} />);
+
+    const sign = screen.getByRole('link', { name: 'coin-flip, next route' });
+    expect(sign).toHaveClass('min-h-14', 'items-stretch');
+    // The plate is the sign's first child; the banned 12 px vertical padding is gone.
+    const plate = sign.firstElementChild as HTMLElement;
+    expect(plate).toHaveTextContent('coin-flipNext route');
+    expect(plate).not.toHaveClass('py-3');
   });
 });
