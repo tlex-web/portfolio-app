@@ -41,7 +41,9 @@ describe('service worker (committed form)', () => {
   });
 
   test('precaches the PRECACHE list on install', () => {
-    expect(sw).toContain("cache.addAll(['/', '/offline', ...PRECACHE])");
+    // 12-08 (D-12): install adds /offline's own assets to the same addAll list;
+    // the behaviour is covered in lib/__tests__/service-worker-navigation.test.ts.
+    expect(sw).toMatch(/cache\.addAll\(\[\.\.\.new Set\(\['\/', '\/offline', \.\.\.PRECACHE,/);
   });
 
   test('serves /terrain/ cache-first', () => {

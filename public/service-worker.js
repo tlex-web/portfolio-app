@@ -31,37 +31,61 @@ async function cacheFirst(request, cacheName) {
   }
 }
 
-async function staleWhileRevalidate(request, cacheName) {
-  const cache = await caches.open(cacheName);
-  const cached = await cache.match(request);
-
-  const fetchPromise = fetch(request)
-    .then((response) => {
-      if (response && response.ok) {
-        cache.put(request, response.clone());
-      }
-      return response;
-    })
-    .catch(() => undefined);
-
-  if (cached) {
-    return cached;
+// Page navigations (EDGE-02): the network answers whenever it can, so no
+// visitor sees a page from an earlier deploy. Only an ok, same-origin
+// ('basic'), non-redirected answer is stored; a 404, a 500, a redirect or an
+// opaque answer is passed through and never stored, and a cached copy never
+// replaces a network answer (the proxy's neutral 404 included). Only a network
+// error falls back: the cached page, then the cached /offline, then a 503.
+async function networkFirstNavigation(request) {
+  let response;
+  try {
+    response = await fetch(request);
+  } catch {
+    return (
+      (await caches.match(request)) ||
+      (await caches.match('/offline')) ||
+      new Response('Offline', {
+        status: 503,
+        statusText: 'Service Unavailable',
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      })
+    );
   }
 
-  const response = await fetchPromise;
-  if (response) {
-    return response;
+  if (response.ok && response.type === 'basic' && !response.redirected) {
+    const cache = await caches.open(DYNAMIC_CACHE);
+    cache.put(request, response.clone());
   }
+  return response;
+}
 
-  // Offline fallback for navigation requests
-  const offlinePage = await caches.match('/offline');
-  return (
-    offlinePage ||
-    new Response('Offline - please check your connection', {
-      status: 503,
-      statusText: 'Service Unavailable',
-    })
+// RSC payloads (client navigations and prefetches) carry a `_rsc` query or an
+// `RSC: 1` header. They stay out of the worker: a stored payload from an
+// earlier build would be served stale, and it is junk in Cache Storage.
+function isRscRequest(request, url) {
+  return url.searchParams.has('_rsc') || request.headers.get('RSC') === '1';
+}
+
+// D-12: /offline must render styled with no network, so install stores it
+// together with every /_next/static/ file its HTML references and every font
+// its Link header preloads (Next sends font preloads in the header, not the
+// HTML). cache.addAll is all-or-nothing: if any URL fails, install rejects and
+// the previous worker stays in control.
+async function precacheOfflineAssets() {
+  const cache = await caches.open(STATIC_CACHE);
+  const response = await fetch('/offline', { cache: 'no-store' });
+  if (!response.ok) {
+    throw new Error(`/offline answered ${response.status}`);
+  }
+  const html = await response.text();
+  const fromHtml = [...html.matchAll(/(?:href|src)="(\/_next\/static\/[^"]+)"/g)].map((m) =>
+    m[1].replace(/&amp;/g, '&')
   );
+  const fromLink = [
+    ...(response.headers.get('link') || '').matchAll(/<(\/_next\/static\/media\/[^>]+)>/g),
+  ].map((m) => m[1]);
+  await cache.addAll([...new Set(['/', '/offline', ...PRECACHE, ...fromHtml, ...fromLink])]);
 }
 
 async function networkFirst(request, cacheName) {
@@ -80,13 +104,9 @@ async function networkFirst(request, cacheName) {
 
 // --- Lifecycle events ---
 
-// Install: precache critical assets
+// Install: precache '/', /offline with the assets it needs, and PRECACHE
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => {
-      return cache.addAll(['/', '/offline', ...PRECACHE]);
-    })
-  );
+  event.waitUntil(precacheOfflineAssets());
 
   self.skipWaiting();
 });
@@ -137,6 +157,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Network-only for RSC payloads (never served from or stored in a cache)
+  if (isRscRequest(request, url)) {
+    return;
+  }
+
   // Cache-first for fingerprinted static assets (every /terrain/ file carries a
   // content hash in its name; fetch() of a heightmap has no image destination)
   if (
@@ -158,12 +183,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Stale-while-revalidate for HTML pages
-  if (
-    request.mode === 'navigate' ||
-    (request.headers.get('accept') || '').includes('text/html')
-  ) {
-    event.respondWith(staleWhileRevalidate(request, DYNAMIC_CACHE));
+  // Network-first for page navigations (EDGE-02)
+  if (request.mode === 'navigate') {
+    event.respondWith(networkFirstNavigation(request));
     return;
   }
 
