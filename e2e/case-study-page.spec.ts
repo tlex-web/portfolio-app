@@ -107,6 +107,34 @@ for (const project of projects) {
       await expect(nav.locator(':scope > ol [aria-current]')).toHaveCount(1);
     });
 
+    test('the index marks nothing current after a sweep to the end jumps back to the top', async ({
+      page,
+    }) => {
+      await page.setViewportSize(WIDE);
+      await page.goto(path);
+      const links = await indexLinks(page);
+      const last = links[links.length - 1];
+      const nav = routeStages(page);
+
+      // The visual suite's settle() sweep: half a viewport at a time, then one
+      // jump back to y = 0 that carries every passed section below the band
+      // without crossing it.
+      await page.evaluate(async () => {
+        const step = window.innerHeight / 2;
+        for (let y = 0; y < document.documentElement.scrollHeight; y += step) {
+          window.scrollTo(0, y);
+          await new Promise((resolve) => setTimeout(resolve, 60));
+        }
+      });
+      await expect(nav.getByRole('link', { name: last.label, exact: true })).toHaveAttribute(
+        'aria-current',
+        'location'
+      );
+
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await expect(nav.locator(':scope > ol [aria-current]')).toHaveCount(0);
+    });
+
     test('below 1024 px the index is a closed Route stages disclosure, not a sticky list', async ({
       page,
     }) => {
