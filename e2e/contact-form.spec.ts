@@ -313,8 +313,14 @@ test.describe('Direct contact panel', () => {
   });
 
   // The DOM order is form then panel at every width, so Tab runs through the
-  // register before Copy and the mailto link.
-  test('should tab from the register into the panel at 1440 px', async ({ page }) => {
+  // register before Copy and the mailto link. Playwright's WebKit keeps
+  // Safari's default, where Tab never lands on a link (Alt+Tab does not reach
+  // one either, probed 2026-11-02), so the mailto step is checked in Chromium
+  // and Firefox only; the WebKit run still checks the order up to Copy.
+  test('should tab from the register into the panel at 1440 px', async ({
+    page,
+    browserName,
+  }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await openContact(page);
 
@@ -325,8 +331,8 @@ test.describe('Direct contact panel', () => {
       page.getByRole('checkbox'),
       sendButton(page),
       copyButton(page),
-      page.getByRole('link', { name: 'Write an email' }),
     ];
+    if (browserName !== 'webkit') order.push(page.getByRole('link', { name: 'Write an email' }));
     for (const next of order) {
       await page.keyboard.press('Tab');
       await expect(next).toBeFocused();
