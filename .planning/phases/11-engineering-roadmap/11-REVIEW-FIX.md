@@ -33,7 +33,7 @@ status: all_fixed
 
 The 11-14 rules and the 11-17 sweep-to-top test are unchanged, and all 12 earlier RouteIndex tests still pass. The rendered markup is unchanged.
 
-### WR-02: RouteLogFilters judges disabled segments with stale counts while a press is pending
+### WR-02: RouteLogFilters judges disabled segments with stale counts while a press is pending, so a fast second press can reach an empty combination
 
 **Files modified:** `components/roadmap/RouteLogFilters.tsx`, `components/roadmap/__tests__/RouteLogFilters.test.tsx`
 **Commit:** 5aef73d
