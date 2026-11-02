@@ -304,17 +304,27 @@ test.describe('Case-study sections', () => {
         await expect(cell.locator('dt')).toHaveText(tile.label);
         const dds = cell.locator('dd');
         await expect(dds.nth(0)).toHaveText(tile.value);
+        // textContent includes the sr-only suffix, so the line ends with the tile's name (G-11-4).
         await expect(dds.nth(1)).toHaveText(
-          tile.sourceUrl ? `${tile.context} Source` : tile.context
+          tile.sourceUrl ? `${tile.context} Source (${tile.label})` : tile.context
         );
-        const source = dds.nth(1).getByRole('link', { name: 'Source', exact: true });
         if (tile.sourceUrl) {
+          const source = dds.nth(1).getByRole('link', {
+            name: `Source (${tile.label})`,
+            exact: true,
+          });
           await expect(source).toHaveAttribute('href', tile.sourceUrl);
           await expect(source).not.toHaveAttribute('target', /.*/);
         } else {
-          await expect(source).toHaveCount(0);
+          await expect(dds.nth(1).getByRole('link')).toHaveCount(0);
         }
       }
+      // Each source link names its tile: none is the bare word 'Source' (11-UAT G-11-4).
+      const metrics = page.locator('section#metrics');
+      await expect(metrics.getByRole('link', { name: 'Source', exact: true })).toHaveCount(0);
+      await expect(metrics.getByRole('link')).toHaveCount(
+        tiles.filter((tile) => tile.sourceUrl).length
+      );
       // coin-flip's context lines never link anywhere (D-23).
       if (project.slug === 'coin-flip') {
         await expect(page.locator('section#metrics a')).toHaveCount(0);

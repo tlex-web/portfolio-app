@@ -3,7 +3,8 @@
  * "Metrics — instrument panel", edge ENG-04 adjacency, empty and ordering).
  * The column count is the G1 contract (never more columns than tiles, an
  * orphan last tile spans the rest of its row), so these tests may assert the
- * grid and span classes; everything else asserts roles, text, links and order.
+ * grid and span classes, and the sr-only class of a source link's suffix
+ * (11-UAT G-11-4); everything else asserts roles, text, links and order.
  */
 import { createElement } from 'react';
 import { render, screen, within } from '@testing-library/react';
@@ -92,11 +93,36 @@ describe('Metrics panel structure', () => {
     const { cells } = panel();
 
     const contextDd = cells[0].querySelectorAll('dd')[1] as HTMLElement;
-    const link = within(contextDd).getByRole('link', { name: 'Source' });
+    const link = within(contextDd).getByRole('link', { name: 'Source (Label 1)' });
     expect(link).toHaveAttribute('href', 'https://github.com/tlex-web/box#readme');
-    expect(contextDd.textContent).toMatch(/^Context line 1 Source$/);
+    expect(contextDd.textContent).toMatch(/^Context line 1 Source \(Label 1\)$/);
+    // On screen the line is unchanged: without its sr-only words it reads as before.
+    const onScreen = contextDd.cloneNode(true) as HTMLElement;
+    onScreen.querySelectorAll('.sr-only').forEach((el) => el.remove());
+    expect(onScreen.textContent).toBe('Context line 1 Source');
+    // The suffix is the tile's own label, read only by assistive technology.
+    const suffixes = link.querySelectorAll('.sr-only');
+    expect(suffixes).toHaveLength(1);
+    expect(suffixes[0]).toHaveClass('sr-only');
+    expect(suffixes[0].textContent).toBe(' (Label 1)');
     expect(within(cells[1]).queryByRole('link')).toBeNull();
+    expect(cells[1].querySelector('.sr-only')).toBeNull();
     expect(screen.getAllByRole('link')).toHaveLength(1);
+  });
+
+  it('names every source link after its tile, so links to the same page are told apart (G-11-4)', () => {
+    const readme = 'https://github.com/tlex-web/box#readme';
+    const urls = [readme, 'https://github.com/tlex-web/box/blob/main/.planning/MILESTONES.md', readme];
+    const list = tiles(3).map((tile, i) => ({ ...tile, sourceUrl: urls[i] }));
+    renderPanel(list);
+    const { cells } = panel();
+
+    cells.forEach((cell, i) => {
+      const link = within(cell).getByRole('link', { name: `Source (Label ${i + 1})` });
+      expect(link).toHaveAttribute('href', urls[i]);
+    });
+    expect(screen.queryAllByRole('link', { name: 'Source' })).toHaveLength(0);
+    expect(screen.getAllByRole('link')).toHaveLength(3);
   });
 
   it('shows every value on the first render, with no state or effect (no count-up)', () => {

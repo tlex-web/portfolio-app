@@ -49,6 +49,11 @@ function lastTileSpan(n: number): string {
  * with a prose link to its public source (coin-flip tiles never carry one,
  * D-23). Values are final on first paint: no state, no count-up. Only audited
  * tiles reach the data, so a project without one renders no section.
+ * Each source link is named 'Source' plus an sr-only ' ({tile label})', so
+ * links that share a page are still told apart (11-UAT G-11-4, the FactSource
+ * pattern in components/photos/Hotspots.tsx). The suffix starts with a space
+ * because the inline-flex link blockifies it in name computation, which pads
+ * it with spaces in the browser but not in jsdom.
  */
 export default function Metrics({
   id,
@@ -92,6 +97,7 @@ export default function Metrics({
                   >
                     Source
                     <ArrowSquareOutIcon size={16} aria-hidden="true" />
+                    <span className="sr-only"> ({tile.label})</span>
                   </a>
                 </>
               )}
