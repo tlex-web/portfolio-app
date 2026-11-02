@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 12
 current_phase_name: Contact, Edge Pages, Cleanup & Verification
 status: executing
-stopped_at: Completed 12-03-PLAN.md
-last_updated: "2026-11-02T16:51:51.744Z"
+stopped_at: Completed 12-04-PLAN.md
+last_updated: "2026-11-02T17:40:27.390Z"
 last_activity: 2026-11-02
 last_activity_desc: Phase 12 execution started
-state_head: 240e53c580587e0e377334fea7434ef62b139b15
+state_head: 7e89d0b21b014fc153e38688a5356bdb290e8798
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 120
-  completed_plans: 97
-  percent: 81
+  completed_plans: 98
+  percent: 82
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-11-02)
 ## Current Position
 
 Phase: 12 (Contact, Edge Pages, Cleanup & Verification) — EXECUTING
-Plan: 4 of 26
+Plan: 5 of 26
 Status: Ready to execute
 Last activity: 2026-11-02 — Phase 12 execution started
 
-Progress: [████████░░] 81%
+Progress: [████████░░] 82%
 
 ## Performance Metrics
 
@@ -155,6 +155,7 @@ Progress: [████████░░] 81%
 | Phase 12 P02 | 17 min | 3 tasks | 9 files |
 | Phase 12 P01 | 25min | 2 tasks | 1 files |
 | Phase 12 P03 | 6 min | 2 tasks | 5 files |
+| Phase 12 P04 | 14 min | 2 tasks | 28 files |
 
 ## Accumulated Context
 
@@ -410,6 +411,8 @@ Recent decisions affecting current work:
 - [Phase 12]: 12-01: log.phase11 supplied (Phase 11 completed 2026-11-02, Phase 12 in-progress, surveyedAt 2026-11-02); sw.reload-once yes; docs.stale-refs fix in 12-22; vercel.plan Hobby; ci.push yes (plain ci/12-NN pushes, never force); info.csp no veto
 - [Phase 12]: 12-03: feedback API field issues map empty/missing/wrong-type to required, too_small to too_short, too_big to too_long, else invalid_email; fields omitted when no visible field is invalid
 - [Phase 12]: 12-03: zod runs before the trail_note honeypot (locked order), so an invalid bot submission gets 400 validation, not the quiet 200
+- [Phase 12]: 12-04: the colour reset @theme { --color-*: initial; } sits right after the @source not lines; check-contrast skips --<ns>-* namespace resets
+- [Phase 12]: 12-04: LEGACY_DEAD_FILES and palette-ratchet.json are empty for good; former dead-file selftest fixtures now expect failures with exact violation counts
 
 ### Pending Todos
 
@@ -456,6 +459,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-02T16:51:51.070Z
-Stopped at: Completed 12-03-PLAN.md
+Last session: 2026-11-02T17:40:26.725Z
+Stopped at: Completed 12-04-PLAN.md
 Resume file: None

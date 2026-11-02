@@ -234,3 +234,10 @@ None. No external service configuration required.
 ---
 *Phase: 12-contact-edge-pages-cleanup-verification*
 *Completed: 2026-11-02*
+
+## Self-Check: PASSED
+
+- FOUND: lib/__tests__/color-backstop.test.ts, 12-04-SUMMARY.md
+- FOUND commits: 6d725dc, b755711, 1236b9e, 7e89d0b
+- Acceptance re-run: dead files untracked (0 lines), ratchet `{}`, `LEGACY_DEAD_FILES = []` (1), `@deprecated v1 alias` 0, `text-shadow-glow` 0, `--color-*: initial` 1; selftest 86 >= 85
+- Plan verification: lint, type-check, jest (85 suites / 1384 tests) green; `PW_PROD=1` design-system + shell chromium 40 passed on a fresh build; `public/service-worker.js` clean
