@@ -49,7 +49,7 @@ key-files:
 key-decisions:
   - "Metric Source links use aria-label 'Source for {label}' instead of an sr-only suffix, so the name begins with the visible word and jsdom and browsers compute the same name"
   - "RouteLog camp marker: left calc(var(--axis-x) * -1) with -translate-x-1/2 centres it on the axis from inside the h2; --axis-x (45 px) already includes the p-6 padding and border, so no separate padding term is needed"
-  - "copy.heads-sentence not supplied: coin-flip clip description unchanged, item pending Tim"
+  - "copy.heads-sentence not supplied (Tim declined: \"heads skip\"): coin-flip clip description unchanged, item stays open per UI-SPEC Content Gates"
   - "Phase 9 dispositions follow Tim's quoted defaults (default.10, .11, .12): scrim spec amended to lg:, wedge closed as terrain, rail tick accepted; no code change"
 
 patterns-established:
@@ -197,7 +197,7 @@ The camp band and h2 boxes are identical too. All three widths are within 0.5 px
 
 ## HEADS sentence (default.9 / copy.heads-sentence)
 
-default.9 picks the figcaption route (no poster change), but `copy.heads-sentence` is **not supplied** (12-01: Tim's reply "heads skip", no further reason given). The coin-flip clip description in `data/projects.ts` is unchanged and the poster is untouched. The item stays **pending Tim**.
+default.9 picks the figcaption route (no poster change), but `copy.heads-sentence` is **not supplied** (12-01: Tim's reply "heads skip", no further reason given). The coin-flip clip description in `data/projects.ts` is unchanged and the poster is untouched. Tim declined the sentence ("heads skip"), so per the UI-SPEC Content Gates the item stays open with that answer; it is not awaiting a reply.
 
 ## Round 1 expected diffs (for 12-11)
 
@@ -269,7 +269,7 @@ None. No external service configuration required.
 ## Next Phase Readiness
 
 - box, coin-flip and roadmap carry the round-1 fixes and Tim's dates, ready for the 12-11 re-baseline run.
-- Open for Tim: copy.heads-sentence (HEADS figcaption sentence), pending.
+- copy.heads-sentence (HEADS figcaption sentence): declined by Tim ("heads skip"); stays open per the UI-SPEC Content Gates, no reply awaited.
 
 ---
 *Phase: 12-contact-edge-pages-cleanup-verification*
