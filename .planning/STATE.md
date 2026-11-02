@@ -4,17 +4,17 @@ milestone: v2.0
 milestone_name: Topographic Identity
 current_phase: 11
 current_phase_name: Engineering & Roadmap
-status: executing
-stopped_at: Completed 11-17-PLAN.md (18/18 plans; phase verification next)
-last_updated: "2026-11-02T01:04:31.387Z"
+status: verifying
+stopped_at: Completed 11-19-PLAN.md (G-11-4 gap closure)
+last_updated: "2026-11-02T11:24:12.992Z"
 last_activity: 2026-11-02
 last_activity_desc: Phase 11 execution started
-state_head: f517799b5ac1b24b53adcc53c1c10bbdf62d1bb0
+state_head: d111885544d93fbfd61119b17a0379711768f9ce
 progress:
   total_phases: 6
   completed_phases: 10
-  total_plans: 93
-  completed_plans: 93
+  total_plans: 94
+  completed_plans: 94
   percent: 100
 ---
 
@@ -30,9 +30,9 @@ See: .planning/PROJECT.md (updated 2026-10-26)
 ## Current Position
 
 Phase: 11 (Engineering & Roadmap) — EXECUTING
-Plan: 18 of 18 (every plan has a SUMMARY)
-Status: All 18 plans complete; phase verification and phase.complete next (orchestrator)
-Last activity: 2026-11-02 — 11-17 complete: Tim's baseline commit e511d7a ("pushed") passed check-snapshot-commit per slug, CI run 41367381672 green on attempt 1 and on the single re-run (attempt 2), ratchet raised 1300 -> 1749 (b9ec33f); ratchet and SUMMARY commits stay local (not pushed)
+Plan: 19 of 19
+Status: Phase complete — ready for verification
+Last activity: 2026-11-02 — Phase 11 execution started
 
 Progress: [██████████] 100%
 
@@ -150,6 +150,7 @@ Progress: [██████████] 100%
 | Phase 11 P14 | 16 min | 3 tasks | 17 files |
 | Phase 11 P16 | about 7 min (continuation) | 2 tasks | 5 files |
 | Phase 11 P17 | 1h 55m | 3 tasks | 7 files |
+| Phase 11 P19 | 9 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -396,6 +397,7 @@ Recent decisions affecting current work:
 - [Phase 11]: 11-16: Tim approved the coin-flip clip, 3.5 s poster, description and intro as drafted ("approve"); the clip block ships verbatim and coin-flip's Demo section and index entry are live
 - [Phase 11]: 11-17: Tim chose option B ("B. Fix first ... run **one more** visual-baselines dispatch"): RouteIndex's scroll handler re-measures every section against the band, so a jump back to the top after a sweep leaves no stale current stage; the extra dispatch is used (41366534214), the CI re-run on Tim's baseline commit stays reserved for Task 3
 - [Phase 11]: 11-17: native video controls hidden in visual shots (hide-canvas.css) so the coin-flip Demo poster is deterministic; RouteIndex re-measures on scroll (Tim's option B); ratchet raised 1300 -> 1749 at Tim's baseline commit e511d7a; CI green twice (run 41367381672 attempts 1 and 2)
+- [Phase 11]: [11-19] G-11-4 closed: box Metrics source links are named 'Source (Tools)', 'Source (Tests)', 'Source (Binary)' via an sr-only ' ({tile label})' suffix (FactSource pattern, no new words; Tim's reply 'yes change to a suffix on each link' approved a suffix, not a wording). New e2e proves zero geometry change at 375/768/1440 in chromium + firefox; no PNG changed, no re-baseline dispatched; CI Visual Regression on the next push is the remaining gate. Counts jest 1307 + e2e 462 = 1769 (baseline 1749 not raised)
 
 ### Pending Todos
 
@@ -440,6 +442,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-02T01:04:30.840Z
-Stopped at: Completed 11-17-PLAN.md (18/18 plans; phase verification next)
+Last session: 2026-11-02T11:24:12.344Z
+Stopped at: Completed 11-19-PLAN.md (G-11-4 gap closure)
 Resume file: None

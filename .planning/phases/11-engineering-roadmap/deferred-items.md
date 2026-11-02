@@ -17,3 +17,6 @@
 - README.md still lists `README_CLIX.md` and `README_CLIX_WEBSITE.md` as CLI_X project docs (lines 222-223), and the unimported legacy `components/Footer.tsx` still links 'CLI_X Tool' and 'CLI_X Website' to the removed `/projects/clix-cli` and `/projects/clix-website` routes (lines 65-66) (found in 11-18)
   status: open
   **What:** Outside 11-18's files and its acceptance greps (README.md and components/Footer.tsx are neither project-side paths nor in the plan); nothing imports Footer.tsx, so no rendered page links to the 404s. 11-17 already lists both for Phase 12; fold into the Phase 12 dead-code and README pass (delete Footer.tsx, drop the two README rows).
+- Dev server: `e2e/case-study.spec.ts` "Demo (ENG-05) › Pause is sticky: nothing advances until it is pressed again (D-02)" failed once on chromium (after resume, `data-command` still "1" at the 8 s timeout) in a 110-test chromium + firefox dev run (found in 11-19)
+  status: open
+  **What:** Timing under parallel dev load in the box Demo terminal, which 11-19 does not touch (11-19 changes only the Metrics source links). Passed 4/4 alone with `--repeat-each=4` and 110/110 on the immediate full re-run. Same class as the other dev-server flakes above; CI runs a production build with one worker. A longer resume timeout or a `test.slow()` would harden local dev runs.

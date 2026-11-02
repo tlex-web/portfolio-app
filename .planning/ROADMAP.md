@@ -392,7 +392,7 @@ Plans:
   4. The terminal demo is styled in tokens v2, stops auto-playing on focus, on hover and under reduced motion, and has a pause button.
   5. `/roadmap` places items in order on a vertical elevation axis: completed items below with their completion dates, in-progress items at the current camp, planned items above. It lists v2.0 as in progress and shows a "last surveyed" date. A segmented control filters by project and status, the filter lives in the URL, and empty filters are removed or disabled.
 
-**Plans**: 18/19 plans executed: 18/18 in 8 waves (re-planned 2026-11-01 for box + coin-flip; 11-02, 11-15, 11-16 and 11-17 carry blocking checkpoints for Tim), plus 1 gap-closure plan (11-19, wave 9) for UAT gap G-11-4
+**Plans**: 19/19 plans executed: 18/18 in 8 waves (re-planned 2026-11-01 for box + coin-flip; 11-02, 11-15, 11-16 and 11-17 carry blocking checkpoints for Tim), plus 1 gap-closure plan (11-19, wave 9) for UAT gap G-11-4
 
 Plans:
 **Wave 1**
@@ -432,7 +432,7 @@ Plans:
 Gap closure (11-UAT.md):
 
 **Wave 9** *(gap closure, blocked on Wave 8 completion)*
-- [ ] 11-19-PLAN.md — G-11-4: each box metric Source link gets an sr-only suffix from its tile label ('Source (Tools)'), visible text and pixels unchanged (proved at 375/768/1440), no re-baseline (ENG-04)
+- [x] 11-19-PLAN.md — G-11-4: each box metric Source link gets an sr-only suffix from its tile label ('Source (Tools)'), visible text and pixels unchanged (proved at 375/768/1440), no re-baseline (ENG-04)
 
 **UI hint**: yes
 **Parallelism**: Can run in parallel with Phase 10.
@@ -502,5 +502,5 @@ Gap closure (11-UAT.md):
 | 8. Data & Terrain Pipeline | v2.0 | 13/13 | Complete    | 2026-10-24 |
 | 9. Home Ascent | v2.0 | 22/22 | Complete    | 2026-10-25 |
 | 10. Photography | v2.0 | 13/13 | Complete    | 2026-10-26 |
-| 11. Engineering & Roadmap | v2.0 | 18/18 | In Progress | - |
+| 11. Engineering & Roadmap | v2.0 | 19/19 | In Progress | - |
 | 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 0/TBD | Not started | - |
