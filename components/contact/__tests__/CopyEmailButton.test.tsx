@@ -33,9 +33,21 @@ function setClipboard(value: unknown) {
   Object.defineProperty(navigator, 'clipboard', { value, configurable: true });
 }
 
+/**
+ * Clicks Copy, lets the clipboard promise settle, then runs the zero-delay
+ * timer React's scheduler queues for the re-render, so getTimerCount() counts
+ * only the component's own COPIED_MS timer.
+ */
 async function press() {
   await act(async () => {
     fireEvent.click(button());
+  });
+  flushScheduler();
+}
+
+function flushScheduler() {
+  act(() => {
+    jest.advanceTimersByTime(0);
   });
 }
 
@@ -147,6 +159,7 @@ describe('CopyEmailButton', () => {
     expect(jest.getTimerCount()).toBe(1);
 
     unmount();
+    flushScheduler();
     expect(jest.getTimerCount()).toBe(0);
   });
 
@@ -166,6 +179,7 @@ describe('CopyEmailButton', () => {
     await act(async () => {
       resolveWrite();
     });
+    flushScheduler();
 
     expect(jest.getTimerCount()).toBe(0);
   });

@@ -12,6 +12,17 @@ const ZURICH = { name: 'Zürich', lat: 47.37, lon: 8.54, source: 'test' };
 
 const terms = () => screen.getAllByRole('term').map((dt) => dt.textContent);
 
+/**
+ * The Location value's exact text. Testing Library's string matchers compare
+ * whitespace-normalised node text, which would turn formatLatLon's no-break
+ * spaces into plain ones; textContent keeps them.
+ */
+const locationText = () =>
+  (screen.getByText('Location').closest('div') as HTMLElement).querySelector('dd')?.textContent;
+
+/** formatLatLon's U+00A0 between each figure and its hemisphere letter. */
+const ZURICH_LINE = '47.37\u00a0N · 8.54\u00a0E · Zürich';
+
 describe('DirectContactPanel', () => {
   it('is a region named Direct contact, not a complementary landmark', () => {
     render(<DirectContactPanel email={site.email} location={ZURICH} links={site.links} />);
@@ -63,7 +74,7 @@ describe('DirectContactPanel', () => {
   it('reads the location at 2 decimals with the place name as written', () => {
     render(<DirectContactPanel email={site.email} location={ZURICH} links={site.links} />);
 
-    expect(screen.getByText('47.37 N · 8.54 E · Zürich')).toBeInTheDocument();
+    expect(locationText()).toBe(ZURICH_LINE);
   });
 
   it('never shows more than 2 decimals, even for a more precise input', () => {
@@ -75,7 +86,7 @@ describe('DirectContactPanel', () => {
       />,
     );
 
-    expect(screen.getByText('47.37 N · 8.54 E · Zürich')).toBeInTheDocument();
+    expect(locationText()).toBe(ZURICH_LINE);
     expect(screen.queryByText(/47\.374/)).not.toBeInTheDocument();
   });
 

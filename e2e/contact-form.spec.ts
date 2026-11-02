@@ -227,3 +227,109 @@ test.describe('Contact Form', () => {
     await expect(checkbox).not.toBeChecked();
   });
 });
+
+/** The Direct contact panel: a <section aria-labelledby>, so a named region. */
+const panel = (page: Page) => page.getByRole('region', { name: 'Direct contact' });
+const copyButton = (page: Page) => page.getByRole('button', { name: 'Copy email address' });
+
+/**
+ * The Direct contact panel beside the register (CONTACT-01; D-01, D-05, D-06,
+ * D-08; 12-UI-SPEC "Direct contact panel"). Server-rendered, so its content is
+ * in the HTML before hydration; only Copy needs the client.
+ */
+test.describe('Direct contact panel', () => {
+  test('should list email, location, replies and profiles with a mailto link', async ({ page }) => {
+    await openContact(page);
+
+    const region = panel(page);
+    await expect(region.getByRole('heading', { level: 2, name: 'Direct contact' })).toBeVisible();
+    await expect(region.locator('dt')).toHaveText(['Email', 'Location', 'Replies', 'Elsewhere']);
+    await expect(region.locator('#contact-email')).toHaveText(site.email);
+    await expect(region.getByRole('link', { name: 'Write an email' })).toHaveAttribute(
+      'href',
+      `mailto:${site.email}`,
+    );
+    await expect(region.getByText('Usually within a few days')).toBeVisible();
+    await expect(region.getByRole('link', { name: 'GitHub' })).toHaveAttribute(
+      'href',
+      site.links.github,
+    );
+    await expect(region.getByRole('link', { name: 'LinkedIn' })).toHaveAttribute(
+      'href',
+      site.links.linkedin,
+    );
+  });
+
+  // Only Chromium grants clipboard permissions in Playwright (Firefox and
+  // WebKit reject clipboard-read/clipboard-write), so the real copy is a
+  // Chromium check; the quiet fallback is covered in Jest.
+  test('should copy exactly the address and announce Copied @chromium-only', async ({
+    page,
+    context,
+    baseURL,
+  }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: baseURL });
+    await openContact(page);
+    await expect
+      .poll(() =>
+        copyButton(page).evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))),
+      )
+      .toBe(true);
+
+    await copyButton(page).click();
+
+    await expect(copyButton(page)).toHaveText('Copied');
+    await expect(page.getByRole('status').filter({ hasText: 'Copied' })).toHaveCount(1);
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(site.email);
+    await expect(copyButton(page)).toHaveText('Copy', { timeout: 5000 });
+  });
+
+  test('should show the panel above the form at 375 px without sideways scroll', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await openContact(page);
+
+    const panelBox = await panel(page).boundingBox();
+    const formBox = await page.getByRole('form', { name: 'Sign the register' }).boundingBox();
+    expect(panelBox && formBox).toBeTruthy();
+    expect(panelBox!.y + panelBox!.height).toBeLessThanOrEqual(formBox!.y);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+      ),
+    ).toBe(true);
+  });
+
+  test('should place the panel right of the form at 1440 px', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openContact(page);
+
+    const panelBox = await panel(page).boundingBox();
+    const formBox = await page.getByRole('form', { name: 'Sign the register' }).boundingBox();
+    expect(panelBox && formBox).toBeTruthy();
+    expect(panelBox!.x).toBeGreaterThanOrEqual(formBox!.x + formBox!.width);
+    expect(panelBox!.y).toBeLessThan(formBox!.y + formBox!.height);
+  });
+
+  // The DOM order is form then panel at every width, so Tab runs through the
+  // register before Copy and the mailto link.
+  test('should tab from the register into the panel at 1440 px', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openContact(page);
+
+    await nameField(page).focus();
+    const order = [
+      emailField(page),
+      messageField(page),
+      page.getByRole('checkbox'),
+      sendButton(page),
+      copyButton(page),
+      page.getByRole('link', { name: 'Write an email' }),
+    ];
+    for (const next of order) {
+      await page.keyboard.press('Tab');
+      await expect(next).toBeFocused();
+    }
+  });
+});

@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
+import DirectContactPanel from '@/components/contact/DirectContactPanel';
 import SummitRegister from '@/components/contact/SummitRegister';
+import { site } from '@/data/site';
 import { pageMetadata } from '@/lib/metadata';
 
 // SEO-01: own title, description (12-01 meta.contact) and canonical.
@@ -18,9 +20,12 @@ export const metadata: Metadata = pageMetadata({
  * The header band carries the approved kicker, the h1 (the nav label, as on
  * Photographs, Engineering and Roadmap) and the intro. The content grid holds
  * the form card, whose heading, lead and required note are server-rendered
- * around the SummitRegister island, the only client code on the page. The grid
- * already reserves the second column for the Direct contact panel (12-16),
- * which follows the form in the DOM and moves first below 1024 px.
+ * around the SummitRegister island. The Direct contact panel (12-16) follows
+ * the form in the DOM, so the keyboard and screen-reader path is header, form,
+ * panel at every width; below 1024 px `order-first` shows it above the form so
+ * the address is visible without scrolling on a phone, and from 1024 px it sits
+ * in the right column (12-01 default.2). Its Copy button is the page's only
+ * other client island.
  */
 export default function ContactPage() {
   return (
@@ -43,6 +48,9 @@ export default function ContactPage() {
           </p>
           <p className="mt-4 text-sm text-ink-muted">Fields marked * are required.</p>
           <SummitRegister />
+        </div>
+        <div className="order-first min-w-0 lg:order-none">
+          <DirectContactPanel email={site.email} location={site.location} links={site.links} />
         </div>
       </div>
     </div>
