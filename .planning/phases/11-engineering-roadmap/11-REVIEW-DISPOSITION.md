@@ -5,7 +5,7 @@ titles: json
 findings:
   - id: WR-01
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "A malformed URL hash makes RouteIndex throw `URIError` on every observer callback"
   - id: WR-02
     severity: warning
@@ -59,16 +59,16 @@ findings:
     severity: info
     disposition: open
     title: "In write mode, build-clip is not atomic and deletes any file in public/media/ it did not produce"
-open: 14
+open: 13
 total: 14
-recorded: 2026-11-02T02:01:36.977Z
+recorded: 2026-11-02T02:08:37.758Z
 ---
 
 # Phase 11: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | open | - |
+| WR-01 | warning | fixed | 11-REVIEW-FIX.md |
 | WR-02 | warning | open | - |
 | IN-01 | info | open | - |
 | IN-02 | info | open | - |
