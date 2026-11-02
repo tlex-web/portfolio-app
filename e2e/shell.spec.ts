@@ -149,24 +149,30 @@ test.describe('Shell landmarks', () => {
  * SHELL-05 / SHELL-01 empty-content case: every unmatched URL, including the
  * deleted playground routes, returns HTTP 404 with no redirect and renders the
  * designed 404 inside one shell (app/not-found.tsx renders SiteChrome itself).
- * /projects/no-such-slug exercises notFound() inside the (site) group, which
- * renders app/(site)/not-found.tsx inside the group layout's chrome.
+ * Unknown /projects/<slug> and /photos/<slug> are rewritten by proxy.ts to the
+ * root not-found (EDGE-01), which swaps that section's link for its D-11
+ * context label ("All routes", "All photographs"); e2e/not-found.spec.ts owns
+ * the server-HTML and no-echo checks.
  */
-const NOT_FOUND_PATHS: ReadonlyArray<readonly [path: string, current: Label | null]> = [
-  ['/__no-such-page__', null],
-  ['/gradient-mesh', null],
-  ['/particle-buttons', null],
-  ['/transitions', null],
+const NOT_FOUND_PATHS: ReadonlyArray<
+  readonly [path: string, current: Label | null, context: 'photos' | 'projects' | null]
+> = [
+  ['/__no-such-page__', null, null],
+  ['/gradient-mesh', null, null],
+  ['/particle-buttons', null, null],
+  ['/transitions', null, null],
   // Under /projects the Engineering destination stays current (prefix match).
-  ['/projects/no-such-slug', 'Engineering'],
-  // Photo slugs match exactly and case-sensitively (dynamicParams = false + notFound(), T-10-01).
-  ['/photos/no-such-slug', 'Photographs'],
-  ['/photos/MATTERHORN-FROM-ZERMATT', 'Photographs'],
+  ['/projects/no-such-slug', 'Engineering', 'projects'],
+  // Photo slugs match exactly and case-sensitively (proxy KNOWN set; dynamicParams = false + notFound(), T-10-01).
+  ['/photos/no-such-slug', 'Photographs', 'photos'],
+  ['/photos/MATTERHORN-FROM-ZERMATT', 'Photographs', 'photos'],
 ];
 
 test.describe('Shell 404', () => {
-  for (const [path, current] of NOT_FOUND_PATHS) {
+  for (const [path, current, context] of NOT_FOUND_PATHS) {
     test(`${path}: HTTP 404, no redirect, one shell, designed 404 body`, async ({ page }) => {
+      const photosLink = context === 'photos' ? 'All photographs' : 'Photographs';
+      const projectsLink = context === 'projects' ? 'All routes' : 'Engineering';
       const response = await page.goto(path);
 
       expect(response?.status()).toBe(404);
@@ -189,11 +195,11 @@ test.describe('Shell 404', () => {
         'href',
         '/',
       );
-      await expect(main.getByRole('link', { name: 'Photographs', exact: true })).toHaveAttribute(
+      await expect(main.getByRole('link', { name: photosLink, exact: true })).toHaveAttribute(
         'href',
         '/photos',
       );
-      await expect(main.getByRole('link', { name: 'Engineering', exact: true })).toHaveAttribute(
+      await expect(main.getByRole('link', { name: projectsLink, exact: true })).toHaveAttribute(
         'href',
         '/projects',
       );
