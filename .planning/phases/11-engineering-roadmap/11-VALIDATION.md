@@ -82,12 +82,14 @@ created: "2026-11-01"
 | 11-17-03 | 17 | 8 | ENG-01, ENG-02, ENG-04, ENG-05, ROUTE-01, ROUTE-02, ROUTE-03 | T-11-39 | per plan threat register | auto | `node scripts/ci/check-snapshot-commit.mjs && npm run guard:tests` | ✅ | ✅ green |
 | 11-18-01 | 18 | 4 | ENG-01, ENG-02, ENG-03 (dropped, D-24) | — | per plan threat register | unit/component (TDD) | `npx jest lib/__tests__/trail-grade.test.ts --silent && npm run type-check` | ✅ | ✅ green |
 | 11-18-02 | 18 | 4 | ENG-01, ENG-02, ENG-03 (dropped, D-24) | T-11-40, T-11-41 | per plan threat register | auto (unit + e2e) | `npx jest components/site/__tests__/SiteChrome.test.tsx components/home --silent && npm run lint && npm run type-check && npx playwright test e2e/home-ascent.spec.ts e2e/homepage.spec.ts --project=chromium` | ✅ | ✅ green |
+| 11-19-01 | 19 | 9 | ENG-04 (gap G-11-4) | T-11-42 | per plan threat register | tracer (unit + e2e, TDD) | `npx jest components/projects/__tests__/Metrics.test.tsx --silent && npm run type-check && npx playwright test e2e/case-study.spec.ts --project=chromium -g "Metrics"` | ✅ | ✅ green |
+| 11-19-02 | 19 | 9 | ENG-04 (gap G-11-4) | T-11-43 | per plan threat register | auto (e2e + no-PNG check) | `npx playwright test e2e/case-study.spec.ts e2e/case-study-page.spec.ts --project=chromium --project=firefox && node scripts/ci/check-snapshot-commit.mjs --sha d111885 --none && node scripts/ci/check-snapshot-commit.mjs --sha 293b093 --none` | ✅ | ✅ green |
 
-*Notes: Jest 1289/1289 at 63e212e; e2e and visual green in CI run 41367381672 attempts 1 and 2 on e511d7a. Clip minimum is 4 s (Tim-approved, 55a7448; media-manifest.test "accepts 4 and 10 seconds and rejects 3.9 or 10.1 seconds"); media-manifest tests renamed in 1b807ed.*
+*Notes: Jest 1289/1289 at 63e212e; e2e and visual green in CI run 41367381672 attempts 1 and 2 on e511d7a. Clip minimum is 4 s (Tim-approved, 55a7448; media-manifest.test "accepts 4 and 10 seconds and rejects 3.9 or 10.1 seconds"); media-manifest tests renamed in 1b807ed. Gap plan 11-19 (G-11-4): Jest 1307/1307 and e2e 462 after c6d9f54 (+1 each, none deleted; guard:tests floor 1749); case-study + case-study-page e2e 110/110 in chromium and firefox; the box visual baselines are expected unchanged (sr-only suffix proven to take no layout space) and the CI Visual Regression job on the next push is the remaining definitive check.*
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
-*Requirement-level command seeds live in `11-RESEARCH.md` §"Validation Architecture → Phase Requirements → Test Map"; the rows above bind them to the 11-02 to 11-18 tasks (11-18 holds the former 11-07 Tasks 2 and 3, split off at plan-check revision 1) (plan-phase re-plan, 2026-11-01). Each TDD task creates its own test file before the implementation, so no task depends on a missing test.*
+*Requirement-level command seeds live in `11-RESEARCH.md` §"Validation Architecture → Phase Requirements → Test Map"; the rows above bind them to the 11-02 to 11-19 tasks (11-18 holds the former 11-07 Tasks 2 and 3, split off at plan-check revision 1) (plan-phase re-plan, 2026-11-01). Each TDD task creates its own test file before the implementation, so no task depends on a missing test.*
 
 ---
 
@@ -134,4 +136,12 @@ created: "2026-11-01"
 |---|---|
 | Gaps found | 4 |
 | Resolved | 4 |
+| Escalated | 0 |
+
+## Validation Audit 2026-11-02
+
+| Metric | Count |
+|---|---|
+| Gaps found | 0 |
+| Resolved | 0 |
 | Escalated | 0 |
