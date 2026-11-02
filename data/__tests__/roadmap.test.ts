@@ -95,7 +95,7 @@ describe('portfolio v2.0 in progress (ROUTE-03, D-18)', () => {
     expect(inProgress[0].area).toBe('portfolio');
   });
 
-  test('v2.0 carries phases 7 to 12: 7-10 completed with dates, 11 in progress, 12 planned', () => {
+  test('v2.0 carries phases 7 to 12: 7-11 completed with dates, 12 in progress (12-01 log.phase11)', () => {
     const v2 = asLog.find((i) => i.id === 'portfolio-v2');
     const phases = v2?.phases ?? [];
     expect(phases.map((p) => p.n)).toEqual([7, 8, 9, 10, 11, 12]);
@@ -104,11 +104,13 @@ describe('portfolio v2.0 in progress (ROUTE-03, D-18)', () => {
       'completed',
       'completed',
       'completed',
+      'completed',
       'in-progress',
-      'planned',
     ]);
-    for (const p of phases.slice(0, 4)) expect(p.completedAt).toMatch(ISO_DATE);
-    for (const p of phases.slice(4)) expect(p.completedAt).toBeUndefined();
+    for (const p of phases.slice(0, 5)) expect(p.completedAt).toMatch(ISO_DATE);
+    // Phase 11's date is Tim's, from the 12-01 content checkpoint (11-08 Q3 rule).
+    expect(phases[4].completedAt).toBe('2026-11-02');
+    for (const p of phases.slice(5)) expect(p.completedAt).toBeUndefined();
   });
 
   test('no other row carries phases', () => {

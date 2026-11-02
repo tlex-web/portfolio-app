@@ -10,11 +10,12 @@
  * from the oldest completed work (1) to the furthest plan; the route log groups
  * rows by status into Base, Current camp and Summit (lib/route-log.ts).
  *
- * Phase 11 is "in-progress" here and carries no date (Q3 rule): its completion
- * date is entered in Phase 12's first data edit, or at the v2.0 milestone close,
- * with Tim's confirmation, and `surveyedAt` moves with it. The D-20 test
- * (data/__tests__/roadmap.test.ts) keeps surveyedAt between the newest date here
- * and today whenever either changes.
+ * Phase 11's completion date, Phase 12's status and `surveyedAt` come from
+ * Phase 12's first data edit (11-08 Q3 rule), confirmed by Tim at the 12-01
+ * content checkpoint (12-01-SUMMARY "Resolved values": log.phase11; reply of
+ * 2026-11-02): Phase 11 completed 2026-11-02, Phase 12 in progress, surveyed
+ * 2026-11-02. The D-20 test (data/__tests__/roadmap.test.ts) keeps surveyedAt
+ * between the newest date here and today whenever either changes.
  */
 import type { RoadmapItem } from './schemas/roadmap';
 
@@ -47,8 +48,8 @@ export const roadmapItems: RoadmapItem[] = [
       { n: 8, name: 'Data & terrain pipeline', status: 'completed', completedAt: '2026-10-24' },
       { n: 9, name: 'Home ascent', status: 'completed', completedAt: '2026-10-25' },
       { n: 10, name: 'Photography', status: 'completed', completedAt: '2026-10-26' },
-      { n: 11, name: 'Engineering & roadmap', status: 'in-progress' },
-      { n: 12, name: 'Contact, edge pages & cleanup', status: 'planned' },
+      { n: 11, name: 'Engineering & roadmap', status: 'completed', completedAt: '2026-11-02' },
+      { n: 12, name: 'Contact, edge pages & cleanup', status: 'in-progress' },
     ],
   },
   {
@@ -91,5 +92,5 @@ export const roadmapItems: RoadmapItem[] = [
   },
 ];
 
-/** The day Tim last checked the route log (log.surveyedAt, 11-02). Required: the kicker reads it. */
-export const surveyedAt = '2026-11-01';
+/** The day Tim last checked the route log (log.phase11, 12-01). Required: the kicker reads it. */
+export const surveyedAt = '2026-11-02';

@@ -260,9 +260,13 @@ describe('RouteLog', () => {
   it('draws the axis, the camp marker and the row ticks out of the accessibility tree', () => {
     const { container } = renderLog();
     expect(container.querySelector('[data-route-axis]')).toHaveAttribute('aria-hidden', 'true');
-    expect(container.querySelector('#current-camp [data-camp-marker]')).toHaveAttribute(
-      'aria-hidden',
-      'true'
+    // The marker is a child of the camp heading (12-UI-SPEC D-24) and leaves its name alone.
+    const marker = container.querySelector('#current-camp h2 > [data-camp-marker]');
+    expect(marker).toHaveAttribute('aria-hidden', 'true');
+    expect(marker).toBeEmptyDOMElement();
+    expect(container.querySelectorAll('[data-camp-marker]')).toHaveLength(1);
+    expect(screen.getByRole('heading', { level: 2, name: 'Current camp' })).toContainElement(
+      marker as HTMLElement
     );
     for (const li of Array.from(container.querySelectorAll('section > ol > li'))) {
       const tick = li.querySelector('[data-row-tick]');

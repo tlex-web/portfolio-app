@@ -20,7 +20,11 @@ import { BAND_LABELS, STATUS_LABELS, type LogBand } from '@/lib/route-log';
  * Geometry: the axis line sits 12 px into the 32 px column (`pl-8`). Each band
  * sets `--axis-x`, the distance from a row's left edge back to the axis, which
  * RouteRow uses to draw its tick: 20 px on the surface bands, 45 px inside the
- * camp plate (its 24 px padding and 1 px border added).
+ * camp plate (its 24 px `p-6` padding and 1 px border added). The camp marker
+ * is a child of the camp heading (made `relative`), whose left edge is the
+ * plate's content edge, so it needs no pixel literal (12-UI-SPEC D-24): it is
+ * centred on the heading's line (`top-1/2 -translate-y-1/2`) and on the axis
+ * (`left: calc(var(--axis-x) * -1)` with `-translate-x-1/2`).
  *
  * `bands` is the output of bands() (or routeLogView().bands) in lib/route-log.
  */
@@ -54,15 +58,15 @@ export default function RouteLog({ bands }: { bands: readonly LogBand[] }) {
               .filter(Boolean)
               .join(' ')}
           >
-            {camp ? (
-              <span
-                data-camp-marker
-                aria-hidden="true"
-                className="absolute top-[39px] -left-[33px] h-0.5 w-6 bg-accent"
-              />
-            ) : null}
-            <h2 id={headingId} className="text-heading">
+            <h2 id={headingId} className={camp ? 'relative text-heading' : 'text-heading'}>
               {BAND_LABELS[band.id]}
+              {camp ? (
+                <span
+                  data-camp-marker
+                  aria-hidden="true"
+                  className="absolute top-1/2 left-[calc(var(--axis-x)*-1)] h-0.5 w-6 -translate-x-1/2 -translate-y-1/2 bg-accent"
+                />
+              ) : null}
             </h2>
             <p className="mt-1 font-mono text-sm text-ink-muted">
               {STATUS_LABELS[band.status]} · {countLabel(band.items.length, 'entry', 'entries')}
