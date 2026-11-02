@@ -18,6 +18,11 @@ import type { PinAnchor } from '@/lib/ascent/route';
  * 4000 ms; a 2000 ms setTimeout where it is missing) or the first passive
  * scroll, whichever comes first. Static devices never fetch it.
  *
+ * The idle arm waits for the window load event (D-25): it starts at once when
+ * `document.readyState` is already 'complete', else from a once-only `load`
+ * listener, so the chunk never holds back `loadEventStart` on a slow phone.
+ * The first passive scroll still arms the stage at once, before or after load.
+ *
  * No loading component, spinner or skeleton: the poster underneath is complete
  * and stays the visible terrain until the canvas reveals itself.
  *
@@ -47,6 +52,7 @@ export default function TerrainStage({ pins }: { pins: readonly PinAnchor[] }) {
     const disarm = () => {
       if (hasIdle) window.cancelIdleCallback(idle);
       else window.clearTimeout(idle);
+      window.removeEventListener('load', startIdle);
       window.removeEventListener('scroll', arm);
     };
     // Whichever trigger fires first arms the stage and cancels the other.
@@ -55,9 +61,14 @@ export default function TerrainStage({ pins }: { pins: readonly PinAnchor[] }) {
       const width = stageRef.current?.getBoundingClientRect().width ?? window.innerWidth;
       setGridSize(width < MOBILE_STAGE_PX ? terrain.grids.mobile : terrain.grids.desktop);
     }
-    idle = hasIdle
-      ? window.requestIdleCallback(arm, { timeout: 4000 })
-      : window.setTimeout(arm, 2000);
+    // The idle arm starts only after the load event (D-25).
+    function startIdle() {
+      idle = hasIdle
+        ? window.requestIdleCallback(arm, { timeout: 4000 })
+        : window.setTimeout(arm, 2000);
+    }
+    if (document.readyState === 'complete') startIdle();
+    else window.addEventListener('load', startIdle, { once: true });
     window.addEventListener('scroll', arm, { once: true, passive: true });
     return disarm;
   }, [eligible, gridSize, stageRef]);
