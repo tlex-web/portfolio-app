@@ -204,8 +204,9 @@ function outcomeOf(response: Response, body: Partial<FeedbackResponse> | null): 
  * client half of CONTACT-03; D-02, D-03; 12-UI-SPEC "/contact — Summit
  * Register", "Form card" and "Validation and submit states").
  *
- * Visible labels and borders on every field, submit-time validation with the
- * approved inline errors, and the `trail_note` honeypot outside the
+ * Visible labels and borders on every field, the approved inline errors (a
+ * field validates on blur once the visitor has typed in it, then live once it
+ * has shown an error; submit validates every field), and the `trail_note` honeypot outside the
  * accessibility tree and the Tab order. A valid submit posts JSON to
  * /api/feedback (no Server Action) and enters Sending: the button reads
  * `Sending…` with aria-disabled, the fields are read-only and repeat clicks
@@ -237,6 +238,10 @@ export default function SummitRegister() {
   );
   /** The field to focus after the next render (Sign again, an invalid submit). */
   const focusNext = useRef<FeedbackField | null>(null);
+  /** Fields the visitor has typed in; only these validate on blur. */
+  const touched = useRef(new Set<FeedbackField>());
+  /** Fields that have shown an error; these revalidate on every input. */
+  const shown = useRef(new Set<FeedbackField>());
 
   useEffect(() => {
     if (failure) failureRef.current?.focus();
@@ -263,6 +268,40 @@ export default function SummitRegister() {
 
   const set = <K extends keyof Values>(key: K, value: Values[K]) =>
     setValues((v) => ({ ...v, [key]: value }));
+
+  /**
+   * Shows or clears one field's error, leaving the others as they are. A field
+   * that shows an error joins the live set. Never touches a value.
+   */
+  function showError(field: FeedbackField, message: string | null) {
+    if (message) shown.current.add(field);
+    setErrors((prev) => {
+      if ((prev[field] ?? null) === message) return prev;
+      const next = { ...prev };
+      if (message) next[field] = message;
+      else delete next[field];
+      return next;
+    });
+  }
+
+  /** Replaces every error at once (a submit or a server answer); each shown field goes live. */
+  function showErrors(next: Errors) {
+    for (const field of FIELDS) if (next[field]) shown.current.add(field);
+    setErrors(next);
+  }
+
+  /** Typing marks a field touched; a field that has shown an error revalidates live. */
+  function onFieldChange(field: FeedbackField, value: string) {
+    set(field, value);
+    touched.current.add(field);
+    if (shown.current.has(field)) showError(field, validateField(field, value));
+  }
+
+  /** Leaving a field validates it only once the visitor has typed in it (or it has shown an error). */
+  function onFieldBlur(field: FeedbackField, value: string) {
+    if (!touched.current.has(field) && !shown.current.has(field)) return;
+    showError(field, validateField(field, value));
+  }
 
   async function send(v: Values) {
     if (sendingRef.current) return;
@@ -327,7 +366,7 @@ export default function SummitRegister() {
         if (issue) next[field] = issueMessage(field, issue, v[field]);
       }
       setFailure(null);
-      setErrors(next);
+      showErrors(next);
       focusNext.current = FIELDS.find((f) => next[f]) ?? null;
       return;
     }
@@ -343,7 +382,7 @@ export default function SummitRegister() {
       const message = validateField(field, values[field]);
       if (message) next[field] = message;
     }
-    setErrors(next);
+    showErrors(next);
     const firstInvalid = FIELDS.find((f) => next[f]);
     if (firstInvalid) {
       setFailure(null);
@@ -357,6 +396,8 @@ export default function SummitRegister() {
     setValues(EMPTY);
     setTrailNote('');
     setErrors({});
+    touched.current.clear();
+    shown.current.clear();
     setFailure(null);
     setSigned(null);
     focusNext.current = 'name';
@@ -454,7 +495,8 @@ export default function SummitRegister() {
           required
           readOnly={sending}
           value={values.name}
-          onChange={(e) => set('name', e.target.value)}
+          onChange={(e) => onFieldChange('name', e.target.value)}
+          onBlur={(e) => onFieldBlur('name', e.target.value)}
           aria-invalid={errors.name ? 'true' : undefined}
           aria-describedby={describedBy('name')}
           className={fieldClass(!!errors.name)}
@@ -484,7 +526,8 @@ export default function SummitRegister() {
           required
           readOnly={sending}
           value={values.email}
-          onChange={(e) => set('email', e.target.value)}
+          onChange={(e) => onFieldChange('email', e.target.value)}
+          onBlur={(e) => onFieldBlur('email', e.target.value)}
           aria-invalid={errors.email ? 'true' : undefined}
           aria-describedby={describedBy('email')}
           className={fieldClass(!!errors.email)}
@@ -511,7 +554,8 @@ export default function SummitRegister() {
           required
           readOnly={sending}
           value={values.message}
-          onChange={(e) => set('message', e.target.value)}
+          onChange={(e) => onFieldChange('message', e.target.value)}
+          onBlur={(e) => onFieldBlur('message', e.target.value)}
           aria-invalid={errors.message ? 'true' : undefined}
           aria-describedby={describedBy('message')}
           className={`${fieldClass(!!errors.message)} resize-y`}
