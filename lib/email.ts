@@ -53,7 +53,8 @@ export async function sendFeedbackEmail(data: FeedbackEmailData): Promise<void> 
       replyTo: data.email, // Allow easy reply to the sender
     });
   } catch (error) {
-    console.error('Failed to send email via Resend:', error);
+    // Only the error name: the Resend error can echo the payload (D-04)
+    console.error('Failed to send email via Resend:', error instanceof Error ? error.name : 'unknown');
     throw new Error('Failed to send feedback email');
   }
 }
