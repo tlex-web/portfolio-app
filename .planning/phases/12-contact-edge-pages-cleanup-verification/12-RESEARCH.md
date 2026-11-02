@@ -753,15 +753,24 @@ test('a returning visitor gets the new HTML on the first load after a deploy @ch
 | A9 | axe's default run (no `withRules`/`withTags`) includes best-practice rules such as `region` and `landmark-*` | Pattern 7 | Missed violations; pin with `withTags` if needed |
 | A10 | Satori renders the 45 KB contour SVG via `<img src="data:image/svg+xml,…">` correctly with the `stroke` replaced | Pattern 3 | Fallback: pre-render the contour plate to PNG at build with sharp (already a devDependency) |
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+Each question is resolved into a plan: the answer only Tim can give is a keyed row of the 12-01 content packet (`## Resolved values` in 12-01-SUMMARY.md, where an unanswered key reads 'not supplied'), and a named plan consumes it.
 
 1. **Zürich figures (D-01).** What we know: Wikipedia infobox 47.37444 N, 8.54111 E → `47.37 N · 8.54 E`. Unclear: Tim's preferred reference point. Recommendation: present this at the copy checkpoint; if he declines, omit the Location row (UI-SPEC content gate).
+   **RESOLVED:** 12-01 packet key `geo.location` (proposal with this source); 12-25 stores the confirmed value at 2 decimals; 12-16 renders the Location row only when it is supplied.
 2. **Proxy rewrite target (A1).** Recommendation: a 30-minute spike plan at the start of the edge-page wave, with the server-HTML e2e as its acceptance test.
+   **RESOLVED:** 12-02 Task 1 (the phase tracer, wave 1) with `e2e/not-found.spec.ts` as its acceptance test; if A1 proves false it stops at a `checkpoint:decision` for Tim.
 3. **Vercel plan / Skew Protection.** Unknown whether the project is Hobby. Recommendation: ask Tim; the SW reload-once guard works either way.
+   **RESOLVED:** 12-01 packet key `vercel.plan` (informational; the 12-08 guard works either way); 12-24 carries the answer into the UAT checklist.
 4. **Phase 11 completion date and next `surveyedAt` (11-08 Q3).** `data/roadmap.ts:50` still reads `{ n: 11, name: 'Engineering & roadmap', status: 'in-progress' }`. Recommendation: first data-edit task with a Tim checkpoint (`2026-11-02` proposed by CONTEXT).
+   **RESOLVED:** 12-01 packet key `log.phase11`; 12-07 Task 2 applies only Tim's quoted values and leaves the file unchanged when not supplied.
 5. **zod bump.** Recommendation: bump to ^4.6.7 behind a checkpoint (SUS verdict is age-only); rerun `app/api/__tests__/feedback.test.ts`.
+   **RESOLVED:** 12-06 Task 2 (blocking-human legitimacy checkpoint before any install) and Task 3 (approved bumps, raised floors, feedback test rerun on the 12-03 tree).
 6. **`.github/copilot-instructions.md` and `project_concept/*` stale references.** Not in the locked list. Recommendation: include them in the README pass or record a reason to leave them.
+   **RESOLVED:** 12-01 packet key `docs.stale-refs`; 12-22 Task 3 updates the Copilot notes only when Tim answers fix (otherwise the file is unchanged and recorded 'pending Tim'), and records that `project_concept/` is gitignored local material left unchanged.
 7. **Reload-on-update UX.** A one-time reload after a deploy could interrupt reading. Recommendation: reload only when no field is dirty; otherwise make the next in-site navigation a hard navigation. Confirm at plan review (Claude's discretion area, but user-visible).
+   **RESOLVED:** 12-01 packet key `sw.reload-once`; 12-08 Task 2 builds the guarded reload only when Tim answers yes and keeps the `controllerchange` handler silent otherwise.
 
 ## Environment Availability
 

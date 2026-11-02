@@ -24,16 +24,39 @@ created: "2026-11-02"
 | **Quick run command** | `npm run lint && npm run type-check && npx jest <touched paths> --silent` (lint runs every guard, `data:check` and `photos:derive --check`) |
 | **Full suite command** | `npm run lint && npm run type-check && npm test && PW_PROD=1 npx playwright test --project=chromium --project=firefox --project=webkit` |
 | **Guards** | `npm run data:check`; `npm run guard:selftest && npm run guard:images`; `npx jest --json --outputFile=jest-results.json --silent && npm run guard:tests` (tests are rewritten, never deleted; test-count ratchet ≥ 1749 at phase start) |
-| **Estimated runtime** | ~25 seconds quick; ~300 seconds full with three browser projects (visual suite runs only in CI) |
+| **Estimated runtime** | ~40 seconds quick (measured 2026-11-02 on this machine: `npm run lint` 32 s, `npm run type-check` 3 s, touched Jest files a few seconds; the full Jest suite 12 s, 82 suites); a per-task production check is one or two specs against the already-running build (no build inside the command, see Execution notes); ~300 seconds full with three browser projects (visual suite runs only in CI) |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** the touched Jest files plus the one relevant spec on chromium (`PW_PROD=1` for service-worker, 404 and OG-image work)
+- **After every task commit:** the touched Jest files plus the one relevant spec on chromium (`PW_PROD=1 PW_REUSE=1` against the plan's one production build for service-worker, 404, OG-image and other production work; 12-02 Tasks 1 and 2 run before the switch exists and keep one fresh build per check)
 - **After every plan wave:** `npm run lint && npm run type-check && npm test`, then that wave's e2e set on chromium + firefox (+ webkit once the D-17 CSP condition lands)
 - **Before `/gsd-verify-work`:** full suite green on all three projects, CI green on a `ci/12-NN` push, the visual round's expected-diff list matched, test count ≥ 1749
 - **Max feedback latency:** 300 seconds
+
+---
+
+## Execution Notes
+
+**Build once, reuse the server (per-task checks).** 12-02 Task 3 adds a local opt-in to `playwright.config.ts`: with `PW_PROD=1 PW_REUSE=1` (and no `CI`), Playwright runs against the production server already answering on port 3000 and builds only when none answers. Every later per-task production check carries `PW_REUSE=1`. Each plan's context repeats the rule:
+- With port 3000 free, run `npm run build`, start `npm run start` in the background, and wait until `curl -sf -o /dev/null http://localhost:3000/` succeeds.
+- Stop the server before any edit outside `e2e/` and `.planning/`, and rebuild before the next check. A spec-only edit keeps the server.
+- Stop it before any Playwright run without `PW_REUSE` (a `--list` call starts no server). Plan-level verification, full or three-engine runs and the round gates (12-11, 12-19, 12-23) keep plain `PW_PROD=1` and build fresh. Dev-server runs need the port free, because dev mode reuses whatever answers there.
+- While it runs, `public/service-worker.js` holds the injected build hash: never stage it, and restore it only after the server has stopped.
+
+Cost per source state: one build. A warm local `npm run build` took 5 s here on 2026-11-02 (Turbopack cache); a cold build plus start stays capped at 240 s by the webServer timeout, and it runs before the check, not inside it. The full Jest suite in 12-06 Task 3 and 12-22 Task 1 measured 12 s.
+
+**Fresh-build guards stay.** The switch is ignored whenever `CI` is set, so CI and `visual-baselines.yml` (both set `CI`) always build fresh. A reused run never writes a snapshot (`updateSnapshots` is `'none'`), and visual baselines still come only from the CI `workflow_dispatch` container (T-12-44).
+
+**One plan at a time.** Phase 12 runs on one checkout with shared `.next` and port 3000 (isolation `none`), so same-wave plans run one after another, never two at once. Waves are unchanged. The multi-plan waves are:
+- wave 1: 12-01 to 12-05, with one run-order rule: 12-04 and 12-05 start only after 12-02 has finished, because 12-02 Task 3 adds the `PW_REUSE` switch their per-task checks use (both plans check that `grep -c "process.env.PW_REUSE" playwright.config.ts` prints at least 1 before their first task and stop if it prints 0); 12-01 and 12-03 have no order constraint;
+- wave 2: 12-06 to 12-10;
+- wave 4: 12-12, 12-13, 12-14 and 12-25;
+- wave 5: 12-15, 12-16 and 12-26;
+- wave 6: 12-17 and 12-18.
+
+Each of those plans states the rule in its context. A plan starts only when the previous one has finished and port 3000 is free.
 
 ---
 
@@ -41,6 +64,48 @@ created: "2026-11-02"
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
+| 12-01-T1 | 01 | 1 | CONTACT-01, SEO-01 | T-12-01 | only quoted answers ship | doc gate | `grep -cE "^\| (copy\|geo\|meta\|og\|log\|default\|sw\|docs\|vercel\|ci\|info)\." 12-CONTENT-PACKET.md` (>= 52) | ❌ W0 (packet) | ⬜ pending |
+| 12-02-T1 | 02 | 1 | EDGE-01 | T-12-02, T-12-03 | slug never echoed; client header ignored | e2e | `PW_PROD=1 npx playwright test e2e/not-found.spec.ts e2e/shell.spec.ts --project=chromium` | ❌ W0 | ⬜ pending |
+| 12-02-T2 | 02 | 1 | VERIFY-01, VERIFY-03 | T-12-04, T-12-05 | upgrade-insecure-requests kept off loopback | unit | `npx jest lib/__tests__/proxy.test.ts --silent` | ❌ W0 | ⬜ pending |
+| 12-02-T3 | 02 | 1 | VERIFY-03 | T-12-44 | SW blocked in functional projects; CI never reuses a server or writes a snapshot from one | config probe + e2e | four-case `node --input-type=module` probe of `playwright.config.ts` (CI unchanged); `PW_PROD=1 PW_REUSE=1 npx playwright test e2e/not-found.spec.ts --project=webkit` | ✅ config | ⬜ pending |
+| 12-03-T1 | 03 | 1 | CONTACT-02 | — | shared codes | unit | `npx jest lib/contact/__tests__/api-contract.test.ts --silent` | ❌ W0 | ⬜ pending |
+| 12-03-T2 | 03 | 1 | CONTACT-03 | T-12-06..T-12-10 | no PII in logs; order csrf, rate limit, honeypot | unit | `npx jest app/api/__tests__/feedback.test.ts lib/contact --silent` | ✅ extend | ⬜ pending |
+| 12-04-T1 | 04 | 1 | VERIFY-01 | T-12-11 | empty exemptions | guards | `npm run lint && npm run type-check && npx jest --silent` | ✅ | ⬜ pending |
+| 12-04-T2 | 04 | 1 | VERIFY-01 | T-12-12 | colour reset before L2 | unit + e2e | `npx jest lib/__tests__/color-backstop.test.ts --silent`; `PW_PROD=1 PW_REUSE=1 npx playwright test e2e/design-system.spec.ts --project=chromium` | ❌ W0 | ⬜ pending |
+| 12-05-T1 | 05 | 1 | VERIFY-01 | T-12-13 | assets exist before deletion | unit | `npx jest data/__tests__/asset-exists.test.ts --silent` | ❌ W0 | ⬜ pending |
+| 12-05-T2 | 05 | 1 | VERIFY-01 | T-12-13 | — | guards + e2e | `npm run lint`; `PW_PROD=1 PW_REUSE=1 npx playwright test e2e/data-privacy.spec.ts e2e/photos.spec.ts --project=chromium` | ✅ | ⬜ pending |
+| 12-06-T1/T3 | 06 | 2 | CONTACT-03, VERIFY-04 | T-12-SC, T-12-14 | legitimacy checkpoint before install; a D-25 item is deferred only on Tim's quoted reply | guards + e2e | `npm run lint && npx jest --silent`; `PW_PROD=1 PW_REUSE=1 npx playwright test e2e/home-canvas.spec.ts e2e/contact-form.spec.ts --project=chromium` | ✅ | ⬜ pending |
+| 12-07-T1 | 07 | 2 | VERIFY-02, VERIFY-04 | — | — | unit + e2e | `npx jest components/projects --silent`; `PW_PROD=1 PW_REUSE=1 npx playwright test e2e/case-study.spec.ts e2e/demo-clip.spec.ts --project=chromium` | ✅ | ⬜ pending |
+| 12-07-T2 | 07 | 2 | VERIFY-04 | T-12-15 | confirmed dates only | unit + e2e | `npx jest data/__tests__/roadmap.test.ts components/roadmap --silent` | ✅ | ⬜ pending |
+| 12-08-T1 | 08 | 2 | EDGE-02 | T-12-16, T-12-17 | network-first; RSC and API bypass | unit | `npx jest lib/__tests__/service-worker-navigation.test.ts lib/__tests__/service-worker-media.test.ts --silent` | ❌ W0 | ⬜ pending |
+| 12-08-T2 | 08 | 2 | EDGE-02 | T-12-18 | one reload, never on dirty forms | unit | `npx jest lib/__tests__/sw-update.test.ts --silent` | ❌ W0 | ⬜ pending |
+| 12-09-T1 | 09 | 2 | SEO-01, SEO-03 | T-12-19 | absolute canonical host | e2e | `PW_PROD=1 PW_REUSE=1 npx playwright test e2e/seo.spec.ts --project=chromium` | ❌ W0 | ⬜ pending |
+| 12-09-T2 | 09 | 2 | SEO-01 | T-12-19 | own canonical per route; helper never sets openGraph | unit + e2e | `npx jest lib/__tests__/metadata.test.ts lib/__tests__/photos-view-model.test.ts --silent`; `PW_PROD=1 PW_REUSE=1 npx playwright test e2e/seo.spec.ts --project=chromium` | ❌ W0 | ⬜ pending |
+| 12-10-T1 | 10 | 2 | SEO-02 | T-12-21 | same-origin fonts only | e2e | `PW_PROD=1 PW_REUSE=1 npx playwright test e2e/og.spec.ts --project=chromium` | ❌ W0 | ⬜ pending |
+| 12-10-T2 | 10 | 2 | SEO-02 | T-12-22 | no undefined or NaN | unit | `npx jest lib/og --silent` | ❌ W0 | ⬜ pending |
+| 12-11-T1/T3 | 11 | 3 | VERIFY-01, VERIFY-03 | T-12-23 | expected list before run; Tim commits | CI | `node scripts/ci/check-visual-run.mjs --sha $(git rev-parse HEAD) --job "Visual Regression"` (one check; the action waits) | ✅ | ⬜ pending |
+| 12-12-T1 | 12 | 4 | EDGE-01 | — | — | unit | `npx jest lib/__tests__/edge-art.test.ts components/site --silent` | ❌ W0 | ⬜ pending |
+| 12-12-T2 | 12 | 4 | EDGE-01 | T-12-24 | slug never echoed | e2e | `PW_PROD=1 PW_REUSE=1 npx playwright test e2e/not-found.spec.ts e2e/shell.spec.ts --project=chromium` (three engines at plan level) | ✅ | ⬜ pending |
+| 12-13-T1 | 13 | 4 | CONTACT-01, CONTACT-02 | T-12-26 | signed only on ok | e2e | `PW_PROD=1 PW_REUSE=1 npx playwright test e2e/contact-form.spec.ts e2e/a11y-contact.spec.ts --project=chromium` (three engines at plan level) | ✅ rewrite | ⬜ pending |
+| 12-13-T2 | 13 | 4 | CONTACT-02 | T-12-25 | submit-time validation; input kept on every failure | unit | `npx jest components/contact lib/__tests__/home-format.test.ts --silent` | ✅ rewrite | ⬜ pending |
+| 12-14-T1/T2 | 14 | 4 | SEO-02 | T-12-27, T-12-28 | derivatives only, never originals | unit + e2e | `npx jest lib/og --silent && PW_PROD=1 PW_REUSE=1 npx playwright test e2e/og.spec.ts --project=chromium` | ❌ W0 | ⬜ pending |
+| 12-15-T1 | 15 | 5 | EDGE-01 | T-12-29 | no exception text or digest | unit | `npx jest components/site components/__tests__/global-error.test.tsx --silent` | ✅ | ⬜ pending |
+| 12-15-T2 | 15 | 5 | EDGE-02 | T-12-30 | rows from data only | unit + e2e | `PW_PROD=1 PW_REUSE=1 npx playwright test e2e/offline.spec.ts --project=chromium` (three engines at plan level) | ❌ W0 | ⬜ pending |
+| 12-16-T1 | 16 | 5 | CONTACT-01 | T-12-31, T-12-32 | clipboard gets site.email only | unit + e2e | `npx jest components/contact --silent`; `PW_PROD=1 PW_REUSE=1 npx playwright test e2e/contact-form.spec.ts --project=chromium` | ❌ W0 | ⬜ pending |
+| 12-16-T2 | 16 | 5 | VERIFY-01 | — | — | unit + guards | `npx jest components/__tests__/SafeCanvas.test.tsx --silent && npm run lint` | ✅ | ⬜ pending |
+| 12-17-T1 | 17 | 6 | SEO-01, SEO-02, SEO-03 | — | — | e2e | `PW_PROD=1 PW_REUSE=1 npx playwright test e2e/seo.spec.ts --project=chromium` (og and firefox at plan level) | ✅ | ⬜ pending |
+| 12-17-T2 | 17 | 6 | EDGE-02 | T-12-33 | fresh HTML after deploy | e2e | `PW_PROD=1 PW_REUSE=1 npx playwright test e2e/service-worker.spec.ts --project=chromium` | ❌ W0 | ⬜ pending |
+| 12-18-T1/T2 | 18 | 6 | VERIFY-01 | T-12-34 | — | unit + lint + e2e | `npx jest lib/__tests__/useProgressiveTextures.test.ts --silent && npm run lint`; `PW_PROD=1 PW_REUSE=1 npx playwright test e2e/photos-carousel.spec.ts --project=chromium` | ❌ W0 | ⬜ pending |
+| 12-19-T1/T3 | 19 | 7 | CONTACT-01, EDGE-01, EDGE-02 | T-12-35 | Tim commits PNGs | CI | `node scripts/ci/check-visual-run.mjs --sha $(git rev-parse HEAD) --job "Visual Regression"` (one check; the action waits) | ✅ | ⬜ pending |
+| 12-20-T1..T3 | 20 | 8 | VERIFY-02, VERIFY-04 | T-12-36 | exact allow-list | e2e | `PW_PROD=1 PW_REUSE=1 npx playwright test e2e/audit.spec.ts --project=chromium` (three engines recorded by the action and at plan level) | ❌ W0 | ⬜ pending |
+| 12-21-T1/T2 | 21 | 9 | VERIFY-02 | T-12-37 | dialog-only focus trap | e2e | `PW_PROD=1 PW_REUSE=1 npx playwright test e2e/keyboard.spec.ts --project=chromium` (three engines recorded by the action and at plan level) | ❌ W0 | ⬜ pending |
+| 12-22-T1..T3 | 22 | 10 | VERIFY-01 | T-12-38 | reasons recorded; pixel-moving fixes on the round-3 list | guards + docs | `npm run lint && npx jest --silent`; `! git grep -n -e HologramTerminal -e RoadmapFilters -e README_CLIX -e GlassmorphismNav -e "3D mountain hero" -- README.md` | ✅ | ⬜ pending |
+| 12-23-T1/T2 | 23 | 11 | VERIFY-03 | T-12-39 | no hidden retries | e2e + CI | `PW_PROD=1 PW_REUSE=1 npx playwright test e2e/no-webgl.spec.ts --project=webkit` (full WebKit run is the action's round-level gate); `node scripts/ci/check-visual-run.mjs --sha $(git rev-parse HEAD) --job "E2E Tests"` (one check; the action waits) | ✅ | ⬜ pending |
+| 12-24-T1 | 24 | 12 | VERIFY-01..04 | T-12-40, T-12-41 | ratchet only rises | guard | `npx jest --json --outputFile=jest-results.json --silent && npm run guard:tests` | ✅ | ⬜ pending |
+| 12-25-T1 | 25 | 4 | SEO-01 | T-12-43 | non-https or local base URL fails lint | unit + guard | `npx jest data/__tests__/site.test.ts --silent && npm run guard:selftest && npm run lint` | ❌ W0 | ⬜ pending |
+| 12-25-T2 | 25 | 4 | CONTACT-01 | T-12-20 | location at 2 decimals, only as Tim confirmed | unit | `npx jest data/__tests__/site.test.ts --silent && npm run type-check` | ❌ W0 | ⬜ pending |
+| 12-26-T1 | 26 | 5 | CONTACT-02 | T-12-42 | values kept; messages never echo input | unit | `npx jest components/contact/__tests__/SummitRegister.test.tsx --silent` | ✅ extend | ⬜ pending |
+| 12-26-T2 | 26 | 5 | CONTACT-02 | T-12-42 | focused summary; threshold-only counter status | unit + e2e | `npx jest components/contact --silent`; `PW_PROD=1 PW_REUSE=1 npx playwright test e2e/contact-form.spec.ts --project=chromium` (three engines at plan level) | ✅ extend | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -51,7 +116,7 @@ created: "2026-11-02"
 ## Wave 0 Requirements
 
 - [ ] Spike: `proxy.ts` rewrite of unknown photo/project slugs → server-rendered 404 (research assumption A1), with an `e2e/shell.spec.ts` server-HTML case (h1, one `<main>`, status 404, no JS) — EDGE-01
-- [ ] `playwright.config.ts`: `serviceWorkers: 'block'` on the functional projects; `webkit` project with `grepInvert`; `--fail-on-flaky-tests` — VERIFY-03, EDGE-02
+- [ ] `playwright.config.ts`: `serviceWorkers: 'block'` on the functional projects; `webkit` project with `grepInvert`; the local `PW_REUSE` opt-in (ignored under CI); `--fail-on-flaky-tests` — VERIFY-03, EDGE-02
 - [ ] `e2e/routes.ts` extracted from `e2e/shell.spec.ts` (shared route list for SEO, audit and keyboard specs) — SEO-01, VERIFY-02, VERIFY-04
 - [ ] `lib/__tests__/service-worker-navigation.test.ts` — EDGE-02
 - [ ] `data/__tests__/asset-exists.test.ts` (every `/images/`, `/terrain/`, `/media/` path in `data/**` and generated manifests exists under `public/`), landed **before** `public/images/optimized/` is deleted — VERIFY-01

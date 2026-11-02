@@ -469,7 +469,58 @@ Gap closure (11-UAT.md):
   4. `Header`, `GlassmorphismNav`, `ParticleButton`, `AnimatedGradientMesh`, `useHexGrid`/`hex-clip`, the legacy image variants, the v1 token aliases and unused CSP origins are gone from the repo, and the build, tests and baselines stay green.
   5. axe reports zero violations on every route, and a keyboard-only pass through navigation, map, lightbox and contact form succeeds. Chromium, Firefox and WebKit runs pass, including the View Transitions and WebGL fallbacks. No route has CLS above 0.1, broken internal links, missing images or CSP console errors.
 
-**Plans**: TBD
+**Plans**: 26 plans
+Plans:
+**Wave 1**
+- [ ] 12-01-PLAN.md — Content packet: Tim approves copy, coordinates, route-log dates, UI-SPEC defaults and open decisions
+- [ ] 12-02-PLAN.md — Tracer: proxy rewrite gives unknown slugs a server-rendered 404; CSP builder (D-17); SW-blocked Playwright, WebKit project, shared routes
+- [ ] 12-03-PLAN.md — Feedback API contract: error codes, honeypot after CSRF and rate limit, metadata-only logs
+- [ ] 12-04-PLAN.md — Dead v1 components and guard lists drained; v1 aliases removed; colour reset backstop
+- [ ] 12-05-PLAN.md — Legacy image variants deleted behind an asset-exists test
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 12-06-PLAN.md — Dependency hygiene: zod and fflate advisories behind a legitimacy checkpoint; D-25 dispositions
+- [ ] 12-07-PLAN.md — Round-1 visual fixes (EndBlock, DemoTerminal, Source names, HEADS), route-log dates, Phase 9 dispositions
+- [ ] 12-08-PLAN.md — Service worker: network-first navigations, offline precache, no-cache script, reload-once guard
+- [ ] 12-09-PLAN.md — site.url, metadataBase, per-route metadata, sitemap.xml and robots.txt
+- [ ] 12-10-PLAN.md — Shared OG template with committed fonts and the default card
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 12-11-PLAN.md — Re-baseline round 1
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 12-12-PLAN.md — Edge art and layout; the marked-trail 404 with context links
+- [ ] 12-13-PLAN.md — Summit register: server Contact page, the SummitRegister states and submit-time validation, the formatters
+- [ ] 12-14-PLAN.md — Per-slug photo and project OG images
+- [ ] 12-25-PLAN.md — Identity guard covers site.url; Zürich location stored at 2 decimals (split from 12-09)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 12-15-PLAN.md — Error and global-error in the edge layout; offline page with saved pages
+- [ ] 12-16-PLAN.md — Direct contact panel (email, Copy, coordinates); gradient mesh deleted
+- [ ] 12-26-PLAN.md — Summit register validation: blur-then-live errors, the focused error summary, the character counter (split from 12-13)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 12-17-PLAN.md — Every route's head tags; service-worker update and offline e2e
+- [ ] 12-18-PLAN.md — Compiler-clean progressive textures; compiler exemption list drained
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 12-19-PLAN.md — Re-baseline round 2
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 12-20-PLAN.md — Permanent audit gate: axe, CLS, links, images, CSP and console on every route and state
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [ ] 12-21-PLAN.md — Keyboard-only flows
+
+**Wave 10** *(blocked on Wave 9 completion)*
+- [ ] 12-22-PLAN.md — Review-row and flake dispositions; README tree and Copilot notes
+
+**Wave 11** *(blocked on Wave 10 completion)*
+- [ ] 12-23-PLAN.md — WebKit in CI, three-engine run, round 3 if needed
+
+**Wave 12** *(blocked on Wave 11 completion)*
+- [ ] 12-24-PLAN.md — Phase close: final CI, ratchet, PROJECT.md, UAT checklist
+
 **UI hint**: yes
 **Scope notes**:
   - `SummitRegister` is a restyle: `/api/feedback`, CSRF, Upstash rate limiting and accessible names stay. It adds the honeypot and the error summary.
@@ -503,4 +554,4 @@ Gap closure (11-UAT.md):
 | 9. Home Ascent | v2.0 | 22/22 | Complete    | 2026-10-25 |
 | 10. Photography | v2.0 | 13/13 | Complete    | 2026-10-26 |
 | 11. Engineering & Roadmap | v2.0 | 19/19 | Complete    | 2026-11-02 |
-| 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 0/TBD | Not started | - |
+| 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 0/26 | Planned | - |
