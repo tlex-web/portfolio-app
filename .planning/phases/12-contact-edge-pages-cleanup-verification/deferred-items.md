@@ -6,3 +6,9 @@
 - `e2e/design-system.spec.ts:20` comment lists `text-shadow-glow*` among the utilities it covers (found by 12-04)
   status: open
   **What:** 12-04 deleted the glow text-shadow tokens, so that utility no longer exists. Comment only (no assertion depends on it); out of 12-04's file list.
+- Prefetch requests skip the proxy, so a forged `x-edge-section` reaches the 404 render and that HTML has no CSP header (found by the 12-02 slug debug session)
+  status: open, owner 12-22
+  **What:** the proxy matcher's `missing` rule skips requests with `purpose: prefetch` or `next-router-prefetch: 1`. On those, a visitor-sent `x-edge-section: photos` changes the generic 404's context link, and the response carries no CSP. Pre-existing, unrelated to the slug fix (details in `.planning/debug/12-slug-script-data.md`). Tim, 2026-11-02, asked "log it / fix sooner": "Log it for 12-22 (Recommended)".
+- Switch the canonical host to `https://www.tlui.de` once the domain is live (Tim, 2026-11-02)
+  status: open, waits on DNS
+  **What:** Tim's answer: "I already have a domain: tlui.de". On 2026-11-02 neither tlui.de nor www.tlui.de resolved (NXDOMAIN), so it is not connected to Vercel. Tim chose "When it's live (Recommended)" and "www.tlui.de" as canonical. When it serves the site: set `site.url` (D-13, `data/site.ts`) to `https://www.tlui.de`; make sure the proxy's neutral-404 host pin (`canFetchNeutral`) allows www.tlui.de (Vercel's `VERCEL_PROJECT_PRODUCTION_URL` may hold only the shortest production domain); redirect tlui.de and portfolio-app-mocha-three.vercel.app to www; re-run the seo, og and not-found specs. Until then site.url stays on the vercel.app URL.

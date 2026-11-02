@@ -430,7 +430,7 @@ Recent decisions affecting current work:
 - [Phase 12]: 12-09: site.url = https://portfolio-app-mocha-three.vercel.app is the one canonical host (D-13); metadataBase, canonicals, sitemap.xml and robots.txt all derive from it
 - [Phase 12]: 12-10: OG fonts are the full static TTF instances (not Google's latin subset, which lacks the U+2192 caption arrow); read from disk at build, never served
 - [Phase 12]: 12-10: Twitter reuses the file-based OG image under the root summary_large_image card; no twitter-image file
-- [Phase 12]: 12-10: open for Tim - coin-flip's approved pitch wraps to 4 lines on the project OG card (UI-SPEC assumed <= 3); the card fits it without clipping
+- [Phase 12]: 12-10: coin-flip's approved pitch wraps to 4 lines on the project OG card (UI-SPEC assumed <= 3); the card fits it without clipping. Resolved 2026-11-02, Tim: "Keep 4 lines (Recommended)"
 - [Phase 12]: 12-06: zod ^4.6.7 and version-scoped fflate overrides (fflate@^0.8.0 -> 0.8.3, fflate@^0.6.0 -> 0.6.11) patch both advisories on Tim's approval; floors zod 4.6.7, fflate 0.8.3; npm audit 46 -> 44
 - [Phase 12]: 12-06: lockfile bumps are patched entry-by-entry and proven with npm ci --dry-run; a plain npm install on Windows/npm 11.6.1 drops the optional @emnapi entries and npm ci then rejects the lockfile
 - [Phase 12]: 12-06: THREE.Clock warning deferred on Tim's "Defer (Recommended)" (upstream console.warn, ignored by the D-20 errors-only gate, owned by the next r3f release that moves to THREE.Timer)

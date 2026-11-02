@@ -274,3 +274,7 @@ None. No external service configuration is required.
 ---
 *Phase: 12-contact-edge-pages-cleanup-verification*
 *Completed: 2026-11-02*
+
+## Follow-up: coin-flip pitch length
+
+Tim, 2026-11-02, asked whether coin-flip's 4-line OG pitch should stay, drop to 24 px, or get a shorter OG-only line: "Keep 4 lines (Recommended)". The template and its at-most-4-lines test stay as shipped.
