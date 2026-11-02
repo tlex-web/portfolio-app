@@ -23,36 +23,53 @@ const MISSING_PATH = '/__missing';
 /** Exactly two segments; /photos/<x>/opengraph-image and deeper paths pass through. */
 const DETAIL_PATH = /^\/(photos|projects)\/([^/]+)$/;
 
+/** Hostnames that only ever reach this machine (URL.hostname keeps IPv6 brackets). */
+const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+/**
+ * The Content-Security-Policy for one response (VERIFY-01, VERIFY-03, D-17).
+ *
+ * D-17: `upgrade-insecure-requests` is sent on every request except plain
+ * HTTP to a loopback host, where it would upgrade the local production
+ * build's own sub-resources to an https://localhost nobody serves (local
+ * WebKit then loads no CSS or scripts). The rule reads only the request URL:
+ * a visitor-sent x-forwarded-proto cannot remove the directive on a public
+ * host, and Vercel serves every public request over HTTPS (T-12-04).
+ *
+ * script-src carries the per-request nonce and 'strict-dynamic';
+ * 'unsafe-eval' is added only under `next dev`, where React needs it for
+ * error stacks (Next CSP guide: not required in production). connect-src is
+ * 'self' only: the site fetches nothing cross-origin.
+ */
+export function buildCsp(nonce: string, url: URL, isDev: boolean): string {
+  const localHttp = url.protocol === 'http:' && LOOPBACK.has(url.hostname);
+  const directives = [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' blob: data:",
+    "font-src 'self' data:",
+    "connect-src 'self'",
+    "frame-src 'none'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    ...(localHttp ? [] : ['upgrade-insecure-requests']),
+  ];
+  return `${directives.join('; ')};`;
+}
+
 export function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
 
-  const cspHeader = `
-    default-src 'self';
-    script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval';
-    style-src 'self' 'unsafe-inline';
-    img-src 'self' blob: data:;
-    font-src 'self' data:;
-    connect-src 'self' https://raw.githubusercontent.com;
-    frame-src 'none';
-    object-src 'none';
-    base-uri 'self';
-    form-action 'self';
-    frame-ancestors 'none';
-    upgrade-insecure-requests;
-  `;
-
-  const contentSecurityPolicyHeaderValue = cspHeader
-    .replace(/\s{2,}/g, ' ')
-    .trim();
+  const csp = buildCsp(nonce, request.nextUrl, process.env.NODE_ENV === 'development');
 
   const requestHeaders = new Headers(request.headers);
   // T-12-02: only the proxy may name the section; a client copy never reaches the render.
   requestHeaders.delete(EDGE_SECTION_HEADER);
   requestHeaders.set('x-nonce', nonce);
-  requestHeaders.set(
-    'Content-Security-Policy',
-    contentSecurityPolicyHeaderValue
-  );
+  requestHeaders.set('Content-Security-Policy', csp);
 
   const match = DETAIL_PATH.exec(request.nextUrl.pathname);
   const section = match?.[1] as EdgeSection | undefined;
@@ -67,10 +84,7 @@ export function proxy(request: NextRequest) {
       request: { headers: requestHeaders },
     });
   }
-  response.headers.set(
-    'Content-Security-Policy',
-    contentSecurityPolicyHeaderValue
-  );
+  response.headers.set('Content-Security-Policy', csp);
 
   return response;
 }
