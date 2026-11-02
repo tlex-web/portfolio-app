@@ -50,14 +50,14 @@ describe('SafeCanvas', () => {
 
     const { container } = render(
       <main>
-        <h1>Get in Touch</h1>
+        <h1>Scene fallback</h1>
         <SafeCanvas className="absolute inset-0" style={{ opacity: 0.5 }} />
         <label htmlFor="name">Name</label>
         <input id="name" />
       </main>
     );
 
-    expect(screen.getByRole('heading', { name: 'Get in Touch' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Scene fallback' })).toBeInTheDocument();
     expect(screen.getByLabelText('Name')).toBeInTheDocument();
     expect(screen.queryByTestId('r3f-canvas')).not.toBeInTheDocument();
     // An empty canvas in the same wrapper box remains, as with R3F < 9.8

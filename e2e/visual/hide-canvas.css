@@ -1,8 +1,8 @@
 /* Applied to visual-regression screenshots via toHaveScreenshot({ stylePath }).
  * WebGL and random canvases are hidden, never masked: a mask paints an opaque
- * box over the full bounding box, which would cover the full-bleed canvases
- * (Contact AnimatedGradientMesh, the Home terrain canvas) and the content above
- * them. visibility keeps layout and shows the deterministic page ground. */
+ * box over the full bounding box, which would cover the full-bleed Home terrain
+ * canvas and the content above it. visibility keeps layout and shows the
+ * deterministic page ground. */
 canvas { visibility: hidden !important; }
 
 /* Chromium's native media controls draw a loading arc over the poster of a
