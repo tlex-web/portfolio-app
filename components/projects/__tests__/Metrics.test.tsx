@@ -66,6 +66,20 @@ describe('Metrics panel structure', () => {
     });
   });
 
+  it('sets every tile value in Mono with tabular figures (ENG-04)', () => {
+    renderPanel(tiles(3));
+    const { cells } = panel();
+
+    cells.forEach((cell) => {
+      const value = cell.querySelectorAll('dd')[0];
+      expect(classes(value)).toEqual(expect.arrayContaining(['font-mono', 'tabular-nums']));
+      // The context line is prose, not an instrument reading.
+      const context = cell.querySelectorAll('dd')[1];
+      expect(classes(context)).not.toContain('font-mono');
+      expect(classes(context)).not.toContain('tabular-nums');
+    });
+  });
+
   it('renders nothing for an empty tile list (ENG-04 empty)', () => {
     const { container } = renderPanel([]);
     expect(container).toBeEmptyDOMElement();

@@ -173,6 +173,43 @@ test.describe('coin-flip Demo clip, populated (E18)', () => {
     await expect(demoVideo(page).locator('p')).toHaveText(FALLBACK);
   });
 
+  test('a clip that fails to load leaves the poster, the description and the Demo section (E18)', async ({
+    page,
+  }) => {
+    const { media, clip } = approved();
+    const aborted: string[] = [];
+    await page.route('**/*.mp4', (route) => {
+      aborted.push(route.request().url());
+      return route.abort();
+    });
+    await page.goto(COIN_FLIP);
+    const video = demoVideo(page);
+    await video.scrollIntoViewIfNeeded();
+
+    // Press play: the browser requests the MP4, the request is aborted, the element errors.
+    const errored = await video.evaluate(
+      (el: HTMLVideoElement) =>
+        new Promise<boolean>((resolve) => {
+          // A failing <source> fires error on the source, which does not bubble: capture it.
+          el.addEventListener('error', () => resolve(true), { capture: true, once: true });
+          el.play().catch(() => undefined);
+          setTimeout(() => resolve(el.error !== null), 5000);
+        })
+    );
+    expect(errored).toBe(true);
+    expect(aborted.some(isMp4)).toBe(true);
+
+    // The failure degrades in place: poster, description and section all remain.
+    await expect(video).toHaveAttribute('poster', media.poster.src);
+    // Nothing loaded: HAVE_NOTHING, and the poster is still what the visitor sees.
+    await expect(video).toHaveJSProperty('readyState', 0);
+    await expect(page.locator('section#demo')).toHaveCount(1);
+    await expect(page.locator('#demo-clip-description')).toHaveText(clip.description);
+    await expect(page.locator('#demo-clip-description')).toBeVisible();
+    const poster = await page.request.get(media.poster.src);
+    expect(poster.status()).toBe(200);
+  });
+
   test.describe('under prefers-reduced-motion', () => {
     test.use({ reducedMotion: 'reduce' });
 

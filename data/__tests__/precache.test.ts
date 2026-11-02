@@ -59,4 +59,26 @@ describe('delivery config', () => {
     expect(config).toContain("source: '/terrain/:path*'");
     expect(config).toContain('immutable');
   });
+  test('proxy matcher skips media/ so clips and posters get no per-request nonce (D-27)', () => {
+    const matcher = read('proxy.ts').match(/source:\s*'([^']+)'/s)?.[1] ?? '';
+    const skipped = matcher.match(/\(\?!([^)]*)\)/)?.[1].split('|') ?? [];
+    expect(skipped).toEqual(expect.arrayContaining(['images/', 'terrain/', 'media/']));
+  });
+
+  test('next.config marks /media/:path* immutable for a year (D-27)', () => {
+    const config = read('next.config.ts');
+    const at = config.indexOf("source: '/media/:path*'");
+    expect(at).toBeGreaterThan(-1);
+    const block = config.slice(at, config.indexOf('}', config.indexOf('headers:', at) + 10));
+    expect(block).toContain("key: 'Cache-Control'");
+    expect(block).toContain('max-age=31536000');
+    expect(block).toContain('immutable');
+  });
+
+  test('the raw clip recordings in assets/clips-original/ are gitignored (D-27)', () => {
+    const lines = read('.gitignore')
+      .split(/\r?\n/)
+      .map((l) => l.trim());
+    expect(lines).toContain('assets/clips-original/');
+  });
 });

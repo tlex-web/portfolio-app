@@ -140,3 +140,38 @@ describe('terrain module stays scalar-only', () => {
     expect(terrainText).not.toContain('d="');
   });
 });
+
+describe('offline guarantee (T-08-09)', () => {
+  const FETCHER = 'fetch-trails.mjs';
+  const scripts: Record<string, string> = JSON.parse(read('package.json')).scripts;
+  const workflowDir = path.join(ROOT, '.github/workflows');
+  const workflows = fs
+    .readdirSync(workflowDir)
+    .filter((f) => /\.ya?ml$/.test(f))
+    .map((f) => ({ f, text: fs.readFileSync(path.join(workflowDir, f), 'utf8') }));
+
+  test('only the trails:fetch script runs fetch-trails.mjs', () => {
+    const users = Object.entries(scripts)
+      .filter(([, cmd]) => cmd.includes(FETCHER))
+      .map(([name]) => name);
+    expect(users).toEqual(['trails:fetch']);
+  });
+
+  test('no script chains into trails:fetch (data:check, prebuild, build stay offline)', () => {
+    const chained = Object.entries(scripts)
+      .filter(([name]) => name !== 'trails:fetch')
+      .filter(([, cmd]) => /trails:fetch/.test(cmd))
+      .map(([name]) => name);
+    expect(chained).toEqual([]);
+  });
+
+  test('no CI workflow fetches trails', () => {
+    expect(workflows.length).toBeGreaterThan(0);
+    for (const { f, text } of workflows) {
+      expect({ f, hit: text.includes(FETCHER) || text.includes('trails:fetch') }).toEqual({
+        f,
+        hit: false,
+      });
+    }
+  });
+});
