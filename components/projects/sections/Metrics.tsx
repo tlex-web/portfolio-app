@@ -49,11 +49,12 @@ function lastTileSpan(n: number): string {
  * with a prose link to its public source (coin-flip tiles never carry one,
  * D-23). Values are final on first paint: no state, no count-up. Only audited
  * tiles reach the data, so a project without one renders no section.
- * Each source link is named 'Source' plus an sr-only ' ({tile label})', so
- * links that share a page are still told apart (11-UAT G-11-4, the FactSource
- * pattern in components/photos/Hotspots.tsx). The suffix starts with a space
- * because the inline-flex link blockifies it in name computation, which pads
- * it with spaces in the browser but not in jsdom.
+ * Each source link's accessible name is the aria-label 'Source for {tile
+ * label}', so links that share a page are still told apart (11-UAT G-11-4)
+ * and the name begins with the visible word 'Source', so label in name holds
+ * for speech input (12 D-24, 11-UI-REVIEW Pillar 1). An aria-label needs no
+ * hidden text, so jsdom and the browser compute the same name and the visible
+ * line is unchanged.
  */
 export default function Metrics({
   id,
@@ -93,11 +94,11 @@ export default function Metrics({
                   {' '}
                   <a
                     href={tile.sourceUrl}
+                    aria-label={`Source for ${tile.label}`}
                     className="inline-flex items-center gap-1 whitespace-nowrap underline decoration-1 underline-offset-4 transition-colors duration-(--duration-fast) ease-erosion hover:text-ink"
                   >
                     Source
                     <ArrowSquareOutIcon size={16} aria-hidden="true" />
-                    <span className="sr-only"> ({tile.label})</span>
                   </a>
                 </>
               )}

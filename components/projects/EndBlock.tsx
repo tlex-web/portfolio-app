@@ -3,9 +3,13 @@ import Link from 'next/link';
 import { projects } from '@/data/projects';
 import type { Project } from '@/data/types';
 
-/** The trail-sign plate of Home's TrailSigns (09 "Trail Signs"), without the count column. */
+/**
+ * The trail-sign plate of Home's TrailSigns (09 "Trail Signs"), without the
+ * count column. No vertical padding: the link's min-h-14 (the TrailSigns
+ * height) and items-stretch give the plate its height (12-UI-SPEC D-24).
+ */
 const PLATE =
-  'flex flex-1 items-center justify-between gap-4 rounded-l-sm border border-line-strong bg-surface-raised px-4 py-3 transition-colors duration-(--duration-fast) ease-erosion group-hover:border-ink-muted group-hover:bg-surface-overlay';
+  'flex flex-1 items-center justify-between gap-4 rounded-l-sm border border-line-strong bg-surface-raised px-4 transition-colors duration-(--duration-fast) ease-erosion group-hover:border-ink-muted group-hover:bg-surface-overlay';
 const TIP_CLIP = { clipPath: 'polygon(0 0, 100% 50%, 0 100%)' } as const;
 
 /**

@@ -1,6 +1,13 @@
 'use client';
 
-import { Fragment, useEffect, useRef, useState, useSyncExternalStore, type FocusEvent } from 'react';
+import {
+  Fragment,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type FocusEvent,
+} from 'react';
 import { PauseIcon } from '@phosphor-icons/react/dist/ssr';
 import {
   delayFor,
@@ -55,7 +62,9 @@ function spokenCommand(command: TerminalCommand, n: number, total: number): stri
 
 /** The static 8 x 16 px block caret beside the line that is typing; it does not blink. */
 function Caret() {
-  return <span aria-hidden="true" className="ml-1 inline-block h-4 w-2 bg-ink-muted align-text-bottom" />;
+  return (
+    <span aria-hidden="true" className="ml-1 inline-block h-4 w-2 bg-ink-muted align-text-bottom" />
+  );
 }
 
 /**
@@ -119,10 +128,13 @@ function CommandLines({ command, lines }: { command: TerminalCommand; lines: Vis
  * a release never clears the last two. A pause mid-line freezes it, and
  * resuming continues from the same character.
  *
- * Layout: every command is rendered in one shared grid cell, the others
- * `invisible`, so the body is as tall as the tallest command and nothing
- * below moves when commands change. While the current command types, an
- * invisible complete copy of it (note included) holds its full height too. With one command (G2) only the body
+ * Layout (12-UI-SPEC D-24, E13): every command's full text is rendered in one
+ * shared grid cell (`[grid-area:1/1]`), the others `invisible`, so the body
+ * has no fixed height: it is as tall as the tallest command wraps at the
+ * current width, nothing below moves when commands change, and the inactive
+ * entries add height but no scroll width. While the current command types,
+ * an invisible complete copy of it (note included) holds its full height in
+ * the same cell. With one command (G2) only the body
  * renders: no toggle, counter, dots or timer. With seven or more (G3) the
  * dot bar wraps.
  *
@@ -155,7 +167,10 @@ export default function DemoTerminal({
 
   useEffect(() => {
     if (!playing) return;
-    const id = window.setTimeout(() => setState((s) => tick(s, commands, reduced)), delayFor(state));
+    const id = window.setTimeout(
+      () => setState((s) => tick(s, commands, reduced)),
+      delayFor(state)
+    );
     return () => window.clearTimeout(id);
   }, [state, playing, reduced, commands]);
 
@@ -244,12 +259,12 @@ export default function DemoTerminal({
               <div
                 data-cell={i + 1}
                 aria-hidden="true"
-                className={`col-start-1 row-start-1 min-w-0${isCurrent ? '' : ' invisible'}`}
+                className={`min-w-0 [grid-area:1/1]${isCurrent ? '' : ' invisible'}`}
               >
                 <CommandLines command={command} lines={lines} />
               </div>
               {isCurrent && !lines.complete && (
-                <div aria-hidden="true" className="invisible col-start-1 row-start-1 min-w-0">
+                <div aria-hidden="true" className="invisible min-w-0 [grid-area:1/1]">
                   <CommandLines command={command} lines={complete} />
                 </div>
               )}
