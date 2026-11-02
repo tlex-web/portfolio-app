@@ -35,7 +35,7 @@
 - [x] **Phase 8: Data & Terrain Pipeline** - Build-time swissALTIRegio terrain and EXIF photo data, privacy-safe images, typed highlights, and the footer map legend (completed 2026-10-24)
 - [x] **Phase 9: Home Ascent** - Real Matterhorn hero with a native-scroll ascent, altimeter rail and photo waypoints, plus a static fallback (completed 2026-10-25)
 - [x] **Phase 10: Photography** - Map / Grid / Carousel light table and a deep-linkable gallery-black lightbox with EXIF and hotspots (completed 2026-10-26)
-- [ ] **Phase 11: Engineering & Roadmap** - Route-panel projects (box, coin-flip), case studies with a per-project safety slot, a tokenized terminal, and a route-log roadmap
+- [x] **Phase 11: Engineering & Roadmap** - Route-panel projects (box, coin-flip), case studies with a per-project safety slot, a tokenized terminal, and a route-log roadmap (completed 2026-11-02)
 - [ ] **Phase 12: Contact, Edge Pages, Cleanup & Verification** - Summit-register contact, designed 404/error/offline pages, SEO, dead-code removal, and axe plus cross-browser verification
 
 ## Phase Details
@@ -392,7 +392,7 @@ Plans:
   4. The terminal demo is styled in tokens v2, stops auto-playing on focus, on hover and under reduced motion, and has a pause button.
   5. `/roadmap` places items in order on a vertical elevation axis: completed items below with their completion dates, in-progress items at the current camp, planned items above. It lists v2.0 as in progress and shows a "last surveyed" date. A segmented control filters by project and status, the filter lives in the URL, and empty filters are removed or disabled.
 
-**Plans**: 19/19 plans executed: 18/18 in 8 waves (re-planned 2026-11-01 for box + coin-flip; 11-02, 11-15, 11-16 and 11-17 carry blocking checkpoints for Tim), plus 1 gap-closure plan (11-19, wave 9) for UAT gap G-11-4
+**Plans**: 19/19 plans complete: 18/18 in 8 waves (re-planned 2026-11-01 for box + coin-flip; 11-02, 11-15, 11-16 and 11-17 carry blocking checkpoints for Tim), plus 1 gap-closure plan (11-19, wave 9) for UAT gap G-11-4
 
 Plans:
 **Wave 1**
@@ -502,5 +502,5 @@ Gap closure (11-UAT.md):
 | 8. Data & Terrain Pipeline | v2.0 | 13/13 | Complete    | 2026-10-24 |
 | 9. Home Ascent | v2.0 | 22/22 | Complete    | 2026-10-25 |
 | 10. Photography | v2.0 | 13/13 | Complete    | 2026-10-26 |
-| 11. Engineering & Roadmap | v2.0 | 19/19 | In Progress | - |
+| 11. Engineering & Roadmap | v2.0 | 19/19 | Complete    | 2026-11-02 |
 | 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 0/TBD | Not started | - |
