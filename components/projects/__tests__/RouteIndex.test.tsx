@@ -254,6 +254,56 @@ describe('RouteIndex', () => {
     expect(currentNames(stickyList())).toEqual(['Safety']);
   });
 
+  it('treats a malformed hash on load as no section, and the spy keeps working (WR-01)', () => {
+    // '%' alone cannot be percent-decoded: decodeURIComponent throws URIError.
+    window.history.replaceState(null, '', '/#%');
+    renderPage(THREE);
+
+    expect(() =>
+      report([
+        { id: 'problem', isIntersecting: false, top: -400 },
+        { id: 'pipeline', isIntersecting: true, top: 120 },
+        { id: 'safety', isIntersecting: false, top: 700 },
+      ])
+    ).not.toThrow();
+    expect(currentNames(stickyList())).toEqual(['Pipeline']);
+
+    // A later report still reaches the spy: the first-callback hash check ran once.
+    expect(() =>
+      report([
+        { id: 'pipeline', isIntersecting: false, top: -200 },
+        { id: 'safety', isIntersecting: true, top: 200 },
+      ])
+    ).not.toThrow();
+    expect(currentNames(stickyList())).toEqual(['Safety']);
+  });
+
+  it('ignores a malformed hash change without an uncaught error, then follows a valid one (WR-01)', () => {
+    renderPage(THREE);
+    const errors: unknown[] = [];
+    const onError = (e: ErrorEvent) => {
+      errors.push(e.error);
+      e.preventDefault();
+    };
+    window.addEventListener('error', onError);
+    try {
+      act(() => {
+        window.history.replaceState(null, '', '/#%E0');
+        window.dispatchEvent(new HashChangeEvent('hashchange'));
+      });
+      expect(errors).toEqual([]);
+      expect(nav().querySelector('[aria-current]')).toBeNull();
+
+      act(() => {
+        window.history.replaceState(null, '', '/#safety');
+        window.dispatchEvent(new HashChangeEvent('hashchange'));
+      });
+      expect(currentNames(stickyList())).toEqual(['Safety']);
+    } finally {
+      window.removeEventListener('error', onError);
+    }
+  });
+
   it('marks the last section current at the end of the page, and gives it back on leaving', () => {
     renderPage(THREE);
     report([

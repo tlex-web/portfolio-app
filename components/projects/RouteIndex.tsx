@@ -30,9 +30,19 @@ const LINK =
 const LINK_CURRENT =
   'relative flex min-h-11 items-center gap-2 pl-4 text-base text-ink before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:bg-accent';
 
-/** The id in the URL hash when it names one of the sections, else null. */
+/**
+ * The id in the URL hash when it names one of the sections, else null. The
+ * hash is the visitor's: one that cannot be percent-decoded ('#%', '#%E0')
+ * names no section rather than throwing URIError out of the observer callback
+ * or the hashchange handler (WR-01).
+ */
 function hashSection(ids: readonly string[]): string | null {
-  const id = decodeURIComponent(window.location.hash.slice(1));
+  let id: string;
+  try {
+    id = decodeURIComponent(window.location.hash.slice(1));
+  } catch {
+    return null;
+  }
   return ids.includes(id) ? id : null;
 }
 
