@@ -13,6 +13,8 @@ import {
   countLabel,
   formatCaptureMonth,
   formatCoordinates,
+  formatCount,
+  formatEntryTime,
   formatKilometres,
   formatLatLon,
   formatMetreRange,
@@ -45,6 +47,42 @@ describe('formatLatLon (hero and plaque kicker, D-11)', () => {
     expect(formatLatLon({ lat: 0.00005, lon: 1.23455 })).toBe(
       `0.0001${NBSP}N ${MIDDOT} 1.2346${NBSP}E`
     );
+  });
+
+  it('prints two decimals with { decimals: 2 } for the Contact location (D-01)', () => {
+    expect(codePoints(formatLatLon({ lat: 47.37444, lon: 8.54111 }, { decimals: 2 }))).toEqual(
+      codePoints(`47.37${NBSP}N ${MIDDOT} 8.54${NBSP}E`)
+    );
+  });
+
+  it('defaults to four decimals: no options and { decimals: 4 } print the same string', () => {
+    const pos = { lat: 47.37444, lon: -8.54111 };
+    expect(formatLatLon(pos)).toBe(`47.3744${NBSP}N ${MIDDOT} 8.5411${NBSP}W`);
+    expect(formatLatLon(pos, { decimals: 4 })).toBe(formatLatLon(pos));
+  });
+});
+
+describe('formatEntryTime (register entry, D-03)', () => {
+  it("prints the visitor's local day, short month, year and 24-hour time", () => {
+    expect(codePoints(formatEntryTime(new Date(2026, 10, 2, 14, 32)))).toEqual(
+      codePoints(`2 Nov 2026 ${MIDDOT} 14:32`)
+    );
+  });
+
+  it('pads the hour and minute to two digits and drops seconds', () => {
+    expect(formatEntryTime(new Date(2027, 0, 9, 7, 5, 59))).toBe(`9 Jan 2027 ${MIDDOT} 07:05`);
+  });
+});
+
+describe('formatCount (the 12-26 character counter and the too-long error)', () => {
+  it.each([
+    [0, '0'],
+    [999, '999'],
+    [1950, '1,950'],
+    [2000, '2,000'],
+    [1234567, '1,234,567'],
+  ])('%d -> %s', (n, expected) => {
+    expect(formatCount(n)).toBe(expected);
   });
 });
 
