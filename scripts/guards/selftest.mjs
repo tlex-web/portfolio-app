@@ -524,6 +524,13 @@ const cases = [
     expectOutput: ['data/site.ts: email "hello@example.com" is not a real address'],
   },
   {
+    name: 'identity: an http, trailing-slash example.com base url in data/site.ts fails the url rule (D-13)',
+    guard: IDENTITY,
+    args: ['--root', idf('bad-url')],
+    expectExit: 1,
+    expectOutput: ['data/site.ts: url "http://example.com/" is not an https origin', 'identity: 1 violations'],
+  },
+  {
     name: 'identity: v1 placeholders in components/Header.tsx and Footer.tsx fail like any file; their importers add nothing',
     guard: IDENTITY,
     args: ['--root', idf('bad-former-dead-files')],
