@@ -1,7 +1,8 @@
 ---
 phase: "12"
 slug: "contact-edge-pages-cleanup-verification"
-status: draft
+status: approved
+reviewed_at: "2026-11-02"
 shadcn_initialized: false
 preset: none
 created: "2026-11-02"
@@ -502,71 +503,96 @@ Strings marked **Draft** ship only after Tim approves them at the copy checkpoin
 > Empty-state and error-state COPY live in `## Copywriting Contract` above — this section covers
 > state coverage and REFERENCES those rows rather than restating the copy (de-dup).
 
-Researcher pre-fill, written before the probe runs. The probe REPLACES these rows when it runs at Step 9.5.
+Probe run 2026-11-02 (`ui-consideration-probe.cjs`). The heuristic classifier over-matched on 9 of 13 elements, so the kinds below are author overrides, confirmed by Tim. Copy for every state is in the Copywriting Contract.
 
-**Elements:**
-- E1 Contact header band
-- E2 Direct contact panel (email, copy, location)
-- E3 `SummitRegister` form
-- E4 Error summary
-- E5 Send-failure box
-- E6 Register entry
-- E7 Message counter
-- E8 404 body (generic, photo, project)
-- E9 `EdgeArt`
-- E10 Error / global-error
-- E11 `/offline` saved-pages list
-- E12 OG images
-- E13 D-24 terminal body
+**Elements (confirmed kinds):**
+- E1 Contact header band — static-content
+- E2 Direct contact panel (email, Copy, location, Elsewhere) — list-collection, interactive-control, static-content
+- E3 `SummitRegister` form — form, interactive-control
+- E4 Error summary — list-collection
+- E5 Send-failure box — interactive-control, static-content
+- E6 Register entry — interactive-control, static-content
+- E7 Message counter — static-content
+- E8 404 body (generic, photo, project) — nav, static-content
+- E9 `EdgeArt` — media
+- E10 Error / global-error — interactive-control, static-content
+- E11 `/offline` saved-pages list — list-collection
+- E12 OG images — media, static-content
+- E13 D-24 `DemoTerminal` body — static-content
 
-Applicable state considerations resolved: 33 covered, 4 backstop, 1 unresolved.
+Applicable state considerations resolved: 48 covered, 6 backstop, 0 unresolved (8 dismissed with reason). 59 considerations in 62 rows: E5 loading, E8 error and E10 error each carry a second row.
 
-| Category | Element(s) | Status | Resolution / Reason |
-|----------|------------|--------|---------------------|
-| populated | E1 | ✅ covered | The header band shows the `Summit register` kicker, the h1 `Contact` and the intro, all server-rendered on first paint |
-| long-text | E1 | ✅ covered | The h1 and intro wrap within `max-w-prose` at 375 with no horizontal scroll |
-| populated | E2 | ✅ covered | The panel shows the email as selectable mono text with Copy and Write an email, plus Replies and the GitHub/LinkedIn links from `data/site.ts` |
-| partial | E2 | ✅ covered | Without Tim's confirmed coordinates, the Location row is omitted and the other rows render unchanged (Content Gates) |
-| error | E2 | ✅ covered | When the clipboard is unavailable or rejects, nothing is announced, the label does not change and the address text is selected for a manual copy |
-| overflow | E2 | ✅ covered | The email wraps after "@" (`<wbr>`, `wrap-anywhere`) inside the 295 px content box at 375 |
-| empty | E3 | ✅ covered | The untouched form shows visible labels, no errors and no placeholder text. Blur on an untouched field shows no error |
-| loading | E3 | ✅ covered | While sending, the button reads `Sending…` with `aria-disabled`, fields are read-only, focus stays on the button and repeat clicks are ignored |
-| error | E3 | ✅ covered | Invalid fields show inline errors with `aria-invalid` and a danger border, and every typed value is kept |
-| partial | E3 | ✅ covered | Only invalid fields error. A field that has errored revalidates live and clears the moment its value is valid |
-| long-text | E3 | ✅ covered | Long input scrolls inside its field, and the textarea resizes vertically only. The card never widens at 375 |
-| error | E3 (honeypot) | ✅ covered | A filled honeypot gets the success-shaped response, no email is sent, and the outcome `honeypot` is logged after the origin and rate-limit checks |
-| zero-one-many | E4 | ✅ covered | The summary title reads `Check 1 field` or `Check {n} fields`, and it lists one link per invalid field in form order |
-| error | E4 | ✅ covered | On an invalid submit the summary receives focus, and each link focuses its field under the sticky nav |
-| error | E5 | ✅ covered | `send-failed`, server and network failures show the failure box with Retry, focus moves to it, and every field keeps its value |
-| error | E5 (429) | ✅ covered | The rate-limit box shows the minutes from `Retry-After` (or "later" when the header is missing), has no Retry button, and keeps the fields |
-| error | E5 (403) | ✅ covered | The origin box tells the visitor to copy the message and reload, offers the `mailto:` fallback, and has no Retry button |
+| Category | Element | Status | Resolution / Reason |
+|----------|---------|--------|---------------------|
+| overflow | E1 | ✅ covered | At 375 the kicker, h1 and intro wrap inside the container with no horizontal scroll (`scrollWidth <= clientWidth`) |
+| long-text | E1 | ✅ covered | The h1 `Contact` and the intro wrap within `max-w-prose`; nothing truncates |
+| empty | E2 | ⊘ dismissed | The panel always has data: email, replies and Elsewhere come from `data/site.ts` at build time, so there is no zero-data panel |
+| loading | E2 | ✅ covered | The panel is server-rendered with its final content on first paint, including the Copy button (never added after hydration). Copy has no pending state: the label swaps only after `writeText` resolves |
+| error | E2 | ✅ covered | When the clipboard is unavailable or rejects, nothing is announced, the label does not change, and the address text is selected for a manual copy |
+| populated | E2 | ✅ covered | The panel shows Email (selectable mono text, Copy, Write an email), Location, Replies and Elsewhere (GitHub, LinkedIn) as a `<dl>` in a raised card |
+| partial | E2 | ✅ covered | Without Tim's confirmed coordinates the Location row is omitted and the other rows render unchanged (Content Gates) |
+| overflow | E2 | ✅ covered | The email wraps after `@` (`<wbr>`, `wrap-anywhere`) in the 295 px content box at 375; the Copy/mailto row and the Elsewhere links wrap with `flex-wrap` |
+| zero-one-many | E2 | ⊘ dismissed | Fixed set: four `dl` items and exactly two Elsewhere links from static site data, with no variable-length collection |
+| long-text | E2 | ✅ covered | The location line and the reply line wrap rather than truncate at 375 |
+| empty | E3 | ✅ covered | The untouched form, and the form restored by Sign again, shows visible labels, no placeholders, no errors and an empty message slot. Blurring an untouched field shows no error. Sign again focuses Name |
+| loading | E3 | ✅ covered | While sending, Send Message reads `Sending…` with `aria-disabled="true"` (not `disabled`), fields are `readOnly`, focus stays on the button, repeat clicks are ignored, and the sr-only status reads `Sending your entry` |
+| error | E3 | ✅ covered | On an invalid submit every field validates, invalid fields show inline errors with `aria-invalid` and a danger border, every typed value is kept, and a message over 2,000 characters blocks submit with the counter in `danger`. A filled honeypot gets the success-shaped 200 with no email sent, logged `honeypot` after the origin and rate-limit checks |
+| partial | E3 | ✅ covered | Only invalid fields error. A field that has shown an error revalidates live and clears the moment its value is valid. A server `validation` 400 maps its `fields` onto the same inline errors and summary |
+| long-text | E3 | ✅ covered | Long input scrolls inside its field, the textarea resizes vertically only, Message has no `maxLength` (paste is never cut), and the card never widens at 375 |
+| empty | E4 | ✅ covered | With zero invalid fields the summary is not rendered and the message slot is empty |
+| loading | E4 | ⊘ dismissed | The summary is computed synchronously from client validation or a 400 body, so it has no in-flight state of its own (sending belongs to E3) |
+| error | E4 | ✅ covered | On an invalid submit the summary (`role="alert"`, `tabindex="-1"`) receives focus, and each link focuses its field and scrolls it clear of the sticky nav |
+| populated | E4 | ✅ covered | The summary lists one link per invalid field in form order, each with the same message as its inline error |
+| partial | E4 | ✅ covered | As fields are fixed the list updates without being re-announced, and the summary stays until the next submit |
+| overflow | E4 | ✅ covered | Long error messages wrap inside the box at 375; nothing truncates and each link stays ≥ 44 px tall |
+| zero-one-many | E4 | ✅ covered | Zero invalid fields → no summary; one → `Check 1 field`; many → `Check {n} fields`, one link each |
 | loading | E5 | 🧪 backstop | `{ statement: "A /api/feedback request that does not answer within 15 s aborts and shows the network failure box with Retry and the kept fields", verification: backstop }` |
-| populated | E6 | ✅ covered | On 200, the entry shows the local timestamp, `Register signed`, `Signed by {name}.` and `I'll reply to {email}.`, and receives focus |
-| long-text | E6 | ✅ covered | A 100-character name and a long email wrap inside the entry at 375 (`wrap-anywhere`), with no horizontal scroll |
-| populated | E6 (Sign again) | ✅ covered | Sign again restores an empty form with no messages and focuses Name |
-| overflow | E7 | ✅ covered | The counter shows `{n} / 2,000`, turns `caution` from 1,800 and `danger` above 2,000, and the over-limit message blocks submit |
-| loading | E7 | ✅ covered | The counter's status region announces only at 1,800, 1,900, 1,950 and 2,000 and when over the limit, never on every keystroke |
-| error | E8 | ✅ covered | An unknown URL or a deleted playground route returns HTTP 404 with the marked-trail h1, the generic body and Go to the homepage, with no redirect |
-| partial | E8 | ✅ covered | A photo or project miss shows its context sentence and its section link (`All photographs` / `All routes`), and never shows the slug |
-| error | E8 | 🧪 backstop | `{ statement: "The server HTML for /projects/<unknown> and /photos/<unknown> (fetched without JS) contains the h1 'You've left the marked trail' and one main, with status 404", verification: backstop }` |
-| overflow | E8, E10 | ✅ covered | The action row wraps with `gap-4` at 375. The h1 takes at most 2 lines with `text-balance` |
-| populated | E9 | ✅ covered | The art shows the hero contours, a dashed trail and an accent dot, at 343 px (375) and 448 px (768, 1440), and is `aria-hidden` |
-| partial | E9 | ✅ covered | A unit test asserts that the dot is at least 56 viewBox units from every trail segment and that dot and trail stay inside the 48–464 safe box |
-| error | E10 | ✅ covered | The error page shows `Something went wrong`, focuses the h1, offers Try again (`retry()`), Go to the homepage and Report this error, and never renders exception text |
+| loading | E5 (retry) | ✅ covered | During a retry the form re-enters Sending: Send Message reads `Sending…`, Retry takes `aria-disabled="true"` and ignores repeats, and the failure box stays until the new response replaces it |
+| error | E5 | ✅ covered | `send-failed`, `server-error` and network failures show the box with Retry. 429 shows the minutes from `Retry-After` (or "later") and 403 shows the reload instruction, both without Retry. Focus moves to the box, every field keeps its value, and every body ends with a `mailto:` fallback |
+| overflow | E5 | ✅ covered | Body text and the `{email}` fallback link wrap inside the box at 375 (`wrap-anywhere` on the address) |
+| long-text | E5 | ✅ covered | Titles and bodies wrap. `{m}` is derived from `Retry-After` (minimum 1, `1 minute` singular) |
+| loading | E6 | ⊘ dismissed | The entry renders only after the 200 response, and the in-flight state belongs to the form (E3) |
+| error | E6 | ⊘ dismissed | The entry exists only on success. Every failure renders the send-failure box (E5) instead |
+| overflow | E6 | ✅ covered | A 200-character name and a long email echoed in the entry wrap with `wrap-anywhere`, and the 375 overflow e2e covers this state |
+| long-text | E6 | ✅ covered | On 200 the entry (timestamp, `Register signed`, `Signed by {name}.`, `I'll reply to {email}.`) receives focus. The echoed name and email are React-escaped and wrap at any length |
+| overflow | E7 | ✅ covered | The helper row (`10 to 2,000 characters` left, `{n} / 2,000` right) fits 295 px at 375 and wraps with `gap-4` if it does not |
+| long-text | E7 | ✅ covered | The counter text is bounded (`{formatCount(n)} / 2,000`). It is `ink-muted` below 1,800, `caution` from 1,800 and `danger` above 2,000, and its sr-only status announces only at 1,800, 1,900, 1,950, 2,000 and over the limit |
+| loading | E8 | ⊘ dismissed | Server-rendered with no client data; the page is complete in the first HTML response |
+| error | E8 | ✅ covered | Unknown URLs and the deleted playground routes return HTTP 404 (no redirect) with the marked-trail h1 and Go to the homepage. Photo and project misses show their context sentence and section link (`All photographs` / `All routes`) and never echo the slug |
+| error | E8 (server HTML) | 🧪 backstop | `{ statement: "The server HTML for /projects/<unknown> and /photos/<unknown> (fetched without JS) contains the h1 'You've left the marked trail' and one main, with status 404", verification: backstop }` |
+| overflow | E8 | ✅ covered | The action row wraps with `gap-4` at 375, and every link stays ≥ 44 px |
+| long-text | E8 | ✅ covered | The h1 takes at most 2 lines at 375 with `text-balance`, and the body wraps in `max-w-prose` |
+| empty | E9 | ⊘ dismissed | Always rendered: the trail and dot geometry is a committed constant in `lib/edge-art.ts`, so there is no data-less state |
+| loading | E9 | ✅ covered | The sheet is an `aspect-square` box with a `surface-raised` ground, so its size is fixed before the contour asset loads (no CLS). The trail and dot are inline SVG and draw with the HTML |
+| error | E9 | ✅ covered | If the same-origin contour asset fails, the sheet keeps its ground, trail and dot. The art is decorative and `aria-hidden`, so nothing else changes |
+| populated | E9 | ✅ covered | The art shows hero-LOD contours, a dashed `ink-muted` trail and an accent dot, at 343 px (375) and 448 px (768, 1440). A unit test asserts that the dot is ≥ 56 viewBox units from every trail segment and that the dot and trail stay inside the 48–464 safe box |
+| loading | E10 | 🧪 backstop | `{ statement: "A component test asserts that Try again calls retry() once per activation and shows no pending UI, and that a retry which fails again renders the same error body", verification: backstop }` |
+| error | E10 | ✅ covered | The error page shows `Something went wrong`, focuses the h1, offers Try again (`retry()`), Go to the homepage and Report this error (`/contact`), and never renders exception text or the digest |
 | error | E10 (global) | 🧪 backstop | `{ statement: "A component test renders global-error with its own html.dark/body, the static chrome, EdgeArt, the h1 focused, Try again calling retry and a plain /contact link", verification: backstop }` |
-| loading | E11 | ✅ covered | First paint shows `Checking saved pages…` under the server-rendered h2 until Cache Storage has been read |
-| empty | E11 | ✅ covered | With no cached navigations, it shows the empty sentence |
-| error | E11 | ✅ covered | Without the `caches` API, it shows the unsupported sentence |
-| zero-one-many | E11 | ✅ covered | Only cached pages are listed: deduplicated, query variants normalised, `/offline` excluded, ordered nav → photos → projects |
+| overflow | E10 | ✅ covered | The action row wraps with `gap-4` at 375 (shared `EdgeLayout`) |
+| long-text | E10 | ✅ covered | The h1 and body wrap. No exception text is rendered, so no unbounded string appears |
+| empty | E11 | ✅ covered | With no cached navigations the list shows the empty sentence |
+| loading | E11 | ✅ covered | First paint shows `Checking saved pages…` under the server-rendered h2 until Cache Storage is read. The swap happens at the end of the extra slot, so the art and text do not move |
+| error | E11 | ✅ covered | Without the `caches` API, or if reading Cache Storage rejects, it shows the unsupported sentence |
+| populated | E11 | ✅ covered | Each row is a ≥ 48 px link with the page title and, for detail pages, a `Photograph` / `Project` label, ordered nav → photos → projects |
+| partial | E11 | ✅ covered | Only cached navigations are listed. `/offline`, query variants (normalised), non-navigation entries, duplicates and any cached path with no matching data title are dropped, never shown as a raw URL |
+| overflow | E11 | ✅ covered | Long titles wrap inside the row (no truncation), and the row grows past 48 px |
+| zero-one-many | E11 | ✅ covered | Zero → the empty sentence; one and many → the same row layout with `line` rules; no count is shown |
+| empty | E12 | ✅ covered | Routes without their own image (Home, `/photos`, `/projects`, `/roadmap`, `/contact`) inherit the default card from the root metadata, so no page ships without an OG image |
+| loading | E12 | ⊘ dismissed | The images are statically generated for every slug, so crawlers receive a finished PNG and there is no in-page loading state |
+| error | E12 | 🧪 backstop | `{ statement: "Each OG URL returns 200 image/png at 1200 × 630 in the test suite, and a missing derivative or font fails the build rather than serving a broken card", verification: backstop }` |
 | populated | E12 | ✅ covered | Each OG URL returns a 1200 × 630 PNG. The photo variant keeps the photo's own aspect (contain) and carries the © line, and the film scan reads 2019 and approx. |
+| overflow | E12 | ✅ covered | Photos are contain-fit in the 768 × 630 slot with `night950` mats, never cropped, and plate text wraps inside 336 px |
 | long-text | E12 | 🧪 backstop | `{ statement: "Jest renders every photo and project OG element tree and asserts that the longest title and pitch fit their boxes (title ≤ 3 lines in 336 px at 32 px, pitch ≤ 3 lines in 640 px at 32 px) with no undefined/NaN", verification: backstop }` |
-| overflow | E13 | ⚠ unresolved — planner must treat as assumption | The grid-overlay terminal body takes the height of the tallest entry at each width. The assumption is that the visually hidden entries add no scroll width at 375, which the 375 overflow e2e confirms in round 1 |
+| overflow | E13 | ✅ covered | The inactive entries sit `invisible` in the same grid cell and wrap at the container width, so they add height but no scroll width. The 375 overflow e2e on the box page asserts `scrollWidth <= clientWidth` in round 1 |
+| long-text | E13 | ✅ covered | The body is as tall as the longest entry wrapped at the current width, so typing never shifts content below (no CLS) and short transcripts leave no dead band |
 
 <!-- Status vocabulary (locked by probe-core projectTruths):
      ✅ covered   → a plain truth string lifted into must_haves.truths
      🧪 backstop  → a flat scalar { statement, verification: backstop }; at verify time, no explicit
                     evidence → insufficient_spec → human_needed (never a silent pass, #1154)
      ⚠ unresolved → an explicit planner assumption (surfaced, never silently dropped)
+     ⊘ dismissed  → not lifted; the reason string is the audit trail
      Rows are REPLACED (not appended) on a probe re-run — idempotent. -->
 
 ---
@@ -640,12 +666,12 @@ Quick-reference rules applied: `color-contrast`, `color-not-only`, `focus-states
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
-- [ ] Dimension 7 Inventory Provenance: PASS
+- [x] Dimension 1 Copywriting: FLAG (non-blocking: visible labels `Retry` / `Copy` are verb-only; accessible names carry the noun. Tim decides at the copy checkpoint)
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
+- [x] Dimension 7 Inventory Provenance: PASS
 
-**Approval:** pending
+**Approval:** approved 2026-11-02 (gsd-ui-checker: 6 PASS, 1 FLAG; UI-consideration probe resolved 59/59)
