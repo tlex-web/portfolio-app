@@ -1,9 +1,9 @@
 ---
-status: diagnosed
+status: complete
 phase: 11-engineering-roadmap
 source: [11-VERIFICATION.md]
 started: 2026-11-02T02:25:00Z
-updated: 2026-11-02T11:02:00Z
+updated: 2026-11-02T11:51:37.257Z
 ---
 
 ## Current Test
@@ -52,7 +52,9 @@ blocked: 0
 
 - gap_id: G-11-4
   truth: "Each box metric Source link's accessible name says what it sources (tools, tests, binary)"
-  status: failed
+  status: resolved
+  resolved_by: 11-19-PLAN.md
+  resolved_at: 2026-11-02
   reason: "User reported: yes change to a suffix on each link"
   severity: minor
   test: 4
