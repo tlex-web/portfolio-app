@@ -9,7 +9,7 @@ findings:
     title: "A malformed URL hash makes RouteIndex throw `URIError` on every observer callback"
   - id: WR-02
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "RouteLogFilters judges disabled segments with stale counts while a press is pending, so a fast second press can reach an empty combination"
   - id: IN-01
     severity: info
@@ -59,9 +59,9 @@ findings:
     severity: info
     disposition: open
     title: "In write mode, build-clip is not atomic and deletes any file in public/media/ it did not produce"
-open: 13
+open: 12
 total: 14
-recorded: 2026-11-02T02:08:37.758Z
+recorded: 2026-11-02T02:09:00.813Z
 ---
 
 # Phase 11: Code Review Disposition
@@ -69,7 +69,7 @@ recorded: 2026-11-02T02:08:37.758Z
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
 | WR-01 | warning | fixed | 11-REVIEW-FIX.md |
-| WR-02 | warning | open | - |
+| WR-02 | warning | fixed | 11-REVIEW-FIX.md |
 | IN-01 | info | open | - |
 | IN-02 | info | open | - |
 | IN-03 | info | open | - |
