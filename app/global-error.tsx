@@ -28,11 +28,14 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 /**
- * Root error boundary (SHELL-05; UI-SPEC "Shell Contract" global-error variant).
- * Its own html/body with the static chrome: plain links, no router hooks, no
- * motion. Try again calls `retry()` (user-approved deviation from the UI-SPEC's
+ * Root error boundary (SHELL-05, EDGE-01; UI-SPEC "Shell Contract" global-error
+ * variant; 12 D-09). Its own html.dark/body with the static chrome: plain links,
+ * no router hooks, no motion. ErrorBody `root` renders in the shared EdgeLayout
+ * with the contour sheet, and its Report this error link is a plain anchor.
+ * Try again calls `retry()` (user-approved deviation from the UI-SPEC's
  * `reset()` wording, 2026-10-10); `reset` stays in the props signature, unused.
- * The error is logged, never rendered.
+ * The error is logged, never rendered (T-12-29). No metadata export: Next does
+ * not support it in global-error.
  */
 export default function GlobalError({
   error,
