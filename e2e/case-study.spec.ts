@@ -99,7 +99,7 @@ test.describe('Case-study route', () => {
 
       expect(response?.status()).toBe(404);
       expect(new URL(page.url()).pathname).toBe(path);
-      await expect(page.getByRole('main').getByText('Error 404', { exact: true })).toHaveCount(1);
+      await expect(page.getByRole('main').getByText('Error 404 · Page not found', { exact: true })).toHaveCount(1);
     });
   }
 

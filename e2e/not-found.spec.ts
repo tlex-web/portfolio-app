@@ -40,6 +40,13 @@ const token = `nf-${crypto.randomUUID().slice(0, 8)}`;
  */
 const withoutScripts = (html: string) => html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
 
+/** The locked 404 h1 (D-10). */
+const H1 = "You've left the marked trail";
+/** The h1 in server HTML: React escapes the apostrophe as &#x27;; accept the literal form too. */
+const H1_HTML = /You(?:&#x27;|&#39;|')ve left the marked trail/;
+/** The 404 title through the root template (app/not-found.tsx metadata). */
+const TITLE = 'Page not found · Tim Lui';
+
 /** Each section miss and the context link that replaces its generic label. */
 const MISSES = [
   { path: `/photos/${token}`, link: 'All photographs', href: '/photos', generic: 'Photographs' },
@@ -69,7 +76,8 @@ test.describe('Unknown detail slugs: server-rendered 404 (EDGE-01)', () => {
     }) => {
       const { body, main } = await expectServerRendered404(await request.get(miss.path));
 
-      expect(main).toContain('Page not found');
+      expect(main).toMatch(H1_HTML);
+      expect(main).toContain('Error 404 · Page not found');
       expect(main).toContain(`>${miss.link}<`);
       expect(main).not.toContain(`>${miss.generic}<`);
       expect(body).not.toContain(token);
@@ -84,7 +92,8 @@ test.describe('Unknown detail slugs: server-rendered 404 (EDGE-01)', () => {
       expect(new URL(page.url()).pathname).toBe(miss.path);
 
       const main = page.getByRole('main');
-      await expect(main.getByRole('heading', { level: 1 })).toHaveText('Page not found');
+      await expect(main.getByRole('heading', { level: 1 })).toHaveText(H1);
+      await expect(page).toHaveTitle(TITLE);
       await expect(main.getByRole('link', { name: miss.link, exact: true })).toHaveAttribute(
         'href',
         miss.href
@@ -110,7 +119,9 @@ test.describe('Unknown detail slugs: server-rendered 404 (EDGE-01)', () => {
     const response = await request.get(`/photos/${photoSlugs[0]}`);
     expect(response.status()).toBe(200);
     // The not-found boundary is serialized into every page's flight payload, so read the markup.
-    expect(withoutScripts(await response.text())).not.toContain('Page not found');
+    const markup = withoutScripts(await response.text());
+    expect(markup).not.toContain('Page not found');
+    expect(markup).not.toMatch(H1_HTML);
   });
 
   test('a three-segment photo path is not rewritten: 404 with the generic links', async ({
@@ -134,6 +145,83 @@ test.describe('Unknown detail slugs: server-rendered 404 (EDGE-01)', () => {
     expect(main).toContain('>Photographs<');
     expect(main).not.toContain('All photographs');
   });
+
+  test('an unmatched URL: the marked-trail h1 in the server HTML and the generic sentence', async ({
+    request,
+  }) => {
+    const { main } = await expectServerRendered404(await request.get('/__no-such-page__'));
+
+    expect(main).toMatch(H1_HTML);
+    expect(main).toContain('Error 404 · Page not found');
+    expect(main).toMatch(/There(?:&#x27;|&#39;|')s no page at this address/);
+    expect(main).toContain('>Photographs<');
+    expect(main).toContain('>Engineering<');
+  });
+});
+
+/**
+ * The designed edge layout (EDGE-01, D-09, D-10; 12-UI-SPEC "EdgeArt", E8):
+ * the marked-trail h1 and the title on every variant, the decorative contour
+ * sheet, and no horizontal scroll at 375 px.
+ */
+test.describe('Marked-trail 404 layout (EDGE-01)', () => {
+  for (const path of ['/__no-such-page__', `/photos/${token}`, `/projects/${token}`]) {
+    test(`${path.replace(token, '<token>')}: marked-trail h1, title, aria-hidden art sheet, no focus move`, async ({
+      page,
+    }) => {
+      const response = await page.goto(path);
+      expect(response?.status()).toBe(404);
+
+      const main = page.getByRole('main');
+      await expect(main.getByRole('heading', { level: 1 })).toHaveText(H1);
+      await expect(main.getByText('Error 404 · Page not found', { exact: true })).toHaveCount(1);
+      await expect(page).toHaveTitle(TITLE);
+
+      // One art sheet: an aria-hidden square holding the trail and the dot, nothing focusable.
+      const sheet = main.locator('div[aria-hidden="true"]:has(> svg[viewBox="0 0 512 512"])');
+      await expect(sheet).toHaveCount(1);
+      await expect(sheet).toBeVisible();
+      await expect(sheet.locator('path[stroke-dasharray="8 6"]')).toHaveCount(1);
+      await expect(sheet.locator('circle[r="8"]')).toHaveCount(1);
+      await expect(sheet.locator('a, button, [tabindex]')).toHaveCount(0);
+      const box = await sheet.boundingBox();
+      expect(box).not.toBeNull();
+      expect(Math.abs(box!.width - box!.height)).toBeLessThanOrEqual(1);
+      expect(box!.width).toBeGreaterThan(0);
+
+      // No focus move on load: the route announcer reads the title.
+      expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
+    });
+  }
+
+  test.describe('375 x 800', () => {
+    test.use({ viewport: { width: 375, height: 800 } });
+
+    for (const path of ['/__no-such-page__', `/photos/${token}`, `/projects/${token}`]) {
+      test(`${path.replace(token, '<token>')}: no horizontal scroll; the sheet fills the column, square`, async ({
+        page,
+      }) => {
+        await page.goto(path);
+        await page.evaluate(() => document.fonts.ready);
+
+        const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+          scrollWidth: document.documentElement.scrollWidth,
+          clientWidth: document.documentElement.clientWidth,
+        }));
+        expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+
+        // The sheet spans the content column (main minus the 16 px gutters): 343 px at
+        // 375 without a scrollbar gutter, less where the stable gutter takes its share.
+        const main = page.getByRole('main');
+        const sheet = main.locator('div[aria-hidden="true"]:has(> svg[viewBox="0 0 512 512"])');
+        const column = ((await main.boundingBox())?.width ?? 0) - 2 * 16;
+        const box = await sheet.boundingBox();
+        expect(Math.abs((box?.width ?? 0) - column)).toBeLessThanOrEqual(1);
+        expect(box?.width).toBeLessThanOrEqual(448);
+        expect(Math.abs((box?.width ?? 0) - (box?.height ?? -1))).toBeLessThanOrEqual(1);
+      });
+    }
+  });
 });
 
 /**
@@ -154,7 +242,7 @@ async function openControlledHome(page: Page) {
 async function expectNeutralDocument(page: Page, miss: (typeof MISSES)[number]) {
   expect(new URL(page.url()).pathname).toBe(miss.path);
   const main = page.getByRole('main');
-  await expect(main.getByRole('heading', { level: 1 })).toHaveText('Page not found');
+  await expect(main.getByRole('heading', { level: 1 })).toHaveText(H1);
   await expect(main.getByRole('link', { name: miss.link, exact: true })).toHaveAttribute(
     'href',
     miss.href

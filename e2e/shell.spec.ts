@@ -173,8 +173,8 @@ test.describe('Shell 404', () => {
 
       const main = page.getByRole('main');
       await expect(main.getByRole('heading', { level: 1 })).toHaveCount(1);
-      await expect(main.getByRole('heading', { level: 1 })).toHaveText('Page not found');
-      await expect(main.getByText('Error 404', { exact: true })).toHaveCount(1);
+      await expect(main.getByRole('heading', { level: 1 })).toHaveText("You've left the marked trail");
+      await expect(main.getByText('Error 404 · Page not found', { exact: true })).toHaveCount(1);
       await expect(main.getByRole('link', { name: 'Go to the homepage', exact: true })).toHaveAttribute(
         'href',
         '/',
