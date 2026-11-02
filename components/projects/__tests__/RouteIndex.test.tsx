@@ -72,6 +72,33 @@ function report(entries: { id: string; isIntersecting: boolean; top: number }[])
   });
 }
 
+/**
+ * Give sections a live layout box (jsdom lays nothing out, so every rect is
+ * otherwise zero): `top` is the section's top edge in the viewport. Returns a
+ * function that takes the boxes away again.
+ */
+function place(boxes: { [id: string]: { top: number; height: number } }): () => void {
+  const els = Object.entries(boxes).map(([id, { top, height }]) => {
+    const el = document.getElementById(id) as HTMLElement;
+    el.getBoundingClientRect = () =>
+      ({
+        top,
+        bottom: top + height,
+        left: 0,
+        right: 800,
+        width: 800,
+        height,
+        x: 0,
+        y: top,
+        toJSON: () => ({}),
+      }) as DOMRect;
+    return el;
+  });
+  return () => {
+    for (const el of els) delete (el as { getBoundingClientRect?: unknown }).getBoundingClientRect;
+  };
+}
+
 /** The index beside the page's sections, as the case-study page renders it. */
 function renderPage(sections: Section[]) {
   return render(
@@ -256,6 +283,45 @@ describe('RouteIndex', () => {
         configurable: true,
         value: 0,
       });
+    }
+  });
+
+  it('marks nothing current after a sweep to the end jumps back to the top of the page', () => {
+    renderPage(THREE);
+    // A sweep down the page: each section enters the band, then leaves it upwards.
+    report([
+      { id: 'problem', isIntersecting: true, top: 120 },
+      { id: 'pipeline', isIntersecting: false, top: 700 },
+      { id: 'safety', isIntersecting: false, top: 1300 },
+    ]);
+    report([
+      { id: 'problem', isIntersecting: false, top: -500 },
+      { id: 'pipeline', isIntersecting: true, top: 100 },
+    ]);
+    report([
+      { id: 'pipeline', isIntersecting: false, top: -500 },
+      { id: 'safety', isIntersecting: true, top: 100 },
+    ]);
+    expect(currentNames(stickyList())).toEqual(['Safety']);
+
+    // One jump back to y = 0 (window.scrollTo(0, 0)): every section now sits
+    // below the band, but only Safety changed intersection, so the observer
+    // reports Safety alone; Problem and Pipeline went from above to below
+    // without ever touching the band.
+    const restore = place({
+      problem: { top: 420, height: 600 },
+      pipeline: { top: 1084, height: 600 },
+      safety: { top: 1748, height: 400 },
+    });
+    try {
+      act(() => {
+        Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+        window.dispatchEvent(new Event('scroll'));
+      });
+      report([{ id: 'safety', isIntersecting: false, top: 1748 }]);
+      expect(nav().querySelector('[aria-current]')).toBeNull();
+    } finally {
+      restore();
     }
   });
 
