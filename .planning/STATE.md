@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 12
 current_phase_name: Contact, Edge Pages, Cleanup & Verification
 status: executing
-stopped_at: Completed 12-09-PLAN.md
-last_updated: "2026-11-02T19:12:40.107Z"
+stopped_at: Completed 12-10-PLAN.md
+last_updated: "2026-11-02T19:33:28.277Z"
 last_activity: 2026-11-02
 last_activity_desc: Phase 12 execution started
-state_head: 06759fcad6e49c6233a2c2c737fd63cb2536d6f8
+state_head: 9f7c1b916a41d989f2d471fed486cac28f87a6fb
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 120
-  completed_plans: 102
-  percent: 85
+  completed_plans: 103
+  percent: 86
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-11-02)
 ## Current Position
 
 Phase: 12 (Contact, Edge Pages, Cleanup & Verification) — EXECUTING
-Plan: 9 of 26
+Plan: 10 of 26
 Status: Ready to execute
 Last activity: 2026-11-02 — Phase 12 execution started
 
-Progress: [█████████░] 85%
+Progress: [█████████░] 86%
 
 ## Performance Metrics
 
@@ -160,6 +160,7 @@ Progress: [█████████░] 85%
 | Phase 12 P07 | 17 min | 3 tasks | 13 files |
 | Phase 12 P08 | 9min | 2 tasks | 7 files |
 | Phase 12 P09 | 7 min | 2 tasks | 15 files |
+| Phase 12 P10 | 17 min | 2 tasks | 16 files |
 
 ## Accumulated Context
 
@@ -426,6 +427,9 @@ Recent decisions affecting current work:
 - [Phase 12]: 12-08: sw.reload-once = yes built as a once-per-tab sessionStorage guard; no reload on first install, with a dirty text field, or when sessionStorage is unavailable
 - [Phase 12]: 12-09: root description lives in SITE_DESCRIPTION (lib/metadata.ts), shared by app/layout.tsx and Home; per-route metadata goes through pageMetadata, which never sets openGraph or twitter
 - [Phase 12]: 12-09: site.url = https://portfolio-app-mocha-three.vercel.app is the one canonical host (D-13); metadataBase, canonicals, sitemap.xml and robots.txt all derive from it
+- [Phase 12]: 12-10: OG fonts are the full static TTF instances (not Google's latin subset, which lacks the U+2192 caption arrow); read from disk at build, never served
+- [Phase 12]: 12-10: Twitter reuses the file-based OG image under the root summary_large_image card; no twitter-image file
+- [Phase 12]: 12-10: open for Tim - coin-flip's approved pitch wraps to 4 lines on the project OG card (UI-SPEC assumed <= 3); the card fits it without clipping
 
 ### Pending Todos
 
@@ -472,6 +476,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-02T19:12:38.953Z
-Stopped at: Completed 12-09-PLAN.md
+Last session: 2026-11-02T19:33:27.105Z
+Stopped at: Completed 12-10-PLAN.md
 Resume file: None
