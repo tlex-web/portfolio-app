@@ -33,19 +33,29 @@ const MONTHS_SHORT = [
   'Dec',
 ] as const;
 
+/** Absolute value at `d` decimals, rounded half up: fixedDecimals(1.23455, 4) -> '1.2346'. */
+function fixedDecimals(v: number, d: number): string {
+  const scale = 10 ** d;
+  return (Math.round(Math.abs(v) * scale) / scale).toFixed(d);
+}
+
 /** Absolute value at four decimals, rounded half up: 1.23455 -> '1.2346'. */
 function fourDecimals(v: number): string {
-  return (Math.round(Math.abs(v) * 1e4) / 1e4).toFixed(4);
+  return fixedDecimals(v, 4);
 }
 
 /**
- * WGS84 coordinates as the kicker prints them (D-11): four decimals, round half
- * up, the hemisphere letter by sign after U+00A0, joined by ' · ':
- * { lat: 45.97644, lon: 7.65861 } -> '45.9764 N · 7.6586 E'.
+ * WGS84 coordinates as the kicker prints them (D-11): four decimals by
+ * default, round half up, the hemisphere letter by sign after U+00A0, joined
+ * by ' · ': { lat: 45.97644, lon: 7.65861 } -> '45.9764 N · 7.6586 E'. The
+ * Contact location (12 D-01) passes `{ decimals: 2 }`: '47.37 N · 8.54 E'.
  */
-export function formatLatLon({ lat, lon }: { lat: number; lon: number }): string {
-  const ns = `${fourDecimals(lat)}${NBSP}${lat < 0 ? 'S' : 'N'}`;
-  const ew = `${fourDecimals(lon)}${NBSP}${lon < 0 ? 'W' : 'E'}`;
+export function formatLatLon(
+  { lat, lon }: { lat: number; lon: number },
+  { decimals = 4 }: { decimals?: 2 | 4 } = {},
+): string {
+  const ns = `${fixedDecimals(lat, decimals)}${NBSP}${lat < 0 ? 'S' : 'N'}`;
+  const ew = `${fixedDecimals(lon, decimals)}${NBSP}${lon < 0 ? 'W' : 'E'}`;
   return `${ns} ${MIDDOT} ${ew}`;
 }
 
@@ -90,9 +100,7 @@ export function formatYearRange(years: readonly number[]): string {
 
 /** Whole metres with comma thousands separators, as formatMetres in lib/photo-format.ts. */
 function groupedMetres(m: number): string {
-  const whole = Math.round(m);
-  const digits = String(Math.abs(whole)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  return `${whole < 0 ? '-' : ''}${digits}`;
+  return formatCount(m);
 }
 
 /**
@@ -133,4 +141,28 @@ export function countLabel(n: number, one: string, many: string): string {
 export function shortPlace(location: string, overrideName?: string | null): string {
   if (overrideName) return overrideName;
   return location.split(',')[0].trim();
+}
+
+/** Two digits with a leading zero: 7 -> '07'. */
+const twoDigits = (n: number) => String(n).padStart(2, '0');
+
+/**
+ * The register entry's time stamp (12 D-03; 12-UI-SPEC "Register entry") in
+ * the visitor's local time from Date getters, with the fixed English month
+ * names and a 24-hour clock: new Date(2026, 10, 2, 14, 32) ->
+ * '2 Nov 2026 · 14:32'. Seconds are dropped.
+ */
+export function formatEntryTime(date: Date): string {
+  const day = `${date.getDate()} ${MONTHS_SHORT[date.getMonth()]} ${date.getFullYear()}`;
+  return `${day} ${MIDDOT} ${twoDigits(date.getHours())}:${twoDigits(date.getMinutes())}`;
+}
+
+/**
+ * A whole count with comma thousands separators, for the Contact character
+ * counter and the too-long error: 1950 -> '1,950'.
+ */
+export function formatCount(n: number): string {
+  const whole = Math.round(n);
+  const digits = String(Math.abs(whole)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return `${whole < 0 ? '-' : ''}${digits}`;
 }

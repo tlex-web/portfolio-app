@@ -14,6 +14,7 @@ import {
   type FieldIssue,
 } from '@/lib/contact/api-contract';
 import { site } from '@/data/site';
+import { formatCount, formatEntryTime } from '@/lib/home-format';
 
 /** No answer within this many milliseconds is a network failure (UI-SPEC "Send failed"). */
 export const SEND_TIMEOUT_MS = 15_000;
@@ -22,11 +23,6 @@ export const SEND_TIMEOUT_MS = 15_000;
 const FIELDS: readonly FeedbackField[] = ['name', 'email', 'message'];
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-/** Comma thousands separators without locale APIs: 1950 -> '1,950'. */
-function grouped(n: number): string {
-  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
 
 /**
  * The approved inline message for one issue on one field (12-01
@@ -42,7 +38,7 @@ function issueMessage(field: FeedbackField, issue: FieldIssue, value: string): s
   }
   if (issue === 'too_short') return `Write at least 10 characters (now ${value.length}).`;
   if (issue === 'too_long') {
-    return `Shorten the message to 2,000 characters (now ${grouped(value.length)}).`;
+    return `Shorten the message to 2,000 characters (now ${formatCount(value.length)}).`;
   }
   return 'Write a message.';
 }
@@ -228,7 +224,7 @@ export default function SummitRegister() {
   const [errors, setErrors] = useState<Errors>({});
   const [sending, setSending] = useState(false);
   const [failure, setFailure] = useState<{ failure: Failure; seq: number } | null>(null);
-  const [signed, setSigned] = useState<{ name: string; email: string } | null>(null);
+  const [signed, setSigned] = useState<{ name: string; email: string; at: Date } | null>(null);
 
   /** Synchronous guard, so two clicks in one frame still send once. */
   const sendingRef = useRef(false);
@@ -272,6 +268,7 @@ export default function SummitRegister() {
     if (sendingRef.current) return;
     sendingRef.current = true;
     const id = ++requestRef.current;
+    const submittedAt = new Date();
     setSending(true);
 
     const controller = new AbortController();
@@ -320,7 +317,7 @@ export default function SummitRegister() {
 
     if (outcome.kind === 'ok') {
       setFailure(null);
-      setSigned({ name: v.name.trim(), email: v.email.trim() });
+      setSigned({ name: v.name.trim(), email: v.email.trim(), at: submittedAt });
       return;
     }
     if (outcome.kind === 'validation') {
@@ -373,7 +370,10 @@ export default function SummitRegister() {
         tabIndex={-1}
         className="mt-6 rounded-sm outline-offset-4"
       >
-        <h2 className="flex items-center gap-2">
+        <p className="font-mono text-sm text-ink-muted tabular-nums">
+          {formatEntryTime(signed.at)}
+        </p>
+        <h2 className="mt-2 flex items-center gap-2">
           <CheckCircleIcon size={24} aria-hidden="true" className="shrink-0 text-success" />
           Register signed
         </h2>
@@ -386,7 +386,11 @@ export default function SummitRegister() {
     );
   }
 
-  const describedBy = (field: FeedbackField) => (errors[field] ? `${field}-error` : undefined);
+  /** The error (when shown) then the hint (Message only), as UI-SPEC "Field error" orders them. */
+  const describedBy = (field: FeedbackField) =>
+    [errors[field] ? `${field}-error` : null, field === 'message' ? 'message-hint' : null]
+      .filter(Boolean)
+      .join(' ') || undefined;
 
   return (
     <form
@@ -454,6 +458,7 @@ export default function SummitRegister() {
         />
         {errors.name ? (
           <p id="name-error" className="mt-2 text-sm text-danger">
+            <span className="sr-only">Error: </span>
             {errors.name}
           </p>
         ) : null}
@@ -483,6 +488,7 @@ export default function SummitRegister() {
         />
         {errors.email ? (
           <p id="email-error" className="mt-2 text-sm text-danger">
+            <span className="sr-only">Error: </span>
             {errors.email}
           </p>
         ) : null}
@@ -509,9 +515,13 @@ export default function SummitRegister() {
         />
         {errors.message ? (
           <p id="message-error" className="mt-2 text-sm text-danger">
+            <span className="sr-only">Error: </span>
             {errors.message}
           </p>
         ) : null}
+        <p id="message-hint" className="mt-2 text-sm text-ink-muted">
+          10 to 2,000 characters
+        </p>
       </div>
 
       {/* The honeypot (CONTACT-03): outside the accessibility tree and the Tab order. */}
