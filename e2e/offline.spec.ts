@@ -89,15 +89,20 @@ test.describe('Offline page (EDGE-02, D-12)', () => {
 
   test('seeded Cache Storage: exactly the two cached pages, in nav then photo order, no raw URL', async ({
     page,
+    context,
   }) => {
     await page.goto('/offline');
     await expect(savedRegion(page).getByText(EMPTY)).toBeVisible();
     const artBefore = await artSheet(page).boundingBox();
 
     await seedCache(page, SEEDED);
-    await page.reload();
+    // A second page of the same context reads the seeded cache. Reloading the seeding page
+    // does not work on Playwright's ephemeral WebKit session: the cache name survives the
+    // reload but its entries do not (probed on chromium, firefox and webkit, 12-15).
+    const reader = await context.newPage();
+    await reader.goto('/offline');
 
-    const region = savedRegion(page);
+    const region = savedRegion(reader);
     const links = region.getByRole('list').getByRole('link');
     await expect(links).toHaveCount(2);
     await expect(links.nth(0)).toHaveAttribute('href', '/roadmap');
@@ -114,7 +119,7 @@ test.describe('Offline page (EDGE-02, D-12)', () => {
     }
 
     // The list arrives at the end of the extra slot; the art does not move.
-    const artAfter = await artSheet(page).boundingBox();
+    const artAfter = await artSheet(reader).boundingBox();
     expect(artAfter!.y).toBeCloseTo(artBefore!.y, 0);
     expect(artAfter!.x).toBeCloseTo(artBefore!.x, 0);
   });
