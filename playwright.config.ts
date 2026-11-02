@@ -48,6 +48,15 @@ const prod = !!process.env.CI || !!process.env.PW_PROD;
  */
 const reuse = !process.env.CI && !!process.env.PW_REUSE;
 
+/**
+ * @prod-only tests need a production build (the service worker registers only
+ * there; e2e/service-worker.spec.ts). Dev-server runs drop them from the list
+ * instead of skipping them (test-count.mjs rejects skips); production runs keep
+ * today's filters.
+ */
+const CHROMIUM_INVERT = prod ? undefined : /@prod-only/;
+const OTHER_ENGINE_INVERT = prod ? /@chromium-only/ : /@chromium-only|@prod-only/;
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -74,13 +83,14 @@ export default defineConfig({
     {
       name: 'chromium',
       testIgnore: [VISUAL, PERF],
+      grepInvert: CHROMIUM_INVERT,
       use: { ...devices['Desktop Chrome'], serviceWorkers: 'block' },
     },
 
     {
       name: 'firefox',
       testIgnore: [VISUAL, PERF],
-      grepInvert: /@chromium-only/,
+      grepInvert: OTHER_ENGINE_INVERT,
       use: { ...devices['Desktop Firefox'], serviceWorkers: 'block' },
     },
 
@@ -88,7 +98,7 @@ export default defineConfig({
     {
       name: 'webkit',
       testIgnore: [VISUAL, PERF],
-      grepInvert: /@chromium-only/,
+      grepInvert: OTHER_ENGINE_INVERT,
       use: { ...devices['Desktop Safari'], serviceWorkers: 'block' },
     },
 
