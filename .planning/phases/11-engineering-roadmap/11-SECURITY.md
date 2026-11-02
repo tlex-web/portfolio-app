@@ -11,7 +11,7 @@ created: "2026-11-02"
 # Phase 11 — Security
 
 > Per-phase security contract: threat register, accepted risks, and audit trail.
-> The register was authored at plan time: all 18 plans carry a `<threat_model>`. That gives 41 threats, T-11-01 to T-11-41, plus the shared supply-chain row T-11-SC (low, accept; `package-lock.json` is untouched in Phase 11). secure-phase verified it at ASVS L1 with block_on: high: gsd-security-auditor ran on 2026-11-02 at HEAD 6872c0a. Its one open finding, T-11-15 (medium: the captured-strings path check missed a driveless Windows home path such as `..\Users\tim`), was closed by Tim's choice "Fix both now (Recommended)" with commit e41cb46, which adds a `\Users\` alternative to the `ABSOLUTE` regex. The same commit adds the missing T-11-19 selftest fixtures (`bad-mp4-uuid`, `bad-mp4-xmp`), so the `uuid`, `XMP_` and XMP-marker rules of the served-asset guard are now proven to fail.
+> The register was authored at plan time: all 19 plans carry a `<threat_model>` (gap plan 11-19 added T-11-42 and T-11-43 on 2026-11-02, both closed at L1). That gives 43 threats, T-11-01 to T-11-43, plus the shared supply-chain row T-11-SC (low, accept; `package-lock.json` is untouched in Phase 11). secure-phase verified it at ASVS L1 with block_on: high: gsd-security-auditor ran on 2026-11-02 at HEAD 6872c0a. Its one open finding, T-11-15 (medium: the captured-strings path check missed a driveless Windows home path such as `..\Users\tim`), was closed by Tim's choice "Fix both now (Recommended)" with commit e41cb46, which adds a `\Users\` alternative to the `ABSOLUTE` regex. The same commit adds the missing T-11-19 selftest fixtures (`bad-mp4-uuid`, `bad-mp4-xmp`), so the `uuid`, `XMP_` and XMP-marker rules of the served-asset guard are now proven to fail.
 > Threat Flags: the 11-11 and 11-13 SUMMARYs each have a `## Threat Flags` section reading "None" (informational; they map to T-11-26, T-11-29 and T-11-30). No other SUMMARY has one.
 
 ---
@@ -85,7 +85,9 @@ created: "2026-11-02"
 | T-11-39 | Tampering | downloaded artifact | low | mitigate | Only PNGs entered the tree (e511d7a); the procedure is in 11-17-PLAN:127 and the 11-17 SUMMARY | closed |
 | T-11-40 | Repudiation | `data/home.ts` About | medium | mitigate | home.ts:22 equals the approved `copy.home-about` row with `{name}` filled in; home-ascent.spec.ts:444 reads the text from the data | closed |
 | T-11-41 | Tampering | visual route table and snapshot folders | low | mitigate | 203d032 changes only `routes.spec.ts` and the README; e511d7a deletes only the clix-cli and clix-website folders | closed |
-| T-11-SC | Tampering | supply chain (npm deps) | low | accept | `package-lock.json` has no Phase 11 commit (last change b101a0c, 09-08). See Accepted Risks Log AR-11-SC | closed |
+| T-11-42 | Information disclosure | `Metrics.tsx` sr-only suffix (11-19, G-11-4) | low | mitigate | Metrics.tsx:100 renders only `{tile.label}`, the text the tile's dt already shows; projects.test.ts:257 asserts no coin-flip tile has a `sourceUrl`; case-study.spec.ts:328-330 asserts coin-flip's `section#metrics` has no link | closed |
+| T-11-43 | Tampering | box visual baselines (11-19) | low | mitigate | case-study.spec.ts:342 proves zero layout change and a ≤1×1 px suffix at 375/768/1440 in chromium and firefox; `check-snapshot-commit --none` OK (0 changed) on 293b093 and d111885; no PNG or `e2e/visual` path in 4f5bdc1..d111885; no re-baseline dispatched | closed |
+| T-11-SC | Tampering | supply chain (npm deps) | low | accept | `package-lock.json` has no Phase 11 commit (last change b101a0c, 09-08; 11-19 installs nothing). See Accepted Risks Log AR-11-SC | closed |
 
 *Status: open · closed · open — below high threshold (non-blocking)*
 *Severity: critical > high > medium > low — only open threats at or above workflow.security_block_on count toward threats_open*
@@ -98,7 +100,7 @@ created: "2026-11-02"
 | Risk ID | Threat Ref | Rationale | Accepted By | Date |
 |---------|------------|-----------|-------------|------|
 | AR-11-01 | T-11-05 | Tim's own public repository at a fixed tag (v2.0, 61afb3d), built with `--locked` against its committed lockfile, in the scratchpad only. Nothing is installed and his installed box is untouched. | Plan-time `accept` disposition (11-02-PLAN threat model), reviewed by secure-phase | 2026-11-02 |
-| AR-11-SC | T-11-SC | The shared supply-chain acceptance repeated in all 18 plans. No dependency changes in Phase 11. | Plan-time `accept` disposition (all 18 plans) | 2026-11-02 |
+| AR-11-SC | T-11-SC | The shared supply-chain acceptance repeated in all 19 plans (18 + gap plan 11-19). No dependency changes in Phase 11. | Plan-time `accept` disposition (all 19 plans) | 2026-11-02 |
 
 *Accepted risks do not resurface in future audit runs.*
 
@@ -109,6 +111,7 @@ created: "2026-11-02"
 | Audit Date | Threats Total | Closed | Open | Run By |
 |------------|---------------|--------|------|--------|
 | 2026-11-02 | 41 (+SC) | 41 | 0 | gsd-security-auditor (ASVS L1, block_on high) + Tim's "Fix both now (Recommended)" (T-11-15, e41cb46) |
+| 2026-11-02 | 43 (+SC) | 43 | 0 | secure-phase L1 short-circuit (plan-time register, threats_open 0): gap plan 11-19 adds T-11-42 and T-11-43, both closed by grep-level evidence at HEAD 7f2d2bd |
 
 ---
 
@@ -127,4 +130,12 @@ created: "2026-11-02"
 |---|---|
 | Threats found | 41 |
 | Closed | 41 |
+| Open | 0 |
+
+## Security Audit 2026-11-02
+
+| Metric | Count |
+|---|---|
+| Threats found | 43 |
+| Closed | 43 |
 | Open | 0 |
