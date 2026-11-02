@@ -2,6 +2,7 @@
 export const site = {
   name: 'Tim Lui',
   role: 'Developer & photographer',
+  url: 'https://portfolio-app-mocha-three.vercel.app',
   email: 'hello@example.com',
   links: {
     github: 'https://github.com/tlex-web',

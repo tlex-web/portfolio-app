@@ -21,7 +21,10 @@
  *                "legacy file is imported again" and the file is scanned as well
  *   - site:      data/site.ts name is Tim Lui, links.github is
  *                https://github.com/tlex-web, email is a real address shape (not
- *                example.com), links.linkedin is a full https linkedin.com/in/ URL
+ *                example.com), links.linkedin is a full https linkedin.com/in/ URL,
+ *                url (D-13) is an https origin with no trailing slash, path or
+ *                port, naming neither localhost nor example.com (host-agnostic,
+ *                so a later canonical domain passes)
  *   - author:    package.json author equals `${name} (${github})` from data/site.ts
  *
  * Usage:
@@ -49,6 +52,8 @@ const SCAN_DIRS = ['app', 'components', 'lib', 'data'];
 const SCRIPT_EXT = new Set(['.ts', '.tsx', '.mjs', '.js']);
 const EMAIL_SHAPE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const LINKEDIN_SHAPE = /^https:\/\/(www\.)?linkedin\.com\/in\/[^\s/]+\/?$/;
+/** D-13: an https origin with no trailing slash, path or port (the shape data/__tests__/site.test.ts pins). */
+const URL_SHAPE = /^https:\/\/[a-z0-9.-]+[a-z0-9]$/;
 
 function usage(message) {
   console.error(`identity: ${message}`);
@@ -145,6 +150,7 @@ function main() {
     const email = literal(source, 'email');
     const github = literal(source, 'github');
     const linkedin = literal(source, 'linkedin');
+    const url = literal(source, 'url');
 
     if (name !== EXPECTED_NAME) violations.push(`data/site.ts: name is ${JSON.stringify(name)}, expected "${EXPECTED_NAME}"`);
     if (github !== EXPECTED_GITHUB) violations.push(`data/site.ts: links.github is ${JSON.stringify(github)}, expected "${EXPECTED_GITHUB}"`);
@@ -153,6 +159,9 @@ function main() {
     }
     if (linkedin === null || !LINKEDIN_SHAPE.test(linkedin)) {
       violations.push(`data/site.ts: links.linkedin ${JSON.stringify(linkedin)} is not a full https://linkedin.com/in/<handle> URL`);
+    }
+    if (url === null || !URL_SHAPE.test(url) || /localhost|example\.com/i.test(url)) {
+      violations.push(`data/site.ts: url ${JSON.stringify(url)} is not an https origin without a trailing slash, or names localhost or example.com`);
     }
 
     // package.json author is a derived copy of the record
