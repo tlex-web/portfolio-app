@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 12
 current_phase_name: Contact, Edge Pages, Cleanup & Verification
 status: executing
-stopped_at: Completed 12-06-PLAN.md
-last_updated: "2026-11-02T20:22:14.794Z"
+stopped_at: Completed 12-11-PLAN.md
+last_updated: "2026-11-02T21:08:43.353Z"
 last_activity: 2026-11-02
 last_activity_desc: Phase 12 execution started
-state_head: c56a29aa9df6b6fe5955663e9586a69755aae000
+state_head: c6f540bc871be0954345165ea2dafc8ac6f268cf
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 120
-  completed_plans: 104
-  percent: 87
+  completed_plans: 105
+  percent: 88
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-11-02)
 ## Current Position
 
 Phase: 12 (Contact, Edge Pages, Cleanup & Verification) — EXECUTING
-Plan: 11 of 26
+Plan: 12 of 26
 Status: Ready to execute
 Last activity: 2026-11-02 — Phase 12 execution started
 
-Progress: [█████████░] 87%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 
@@ -162,6 +162,7 @@ Progress: [█████████░] 87%
 | Phase 12 P09 | 7 min | 2 tasks | 15 files |
 | Phase 12 P10 | 17 min | 2 tasks | 16 files |
 | Phase 12 P06 | 11 min | 3 tasks | 7 files |
+| Phase 12 P11 | 41 min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -435,6 +436,7 @@ Recent decisions affecting current work:
 - [Phase 12]: 12-06: lockfile bumps are patched entry-by-entry and proven with npm ci --dry-run; a plain npm install on Windows/npm 11.6.1 drops the optional @emnapi entries and npm ci then rejects the lockfile
 - [Phase 12]: 12-06: THREE.Clock warning deferred on Tim's "Defer (Recommended)" (upstream console.warn, ignored by the D-20 errors-only gate, owned by the next r3f release that moves to THREE.Timer)
 - [Phase 12]: 12-06: TerrainStage's idle arm waits for the window load event on Tim's "Canvas fix"; loadEventStart now precedes the three/R3F chunk on the HOME-08 profile, LCP unchanged
+- [Phase 12]: [12-11] Round 1 re-baseline closed: only roadmap/{375,768,1440}-reduced changed (kicker 1 Nov -> 2 Nov 2026), Tim committed them in a046347 (reply "pushed"); check-snapshot-commit --some --allow roadmap OK (3 changed); 45 byte-identical shots prove 12-02..12-06 and 12-08..12-10 zero-diff, and the box/coin-flip D-24 fixes zero-pixel; CI run 41522964315 green (Visual, E2E, Unit, Lint)
 
 ### Pending Todos
 
@@ -481,6 +483,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-02T20:21:48.636Z
-Stopped at: Completed 12-06-PLAN.md
+Last session: 2026-11-02T21:08:42.052Z
+Stopped at: Completed 12-11-PLAN.md
 Resume file: None
