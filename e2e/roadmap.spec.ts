@@ -92,20 +92,29 @@ test.describe('/roadmap route log (ROUTE-01, ROUTE-03)', () => {
     expect(await row.evaluate((el) => el.matches(':target'))).toBe(true);
   });
 
-  test('the v2.0 phase disclosure starts closed and shows Phase 11 in progress (D-18)', async ({
+  test('the v2.0 phase disclosure starts closed and shows the in-progress phase from the data (D-18)', async ({
     page,
   }) => {
     await page.goto('/roadmap');
     const v2 = roadmapItems.find((i) => i.status === 'in-progress' && i.phases);
     expect(v2).toBeDefined();
+    // Read from the data, so a phase completing (12-01 log.phase11) moves the check with it.
+    const current = v2!.phases!.find((p) => p.status === 'in-progress');
+    expect(current).toBeDefined();
     const details = page.locator(`li[id="${v2!.id}"] details`);
     await expect(details).not.toHaveAttribute('open', /.*/);
-    const phase11 = details.locator('li').filter({ hasText: 'Phase 11' });
-    await expect(phase11).toBeHidden();
+    const row = details.locator('li').filter({ hasText: `Phase ${current!.n}` });
+    await expect(row).toBeHidden();
     await details.locator('summary').click();
     await expect(details).toHaveAttribute('open', '');
-    await expect(phase11).toBeVisible();
-    await expect(phase11).toContainText(STATUS_LABELS['in-progress']);
+    await expect(row).toBeVisible();
+    await expect(row).toContainText(STATUS_LABELS['in-progress']);
+    // A completed phase shows its date instead of a status word.
+    const done = v2!.phases!.filter((p) => p.status === 'completed' && p.completedAt);
+    const last = done[done.length - 1];
+    await expect(details.locator('li').filter({ hasText: `Phase ${last.n}` })).toContainText(
+      formatLogDate(last.completedAt!)
+    );
   });
 
   test('the status line counts every entry with no filter', async ({ page }) => {
