@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from 'react';
 import {
   ArrowClockwiseIcon,
   CheckCircleIcon,
@@ -63,6 +63,37 @@ export function validateField(field: FeedbackField, value: string): string | nul
   if (value.length < FEEDBACK_LIMITS.messageMin) return issueMessage('message', 'too_short', value);
   if (value.length > FEEDBACK_LIMITS.messageMax) return issueMessage('message', 'too_long', value);
   return null;
+}
+
+/** Characters left at which the counter speaks (UI-SPEC "Counter announcement": 1,800, 1,900, 1,950). */
+const COUNTER_STEPS = [50, 100, 200] as const;
+
+/**
+ * The counter's sr-only announcement for a message of `n` characters (12-UI-SPEC
+ * "Counter announcement", E7): empty below 1,800, then one complete phrase that
+ * changes only when the count crosses 1,800, 1,900 or 1,950, reaches 2,000, or
+ * goes over the limit, so it never speaks on every keystroke. Over the limit
+ * the noun is singular only for exactly one character, the summary title's
+ * `Check 1 field` / `Check {n} fields` rule.
+ */
+export function counterStatus(n: number): string {
+  const max = FEEDBACK_LIMITS.messageMax;
+  if (n > max) {
+    const over = n - max;
+    return `${formatCount(over)} ${over === 1 ? 'character' : 'characters'} over the limit`;
+  }
+  if (n === max) return 'No characters left';
+  for (const step of COUNTER_STEPS) {
+    if (n >= max - step) return `${formatCount(step)} characters left`;
+  }
+  return '';
+}
+
+/** The counter's colour: ink-muted below 1,800, caution from 1,800 to 2,000, danger above. */
+function counterTone(n: number): string {
+  if (n > FEEDBACK_LIMITS.messageMax) return 'text-danger';
+  if (n >= FEEDBACK_LIMITS.messageMax - COUNTER_STEPS[COUNTER_STEPS.length - 1]) return 'text-caution';
+  return 'text-ink-muted';
 }
 
 /**
@@ -213,6 +244,13 @@ function outcomeOf(response: Response, body: Partial<FeedbackResponse> | null): 
  * send nothing. No answer within 15 s aborts and counts as a network failure;
  * an answer arriving after that is ignored.
  *
+ * An invalid submit, or a server `validation` answer, fills the message slot
+ * with the focused error summary (role="alert"): one link per invalid field in
+ * form order, each with its inline error's message. The list follows later
+ * fixes without moving focus or re-announcing and stays until the next submit.
+ * Under Message, the counter reads `{n} / 2,000` and an sr-only status speaks
+ * only at the thresholds (`counterStatus`).
+ *
  * Only `{ code: 'ok' }` signs the register (D-02): the entry replaces the form,
  * takes focus and echoes the visitor's own name and address through React
  * text nodes. Every other outcome keeps every field as typed and shows the
@@ -226,6 +264,14 @@ export default function SummitRegister() {
   const [sending, setSending] = useState(false);
   const [failure, setFailure] = useState<{ failure: Failure; seq: number } | null>(null);
   const [signed, setSigned] = useState<{ name: string; email: string; at: Date } | null>(null);
+  /**
+   * The error summary: 0 while closed, else the number of the submit that
+   * opened it (a new number remounts and refocuses it). It stays until the
+   * next submit, or until no field is left to fix.
+   */
+  const [summarySeq, setSummarySeq] = useState(0);
+  /** Set once the visitor fixes or breaks a field: the list then updates without re-announcing. */
+  const [summaryQuiet, setSummaryQuiet] = useState(false);
 
   /** Synchronous guard, so two clicks in one frame still send once. */
   const sendingRef = useRef(false);
@@ -233,6 +279,7 @@ export default function SummitRegister() {
   const requestRef = useRef(0);
   const failureRef = useRef<HTMLDivElement>(null);
   const entryRef = useRef<HTMLDivElement>(null);
+  const summaryRef = useRef<HTMLDivElement>(null);
   const fieldRefs = useRef<Partial<Record<FeedbackField, HTMLInputElement | HTMLTextAreaElement>>>(
     {},
   );
@@ -242,6 +289,12 @@ export default function SummitRegister() {
   const touched = useRef(new Set<FeedbackField>());
   /** Fields that have shown an error; these revalidate on every input. */
   const shown = useRef(new Set<FeedbackField>());
+  /** A pointer is pressed inside the form: a field blur waits until the press is over. */
+  const pointerHeld = useRef(false);
+  /** The blur that waited for the press, with the value the field had when it lost focus. */
+  const pendingBlur = useRef<{ field: FeedbackField; value: string } | null>(null);
+  /** Runs the waiting blur with this render's state (refreshed after every render). */
+  const flushBlur = useRef<() => void>(() => {});
 
   useEffect(() => {
     if (failure) failureRef.current?.focus();
@@ -252,11 +305,43 @@ export default function SummitRegister() {
   }, [signed]);
 
   useEffect(() => {
+    if (summarySeq) summaryRef.current?.focus();
+  }, [summarySeq]);
+
+  useEffect(() => {
     if (focusNext.current) {
       fieldRefs.current[focusNext.current]?.focus();
       focusNext.current = null;
     }
   });
+
+  useEffect(() => {
+    flushBlur.current = () => {
+      const pending = pendingBlur.current;
+      pendingBlur.current = null;
+      if (pending) showError(pending.field, validateField(pending.field, pending.value));
+    };
+  });
+
+  // A blur error inserted mid-press moves everything below the field, so the
+  // press (Send, the checkbox) would end off its target and the click would be
+  // lost. The waiting blur runs after the click; a Send click has validated
+  // every field by then.
+  useEffect(() => {
+    const release = () => {
+      if (!pointerHeld.current) return;
+      setTimeout(() => {
+        pointerHeld.current = false;
+        flushBlur.current();
+      }, 0);
+    };
+    window.addEventListener('pointerup', release);
+    window.addEventListener('pointercancel', release);
+    return () => {
+      window.removeEventListener('pointerup', release);
+      window.removeEventListener('pointercancel', release);
+    };
+  }, []);
 
   // An unmounted island ignores any answer still in flight.
   useEffect(
@@ -275,19 +360,40 @@ export default function SummitRegister() {
    */
   function showError(field: FeedbackField, message: string | null) {
     if (message) shown.current.add(field);
-    setErrors((prev) => {
-      if ((prev[field] ?? null) === message) return prev;
-      const next = { ...prev };
-      if (message) next[field] = message;
-      else delete next[field];
-      return next;
-    });
+    if ((errors[field] ?? null) === message) return;
+    const next = { ...errors };
+    if (message) next[field] = message;
+    else delete next[field];
+    setErrors(next);
+    if (!summarySeq) return;
+    // The open summary follows the fields quietly, and closes once nothing is left to fix.
+    setSummaryQuiet(true);
+    if (!FIELDS.some((f) => next[f])) setSummarySeq(0);
   }
 
-  /** Replaces every error at once (a submit or a server answer); each shown field goes live. */
-  function showErrors(next: Errors) {
+  /**
+   * Replaces every error at once (a submit or a server answer); each shown
+   * field goes live. Any invalid field opens a fresh, focused summary in place
+   * of the failure box. Returns whether any field is invalid.
+   */
+  function showErrors(next: Errors): boolean {
     for (const field of FIELDS) if (next[field]) shown.current.add(field);
     setErrors(next);
+    const invalid = FIELDS.some((f) => next[f]);
+    if (invalid) setFailure(null);
+    setSummaryQuiet(false);
+    setSummarySeq(invalid ? (seq) => seq + 1 : 0);
+    return invalid;
+  }
+
+  /** A summary link: no jump to the anchor; scroll the field clear of the sticky nav and focus it. */
+  function jumpTo(e: MouseEvent<HTMLAnchorElement>, field: FeedbackField) {
+    e.preventDefault();
+    const input = fieldRefs.current[field];
+    if (!input) return;
+    // The wrapper (label + input) carries the global nav-height scroll margin.
+    input.parentElement?.scrollIntoView?.({ block: 'start' });
+    input.focus({ preventScroll: true });
   }
 
   /** Typing marks a field touched; a field that has shown an error revalidates live. */
@@ -300,6 +406,10 @@ export default function SummitRegister() {
   /** Leaving a field validates it only once the visitor has typed in it (or it has shown an error). */
   function onFieldBlur(field: FeedbackField, value: string) {
     if (!touched.current.has(field) && !shown.current.has(field)) return;
+    if (pointerHeld.current) {
+      pendingBlur.current = { field, value };
+      return;
+    }
     showError(field, validateField(field, value));
   }
 
@@ -367,7 +477,6 @@ export default function SummitRegister() {
       }
       setFailure(null);
       showErrors(next);
-      focusNext.current = FIELDS.find((f) => next[f]) ?? null;
       return;
     }
     const failed = outcome.failure;
@@ -382,13 +491,7 @@ export default function SummitRegister() {
       const message = validateField(field, values[field]);
       if (message) next[field] = message;
     }
-    showErrors(next);
-    const firstInvalid = FIELDS.find((f) => next[f]);
-    if (firstInvalid) {
-      setFailure(null);
-      focusNext.current = firstInvalid;
-      return;
-    }
+    if (showErrors(next)) return;
     void send(values);
   }
 
@@ -396,6 +499,7 @@ export default function SummitRegister() {
     setValues(EMPTY);
     setTrailNote('');
     setErrors({});
+    setSummarySeq(0);
     touched.current.clear();
     shown.current.clear();
     setFailure(null);
@@ -427,6 +531,10 @@ export default function SummitRegister() {
     );
   }
 
+  /** The invalid fields in form order: the summary's items. */
+  const invalidFields = FIELDS.filter((f) => errors[f]);
+  const messageLength = values.message.length;
+
   /** The error (when shown) then the hint (Message only), as UI-SPEC "Field error" orders them. */
   const describedBy = (field: FeedbackField) =>
     [errors[field] ? `${field}-error` : null, field === 'message' ? 'message-hint' : null]
@@ -441,6 +549,9 @@ export default function SummitRegister() {
       noValidate
       aria-labelledby="register-title"
       onSubmit={onSubmit}
+      onPointerDownCapture={() => {
+        pointerHeld.current = true;
+      }}
       className="mt-6 flex flex-col gap-6"
     >
       {/* The message slot (UI-SPEC "Message slot"); hidden while empty, so it adds no gap. */}
@@ -475,6 +586,40 @@ export default function SummitRegister() {
                 Retry
               </button>
             ) : null}
+          </div>
+        ) : summarySeq && invalidFields.length > 0 ? (
+          // The error summary (UI-SPEC "Error summary", E4; 12-01 default.5): the
+          // announced channel. Keyed by submit, so each invalid submit is a fresh
+          // alert; later fixes update the list with aria-live off.
+          <div
+            key={summarySeq}
+            ref={summaryRef}
+            role="alert"
+            tabIndex={-1}
+            aria-labelledby="register-errors-title"
+            aria-live={summaryQuiet ? 'off' : undefined}
+            className="rounded-sm border border-danger bg-surface-overlay p-4"
+          >
+            <h3
+              id="register-errors-title"
+              className="flex items-center gap-2 text-base font-semibold text-ink"
+            >
+              <WarningCircleIcon size={20} aria-hidden="true" className="shrink-0 text-danger" />
+              {invalidFields.length === 1 ? 'Check 1 field' : `Check ${invalidFields.length} fields`}
+            </h3>
+            <ul className="mt-2 flex flex-col gap-1">
+              {invalidFields.map((field) => (
+                <li key={field}>
+                  <a
+                    href={`#${field}`}
+                    onClick={(e) => jumpTo(e, field)}
+                    className="inline-flex min-h-11 items-center text-base text-danger underline decoration-1 underline-offset-4 wrap-break-word"
+                  >
+                    {errors[field]}
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
         ) : null}
       </div>
@@ -566,8 +711,20 @@ export default function SummitRegister() {
             {errors.message}
           </p>
         ) : null}
-        <p id="message-hint" className="mt-2 text-sm text-ink-muted">
-          10 to 2,000 characters
+        {/* The helper row (UI-SPEC "Message helper row", E7): the hint left, the counter right. */}
+        <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
+          <p id="message-hint" className="text-sm text-ink-muted">
+            10 to 2,000 characters
+          </p>
+          <p
+            aria-hidden="true"
+            className={`font-mono text-sm tabular-nums ${counterTone(messageLength)}`}
+          >
+            {formatCount(messageLength)} / {formatCount(FEEDBACK_LIMITS.messageMax)}
+          </p>
+        </div>
+        <p id="message-count-status" role="status" aria-atomic="true" className="sr-only">
+          {counterStatus(messageLength)}
         </p>
       </div>
 

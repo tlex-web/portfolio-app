@@ -506,6 +506,25 @@ describe('SummitRegister validation timing (CONTACT-02, 12-26)', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('holds a blur error until a press inside the form is over, so the press keeps its target', () => {
+    jest.useFakeTimers();
+    render(<SummitRegister />);
+
+    fireEvent.change(messageField(), { target: { value: 'short' } });
+    // Pressing Send blurs Message; an error inserted now would move Send away mid-click.
+    fireEvent.pointerDown(sendButton());
+    fireEvent.blur(messageField());
+    expect(messageField()).not.toHaveAttribute('aria-invalid');
+
+    fireEvent.pointerUp(window);
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+    expect(messageField()).toHaveAttribute('aria-invalid', 'true');
+    expect(messageField()).toHaveValue('short');
+    jest.useRealTimers();
+  });
+
   it('lands a server validation answer on the inline email error, which then follows typing', async () => {
     fetchMock.mockResolvedValueOnce(
       answer(400, { code: 'validation', fields: { email: 'invalid_email' } }),
@@ -652,11 +671,14 @@ describe('SummitRegister error summary (CONTACT-02, 12-26)', () => {
 
     await user.click(sendButton());
     await waitFor(() => expect(screen.getByRole('alert')).toHaveFocus());
+    expect(screen.getByRole('alert')).not.toHaveAttribute('aria-live');
 
     await user.type(nameField(), 'Tim');
     expect(nameField()).toHaveFocus();
     let box = screen.getByRole('alert');
     expect(box).toHaveAccessibleName('Check 2 fields');
+    // Not re-announced: the alert's live updates are switched off once the visitor fixes a field.
+    expect(box).toHaveAttribute('aria-live', 'off');
     expect(summaryLinks(box).map(([, href]) => href)).toEqual(['#email', '#message']);
 
     await user.type(emailField(), 'tim@example.com');

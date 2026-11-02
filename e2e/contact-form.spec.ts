@@ -109,6 +109,28 @@ test.describe('Contact Form', () => {
     );
   });
 
+  // 12-26: leaving Message for Send shows its blur error, which pushes Send
+  // down. The error waits until the press is over, so the click still submits
+  // and the focused summary appears. (The form scope keeps Next's route
+  // announcer, also role="alert", out of the match.)
+  test('should focus the error summary when Send is clicked straight from an invalid field', async ({
+    page,
+  }) => {
+    await openContact(page);
+
+    await nameField(page).fill('John Doe');
+    await emailField(page).fill('john@example.com');
+    await messageField(page).fill('Short');
+    await sendButton(page).click();
+
+    const summary = page.getByRole('form', { name: 'Sign the register' }).getByRole('alert');
+    await expect(summary).toBeFocused();
+    await expect(summary).toHaveAccessibleName('Check 1 field');
+    await summary.getByRole('link', { name: 'Write at least 10 characters (now 5).' }).click();
+    await expect(messageField(page)).toBeFocused();
+    await expect(messageField(page)).toHaveValue('Short');
+  });
+
   test('should sign the register and offer an empty form again', async ({ page }) => {
     await mockFeedback(page, 200, { code: 'ok' });
     await openContact(page);
