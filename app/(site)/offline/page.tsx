@@ -1,82 +1,47 @@
-'use client';
+import type { Metadata } from 'next';
+import EdgeLayout from '@/components/site/EdgeLayout';
+import OfflineRetry from '@/components/site/OfflineRetry';
+import SavedPages from '@/components/site/SavedPages';
+import { site } from '@/data/site';
+import { projects } from '@/data/projects';
+import { photoViews } from '@/lib/photos/view-model';
+import { savedPageCatalog } from '@/lib/saved-pages';
 
-import Link from 'next/link';
+/**
+ * The offline page (EDGE-02, D-12; 12-UI-SPEC "Per-page content" /offline and
+ * E11). The service worker precaches it with its CSS, JS and fonts (12-08) and
+ * serves it when a navigation fails without a cached copy.
+ *
+ * A Server Component in the shared edge layout beside the contour sheet: the
+ * text block with Tim's h1 and sentence, a primary Try again (OfflineRetry,
+ * which also reloads once when the connection returns), and the saved-pages
+ * list in the extra slot. The catalog of listable pages is built here from
+ * data, so the client island ships only titles and paths. No focus move.
+ * Noindex, and kept out of the sitemap (12-09).
+ */
+export const metadata: Metadata = {
+  title: 'Offline',
+  robots: { index: false },
+};
 
 export default function OfflinePage() {
+  const catalog = savedPageCatalog({ nav: site.nav, photos: photoViews, projects });
+
   return (
-    <>
-      <div className="min-h-screen bg-gradient-to-b from-surface to-surface-raised flex items-center justify-center px-4">
-        <div className="max-w-2xl mx-auto text-center">
-          <div className="mb-8">
-            <svg
-              className="w-24 h-24 mx-auto text-ink-muted"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414"
-              />
-            </svg>
-          </div>
-
-          <h1 className="text-5xl font-bold text-ink mb-6">
-            You&apos;re Offline
-          </h1>
-          
-          <p className="text-xl text-ink-muted mb-8">
-            It looks like you&apos;ve lost your internet connection. Some content may not be available right now.
+    <EdgeLayout
+      text={
+        <>
+          <p className="mb-4 font-mono text-sm text-ink-muted tabular-nums">Offline</p>
+          <h1 className="mb-4 text-balance">You&apos;re offline</h1>
+          <p className="mb-8 text-base text-ink-muted">
+            This page needs a connection and reloads by itself when you&apos;re back online.
           </p>
-
-          <div className="bg-surface-raised border-2 border-line-strong rounded-xl p-6 mb-8">
-            <p className="text-ink">
-              <strong>Good news!</strong>{' '}
-              This site uses service workers to cache content.
-              Pages and images you&apos;ve visited before should still be available.
-            </p>
+          <div className="flex flex-wrap items-center gap-4">
+            <OfflineRetry />
           </div>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={() => window.location.reload()}
-              className="px-6 py-3 bg-accent text-ink-inverse rounded-lg hover:bg-accent-hover transition-colors font-semibold"
-            >
-              Try Again
-            </button>
-            
-            <Link
-              href="/"
-              className="px-6 py-3 bg-surface-raised text-ink rounded-lg hover:bg-surface-overlay transition-colors font-semibold border-2 border-line-strong"
-            >
-              Go to Homepage
-            </Link>
-          </div>
-
-          <div className="mt-12 text-sm text-ink-muted">
-            <p>Cached pages you can try to access:</p>
-            <ul className="mt-4 space-y-2">
-              <li>
-                <Link href="/photos" className="text-accent hover:underline">
-                  Photo Gallery
-                </Link>
-              </li>
-              <li>
-                <Link href="/projects" className="text-accent hover:underline">
-                  Projects
-                </Link>
-              </li>
-              <li>
-                <Link href="/roadmap" className="text-accent hover:underline">
-                  Roadmap
-                </Link>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </>
+        </>
+      }
+      extra={<SavedPages catalog={catalog} />}
+    />
   );
 }
