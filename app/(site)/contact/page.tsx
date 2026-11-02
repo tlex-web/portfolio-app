@@ -1,123 +1,50 @@
-'use client';
+import type { Metadata } from 'next';
+import SummitRegister from '@/components/contact/SummitRegister';
+import { pageMetadata } from '@/lib/metadata';
 
-import { motion } from 'motion/react';
-import { Clock, EnvelopeSimple, MapPin } from '@phosphor-icons/react/dist/ssr';
-import FeedbackForm from '@/components/FeedbackForm';
-import AnimatedGradientMesh from '@/components/AnimatedGradientMesh';
-import { site } from '@/data/site';
+// SEO-01: own title, description (12-01 meta.contact) and canonical.
+export const metadata: Metadata = pageMetadata({
+  title: 'Contact',
+  description:
+    'Write to Tim Lui. Messages go straight to his inbox, and he usually replies within a few days.',
+  path: '/contact',
+});
 
 /**
- * Contact, interim contrast fix (SHELL-06, UI-SPEC "Contact Interim Contrast
- * Fix"). All text sits on solid surface-raised panels, never on the mesh, so
- * every pair is a UI-SPEC token pair with or without WebGL and in either OS
- * colour scheme. Phase 12 redesigns the page and removes the mesh.
+ * /contact, the summit register (CONTACT-01, CONTACT-02, CONTACT-03; D-02,
+ * D-03, D-05; 12-UI-SPEC "/contact — Summit Register"). A Server Component on
+ * the plain surface: no background animation, no canvas and no motion import.
+ *
+ * The header band carries the approved kicker, the h1 (the nav label, as on
+ * Photographs, Engineering and Roadmap) and the intro. The content grid holds
+ * the form card, whose heading, lead and required note are server-rendered
+ * around the SummitRegister island, the only client code on the page. The grid
+ * already reserves the second column for the Direct contact panel (12-16),
+ * which follows the form in the DOM and moves first below 1024 px.
  */
-const cardClass = 'text-center p-6 bg-surface-raised border border-line rounded-lg';
-const iconTileClass =
-  'w-12 h-12 mx-auto mb-4 bg-surface-overlay rounded-full flex items-center justify-center';
-
-// The address breaks after the "@" first (<wbr>); wrap-anywhere is the fallback
-// for a part longer than the card. Copied text stays the plain address.
-const [emailUser, emailDomain] = site.email.split('@');
-
 export default function ContactPage() {
   return (
-    <>
-      <div className="min-h-screen relative overflow-hidden">
-        {/* Animated Gradient Mesh Background */}
-        <AnimatedGradientMesh
-          colorScheme="lavender"
-          intensity={1.2}
-          speed={0.4}
-          blur={true}
-          opacity={0.6}
-        />
+    <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
+      <div className="border-b border-line pt-8 pb-6">
+        <p className="mb-2 text-sm font-semibold text-ink-muted">Summit register</p>
+        <h1>Contact</h1>
+        <p className="mt-4 max-w-prose text-base text-ink-muted">
+          Write a line in the register. I read every entry and reply by email.
+        </p>
+      </div>
 
-        {/* Hero Section */}
-        <div className="relative py-20">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl mx-auto bg-surface-raised border border-line rounded-lg p-8 md:p-12 text-left">
-              <h1 className="text-6xl font-bold mb-6 text-ink">
-                Get in Touch
-              </h1>
-              <p className="text-base text-ink-muted max-w-prose">
-                Have a question, feedback, or interested in collaborating? I&apos;d love to hear from you!
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Form Section */}
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 relative">
-          <div className="max-w-3xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="bg-surface-raised border border-line rounded-lg p-8"
-            >
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold mb-4 text-ink">
-                  Send Me a Message
-                </h2>
-                <p className="text-ink">
-                  Whether you&apos;re interested in licensing my photography, discussing technology projects,
-                  or just want to say hello, I&apos;ll get back to you as soon as possible.
-                </p>
-              </div>
-              <FeedbackForm />
-            </motion.div>
-
-            {/* Additional Info */}
-            <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.1 }}
-                className={cardClass}
-              >
-                <div className={iconTileClass}>
-                  <Clock size={20} aria-hidden="true" className="text-ink-muted" />
-                </div>
-                <h3 className="font-bold text-ink mb-2">Response Time</h3>
-                <p className="text-sm text-ink-muted">Usually within 24-48 hours</p>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
-                className={cardClass}
-              >
-                <div className={iconTileClass}>
-                  <EnvelopeSimple size={20} aria-hidden="true" className="text-ink-muted" />
-                </div>
-                <h3 className="font-bold text-ink mb-2">Email</h3>
-                <p className="text-sm text-ink-muted wrap-anywhere">
-                  {`${emailUser}@`}<wbr />{emailDomain}
-                </p>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.3 }}
-                className={cardClass}
-              >
-                <div className={iconTileClass}>
-                  <MapPin size={20} aria-hidden="true" className="text-ink-muted" />
-                </div>
-                <h3 className="font-bold text-ink mb-2">Location</h3>
-                <p className="text-sm text-ink-muted">Switzerland</p>
-              </motion.div>
-            </div>
-          </div>
+      <div className="mt-8 grid gap-8 pb-12 md:pb-16 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-start lg:gap-x-12">
+        <div className="min-w-0 rounded-lg border border-line bg-surface-raised p-6 lg:p-8">
+          <h2 id="register-title" className="text-heading">
+            Sign the register
+          </h2>
+          <p className="mt-2 max-w-prose text-base text-ink-muted">
+            Your name, your email and a message.
+          </p>
+          <p className="mt-4 text-sm text-ink-muted">Fields marked * are required.</p>
+          <SummitRegister />
         </div>
       </div>
-    </>
+    </div>
   );
 }

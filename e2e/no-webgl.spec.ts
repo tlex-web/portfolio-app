@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { projects } from '@/data/projects';
-import { disableWebGL, expectNoErrorPage, nextFrames, webglFailure } from './helpers/webgl';
+import { disableWebGL, expectNoErrorPage, nextFrames } from './helpers/webgl';
 
 /** The demo terminal's region is named after its project (11-03), read from the data. */
 const demoProject = projects.find((p) => p.slug === 'box' && p.demo?.commands.length);
@@ -37,14 +37,15 @@ test.describe('Without WebGL', () => {
     await expectNoErrorPage(page);
   });
 
+  // Contact mounts no canvas since 12-13 (D-05: the gradient mesh is gone), so
+  // there is no WebGL failure to wait for. It must still be the complete page.
   test('contact keeps the form', async ({ page }) => {
-    const failed = webglFailure(page);
     await page.goto('/contact');
-    await failed;
     await nextFrames(page);
 
     await expectNoErrorPage(page);
-    await expect(page.getByRole('heading', { name: /Get in Touch/i })).toBeVisible();
+    await expect(page.locator('canvas')).toHaveCount(0);
+    await expect(page.getByRole('heading', { level: 1, name: 'Contact', exact: true })).toBeVisible();
     await expect(page.getByLabel(/Name/i)).toBeVisible();
   });
 
