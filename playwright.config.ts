@@ -38,6 +38,16 @@ const SCREENSHOT = { animations: 'disabled', caret: 'hide', threshold: 0.01 } as
  */
 const prod = !!process.env.CI || !!process.env.PW_PROD;
 
+/**
+ * Local opt-in for per-task checks (12-VALIDATION "Execution notes"): with
+ * PW_PROD=1 PW_REUSE=1, Playwright uses the production server already
+ * answering on port 3000 (started from `npm run build` then `npm run start`)
+ * and builds only when none answers. Ignored whenever CI is set, so CI and the
+ * visual-baseline workflow always build fresh; a reused run never writes a
+ * snapshot (the server may be serving an older build).
+ */
+const reuse = !process.env.CI && !!process.env.PW_REUSE;
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -48,7 +58,7 @@ export default defineConfig({
   timeout: 30000, // 30 seconds per test
   /* A missing baseline fails a CI run instead of being written silently.
    * Baselines are regenerated only by the "Update visual baselines" workflow. */
-  updateSnapshots: process.env.CI ? 'none' : 'missing',
+  updateSnapshots: process.env.CI || reuse ? 'none' : 'missing',
   expect: { toHaveScreenshot: SCREENSHOT },
   use: {
     baseURL: 'http://localhost:3000',
@@ -58,27 +68,29 @@ export default defineConfig({
   },
 
   projects: [
+    // Functional projects block the production service worker, so page.route
+    // sees every request (12-RESEARCH Pitfall 6); only a dedicated service-worker
+    // test opts back in, with test.use({ serviceWorkers: 'allow' }).
     {
       name: 'chromium',
       testIgnore: [VISUAL, PERF],
-      use: { ...devices['Desktop Chrome'] },
+      use: { ...devices['Desktop Chrome'], serviceWorkers: 'block' },
     },
 
     {
       name: 'firefox',
       testIgnore: [VISUAL, PERF],
       grepInvert: /@chromium-only/,
-      use: { ...devices['Desktop Firefox'] },
+      use: { ...devices['Desktop Firefox'], serviceWorkers: 'block' },
     },
 
-    // Webkit skipped in CI — Playwright's Linux webkit build has known issues
-    // with client-side navigation, form validation, modals, and WebGL.
-    // Run locally on macOS for real Safari coverage.
-    ...(!process.env.CI ? [{
+    // Defined in every environment; CI adds --project=webkit in 12-23 after triage.
+    {
       name: 'webkit',
       testIgnore: [VISUAL, PERF],
-      use: { ...devices['Desktop Safari'] },
-    }] : []),
+      grepInvert: /@chromium-only/,
+      use: { ...devices['Desktop Safari'], serviceWorkers: 'block' },
+    },
 
     // Visual regression (GUARD-02). Baselines are -linux.png files captured in
     // mcr.microsoft.com/playwright:v<lockfile version>-noble; see e2e/visual/README.md.
@@ -115,7 +127,7 @@ export default defineConfig({
   webServer: {
     command: prod ? 'npm run build && npm run start' : 'npm run dev',
     url: 'http://localhost:3000',
-    reuseExistingServer: !prod,
+    reuseExistingServer: !prod || reuse,
     timeout: prod ? 240000 : 120000, // 4 min for build+start, 2 min for dev
   },
 });

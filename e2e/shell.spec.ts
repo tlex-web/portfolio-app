@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { site } from '@/data/site';
 import { terrain } from '@/data/generated/terrain';
 import { photos } from '@/data/generated/photos';
-import { buildPhotoViews } from '@/lib/photos/view-model';
+import { ROUTES, type Label } from './routes';
 
 /**
  * Shell contract (SHELL-01, SHELL-02, DSGN-08 shell; UI-SPEC "Guardrail
@@ -14,22 +14,6 @@ import { buildPhotoViews } from '@/lib/photos/view-model';
  * Landmarks are counted with toHaveCount(1), never narrowed with .first(),
  * so a duplicated shell fails here instead of being hidden (PITFALLS 5, 7).
  */
-
-type Label = (typeof site.nav)[number]['label'];
-
-/** Each content route and the nav destination that must carry aria-current="page". */
-const ROUTES: ReadonlyArray<readonly [path: string, current: Label | null]> = [
-  ['/', 'Home'],
-  ['/photos', 'Photographs'],
-  // The full photo page (LBOX-01, D-08): under /photos, Photographs stays current.
-  ['/photos/' + buildPhotoViews()[0].slug, 'Photographs'],
-  ['/projects', 'Engineering'],
-  ['/projects/box', 'Engineering'],
-  ['/roadmap', 'Roadmap'],
-  ['/contact', 'Contact'],
-  // Not a nav destination: no link is current.
-  ['/offline', null],
-];
 
 const primaryNav = (page: Page) => page.getByRole('navigation', { name: 'Primary' });
 /**
