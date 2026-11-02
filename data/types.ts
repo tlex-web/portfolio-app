@@ -30,6 +30,12 @@ export interface NavItem {
 export interface Site {
   name: string;
   role: string;
+  /**
+   * Required: the canonical base URL (D-13), https with no trailing slash.
+   * metadataBase, every page canonical, sitemap.xml and robots.txt build their
+   * absolute URLs from it, so removing it fails tsc.
+   */
+  url: string;
   email: string;
   links: {
     github: string;

@@ -4,6 +4,7 @@ import RouteLog from '@/components/roadmap/RouteLog';
 import RouteLogFilters from '@/components/roadmap/RouteLogFilters';
 import { roadmapItems, surveyedAt } from '@/data/roadmap';
 import { formatLogDate } from '@/lib/log-date';
+import { pageMetadata } from '@/lib/metadata';
 import {
   BAND_LABELS,
   PROJECT_LABELS,
@@ -14,7 +15,13 @@ import {
   type LogFilter,
 } from '@/lib/route-log';
 
-export const metadata: Metadata = { title: 'Roadmap' };
+// SEO-01: own title, description (12-01 meta.roadmap) and canonical.
+export const metadata: Metadata = pageMetadata({
+  title: 'Roadmap',
+  description:
+    'What Tim has finished, is working on and plans next for this site, box and coin-flip.',
+  path: '/roadmap',
+});
 
 const INTRO =
   "What I've finished, what I'm working on and what comes next, for this site, box and coin-flip.";
