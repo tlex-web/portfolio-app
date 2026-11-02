@@ -1,9 +1,9 @@
 ---
-status: complete
+status: diagnosed
 phase: 11-engineering-roadmap
 source: [11-VERIFICATION.md]
 started: 2026-11-02T02:25:00Z
-updated: 2026-11-02T10:59:32.181Z
+updated: 2026-11-02T11:02:00Z
 ---
 
 ## Current Test
@@ -56,5 +56,15 @@ blocked: 0
   reason: "User reported: yes change to a suffix on each link"
   severity: minor
   test: 4
-  artifacts: []
-  missing: []
+  root_cause: "Metrics.tsx renders each tile's source link with the visible word 'Source' plus an aria-hidden ArrowSquareOutIcon and no other name source, so every link's accessible name is the bare word 'Source' and nothing ties it to its tile (Tools, Tests, Binary). Confirmed in the live accessibility tree of /projects/box."
+  artifacts:
+    - path: "components/projects/sections/Metrics.tsx"
+      issue: "Source link (lines 89-95) has no tile-specific accessible name"
+    - path: "components/projects/__tests__/Metrics.test.tsx"
+      issue: "Lines 95-97 assert the link name 'Source' and the dd textContent /^Context line 1 Source$/; both change once the suffix exists"
+    - path: "e2e/case-study.spec.ts"
+      issue: "Lines 308-310 assert the dd text `${tile.context} Source` and the link name 'Source' (exact); both change once the suffix exists"
+  missing:
+    - "Give each Source link a screen-reader-only suffix naming what it sources (per tile), visible text and visuals unchanged"
+    - "Update the Metrics unit test and the case-study e2e to assert the per-tile accessible names"
+  debug_session: ""
