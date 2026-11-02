@@ -393,7 +393,10 @@ export default function SummitRegister() {
       .join(' ') || undefined;
 
   return (
+    // method="post": a submit that lands before hydration is a native post,
+    // which never puts the visitor's words into a URL (D-04).
     <form
+      method="post"
       noValidate
       aria-labelledby="register-title"
       onSubmit={onSubmit}

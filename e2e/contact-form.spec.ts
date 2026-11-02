@@ -21,6 +21,20 @@ const sendButton = (page: Page) => page.getByRole('button', { name: /Send Messag
 
 const MESSAGE = 'This is a test message that is definitely long enough to pass validation.';
 
+/**
+ * Opens /contact and waits until React has hydrated the register: text typed
+ * into the server-rendered fields before hydration is reset by it (seen in
+ * WebKit), and a click before it is a native form post.
+ */
+async function openContact(page: Page) {
+  await page.goto('/contact');
+  await expect
+    .poll(() =>
+      sendButton(page).evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))),
+    )
+    .toBe(true);
+}
+
 async function fillValid(page: Page) {
   await nameField(page).fill('John Doe');
   await emailField(page).fill('john@example.com');
@@ -48,7 +62,7 @@ async function expectFieldsKept(page: Page) {
 
 test.describe('Contact Form', () => {
   test('should display the register with its locked names', async ({ page }) => {
-    await page.goto('/contact');
+    await openContact(page);
 
     await expect(page).toHaveTitle('Contact · Tim Lui');
     await expect(page.getByRole('heading', { level: 1, name: 'Contact', exact: true })).toBeVisible();
@@ -61,7 +75,7 @@ test.describe('Contact Form', () => {
   });
 
   test('should show validation error for empty name', async ({ page }) => {
-    await page.goto('/contact');
+    await openContact(page);
 
     await sendButton(page).click();
 
@@ -70,7 +84,7 @@ test.describe('Contact Form', () => {
   });
 
   test('should show validation error for invalid email', async ({ page }) => {
-    await page.goto('/contact');
+    await openContact(page);
 
     await nameField(page).fill('John Doe');
     await emailField(page).fill('not-an-email');
@@ -83,7 +97,7 @@ test.describe('Contact Form', () => {
   });
 
   test('should show validation error for short message', async ({ page }) => {
-    await page.goto('/contact');
+    await openContact(page);
 
     await nameField(page).fill('John Doe');
     await emailField(page).fill('john@example.com');
@@ -97,7 +111,7 @@ test.describe('Contact Form', () => {
 
   test('should sign the register and offer an empty form again', async ({ page }) => {
     await mockFeedback(page, 200, { code: 'ok' });
-    await page.goto('/contact');
+    await openContact(page);
 
     await fillValid(page);
     const request = page.waitForRequest('**/api/feedback');
@@ -125,7 +139,7 @@ test.describe('Contact Form', () => {
 
   test('should keep every word and offer Retry when the send fails', async ({ page }) => {
     await mockFeedback(page, 502, { code: 'send-failed' });
-    await page.goto('/contact');
+    await openContact(page);
 
     await fillValid(page);
     await sendButton(page).click();
@@ -144,7 +158,7 @@ test.describe('Contact Form', () => {
 
   test('should read the minutes from Retry-After when rate limited', async ({ page }) => {
     await mockFeedback(page, 429, { code: 'rate-limited', retryAfterS: 120 }, { 'Retry-After': '120' });
-    await page.goto('/contact');
+    await openContact(page);
 
     await fillValid(page);
     await sendButton(page).click();
@@ -158,7 +172,7 @@ test.describe('Contact Form', () => {
 
   test('should ask for a reload when the origin is rejected', async ({ page }) => {
     await mockFeedback(page, 403, { code: 'origin-rejected' });
-    await page.goto('/contact');
+    await openContact(page);
 
     await fillValid(page);
     await sendButton(page).click();
@@ -175,7 +189,7 @@ test.describe('Contact Form', () => {
   test('should never scroll sideways at 375 px, even with a long entry', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await mockFeedback(page, 200, { code: 'ok' });
-    await page.goto('/contact');
+    await openContact(page);
 
     const noSidewaysScroll = () =>
       page.evaluate(
@@ -197,7 +211,7 @@ test.describe('Contact Form', () => {
   });
 
   test('should toggle collaboration checkbox', async ({ page }) => {
-    await page.goto('/contact');
+    await openContact(page);
 
     const checkbox = page.getByRole('checkbox');
 
