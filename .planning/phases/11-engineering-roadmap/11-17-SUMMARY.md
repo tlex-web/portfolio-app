@@ -242,6 +242,12 @@ Phase 11 is ready for phase verification. Phase 12 carry-overs (record, not done
 - **Open design notes for Tim:** the Zmutt end point of the coin-flip profile (11-04 D4), the plain-anchor choice for Next steps rows (11-13 Deviation 1), and the coin-flip Demo controls bar covering the HEADS label on the poster for real visitors (11-16; hidden only in visual shots)
 - The ratchet commit and this SUMMARY stay on the local phase branch (not pushed)
 
+## Self-Check: PASSED
+
+- Commits found on HEAD: 395f893, 176eb82, 2fadace, 69bd7ab, 56c11bf, 43f87ba, e511d7a, b9ec33f
+- Files found: e2e/visual/hide-canvas.css, components/projects/RouteIndex.tsx, scripts/guards/test-count.baseline.json, box/ and coin-flip/ baselines; clix-cli/ and clix-website/ snapshot folders are gone
+- `commits: 8` measured as `git rev-list --count 4c757d1..b9ec33f` (the SUMMARY commit comes after it)
+
 ---
 *Phase: 11-engineering-roadmap*
 *Completed: 2026-11-02*

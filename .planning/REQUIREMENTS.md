@@ -84,17 +84,17 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 
 ### Engineering
 
-- [ ] **ENG-01**: `/projects` shows each project as a full-width route panel (name, pitch, metric strip, trail-grade badge, elevation-profile glyph); the hexagon cards and hex-grid code are removed
-- [ ] **ENG-02**: Project pages follow a case-study structure (problem, pipeline diagram, safety, metrics, demo, stack, next steps) and omit any section that has no data
+- [x] **ENG-01**: `/projects` shows each project as a full-width route panel (name, pitch, metric strip, trail-grade badge, elevation-profile glyph); the hexagon cards and hex-grid code are removed
+- [x] **ENG-02**: Project pages follow a case-study structure (problem, pipeline diagram, safety, metrics, demo, stack, next steps) and omit any section that has no data
 - [ ] **ENG-03**: ~~CLI_X's four risk bands are shown as Swiss trail grades, each with its marker glyph, text label and score range, plus an equivalent data table~~ **Dropped 2026-11-01 (D-24):** CLI_X is discontinued; neither box nor coin-flip has risk bands. Trail grades appear only as the real SAC badges of the profile trails.
-- [ ] **ENG-04**: Metrics display as an instrument panel with tabular numerals and a context line, and every claim is either sourced or softened
-- [ ] **ENG-05**: The terminal demo uses tokens v2, stops auto-playing on focus, hover and under reduced motion, and has a pause button
+- [x] **ENG-04**: Metrics display as an instrument panel with tabular numerals and a context line, and every claim is either sourced or softened
+- [x] **ENG-05**: The terminal demo uses tokens v2, stops auto-playing on focus, hover and under reduced motion, and has a pause button
 
 ### Roadmap
 
-- [ ] **ROUTE-01**: The roadmap shows items on a vertical elevation axis: completed below, in-progress at the current camp, planned above
-- [ ] **ROUTE-02**: A visitor can filter by project and status with a segmented control; the filter lives in the URL, and filters with no items are removed or disabled
-- [ ] **ROUTE-03**: Roadmap data includes an order and completion dates, lists v2.0 as in progress, and shows a "last surveyed" date
+- [x] **ROUTE-01**: The roadmap shows items on a vertical elevation axis: completed below, in-progress at the current camp, planned above
+- [x] **ROUTE-02**: A visitor can filter by project and status with a segmented control; the filter lives in the URL, and filters with no items are removed or disabled
+- [x] **ROUTE-03**: Roadmap data includes an order and completion dates, lists v2.0 as in progress, and shows a "last surveyed" date
 
 ### Contact
 
@@ -214,14 +214,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LBOX-05 | Phase 10 | Complete |
 | LBOX-06 | Phase 10 | Complete |
 | LBOX-07 | Phase 10 | Complete |
-| ENG-01 | Phase 11 | Pending |
-| ENG-02 | Phase 11 | Pending |
+| ENG-01 | Phase 11 | Complete |
+| ENG-02 | Phase 11 | Complete |
 | ENG-03 | Phase 11 | Dropped (D-24) |
-| ENG-04 | Phase 11 | Pending |
-| ENG-05 | Phase 11 | Pending |
-| ROUTE-01 | Phase 11 | Pending |
-| ROUTE-02 | Phase 11 | Pending |
-| ROUTE-03 | Phase 11 | Pending |
+| ENG-04 | Phase 11 | Complete |
+| ENG-05 | Phase 11 | Complete |
+| ROUTE-01 | Phase 11 | Complete |
+| ROUTE-02 | Phase 11 | Complete |
+| ROUTE-03 | Phase 11 | Complete |
 | CONTACT-01 | Phase 12 | Pending |
 | CONTACT-02 | Phase 12 | Pending |
 | CONTACT-03 | Phase 12 | Pending |

@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 11
 current_phase_name: Engineering & Roadmap
 status: executing
-stopped_at: "11-17 Task 2 checkpoint (human-action): Tim reviews and commits the 15 Phase 11 baseline PNGs (box/1440 and coin-flip/1440 re-baselined after the RouteIndex fix) and removes clix-cli/clix-website"
-last_updated: "2026-11-02T00:23:29.000Z"
-last_activity: 2026-11-01
+stopped_at: Completed 11-17-PLAN.md (18/18 plans; phase verification next)
+last_updated: "2026-11-02T01:04:31.387Z"
+last_activity: 2026-11-02
 last_activity_desc: Phase 11 execution started
-state_head: 56c11bf2ec93226f4f257381c4269fd1d61cd490
+state_head: f517799b5ac1b24b53adcc53c1c10bbdf62d1bb0
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 93
-  completed_plans: 92
-  percent: 99
+  completed_plans: 93
+  percent: 100
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-26)
 ## Current Position
 
 Phase: 11 (Engineering & Roadmap) — EXECUTING
-Plan: 17 of 18 (11-17 is the only plan without a SUMMARY)
-Status: Paused at 11-17 Task 2 (human-action checkpoint: Tim's baseline commit; RouteIndex fixed, second dispatch used)
-Last activity: 2026-11-02 — 11-17 Task 2 option B (Tim: "B"): RouteIndex re-measures on scroll (2fadace RED, 69bd7ab fix, 56c11bf e2e), ci/11-17 fast-forwarded to 56c11bf, push run 41365055838 green apart from the 30 expected visual shots, the one extra baseline run 41366534214 changed only box/1440 and coin-flip/1440 vs run 41362320008; 15 PNGs (6 new, 9 changed) unstaged for Tim
+Plan: 18 of 18 (every plan has a SUMMARY)
+Status: All 18 plans complete; phase verification and phase.complete next (orchestrator)
+Last activity: 2026-11-02 — 11-17 complete: Tim's baseline commit e511d7a ("pushed") passed check-snapshot-commit per slug, CI run 41367381672 green on attempt 1 and on the single re-run (attempt 2), ratchet raised 1300 -> 1749 (b9ec33f); ratchet and SUMMARY commits stay local (not pushed)
 
-Progress: [█████████░] 99%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -149,6 +149,7 @@ Progress: [█████████░] 99%
 | Phase 11 P15 | 20 min | 3 tasks | 17 files |
 | Phase 11 P14 | 16 min | 3 tasks | 17 files |
 | Phase 11 P16 | about 7 min (continuation) | 2 tasks | 5 files |
+| Phase 11 P17 | 1h 55m | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -394,6 +395,7 @@ Recent decisions affecting current work:
 - [Phase 11]: 11-13 open item resolved: Tim chose "A" (verbatim, 2026-11-01), keep the plain <a> in RouteRow's compact Next steps row (:target highlight works; no prefetch); no code change
 - [Phase 11]: 11-16: Tim approved the coin-flip clip, 3.5 s poster, description and intro as drafted ("approve"); the clip block ships verbatim and coin-flip's Demo section and index entry are live
 - [Phase 11]: 11-17: Tim chose option B ("B. Fix first ... run **one more** visual-baselines dispatch"): RouteIndex's scroll handler re-measures every section against the band, so a jump back to the top after a sweep leaves no stale current stage; the extra dispatch is used (41366534214), the CI re-run on Tim's baseline commit stays reserved for Task 3
+- [Phase 11]: 11-17: native video controls hidden in visual shots (hide-canvas.css) so the coin-flip Demo poster is deterministic; RouteIndex re-measures on scroll (Tim's option B); ratchet raised 1300 -> 1749 at Tim's baseline commit e511d7a; CI green twice (run 41367381672 attempts 1 and 2)
 
 ### Pending Todos
 
@@ -438,6 +440,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-02T00:23:29.000Z
-Stopped at: 11-17 Task 2 checkpoint (human-action): Tim reviews and commits the 15 Phase 11 baseline PNGs (box/1440 and coin-flip/1440 re-baselined after the RouteIndex fix) and removes clix-cli/clix-website
-Resume file: .planning/phases/11-engineering-roadmap/11-17-PLAN.md
+Last session: 2026-11-02T01:04:30.840Z
+Stopped at: Completed 11-17-PLAN.md (18/18 plans; phase verification next)
+Resume file: None
