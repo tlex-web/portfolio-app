@@ -3,6 +3,18 @@ phase: 11
 review: 11-REVIEW.md
 titles: json
 findings:
+  - id: IN-08
+    severity: info
+    disposition: open
+    title: "React keys come from content whose uniqueness the schema does not enforce"
+  - id: IN-13
+    severity: info
+    disposition: open
+    title: "The G-11-4 link names are only distinct if tile labels are non-empty and unique, and nothing enforces either"
+  - id: IN-14
+    severity: info
+    disposition: open
+    title: "A unit assertion that the suffix \"has class sr-only\" can never fail"
   - id: WR-01
     severity: warning
     disposition: fixed
@@ -39,10 +51,6 @@ findings:
     severity: info
     disposition: open
     title: "RouteIndex hard-codes the band top that CSS derives from `--nav-h`"
-  - id: IN-08
-    severity: info
-    disposition: open
-    title: "React keys come from content whose uniqueness the schema does not enforce"
   - id: IN-09
     severity: info
     disposition: open
@@ -59,29 +67,31 @@ findings:
     severity: info
     disposition: open
     title: "In write mode, build-clip is not atomic and deletes any file in public/media/ it did not produce"
-open: 12
-total: 14
-recorded: 2026-11-02T02:09:00.813Z
+open: 14
+total: 16
+recorded: 2026-11-02T11:34:09.155Z
 ---
 
 # Phase 11: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | fixed | 11-REVIEW-FIX.md |
-| WR-02 | warning | fixed | 11-REVIEW-FIX.md |
-| IN-01 | info | open | - |
-| IN-02 | info | open | - |
-| IN-03 | info | open | - |
-| IN-04 | info | open | - |
-| IN-05 | info | open | - |
-| IN-06 | info | open | - |
-| IN-07 | info | open | - |
 | IN-08 | info | open | - |
-| IN-09 | info | open | - |
-| IN-10 | info | open | - |
-| IN-11 | info | open | - |
-| IN-12 | info | open | - |
+| IN-13 | info | open | - |
+| IN-14 | info | open | - |
+| WR-01 | warning | fixed | 11-REVIEW-FIX.md (not in the current review) |
+| WR-02 | warning | fixed | 11-REVIEW-FIX.md (not in the current review) |
+| IN-01 | info | open | - (not in the current review) |
+| IN-02 | info | open | - (not in the current review) |
+| IN-03 | info | open | - (not in the current review) |
+| IN-04 | info | open | - (not in the current review) |
+| IN-05 | info | open | - (not in the current review) |
+| IN-06 | info | open | - (not in the current review) |
+| IN-07 | info | open | - (not in the current review) |
+| IN-09 | info | open | - (not in the current review) |
+| IN-10 | info | open | - (not in the current review) |
+| IN-11 | info | open | - (not in the current review) |
+| IN-12 | info | open | - (not in the current review) |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
