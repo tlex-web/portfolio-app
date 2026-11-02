@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 12
 current_phase_name: Contact, Edge Pages, Cleanup & Verification
 status: executing
-stopped_at: Completed 12-08-PLAN.md
-last_updated: "2026-11-02T19:01:11.602Z"
+stopped_at: Completed 12-09-PLAN.md
+last_updated: "2026-11-02T19:12:40.107Z"
 last_activity: 2026-11-02
 last_activity_desc: Phase 12 execution started
-state_head: d6013297934b71f17396ad05054f6bd371f6be55
+state_head: 06759fcad6e49c6233a2c2c737fd63cb2536d6f8
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 120
-  completed_plans: 101
-  percent: 84
+  completed_plans: 102
+  percent: 85
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-11-02)
 ## Current Position
 
 Phase: 12 (Contact, Edge Pages, Cleanup & Verification) — EXECUTING
-Plan: 8 of 26
+Plan: 9 of 26
 Status: Ready to execute
 Last activity: 2026-11-02 — Phase 12 execution started
 
-Progress: [████████░░] 84%
+Progress: [█████████░] 85%
 
 ## Performance Metrics
 
@@ -159,6 +159,7 @@ Progress: [████████░░] 84%
 | Phase 12 P05 | 7 min | 2 tasks | 67 files |
 | Phase 12 P07 | 17 min | 3 tasks | 13 files |
 | Phase 12 P08 | 9min | 2 tasks | 7 files |
+| Phase 12 P09 | 7 min | 2 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -423,6 +424,8 @@ Recent decisions affecting current work:
 - [Phase 12]: 12-07: Phase 9 D-24 items follow Tim's defaults (09 spec scrim row to lg:, wedge closed, tick accepted); copy.heads-sentence pending Tim
 - [Phase 12]: 12-08: SW install puts /offline in the single all-or-nothing addAll (no separate put); the no-store /offline fetch only supplies asset URLs and must be ok
 - [Phase 12]: 12-08: sw.reload-once = yes built as a once-per-tab sessionStorage guard; no reload on first install, with a dirty text field, or when sessionStorage is unavailable
+- [Phase 12]: 12-09: root description lives in SITE_DESCRIPTION (lib/metadata.ts), shared by app/layout.tsx and Home; per-route metadata goes through pageMetadata, which never sets openGraph or twitter
+- [Phase 12]: 12-09: site.url = https://portfolio-app-mocha-three.vercel.app is the one canonical host (D-13); metadataBase, canonicals, sitemap.xml and robots.txt all derive from it
 
 ### Pending Todos
 
@@ -469,6 +472,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-02T19:01:10.601Z
-Stopped at: Completed 12-08-PLAN.md
+Last session: 2026-11-02T19:12:38.953Z
+Stopped at: Completed 12-09-PLAN.md
 Resume file: None

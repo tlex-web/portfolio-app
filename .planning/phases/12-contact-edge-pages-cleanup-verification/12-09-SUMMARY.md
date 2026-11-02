@@ -211,6 +211,11 @@ None.
 - SEO-02 OG images can attach to the root or to `photoMetadata` and project `generateMetadata`. Page-level `pageMetadata` calls must keep setting no openGraph.
 - Flagged for Tim (from the plan): robots disallows `/offline`, which is also noindex. If he wants it crawlable but noindex, remove that disallow line.
 
+## Self-Check: PASSED
+
+- Created files present: lib/metadata.ts, lib/__tests__/metadata.test.ts, app/sitemap.ts, app/robots.ts, e2e/seo.spec.ts
+- Commits on this branch: 123d67a, 1b33003, 23dc92f
+
 ---
 *Phase: 12-contact-edge-pages-cleanup-verification*
 *Completed: 2026-11-02*
