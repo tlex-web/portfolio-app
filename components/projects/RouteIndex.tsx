@@ -7,6 +7,23 @@ type Section = { id: string; label: string };
 
 /** The nav height plus 16 px down to 40 % of the viewport: the band a section top crosses. */
 const ROOT_MARGIN = '-80px 0px -60% 0px';
+/** The band's edges in viewport px, the same band ROOT_MARGIN leaves the observer. */
+const BAND_TOP = 80;
+const BAND_BOTTOM_SHARE = 0.4;
+
+type Place = 'in' | 'above' | 'below';
+
+/**
+ * Where a section's live box sits against the band, or null when it has no
+ * layout box (display: none) and so no place to judge. Edge contact counts as
+ * in, as it does for the observer.
+ */
+function measure(el: HTMLElement): Place | null {
+  const { top, bottom, width, height } = el.getBoundingClientRect();
+  if (width === 0 && height === 0) return null;
+  if (top <= window.innerHeight * BAND_BOTTOM_SHARE && bottom >= BAND_TOP) return 'in';
+  return top < BAND_TOP ? 'above' : 'below';
+}
 
 const LINK =
   'relative flex min-h-11 items-center gap-2 pl-4 text-base text-ink-muted hover:text-ink';
@@ -61,10 +78,13 @@ function Links({ sections, current }: { sections: readonly Section[]; current: s
  * already scrolled above it, and at the very end of the page the last section
  * (a short last section never reaches the band's top). An anchor jump puts
  * its section's top at the band's top (scroll-margin-top), so the jumped-to
- * section is the one current. State is set only
+ * section is the one current. The observer alone misses a jump that moves a
+ * section from above the band to below it without crossing it (back to the top
+ * after reading to the end), so a passive scroll handler also re-measures every
+ * section's live box against the same band (11-17). State is set only
  * in the observer callback and the hashchange and scroll handlers (React
- * Compiler rules; the scroll handler sets state only when the end is reached
- * or left): the first callback prefers a section named in the URL hash, so
+ * Compiler rules), and only when the current section changes: the first
+ * callback prefers a section named in the URL hash, so
  * '/projects/box#safety' lands with Safety current. Without JS the links still work and nothing is
  * current; the jump itself is the browser's (scroll-margin-top, no
  * animation under reduced motion). The observer disconnects on unmount
@@ -77,13 +97,26 @@ export default function RouteIndex({ sections }: { sections: readonly Section[] 
     if (sections.length < 2 || typeof IntersectionObserver === 'undefined') return;
     const ids = sections.map((s) => s.id);
     // Where each section sits against the band: in it, wholly above it, or below.
-    const where = new Map<string, 'in' | 'above' | 'below'>();
+    const where = new Map<string, Place>();
     let spied: string | null = null;
     let fromHash: string | null = null;
     let first = true;
     let atEnd = false;
+    // The last value handed to setCurrent; undefined until the first one.
+    let shown: string | null | undefined;
 
-    const publish = () => setCurrent(atEnd ? ids[ids.length - 1] : (fromHash ?? spied));
+    const show = (id: string | null) => {
+      if (id === shown) return;
+      shown = id;
+      setCurrent(id);
+    };
+    const spy = () => {
+      const reading = ids.find((id) => where.get(id) === 'in');
+      const passed = ids.filter((id) => where.get(id) === 'above');
+      spied = reading ?? passed[passed.length - 1] ?? null;
+      atEnd = scrolledToEnd();
+      show(atEnd ? ids[ids.length - 1] : (fromHash ?? spied));
+    };
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -94,13 +127,9 @@ export default function RouteIndex({ sections }: { sections: readonly Section[] 
             entry.isIntersecting ? 'in' : entry.boundingClientRect.top < lineTop ? 'above' : 'below'
           );
         }
-        const reading = ids.find((id) => where.get(id) === 'in');
-        const passed = ids.filter((id) => where.get(id) === 'above');
-        spied = reading ?? passed[passed.length - 1] ?? null;
         fromHash = first ? hashSection(ids) : null;
         first = false;
-        atEnd = scrolledToEnd();
-        publish();
+        spy();
       },
       { rootMargin: ROOT_MARGIN }
     );
@@ -111,15 +140,23 @@ export default function RouteIndex({ sections }: { sections: readonly Section[] 
 
     const onHashChange = () => {
       const id = hashSection(ids);
-      if (id) setCurrent(id);
+      if (id) show(id);
     };
-    // At the very end of the page a short last section may never reach the
-    // line; reaching the end makes it current, leaving the end gives it back.
+    // The observer reports only sections whose intersection changed, so a
+    // jump that carries a section from above the band to below it (or back)
+    // without touching it, such as scrollTo(0, 0) after reading to the end,
+    // goes unreported. Every scroll therefore re-measures each section's live
+    // box against the band; at the very end of the page a short last section
+    // may never reach the band, so reaching the end makes it current. Scroll
+    // fires at most once per frame, the handler only reads layout, and state
+    // changes only when the current section does.
     const onScroll = () => {
-      const end = scrolledToEnd();
-      if (end === atEnd) return;
-      atEnd = end;
-      publish();
+      for (const id of ids) {
+        const el = document.getElementById(id);
+        const place = el && measure(el);
+        if (place) where.set(id, place);
+      }
+      spy();
     };
     window.addEventListener('hashchange', onHashChange);
     window.addEventListener('scroll', onScroll, { passive: true });
