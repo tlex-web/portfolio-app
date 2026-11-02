@@ -1,6 +1,6 @@
 # Phase 12 Content Packet (12-01)
 
-**Drafted:** 2026-11-02 by Claude. **Status:** waiting for Tim's answers.
+**Drafted:** 2026-11-02 by Claude. **Status:** answered by Tim 2026-11-02 (see `## Answers (verbatim)` and `## Resolved values` at the end).
 
 Everything below is a proposal. Nothing here is approved until Tim's own reply says so. Each row is one key that later plans look up in `## Resolved values` (12-01-SUMMARY.md). A key Tim does not answer reads `not supplied`, and the element falls back as the UI-SPEC "Content Gates, Both Cases" table (12-UI-SPEC.md lines 465-472) says.
 
@@ -139,4 +139,65 @@ Source: UI-SPEC L646-663. Answer `default` or `alternative` per row ("F: default
 
 ## Answers (verbatim)
 
+Tim, 2026-11-02:
+
+A: approve all, lead option 2; B: confirm; C: approve; D: approve; E: heads skip, log ok; F: defaults; G: reload-once yes, stale refs fix, Hobby, ci push yes; H: ok
+
 ## Resolved values
+
+One line per packet key (52). `supplied` rows carry the final value; the one `not supplied` row carries its UI-SPEC Content Gates fallback.
+
+| Key | Status | Value |
+|-----|--------|-------|
+| copy.contact-kicker | supplied | `Summit register` |
+| copy.contact-h1 | supplied | `Contact` |
+| copy.contact-intro | supplied | "Write a line in the register. I read every entry and reply by email." |
+| copy.form-h2 | supplied | `Sign the register` |
+| copy.form-lead | supplied | "Your name, your email and a message." (option 2, no claim) |
+| copy.checkbox-label | supplied | `I'd like to talk about working together` |
+| copy.field-errors | supplied | Name empty: `Enter your name.` Email empty: `Enter your email address.` Email invalid: `Enter a full email address, with an @ and a domain.` Message empty: `Write a message.` Too short: `Write at least 10 characters (now {n}).` Too long: `Shorten the message to 2,000 characters (now {formatCount(n)}).` |
+| copy.summary-title | supplied | `Check 1 field` / `Check {n} fields` |
+| copy.fail-send | supplied | title `Couldn't send.`; body "Your message is still here. Try again, or email me at {email}."; button `Retry` (name `Retry sending`) |
+| copy.fail-network | supplied | title `Couldn't reach the server.`; body "Check your connection. Your message is still here. Try again, or email me at {email}."; `Retry` |
+| copy.fail-429 | supplied | title `Too many attempts.`; body "This connection has sent too many entries in the last hour. Try again in {m} minutes, or email me at {email}." (`{m}` = ceil(`Retry-After` / 60), minimum 1, `1 minute` singular; header missing → "Try again later, or email me at {email}.") |
+| copy.fail-403 | supplied | title `Couldn't verify this page.`; body "Copy your message, reload the page and send it again, or email me at {email}." |
+| copy.panel-h2 | supplied | `Direct contact` |
+| geo.location | supplied | `47.37 N · 8.54 E · Zürich` (source: Wikipedia "Zurich" infobox, 47.37444 N 8.54111 E, rounded to 2 decimals) |
+| copy.404-body | supplied | "There's no page at this address; the link may be mistyped or out of date." |
+| copy.404-photo | supplied | "No photograph at this address." + `All photographs` |
+| copy.404-project | supplied | "No project at this address." + `All routes` |
+| copy.error-report | supplied | `Report this error` |
+| copy.offline-h1 | supplied | `You're offline` |
+| copy.offline-body | supplied | "This page needs a connection and reloads by itself when you're back online." |
+| copy.offline-h2 | supplied | `Saved on this device` |
+| copy.offline-empty | supplied | "No pages are saved on this device yet." |
+| copy.offline-unsupported | supplied | "This browser can't list saved pages." |
+| meta.photos | supplied | title `Photographs` · description "Landscape photographs from around Zermatt, each placed on the terrain where Tim took it." |
+| meta.photo-slug | supplied | title `{title}` · description "{title}: a photograph by Tim Lui from {short place} at {altitude}[ approx.], {Mon YYYY \| YYYY}." |
+| meta.projects | supplied | title `Engineering` · description "What Tim builds: box, a command-line toolkit for PowerShell, and coin-flip, a fair 3D coin toss for Android." |
+| meta.roadmap | supplied | title `Roadmap` · description "What Tim has finished, is working on and plans next for this site, box and coin-flip." |
+| meta.contact | supplied | title `Contact` · description "Write to Tim Lui. Messages go straight to his inbox, and he usually replies within a few days." |
+| og.alt-default | supplied | `Tim Lui, developer and photographer, over a contour map of the Matterhorn` |
+| og.alt-photo | supplied | `{title}, a photograph by Tim Lui. {short place}, {altitude}[ approx.]` |
+| og.alt-project | supplied | `{name}: {pitch}` |
+| copy.heads-sentence | not supplied | The figcaption stays as approved; the item stays open with Tim's reason (Tim's reply: "heads skip"; no further reason given) |
+| log.phase11 | supplied | Phase 11 `completed`, completedAt `2026-11-02`; Phase 12 `in-progress`; `surveyedAt` `2026-11-02` |
+| default.1 | supplied | Default: Contact on plain `surface` |
+| default.2 | supplied | Default: DOM order form → panel; panel `order-first` below 1024 |
+| default.3 | supplied | Default: Copy failure: select the address silently |
+| default.4 | supplied | Default: Kicker `Summit register` + h1 `Contact` |
+| default.5 | supplied | Default: Inline errors without a live role; summary `role="alert"` + focus |
+| default.6 | supplied | Default: Error copy rewritten to cause + fix (`Enter your name.`) |
+| default.7 | supplied | Default: Edge art: square sheet, max 448 px |
+| default.8 | supplied | Default: OG photo: contain-fit in a 768 slot with mats |
+| default.9 | supplied | Default: HEADS fix via a figcaption sentence |
+| default.10 | supplied | Default: Hero scrim: amend the 09 spec to `lg:` |
+| default.11 | supplied | Default: Summit dark wedge: close as terrain |
+| default.12 | supplied | Default: Rail tick 4.81:1: accept, B8 keeps the floor |
+| default.13 | supplied | Default: `Send Message` kept exactly |
+| default.14 | supplied | Default: Honeypot `trail_note`, label `Leave this field empty` |
+| sw.reload-once | supplied | yes: reload once on `controllerchange` only when no form field is dirty; otherwise the next in-site navigation is a hard navigation (12-08 builds the guarded reload) |
+| docs.stale-refs | supplied | fix: update `.github/copilot-instructions.md` in the README pass (12-22); `project_concept/` is gitignored (`.gitignore:90`) and stays unchanged |
+| vercel.plan | supplied | Hobby (Skew Protection is Pro/Enterprise, so not available; the SW reload guard works either way) |
+| ci.push | supplied | yes: plain pushes only, never force, of `ci/12-NN` branches for this phase's CI and re-baseline runs |
+| info.csp | supplied | acknowledged, no veto: 12-02 drops the GitHub raw-content origin and keeps `'unsafe-eval'` only under `next dev` |
