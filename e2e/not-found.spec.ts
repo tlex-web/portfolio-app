@@ -14,18 +14,22 @@ import { photoSlugs } from '@/lib/photos/view-model';
  * JavaScript), then the hydrated page.
  *
  * A random token stands in for the slug, so any echo of the requested URL in
- * the rendered HTML, the DOM or the title is caught (T-12-03). Script elements
- * are left out of that check: Next's RSC flight payload always carries the
- * page's canonical URL as JSON (`"c":["","photos","<slug>"]`, on every App
- * Router response at any URL), and Vercel Speed Insights puts the path in its
- * script's data-route attribute. Neither is rendered; both are escaped data.
- * The spoofed-header case proves a visitor cannot pick the context link
- * (T-12-02).
+ * the whole server HTML, the hydrated document or the title is caught
+ * (T-12-03), script data included: Next writes the URL it renders into the
+ * flight payload (`"c":[...]`), so proxy.ts serves a missed document with the
+ * 404 rendered under a neutral slug, and Speed Insights reports every root 404
+ * as /404 instead of writing the raw path into its script's data-route
+ * (components/SpeedInsightsRoute.tsx). The spoofed-header case proves a
+ * visitor cannot pick the context link (T-12-02).
  */
 
 const token = `nf-${crypto.randomUUID().slice(0, 8)}`;
 
-/** Markup without script elements (and their attributes): what the page renders. */
+/**
+ * Markup without script elements (and their attributes). Only for text that
+ * every page's flight payload carries (the root not-found boundary), never
+ * for the token.
+ */
 const withoutScripts = (html: string) => html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
 
 /** Each section miss and the context link that replaces its generic label. */
@@ -60,7 +64,7 @@ test.describe('Unknown detail slugs: server-rendered 404 (EDGE-01)', () => {
       expect(main).toContain('Page not found');
       expect(main).toContain(`>${miss.link}<`);
       expect(main).not.toContain(`>${miss.generic}<`);
-      expect(withoutScripts(body)).not.toContain(token);
+      expect(body).not.toContain(token);
     });
 
     test(`${miss.path.replace(token, '<token>')}: context link "${miss.link}" after hydration, slug absent from DOM and title`, async ({
@@ -82,8 +86,13 @@ test.describe('Unknown detail slugs: server-rendered 404 (EDGE-01)', () => {
         main.getByRole('link', { name: 'Go to the homepage', exact: true })
       ).toHaveAttribute('href', '/');
 
+      // Speed Insights adds its script after hydration; wait for it so its data-route is checked.
+      await expect(page.locator('script[src*="speed-insights"]')).toHaveAttribute(
+        'data-route',
+        '/404'
+      );
       const html = await page.evaluate(() => document.documentElement.outerHTML);
-      expect(withoutScripts(html)).not.toContain(token);
+      expect(html).not.toContain(token);
       expect(await page.locator('body').innerText()).not.toContain(token);
       expect(await page.title()).not.toContain(token);
     });

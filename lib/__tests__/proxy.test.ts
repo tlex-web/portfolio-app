@@ -15,10 +15,13 @@
  * NextResponse encodes a rewrite as x-middleware-rewrite and each forwarded
  * request header as x-middleware-request-<name>, listed in
  * x-middleware-override-headers; the rewrite tests read those (T-12-02).
+ * T-12-03: a missed document is answered with the 404 rendered under the
+ * neutral slug, fetched by the proxy; fetch is mocked here (no network).
  */
 
 import { NextRequest } from 'next/server';
-import { buildCsp, proxy } from '../../proxy';
+import { buildCsp, NEUTRAL_SLUG, NEUTRAL_TIMEOUT_MS, proxy } from '../../proxy';
+import { projects } from '@/data/projects';
 import { photoSlugs } from '@/lib/photos/view-model';
 
 const NONCE = 'bm9uY2U=';
@@ -34,6 +37,17 @@ function directive(csp: string, name: string): string | undefined {
 
 const run = (url: string, headers: Record<string, string> = {}) =>
   proxy(new NextRequest(url, { headers }));
+
+/** A client-side navigation: the proxy keeps the plain rewrite for it. */
+const NAVIGATION = { 'sec-fetch-dest': 'empty' };
+
+let fetchMock: jest.SpiedFunction<typeof fetch>;
+beforeEach(() => {
+  fetchMock = jest
+    .spyOn(globalThis, 'fetch')
+    .mockRejectedValue(new Error('no network in unit tests'));
+});
+afterEach(() => fetchMock.mockRestore());
 
 /** Request headers the proxy forwards to the render (NextResponse's override encoding). */
 function forwarded(response: Response): Map<string, string> {
@@ -113,20 +127,20 @@ describe('buildCsp: script-src and origins', () => {
 });
 
 describe('proxy(): CSP header', () => {
-  it('a forged x-forwarded-proto: http on the production host keeps upgrade-insecure-requests', () => {
-    const response = run('https://portfolio-app-mocha-three.vercel.app/', {
+  it('a forged x-forwarded-proto: http on the production host keeps upgrade-insecure-requests', async () => {
+    const response = await run('https://portfolio-app-mocha-three.vercel.app/', {
       'x-forwarded-proto': 'http',
     });
     expect(response.headers.get('Content-Security-Policy')).toContain(UPGRADE);
   });
 
-  it('serves plain HTTP on localhost without upgrade-insecure-requests', () => {
-    const response = run('http://localhost:3000/');
+  it('serves plain HTTP on localhost without upgrade-insecure-requests', async () => {
+    const response = await run('http://localhost:3000/');
     expect(response.headers.get('Content-Security-Policy')).not.toContain(UPGRADE);
   });
 
-  it("sends no 'unsafe-eval' outside next dev, and the same CSP and nonce to the render", () => {
-    const response = run('https://portfolio-app-mocha-three.vercel.app/roadmap');
+  it("sends no 'unsafe-eval' outside next dev, and the same CSP and nonce to the render", async () => {
+    const response = await run('https://portfolio-app-mocha-three.vercel.app/roadmap');
     const csp = response.headers.get('Content-Security-Policy') ?? '';
     const request = forwarded(response);
 
@@ -137,23 +151,41 @@ describe('proxy(): CSP header', () => {
 });
 
 describe('proxy(): unknown-slug rewrite (EDGE-01)', () => {
-  it('rewrites an unknown project slug to /__missing with x-edge-section=projects', () => {
-    const response = run('https://portfolio-app-mocha-three.vercel.app/projects/no-such-slug');
+  it('rewrites an unknown project slug to /__missing with x-edge-section=projects', async () => {
+    const response = await run(
+      'https://portfolio-app-mocha-three.vercel.app/projects/no-such-slug',
+      NAVIGATION
+    );
 
     expect(response.headers.get('x-middleware-rewrite')).toMatch(/\/__missing$/);
     expect(forwarded(response).get('x-edge-section')).toBe('projects');
     expect(response.headers.get('Content-Security-Policy')).toContain("default-src 'self'");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('rewrites an unknown photo slug with x-edge-section=photos', () => {
-    const response = run('https://portfolio-app-mocha-three.vercel.app/photos/no-such-slug');
+  it('rewrites an unknown photo slug with x-edge-section=photos', async () => {
+    const response = await run(
+      'https://portfolio-app-mocha-three.vercel.app/photos/no-such-slug',
+      NAVIGATION
+    );
 
     expect(response.headers.get('x-middleware-rewrite')).toMatch(/\/__missing$/);
     expect(forwarded(response).get('x-edge-section')).toBe('photos');
   });
 
-  it('deletes a client-sent x-edge-section header before the render sees it', () => {
-    const response = run('https://portfolio-app-mocha-three.vercel.app/roadmap', {
+  it('rewrites the neutral slug itself without fetching, even for a document', async () => {
+    const response = await run(
+      `https://portfolio-app-mocha-three.vercel.app/photos/${NEUTRAL_SLUG}`,
+      { 'sec-fetch-dest': 'document' }
+    );
+
+    expect(response.headers.get('x-middleware-rewrite')).toMatch(/\/__missing$/);
+    expect(forwarded(response).get('x-edge-section')).toBe('photos');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('deletes a client-sent x-edge-section header before the render sees it', async () => {
+    const response = await run('https://portfolio-app-mocha-three.vercel.app/roadmap', {
       'x-edge-section': 'photos',
     });
 
@@ -162,8 +194,9 @@ describe('proxy(): unknown-slug rewrite (EDGE-01)', () => {
     expect(response.headers.get('x-middleware-request-x-edge-section')).toBeNull();
   });
 
-  it('replaces a client-sent x-edge-section on a miss with the proxy value', () => {
-    const response = run('https://portfolio-app-mocha-three.vercel.app/projects/nope', {
+  it('replaces a client-sent x-edge-section on a miss with the proxy value', async () => {
+    const response = await run('https://portfolio-app-mocha-three.vercel.app/projects/nope', {
+      ...NAVIGATION,
       'x-edge-section': 'photos',
     });
     expect(forwarded(response).get('x-edge-section')).toBe('projects');
@@ -174,9 +207,123 @@ describe('proxy(): unknown-slug rewrite (EDGE-01)', () => {
     '/projects/box',
     '/photos/no-such-slug/opengraph-image',
     '/photos',
-  ])('passes %s through without a rewrite', (path) => {
-    const response = run(`https://portfolio-app-mocha-three.vercel.app${path}`);
+  ])('passes %s through without a rewrite', async (path) => {
+    const response = await run(`https://portfolio-app-mocha-three.vercel.app${path}`);
     expect(response.headers.get('x-middleware-rewrite')).toBeNull();
     expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('proxy(): neutral 404 for a missed document (T-12-03)', () => {
+  const NEUTRAL_CSP = "default-src 'self'; script-src 'self' 'nonce-bmV1dHJhbA==';";
+  const HTML = '<!DOCTYPE html><html><body><main><h1>Page not found</h1></main></body></html>';
+
+  /** The neutral render's answer, as the inner proxy run and render would send it. */
+  const neutralAnswer = (status = 404) =>
+    new Response(HTML, {
+      status,
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        'content-security-policy': NEUTRAL_CSP,
+        'content-encoding': 'gzip',
+        'x-middleware-rewrite': '/__missing',
+        vary: 'rsc, next-router-state-tree',
+      },
+    });
+
+  it('the neutral slug is no known slug in either section', () => {
+    expect(photoSlugs).not.toContain(NEUTRAL_SLUG);
+    expect(projects.map((p) => p.slug)).not.toContain(NEUTRAL_SLUG);
+  });
+
+  it.each([
+    ['photos', {}],
+    ['projects', { 'sec-fetch-dest': 'document' }],
+  ] as const)(
+    'serves the %s 404 rendered under the neutral slug (request headers %j)',
+    async (section, extra) => {
+      fetchMock.mockResolvedValue(neutralAnswer());
+      const response = await run(
+        `https://portfolio-app-mocha-three.vercel.app/${section}/nf-token?q=nf-token`,
+        { ...extra, accept: 'text/html', cookie: 'a=b', 'x-edge-section': 'photos', 'x-other': '1' }
+      );
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const [url, init] = fetchMock.mock.calls[0];
+      expect(String(url)).toBe(
+        `https://portfolio-app-mocha-three.vercel.app/${section}/${NEUTRAL_SLUG}`
+      );
+      const sent = new Headers(init?.headers);
+      expect(sent.get('accept')).toBe('text/html');
+      expect(sent.get('cookie')).toBe('a=b');
+      expect(sent.has('x-edge-section')).toBe(false);
+      expect(sent.has('x-other')).toBe(false);
+
+      expect(response.status).toBe(404);
+      expect(await response.text()).toBe(HTML);
+      expect(response.headers.get('content-security-policy')).toBe(NEUTRAL_CSP);
+      expect(response.headers.get('vary')).toBe('rsc, next-router-state-tree');
+      expect(response.headers.get('content-encoding')).toBeNull();
+      expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+      expect(response.headers.get('x-middleware-next')).toBeNull();
+    }
+  );
+
+  it('falls back to the rewrite when the neutral fetch fails', async () => {
+    const response = await run('https://portfolio-app-mocha-three.vercel.app/photos/nf-token');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(response.headers.get('x-middleware-rewrite')).toMatch(/\/__missing$/);
+    expect(forwarded(response).get('x-edge-section')).toBe('photos');
+  });
+
+  it.each([200, 401, 500])(
+    'falls back to the rewrite when the neutral render answers %i',
+    async (status) => {
+      fetchMock.mockResolvedValue(neutralAnswer(status));
+      const response = await run('https://portfolio-app-mocha-three.vercel.app/projects/nf-token');
+
+      expect(response.headers.get('x-middleware-rewrite')).toMatch(/\/__missing$/);
+      expect(forwarded(response).get('x-edge-section')).toBe('projects');
+    }
+  );
+
+  it(`falls back to the rewrite when the neutral render has not answered after ${NEUTRAL_TIMEOUT_MS} ms`, async () => {
+    jest.useFakeTimers();
+    try {
+      // A render that never answers: the request settles only when its signal aborts.
+      fetchMock.mockImplementation(
+        (_url, init) =>
+          new Promise((_resolve, reject) => {
+            init?.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+          })
+      );
+      const pending = run('https://portfolio-app-mocha-three.vercel.app/photos/nf-token');
+
+      await jest.advanceTimersByTimeAsync(NEUTRAL_TIMEOUT_MS - 1);
+      expect(fetchMock.mock.calls[0][1]?.signal?.aborted).toBe(false);
+      await jest.advanceTimersByTimeAsync(1);
+      const response = await pending;
+
+      expect(response.headers.get('x-middleware-rewrite')).toMatch(/\/__missing$/);
+      expect(forwarded(response).get('x-edge-section')).toBe('photos');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('does not abort the neutral body once its headers have arrived', async () => {
+    jest.useFakeTimers();
+    try {
+      fetchMock.mockResolvedValue(neutralAnswer());
+      const response = await run('https://portfolio-app-mocha-three.vercel.app/photos/nf-token');
+      await jest.advanceTimersByTimeAsync(NEUTRAL_TIMEOUT_MS * 2);
+
+      expect(fetchMock.mock.calls[0][1]?.signal?.aborted).toBe(false);
+      expect(await response.text()).toBe(HTML);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });

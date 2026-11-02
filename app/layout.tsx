@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { Inter, JetBrains_Mono, Schibsted_Grotesk } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
-import { SpeedInsights } from '@vercel/speed-insights/next';
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration';
+import SpeedInsightsRoute from '@/components/SpeedInsightsRoute';
 import './globals.css';
 
 // Display face (DSGN-07): h1, h2 and the wordmark. Variable wght 400-900;
@@ -57,7 +57,7 @@ export default async function RootLayout({
         <ServiceWorkerRegistration />
         {children}
         <Analytics />
-        <SpeedInsights />
+        <SpeedInsightsRoute />
       </body>
     </html>
   );

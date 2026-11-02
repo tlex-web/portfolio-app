@@ -23,6 +23,79 @@ const MISSING_PATH = '/__missing';
 /** Exactly two segments; /photos/<x>/opengraph-image and deeper paths pass through. */
 const DETAIL_PATH = /^\/(photos|projects)\/([^/]+)$/;
 
+/**
+ * The slug a document 404 is rendered under (T-12-03). Next writes the URL it
+ * renders into the flight payload as `"c":["","photos","<slug>"]`, and a
+ * rewrite keeps the requested URL there. So a document miss is fetched again
+ * as /<section>/_ (an ordinary miss, rewritten below) and that HTML is served
+ * at the typed URL: the page names no requested slug. Never a real slug.
+ */
+export const NEUTRAL_SLUG = '_';
+
+/** Request headers the neutral render needs: content negotiation and the cookies. */
+const NEUTRAL_REQUEST_HEADERS = ['accept', 'accept-language', 'cookie', 'user-agent'];
+
+/** How long the neutral render may take to answer before the plain rewrite is used. */
+export const NEUTRAL_TIMEOUT_MS = 5000;
+
+/** Hop and encoding headers of the neutral render (fetch already decoded the body). */
+const NEUTRAL_DROPPED_HEADERS = new Set([
+  'connection',
+  'content-encoding',
+  'content-length',
+  'keep-alive',
+  'transfer-encoding',
+]);
+
+/**
+ * The 404 page for a missed document, rendered under NEUTRAL_SLUG, or null.
+ *
+ * Only document requests: a client-side navigation (sec-fetch-dest "empty")
+ * keeps the plain rewrite and gets its flight answer, which is never written
+ * into the page (the router loads a 404 answer as a new document, which comes
+ * back here). Null on any failure, an unexpected status or no answer within
+ * NEUTRAL_TIMEOUT_MS; the caller then rewrites as before, so the visitor still
+ * gets the 404 (with the slug back in the flight data). The timeout covers the
+ * response headers only, so a slow body is never cut off. The response keeps
+ * the neutral render's own CSP header (its scripts carry that render's nonce)
+ * and drops its x-middleware-* headers, which would otherwise read as a second
+ * proxy result.
+ */
+async function neutral404(request: NextRequest, section: EdgeSection): Promise<Response | null> {
+  const dest = request.headers.get('sec-fetch-dest');
+  if (dest !== null && dest !== 'document') return null;
+
+  const headers = new Headers();
+  for (const name of NEUTRAL_REQUEST_HEADERS) {
+    const value = request.headers.get(name);
+    if (value !== null) headers.set(name, value);
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), NEUTRAL_TIMEOUT_MS);
+  try {
+    const neutral = await fetch(new URL(`/${section}/${NEUTRAL_SLUG}`, request.url), {
+      headers,
+      redirect: 'manual',
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+    if (neutral.status !== 404 || neutral.body === null) return null;
+
+    const responseHeaders = new Headers();
+    neutral.headers.forEach((value, name) => {
+      if (!NEUTRAL_DROPPED_HEADERS.has(name) && !name.startsWith('x-middleware-')) {
+        responseHeaders.append(name, value);
+      }
+    });
+    return new Response(neutral.body, { status: 404, headers: responseHeaders });
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /** Hostnames that only ever reach this machine (URL.hostname keeps IPv6 brackets). */
 const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]']);
 
@@ -60,7 +133,16 @@ export function buildCsp(nonce: string, url: URL, isDev: boolean): string {
   return `${directives.join('; ')};`;
 }
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest): Promise<Response> {
+  const match = DETAIL_PATH.exec(request.nextUrl.pathname);
+  const section = match?.[1] as EdgeSection | undefined;
+  const miss = section !== undefined && match !== null && !KNOWN[section].has(match[2]);
+
+  if (miss && match[2] !== NEUTRAL_SLUG) {
+    const neutral = await neutral404(request, section);
+    if (neutral) return neutral;
+  }
+
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
 
   const csp = buildCsp(nonce, request.nextUrl, process.env.NODE_ENV === 'development');
@@ -71,10 +153,8 @@ export function proxy(request: NextRequest) {
   requestHeaders.set('x-nonce', nonce);
   requestHeaders.set('Content-Security-Policy', csp);
 
-  const match = DETAIL_PATH.exec(request.nextUrl.pathname);
-  const section = match?.[1] as EdgeSection | undefined;
   let response: NextResponse;
-  if (section && match && !KNOWN[section].has(match[2])) {
+  if (miss) {
     requestHeaders.set(EDGE_SECTION_HEADER, section);
     response = NextResponse.rewrite(new URL(MISSING_PATH, request.url), {
       request: { headers: requestHeaders },
