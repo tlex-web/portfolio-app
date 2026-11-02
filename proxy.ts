@@ -24,11 +24,11 @@ const MISSING_PATH = '/__missing';
 const DETAIL_PATH = /^\/(photos|projects)\/([^/]+)$/;
 
 /**
- * The slug a document 404 is rendered under (T-12-03). Next writes the URL it
- * renders into the flight payload as `"c":["","photos","<slug>"]`, and a
- * rewrite keeps the requested URL there. So a document miss is fetched again
- * as /<section>/_ (an ordinary miss, rewritten below) and that HTML is served
- * at the typed URL: the page names no requested slug. Never a real slug.
+ * The slug a 404 is rendered under (T-12-03). Next writes the URL it renders
+ * into the flight payload as `"c":["","photos","<slug>"]`, and a rewrite keeps
+ * the requested URL there. So a miss is fetched again as /<section>/_ (an
+ * ordinary miss, rewritten below) and that HTML is served at the typed URL:
+ * the page names no requested slug. Never a real slug.
  */
 export const NEUTRAL_SLUG = '_';
 
@@ -48,13 +48,21 @@ const NEUTRAL_DROPPED_HEADERS = new Set([
 ]);
 
 /**
- * The 404 page for a missed document, rendered under NEUTRAL_SLUG, or null.
+ * The 404 page for a missed URL, rendered under NEUTRAL_SLUG, or null.
  * Called only for a host canFetchNeutral allows.
  *
- * Only document requests: a client-side navigation (sec-fetch-dest "empty")
- * keeps the plain rewrite and gets its flight answer, which is never written
- * into the page (the router loads a 404 answer as a new document, which comes
- * back here). Null on any failure, an unexpected status or no answer within
+ * Every request kind gets it, whatever its sec-fetch-dest: a navigation that
+ * a service worker re-fetches arrives with sec-fetch-dest "empty", like a
+ * client-side navigation. Telling a client navigation's flight request apart
+ * is not possible here: Next strips the rsc and next-router-* headers (and the
+ * _rsc query) from the request before the proxy sees it
+ * (next/dist/server/web/adapter.js). It is also not needed: the router treats
+ * any answer to a flight request that is not an OK flight response as a
+ * reason to load the URL as a new document (fetch-server-response.js), so an
+ * HTML 404 ends where the flight 404 did, with a document request that comes
+ * back here.
+ *
+ * Null on any failure, an unexpected status or no answer within
  * NEUTRAL_TIMEOUT_MS; the caller then rewrites as before, so the visitor still
  * gets the 404 (with the slug back in the flight data). The timeout covers the
  * response headers only, so a slow body is never cut off. The response keeps
@@ -63,9 +71,6 @@ const NEUTRAL_DROPPED_HEADERS = new Set([
  * proxy result.
  */
 async function neutral404(request: NextRequest, section: EdgeSection): Promise<Response | null> {
-  const dest = request.headers.get('sec-fetch-dest');
-  if (dest !== null && dest !== 'document') return null;
-
   const headers = new Headers();
   for (const name of NEUTRAL_REQUEST_HEADERS) {
     const value = request.headers.get(name);

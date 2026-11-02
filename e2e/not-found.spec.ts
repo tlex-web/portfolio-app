@@ -1,4 +1,4 @@
-import { test, expect, type APIResponse } from '@playwright/test';
+import { test, expect, type APIResponse, type Page } from '@playwright/test';
 import { photoSlugs } from '@/lib/photos/view-model';
 
 /**
@@ -16,12 +16,20 @@ import { photoSlugs } from '@/lib/photos/view-model';
  * A random token stands in for the slug, so any echo of the requested URL in
  * the whole server HTML, the hydrated document or the title is caught
  * (T-12-03), script data included: Next writes the URL it renders into the
- * flight payload (`"c":[...]`), so proxy.ts serves a missed document with the
- * 404 rendered under a neutral slug, and Speed Insights reports every root 404
+ * flight payload (`"c":[...]`), so proxy.ts serves every miss with the 404
+ * rendered under a neutral slug, and Speed Insights reports every root 404
  * as /404 instead of writing the raw path into its script's data-route
  * (components/SpeedInsightsRoute.tsx). The spoofed-header case proves a
  * visitor cannot pick the context link (T-12-02).
+ *
+ * The functional projects block service workers, so the last block allows the
+ * production worker: it re-fetches navigations itself, and that request
+ * reached the proxy looking like a client-side navigation (the wave 1
+ * live-DOM check found the slug there).
  */
+
+/** The production server (playwright.config.ts `prod`); only it registers the service worker. */
+const prod = !!process.env.CI || !!process.env.PW_PROD;
 
 const token = `nf-${crypto.randomUUID().slice(0, 8)}`;
 
@@ -125,5 +133,86 @@ test.describe('Unknown detail slugs: server-rendered 404 (EDGE-01)', () => {
 
     expect(main).toContain('>Photographs<');
     expect(main).not.toContain('All photographs');
+  });
+});
+
+/**
+ * The home page, then (production only) a reload once the worker is active,
+ * so the service worker controls every later navigation in this page. Not a
+ * skip on the dev server (test-count.mjs rejects skips): there no worker
+ * registers and the same checks run without one.
+ */
+async function openControlledHome(page: Page) {
+  await page.goto('/');
+  if (!prod) return;
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await page.reload();
+  await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
+}
+
+/** The hydrated 404 for `miss`: context link, Speed Insights route, no token anywhere in the document. */
+async function expectNeutralDocument(page: Page, miss: (typeof MISSES)[number]) {
+  expect(new URL(page.url()).pathname).toBe(miss.path);
+  const main = page.getByRole('main');
+  await expect(main.getByRole('heading', { level: 1 })).toHaveText('Page not found');
+  await expect(main.getByRole('link', { name: miss.link, exact: true })).toHaveAttribute(
+    'href',
+    miss.href
+  );
+  await expect(page.locator('script[src*="speed-insights"]')).toHaveAttribute('data-route', '/404');
+  expect(await page.evaluate(() => document.documentElement.outerHTML)).not.toContain(token);
+  expect(await page.title()).not.toContain(token);
+  if (prod) {
+    expect(await page.evaluate(() => navigator.serviceWorker.controller !== null)).toBe(true);
+  }
+}
+
+test.describe('Unknown detail slugs with the service worker in control (T-12-03)', () => {
+  test.use({ serviceWorkers: 'allow' });
+
+  for (const miss of MISSES) {
+    test(`${miss.path.replace(token, '<token>')}: a navigation through the service worker gets the neutral 404`, async ({
+      page,
+      browserName,
+    }) => {
+      await openControlledHome(page);
+
+      const response = await page.goto(miss.path);
+      expect(response?.status()).toBe(404);
+      // Playwright's Firefox cannot read the body of any page a service worker
+      // delivers (getResponseBody fails, /roadmap included); there the
+      // outerHTML check below, which keeps the flight scripts, covers it.
+      if (browserName !== 'firefox') expect(await response?.text()).not.toContain(token);
+      await expectNeutralDocument(page, miss);
+    });
+  }
+
+  test('a client-side navigation to a miss reloads into the neutral 404', async ({ page }) => {
+    type RouterWindow = Window & {
+      __beforeNavigation?: boolean;
+      next?: { router?: { push(href: string): void } };
+    };
+    const miss = MISSES[0];
+    await openControlledHome(page);
+    await page.goto('/photos');
+    // Hydrated: Speed Insights injects its script from an effect, and the App
+    // Router is on window.next.
+    await expect(page.locator('script[src*="speed-insights"]')).toHaveAttribute(
+      'data-route',
+      '/photos'
+    );
+    await page.waitForFunction(
+      () => typeof (window as RouterWindow).next?.router?.push === 'function'
+    );
+    await page.evaluate(() => {
+      (window as RouterWindow).__beforeNavigation = true;
+    });
+
+    // The router's flight request gets a 404, so it loads the URL as a new document.
+    await page.evaluate((path) => (window as RouterWindow).next!.router!.push(path), miss.path);
+    await page.waitForURL(`**${miss.path}`);
+    await page.waitForFunction(() => !(window as RouterWindow).__beforeNavigation);
+
+    await expectNeutralDocument(page, miss);
   });
 });

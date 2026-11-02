@@ -15,8 +15,9 @@
  * NextResponse encodes a rewrite as x-middleware-rewrite and each forwarded
  * request header as x-middleware-request-<name>, listed in
  * x-middleware-override-headers; the rewrite tests read those (T-12-02).
- * T-12-03: a missed document is answered with the 404 rendered under the
- * neutral slug, fetched by the proxy; fetch is mocked here (no network). The
+ * T-12-03: a miss is answered with the 404 rendered under the neutral slug,
+ * fetched by the proxy, for every request kind; fetch is mocked here (no
+ * network). The
  * fetch runs only on loopback and on the hostnames Vercel names in
  * VERCEL_URL, VERCEL_BRANCH_URL and VERCEL_PROJECT_PRODUCTION_URL; the tests
  * clear those variables and set them where needed.
@@ -40,9 +41,6 @@ function directive(csp: string, name: string): string | undefined {
 
 const run = (url: string, headers: Record<string, string> = {}) =>
   proxy(new NextRequest(url, { headers }));
-
-/** A client-side navigation: the proxy keeps the plain rewrite for it. */
-const NAVIGATION = { 'sec-fetch-dest': 'empty' };
 
 /** The production host the tests use, and the Vercel variables that can allow a host. */
 const PROD_HOST = 'portfolio-app-mocha-three.vercel.app';
@@ -170,10 +168,11 @@ describe('proxy(): CSP header', () => {
 });
 
 describe('proxy(): unknown-slug rewrite (EDGE-01)', () => {
+  // No Vercel variable is set here, so the production host is not allowed to
+  // fetch the neutral 404 and every miss takes the plain rewrite.
   it('rewrites an unknown project slug to /__missing with x-edge-section=projects', async () => {
     const response = await run(
-      'https://portfolio-app-mocha-three.vercel.app/projects/no-such-slug',
-      NAVIGATION
+      'https://portfolio-app-mocha-three.vercel.app/projects/no-such-slug'
     );
 
     expect(response.headers.get('x-middleware-rewrite')).toMatch(/\/__missing$/);
@@ -183,16 +182,14 @@ describe('proxy(): unknown-slug rewrite (EDGE-01)', () => {
   });
 
   it('rewrites an unknown photo slug with x-edge-section=photos', async () => {
-    const response = await run(
-      'https://portfolio-app-mocha-three.vercel.app/photos/no-such-slug',
-      NAVIGATION
-    );
+    const response = await run('https://portfolio-app-mocha-three.vercel.app/photos/no-such-slug');
 
     expect(response.headers.get('x-middleware-rewrite')).toMatch(/\/__missing$/);
     expect(forwarded(response).get('x-edge-section')).toBe('photos');
   });
 
-  it('rewrites the neutral slug itself without fetching, even for a document', async () => {
+  it('rewrites the neutral slug itself without fetching, even on an allowed host', async () => {
+    process.env.VERCEL_PROJECT_PRODUCTION_URL = PROD_HOST;
     const response = await run(
       `https://portfolio-app-mocha-three.vercel.app/photos/${NEUTRAL_SLUG}`,
       { 'sec-fetch-dest': 'document' }
@@ -215,7 +212,6 @@ describe('proxy(): unknown-slug rewrite (EDGE-01)', () => {
 
   it('replaces a client-sent x-edge-section on a miss with the proxy value', async () => {
     const response = await run('https://portfolio-app-mocha-three.vercel.app/projects/nope', {
-      ...NAVIGATION,
       'x-edge-section': 'photos',
     });
     expect(forwarded(response).get('x-edge-section')).toBe('projects');
@@ -234,7 +230,7 @@ describe('proxy(): unknown-slug rewrite (EDGE-01)', () => {
   });
 });
 
-describe('proxy(): neutral 404 for a missed document (T-12-03)', () => {
+describe('proxy(): neutral 404 for a miss (T-12-03)', () => {
   // The production host is a Vercel-named host in these tests.
   beforeEach(() => {
     process.env.VERCEL_PROJECT_PRODUCTION_URL = PROD_HOST;
@@ -261,12 +257,27 @@ describe('proxy(): neutral 404 for a missed document (T-12-03)', () => {
     expect(projects.map((p) => p.slug)).not.toContain(NEUTRAL_SLUG);
   });
 
+  // The fetch-metadata a request carries, as the proxy sees it (observed in Chrome).
   it.each([
-    ['photos', {}],
-    ['projects', { 'sec-fetch-dest': 'document' }],
+    ['photos', 'no fetch metadata (curl, Playwright request)', {}],
+    [
+      'projects',
+      'a browser navigation',
+      { 'sec-fetch-dest': 'document', 'sec-fetch-mode': 'navigate', 'sec-fetch-user': '?1' },
+    ],
+    [
+      'photos',
+      'a navigation the service worker re-fetches',
+      { 'sec-fetch-dest': 'empty', 'sec-fetch-mode': 'navigate', 'sec-fetch-site': 'same-origin' },
+    ],
+    [
+      'projects',
+      "a client-side navigation's flight request (Next has stripped rsc)",
+      { 'sec-fetch-dest': 'empty', 'sec-fetch-mode': 'cors', 'next-url': '/photos' },
+    ],
   ] as const)(
-    'serves the %s 404 rendered under the neutral slug (request headers %j)',
-    async (section, extra) => {
+    'serves the %s 404 rendered under the neutral slug for %s',
+    async (section, _kind, extra) => {
       fetchMock.mockResolvedValue(neutralAnswer());
       const response = await run(
         `https://portfolio-app-mocha-three.vercel.app/${section}/nf-token?q=nf-token`,
@@ -293,6 +304,18 @@ describe('proxy(): neutral 404 for a missed document (T-12-03)', () => {
       expect(response.headers.get('x-middleware-next')).toBeNull();
     }
   );
+
+  it('does not branch on flight headers (Next strips them before the proxy runs)', async () => {
+    fetchMock.mockResolvedValue(neutralAnswer());
+    const response = await run(`https://${PROD_HOST}/photos/nf-token`, {
+      rsc: '1',
+      'next-router-state-tree': '%5B%22%22%5D',
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(response.status).toBe(404);
+    expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+  });
 
   it('falls back to the rewrite when the neutral fetch fails', async () => {
     const response = await run('https://portfolio-app-mocha-three.vercel.app/photos/nf-token');
