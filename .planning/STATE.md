@@ -5,16 +5,16 @@ milestone_name: Topographic Identity
 current_phase: 12
 current_phase_name: Contact, Edge Pages, Cleanup & Verification
 status: executing
-stopped_at: Completed 12-05-PLAN.md
-last_updated: "2026-11-02T17:56:36.961Z"
+stopped_at: Completed 12-07-PLAN.md
+last_updated: "2026-11-02T18:47:31.063Z"
 last_activity: 2026-11-02
 last_activity_desc: Phase 12 execution started
-state_head: 7560f0d9b27a9f0fa8c6db5fba509e8e997cf5a2
+state_head: 9d91310c38c8d14dccf83549e7a277c90ad191bb
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 120
-  completed_plans: 99
+  completed_plans: 100
   percent: 83
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-02)
 ## Current Position
 
 Phase: 12 (Contact, Edge Pages, Cleanup & Verification) — EXECUTING
-Plan: 6 of 26
+Plan: 7 of 26
 Status: Ready to execute
 Last activity: 2026-11-02 — Phase 12 execution started
 
@@ -157,6 +157,7 @@ Progress: [████████░░] 83%
 | Phase 12 P03 | 6 min | 2 tasks | 5 files |
 | Phase 12 P04 | 14 min | 2 tasks | 28 files |
 | Phase 12 P05 | 7 min | 2 tasks | 67 files |
+| Phase 12 P07 | 17 min | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -416,6 +417,9 @@ Recent decisions affecting current work:
 - [Phase 12]: 12-04: LEGACY_DEAD_FILES and palette-ratchet.json are empty for good; former dead-file selftest fixtures now expect failures with exact violation counts
 - [Phase 12]: 12-05: asset-exists guard matches whole quoted literals in data/**/*.{ts,json} (comments stripped, ${} templates skipped); the plan's bare regex broke on the v1 names' spaces and parentheses
 - [Phase 12]: 12-05: legacy v1 variants deleted (60 files); photos:derive rewrote only the manifest, all 36 derivatives byte-identical
+- [Phase 12]: 12-07: metric Source links named by aria-label 'Source for {label}' (label in name), not an sr-only suffix
+- [Phase 12]: 12-07: RouteLog camp marker lives in the relative camp h2, left calc(var(--axis-x) * -1) + -translate-x-1/2; measured 0 px moved at 375/768/1440
+- [Phase 12]: 12-07: Phase 9 D-24 items follow Tim's defaults (09 spec scrim row to lg:, wedge closed, tick accepted); copy.heads-sentence pending Tim
 
 ### Pending Todos
 
@@ -462,6 +466,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-02T17:56:36.315Z
-Stopped at: Completed 12-05-PLAN.md
+Last session: 2026-11-02T18:47:30.089Z
+Stopped at: Completed 12-07-PLAN.md
 Resume file: None
