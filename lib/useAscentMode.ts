@@ -73,7 +73,12 @@ function getSnapshot(): AscentMode {
   const reducedMotion = window.matchMedia(REDUCED).matches;
   cheap ??= readCheapSignals();
   // Decide on the cheap signals first; only a device that passes them is probed.
-  const early = decideAscentMode({ reducedMotion, ...cheap, webgl2: true, maxTextureSize: Infinity });
+  const early = decideAscentMode({
+    reducedMotion,
+    ...cheap,
+    webgl2: true,
+    maxTextureSize: Infinity,
+  });
   if (early !== 'eligible') return early;
   webgl ??= probeWebGL2();
   const mode = decideAscentMode({ reducedMotion, ...cheap, ...webgl });
