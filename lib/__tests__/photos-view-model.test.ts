@@ -122,13 +122,26 @@ describe('lookup and metadata (LBOX-01)', () => {
     expect(photoBySlug('no-such-slug')).toBeUndefined();
   });
 
-  it('returns the title, story and canonical path for a known slug, and nothing otherwise', () => {
+  // SEO-01, 12-01 meta.photo-slug: "{title}: a photograph by Tim Lui from
+  // {short place} at {altitude}[ approx.], {Mon YYYY | YYYY}."
+  it('describes an EXIF photo with its place, height, and capture month and year; the canonical is unchanged', () => {
     const view = photoViews[1];
     expect(photoMetadata(view.slug)).toEqual({
-      title: view.title,
-      description: view.story,
-      alternates: { canonical: `/photos/${view.slug}` },
+      title: 'Waterfall in the Gornerschlucht',
+      description: `Waterfall in the Gornerschlucht: a photograph by Tim Lui from Gornerschlucht at 1,668${' '}m, Sep 2021.`,
+      alternates: { canonical: '/photos/gornerschlucht-waterfall' },
     });
+  });
+
+  it("describes the film scan with 'approx.' and the year alone; the canonical is unchanged", () => {
+    expect(photoMetadata('riffelsee-reflection')).toEqual({
+      title: 'Matterhorn in the Riffelsee',
+      description: `Matterhorn in the Riffelsee: a photograph by Tim Lui from Riffelsee at 2,760${' '}m approx., 2019.`,
+      alternates: { canonical: '/photos/riffelsee-reflection' },
+    });
+  });
+
+  it('returns nothing for an unknown slug', () => {
     expect(photoMetadata('no-such-slug')).toEqual({});
   });
 });
