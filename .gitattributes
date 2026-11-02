@@ -40,3 +40,8 @@ data/generated/trail-profiles.ts text eol=lf
 data/media/clips.json text eol=lf
 data/generated/media-manifest.ts text eol=lf
 public/media/* binary
+
+# Open Graph fonts (12-10): README.md records each file's SHA-256, so the TTFs and
+# their OFL texts keep their exact bytes on every checkout.
+lib/og/fonts/*.ttf binary
+lib/og/fonts/*.txt text eol=lf

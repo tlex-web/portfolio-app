@@ -35,7 +35,18 @@ describe('generated shader tokens (D-17, 09-UI-SPEC "Night-tinted relief")', () 
 
   it('every hex is lowercase #rrggbb and every sRGB channel is in [0, 1]', () => {
     const keys = Object.keys(tokens.hex).sort();
-    expect(keys).toEqual(['firn50', 'glacier400', 'mist300', 'night900', 'night950']);
+    expect(keys).toEqual([
+      'firn50',
+      'glacier400',
+      'mist300',
+      'night700',
+      'night900',
+      'night950',
+      'trailAlpine',
+      'trailBlaze',
+      'trailMountain',
+      'trailYellow',
+    ]);
     expect(Object.keys(tokens.srgb).sort()).toEqual(keys);
     for (const hex of Object.values(tokens.hex)) expect(hex).toMatch(/^#[0-9a-f]{6}$/);
     for (const triple of Object.values(tokens.srgb)) {
