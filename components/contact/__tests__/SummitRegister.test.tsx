@@ -14,6 +14,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import userEvent from '@testing-library/user-event';
 import SummitRegister, {
   SEND_TIMEOUT_MS,
+  counterStatus,
   minutesFromRetryAfter,
   validateField,
 } from '../SummitRegister';
@@ -354,7 +355,9 @@ describe('SummitRegister', () => {
         'Error: Enter a full email address, with an @ and a domain.',
       ),
     );
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    // 12-26: the only alert is the error summary, never a failure box.
+    expect(screen.getByRole('alert')).toHaveTextContent('Check 1 field');
+    expect(screen.getByRole('alert')).not.toHaveTextContent("Couldn't");
     expectFieldsKept();
   });
 
@@ -524,6 +527,241 @@ describe('SummitRegister validation timing (CONTACT-02, 12-26)', () => {
     fireEvent.change(emailField(), { target: { value: 'john@example.org' } });
     expect(emailField()).not.toHaveAttribute('aria-invalid');
     expect(emailField()).toHaveValue('john@example.org');
+  });
+});
+
+/** The summary's links as [text, href] pairs, in DOM order. */
+const summaryLinks = (box: HTMLElement) =>
+  within(box)
+    .getAllByRole('link')
+    .map((link) => [link.textContent, link.getAttribute('href')]);
+
+/** A field's inline error text without the sr-only "Error: " prefix. */
+const inlineError = (field: 'name' | 'email' | 'message') =>
+  document.getElementById(`${field}-error`)?.textContent?.replace(/^Error: /, '');
+
+/** The counter's sr-only announcement (UI-SPEC "Counter announcement"). */
+const counterAnnouncement = () => document.getElementById('message-count-status');
+
+/**
+ * The focused error summary (12-26; UI-SPEC "Error summary", E4; 12-01
+ * copy.summary-title and default.5: inline errors carry no live role, the
+ * summary is role="alert" and takes focus on an invalid submit).
+ */
+describe('SummitRegister error summary (CONTACT-02, 12-26)', () => {
+  const scrollIntoView = jest.fn();
+
+  beforeEach(() => {
+    fetchMock.mockReset();
+    scrollIntoView.mockReset();
+    // jsdom implements no scrolling.
+    Element.prototype.scrollIntoView = scrollIntoView;
+  });
+
+  afterEach(() => {
+    delete (Element.prototype as Partial<Element>).scrollIntoView;
+  });
+
+  it('fills the focused summary on an empty submit and each link focuses its field', async () => {
+    const user = userEvent.setup();
+    render(<SummitRegister />);
+
+    await user.click(sendButton());
+
+    const box = screen.getByRole('alert');
+    await waitFor(() => expect(box).toHaveFocus());
+    expect(box).toHaveAttribute('tabindex', '-1');
+    expect(box).toHaveAccessibleName('Check 3 fields');
+    expect(within(box).getByRole('heading', { name: 'Check 3 fields' })).toBeInTheDocument();
+    expect(summaryLinks(box)).toEqual([
+      ['Enter your name.', '#name'],
+      ['Enter your email address.', '#email'],
+      ['Write a message.', '#message'],
+    ]);
+    for (const link of within(box).getAllByRole('link')) expect(link).toHaveClass('min-h-11');
+
+    await user.click(within(box).getByRole('link', { name: 'Enter your email address.' }));
+    expect(emailField()).toHaveFocus();
+    expect(scrollIntoView).toHaveBeenCalled();
+    // The link prevents the default jump to #message.
+    expect(fireEvent.click(within(box).getByRole('link', { name: 'Write a message.' }))).toBe(false);
+    expect(messageField()).toHaveFocus();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('renders no summary and leaves the message slot empty with zero invalid fields', async () => {
+    fetchMock.mockReturnValue(new Promise(() => {}));
+    const user = userEvent.setup();
+    const { container } = render(<SummitRegister />);
+
+    fillValid();
+    await user.click(sendButton());
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Check \d+ fields?$/)).not.toBeInTheDocument();
+    expect(container.querySelector('form')?.firstElementChild).toBeEmptyDOMElement();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('titles one invalid field "Check 1 field" with the inline error\'s own message', async () => {
+    const user = userEvent.setup();
+    render(<SummitRegister />);
+
+    await user.type(nameField(), 'John Doe');
+    await user.type(emailField(), 'john@example.com');
+    await user.type(messageField(), 'Too short');
+    await user.click(sendButton());
+
+    const box = screen.getByRole('alert');
+    expect(within(box).getByRole('heading', { name: 'Check 1 field' })).toBeInTheDocument();
+    expect(summaryLinks(box)).toEqual([['Write at least 10 characters (now 9).', '#message']]);
+    expect(inlineError('message')).toBe('Write at least 10 characters (now 9).');
+  });
+
+  it('lists the items in form order whatever order the fields were blurred in', async () => {
+    const user = userEvent.setup();
+    render(<SummitRegister />);
+
+    fireEvent.change(messageField(), { target: { value: 'short' } });
+    fireEvent.blur(messageField());
+    fireEvent.change(emailField(), { target: { value: 'tim' } });
+    fireEvent.blur(emailField());
+    fireEvent.change(nameField(), { target: { value: 'T' } });
+    fireEvent.change(nameField(), { target: { value: '' } });
+    fireEvent.blur(nameField());
+    // Blur errors stay inline; only a submit fills the summary.
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+    await user.click(sendButton());
+
+    const box = screen.getByRole('alert');
+    expect(summaryLinks(box).map(([text]) => text)).toEqual([
+      inlineError('name'),
+      inlineError('email'),
+      inlineError('message'),
+    ]);
+    expect(summaryLinks(box).map(([, href]) => href)).toEqual(['#name', '#email', '#message']);
+    expect(messageField()).toHaveValue('short');
+    expect(emailField()).toHaveValue('tim');
+  });
+
+  it('updates the list as fields are fixed without moving focus, and stays until the next submit', async () => {
+    fetchMock.mockReturnValue(new Promise(() => {}));
+    const user = userEvent.setup();
+    render(<SummitRegister />);
+
+    await user.click(sendButton());
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveFocus());
+
+    await user.type(nameField(), 'Tim');
+    expect(nameField()).toHaveFocus();
+    let box = screen.getByRole('alert');
+    expect(box).toHaveAccessibleName('Check 2 fields');
+    expect(summaryLinks(box).map(([, href]) => href)).toEqual(['#email', '#message']);
+
+    await user.type(emailField(), 'tim@example.com');
+    expect(emailField()).toHaveFocus();
+    box = screen.getByRole('alert');
+    expect(box).toHaveAccessibleName('Check 1 field');
+    expect(summaryLinks(box)).toEqual([['Write a message.', '#message']]);
+
+    await user.type(messageField(), MESSAGE);
+    expect(messageField()).toHaveFocus();
+    await user.click(sendButton());
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows a one-item summary for a server validation answer and focuses it', async () => {
+    fetchMock.mockResolvedValueOnce(
+      answer(400, { code: 'validation', fields: { email: 'invalid_email' } }),
+    );
+    const user = userEvent.setup();
+    render(<SummitRegister />);
+
+    fillValid();
+    await user.click(sendButton());
+
+    const box = await screen.findByRole('alert');
+    await waitFor(() => expect(box).toHaveFocus());
+    expect(box).toHaveAccessibleName('Check 1 field');
+    expect(summaryLinks(box)).toEqual([
+      ['Enter a full email address, with an @ and a domain.', '#email'],
+    ]);
+    expectFieldsKept();
+  });
+
+  it('counts the message as {n} / 2,000, colours it by threshold and announces only at the thresholds', async () => {
+    const user = userEvent.setup();
+    render(<SummitRegister />);
+    const counter = () => screen.getByText(/^[\d,]+ \/ 2,000$/);
+    const typeLength = (length: number) =>
+      fireEvent.change(messageField(), { target: { value: 'x'.repeat(length) } });
+
+    expect(counter()).toHaveTextContent('0 / 2,000');
+    expect(counter()).toHaveAttribute('aria-hidden', 'true');
+    expect(counter()).toHaveClass('text-ink-muted');
+    expect(counterAnnouncement()).toHaveAttribute('role', 'status');
+    expect(counterAnnouncement()).toHaveAttribute('aria-atomic', 'true');
+    expect(counterAnnouncement()).toBeEmptyDOMElement();
+
+    typeLength(1799);
+    expect(counter()).toHaveTextContent('1,799 / 2,000');
+    expect(counter()).toHaveClass('text-ink-muted');
+    expect(counterAnnouncement()).toBeEmptyDOMElement();
+
+    typeLength(1800);
+    expect(counter()).toHaveClass('text-caution');
+    expect(counterAnnouncement()).toHaveTextContent('200 characters left');
+    typeLength(1850);
+    expect(counterAnnouncement()).toHaveTextContent('200 characters left');
+    typeLength(1900);
+    expect(counterAnnouncement()).toHaveTextContent('100 characters left');
+    typeLength(1950);
+    expect(counterAnnouncement()).toHaveTextContent('50 characters left');
+    typeLength(2000);
+    expect(counter()).toHaveClass('text-caution');
+    expect(counterAnnouncement()).toHaveTextContent('No characters left');
+    typeLength(2001);
+    expect(counter()).toHaveClass('text-danger');
+    expect(counterAnnouncement()).toHaveTextContent('1 character over the limit');
+    typeLength(2002);
+    expect(counter()).toHaveTextContent('2,002 / 2,000');
+    expect(counterAnnouncement()).toHaveTextContent('2 characters over the limit');
+
+    fireEvent.change(nameField(), { target: { value: 'John Doe' } });
+    fireEvent.change(emailField(), { target: { value: 'john@example.com' } });
+    await user.click(sendButton());
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveAccessibleName('Check 1 field');
+    expect(summaryLinks(screen.getByRole('alert'))).toEqual([
+      ['Shorten the message to 2,000 characters (now 2,002).', '#message'],
+    ]);
+    expect(messageField()).toHaveValue('x'.repeat(2002));
+  });
+});
+
+describe('counterStatus (UI-SPEC "Counter announcement")', () => {
+  it('stays silent below 1,800 characters', () => {
+    expect(counterStatus(0)).toBe('');
+    expect(counterStatus(1799)).toBe('');
+  });
+
+  it('names the characters left from 1,800, 1,900 and 1,950, and at 2,000', () => {
+    expect(counterStatus(1800)).toBe('200 characters left');
+    expect(counterStatus(1899)).toBe('200 characters left');
+    expect(counterStatus(1900)).toBe('100 characters left');
+    expect(counterStatus(1949)).toBe('100 characters left');
+    expect(counterStatus(1950)).toBe('50 characters left');
+    expect(counterStatus(1999)).toBe('50 characters left');
+    expect(counterStatus(2000)).toBe('No characters left');
+  });
+
+  it('counts the characters over the limit, singular only for exactly one', () => {
+    expect(counterStatus(2001)).toBe('1 character over the limit');
+    expect(counterStatus(2002)).toBe('2 characters over the limit');
+    expect(counterStatus(3234)).toBe('1,234 characters over the limit');
   });
 });
 
