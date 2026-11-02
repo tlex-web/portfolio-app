@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import NextLink from 'next/link';
 import GlobalError from '@/app/global-error';
 import MotionProvider from '@/components/providers/MotionProvider';
 import { site } from '@/data/site';
@@ -10,7 +11,16 @@ jest.mock('@/components/providers/MotionProvider', () => ({
   default: jest.fn(({ children }: { children: React.ReactNode }) => children),
 }));
 
+// global-error must not depend on the router: every link in it is a plain anchor (D-09).
+jest.mock('next/link', () => ({
+  __esModule: true,
+  default: jest.fn(({ href, children }: { href: string; children: React.ReactNode }) => (
+    <a href={href}>{children}</a>
+  )),
+}));
+
 const mockMotionProvider = MotionProvider as unknown as jest.Mock;
+const mockLink = NextLink as unknown as jest.Mock;
 
 const SECRET_MESSAGE = 'secret-stack-detail';
 const SECRET_DIGEST = 'abc123';
@@ -31,6 +41,7 @@ function renderMarkup() {
 describe('app/global-error (UI-SPEC E7 backstop)', () => {
   beforeEach(() => {
     mockMotionProvider.mockClear();
+    mockLink.mockClear();
   });
 
   it('renders its own html.dark and body with the static chrome: one Primary nav of five plain links, one main, the h1', () => {
@@ -73,6 +84,39 @@ describe('app/global-error (UI-SPEC E7 backstop)', () => {
     expect(doc.querySelector('h1')?.textContent).toBe('Something went wrong');
     expect(markup).not.toContain(SECRET_MESSAGE);
     expect(markup).not.toContain(SECRET_DIGEST);
+  });
+
+  it('renders the EdgeArt sheet beside the text inside main (D-09)', () => {
+    const { doc } = renderMarkup();
+    const main = doc.querySelector('main');
+    const trail = main?.querySelector('[aria-hidden="true"] svg path[stroke-dasharray="8 6"]');
+    expect(trail).not.toBeNull();
+    const sheet = trail?.closest('[aria-hidden="true"]');
+    expect(sheet?.querySelector('circle')).not.toBeNull();
+    expect(sheet?.querySelector('a, button, [tabindex]')).toBeNull();
+    expect(main?.querySelector('.grid')).not.toBeNull();
+  });
+
+  it('offers Report this error as a plain /contact anchor; nothing in the fallback uses the router link', () => {
+    const { doc } = renderMarkup();
+    const report = [...doc.querySelectorAll('main a')].find(
+      (a) => a.textContent === 'Report this error'
+    );
+    expect(report).toBeDefined();
+    expect(report?.getAttribute('href')).toBe('/contact');
+    expect(mockLink).not.toHaveBeenCalled();
+  });
+
+  it('focuses the h1 on mount', () => {
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+    render(<GlobalError error={secretError()} retry={jest.fn()} reset={jest.fn()} />);
+
+    const heading = screen.getByRole('heading', { level: 1, name: 'Something went wrong' });
+    expect(heading).toHaveAttribute('tabindex', '-1');
+    expect(heading).toHaveFocus();
+    expect(document.body.innerHTML).not.toContain(SECRET_MESSAGE);
+    expect(document.body.innerHTML).not.toContain(SECRET_DIGEST);
+    consoleError.mockRestore();
   });
 
   it('calls retry (not reset) when Try again is pressed', () => {
