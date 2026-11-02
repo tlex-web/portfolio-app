@@ -332,6 +332,65 @@ test.describe('Case-study sections', () => {
     });
   }
 
+  /**
+   * The G-11-4 suffixes add a name, never a pixel: at the visual-baseline
+   * widths and height (e2e/visual/routes.spec.ts) every suffix box is at most
+   * 1 x 1 px, and removing the suffixes moves no dl, tile, dd or link and
+   * changes neither document scroll size. Fails if the sr-only class is lost,
+   * since the suffix would then become a flex item and widen its link.
+   */
+  test('box Metrics source suffixes are screen-reader-only: removing them moves nothing at 375, 768 and 1440 px (G-11-4)', async ({
+    page,
+  }) => {
+    const tiles = box.metrics?.tiles ?? [];
+    const sourced = tiles.filter((tile) => tile.sourceUrl);
+    expect(sourced.length).toBeGreaterThan(0);
+
+    for (const width of [375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(BOX);
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      await page.evaluate(() => document.fonts.ready);
+
+      // One synchronous evaluate, so no font swap or frame lands between the two measurements.
+      const m = await page.locator('section#metrics').evaluate((section) => {
+        const rect = (el: Element) => {
+          const r = el.getBoundingClientRect();
+          return { x: r.x, y: r.y, width: r.width, height: r.height };
+        };
+        const all = (selector: string) => Array.from(section.querySelectorAll(selector));
+        const layout = () => ({
+          rects: [...all('dl'), ...all('dl > div'), ...all('dd'), ...all('a')].map(rect),
+          scrollWidth: document.documentElement.scrollWidth,
+          scrollHeight: document.documentElement.scrollHeight,
+        });
+        const before = layout();
+        const suffixes = all('.sr-only');
+        const suffixRects = suffixes.map(rect);
+        suffixes.forEach((el) => el.remove());
+        const after = layout();
+        const contexts = all('dl > div').map((cell) =>
+          (cell.querySelectorAll('dd')[1]?.textContent ?? '').replace(/\s+/g, ' ').trim()
+        );
+        return { before, after, suffixCount: suffixes.length, suffixRects, contexts };
+      });
+
+      expect(m.suffixCount, `suffixes at ${width} px`).toBe(sourced.length);
+      for (const r of m.suffixRects) {
+        expect(r.width, `suffix width at ${width} px`).toBeLessThanOrEqual(1);
+        expect(r.height, `suffix height at ${width} px`).toBeLessThanOrEqual(1);
+      }
+      expect(m.before.rects.length).toBe(1 + tiles.length * 3 + sourced.length);
+      expect(m.after.rects, `layout at ${width} px`).toEqual(m.before.rects);
+      expect(m.after.scrollWidth, `scrollWidth at ${width} px`).toBe(m.before.scrollWidth);
+      expect(m.after.scrollHeight, `scrollHeight at ${width} px`).toBe(m.before.scrollHeight);
+      // Without the suffixes each line reads as it did before G-11-4.
+      expect(m.contexts).toEqual(
+        tiles.map((tile) => (tile.sourceUrl ? `${tile.context} Source` : tile.context))
+      );
+    }
+  });
+
   test('Stack lists each approved group and its chips', async ({ page }) => {
     for (const project of [box, coinFlip]) {
       const groups = project.stack?.groups ?? [];
