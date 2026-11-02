@@ -264,6 +264,25 @@ None. No external service configuration is required.
 - Every acceptance criterion from Tasks 1 to 3 was re-run and passes.
 - No stub patterns in the created or modified files.
 
+## Follow-up: slug kept out of script data
+
+The narrowed no-echo check (markup with `<script>` elements removed) was put to Tim. His literal reply: "cover script data too". The token check now covers the whole server HTML and the whole hydrated `document.documentElement.outerHTML`, scripts and attributes included (debug session `.planning/debug/12-slug-script-data.md`).
+
+**Root cause of each occurrence**
+
+1. Flight payload `"c":["","photos","<slug>"]`: Next 16.4.2 writes the URL of the request it renders into flight row 0 (`node_modules/next/dist/server/app-render/app-render.js:1155-1157` `prepareInitialCanonicalUrl`, `:1239`, with `url` parsed from `req.url` at `:1902`). A proxy rewrite changes only the routing URL (`server/lib/router-utils/resolve-routes.js:468-472`), never `req.url`, so no rewrite variant can drop it. The browser does not use `"c"`: the client router takes its URL from `window.location` (`client/components/router-reducer/create-initial-router-state.js:27-29`). `"c"` only seeds `usePathname()` during SSR.
+2. Speed Insights `data-route`: the `@vercel/speed-insights/next` export derives the route from `usePathname()` and `useParams()` (`dist/next/index.mjs:206-217`). The root not-found has no params, so the raw path, slug included, went into the attribute.
+
+**Fix**
+
+- `proxy.ts`: a missed document request (`sec-fetch-dest` of `document`, or none) is answered with the 404 the proxy fetches for `/<section>/_` (`NEUTRAL_SLUG`), served at the typed URL with status 404 and that render's CSP header. `/<section>/_` is an ordinary miss handled by the existing rewrite, so the page and the D-11 context link are unchanged and its flight data reads `"c":["","photos","_"]`. Client navigations and the neutral slug keep the plain rewrite. If the fetch fails, answers anything but 404, or sends no headers within 5 s, the proxy falls back to the old rewrite: still a 404, but with the slug back in the flight data.
+- `components/SpeedInsightsRoute.tsx` (replaces `<SpeedInsights />` in `app/layout.tsx`): it uses the package's React export with an explicit route. Every root 404 is reported as `/404` (`useSelectedLayoutSegment() === '/_not-found'`); every other page gets `computeRoute(pathname, params)`, so it still reports `/photos/[slug]`, `/projects/[slug]` and so on. The component stays mounted, so client navigations update the route.
+- `e2e/not-found.spec.ts`: `withoutScripts` is gone from the token checks. The hydrated check waits for the Speed Insights script and expects `data-route="/404"`. The known-slug "Page not found" check keeps `withoutScripts`.
+
+**Verification:** fresh build. not-found.spec and shell.spec pass on chromium and firefox (80/80), and not-found.spec passes on webkit (7/7, and 105/105 with `--repeat-each=5` on all three engines). Jest: 84 suites, 1,379 tests. `npm run lint` and `npm run type-check` exit 0. With the source reverted and the tightened spec kept, the spec fails 4 tests; with the fix reapplied, all pass. Response headers never carried the slug: there is no `x-matched-path`, and `x-middleware-rewrite` read `/__missing` before and is now absent.
+
+**Open:** the self-fetch could not be exercised on Vercel. If deployment protection, the firewall or a bot challenge blocks it there, the proxy silently falls back to the old rewrite. Check on a preview: `curl -s https://<preview>/photos/nf-check | grep -c nf-check` should print 0. A miss now costs one extra proxy run and one internal HTTP hop (42 ms vs 35 ms locally).
+
 ---
 *Phase: 12-contact-edge-pages-cleanup-verification*
 *Completed: 2026-11-02*
