@@ -40,6 +40,8 @@ interface Segment {
   key: string;
   label: string;
   count: number;
+  /** The count was taken under the other group's previous value (a press is pending). */
+  stale: boolean;
   next: LogFilter;
   pressed: boolean;
 }
@@ -70,6 +72,14 @@ interface Segment {
  * focusable and announced; the pressed segment is never disabled, even when a
  * hand-typed URL selects a combination with no entries. Pressing the pressed
  * segment does nothing.
+ *
+ * Each group's counts were taken under the other group's value in `filter`.
+ * While a press in one group is pending, `filter` and `counts` still describe
+ * the previous filter, so the other group's counts are stale: its unpressed
+ * segments are treated like zero-count ones (aria-disabled, dimmed, inert,
+ * still focusable) until the server render lands with fresh counts. The
+ * pressed group stays live, because its counts still hold. So a fast second
+ * press can never reach an empty combination (WR-02).
  */
 export default function RouteLogFilters({
   filter,
@@ -93,10 +103,15 @@ export default function RouteLogFilters({
     });
   };
 
+  // Project counts are taken within the status, Status counts within the project.
+  const projectCountsStale = optimistic.status !== filter.status;
+  const statusCountsStale = optimistic.project !== filter.project;
+
   const projectSegments: Segment[] = (['all', ...PROJECTS] as const).map((p) => ({
     key: p,
     label: p === 'all' ? 'All' : PROJECT_LABELS[p],
     count: counts.project[p],
+    stale: projectCountsStale,
     next: { project: p, status: optimistic.status },
     pressed: optimistic.project === p,
   }));
@@ -105,6 +120,7 @@ export default function RouteLogFilters({
     key: s,
     label: s === 'all' ? 'All' : STATUS_LABELS[s],
     count: counts.status[s],
+    stale: statusCountsStale,
     next: { project: optimistic.project, status: s },
     pressed: optimistic.status === s,
   }));
@@ -123,7 +139,7 @@ export default function RouteLogFilters({
           </p>
           <div role="group" aria-labelledby={g.labelId} className={TRACK}>
             {g.segments.map((s) => {
-              const disabled = s.count === 0 && !s.pressed;
+              const disabled = !s.pressed && (s.count === 0 || s.stale);
               return (
                 <button
                   key={s.key}

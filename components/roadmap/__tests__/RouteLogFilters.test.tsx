@@ -218,6 +218,47 @@ describe('RouteLogFilters (ROUTE-02)', () => {
     expect(segment('Project', 'coin-flip')).toHaveAttribute('aria-disabled', 'true');
   });
 
+  it('while a press is pending, the other group is inert, so a fast second press cannot reach an empty combination (WR-02)', async () => {
+    render(<Harness filter={ALL} counts={COUNTS} />);
+    await press(segment('Project', 'box'));
+    // The server render for {box, all} has not landed: the Status counts still
+    // describe {all, all}, where Planned has 2 entries; under box it has none.
+    const planned = segment('Status', 'Planned');
+    expect(planned).toHaveAttribute('aria-disabled', 'true');
+    expect(planned).not.toBeDisabled();
+    expect(segment('Status', 'Completed')).toHaveAttribute('aria-disabled', 'true');
+    // The pressed segment of that group is never disabled.
+    expect(segment('Status', 'All')).toHaveAttribute('aria-pressed', 'true');
+    expect(segment('Status', 'All')).not.toHaveAttribute('aria-disabled');
+
+    await press(planned);
+    expect(replace).toHaveBeenCalledTimes(1);
+    expect(replace).toHaveBeenLastCalledWith('/roadmap?project=box', { scroll: false });
+    expect(planned).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('while a press is pending, the same group stays live, because its counts still hold', async () => {
+    render(<Harness filter={ALL} counts={COUNTS} />);
+    await press(segment('Project', 'box'));
+    const coinFlip = segment('Project', 'coin-flip');
+    expect(coinFlip).not.toHaveAttribute('aria-disabled');
+    await press(coinFlip);
+    expect(replace).toHaveBeenLastCalledWith('/roadmap?project=coin-flip', { scroll: false });
+    expect(coinFlip).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('once the server render lands, the other group judges its segments by the new counts again', async () => {
+    const { rerender } = render(<Harness filter={ALL} counts={COUNTS} />);
+    await press(segment('Project', 'box'));
+    rerender(<Harness filter={{ project: 'box', status: 'all' }} counts={BOX_COUNTS} />);
+    expect(segment('Status', 'Completed')).not.toHaveAttribute('aria-disabled');
+    expect(segment('Status', 'Planned')).toHaveAttribute('aria-disabled', 'true');
+    await press(segment('Status', 'Completed'));
+    expect(replace).toHaveBeenLastCalledWith('/roadmap?project=box&status=completed', {
+      scroll: false,
+    });
+  });
+
   it('Enter or Space on a focused enabled segment presses it like a click', async () => {
     const user = userEvent.setup();
     render(<Harness filter={ALL} counts={COUNTS} />);
