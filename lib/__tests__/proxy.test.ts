@@ -16,11 +16,14 @@
  * request header as x-middleware-request-<name>, listed in
  * x-middleware-override-headers; the rewrite tests read those (T-12-02).
  * T-12-03: a missed document is answered with the 404 rendered under the
- * neutral slug, fetched by the proxy; fetch is mocked here (no network).
+ * neutral slug, fetched by the proxy; fetch is mocked here (no network). The
+ * fetch runs only on loopback and on the hostnames Vercel names in
+ * VERCEL_URL, VERCEL_BRANCH_URL and VERCEL_PROJECT_PRODUCTION_URL; the tests
+ * clear those variables and set them where needed.
  */
 
 import { NextRequest } from 'next/server';
-import { buildCsp, NEUTRAL_SLUG, NEUTRAL_TIMEOUT_MS, proxy } from '../../proxy';
+import { buildCsp, canFetchNeutral, NEUTRAL_SLUG, NEUTRAL_TIMEOUT_MS, proxy } from '../../proxy';
 import { projects } from '@/data/projects';
 import { photoSlugs } from '@/lib/photos/view-model';
 
@@ -41,13 +44,29 @@ const run = (url: string, headers: Record<string, string> = {}) =>
 /** A client-side navigation: the proxy keeps the plain rewrite for it. */
 const NAVIGATION = { 'sec-fetch-dest': 'empty' };
 
+/** The production host the tests use, and the Vercel variables that can allow a host. */
+const PROD_HOST = 'portfolio-app-mocha-three.vercel.app';
+const VERCEL_HOST_VARS = [
+  'VERCEL_URL',
+  'VERCEL_BRANCH_URL',
+  'VERCEL_PROJECT_PRODUCTION_URL',
+] as const;
+const savedEnv = Object.fromEntries(VERCEL_HOST_VARS.map((name) => [name, process.env[name]]));
+
 let fetchMock: jest.SpiedFunction<typeof fetch>;
 beforeEach(() => {
   fetchMock = jest
     .spyOn(globalThis, 'fetch')
     .mockRejectedValue(new Error('no network in unit tests'));
+  for (const name of VERCEL_HOST_VARS) delete process.env[name];
 });
-afterEach(() => fetchMock.mockRestore());
+afterEach(() => {
+  fetchMock.mockRestore();
+  for (const name of VERCEL_HOST_VARS) {
+    if (savedEnv[name] === undefined) delete process.env[name];
+    else process.env[name] = savedEnv[name];
+  }
+});
 
 /** Request headers the proxy forwards to the render (NextResponse's override encoding). */
 function forwarded(response: Response): Map<string, string> {
@@ -216,6 +235,11 @@ describe('proxy(): unknown-slug rewrite (EDGE-01)', () => {
 });
 
 describe('proxy(): neutral 404 for a missed document (T-12-03)', () => {
+  // The production host is a Vercel-named host in these tests.
+  beforeEach(() => {
+    process.env.VERCEL_PROJECT_PRODUCTION_URL = PROD_HOST;
+  });
+
   const NEUTRAL_CSP = "default-src 'self'; script-src 'self' 'nonce-bmV1dHJhbA==';";
   const HTML = '<!DOCTYPE html><html><body><main><h1>Page not found</h1></main></body></html>';
 
@@ -325,5 +349,79 @@ describe('proxy(): neutral 404 for a missed document (T-12-03)', () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+});
+
+describe('proxy(): the neutral fetch runs only on loopback and Vercel hosts (T-12-03)', () => {
+  const miss = (host: string) => `https://${host}/photos/nf-token`;
+
+  it('a forged host gets the plain rewrite and no fetch', async () => {
+    process.env.VERCEL_PROJECT_PRODUCTION_URL = PROD_HOST;
+    const response = await run(miss('evil.example'));
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(response.headers.get('x-middleware-rewrite')).toMatch(/\/__missing$/);
+    expect(forwarded(response).get('x-edge-section')).toBe('photos');
+  });
+
+  it.each([`${PROD_HOST}.evil.example`, `evil-${PROD_HOST}`, 'vercel.app'])(
+    'only an exact hostname matches (%s gets no fetch)',
+    async (host) => {
+      process.env.VERCEL_PROJECT_PRODUCTION_URL = PROD_HOST;
+      await run(miss(host));
+      expect(fetchMock).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each(VERCEL_HOST_VARS)('the hostname in %s self-fetches', async (name) => {
+    process.env[name] = 'portfolio-app-git-branch-tlex.vercel.app';
+    await run(miss('portfolio-app-git-branch-tlex.vercel.app'));
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0][0])).toBe(
+      `https://portfolio-app-git-branch-tlex.vercel.app/photos/${NEUTRAL_SLUG}`
+    );
+  });
+
+  it.each([
+    ['unset', undefined],
+    ['empty', ''],
+    ['blank', '   '],
+  ])('%s variables allow no host', async (_label, value) => {
+    for (const name of VERCEL_HOST_VARS) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+    await run(miss(PROD_HOST));
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(canFetchNeutral('')).toBe(false);
+  });
+
+  it('compares case-insensitively and tolerates a scheme or path in the variable', () => {
+    process.env.VERCEL_URL = ' Portfolio-App-ABC.Vercel.App ';
+    process.env.VERCEL_BRANCH_URL = 'https://portfolio-app-branch.vercel.app/';
+    expect(canFetchNeutral('portfolio-app-abc.vercel.app')).toBe(true);
+    expect(canFetchNeutral('PORTFOLIO-APP-BRANCH.VERCEL.APP')).toBe(true);
+    expect(canFetchNeutral('portfolio-app-other.vercel.app')).toBe(false);
+  });
+
+  it.each(['http://localhost:3000', 'http://127.0.0.1:3000', 'http://[::1]:3000'])(
+    'loopback (%s) self-fetches with no Vercel variable set',
+    async (origin) => {
+      await run(`${origin}/projects/nf-token`);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(new URL(String(fetchMock.mock.calls[0][0])).pathname).toBe(
+        `/projects/${NEUTRAL_SLUG}`
+      );
+    }
+  );
+
+  it('compares the host the fetch targets (request.url), not a Host header', async () => {
+    process.env.VERCEL_PROJECT_PRODUCTION_URL = PROD_HOST;
+    await run(miss(PROD_HOST), { host: 'evil.example' });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(new URL(String(fetchMock.mock.calls[0][0])).hostname).toBe(PROD_HOST);
   });
 });

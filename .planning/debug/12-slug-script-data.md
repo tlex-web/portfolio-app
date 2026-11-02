@@ -2,7 +2,7 @@
 status: awaiting_human_verify
 trigger: "Keep the requested slug of an unknown /photos/<slug> or /projects/<slug> URL out of the 404 response's script data (T-12-03). Tim: \"cover script data too\"."
 created: 2026-11-02T00:00:00Z
-updated: 2026-11-02T18:10:00Z
+updated: 2026-11-02T19:30:00Z
 ---
 
 ## Current Focus
@@ -106,6 +106,21 @@ started: since 12-02 (proxy rewrite to /__missing)
   found: a request carrying `purpose: prefetch` or `next-router-prefetch: 1` skips the proxy, so a client-sent `x-edge-section: photos` reaches the render ("All photographs" on /__no-such-page__) and the HTML has no CSP header
   implication: T-12-02 gap and a CSP gap unrelated to this fix; reported, not changed
 
+- timestamp: 2026-11-02T19:00:00Z
+  checked: host pin follow-up (Tim chose option A; literal reply "A"). Where the proxy's request.url host comes from: node_modules/next/dist/server/next-server.js:1154-1161 (runMiddleware url = `${initProtocol}://${this.fetchHostname || 'localhost'}:${this.port}${pathname}`; only with skipProxyUrlNormalize is initURL used), :1298-1302 and server/lib/router-utils/resolve-routes.js:116-118 (initURL: Host header only with experimental.trustHostHeader), server/base-server.js:349 (fetchHostname = formatted server hostname), server/web/adapter.js:106-107 + server/web/next-url.js:15-21 (NextURL keeps that host, maps 127.x and [::1] to localhost), server/web/spec-extension/request.js:47-51 (request.url = nextUrl.toString()), shared/lib/get-hostname.js (Host header read only for i18n domain locale)
+  found: under `next start`, request.url follows neither Host nor X-Forwarded-Host; only x-forwarded-proto picks the scheme. No "x-forwarded-host" string exists in the Next server or proxy code paths. Live check on a fresh build: `Host: evil.example` and `X-Forwarded-Host: evil.example` on /photos/<t> still self-fetch localhost (404, token 0, c=["","photos","_"]). On Vercel, request.url is built by Vercel's edge from the deployment domain; other adapters or custom servers may derive it from Host or X-Forwarded-Host.
+  implication: the pin compares new URL(request.url).hostname, which is exactly the origin `new URL('/<section>/_', request.url)` fetches, whatever builds request.url on a given platform
+
+- timestamp: 2026-11-02T19:20:00Z
+  checked: pin implemented (proxy.ts canFetchNeutral: LOOPBACK or an exact, case-insensitive match with the hostname parsed from VERCEL_URL, VERCEL_BRANCH_URL or VERCEL_PROJECT_PRODUCTION_URL, read per request; unset, empty, blank or unparsable values allow nothing); any other host keeps the plain rewrite silently
+  found: proxy unit tests 48/48 (new: forged host gets the rewrite with no fetch; suffix/prefix look-alikes and bare vercel.app get no fetch; each of the three variables allows its host; unset/empty/blank allow nothing; case and scheme/path tolerance; localhost, 127.0.0.1 and [::1] self-fetch; a Host header does not move the target). Manual mutants: removing the pin (7 fail), suffix match (1), dropping loopback (3), reading only VERCEL_URL (9) all killed; dropping the empty-value guard survives as an equivalent mutant (new URL('https://') throws and is caught anyway); a separate .toLowerCase() on the env hostname was removed as redundant (URL lower-cases hostnames). Full Jest 85 suites / 1399 tests; lint and type-check exit 0; fresh build: not-found+shell chromium+firefox 80/80, not-found webkit 7/7, not-found x3 on three engines 63/63.
+  implication: option A done; localhost runs keep the token-absent assertions green
+
+- timestamp: 2026-11-02T19:25:00Z
+  checked: follow-ups left open by the pin (not changed)
+  found: (1) VERCEL_PROJECT_PRODUCTION_URL holds only the shortest production domain. If Tim's production is served from a custom domain other than that one (for example both apex and www, or the vercel.app alias while a custom domain exists), requests on the other domains take the plain rewrite and keep the slug in c. 12-09 adds a canonical base URL that could be added to the allow-list later. The code names only portfolio-app-mocha-three.vercel.app (tests), so no custom domain is known here. (2) Vercel must expose system environment variables at runtime (project setting "Automatically expose System Environment Variables", on by default); if it is off, every Vercel host gets the plain rewrite. (3) A self-hosted `next start -H 0.0.0.0` (e.g. Docker standalone with HOSTNAME=0.0.0.0) gives request.url the host 0.0.0.0, which is not in LOOPBACK, so it also takes the plain rewrite.
+  implication: check on a Vercel preview with the same curl as before (grep -c nf-check must print 0) on each production domain
+
 ## Resolution
 
 root_cause: "Two independent sources (AND-gate). (1) Next 16.4.2 serializes the rendered request's URL into flight row 0 as \"c\" (server/app-render/app-render.js:1155-1157 prepareInitialCanonicalUrl, :1239 getRSCPayload, url from :1902 parseRelativeUrl(req.url)); a proxy rewrite only changes the routing parsedUrl (server/lib/router-utils/resolve-routes.js:468-472), never req.url, so the rewrite to /__missing still renders with the typed URL. c is only read on the server (SSR usePathname), never for browser history (client/components/router-reducer/create-initial-router-state.js:27-29). (2) @vercel/speed-insights 2.0.0 next export derives route = computeRoute(usePathname(), useParams() || searchParams) (dist/next/index.mjs:206-217, :41-62); the root not-found has no params, so the raw path went into data-route (loadProps :113-115, injectSpeedInsights :144-147)."
@@ -118,3 +133,4 @@ verification:
   revert_and_reconfirm: { result: pass, bug_returned_on_revert: true, fixed_on_reapply: true, detail: "source reverted, tightened spec kept, fresh build: 4 failures (body token x2, data-route=/photos|projects/<token> x2); reapplied, fresh build: all pass" }
   guardrail_verdict: accepted
 files_changed: [proxy.ts, components/SpeedInsightsRoute.tsx, app/layout.tsx, lib/__tests__/proxy.test.ts, e2e/not-found.spec.ts]
+host_pin: "Tim chose option A (literal reply: \"A\"): the neutral self-fetch runs only when new URL(request.url).hostname is loopback or exactly a hostname from VERCEL_URL, VERCEL_BRANCH_URL or VERCEL_PROJECT_PRODUCTION_URL (proxy.ts canFetchNeutral). Any other host keeps the plain rewrite: 404, slug in c, silent."
