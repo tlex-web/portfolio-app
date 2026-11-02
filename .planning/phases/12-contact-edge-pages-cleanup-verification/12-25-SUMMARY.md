@@ -215,3 +215,8 @@ None. No external service configuration is required.
 ---
 *Phase: 12-contact-edge-pages-cleanup-verification*
 *Completed: 2026-11-02*
+
+## Self-Check: PASSED
+
+- Files: data/__tests__/site.test.ts, scripts/guards/__selftest__/identity/bad-url/data/site.ts, 12-25-SUMMARY.md all present
+- Commits: 06898aa, c3960a4, e48204b, 11cf575 all ancestors of HEAD; no file deletions in any task commit
