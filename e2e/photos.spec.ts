@@ -57,9 +57,10 @@ test.describe('Map view (PHOTO-01, PHOTO-03, D-01..D-04)', () => {
     }
   });
 
-  // @no-webkit: the waypoints are links, and Playwright's WebKit never Tabs to a link
-  // (Safari's default, helpers/engine.ts); this test has no step left without Tab.
-  test('Tab reaches the four waypoint links in altitude order @no-webkit', async ({ page }) => {
+  // @needs-tab-to-links: the waypoints are links, and WebKit on Windows and macOS never Tabs
+  // to a link (Safari's default, helpers/engine.ts); no step is left without Tab, so only that
+  // webkit project drops it. Linux WebKit (CI) runs it (12-23 triage, run 41565046890).
+  test('Tab reaches the four waypoint links in altitude order @needs-tab-to-links', async ({ page }) => {
     await page.goto('/photos');
     const links = mapLinks(page);
     await expect(links).toHaveCount(views.length);
@@ -503,7 +504,10 @@ test.describe('View switcher (PHOTO-02, D-14)', () => {
     expect(await page.evaluate(() => window.history.length)).toBe(historyLength);
   });
 
-  test('a reload keeps Grid, and Back from a photo returns to the grid with Grid pressed', async ({
+  // @no-win-webkit: history Back while the open's View Transition commit settles crashes
+  // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
+  // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
+  test('a reload keeps Grid, and Back from a photo returns to the grid with Grid pressed @no-win-webkit', async ({
     page,
   }) => {
     await page.goto('/photos?view=grid');

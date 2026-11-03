@@ -74,7 +74,10 @@ test.describe('coin-flip Demo clip (D-27)', () => {
     await expect(page.getByText(/coming soon/i)).toHaveCount(0);
   });
 
-  test('loading coin-flip makes no request for the MP4 before play (preload none)', async ({
+  // @no-linux-webkit: Linux WebKit's GStreamer media backend requests the MP4 despite
+  // preload="none" (CI run 41565046890); Windows WebKit, Chromium and Firefox make no request
+  // and keep the check, so only the Linux webkit project drops it (12-23 triage).
+  test('loading coin-flip makes no request for the MP4 before play (preload none) @no-linux-webkit', async ({
     page,
   }) => {
     const requested = await requestsWhileLoading(page);
@@ -173,7 +176,10 @@ test.describe('coin-flip Demo clip, populated (E18)', () => {
     await expect(demoVideo(page).locator('p')).toHaveText(FALLBACK);
   });
 
-  test('a clip that fails to load leaves the poster, the description and the Demo section (E18)', async ({
+  // @no-win-webkit: Playwright's Windows WebKit loads media outside page.route (0 MP4 requests
+  // seen, so nothing is aborted and no error fires); Linux WebKit intercepts it and passes in CI
+  // (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
+  test('a clip that fails to load leaves the poster, the description and the Demo section (E18) @no-win-webkit', async ({
     page,
   }) => {
     const { media, clip } = approved();
@@ -213,7 +219,10 @@ test.describe('coin-flip Demo clip, populated (E18)', () => {
   test.describe('under prefers-reduced-motion', () => {
     test.use({ reducedMotion: 'reduce' });
 
-    test('the same attributes hold, the poster is the manifest poster and nothing plays', async ({
+    // @no-linux-webkit: Linux WebKit's GStreamer media backend requests the MP4 despite
+    // preload="none" (CI run 41565046890); Windows WebKit, Chromium and Firefox make no request
+    // and keep the check, so only the Linux webkit project drops it (12-23 triage).
+    test('the same attributes hold, the poster is the manifest poster and nothing plays @no-linux-webkit', async ({
       page,
     }) => {
       const { media } = approved();

@@ -2,6 +2,7 @@ import { test, expect, type Locator, type Page } from '@playwright/test';
 import { site } from '@/data/site';
 import { buildPhotoViews } from '@/lib/photos/view-model';
 import { ROUTES } from './routes';
+import { tabReachesLinks } from './helpers/engine';
 
 /**
  * Keyboard-only flows (VERIFY-02, D-22; 12-UI-SPEC "Keyboard paths the D-22
@@ -43,7 +44,8 @@ const PHOTO_PATH = ROUTES.find(([p]) => p.startsWith('/photos/'))?.[0];
 
 /** Presses `key` once per reachable stop and asserts each stop has focus, in order. */
 async function walk(page: Page, browserName: string, stops: Stop[], key = 'Tab') {
-  const reachable = browserName === 'webkit' ? stops.filter((s) => !s.link) : stops;
+  // Link stops drop out where Tab never lands on a link (helpers/engine.ts).
+  const reachable = tabReachesLinks(browserName) ? stops : stops.filter((s) => !s.link);
   for (const [i, stop] of reachable.entries()) {
     await page.keyboard.press(key);
     await expect(stop.target, `${key} ${i + 1} should reach ${stop.name}`).toBeFocused();
@@ -116,7 +118,7 @@ test.describe('Navigation by keyboard (desktop 1440)', () => {
     const skip = page.getByRole('link', { name: 'Skip to main content', exact: true });
     await waitForHydration(page.getByRole('button', { name: 'Send Message' }));
 
-    if (browserName !== 'webkit') {
+    if (tabReachesLinks(browserName)) {
       await page.keyboard.press('Tab');
       await expect(skip).toBeFocused();
       await expect(skip).toHaveAttribute('href', '#main-content');
@@ -248,13 +250,14 @@ test.describe('Photo map and lightbox by keyboard (1440)', () => {
     await expect(opener).toHaveAttribute('href', PHOTO_PATH!);
 
     await walk(page, browserName, mapStops(page).slice(0, -(views.length - 1)));
-    if (browserName === 'webkit') {
-      // No Tab reaches the map target (a link) in Playwright's WebKit, so the
-      // lightbox cannot be opened from the keyboard there; the walk above
-      // checked the controls up to the Carousel segment (12-23 triage).
+    if (!tabReachesLinks(browserName)) {
+      // No Tab reaches the map target (a link) in WebKit with Safari's
+      // conventions (Windows, macOS; helpers/engine.ts), so the lightbox cannot
+      // be opened from the keyboard there; the walk above checked the controls
+      // up to the Carousel segment. Linux WebKit (CI) runs every step (12-23).
       test.info().annotations.push({
         type: 'webkit',
-        description: 'Tab never focuses a link in Playwright WebKit; dialog steps run in Chromium and Firefox',
+        description: 'Tab never focuses a link in WebKit off Linux; dialog steps run in Chromium, Firefox and Linux WebKit',
       });
       return;
     }
@@ -374,7 +377,7 @@ test.describe('Contact by keyboard (1440)', () => {
     await expect(summary.getByRole('link')).toHaveCount(3);
     await expect(first).toHaveAttribute('href', '#name');
 
-    if (browserName === 'webkit') {
+    if (!tabReachesLinks(browserName)) {
       // The summary's links are links: WebKit's next Tab passes them and lands on Name.
       await page.keyboard.press('Tab');
     } else {

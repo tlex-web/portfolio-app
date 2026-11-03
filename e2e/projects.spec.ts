@@ -208,9 +208,10 @@ test.describe('Engineering route panels (ENG-01)', () => {
     await expect(page.getByText('Programming Projects')).toHaveCount(0);
   });
 
-  // @no-webkit: the panel titles are links, and Playwright's WebKit never Tabs to a link
-  // (Safari's default, helpers/engine.ts); this test has no step left without Tab.
-  test('Tab reaches each panel title link @no-webkit', async ({ page }) => {
+  // @needs-tab-to-links: the panel titles are links, and WebKit on Windows and macOS never Tabs
+  // to a link (Safari's default, helpers/engine.ts); no step is left without Tab, so only that
+  // webkit project drops it. Linux WebKit (CI) runs it (12-23 triage, run 41565046890).
+  test('Tab reaches each panel title link @needs-tab-to-links', async ({ page }) => {
     await page.goto('/projects');
     await expect(routes(page)).toBeVisible();
 

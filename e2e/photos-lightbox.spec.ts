@@ -365,7 +365,10 @@ test.describe('Lightbox over the gallery (LBOX-01)', () => {
     await expect(page).toHaveTitle(`${first.title} · Tim Lui`);
   });
 
-  test('Back closes it, Forward reopens it, reload lands on the full page', async ({ page }) => {
+  // @no-win-webkit: history Back while the open's View Transition commit settles crashes
+  // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
+  // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
+  test('Back closes it, Forward reopens it, reload lands on the full page @no-win-webkit', async ({ page }) => {
     await openFirstTile(page);
 
     await page.goBack();
@@ -381,7 +384,10 @@ test.describe('Lightbox over the gallery (LBOX-01)', () => {
     await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toHaveText(first.title);
   });
 
-  test('the Close photo button closes it and the URL returns to the grid', async ({ page }) => {
+  // @no-win-webkit: history Back while the open's View Transition commit settles crashes
+  // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
+  // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
+  test('the Close photo button closes it and the URL returns to the grid @no-win-webkit', async ({ page }) => {
     const dialog = await openFirstTile(page);
     await dialog.getByRole('button', { name: 'Close photo', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -413,7 +419,10 @@ test.describe('Focus and Escape (LBOX-03)', () => {
     }
   });
 
-  test('Escape closes through the router and focus returns to the photo tile', async ({ page }) => {
+  // @no-win-webkit: history Back while the open's View Transition commit settles crashes
+  // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
+  // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
+  test('Escape closes through the router and focus returns to the photo tile @no-win-webkit', async ({ page }) => {
     await openFirstTile(page);
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -423,7 +432,10 @@ test.describe('Focus and Escape (LBOX-03)', () => {
       .toBe(first.slug);
   });
 
-  test('three open-and-Escape cycles in a row each close with the URL in sync', async ({
+  // @no-win-webkit: history Back while the open's View Transition commit settles crashes
+  // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
+  // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
+  test('three open-and-Escape cycles in a row each close with the URL in sync @no-win-webkit', async ({
     page,
   }) => {
     await page.goto('/photos?view=grid');
@@ -436,7 +448,10 @@ test.describe('Focus and Escape (LBOX-03)', () => {
     }
   });
 
-  test('opening from a scrolled grid and closing leaves the scroll position unchanged', async ({
+  // @no-win-webkit: history Back while the open's View Transition commit settles crashes
+  // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
+  // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
+  test('opening from a scrolled grid and closing leaves the scroll position unchanged @no-win-webkit', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1024, height: 700 });
@@ -653,7 +668,10 @@ test.describe('Moving between photos (LBOX-02)', () => {
     await expect(counter(dialog)).toHaveText(`2 / ${views.length}`);
   });
 
-  test('closing after two steps returns focus to the tile of the photo shown', async ({ page }) => {
+  // @no-win-webkit: history Back while the open's View Transition commit settles crashes
+  // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
+  // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
+  test('closing after two steps returns focus to the tile of the photo shown @no-win-webkit', async ({ page }) => {
     const dialog = await openFirstTile(page);
     const next = dialog.getByRole('button', { name: 'Next photo', exact: true });
     await next.click();
@@ -668,7 +686,10 @@ test.describe('Moving between photos (LBOX-02)', () => {
       .toBe(views[2].slug);
   });
 
-  test('browser Back right after a step returns focus to the tile of the photo shown (10-REVIEW WR-01)', async ({
+  // @no-win-webkit: history Back while the open's View Transition commit settles crashes
+  // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
+  // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
+  test('browser Back right after a step returns focus to the tile of the photo shown (10-REVIEW WR-01) @no-win-webkit', async ({
     page,
   }) => {
     const dialog = await openFirstTile(page);
@@ -765,7 +786,10 @@ test.describe('Morph and motion (LBOX-06)', () => {
     expect(after.filter((pseudo) => pseudo.includes('photo-'))).toEqual([]);
   });
 
-  test('no duplicate view-transition-name across open, three steps and close', async ({ page }) => {
+  // @no-win-webkit: history Back while the open's View Transition commit settles crashes
+  // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
+  // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
+  test('no duplicate view-transition-name across open, three steps and close @no-win-webkit', async ({ page }) => {
     const messages: string[] = [];
     page.on('console', (message) => {
       // The browser's duplicate-name error, and React's dev warning for two
@@ -1013,7 +1037,10 @@ test.describe('Hotspots (LBOX-05)', () => {
     return button;
   }
 
-  test('gutter tier: Enter expands a label, Escape collapses it to the label, then closes', async ({
+  // @no-win-webkit: history Back while the open's View Transition commit settles crashes
+  // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
+  // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
+  test('gutter tier: Enter expands a label, Escape collapses it to the label, then closes @no-win-webkit', async ({
     page,
   }) => {
     const dialog = await openTrail(page);

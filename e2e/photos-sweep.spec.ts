@@ -286,7 +286,10 @@ test.describe('The lightbox path end to end (10-UI-SPEC E5 populated)', () => {
   const focusInDialog = (page: Page) =>
     page.evaluate(() => document.activeElement?.closest('dialog[open]') != null);
 
-  test('the lightbox path end to end (UI-SPEC E5)', async ({ page }) => {
+  // @no-win-webkit: history Back while the open's View Transition commit settles crashes
+  // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
+  // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
+  test('the lightbox path end to end (UI-SPEC E5) @no-win-webkit', async ({ page }) => {
     test.slow();
     expect(callout.hotspots.length, 'a photo with hotspots').toBeGreaterThan(0);
     expect(views.length, 'three steps need four photos').toBeGreaterThanOrEqual(4);

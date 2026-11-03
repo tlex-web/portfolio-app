@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { site } from '../data/site';
+import { tabReachesLinks } from './helpers/engine';
 
 /**
  * The summit register on /contact (CONTACT-01, CONTACT-02; D-02, D-03;
@@ -335,10 +336,10 @@ test.describe('Direct contact panel', () => {
   });
 
   // The DOM order is form then panel at every width, so Tab runs through the
-  // register before Copy and the mailto link. Playwright's WebKit keeps
-  // Safari's default, where Tab never lands on a link (Alt+Tab does not reach
-  // one either, probed 2026-11-02), so the mailto step is checked in Chromium
-  // and Firefox only; the WebKit run still checks the order up to Copy.
+  // register before Copy and the mailto link. Playwright's WebKit on Windows
+  // and macOS keeps Safari's default, where Tab never lands on a link (Alt+Tab
+  // does not reach one either, probed 2026-11-02), so there the order is
+  // checked up to Copy; Linux WebKit (CI) checks the mailto step too (12-23).
   test('should tab from the register into the panel at 1440 px', async ({
     page,
     browserName,
@@ -354,7 +355,7 @@ test.describe('Direct contact panel', () => {
       sendButton(page),
       copyButton(page),
     ];
-    if (browserName !== 'webkit') order.push(page.getByRole('link', { name: 'Write an email' }));
+    if (tabReachesLinks(browserName)) order.push(page.getByRole('link', { name: 'Write an email' }));
     for (const next of order) {
       await page.keyboard.press('Tab');
       await expect(next).toBeFocused();

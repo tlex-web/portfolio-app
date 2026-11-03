@@ -58,12 +58,24 @@ const CHROMIUM_INVERT = prod ? undefined : /@prod-only/;
 const OTHER_ENGINE_INVERT = prod ? /@chromium-only/ : /@chromium-only|@prod-only/;
 
 /**
- * @no-webkit leaves only the webkit project (12-23, D-18), for a test whose
- * every step needs something Playwright's WebKit does not do (a Tab press
- * onto a link); Chromium and Firefox keep it. Each tagged title has a comment
- * above it naming the reason, and 12-23-SUMMARY.md lists them.
+ * WebKit-only exclusions (12-23, D-18); Chromium and Firefox keep every one.
+ * Each tagged title has a comment above it naming the reason, and
+ * 12-23-SUMMARY.md lists them.
+ * - @needs-tab-to-links: every step is a Tab press onto a link, which WebKit
+ *   on Windows and macOS never does (Safari's default; e2e/helpers/engine.ts).
+ *   Linux WebKit, which CI runs, Tabs to links and keeps them.
+ * - @no-win-webkit: Playwright's Windows WebKit (WinCairo) only; Linux WebKit
+ *   runs them in CI.
+ * - @no-linux-webkit: Linux WebKit (CI) only; Windows WebKit runs them.
  */
-const WEBKIT_INVERT = prod ? /@chromium-only|@no-webkit/ : /@chromium-only|@prod-only|@no-webkit/;
+const WEBKIT_PLATFORM_TAGS = {
+  win32: ['@needs-tab-to-links', '@no-win-webkit'],
+  darwin: ['@needs-tab-to-links'],
+  linux: ['@no-linux-webkit'],
+}[process.platform as string] ?? ['@needs-tab-to-links'];
+const WEBKIT_INVERT = new RegExp(
+  ['@chromium-only', ...WEBKIT_PLATFORM_TAGS, ...(prod ? [] : ['@prod-only'])].join('|')
+);
 
 export default defineConfig({
   testDir: './e2e',
