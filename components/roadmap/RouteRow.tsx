@@ -103,7 +103,7 @@ export default function RouteRow({
     // A plain anchor, not next/link: a client-side navigation sets the URL
     // with history.pushState, which never updates the document's target
     // element, so the row would land without its `target:` highlight. A
-    // document navigation to the static /roadmap makes the row the :target.
+    // document navigation to /roadmap makes the row the :target.
     return (
       <li>
         <a
