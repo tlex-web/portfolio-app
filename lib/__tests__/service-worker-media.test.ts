@@ -8,6 +8,10 @@
  * without `respondWith`, and no cache method may run. A /media/ poster is an
  * image request and keeps the image path.
  *
+ * WR-04: the cache-first and network-first helpers hand each write to
+ * `event.waitUntil` and catch a rejected put, so the answer is always the
+ * network response and no rejection is left unhandled.
+ *
  * The committed public/service-worker.js (placeholders and all) is evaluated
  * against stubs for `self`, `caches` and `fetch`, and its fetch listener is
  * called with fake events.
@@ -31,17 +35,30 @@ interface FakeEvent {
 
 const source = fs.readFileSync(path.join(process.cwd(), 'public/service-worker.js'), 'utf8');
 
-/** Loads the worker into stubs; returns its fetch listener and the stubs. */
-function loadWorker() {
+/**
+ * Loads the worker into stubs; returns its fetch listener and the stubs.
+ * `respond` answers fetch (never settles by default); `put` is cache.put's
+ * implementation (resolves by default).
+ */
+function loadWorker(
+  options: {
+    respond?: (input: unknown) => Promise<unknown>;
+    put?: (req: unknown, res: unknown) => Promise<void>;
+  } = {},
+) {
   const listeners: Record<string, Listener> = {};
-  const cache = { match: jest.fn(), put: jest.fn(), addAll: jest.fn() };
+  const cache = {
+    match: jest.fn(),
+    put: jest.fn(options.put ?? ((_req: unknown, _res: unknown) => Promise.resolve())),
+    addAll: jest.fn(),
+  };
   const caches = {
-    match: jest.fn(() => Promise.resolve(undefined)),
-    open: jest.fn(() => Promise.resolve(cache)),
+    match: jest.fn((_req: unknown) => Promise.resolve(undefined)),
+    open: jest.fn((_name: string) => Promise.resolve(cache)),
     keys: jest.fn(() => Promise.resolve([])),
     delete: jest.fn(),
   };
-  const fetchStub = jest.fn(() => new Promise(() => {}));
+  const fetchStub = jest.fn(options.respond ?? ((_input: unknown) => new Promise<unknown>(() => {})));
   const self = {
     addEventListener: (type: string, fn: Listener) => {
       listeners[type] = fn;
@@ -125,4 +142,51 @@ describe('service worker media bypass (Pitfall 6)', () => {
   test('the clip is not precached', () => {
     expect(source).not.toMatch(/\.mp4/);
   });
+});
+
+/** An ok same-origin answer; `clone` returns itself so identity checks stay simple. */
+function okResponse() {
+  const response = { ok: true, status: 200, type: 'basic', redirected: false, clone: () => response };
+  return response;
+}
+
+/** A rejected cache.put, the way a full origin quota fails it. */
+const quotaExceeded = () => Promise.reject(new DOMException('Quota exceeded', 'QuotaExceededError'));
+
+// WR-04: every cache write runs under event.waitUntil, so the browser keeps the
+// worker alive until the copy is stored, and a rejected put is caught there.
+describe('service worker cache writes (WR-04)', () => {
+  const paths = [
+    ['a cache-first /_next/static/ asset', '/_next/static/chunks/app.0123456789.js', 'script', 'static-__BUILD_HASH__'],
+    ['a cache-first /media/ poster image', '/media/coin-flip-toss-poster.0123456789.webp', 'image', 'images-__BUILD_HASH__'],
+    ['a network-first GET', '/feed.json', '', 'dynamic-__BUILD_HASH__'],
+  ] as const;
+
+  test.each(paths)('%s hands its cache write to event.waitUntil', async (_label, pathname, destination, cacheName) => {
+    const response = okResponse();
+    const { onFetch, caches, cache } = loadWorker({ respond: () => Promise.resolve(response) });
+    const event = fetchEvent(pathname, destination);
+    onFetch(event);
+    expect(event.respondWith).toHaveBeenCalledTimes(1);
+    await expect(event.respondWith.mock.calls[0][0]).resolves.toBe(response);
+    expect(event.waitUntil).toHaveBeenCalledTimes(1);
+    await event.waitUntil.mock.calls[0][0];
+    expect(caches.open).toHaveBeenCalledWith(cacheName);
+    expect(cache.put).toHaveBeenCalledWith(event.request, response);
+  });
+
+  test.each(paths)(
+    '%s still answers from the network when cache.put rejects (QuotaExceededError)',
+    async (_label, pathname, destination) => {
+      const response = okResponse();
+      const { onFetch, cache } = loadWorker({ respond: () => Promise.resolve(response), put: quotaExceeded });
+      const event = fetchEvent(pathname, destination);
+      onFetch(event);
+      await expect(event.respondWith.mock.calls[0][0]).resolves.toBe(response);
+      expect(event.waitUntil).toHaveBeenCalledTimes(1);
+      // Caught inside the waitUntil chain: nothing is left unhandled.
+      await expect(event.waitUntil.mock.calls[0][0]).resolves.toBeUndefined();
+      expect(cache.put).toHaveBeenCalledWith(event.request, response);
+    },
+  );
 });

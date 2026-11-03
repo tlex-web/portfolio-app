@@ -19,6 +19,10 @@
  *   cache.addAll is all-or-nothing, so a failed install rejects and the
  *   previous worker stays in control.
  * - Activate deletes every cache that does not end in the current build hash.
+ * - WR-04: the navigation's cache write is handed to `event.waitUntil` while
+ *   respondWith is still pending, so the browser cannot stop the worker
+ *   mid-write; a rejected put (QuotaExceededError) is caught inside that chain
+ *   and the visitor still gets the network answer.
  *
  * The committed public/service-worker.js is evaluated against stubs for `self`,
  * `caches` and `fetch` (the harness from service-worker-media.test.ts), with
@@ -90,13 +94,15 @@ function loadWorker(
     stored?: Record<string, FakeResponse>;
     respond?: (input: string | FakeRequest, init?: RequestInit) => Promise<FakeResponse>;
     keys?: string[];
+    /** cache.put's implementation; resolves by default. */
+    put?: (req: string | FakeRequest, res: FakeResponse) => Promise<void>;
   } = {},
 ) {
   const listeners: Record<string, Listener> = {};
   const stored = options.stored ?? {};
   const cache = {
     match: jest.fn((req: string | FakeRequest) => Promise.resolve(stored[keyOf(req)])),
-    put: jest.fn(() => Promise.resolve()),
+    put: jest.fn(options.put ?? ((_req: string | FakeRequest, _res: FakeResponse) => Promise.resolve())),
     addAll: jest.fn((_urls: string[]) => Promise.resolve()),
   };
   const caches = {
@@ -150,6 +156,17 @@ async function navigate(worker: ReturnType<typeof loadWorker>, pathname: string)
   return { event, answer };
 }
 
+/**
+ * Awaits every promise the worker handed to `event.waitUntil` (WR-04): the
+ * cache writes the browser keeps the worker alive for.
+ */
+async function settled(event: FakeEvent) {
+  return Promise.all(event.waitUntil.mock.calls.map((call) => call[0] as Promise<unknown>));
+}
+
+/** A rejected cache.put, the way a full origin quota fails it. */
+const quotaExceeded = () => Promise.reject(new DOMException('Quota exceeded', 'QuotaExceededError'));
+
 const offline = () => Promise.reject(new TypeError('Failed to fetch'));
 
 describe('service worker navigations (EDGE-02, network-first)', () => {
@@ -158,7 +175,41 @@ describe('service worker navigations (EDGE-02, network-first)', () => {
     const worker = loadWorker({ respond: () => Promise.resolve(page) });
     const { event, answer } = await navigate(worker, '/roadmap');
     expect(answer).toBe(page);
+    await settled(event);
     expect(worker.caches.open).toHaveBeenCalledWith(`dynamic-${BUILD}`);
+    expect(worker.cache.put).toHaveBeenCalledWith(event.request, page);
+  });
+
+  test('an ok navigation hands its cache write to event.waitUntil before the answer settles (WR-04)', async () => {
+    const page = fakeResponse({ body: '<html>fresh</html>' });
+    const worker = loadWorker({ respond: () => Promise.resolve(page) });
+    const event = fakeEvent(fakeRequest('/roadmap', 'navigate', 'document', { accept: 'text/html' }));
+    // waitUntil is only allowed while respondWith's promise is pending, so
+    // record how many writes were handed over when the answer settled.
+    let handedOverAtAnswer = -1;
+    event.respondWith.mockImplementation((answer: Promise<unknown>) => {
+      void answer.then(() => {
+        handedOverAtAnswer = event.waitUntil.mock.calls.length;
+      });
+    });
+    worker.listeners.fetch(event);
+    await expect(event.respondWith.mock.calls[0][0]).resolves.toBe(page);
+    expect(handedOverAtAnswer).toBe(1);
+    expect(event.waitUntil).toHaveBeenCalledTimes(1);
+    expect(event.waitUntil.mock.calls[0][0]).toBeInstanceOf(Promise);
+    await settled(event);
+    expect(worker.caches.open).toHaveBeenCalledWith(`dynamic-${BUILD}`);
+    expect(worker.cache.put).toHaveBeenCalledWith(event.request, page);
+  });
+
+  test('a rejected put (QuotaExceededError) still returns the network answer, and waitUntil resolves (WR-04)', async () => {
+    const page = fakeResponse({ body: '<html>fresh</html>' });
+    const worker = loadWorker({ respond: () => Promise.resolve(page), put: quotaExceeded });
+    const { event, answer } = await navigate(worker, '/roadmap');
+    expect(answer).toBe(page);
+    expect(event.waitUntil).toHaveBeenCalledTimes(1);
+    // The rejection is caught inside the waitUntil chain: nothing is left unhandled.
+    await expect(event.waitUntil.mock.calls[0][0]).resolves.toBeUndefined();
     expect(worker.cache.put).toHaveBeenCalledWith(event.request, page);
   });
 
@@ -180,8 +231,10 @@ describe('service worker navigations (EDGE-02, network-first)', () => {
   ])('%s is returned and never stored', async (_label, init) => {
     const response = fakeResponse(init);
     const worker = loadWorker({ respond: () => Promise.resolve(response) });
-    const { answer } = await navigate(worker, '/photos/no-such-slug');
+    const { event, answer } = await navigate(worker, '/photos/no-such-slug');
     expect(answer).toBe(response);
+    await settled(event);
+    expect(event.waitUntil).not.toHaveBeenCalled();
     expect(worker.cache.put).not.toHaveBeenCalled();
   });
 
@@ -192,8 +245,9 @@ describe('service worker navigations (EDGE-02, network-first)', () => {
       stored: { '/photos/gone': cachedPage },
       respond: () => Promise.resolve(notFound),
     });
-    const { answer } = await navigate(worker, '/photos/gone');
+    const { event, answer } = await navigate(worker, '/photos/gone');
     expect(answer).toBe(notFound);
+    await settled(event);
     expect(worker.cache.put).not.toHaveBeenCalled();
   });
 
