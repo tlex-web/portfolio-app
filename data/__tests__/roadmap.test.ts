@@ -12,7 +12,7 @@
 import { RoadmapItemSchema, RoadmapSchema } from '@/data/schemas/roadmap';
 import { roadmapItems, surveyedAt } from '@/data/roadmap';
 import { formatLogDate } from '@/lib/log-date';
-import { newestCompletedAt, type RouteLogItem } from '@/lib/route-log';
+import { BAND_LABELS, newestCompletedAt, type RouteLogItem } from '@/lib/route-log';
 
 // Type-level check (`npm run type-check`): the data feeds the route-log functions as is.
 const asLog: readonly RouteLogItem[] = roadmapItems;
@@ -72,6 +72,16 @@ describe('roadmapItems (ROUTE-01, D-31, D-32)', () => {
   test('ids are unique', () => {
     const ids = asLog.map((i) => i.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  test('no id collides with an id /roadmap already uses (11 IN-04)', () => {
+    const bands = Object.keys(BAND_LABELS);
+    const reserved = ['main-content', ...bands, ...bands.map((b) => `${b}-heading`)];
+    for (const { id } of asLog) expect(reserved).not.toContain(id);
+  });
+
+  test.each(['Box v1', 'box#v1', 'Box-v1', '-box'])('rejects the row id %j (11 IN-04)', (id) => {
+    expect(RoadmapItemSchema.safeParse({ ...validRow, id }).success).toBe(false);
   });
 
   test('order values are unique integers, so no two rows tie on the axis', () => {

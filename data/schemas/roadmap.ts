@@ -34,7 +34,8 @@ export const RoadmapPhaseSchema = z.strictObject({
 
 /** One route-log row. */
 export const RoadmapItemSchema = z.strictObject({
-  id: z.string().min(1),
+  /** A lowercase slug: it becomes the row's DOM id and a #fragment (11 IN-04). */
+  id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   title: z.string().min(1),
   description: z.string().min(1),
   area: z.enum(['portfolio', 'box', 'coin-flip']),
