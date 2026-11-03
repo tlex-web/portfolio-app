@@ -17,6 +17,17 @@ import {
  * expected value is derived from buildPhotoViews(), never hand-typed.
  */
 
+/*
+ * Tests in this file run in order in one worker, each retried on its own
+ * (12-22, D-26). On the dev server with the default worker count (16 here),
+ * every worker compiling and soft-navigating the photo routes at once slowed
+ * lightbox navigations past their timeouts: 16 of 52 tests failed in one run of
+ * this file alone, and 52 of 52 passed with --workers=2. The production server
+ * that CI uses (one worker) runs these tests in order already, so CI is
+ * unaffected; no timeout or assertion changes.
+ */
+test.describe.configure({ mode: 'default' });
+
 const views = buildPhotoViews();
 
 /** A content-hashed manifest derivative: /images/photos/<name>.<10 hex>.<avif|webp>. */
@@ -61,6 +72,9 @@ test.describe('Photo page (LBOX-01 direct load)', () => {
   }
 
   test('the strip shows every field without filler (LBOX-04, D-07)', async ({ page }) => {
+    // One full page load per photo (nine) in one test: on a loaded dev server they can
+    // outrun the 30 s default, so the budget is tripled (12-22, D-26). Assertions unchanged.
+    test.slow();
     for (const view of views) {
       await page.goto(`/photos/${view.slug}`);
       const main = page.getByRole('main');

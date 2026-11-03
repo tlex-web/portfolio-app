@@ -343,6 +343,9 @@ test.describe('Case-study sections', () => {
   test('box Metrics source links carry their tile name in the accessible name only, at 375, 768 and 1440 px (G-11-4, 12 D-24)', async ({
     page,
   }) => {
+    // Three full page loads in one test: on a loaded dev server they can outrun the
+    // 30 s default, so the budget is tripled (12-22, D-26). Assertions unchanged.
+    test.slow();
     const tiles = box.metrics?.tiles ?? [];
     const sourced = tiles.filter((tile) => tile.sourceUrl);
     expect(sourced.length).toBeGreaterThan(0);
@@ -475,6 +478,9 @@ test.describe('Case-study sections', () => {
   });
 
   test('at 375 px neither case study scrolls sideways', async ({ page }) => {
+    // Three full page loads in one test: on a loaded dev server they can outrun the
+    // 30 s default, so the budget is tripled (12-22, D-26). Assertions unchanged.
+    test.slow();
     await page.setViewportSize({ width: 375, height: 800 });
     for (const path of [BOX, COIN_FLIP]) {
       await page.goto(path);
