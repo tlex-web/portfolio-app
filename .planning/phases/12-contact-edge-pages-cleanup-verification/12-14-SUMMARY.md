@@ -207,3 +207,7 @@ None.
 ---
 *Phase: 12-contact-edge-pages-cleanup-verification*
 *Completed: 2026-11-02*
+
+## Follow-up: prerender decision (raised at the round-2 summary, per RESEARCH A3)
+
+Tim, 2026-11-03, at the 12-19 checkpoint, asked whether the per-slug cards should keep rendering on first request (per-slug alt kept) or be prerendered with a generic alt: "Keep runtime render (Recommended)". The routes stay as shipped; the three must-have truths about prerendering and `dynamicParams` are superseded by this decision.
