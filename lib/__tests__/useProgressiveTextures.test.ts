@@ -235,6 +235,49 @@ describe('useProgressiveTextures (VERIFY-01)', () => {
     expect(result.current.textures.some((t) => old.includes(t as MockTexture))).toBe(false);
   });
 
+  it('reloads when the sources change at the same count: new thumbnails, old textures disposed and never returned (IN-03)', async () => {
+    const first = makeSources(2);
+    const { result, rerender } = renderTextures(first);
+    await resolveThumbs(first);
+    const old = [...result.current.textures] as MockTexture[];
+    const before = old.map((t) => t.disposeCount);
+
+    const next = makeSources(2, 'b-');
+    rerender({ list: next, active: 0 });
+    await act(async () => {});
+
+    expect(pendingUrls()).toEqual(expect.arrayContaining(['b-t0.webp', 'b-t1.webp']));
+    expect(result.current.loadState).toEqual(['loading', 'loading']);
+    expect(result.current.allThumbsLoaded).toBe(false);
+    expect(result.current.textures.some((t) => old.includes(t as MockTexture))).toBe(false);
+    old.forEach((t, i) => expect(t.disposeCount).toBeGreaterThan(before[i]));
+
+    await resolveThumbs(next);
+    expect(result.current.allThumbsLoaded).toBe(true);
+    expect(result.current.textures).toHaveLength(2);
+    expect(result.current.textures.some((t) => old.includes(t as MockTexture))).toBe(false);
+    expect(result.current.textures.map((t) => (t.image as { src: string }).src)).toEqual([
+      'b-t0.webp',
+      'b-t1.webp',
+    ]);
+  });
+
+  it('starts no new load for a new array holding the same URLs (IN-03)', async () => {
+    const first = makeSources(2);
+    const { result, rerender } = renderTextures(first);
+    await resolveThumbs(first);
+    const live = [...result.current.textures];
+    const calls = mockCalls.length;
+
+    rerender({ list: makeSources(2), active: 0 });
+    await act(async () => {});
+
+    expect(mockCalls).toHaveLength(calls);
+    expect(result.current.allThumbsLoaded).toBe(true);
+    result.current.textures.forEach((t, i) => expect(t).toBe(live[i]));
+    expect(pendingUrls()).toEqual(['f0.webp']);
+  });
+
   it('disposes every texture on unmount and ignores loads that settle afterwards', async () => {
     const sources = makeSources(3);
     const { result, unmount } = renderTextures(sources, 1);
