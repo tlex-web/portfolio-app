@@ -469,7 +469,7 @@ Gap closure (11-UAT.md):
   4. `Header`, `GlassmorphismNav`, `ParticleButton`, `AnimatedGradientMesh`, `useHexGrid`/`hex-clip`, the legacy image variants, the v1 token aliases and unused CSP origins are gone from the repo, and the build, tests and baselines stay green.
   5. axe reports zero violations on every route, and a keyboard-only pass through navigation, map, lightbox and contact form succeeds. Chromium, Firefox and WebKit runs pass, including the View Transitions and WebGL fallbacks. No route has CLS above 0.1, broken internal links, missing images or CSP console errors.
 
-**Plans**: 20/26 plans executed
+**Plans**: 21/26 plans executed
 Plans:
 **Wave 1**
 - [x] 12-01-PLAN.md — Content packet: Tim approves copy, coordinates, route-log dates, UI-SPEC defaults and open decisions
@@ -504,7 +504,7 @@ Plans:
 - [x] 12-18-PLAN.md — Compiler-clean progressive textures; compiler exemption list drained
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 12-19-PLAN.md — Re-baseline round 2
+- [x] 12-19-PLAN.md — Re-baseline round 2
 
 **Wave 8** *(blocked on Wave 7 completion)*
 - [ ] 12-20-PLAN.md — Permanent audit gate: axe, CLS, links, images, CSP and console on every route and state
@@ -554,4 +554,4 @@ Plans:
 | 9. Home Ascent | v2.0 | 22/22 | Complete    | 2026-10-25 |
 | 10. Photography | v2.0 | 13/13 | Complete    | 2026-10-26 |
 | 11. Engineering & Roadmap | v2.0 | 19/19 | Complete    | 2026-11-02 |
-| 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 20/26 | In Progress | - |
+| 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 21/26 | In Progress | - |

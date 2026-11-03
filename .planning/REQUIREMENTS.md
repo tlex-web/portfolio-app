@@ -98,14 +98,14 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 
 ### Contact
 
-- [ ] **CONTACT-01**: The contact page is a dark "summit register" form with visible labels and field borders, Tim's email as selectable text, and the location as coordinates
+- [x] **CONTACT-01**: The contact page is a dark "summit register" form with visible labels and field borders, Tim's email as selectable text, and the location as coordinates
 - [x] **CONTACT-02**: Validation errors appear below each field and in an error summary that receives focus; input is kept on error; submitting shows progress, then a "register signed" confirmation or a recoverable error
 - [x] **CONTACT-03**: A honeypot field blocks simple spam bots, and the existing CSRF protection and rate limiting keep working unchanged
 
 ### Edge Pages
 
-- [ ] **EDGE-01**: The 404 page shows "You've left the marked trail" with contour art and a route home, and the error and global-error pages use the same shell
-- [ ] **EDGE-02**: The offline page matches the design system, and the service worker fetches pages network-first so no visitor sees stale v1 pages after deploy
+- [x] **EDGE-01**: The 404 page shows "You've left the marked trail" with contour art and a route home, and the error and global-error pages use the same shell
+- [x] **EDGE-02**: The offline page matches the design system, and the service worker fetches pages network-first so no visitor sees stale v1 pages after deploy
 
 ### SEO
 
@@ -222,11 +222,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ROUTE-01 | Phase 11 | Complete |
 | ROUTE-02 | Phase 11 | Complete |
 | ROUTE-03 | Phase 11 | Complete |
-| CONTACT-01 | Phase 12 | Pending |
+| CONTACT-01 | Phase 12 | Complete |
 | CONTACT-02 | Phase 12 | Complete |
 | CONTACT-03 | Phase 12 | Complete |
-| EDGE-01 | Phase 12 | Pending |
-| EDGE-02 | Phase 12 | Pending |
+| EDGE-01 | Phase 12 | Complete |
+| EDGE-02 | Phase 12 | Complete |
 | SEO-01 | Phase 12 | Complete |
 | SEO-02 | Phase 12 | Complete |
 | SEO-03 | Phase 12 | Complete |

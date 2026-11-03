@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 12
 current_phase_name: Contact, Edge Pages, Cleanup & Verification
 status: executing
-stopped_at: Completed 12-18-PLAN.md
-last_updated: "2026-11-02T23:43:28.635Z"
+stopped_at: Completed 12-19-PLAN.md
+last_updated: "2026-11-03T00:32:37.034Z"
 last_activity: 2026-11-02
 last_activity_desc: Phase 12 execution started
-state_head: c5629939c0158785b7efcc6b67bf97f47ffb5082
+state_head: b743ca061dc63ff609c17b14befabf9d6a294e4f
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 120
-  completed_plans: 114
-  percent: 95
+  completed_plans: 115
+  percent: 96
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-11-02)
 ## Current Position
 
 Phase: 12 (Contact, Edge Pages, Cleanup & Verification) — EXECUTING
-Plan: 21 of 26
+Plan: 22 of 26
 Status: Ready to execute
 Last activity: 2026-11-02 — Phase 12 execution started
 
-Progress: [█████████░] 95%
+Progress: [█████████░] 96%
 
 ## Performance Metrics
 
@@ -172,6 +172,7 @@ Progress: [█████████░] 95%
 | Phase 12 P26 | 17 min | 2 tasks | 3 files |
 | Phase 12 P17 | 8min | 2 tasks | 3 files |
 | Phase 12 P18 | 10 min | 2 tasks | 3 files |
+| Phase 12 P19 | 47 min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -467,6 +468,8 @@ Recent decisions affecting current work:
 - [Phase 12]: 12-17: hero-contour precache stays deferred (fix in scripts/terrain/build-terrain.mjs precacheText + regenerated data/generated/precache.json; no service-worker.js change)
 - [Phase 12]: 12-18: useProgressiveTextures keeps textures in state (empty until every thumbnail settles) and one effect run per source count owns its loader, slots and cancelled flag; a source-count change resets the hook in the same render
 - [Phase 12]: 12-18: LEGACY_COMPILER_FILES removed; the React Compiler rules apply at error to every file (07-02 rule reached zero)
+- [Phase 12]: 12-19: Per-slug OG cards keep rendering on first request with per-slug alt; Tim chose "Keep runtime render (Recommended)" (2026-11-03)
+- [Phase 12]: 12-19: Round 2 re-baselined contact, not-found and offline (9 PNGs, Tim's b743ca0); check-snapshot-commit with only those three --allow slugs; 39 shots byte-identical prove 12-14, 12-17, 12-18, 12-25 zero-pixel
 
 ### Pending Todos
 
@@ -513,6 +516,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-02T23:43:27.374Z
-Stopped at: Completed 12-18-PLAN.md
+Last session: 2026-11-03T00:32:35.779Z
+Stopped at: Completed 12-19-PLAN.md
 Resume file: None
