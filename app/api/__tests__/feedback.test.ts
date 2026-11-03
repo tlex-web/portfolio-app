@@ -180,6 +180,28 @@ describe('Feedback API Route', () => {
       expect(data).toEqual({ code: 'validation', fields: { email: 'invalid_email' } });
     });
 
+    // IN-07 (CONTACT-03): the email check is Zod 4's z.email(); these pin the
+    // same accept and reject set as the deprecated z.string().email().
+    it.each(['visitor@example.com', 'first.last+tag@mail.example.co.uk'])(
+      'accepts the plain address %s',
+      async (email) => {
+        const response = await POST(createMockRequest({ ...validBody, email }));
+
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({ code: 'ok' });
+      },
+    );
+
+    it.each(['tim@', 'tim@example', 'two@@example.com', 'has space@example.com'])(
+      'rejects %s as invalid_email',
+      async (email) => {
+        const response = await POST(createMockRequest({ ...validBody, email }));
+
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({ code: 'validation', fields: { email: 'invalid_email' } });
+      },
+    );
+
     it('rejects an empty email as required', async () => {
       const request = createMockRequest({ ...validBody, email: '' });
 
