@@ -469,7 +469,7 @@ Gap closure (11-UAT.md):
   4. `Header`, `GlassmorphismNav`, `ParticleButton`, `AnimatedGradientMesh`, `useHexGrid`/`hex-clip`, the legacy image variants, the v1 token aliases and unused CSP origins are gone from the repo, and the build, tests and baselines stay green.
   5. axe reports zero violations on every route, and a keyboard-only pass through navigation, map, lightbox and contact form succeeds. Chromium, Firefox and WebKit runs pass, including the View Transitions and WebGL fallbacks. No route has CLS above 0.1, broken internal links, missing images or CSP console errors.
 
-**Plans**: 26/26 plans executed
+**Plans**: 26/34 plans executed (follow-up plans 12-27 to 12-34 added 2026-11-03 for the gate findings, 12-FOLLOWUP-SCOPE.md)
 Plans:
 **Wave 1**
 - [x] 12-01-PLAN.md — Content packet: Tim approves copy, coordinates, route-log dates, UI-SPEC defaults and open decisions
@@ -521,6 +521,30 @@ Plans:
 **Wave 12** *(blocked on Wave 11 completion)*
 - [x] 12-24-PLAN.md — Phase close: final CI, ratchet, PROJECT.md, UAT checklist
 
+**Wave 13** *(follow-up; blocked on Wave 12 completion)*
+- [ ] 12-27-PLAN.md — One Tim checkpoint: npm prod-tree advisories (source-map-js, baseline-browser-mapping), IN-01 and IN-05 copy, the 404 header-guard option; approved bumps with floors
+
+**Wave 14** *(blocked on Wave 13 completion)*
+- [ ] 12-28-PLAN.md — Contact form: fieldless validation answer shows the send failure (WR-01), Retry validates (IN-06), name too-long copy (IN-01), z.email() (IN-07)
+
+**Wave 15** *(blocked on Wave 14 completion)*
+- [ ] 12-29-PLAN.md — Document prefetches pass the proxy (C1) and the 404 section guard per Tim's option (IN-02); T-12-02 closed
+
+**Wave 16** *(blocked on Wave 15 completion)*
+- [ ] 12-30-PLAN.md — Service worker: hero contour precached (C2), cache writes under waitUntil (WR-04)
+
+**Wave 17** *(blocked on Wave 16 completion)*
+- [ ] 12-31-PLAN.md — DemoTerminal observer follows its region (WR-02); texture loader keyed on source URLs (IN-03); SW update check cleanup (IN-04)
+
+**Wave 18** *(blocked on Wave 17 completion)*
+- [ ] 12-32-PLAN.md — Error-page Report link in the ink-muted style (D1), saved-page hover token (D2), global-error title (IN-05)
+
+**Wave 19** *(blocked on Wave 18 completion)*
+- [ ] 12-33-PLAN.md — README env names and Node 24 (WR-03); credit test slow marker (C3); G3 production-only and the stale comment (C4)
+
+**Wave 20** *(blocked on Wave 19 completion)*
+- [ ] 12-34-PLAN.md — Follow-up close: three-engine local and CI runs, ratchet, review, security, deferred and validation ledgers
+
 **UI hint**: yes
 **Scope notes**:
   - `SummitRegister` is a restyle: `/api/feedback`, CSRF, Upstash rate limiting and accessible names stay. It adds the honeypot and the error summary.
@@ -554,4 +578,4 @@ Plans:
 | 9. Home Ascent | v2.0 | 22/22 | Complete    | 2026-10-25 |
 | 10. Photography | v2.0 | 13/13 | Complete    | 2026-10-26 |
 | 11. Engineering & Roadmap | v2.0 | 19/19 | Complete    | 2026-11-02 |
-| 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 26/26 | In Progress | - |
+| 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 26/34 | In Progress | - |
