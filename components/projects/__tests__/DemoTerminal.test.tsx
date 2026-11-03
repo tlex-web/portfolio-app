@@ -28,17 +28,27 @@ const COMMANDS: TerminalCommand[] = [
   { input: 'box epoch 0', output: '1970-01-01T00:00:00Z' },
 ];
 
-/** IntersectionObserver instances created by the island, so a test can report visibility. */
-let observers: { callback: IntersectionObserverCallback; disconnected: boolean }[] = [];
+/**
+ * IntersectionObserver instances created by the island, so a test can report
+ * visibility, with the elements each one observes (12-31 WR-02).
+ */
+type ObserverRecord = {
+  callback: IntersectionObserverCallback;
+  disconnected: boolean;
+  targets: Element[];
+};
+let observers: ObserverRecord[] = [];
 const OriginalIO = window.IntersectionObserver;
 
 class CapturingIntersectionObserver {
-  record: { callback: IntersectionObserverCallback; disconnected: boolean };
+  record: ObserverRecord;
   constructor(callback: IntersectionObserverCallback) {
-    this.record = { callback, disconnected: false };
+    this.record = { callback, disconnected: false, targets: [] };
     observers.push(this.record);
   }
-  observe() {}
+  observe(target: Element) {
+    this.record.targets.push(target);
+  }
   unobserve() {}
   disconnect() {
     this.record.disconnected = true;
@@ -389,6 +399,75 @@ describe('DemoTerminal one and many commands (G2, G3)', () => {
     );
     expect(region()).toHaveAttribute('data-command', '1');
     expect(cell(1)).toHaveTextContent('box hash notes.txt');
+  });
+
+  it('keeps observing the region in the document after the list shrinks, so visibility still pauses and resumes it (WR-02)', () => {
+    const { rerender } = setup();
+    // fireEvent, not user: no hover or focus pause, so only visibility decides.
+    fireEvent.click(within(region()).getByRole('button', { name: 'Go to command 4' }));
+    expect(region()).toHaveAttribute('data-command', '4');
+    rerender(
+      <>
+        <DemoTerminal name="box" commands={COMMANDS.slice(0, 2)} />
+        <button type="button">Outside</button>
+      </>
+    );
+    expect(region()).toHaveAttribute('data-command', '1');
+
+    const live = observers.filter((o) => !o.disconnected);
+    expect(live.flatMap((o) => o.targets)).toContain(region());
+    for (const o of observers) {
+      if (o.targets.some((t) => !document.contains(t))) expect(o.disconnected).toBe(true);
+    }
+    expect(region()).toHaveAttribute('data-playback', 'playing');
+    reportVisibility(false);
+    expect(region()).toHaveAttribute('data-playback', 'paused');
+    reportVisibility(true);
+    expect(region()).toHaveAttribute('data-playback', 'playing');
+  });
+
+  it('follows the region when the list empties and grows again: the removed node is let go and the new one observed (WR-02)', () => {
+    const { rerender } = setup();
+    const first = region();
+    const list = (commands: readonly TerminalCommand[]) => (
+      <>
+        <DemoTerminal name="box" commands={commands} />
+        <button type="button">Outside</button>
+      </>
+    );
+    rerender(list([]));
+    expect(document.contains(first)).toBe(false);
+    rerender(list(COMMANDS.slice(0, 2)));
+
+    const live = observers.filter((o) => !o.disconnected);
+    expect(live.flatMap((o) => o.targets)).toContain(region());
+    for (const o of live) {
+      for (const t of o.targets) expect(document.contains(t)).toBe(true);
+    }
+    reportVisibility(false);
+    expect(region()).toHaveAttribute('data-playback', 'paused');
+    reportVisibility(true);
+    expect(region()).toHaveAttribute('data-playback', 'playing');
+  });
+
+  it('observes the region when its first commands arrive after an empty list (WR-02)', () => {
+    const { rerender } = setup([]);
+    expect(observers.filter((o) => !o.disconnected)).toHaveLength(0);
+    rerender(
+      <>
+        <DemoTerminal name="box" commands={COMMANDS.slice(0, 2)} />
+        <button type="button">Outside</button>
+      </>
+    );
+
+    const live = observers.filter((o) => !o.disconnected);
+    expect(live).toHaveLength(1);
+    expect(live[0].targets).toContain(region());
+    expect(region()).toHaveAttribute('data-playback', 'playing');
+    reportVisibility(false);
+    expect(region()).toHaveAttribute('data-playback', 'paused');
+    reportVisibility(true);
+    expect(region()).toHaveAttribute('data-playback', 'playing');
   });
 
   it('gives seven commands seven dots in a wrapping bar', () => {
