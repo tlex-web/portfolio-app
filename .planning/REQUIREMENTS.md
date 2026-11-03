@@ -115,10 +115,10 @@ Requirements for this milestone. Each maps to exactly one roadmap phase.
 
 ### Verification & Cleanup
 
-- [ ] **VERIFY-01**: Dead code is removed: `Header`, `GlassmorphismNav`, `ParticleButton`, `AnimatedGradientMesh`, `useHexGrid`/`hex-clip`, legacy image variants (after migration), v1 token aliases and unused CSP origins
-- [ ] **VERIFY-02**: axe reports zero violations on every route, and a keyboard-only pass through navigation, map, lightbox and contact form succeeds
-- [ ] **VERIFY-03**: Chromium, Firefox and WebKit runs pass, including the View Transitions and WebGL fallbacks
-- [ ] **VERIFY-04**: No route has CLS above 0.1, broken internal links, missing images or CSP console errors
+- [x] **VERIFY-01**: Dead code is removed: `Header`, `GlassmorphismNav`, `ParticleButton`, `AnimatedGradientMesh`, `useHexGrid`/`hex-clip`, legacy image variants (after migration), v1 token aliases and unused CSP origins
+- [x] **VERIFY-02**: axe reports zero violations on every route, and a keyboard-only pass through navigation, map, lightbox and contact form succeeds
+- [x] **VERIFY-03**: Chromium, Firefox and WebKit runs pass, including the View Transitions and WebGL fallbacks
+- [x] **VERIFY-04**: No route has CLS above 0.1, broken internal links, missing images or CSP console errors
 
 ## Future Requirements
 
@@ -230,10 +230,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SEO-01 | Phase 12 | Complete |
 | SEO-02 | Phase 12 | Complete |
 | SEO-03 | Phase 12 | Complete |
-| VERIFY-01 | Phase 12 | Pending |
-| VERIFY-02 | Phase 12 | Pending |
-| VERIFY-03 | Phase 12 | Pending |
-| VERIFY-04 | Phase 12 | Pending |
+| VERIFY-01 | Phase 12 | Complete |
+| VERIFY-02 | Phase 12 | Complete |
+| VERIFY-03 | Phase 12 | Complete |
+| VERIFY-04 | Phase 12 | Complete |
 
 **Coverage:**
 - v2.0 requirements: 68 total
