@@ -249,10 +249,23 @@ export default function PhotoViewer({
     [lightbox, photos]
   );
 
-  // The document title follows the shown photo (the metadata only sets it on load).
+  // The document title follows the shown photo (the metadata only sets it on
+  // load). The route's own <title> can still be written after hydration (WebKit
+  // rewrites it for ~350 ms after the viewer appears, 12-23), which would undo
+  // a step taken in that window, so a head mutation re-applies the shown
+  // photo's title. Only while the URL names that photo: once the route leaves,
+  // the next page's title is left alone, even before this effect is cleaned up.
   useEffect(() => {
-    document.title = `${current.title} · ${site.name}`;
-  }, [current.title]);
+    const wanted = `${current.title} · ${site.name}`;
+    const path = `/photos/${current.slug}`;
+    const keep = () => {
+      if (window.location.pathname === path && document.title !== wanted) document.title = wanted;
+    };
+    document.title = wanted;
+    const observer = new MutationObserver(keep);
+    observer.observe(document.head, { childList: true, subtree: true, characterData: true });
+    return () => observer.disconnect();
+  }, [current.title, current.slug]);
 
   // Page surface only: Escape is the last layer and goes to the gallery (D-08).
   // The zoom layer runs first (ZoomStage, capture phase): while zoomed it
