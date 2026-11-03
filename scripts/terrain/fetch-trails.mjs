@@ -40,6 +40,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { TerrainSource } from '../../data/schemas/terrain.ts';
 import { TrailsFile } from '../../data/schemas/trail.ts';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -376,7 +377,10 @@ async function fetchTrail(spec, extent, fetchedAt) {
 }
 
 async function main() {
-  const source = JSON.parse(fs.readFileSync(path.join(SOURCE_DIR, 'source.json'), 'utf8'));
+  // Parsed like build-trails does, so a malformed extent is a schema error (11 IN-10).
+  const source = TerrainSource.parse(
+    JSON.parse(fs.readFileSync(path.join(SOURCE_DIR, 'source.json'), 'utf8'))
+  );
   const fetchedAt = new Date().toISOString();
   const trails = [];
   for (const spec of TRAIL_SPECS) trails.push(await fetchTrail(spec, source.extent, fetchedAt));
