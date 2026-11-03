@@ -3,10 +3,11 @@
 ## Deferred Items
 
 - README project tree still describes `app/page.tsx` as "Homepage with 3D mountain hero"
-  status: open
+  status: resolved
   **What:** 09-02 removed the three deleted-component lines from the README structure block, as planned. The `page.tsx` comment on the same tree, and the tree's v1 `app/` layout without the `(site)` group, are stale but name no deleted file.
   **Found by:** 09-02 Task 2.
   **Owner:** Phase 12 (documentation pass, together with `.github/copilot-instructions.md`). Out of scope for 09-02 (scope boundary).
+  **12-22 (executor outcome):** fixed in `dcfcd71`. The README tree is rewritten from `git ls-files` with the `(site)` group, and `app/(site)/page.tsx` reads "Home: the ascent over the Zermatt terrain". `.github/copilot-instructions.md` is updated in the same commit (Tim's 12-01 docs.stale-refs answer, supplied: "fix").
 
 - `e2e/photos.spec.ts` "should switch to 3D carousel view" flaked once under a 54-test parallel dev-server run
   status: resolved
@@ -24,40 +25,46 @@
   **Resolved by:** 09-07 Task 3 (`3264177`): the test asserts `data-ascent-mode="static"`, the poster, no canvas, four cards, `#summit` and About; it passes in Chromium and Firefox.
 
 - Hero scrim switches to the horizontal gradient at `lg:` (1024 px), not at 768 px as 09-UI-SPEC "Hero" specifies
-  status: open
+  status: resolved
   **What:** `HeroBlock`'s `SCRIM` uses the vertical phone gradient up to 1023 px. At 768 x 1024 the kicker sits at about 71% of the hero height from the bottom, where the scrim is about 0.68 `surface`: above the 0.5 floor, but below the UI-SPEC's "at least 0.7 everywhere text can fall". The composed-contrast backstop (09-07 B7) still measures every hero text line at 6.84:1 or better at 768 px. Inside the 576 px block box of the kicker, beside its text, a contour index line measures 3.62:1. No glyph sits there, but it is the closest pixel to the floor. The UI-SPEC's own `md:` gradient would not help that pixel either: it fades to transparent at 75% of the width.
   **Found by:** 09-07 Task 3 (B7 diagnosis).
   **Owner:** 09-14 visual review (decide whether to align the breakpoint or amend the UI-SPEC row). 09-07 does not modify HeroBlock (scope boundary).
+  **D-24 (carried from 12-07-SUMMARY "D-24 Phase 9 dispositions", item #10):** Tim's choice is the 12-01 Resolved values row default.10, supplied: "Default: Hero scrim: amend the 09 spec to `lg:`". Outcome (12-07): the 09-UI-SPEC Hero row is amended to `lg:` as built (the built `lg:` gradient stops: via 60%, to 90%), citing the 6.84:1 measured at 768 px (09-07 B7). Code unchanged.
 
 - Rail tick label "2,760 m approx." measures 4.81:1 at 768 px with the summit centred
-  status: open
+  status: accepted
   **What:** 09-07's B8 backstop passes every tick (4.5 floor), but the Riffelsee label at 768 px is the closest to the floor (5.42:1 at 1440 px; the other ticks are 6.8 or better). The rail scrim is narrower than the label run at that width.
   **Found by:** 09-07 Task 3.
   **Owner:** 09-14 visual review; recheck after 09-08 puts the live canvas behind the rail (B8 samples the poster today).
+  **D-24 (carried from 12-07-SUMMARY, item #12):** Tim's choice is the 12-01 Resolved values row default.12, supplied: "Default: Rail tick 4.81:1: accept, B8 keeps the floor". Outcome (12-07): accepted. It passes AA (at least 4.5:1), and the B8 backstop keeps the 4.5 floor, so a regression fails CI. No scrim change.
 
 - `fflate` 0.8.2 carries a moderate advisory (unzipSync infinite loop on malformed ZIP64), and fast-png now ships it in the canvas chunk
-  status: open
+  status: resolved
   **What:** `npm audit` lists fflate 0.6.0-0.6.10 and 0.8.0-0.8.2 ("unzipSync can enter an infinite loop when parsing malformed ZIP64 archives", fixed in 0.8.3). 0.8.2 was already in the tree through `@types/three` (deduped); fast-png 8.0.0 (`"fflate": "^0.8.2"`) reuses it and imports only `Unzlib`, `unzlibSync` and `zlibSync`, never `unzipSync`, so the vulnerable path is unreachable from the heightmap decode. `three-stdlib` (drei) pins its own 0.6.10. A lockfile bump to fflate 0.8.3 needs `npm audit fix` or an override, which is a dependency decision outside 09-08's scope (07-07 rule: a version floor only when an advisory requires one).
   **Found by:** 09-08 Task 1 (`npm install fast-png@8.0.0 --save-exact`).
   **Owner:** Tim / the next dependency pass (Phase 12), or 09-13 if the bundle audit wants it.
+  **D-25 (carried from 12-06-SUMMARY "D-25 dispositions"):** fixed (scoped) on Tim's 2026-11-02 answer "Approve scoped (Recommended)". `646f3ac` overrides `fflate@^0.8.0` -> 0.8.3 and `fflate@^0.6.0` -> 0.6.11; `npm ls fflate` shows 0.8.3 (fast-png, @types/three) and 0.6.11 (three-stdlib); npm audit no longer lists fflate (46 -> 44). Floor 0.8.3.
 
 - `e2e/no-webgl.spec.ts` "contact keeps the form" and "project detail keeps its content" timed out once under a 74-test parallel dev-server run
-  status: open
+  status: resolved
   **What:** In a combined Chromium + Firefox run of home-ascent, no-webgl, homepage and design-system, both tests waited the full 15 s for three's "Error creating WebGL context" console message while `/contact` and `/projects/clix-cli` compiled for the first time. `e2e/no-webgl.spec.ts` alone passed 8/8 right after. 09-08 touches neither route (its code loads only in Home's lazy canvas chunk).
   **Found by:** 09-08 plan verification.
   **Owner:** CI runs on a production build, where there is no first-compile delay; revisit only if it reproduces there.
+  **12-22 (executor outcome): closed, obsolete.** Both tests waited 15 s for three's "Error creating WebGL context" message. 11-01 (project detail: the flat DemoTerminal, no canvas) and 12-13 (contact: the gradient mesh is gone) rewrote them to assert no canvas and the complete page, so there is no message to wait for. On a fresh dev server `npx playwright test e2e/no-webgl.spec.ts -g "contact keeps the form|project detail keeps its content" --project=chromium --repeat-each=5` gave "10 passed (18.1s)", and the four-spec dev-server run `npx playwright test e2e/case-study.spec.ts e2e/photos-lightbox.spec.ts e2e/photos.spec.ts e2e/no-webgl.spec.ts --project=chromium --repeat-each=3` (16 workers): "375 passed (4.4m)".
 
 - R3F 9 logs "THREE.Clock: This module has been deprecated. Please use THREE.Timer instead." on every canvas mount
-  status: open
+  status: deferred
   **What:** `@react-three/fiber` creates `new THREE.Clock()` in its store (events-9ce18a08.esm.js:1054), and three 0.184 deprecates Clock. The warning appears in the dev-server browser log for every canvas, including the Home terrain canvas since 09-08. It is a library warning, not an error, and comes from no project file.
   **Found by:** 09-08 Task 3 run.
   **Owner:** the next R3F upgrade (watch for a release that switches to THREE.Timer).
+  **D-25 (carried from 12-06-SUMMARY):** deferred on Tim's 2026-11-02 answer "Defer (Recommended)". The reason Tim was shown: an upstream `console.warn` from R3F's store that the D-20 audit gate (errors only) ignores, owned by the next r3f release that moves to THREE.Timer. Measured: 1 warning per canvas mount (Chromium 156, production build). No r3f release fixes it yet (9.8.2 still constructs THREE.Clock).
 
 - The canvas chunk arms before the load event on the HOME-08 profile and holds that event back by about 1.5 s
-  status: open
+  status: resolved
   **What:** In the 09-09 local production probe (Pixel 7, 4x CPU, 150 ms, 200000 B/s), `requestIdleCallback` arms the stage at about 3.1 s, while the hillshade AVIF is still downloading. The dynamically inserted chunk scripts (`three`/R3F 241,953 B, mesh/shader/fast-png 17,583 B, a 474 B stub) then hold the `load` event until they finish: loadEventStart was 4856 ms, and the three/R3F chunk's responseEnd was 4684 ms. LCP is unaffected (3084 ms locally, because canvases are never LCP candidates), and HOME-08 judges LCP and script bytes, not the load event. One consequence: by the plan's boundary (startTime before loadEventStart) the lazy chunk counts as "initial", so `initialJsTransferBytes` equals `totalJsTransferBytes` and `lateScripts` is empty. The perf JSON's `scriptTimeline` and per-sample `loadEventStartMs` still show the chunk.
   **Found by:** 09-09 Task 2 early HOME-08 signal.
   **Owner:** Tim at the 09-13 Task 3 gate choice: "gate on initial bytes" measures the same as total under this boundary. Moving the arm after `load` (TerrainStage) or adding an arm mark would make the split meaningful; either is a behaviour or product-code change outside 09-09.
+  **D-25 (carried from 12-06-SUMMARY):** fixed on Tim's 2026-11-02 answer "Canvas fix" in `8f07cd0` (RED) and `ae1c0fe` (GREEN). loadEventStart before: 5271 / 5255 / 5167 ms, after the chunk's responseEnd (4849 / 4898 / 4835). After: 3432 / 3456 / 3451 ms, before the chunk's start (3690 / 3465 / 3767) and responseEnd (5312 / 4983 / 5391). LCP 3140 to 3204 ms (was 3216 to 3280).
 
 - The summit frame at 1440 px puts 3D pins 1 and 2 behind the summit plaque
   status: resolved
@@ -67,11 +74,12 @@
   **Resolution:** 09-12 `fc24d57` (Tim: "Fix in 09-12 (Recommended)"). Wide stages widen the summit FOV to 75° and shift the summit framing right (`SUMMIT_VIEW_OFFSET_X_SHARE` 0.095), and narrow stages lift it (`SUMMIT_VIEW_OFFSET_Y_SHARE` 0.08). All four pins now clear the plaque at 1280 x 720, 1440 x 900, 1920 x 1080, 375 x 812 and 412 x 839, guarded by the e2e 'summit pins clear the plaque'.
 
 - A small dark wedge at the bottom edge of the 1440 px summit frame
-  status: open
+  status: resolved
   **What:** About 70 x 40 px near x 400-460 px, y 860 px at 1440 x 900 with `#summit` centred, darker than the surrounding relief. The summit peak sits about 38° below the camera, right at the frame's bottom edge (half vertical FOV 18.5° plus about 20° of pitch), so this is most likely the peak's steep faces seen from just above, or the contour merge fade on them. It is not seen at 412 px (wider FOV).
   **Found by:** 09-10 visual check after Task 3.
   **Owner:** Tim at the 09-12 render review (`SUMMIT_LIFT_M`, `SUMMIT_PULLBACK_M`), then 09-14.
   **09-12 note:** Tim kept the defaults (pull-back 450 m). The wider desktop summit FOV from the plaque fix (75° horizontal, about 51° vertical at 1440 x 900) brings the summit marker and the peak's dark faces further into the bottom of the frame: a dark mass of about 200 x 135 px near x 560-760, y 765-900 at 1440 x 900. See the scratchpad render summit-fixed-1440.png. This is for the 09-14 visual review.
+  **D-24 (carried from 12-07-SUMMARY, item #11):** Tim's choice is the 12-01 Resolved values row default.11, supplied: "Default: Summit dark wedge: close as terrain". Outcome (12-07): closed as terrain, the peak's shadowed faces seen from above at the wide summit FOV, live canvas only (visual baselines hide canvases). No camera change.
 
 - After the 09-12 plaque fix, summit pins still sit behind the plaque at some sizes where the plaque fills most of the stage
   status: resolved
@@ -107,11 +115,12 @@
   **Visual review:** Tim committed and pushed the baselines with the reply "pushed" and no comment on the 09-22 review checklist; the checklist items stay open in 09-22-SUMMARY.
 
 - `e2e/home-canvas.spec.ts` and `lib/useAscentMode.ts` fail `prettier --check` on lines no 09-15 change touches
-  status: open
+  status: resolved
   **What:** At `1826e6d` both files already differ from the repo's Prettier output (`intersects()`, `settledPinBoxes()` and several `expect(...)` wraps in the spec; the `decideAscentMode({...})` call at `lib/useAscentMode.ts:76`). `npm run lint` passes (it does not run Prettier). 09-15 kept its own additions formatted and did not reformat the rest, so its diff stays reviewable.
   **Found by:** 09-15 Task 1 (pre-commit format check).
   **Owner:** Any later formatting pass (one `prettier --write` commit of its own). Out of scope for 09-15 (scope boundary).
   **09-22:** `e2e/home-canvas.spec.ts` now passes `prettier --check`: by then only the `settledPinBoxes()` wrap was left, and `05a5e8c` rewrapped it (whitespace only). `lib/useAscentMode.ts` still fails, so this entry stays open.
+  **D-25 (carried from 12-06-SUMMARY):** fixed in 12-06 (`8fae4f8`). `npx prettier --check lib/useAscentMode.ts e2e/home-canvas.spec.ts` passes (re-run in 12-06 Task 3).
 
 - `e2e/home-canvas.spec.ts` "pins hand over at the reveal" failed on the CI re-run of Tim's baseline commit
   status: resolved
@@ -121,11 +130,12 @@
   **Found by:** 09-22 Task 2 step 6.
 
 - The other four `delayHeightmap` users in `e2e/home-canvas.spec.ts` hold nothing on the production server either
-  status: open
+  status: resolved
   **What:** "reveal keeps the layout", "a load abandoned for reduced motion reveals nothing", "a late canvas reveals at the current progress" and "a canvas revealed while stationary lights its 3D pin" share the service-worker bypass in the entry above. A local diagnostic on the production server, with a wheel scroll and with waypoint 2 centred, ran the route handler 0 times in 8 of 8 runs, and the worker served the heightmap. The four tests pass because their checks happen to finish before the mesh is built, so they can flake the same way on a slow runner. "a load abandoned for reduced motion reveals nothing" is the most exposed: an early reveal adds an `ascent-canvas-ready` mark.
   **Fix (not applied):** one `test.use({ serviceWorkers: 'block' })` for these tests, or for the whole file. Playwright recommends blocking service workers wherever `page.route` must see requests. `holdHeightmap()` is there if a test should release the load itself. 09-22 left these tests alone (scope: the one failing test, and Tim's authorization covered one push and one re-run).
   **Found by:** 09-22 Task 2 step 6 diagnosis.
   **Owner:** Tim to decide: a follow-up quick task, or the next plan that touches `e2e/home-canvas.spec.ts`.
+  **D-25 (carried from 12-06-SUMMARY):** closed by 12-02. 12-02-SUMMARY "delayHeightmap result": "`PW_PROD=1 PW_REUSE=1 npx playwright test e2e/home-canvas.spec.ts --project=chromium` gave 45 passed, including all four `delayHeightmap` users"; its stub probe saw 1 hit with `serviceWorkers: 'block'` (the functional projects now block service workers). 12-06 re-confirmed home-canvas on the bumped tree (62 passed together with contact-form and not-found).
 
 - In the static poster at about 768-1090 px, waypoint 3's pin label is hidden while waypoint 3 is active
   status: accepted
