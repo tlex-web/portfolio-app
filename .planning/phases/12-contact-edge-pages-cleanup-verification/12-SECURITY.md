@@ -183,3 +183,11 @@ Register authored at plan time: every one of the 34 PLAN files carries a `<threa
 - [x] `status: verified` set in frontmatter
 
 **Approval:** verified 2026-11-03 (threats_open 0; T-12-02 was kept open below the high threshold by Tim's choice, then closed by 12-29 with residual AR-12-02)
+
+## Security Audit 2026-11-03
+
+| Metric | Count |
+|---|---|
+| Threats found | 97 |
+| Closed | 97 |
+| Open | 0 |
