@@ -52,12 +52,15 @@ const ORIGINALS_DIR = path.join(ROOT, ORIGINALS_REL);
 const SIDECAR_PATH = path.join(ROOT, SIDECAR_REL);
 const NAME = 'photos:exif';
 
-/** Sorted *.jpg names in the originals folder, or null when the folder is absent. */
+/**
+ * Sorted *.jpg and *.jpeg names in the originals folder, or null when the folder
+ * is absent. A `.jpeg` original is never skipped without a word (08 IN-05).
+ */
 function listOriginals() {
   if (!fs.existsSync(ORIGINALS_DIR)) return null;
   return fs
     .readdirSync(ORIGINALS_DIR)
-    .filter((f) => /\.jpg$/i.test(f))
+    .filter((f) => /\.jpe?g$/i.test(f))
     .sort();
 }
 
