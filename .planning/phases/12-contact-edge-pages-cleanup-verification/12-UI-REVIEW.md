@@ -1,77 +1,74 @@
-# Phase 12 — UI Review
+# Phase 12 — UI Review (re-audit after follow-up plans 12-27..12-34)
 
 **Audited:** 2026-11-03
-**Baseline:** 12-UI-SPEC.md (approved), with 12-01-SUMMARY.md Resolved values as the only approved copy
-**Screenshots:** not captured. This was a code-only audit; no build or dev server was run, so nothing below is verified at 375/768/1440 px.
+**Baseline:** 12-UI-SPEC.md (approved, incl. the 2026-11-03 12-32 amendment)
+**Screenshots:** not captured. Code-only audit; no server was started, so nothing is verified at 375/768/1440 px.
 **Interaction captures:** off (workflow.ui_interaction_capture is false). Interaction findings are code-derived.
 
 ---
 
-## Pillar Scores
+## Pillar Scores (vs previous 20/24)
 
-| Pillar | Score | Key Finding |
-|--------|-------|-------------|
-| 1. Copywriting | 4/4 | Contact, edge and offline strings match the approved packet; no generic labels |
-| 2. Visuals | 3/4 | Structure and a11y match the contract, but no render was inspected, so layout and the OG cards are unproven |
-| 3. Color | 3/4 | No hex or v1 colors in Phase 12 files; the "Report this error" link is accent-colored outside the declared accent list |
-| 4. Typography | 4/4 | No `font-bold`, `font-medium`, or sizes outside the 07 roles; mono used for data and kickers as specified |
-| 5. Spacing | 3/4 | On-scale classes throughout; the only arbitrary values are the pre-existing `min-[112rem]` footer breakpoints |
-| 6. Experience Design | 3/4 | Strong state handling, but copy-fallback and retry-failure paths are unverified in a browser |
+| Pillar | Score | Previous | Key Finding |
+|--------|-------|----------|-------------|
+| 1. Copywriting | 4/4 | 4 | Unchanged; failure/retry and global-error title copy match the Resolved values |
+| 2. Visuals | 3/4 | 3 | Still never rendered; layout and OG cards unproven |
+| 3. Color | 4/4 | 3 | Both color warnings fixed (Report link ink-muted; row hover overlay) |
+| 4. Typography | 4/4 | 4 | No `font-bold`/`font-medium`/off-scale sizes in audited files |
+| 5. Spacing | 3/4 | 3 | On-scale; only arbitrary values are `underline-offset-[0.2em]` (NotFoundBody) and the pre-existing `min-[112rem]` footer breakpoints |
+| 6. Experience Design | 3/4 | 3 | Error/Retry states now coded, but still no render; SummitRegister grew to 796 lines |
 
-**Overall: 20/24**
+**Overall: 21/24** (+1)
 
 ---
 
+## Previous top fixes: status
+
+1. Visuals never rendered: **still open.** No screenshots in this pass either.
+2. "Report this error" accent link: **resolved.** `components/site/ErrorBody.tsx:24` now uses `text-base text-ink-muted underline decoration-1 underline-offset-4 hover:text-ink` on `--duration-fast` `ease-erosion`, exactly the amended spec string. Try again is the sole accent on the error pages. The 404 action-row links keep `text-accent` (`NotFoundBody.tsx:52`), which the amendment explicitly keeps.
+3. Saved-page row hover: **resolved.** `components/site/SavedPages.tsx:14` is `hover:bg-surface-overlay`.
+
 ## Top 3 Priority Fixes
 
-1. **Visuals were never rendered** — layout at 375 px, the `order-first` panel swap, the edge-art sheet and the OG cards cannot be confirmed. Run `npm run build`, start `next start`, and capture /contact, /404, /offline and /opengraph-image at 375/768/1440. Check for `scrollWidth <= clientWidth` and a 2-line balanced h1 on the 404.
-2. **"Report this error" link uses `text-accent`** (`components/site/ErrorBody.tsx` TEXT_LINK). The spec's accent list allows one primary fill per view plus inline prose links, and this is a standalone action-row link. It competes with Try again. Use the `ink-muted` link style, as the spec does for Copy and `mailto:`. If 07 permits it for NotFoundBody's text links, record that as a deliberate deviation.
-3. **Saved-page row hover uses `hover:bg-surface-raised`** (`components/site/SavedPages.tsx:14`). The spec lists `surface-overlay` for saved-page row hover. The contrast margin is large (ink on raised 15.02), so this is cosmetic, but it is a token deviation. Change it to `hover:bg-surface-overlay`.
+1. **Still no rendered verification** (WARNING) — Build, run `next start`, and capture /contact (form states: invalid, sending, failure, success), /404, /offline, /opengraph-image at 375/768/1440. Check `scrollWidth <= clientWidth` and the balanced 404 h1. This is the only thing keeping Visuals and Experience Design at 3.
+2. **SummitRegister.tsx is 796 lines** (WARNING) — One client island carries validation, send, rate-limit minutes, failure, and success. Split the failure panel (lines ~180-205) and the field list into components before the next change; every follow-up has grown it.
+3. **404 text link uses an arbitrary `underline-offset-[0.2em]`** (minor WARNING) — `NotFoundBody.tsx:52` is off the token style that ErrorBody now uses (`underline-offset-4`). Align it or record it as deliberate in the spec.
 
 ---
 
 ## Detailed Findings
 
-### Pillar 1: Copywriting (4/4)
-- `app/(site)/contact/page.tsx`: kicker "Summit register", h1 "Contact", h2 "Sign the register", lead "Your name, your email and a message." (the approved option 2, no claim), and "Fields marked * are required." All match 12-01. The retired strings ("Get in Touch", "Send Me a Message") are absent.
-- `ErrorBody.tsx`: "Something went wrong", "Try again", "Report this error", "Reload page". `offline/page.tsx`: "You're offline" and the approved body sentence. Labels are specific; no "Submit", "OK" or "Click here".
-- Informational only: the 404 kicker "Error 404 · Page not found" is mono although it contains plain words. The spec itself sets edge kickers to mono, so this is not a deviation.
-- Unconfirmed: the "Replies: Usually within a few days" wording in DirectContactPanel is hard-coded rather than read from a Resolved-values key.
+### Pillar 1: Copywriting (4/4, unchanged)
+- `ErrorBody.tsx:27` REPORT_LABEL "Report this error" and "Try again" match the contract. Contact failure copy at `SummitRegister.tsx:187-203` ("Your message is still here. Try again, or email me at ...", "Check your connection...", "Try again later" / "Try again in N minute(s)") is specific, actionable, and correctly pluralized.
+- `app/global-error.tsx:31` title "Something went wrong · Tim Lui" (IN-05) matches the Resolved value and is set as a React `<title>` (line 59), which the file notes React 19 hoists.
+- No generic "Submit", "OK" or "Click here" labels.
 
-### Pillar 2: Visuals (3/4)
-- Contact has a clear hierarchy: header band, then form card (2fr) and Direct contact panel (1fr) from 1024 px. Below 1024 px `order-first` shows the panel first while the DOM keeps header, form, panel, which preserves keyboard order.
-- EdgeLayout keeps the art `aria-hidden` and in the 28rem right column. `EdgeArt` is `aspect-square max-w-md` (= 28rem), consistent with the grid.
-- Icon-only controls: all icons are `aria-hidden` and sit beside visible text. The Copy button has `aria-label="Copy email address"`, which contains its visible "Copy" (WCAG 2.5.3 passes).
-- Weakness: the accessible name stays "Copy email address" in the "Copied" state, so the check-icon swap depends on the polite status span to be perceived by non-visual users. That is acceptable but should be tested.
-- Unverified: OG templates (default, photo, project), Satori font loading and hierarchy, and the D-24 fixes (EndBlock, DemoClip, DemoTerminal, RouteLog).
+### Pillar 2: Visuals (3/4, unchanged)
+- Structure, `aria-hidden` art, the 28rem art column, and icon labelling are unchanged and consistent with the contract. The error page now has a clearer hierarchy: one filled accent action and quiet text links.
+- Unverified: 375 px panel-first order, the edge-art sheet, OG templates, and the D-24 fixes. No evidence of a render exists, so no 4.
 
-### Pillar 3: Color (3/4)
-- Grep for hex or `rgb(` across `components/contact`, `components/site`, `app/(site)/contact`, offline, error, global-error, not-found and opengraph-image returns 0 hits outside tests.
-- Accent is used on the primary button (Send Message, Try again, Go to the homepage), the `you are here` dot in EdgeArt (`fill-accent`), and TEXT_LINK. `danger` is correctly confined to errors and the required asterisk.
-- WARNING: TEXT_LINK = `text-accent underline` for "Report this error" is a fourth accent element on the error page. See priority fix 2.
-- WARNING: `hover:bg-surface-raised` on saved-page rows is not the specified overlay.
+### Pillar 3: Color (4/4, was 3)
+- No hex or `rgb(` in Phase 12 component files (spot-checked components/contact and components/site).
+- Accent is confined to the primary buttons, the EdgeArt "you are here" dot, and the 404 action-row links (spec-permitted). `danger` is on errors and the required asterisk only. Error panels use `border-danger bg-surface-overlay`.
+- Both previous warnings are closed. Caveat: ink-muted link contrast on the error surface follows the spec's measured value and was not re-measured here.
 
-### Pillar 4: Typography (4/4)
-- 0 occurrences of `font-bold`, `font-medium`, `font-light`, or `text-xs/2xl–6xl` in the audited paths. The only classes are `text-sm`, `text-base` and the `text-heading` role.
-- Weights are 600 and 400 only. Mono carries data: the email, coordinates, and the "Error"/"Offline" kickers, all with `tabular-nums`. The h1 uses `text-balance`, and the email uses `wrap-anywhere` with a `<wbr>`.
+### Pillar 4: Typography (4/4, unchanged)
+- Grep over `components/contact` and `components/site` (non-test) for `font-bold`, `font-medium`, `text-xs`, `text-2xl` returned 0 hits. Roles used are `text-sm`, `text-base`, and the heading role; weights 600/400.
 
-### Pillar 5: Spacing (3/4)
-- Spacing classes follow the scale: `mb-4/mb-8`, `gap-4/gap-8`, `p-6 lg:p-8`, `pt-8 pb-6`, `min-h-11` touch targets, `min-h-12` saved rows. Edge layout uses `pt-16 pb-16` and `gap-y-12`.
-- The only arbitrary values are `min-[112rem]` in `SiteFooter.tsx:31-32` (a breakpoint, not spacing).
-- Cannot confirm optical rhythm without a render.
+### Pillar 5: Spacing (3/4, unchanged)
+- Scale classes only: `min-h-11` touch targets, `min-h-12` saved rows, `p-6 lg:p-8`, `gap-4/gap-8`.
+- Arbitrary values: `underline-offset-[0.2em]` (`NotFoundBody.tsx:52`, new this audit, minor) and `min-[112rem]` footer breakpoints (pre-existing). Optical rhythm is unconfirmed without a render.
 
-### Pillar 6: Experience Design (3/4)
-- Form: `noValidate`, a focused error summary with `role="alert"` and per-field links, `aria-invalid`/`aria-describedby`, and `aria-disabled` while sending (focus is kept). The fields are read-only during send. There is a honeypot, a live counter, `maxLength` and `autoComplete`. The send-failure box has a Retry button, and the success state is `role="status"` with a CheckCircle.
-- Copy button: the Clipboard-API-missing path falls back to selecting the address text, and its timers are cleaned up. SavedPages has checking, ready, unsupported and empty states, and ErrorBody moves focus to the h1.
-- WARNING: `SummitRegister.tsx` is 774 lines, which is a high regression surface for a single client island. The state matrix (invalid, sending, failure, success, counter over the limit) was not exercised in a render, so no state is confirmed visually.
-- No destructive actions in this phase; no confirmations are needed.
-- Registry audit: skipped (no `components.json`).
+### Pillar 6: Experience Design (3/4, unchanged)
+- Added by 12-28: a distinct rate-limit state ("Try again in N minutes") and a network-failure state with Retry; Retry re-runs field validation first (`SummitRegister.tsx:127` comment). The prior strengths remain: `noValidate`, error summary with `role="alert"`, `aria-invalid`/`aria-describedby`, `aria-disabled` while sending, honeypot, live counter, focus moved to the h1 on error pages, SavedPages checking/ready/unsupported/empty states.
+- WARNING: the new failure and Retry paths are unit-tested at best; none was exercised in a browser. The file is 796 lines (up from 774).
+- No destructive actions. Registry audit: skipped (no `components.json` at the repo root).
 
 ---
 
 ## Files Audited
-- `app/(site)/contact/page.tsx`
+- `components/site/ErrorBody.tsx`, `NotFoundBody.tsx`, `SavedPages.tsx`, `EdgeLayout.tsx`, `EdgeArt.tsx`
 - `components/contact/SummitRegister.tsx`, `CopyEmailButton.tsx`, `DirectContactPanel.tsx`
-- `components/site/EdgeLayout.tsx`, `EdgeArt.tsx`, `ErrorBody.tsx`, `NotFoundBody.tsx`, `SavedPages.tsx`
-- `app/(site)/offline/page.tsx`
-- Grep scans over `app/(site)/error.tsx`, `app/global-error.tsx`, `app/not-found.tsx`, `app/opengraph-image.tsx` (hex, weight and size classes only)
+- `app/global-error.tsx`, `app/(site)/contact/page.tsx`, `app/(site)/offline/page.tsx`
+- 12-UI-SPEC.md (amendment at line 291), previous 12-UI-REVIEW.md
+- Grep scans over `components/` and `app/` for hex, weight, size and spacing classes
