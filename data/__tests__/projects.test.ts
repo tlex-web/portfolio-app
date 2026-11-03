@@ -263,6 +263,29 @@ describe('Copy (D-09, D-23, D-30, ENG-04)', () => {
     }
   });
 
+  test('tile keys and labels are non-empty and distinct, so keys and Source names stay unique (11 IN-08, IN-13)', () => {
+    const tile = { key: 'x', label: 'X', value: '1', context: 'c' };
+    const bad = [
+      [tile, { ...tile, label: 'Y' }],
+      [tile, { ...tile, key: 'y' }],
+      [{ ...tile, label: '' }],
+      [{ ...tile, key: '' }],
+    ];
+    for (const tiles of bad) {
+      expect(ProjectSchema.safeParse({ ...box, metrics: { tiles } }).success).toBe(false);
+    }
+    expect(ProjectSchema.safeParse({ ...box, metrics: { tiles: [tile] } }).success).toBe(true);
+  });
+
+  test('stack groups, stack items and privacy facts are distinct (11 IN-08)', () => {
+    const group = { label: 'G', items: ['a'] };
+    for (const groups of [[group, group], [{ label: 'G', items: ['a', 'a'] }]]) {
+      expect(ProjectSchema.safeParse({ ...box, stack: { groups } }).success).toBe(false);
+    }
+    const privacy = { facts: ['Same fact.', 'Same fact.'] };
+    expect(ProjectSchema.safeParse({ ...coinFlip, privacy }).success).toBe(false);
+  });
+
   test('no coin-flip metric tile links to a source (D-23)', () => {
     expect(coinFlip.metrics?.tiles.length).toBeGreaterThan(0);
     for (const tile of coinFlip.metrics?.tiles ?? []) expect(tile.sourceUrl).toBeUndefined();

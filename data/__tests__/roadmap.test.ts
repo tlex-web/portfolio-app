@@ -54,6 +54,12 @@ describe('RoadmapSchema', () => {
     );
   });
 
+  test('rejects two phases with the same number, the disclosure key (11 IN-08)', () => {
+    const phase = { n: 7, name: 'Phase', status: 'completed' };
+    const phases = [phase, { ...phase, name: 'Other' }];
+    expect(RoadmapItemSchema.safeParse({ ...validRow, phases }).success).toBe(false);
+  });
+
   test('accepts a completed row without a confirmed date (it renders "Completed")', () => {
     const undated: Record<string, unknown> = { ...validRow };
     delete undated.completedAt;

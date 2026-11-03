@@ -57,7 +57,8 @@ export default function RoutePanel({
         {units.length > 0 && (
           <p className="font-mono text-sm text-ink-muted">
             {units.map((unit, i) => (
-              <span key={unit}>
+              // Version then status: a fixed two-slot list, so the index is a stable key (11 IN-08).
+              <span key={i}>
                 {i > 0 && <span aria-hidden="true"> · </span>}
                 <span className="whitespace-nowrap">{unit}</span>
               </span>

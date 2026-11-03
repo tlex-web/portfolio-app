@@ -28,13 +28,24 @@ export const DemoCommandSchema = z.strictObject({
 });
 
 /**
+ * True when no two entries repeat a value (`unique`) or share `entry[key]`
+ * (`uniqueBy`). React keys and the names that tell source links apart must
+ * stay distinct (11 IN-08, IN-13).
+ */
+const unique = (list: unknown[]) => new Set(list).size === list.length;
+const uniqueBy =
+  <K extends string>(key: K) =>
+  (list: Record<K, unknown>[]) =>
+    unique(list.map((entry) => entry[key]));
+
+/**
  * One metric tile (D-28, ENG-04). The context line is required: a figure
  * without it does not ship. `sourceUrl` points at the public evidence, over
  * https only, like the site's other external links (11 IN-03).
  */
 const MetricTile = z.strictObject({
-  key: z.string(),
-  label: z.string(),
+  key: z.string().min(1),
+  label: z.string().min(1),
   value: z.string(),
   context: z.string().min(1),
   sourceUrl: z.url({ protocol: /^https$/ }).optional(),
@@ -68,14 +79,24 @@ const ProjectBase = z.strictObject({
   metrics: z
     .strictObject({
       releaseLine: z.string().optional(),
-      tiles: z.array(MetricTile).min(1),
+      tiles: z
+        .array(MetricTile)
+        .min(1)
+        .refine(uniqueBy('key'), 'duplicate metric key')
+        .refine(uniqueBy('label'), 'duplicate metric label'),
     })
     .optional(),
   stack: z
     .strictObject({
       groups: z
-        .array(z.strictObject({ label: z.string(), items: z.array(z.string()).min(1) }))
-        .min(1),
+        .array(
+          z.strictObject({
+            label: z.string(),
+            items: z.array(z.string()).min(1).refine(unique, 'duplicate stack item'),
+          })
+        )
+        .min(1)
+        .refine(uniqueBy('label'), 'duplicate stack group'),
     })
     .optional(),
   /** Route-log row ids, planned or in progress only (N4, D-32). */
@@ -115,7 +136,10 @@ const CoinFlip = ProjectBase.extend({
   repository: z.literal('private'),
   /** The third slot on coin-flip (D-25). */
   privacy: z
-    .strictObject({ intro: z.string().optional(), facts: z.array(z.string()).min(1) })
+    .strictObject({
+      intro: z.string().optional(),
+      facts: z.array(z.string()).min(1).refine(unique, 'duplicate privacy fact'),
+    })
     .optional(),
   /** D-27: the clip renders only with its text description. */
   clip: z

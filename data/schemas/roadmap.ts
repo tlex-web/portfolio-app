@@ -42,7 +42,11 @@ export const RoadmapItemSchema = z.strictObject({
   order: z.number().int(),
   completedAt: IsoDate.optional(),
   targetRelease: z.string().min(1).optional(),
-  phases: z.array(RoadmapPhaseSchema).optional(),
+  /** Phase numbers are React keys in the disclosure, so they are unique (11 IN-08). */
+  phases: z
+    .array(RoadmapPhaseSchema)
+    .refine((p) => new Set(p.map((x) => x.n)).size === p.length, 'duplicate phase number')
+    .optional(),
 });
 
 export const RoadmapSchema = z.array(RoadmapItemSchema);
