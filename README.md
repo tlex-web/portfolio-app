@@ -82,11 +82,21 @@ npm install
 cp .env.example .env.local
 ```
 
-4. Edit `.env.local` with your configuration if needed:
+4. Edit `.env.local` with the contact-form settings:
 
 ```env
-FEEDBACK_EMAIL=your.email@example.com
+# Resend (email delivery, required)
+RESEND_API_KEY=re_your_api_key
+FEEDBACK_RECIPIENT_EMAIL=your.email@example.com
+# Optional, defaults to onboarding@resend.dev
+FEEDBACK_FROM_EMAIL=noreply@yourdomain.com
+
+# Upstash Redis (rate limiting, optional)
+UPSTASH_REDIS_REST_URL=https://your-database.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your_token_here
 ```
+
+The form answers "Couldn't send." until `RESEND_API_KEY` and `FEEDBACK_RECIPIENT_EMAIL` are set, and rate limiting is off without the Upstash pair.
 
 ### Development
 
@@ -323,7 +333,9 @@ git push origin main
    - Vercel will auto-detect Next.js settings
 
 3. Configure environment variables in Vercel dashboard:
-   - Add `FEEDBACK_EMAIL` if using email notifications
+   - Required for the contact form: `RESEND_API_KEY` and `FEEDBACK_RECIPIENT_EMAIL`
+   - Optional: `FEEDBACK_FROM_EMAIL` (defaults to `onboarding@resend.dev`)
+   - Rate limiting: `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, or add Vercel's Upstash integration, which injects them
 
 4. Deploy! Vercel will automatically:
    - Run tests
@@ -382,7 +394,7 @@ This Next.js app can also deploy to:
 - **Netlify**: Use the Netlify CLI or connect your GitHub repo
 - **Railway**: One-click deploy from GitHub
 - **Cloudflare Pages**: Deploy via Wrangler or dashboard
-- **Self-hosted**: Run `npm run build && npm start` on any Node.js 20+ server
+- **Self-hosted**: Run `npm run build && npm start` on a Node.js 24 server (`engines.node` 24.x, `.node-version`)
 
 ## 🎨 Browser Support
 
