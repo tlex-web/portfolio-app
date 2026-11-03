@@ -288,6 +288,7 @@ One shared layout component, `EdgeLayout` (Server, zero JS, no hooks, so it also
 | `/offline` [D-12] | `Offline` | `You're offline` (Draft) | Draft: "This page needs a connection and reloads by itself when you're back online." | Primary **Try again** (`window.location.reload()`) | No focus move |
 
 - **Text links** in the action row use the 07 prose link style (`text-accent underline underline-offset-[0.2em] min-h-11 inline-flex items-center`), as `NotFoundBody` has them today.
+  - **Amendment (2026-11-03, 12-32, after 12-UI-REVIEW priority fix 2):** the 404's action-row links keep that style. On `(site)/error` and `global-error`, **Report this error** uses the 11 ink-muted text-link style (`inline-flex min-h-11 items-center text-base text-ink-muted underline decoration-1 underline-offset-4 hover:text-ink`, hover on `--duration-fast` `ease-erosion`), so **Try again** stays the page's one accent element.
 - **Context without the slug** [D-11]: `NotFoundBody` takes `context?: 'photos' | 'projects'` and never reads `params` or the pathname's slug. The mechanism is the planner's: segment `not-found.tsx` files in `photos/` and `projects/`, or the group not-found reading only the first path segment. It must cover both `dynamicParams = false` misses and explicit `notFound()` calls. An e2e test visits `/photos/<random-token>` and `/projects/<random-token>` and asserts the token string appears nowhere in the DOM or `<title>`.
 - **Server HTML gate (STATE blocker, EDGE-01 sign-off):** the response body for `/projects/<unknown>` and `/photos/<unknown>`, fetched with `request.get` (no JS), contains the h1 `You've left the marked trail` and one `main`, with status 404. An empty `<html id="__next_error__">` body fails EDGE-01.
 - **Status and indexing:** 404s return HTTP 404 with no redirect [07, D-carried]; Next injects `noindex` [NEXT not-found]. `/offline` exports `robots: { index: false }` and stays out of the sitemap.
@@ -405,7 +406,7 @@ Phase 12 adds **no motion**. Removed: the Contact `AnimatedGradientMesh`, every 
 | Checkbox row | `accent-color` box, ink label | none | Ring on the box | Checked: native |
 | Send Message (primary) | `bg-accent text-ink-inverse` | `bg-accent-hover` | Ring | Sending: `Sending…`, `aria-disabled="true"`, `cursor-not-allowed`, no hover change; **no** `opacity-50` (it is busy, not unavailable) |
 | Copy, Retry, Sign again (secondary) | `line-strong` border, ink | `bg-surface-overlay` | Ring | Copy shows `Copied` + `CheckIcon` for 2 s |
-| Text links (mailto, Elsewhere) | `ink-muted`, underlined (mailto) | `ink` | Ring | n/a |
+| Text links (mailto, Elsewhere, Report this error [12-32]) | `ink-muted`, underlined (mailto, Report this error) | `ink` | Ring | n/a |
 | Summary links | `danger`, underlined | `ink` | Ring | n/a |
 | Edge primary / secondary | 07 primary / secondary | 07 | Ring | n/a |
 | Edge text links | `accent`, underlined | `accent-hover` | Ring | n/a |

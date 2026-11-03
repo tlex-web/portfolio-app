@@ -15,8 +15,13 @@ const PRIMARY =
   'inline-flex items-center gap-2 min-h-11 px-6 rounded-sm bg-accent text-ink-inverse font-semibold text-base hover:bg-accent-hover transition-colors duration-(--duration-fast) ease-erosion cursor-pointer touch-manipulation';
 const SECONDARY =
   'inline-flex items-center gap-2 min-h-11 px-6 rounded-sm border border-line-strong text-ink font-semibold text-base hover:bg-surface-raised transition-colors duration-(--duration-fast) ease-erosion';
-/** The 07 prose link style, as NotFoundBody's text links. */
-const TEXT_LINK = 'text-accent underline underline-offset-[0.2em] min-h-11 inline-flex items-center';
+/**
+ * Report this error: the 11 ink-muted text-link style (12-UI-SPEC mailto link) with the 07
+ * hover motion, 44 px target kept. 12-UI-REVIEW priority fix 2: Try again stays the one
+ * accent element on the error pages; the underline keeps the link identifiable without colour.
+ */
+const REPORT_LINK =
+  'inline-flex min-h-11 items-center text-base text-ink-muted underline decoration-1 underline-offset-4 hover:text-ink transition-colors duration-(--duration-fast) ease-erosion';
 
 /** copy.error-report (12-01 "Resolved values", supplied). */
 const REPORT_LABEL = 'Report this error';
@@ -65,7 +70,7 @@ export default function ErrorBody({
                 <Link href="/" className={SECONDARY}>
                   Go to the homepage
                 </Link>
-                <Link href="/contact" className={TEXT_LINK}>
+                <Link href="/contact" className={REPORT_LINK}>
                   {REPORT_LABEL}
                 </Link>
               </>
@@ -79,7 +84,7 @@ export default function ErrorBody({
                   Reload page
                 </button>
                 {/* Plain anchor on purpose: the global-error fallback must not depend on the router */}
-                <a href="/contact" className={TEXT_LINK}>
+                <a href="/contact" className={REPORT_LINK}>
                   {REPORT_LABEL}
                 </a>
               </>

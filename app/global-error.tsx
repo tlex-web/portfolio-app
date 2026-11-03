@@ -27,6 +27,9 @@ const jetbrainsMono = JetBrains_Mono({
   display: 'swap',
 });
 
+/** meta.global-error-title (12-27 "Resolved values (follow-up)", supplied by Tim). */
+const GLOBAL_ERROR_TITLE = 'Something went wrong · Tim Lui';
+
 /**
  * Root error boundary (SHELL-05, EDGE-01; UI-SPEC "Shell Contract" global-error
  * variant; 12 D-09). Its own html.dark/body with the static chrome: plain links,
@@ -35,7 +38,8 @@ const jetbrainsMono = JetBrains_Mono({
  * Try again calls `retry()` (user-approved deviation from the UI-SPEC's
  * `reset()` wording, 2026-10-10); `reset` stays in the props signature, unused.
  * The error is logged, never rendered (T-12-29). No metadata export: Next does
- * not support it in global-error.
+ * not support it in global-error, so the title is a React title element that React 19
+ * hoists into the head (IN-05).
  */
 export default function GlobalError({
   error,
@@ -52,6 +56,7 @@ export default function GlobalError({
   return (
     <html lang="en" className={`dark ${schibsted.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
       <body className="font-body antialiased">
+        <title>{GLOBAL_ERROR_TITLE}</title>
         <SiteChrome variant="static">
           <ErrorBody variant="root" onRetry={retry} />
         </SiteChrome>
