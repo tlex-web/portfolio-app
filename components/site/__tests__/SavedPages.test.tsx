@@ -86,7 +86,7 @@ describe('SavedPages', () => {
     expect(region.textContent).not.toMatch(/https?:|\/photos\/|\/roadmap|\/offline|_next/);
   });
 
-  it('rows are at least 48 px link rows with line rules, and no count is shown', async () => {
+  it('rows are at least 48 px link rows with line rules that hover to surface-overlay, and no count is shown', async () => {
     stubCaches({ 'dynamic-x': [`${ORIGIN}/`, `${ORIGIN}/roadmap`] });
     render(<SavedPages catalog={catalog} />);
 
@@ -94,7 +94,13 @@ describe('SavedPages', () => {
     expect(list).toHaveClass('mt-4', 'border-b', 'border-line');
     for (const item of within(list).getAllByRole('listitem')) {
       expect(item).toHaveClass('border-t', 'border-line');
-      expect(within(item).getByRole('link')).toHaveClass('flex', 'min-h-12', 'items-center');
+      // 12-UI-SPEC colour roles: overlay is the hover surface for saved-page rows (D2).
+      expect(within(item).getByRole('link')).toHaveClass(
+        'flex',
+        'min-h-12',
+        'items-center',
+        'hover:bg-surface-overlay'
+      );
     }
     const region = screen.getByRole('region', { name: 'Saved on this device' });
     expect(region.textContent).not.toMatch(/\d/);
