@@ -24,7 +24,14 @@
  */
 
 import { NextRequest } from 'next/server';
-import { buildCsp, canFetchNeutral, NEUTRAL_SLUG, NEUTRAL_TIMEOUT_MS, proxy } from '../../proxy';
+import {
+  buildCsp,
+  canFetchNeutral,
+  config,
+  NEUTRAL_SLUG,
+  NEUTRAL_TIMEOUT_MS,
+  proxy,
+} from '../../proxy';
 import { projects } from '@/data/projects';
 import { photoSlugs } from '@/lib/photos/view-model';
 
@@ -140,6 +147,15 @@ describe('buildCsp: script-src and origins', () => {
       expect(csp).toContain(`${d};`);
     }
     expect(csp.endsWith(';')).toBe(true);
+  });
+});
+
+describe('config.matcher', () => {
+  // C1 (T-12-02, D-17): a document prefetch (`purpose: prefetch`) is a
+  // document, so it must pass the proxy for its CSP header and the
+  // section-header delete; only the RSC prefetch (next-router-prefetch) skips.
+  it('skips only RSC prefetches: missing holds the next-router-prefetch entry alone', () => {
+    expect(config.matcher[0].missing).toEqual([{ type: 'header', key: 'next-router-prefetch' }]);
   });
 });
 

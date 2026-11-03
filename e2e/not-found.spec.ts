@@ -146,6 +146,33 @@ test.describe('Unknown detail slugs: server-rendered 404 (EDGE-01)', () => {
     expect(main).not.toContain('All photographs');
   });
 
+  // C1: a document prefetch (`purpose: prefetch`) passes the proxy, so it gets
+  // the CSP header and the proxy's delete of a visitor-sent section header.
+  test('a document prefetch with a client-sent x-edge-section gets the CSP header and the generic links', async ({
+    request,
+  }) => {
+    const response = await request.get('/__no-such-page__', {
+      headers: { purpose: 'prefetch', 'x-edge-section': 'photos' },
+    });
+    const { main } = await expectServerRendered404(response);
+
+    expect(response.headers()['content-security-policy'] ?? '').toContain("default-src 'self'");
+    expect(main).toContain('>Photographs<');
+    expect(main).not.toContain('All photographs');
+  });
+
+  // Positive control: the proxy really runs on a document prefetch, so an
+  // unknown photo slug gets its miss handling and the section's context link.
+  test('a document prefetch of an unknown photo slug gets the proxy miss handling', async ({
+    request,
+  }) => {
+    const response = await request.get(`/photos/${token}`, { headers: { purpose: 'prefetch' } });
+    const { main } = await expectServerRendered404(response);
+
+    expect(response.headers()['content-security-policy'] ?? '').toContain("default-src 'self'");
+    expect(main).toContain('All photographs');
+  });
+
   test('an unmatched URL: the marked-trail h1 in the server HTML and the generic sentence', async ({
     request,
   }) => {
