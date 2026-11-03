@@ -5,16 +5,16 @@ milestone_name: Topographic Identity
 current_phase: 12
 current_phase_name: Contact, Edge Pages, Cleanup & Verification
 status: executing
-stopped_at: Completed 12-31-PLAN.md
-last_updated: "2026-11-03T13:24:57.261Z"
+stopped_at: Completed 12-32-PLAN.md
+last_updated: "2026-11-03T13:34:46.804Z"
 last_activity: 2026-11-03
 last_activity_desc: Phase 12 execution started
-state_head: e3ae417cc7df68ce619689f0c5c32e259cfabe7b
+state_head: f7ce5eaaf3f5001eb156dda0033d118c6810898f
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 128
-  completed_plans: 125
+  completed_plans: 126
   percent: 98
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-02)
 ## Current Position
 
 Phase: 12 (Contact, Edge Pages, Cleanup & Verification) — EXECUTING
-Plan: 32 of 34
+Plan: 33 of 34
 Status: Ready to execute
 Last activity: 2026-11-03 — Phase 12 execution started
 
@@ -183,6 +183,7 @@ Progress: [█████████░] 98%
 | Phase 12 P29 | 9 min | 3 tasks | 6 files |
 | Phase 12 P30 | 8 min | 2 tasks | 8 files |
 | Phase 12 P31 | 13 min | 3 tasks | 7 files |
+| Phase 12 P32 | 5 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -505,6 +506,9 @@ Recent decisions affecting current work:
 - [Phase 12]: 12-31 WR-02: DemoTerminal observes its region via the observeRegion callback ref (React 19 ref cleanup); a 4->2 shrink never removed the node (render-phase update discards the null), the real removed-node path is empty-then-refill
 - [Phase 12]: 12-31 IN-03: useProgressiveTextures keys its loader on sourcesKey (joined thumbSrc/fullSrc) with a tracked-key reset; same URLs in a new array start no load
 - [Phase 12]: 12-31 IN-04: startUpdateChecks(container, scriptUrl, everyMs) in lib/sw-update.ts returns a stop function and catches update(); ServiceWorkerRegistration stops it in the effect cleanup
+- [Phase 12]: 12-32 D1: error-page Report this error uses the ink-muted text-link style (REPORT_LINK); NotFoundBody keeps its 07 accent links; 12-UI-SPEC amended 2026-11-03
+- [Phase 12]: 12-32 IN-05: global-error ships Tim's 12-27 title 'Something went wrong · Tim Lui' as a React title element
+- [Phase 12]: 12-32 D2: saved-page rows hover to surface-overlay
 
 ### Pending Todos
 
@@ -551,6 +555,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-03T13:24:41.085Z
-Stopped at: Completed 12-31-PLAN.md
+Last session: 2026-11-03T13:34:45.483Z
+Stopped at: Completed 12-32-PLAN.md
 Resume file: None
