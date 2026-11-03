@@ -179,6 +179,22 @@ test.describe('Contact Form', () => {
     await expectFieldsKept(page);
   });
 
+  // WR-01 (D-02): a validation answer the visitor cannot act on is a send
+  // failure, never a silent form.
+  test('should show the send failure when a validation answer names no field', async ({ page }) => {
+    await mockFeedback(page, 400, { code: 'validation' });
+    await openContact(page);
+
+    await fillValid(page);
+    await sendButton(page).click();
+
+    const box = page.getByRole('alert').filter({ hasText: "Couldn't send." });
+    await expect(box).toBeFocused();
+    await expect(box.getByRole('button', { name: 'Retry sending' })).toBeVisible();
+    await expect(page.getByText('Register signed')).toHaveCount(0);
+    await expectFieldsKept(page);
+  });
+
   test('should read the minutes from Retry-After when rate limited', async ({ page }) => {
     await mockFeedback(page, 429, { code: 'rate-limited', retryAfterS: 120 }, { 'Retry-After': '120' });
     await openContact(page);

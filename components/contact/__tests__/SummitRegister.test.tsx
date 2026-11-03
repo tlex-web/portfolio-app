@@ -361,6 +361,29 @@ describe('SummitRegister', () => {
     expectFieldsKept();
   });
 
+  // WR-01 (D-02, CONTACT-02): a validation answer that names no field the
+  // visitor can fix is a send failure, never silence.
+  it.each([
+    ['no fields', { code: 'validation' }],
+    ['empty fields', { code: 'validation', fields: {} }],
+  ])('WR-01: a validation answer with %s shows the send failure and keeps every field', async (_, body) => {
+    fetchMock.mockResolvedValueOnce(answer(400, body));
+    const user = userEvent.setup();
+    render(<SummitRegister />);
+
+    fillValid();
+    await user.click(sendButton());
+
+    const box = await screen.findByRole('alert');
+    await waitFor(() => expect(box).toHaveFocus());
+    expect(box).toHaveTextContent("Couldn't send.");
+    expect(box).toHaveTextContent('Your message is still here. Try again, or email me at');
+    expect(within(box).getByRole('button', { name: 'Retry sending' })).toBeInTheDocument();
+    expect(box).not.toHaveTextContent(/Check \d+ fields?/);
+    expect(screen.queryByText('Register signed')).not.toBeInTheDocument();
+    expectFieldsKept();
+  });
+
   it('keeps the honeypot out of the Tab order and the accessibility tree', async () => {
     const user = userEvent.setup();
     const { container } = render(<SummitRegister />);
