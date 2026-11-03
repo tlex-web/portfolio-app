@@ -45,7 +45,7 @@ export const ALLOWED_CONSOLE: ReadonlyArray<AllowedConsole> = [
     engine: 'chromium',
     pattern: new RegExp(
       String.raw`^(?:Failed to load resource: the server responded with a status of 404 \(Not Found\) @ ${LOADER}` +
-        String.raw`|Refused to execute script from '${LOADER}' because its MIME type \('[^']*'\) is not executable, and strict MIME type checking is enabled\. @ \S*)$`,
+        String.raw`|Refused to execute script from '${LOADER}' because its MIME type \('[^']*'\) is not executable, and strict MIME type checking is enabled\. @ \S*)$`
     ),
   },
   // Firefox (Vercel loaders under next start): the nosniff MIME block of the
@@ -53,7 +53,7 @@ export const ALLOWED_CONSOLE: ReadonlyArray<AllowedConsole> = [
   {
     engine: 'firefox',
     pattern: new RegExp(
-      String.raw`^\[JavaScript Error: "The resource from “${LOADER}” was blocked due to MIME type \(“[^”]*”\) mismatch \(X-Content-Type-Options: nosniff\)\." \{file: "[^"]*" line: 0\}\] @ \S*$`,
+      String.raw`^\[JavaScript Error: "The resource from “${LOADER}” was blocked due to MIME type \(“[^”]*”\) mismatch \(X-Content-Type-Options: nosniff\)\." \{file: "[^"]*" line: 0\}\] @ \S*$`
     ),
   },
   // WebKit (Vercel loaders under next start): the network 404 of the loader and
@@ -62,7 +62,7 @@ export const ALLOWED_CONSOLE: ReadonlyArray<AllowedConsole> = [
     engine: 'webkit',
     pattern: new RegExp(
       String.raw`^(?:Failed to load resource: the server responded with a status of 404 \(Not Found\) @ ${LOADER}` +
-        String.raw`|Refused to execute ${LOADER} as script because "X-Content-Type-Options: nosniff" was given and its Content-Type is not a script MIME type\. @ \S*)$`,
+        String.raw`|Refused to execute ${LOADER} as script because "X-Content-Type-Options: nosniff" was given and its Content-Type is not a script MIME type\. @ \S*)$`
     ),
   },
 ];
@@ -77,7 +77,7 @@ export async function installAuditProbes(page: Page): Promise<void> {
       w.__auditCsp.push(
         `${event.effectiveDirective} blocked ${event.blockedURI || '(inline)'} at ${
           event.sourceFile || '(document)'
-        }:${event.lineNumber}`,
+        }:${event.lineNumber}`
       );
     });
     if (
@@ -164,6 +164,11 @@ export async function settle(page: Page): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 80));
     window.scrollTo(0, 0);
   });
+  await waitForAnimations(page);
+}
+
+/** Every finite running animation finished (capped at 5 s), then two frames. */
+export async function waitForAnimations(page: Page): Promise<void> {
   await page.evaluate(async () => {
     const deadline = performance.now() + 5000;
     const running = () =>
@@ -187,11 +192,13 @@ export async function runAxe(page: Page): Promise<{ violations: string[]; region
       (node) =>
         `${rule.id} (${rule.impact ?? 'n/a'}) ${node.target.join(' ')} :: ${
           node.failureSummary?.replace(/\s+/g, ' ') ?? rule.help
-        }`,
-    ),
+        }`
+    )
   );
   // 'region' is a best-practice rule: seeing it proves the default run is not WCAG-only.
-  const regionRan = [...results.passes, ...results.inapplicable].some((rule) => rule.id === 'region');
+  const regionRan = [...results.passes, ...results.inapplicable].some(
+    (rule) => rule.id === 'region'
+  );
   return { violations, regionRan };
 }
 
@@ -203,10 +210,13 @@ export async function runAxe(page: Page): Promise<{ violations: string[]; region
 export async function checkLinks(
   page: Page,
   request: APIRequestContext,
-  seen: Set<string>,
+  seen: Set<string>
 ): Promise<string[]> {
   const urls = await page.evaluate(() => {
     const found = new Set<string>();
+    const current = new URL(location.href);
+    current.hash = '';
+    const here = current.href;
     const add = (raw: string | null) => {
       if (!raw) return;
       let url: URL;
@@ -217,6 +227,9 @@ export async function checkLinks(
       }
       if (url.origin !== location.origin) return;
       url.hash = '';
+      // An in-page link (the skip link's #main-content) points at this document,
+      // which the caller loaded and checked itself; it starts no request.
+      if (url.href === here) return;
       found.add(url.href);
     };
     for (const anchor of document.querySelectorAll('a[href]')) add(anchor.getAttribute('href'));
@@ -242,7 +255,7 @@ export async function checkLinks(
         const status = response.status();
         await response.dispose();
         return status;
-      }),
+      })
     );
     statuses.forEach((status, index) => {
       if (status >= 400) broken.push(`${status} ${batch[index]}`);
