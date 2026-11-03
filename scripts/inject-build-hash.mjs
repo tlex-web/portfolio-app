@@ -10,8 +10,9 @@
  * 2. Reads data/generated/precache.json (written by
  *    scripts/terrain/build-terrain.mjs) and replaces the exact token
  *    `/*__PRECACHE_URLS__*\/[]` with the JSON array, so the service worker
- *    precaches the content-hashed footer strip (SHELL-04: /offline keeps its
- *    band).
+ *    precaches the content-hashed footer strip and hero contour (SHELL-04,
+ *    D-12: /offline keeps its band and its edge-art sheet on a first offline
+ *    visit).
  *
  * The URLs end up inside executable service-worker code (T-08-17), so only a
  * JSON array of content-hashed same-origin /terrain/ paths is accepted, and it
