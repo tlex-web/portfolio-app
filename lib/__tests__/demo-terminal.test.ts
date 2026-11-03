@@ -62,6 +62,10 @@ describe('demo terminal state machine', () => {
     });
   });
 
+  it('restarts on the first command when the list shrank below the index (11 IN-01)', () => {
+    expect(tick({ index: 5, phase: 'input', chars: 2 }, COMMANDS, false)).toEqual(initialState());
+  });
+
   it('skips typing under reduced motion: shown(0) -> shown(1) -> shown(0)', () => {
     expect(walk(initialState(), 2, true)).toEqual([
       { index: 1, phase: 'shown', chars: 0 },

@@ -212,6 +212,12 @@ export default function DemoTerminal({
     setFocusWithin(false);
   }
 
+  if (state.index >= count) {
+    // An empty list renders nothing; a shrunken one restarts on command 1 (11 IN-01).
+    if (count > 0) setState(initialState());
+    return null;
+  }
+
   const shownState: TerminalState = reduced ? { ...state, phase: 'shown' } : state;
   const current = commands[state.index];
 

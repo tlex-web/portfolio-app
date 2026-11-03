@@ -63,6 +63,8 @@ export function tick(
 ): TerminalState {
   const count = commands.length;
   if (count === 0) return state;
+  // The list shrank below the current command: restart on the first (11 IN-01).
+  if (state.index >= count) return initialState();
 
   if (state.phase === 'shown') {
     const next = (state.index + 1) % count;

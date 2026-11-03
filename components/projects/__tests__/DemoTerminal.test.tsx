@@ -374,6 +374,23 @@ describe('DemoTerminal one and many commands (G2, G3)', () => {
     expect(cell(1)).toHaveTextContent('box hash notes.txt');
   });
 
+  it('renders nothing with no commands, and restarts on command 1 when the list shrinks (11 IN-01)', async () => {
+    const { container } = render(<DemoTerminal name="box" commands={[]} />);
+    expect(container).toBeEmptyDOMElement();
+
+    const { user, rerender } = setup();
+    await user.click(within(region()).getByRole('button', { name: 'Go to command 4' }));
+    expect(region()).toHaveAttribute('data-command', '4');
+    rerender(
+      <>
+        <DemoTerminal name="box" commands={COMMANDS.slice(0, 2)} />
+        <button type="button">Outside</button>
+      </>
+    );
+    expect(region()).toHaveAttribute('data-command', '1');
+    expect(cell(1)).toHaveTextContent('box hash notes.txt');
+  });
+
   it('gives seven commands seven dots in a wrapping bar', () => {
     const seven = Array.from({ length: 7 }, (_, i) => ({
       ...COMMANDS[i % 4],
