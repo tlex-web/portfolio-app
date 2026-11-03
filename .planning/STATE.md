@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 12
 current_phase_name: Contact, Edge Pages, Cleanup & Verification
 status: executing
-stopped_at: Completed 12-22-PLAN.md
-last_updated: "2026-11-03T02:11:38.367Z"
+stopped_at: Completed 12-23-PLAN.md
+last_updated: "2026-11-03T09:52:53.409Z"
 last_activity: 2026-11-02
 last_activity_desc: Phase 12 execution started
-state_head: 03e96ef9357f5f6f16ee9cd6afa359f4fb5608b5
+state_head: d8d477a3690641bd15beb0c1f1a9d88b0d486fa7
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 120
-  completed_plans: 118
-  percent: 98
+  completed_plans: 119
+  percent: 99
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-11-02)
 ## Current Position
 
 Phase: 12 (Contact, Edge Pages, Cleanup & Verification) — EXECUTING
-Plan: 25 of 26
+Plan: 26 of 26
 Status: Ready to execute
 Last activity: 2026-11-02 — Phase 12 execution started
 
-Progress: [█████████░] 98%
+Progress: [█████████░] 99%
 
 ## Performance Metrics
 
@@ -176,6 +176,7 @@ Progress: [█████████░] 98%
 | Phase 12 P20 | 13 min | 3 tasks | 2 files |
 | Phase 12 P21 | 15 min | 2 tasks | 1 files |
 | Phase 12 P22 | 58min | 3 tasks | 23 files |
+| Phase 12 P23 | 1h 41m | 3 tasks | 16 files |
 
 ## Accumulated Context
 
@@ -478,6 +479,10 @@ Recent decisions affecting current work:
 - [Phase 12]: 12-22: closed review rows are written as the ledger's skipped value with 'Closed, executor outcome' and the removing commit (the enum has no closed)
 - [Phase 12]: 12-22: e2e/photos-lightbox.spec.ts runs in order in one worker (describe.configure mode 'default'); 16-worker dev runs overloaded next dev, CI single-worker unaffected
 - [Phase 12]: 12-22: reproduced flakes in specs outside 12-22's list (shell.spec.ts:402 test.slow(), design-system G3 @prod-only) and the prefetch/CSP, hero precache and design-system comment rows are open for a follow-up quick plan with exact fixes
+- [Phase 12]: [12-23] CI E2E Tests runs chromium, firefox and webkit with --fail-on-flaky-tests (28f141d); green on 147bc82, run 41571031827 (501 + 432 + 430, 0 flaky); timeout-minutes stays 60 (job about 36.5 min); no round 3 (Tim: "No round 3")
+- [Phase 12]: [12-23] WebKit exclusions are per platform, never @chromium-only or test.skip: @needs-tab-to-links (webkit on win32/darwin), @no-win-webkit (WinCairo history-Back crash during the lightbox View Transition, media outside page.route), @no-linux-webkit (GStreamer fetches preload-none MP4); 17 tags, each with a reason comment; Firefox and Chromium keep every test
+- [Phase 12]: [12-23] Safari focus conventions (Tab skips links, a click does not focus a button) apply to WebKit off Linux only; specs branch through e2e/helpers/engine.ts (tabReachesLinks, clickFocusesButtons, pressButton), so Linux WebKit in CI walks every link stop
+- [Phase 12]: [12-23] PhotoViewer re-applies the shown photo's document title through WebKit's late head writes (aeb3d0f); real Safari checks Back right after opening a photo and a quick Next after a photo page loads in 12-24 UAT (D-19)
 
 ### Pending Todos
 
@@ -524,6 +529,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-03T02:11:37.410Z
-Stopped at: Completed 12-22-PLAN.md
+Last session: 2026-11-03T09:52:52.462Z
+Stopped at: Completed 12-23-PLAN.md
 Resume file: None
