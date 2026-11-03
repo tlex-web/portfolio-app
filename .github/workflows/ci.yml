@@ -101,7 +101,7 @@ jobs:
         run: npx playwright install --with-deps
 
       - name: Run Playwright tests
-        run: npx playwright test --project=chromium --project=firefox
+        run: npx playwright test --project=chromium --project=firefox --project=webkit --fail-on-flaky-tests
         env:
           RESEND_API_KEY: dummy_key_for_tests
           FEEDBACK_RECIPIENT_EMAIL: test@example.com

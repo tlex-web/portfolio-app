@@ -94,7 +94,9 @@ export default defineConfig({
       use: { ...devices['Desktop Firefox'], serviceWorkers: 'block' },
     },
 
-    // Defined in every environment; CI adds --project=webkit in 12-23 after triage.
+    // Defined in every environment. CI runs it with chromium and firefox under
+    // --fail-on-flaky-tests (D-18, 12-23): a test that passes only on a retry
+    // fails the run, so the retries below never hide a flake.
     {
       name: 'webkit',
       testIgnore: [VISUAL, PERF],
