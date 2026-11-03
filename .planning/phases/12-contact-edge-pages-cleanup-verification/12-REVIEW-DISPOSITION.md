@@ -3,6 +3,26 @@ phase: 12
 review: 12-REVIEW.md
 titles: json
 findings:
+  - id: IN-08
+    severity: info
+    disposition: open
+    title: "A fieldless `validation` answer now offers Retry, but the retry is deterministic and costs a rate-limit slot each time"
+  - id: IN-09
+    severity: info
+    disposition: open
+    title: "`storeCopy` has no guard against a synchronous throw, so a cache-side failure can replace a good network answer"
+  - id: IN-10
+    severity: info
+    disposition: open
+    title: "The new name too-long copy hard-codes `100` beside a check that reads `FEEDBACK_LIMITS.nameMax`"
+  - id: IN-11
+    severity: info
+    disposition: open
+    title: "README says Vercel's Upstash integration \"injects them\"; the code reads only the `UPSTASH_REDIS_REST_*` names"
+  - id: IN-12
+    severity: info
+    disposition: open
+    title: "The new advisory floors (`source-map-js`, `baseline-browser-mapping`) are checked only on the hoisted lockfile copy"
   - id: WR-01
     severity: warning
     disposition: fixed
@@ -47,26 +67,31 @@ findings:
     severity: info
     disposition: fixed
     title: "`z.string().email()` is the deprecated Zod 4 form"
-open: 0
-total: 11
-recorded: 2026-11-03T10:39:05.082Z
+open: 5
+total: 16
+recorded: 2026-11-03T15:15:44.129Z
 ---
 
 # Phase 12: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | fixed | 12-28: e22a714 (RED), e9a3fa1 (fix) |
-| WR-02 | warning | fixed | 12-31: dafcb6e (RED), 4312701 (fix) |
-| WR-03 | warning | fixed | 12-33: d847f8c (README names the five variables lib/email.ts and lib/rate-limit.ts read; Node.js 24) |
-| WR-04 | warning | fixed | 12-30: 11ef205 (RED), 29c321a (fix) |
-| IN-01 | info | fixed | 12-28: f180a4c (RED), 44f764f (fix), with Tim's 12-27 string (copy.field-error-name-long, status supplied) |
-| IN-02 | info | deferred | Narrowed, not fixed as written. 12-27 edge.header-guard status reads option A, Tim's words "A (Recommended)". 12-29's C1 commits 16deede (RED) and 099fab7 (fix) send document prefetches through the proxy, which closes that path; 0b3b5c4 scopes the comments and 9abf40a closes T-12-02. The paths proxy.ts config.matcher still skips (RSC prefetches, api, missing files under images/, terrain/, media/) are the residual Tim accepted as AR-12-02 (12-SECURITY.md). |
-| IN-03 | info | fixed | 12-31: d1c7946 (RED), de25be0 (fix) |
-| IN-04 | info | fixed | 12-31: a5ff20f (RED), b2fb90e (fix) |
-| IN-05 | info | fixed | 12-32: d252a64 (RED), 0eff11c (fix), with Tim's 12-27 string (meta.global-error-title, status supplied) |
-| IN-06 | info | fixed | 12-28: f180a4c (RED), 44f764f (fix) |
-| IN-07 | info | fixed | 12-28: 5abc9b6 (contract pin), b81d5bd (fix) |
+| IN-08 | info | open | - |
+| IN-09 | info | open | - |
+| IN-10 | info | open | - |
+| IN-11 | info | open | - |
+| IN-12 | info | open | - |
+| WR-01 | warning | fixed | 12-28: e22a714 (RED), e9a3fa1 (fix) (not in the current review) |
+| WR-02 | warning | fixed | 12-31: dafcb6e (RED), 4312701 (fix) (not in the current review) |
+| WR-03 | warning | fixed | 12-33: d847f8c (README names the five variables lib/email.ts and lib/rate-limit.ts read; Node.js 24) (not in the current review) |
+| WR-04 | warning | fixed | 12-30: 11ef205 (RED), 29c321a (fix) (not in the current review) |
+| IN-01 | info | fixed | 12-28: f180a4c (RED), 44f764f (fix), with Tim's 12-27 string (copy.field-error-name-long, status supplied) (not in the current review) |
+| IN-02 | info | deferred | Narrowed, not fixed as written. 12-27 edge.header-guard status reads option A, Tim's words "A (Recommended)". 12-29's C1 commits 16deede (RED) and 099fab7 (fix) send document prefetches through the proxy, which closes that path; 0b3b5c4 scopes the comments and 9abf40a closes T-12-02. The paths proxy.ts config.matcher still skips (RSC prefetches, api, missing files under images/, terrain/, media/) are the residual Tim accepted as AR-12-02 (12-SECURITY.md). (not in the current review) |
+| IN-03 | info | fixed | 12-31: d1c7946 (RED), de25be0 (fix) (not in the current review) |
+| IN-04 | info | fixed | 12-31: a5ff20f (RED), b2fb90e (fix) (not in the current review) |
+| IN-05 | info | fixed | 12-32: d252a64 (RED), 0eff11c (fix), with Tim's 12-27 string (meta.global-error-title, status supplied) (not in the current review) |
+| IN-06 | info | fixed | 12-28: f180a4c (RED), 44f764f (fix) (not in the current review) |
+| IN-07 | info | fixed | 12-28: 5abc9b6 (contract pin), b81d5bd (fix) (not in the current review) |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
