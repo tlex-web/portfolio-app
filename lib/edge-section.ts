@@ -7,6 +7,13 @@
  * headers() and parseEdgeSection, so the 404 can offer a link back to the
  * right section without ever seeing (or echoing) the requested slug.
  *
+ * The proxy alone names the section on requests the proxy handles. On the
+ * requests its matcher skips (RSC prefetches with next-router-prefetch, paths
+ * starting with `api`, missing files under images/, terrain/ and media/) a
+ * visitor-sent header reaches the 404 unchanged and can pick one of the two
+ * values below for the sender's own response: the accepted residual
+ * 12-SECURITY AR-12-02.
+ *
  * Pure and import-free: the proxy and the server render both use it.
  */
 

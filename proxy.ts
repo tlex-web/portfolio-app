@@ -191,7 +191,11 @@ export async function proxy(request: NextRequest): Promise<Response> {
   const csp = buildCsp(nonce, request.nextUrl, process.env.NODE_ENV === 'development');
 
   const requestHeaders = new Headers(request.headers);
-  // T-12-02: only the proxy may name the section; a client copy never reaches the render.
+  // T-12-02: on requests the proxy handles, only the proxy may name the
+  // section; the visitor's copy is deleted here on every one of them. Requests
+  // config.matcher skips reach the 404 without this delete: RSC prefetches
+  // (next-router-prefetch), paths starting with `api`, and missing files under
+  // images/, terrain/ and media/ (accepted residual, 12-SECURITY AR-12-02).
   requestHeaders.delete(EDGE_SECTION_HEADER);
   requestHeaders.set('x-nonce', nonce);
   requestHeaders.set('Content-Security-Policy', csp);
