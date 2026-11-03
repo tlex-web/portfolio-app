@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 12
 current_phase_name: Contact, Edge Pages, Cleanup & Verification
 status: executing
-stopped_at: Completed 12-30-PLAN.md
-last_updated: "2026-11-03T13:06:27.901Z"
+stopped_at: Completed 12-31-PLAN.md
+last_updated: "2026-11-03T13:24:57.261Z"
 last_activity: 2026-11-03
 last_activity_desc: Phase 12 execution started
-state_head: 1c55c69979d6053f983f108bc0946825b48c7d26
+state_head: e3ae417cc7df68ce619689f0c5c32e259cfabe7b
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 128
-  completed_plans: 124
-  percent: 97
+  completed_plans: 125
+  percent: 98
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-11-02)
 ## Current Position
 
 Phase: 12 (Contact, Edge Pages, Cleanup & Verification) — EXECUTING
-Plan: 31 of 34
+Plan: 32 of 34
 Status: Ready to execute
 Last activity: 2026-11-03 — Phase 12 execution started
 
-Progress: [█████████░] 97%
+Progress: [█████████░] 98%
 
 ## Performance Metrics
 
@@ -182,6 +182,7 @@ Progress: [█████████░] 97%
 | Phase 12 P28 | 9 min | 3 tasks | 5 files |
 | Phase 12 P29 | 9 min | 3 tasks | 6 files |
 | Phase 12 P30 | 8 min | 2 tasks | 8 files |
+| Phase 12 P31 | 13 min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -501,6 +502,9 @@ Recent decisions affecting current work:
 - [Phase 12]: 12-29: IN-02 narrowed, not fixed as written: matcher-skipped paths (RSC prefetches, api..., missing images/, terrain/, media/ files) are accepted residual AR-12-02; T-12-02 closed in 12-SECURITY.md, threats_open 0; 12-34 records IN-02 deferred
 - [Phase 12]: 12-30: the hero contour joins the install precache through the terrain build (precache.json = [contours.strip, contours.hero]); +45,632 bytes per install (C2)
 - [Phase 12]: 12-30: every service-worker cache write goes through storeCopy (clone at once, event.waitUntil(open.then(put).catch(() => {}))); network-first freshness and never-stored rules unchanged (WR-04)
+- [Phase 12]: 12-31 WR-02: DemoTerminal observes its region via the observeRegion callback ref (React 19 ref cleanup); a 4->2 shrink never removed the node (render-phase update discards the null), the real removed-node path is empty-then-refill
+- [Phase 12]: 12-31 IN-03: useProgressiveTextures keys its loader on sourcesKey (joined thumbSrc/fullSrc) with a tracked-key reset; same URLs in a new array start no load
+- [Phase 12]: 12-31 IN-04: startUpdateChecks(container, scriptUrl, everyMs) in lib/sw-update.ts returns a stop function and catches update(); ServiceWorkerRegistration stops it in the effect cleanup
 
 ### Pending Todos
 
@@ -547,6 +551,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-03T13:06:26.397Z
-Stopped at: Completed 12-30-PLAN.md
+Last session: 2026-11-03T13:24:41.085Z
+Stopped at: Completed 12-31-PLAN.md
 Resume file: None
