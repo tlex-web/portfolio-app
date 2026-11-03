@@ -29,14 +29,15 @@ export const DemoCommandSchema = z.strictObject({
 
 /**
  * One metric tile (D-28, ENG-04). The context line is required: a figure
- * without it does not ship. `sourceUrl` points at the public evidence.
+ * without it does not ship. `sourceUrl` points at the public evidence, over
+ * https only, like the site's other external links (11 IN-03).
  */
 const MetricTile = z.strictObject({
   key: z.string(),
   label: z.string(),
   value: z.string(),
   context: z.string().min(1),
-  sourceUrl: z.url().optional(),
+  sourceUrl: z.url({ protocol: /^https$/ }).optional(),
 });
 
 /** The marked trail each project's route profile follows (D-07). */

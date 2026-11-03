@@ -252,6 +252,17 @@ describe('Copy (D-09, D-23, D-30, ENG-04)', () => {
     expect(ProjectSchema.safeParse({ ...box, metrics: { tiles } }).success).toBe(false);
   });
 
+  test('a metric sourceUrl that is not https fails the parse (11 IN-03)', () => {
+    for (const sourceUrl of [
+      'http://github.com/tlex-web/box',
+      'javascript:alert(1)',
+      'data:text/html,x',
+    ]) {
+      const tiles = [{ key: 'x', label: 'X', value: '1', context: 'c', sourceUrl }];
+      expect(ProjectSchema.safeParse({ ...box, metrics: { tiles } }).success).toBe(false);
+    }
+  });
+
   test('no coin-flip metric tile links to a source (D-23)', () => {
     expect(coinFlip.metrics?.tiles.length).toBeGreaterThan(0);
     for (const tile of coinFlip.metrics?.tiles ?? []) expect(tile.sourceUrl).toBeUndefined();
