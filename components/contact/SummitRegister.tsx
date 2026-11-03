@@ -244,7 +244,7 @@ function outcomeOf(response: Response, body: Partial<FeedbackResponse> | null): 
  * send nothing. No answer within 15 s aborts and counts as a network failure;
  * an answer arriving after that is ignored.
  *
- * An invalid submit, or a server `validation` answer, fills the message slot
+ * An invalid submit, or a server `validation` answer naming a field, fills the message slot
  * with the focused error summary (role="alert"): one link per invalid field in
  * form order, each with its inline error's message. The list follows later
  * fixes without moving focus or re-announcing and stays until the next submit.
@@ -474,6 +474,11 @@ export default function SummitRegister() {
       for (const field of FIELDS) {
         const issue = outcome.fields?.[field];
         if (issue) next[field] = issueMessage(field, issue, v[field]);
+      }
+      // A validation answer the visitor cannot act on is a send failure, never silence (WR-01).
+      if (!FIELDS.some((f) => next[f])) {
+        setFailure((prev) => ({ failure: { kind: 'send' }, seq: (prev?.seq ?? 0) + 1 }));
+        return;
       }
       setFailure(null);
       showErrors(next);
