@@ -25,7 +25,7 @@ import {
 // Define and validate input schema
 const feedbackSchema = z.object({
   name: z.string().min(1).max(FEEDBACK_LIMITS.nameMax),
-  email: z.string().email(),
+  email: z.email(),
   message: z.string().min(FEEDBACK_LIMITS.messageMin).max(FEEDBACK_LIMITS.messageMax),
   interestedInCollaboration: z.boolean().optional(),
   [HONEYPOT_FIELD]: z.string().max(FEEDBACK_LIMITS.honeypotMax).optional(),

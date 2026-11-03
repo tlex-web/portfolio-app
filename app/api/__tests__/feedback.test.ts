@@ -181,7 +181,7 @@ describe('Feedback API Route', () => {
     });
 
     // IN-07 (CONTACT-03): the email check is Zod 4's z.email(); these pin the
-    // same accept and reject set as the deprecated z.string().email().
+    // same accept and reject set as the deprecated string-method email check.
     it.each(['visitor@example.com', 'first.last+tag@mail.example.co.uk'])(
       'accepts the plain address %s',
       async (email) => {
