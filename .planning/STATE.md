@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 12
 current_phase_name: Contact, Edge Pages, Cleanup & Verification
 status: executing
-stopped_at: Completed 12-24-PLAN.md
-last_updated: "2026-11-03T12:07:19.551Z"
-last_activity: 2026-11-02
+stopped_at: Completed 12-27-PLAN.md
+last_updated: "2026-11-03T12:23:37.064Z"
+last_activity: 2026-11-03
 last_activity_desc: Phase 12 execution started
-state_head: 34d340961ef75795e73e3b7bf9ab660889e369c1
+state_head: 76c337514b4d9d81048f13c801b0d97a0043e598
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 128
-  completed_plans: 120
-  percent: 94
+  completed_plans: 121
+  percent: 95
 ---
 
 # Project State
@@ -29,12 +29,12 @@ See: .planning/PROJECT.md (updated 2026-11-02)
 
 ## Current Position
 
-Phase: 12 (Contact, Edge Pages, Cleanup & Verification) — READY TO EXECUTE
-Plan: 26 of 26
+Phase: 12 (Contact, Edge Pages, Cleanup & Verification) — EXECUTING
+Plan: 28 of 34
 Status: Ready to execute
-Last activity: 2026-11-02 — Phase 12 execution started
+Last activity: 2026-11-03 — Phase 12 execution started
 
-Progress: [█████████░] 94%
+Progress: [█████████░] 95%
 
 ## Performance Metrics
 
@@ -178,6 +178,7 @@ Progress: [█████████░] 94%
 | Phase 12 P22 | 58min | 3 tasks | 23 files |
 | Phase 12 P23 | 1h 41m | 3 tasks | 16 files |
 | Phase 12 P24 | 4min | 2 tasks | 2 files |
+| Phase 12 P27 | 3min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -486,6 +487,9 @@ Recent decisions affecting current work:
 - [Phase 12]: [12-23] PhotoViewer re-applies the shown photo's document title through WebKit's late head writes (aeb3d0f); real Safari checks Back right after opening a photo and a quick Next after a photo page loads in 12-24 UAT (D-19)
 - [Phase 12]: 12-24: no round 3 on ci/12-23, so the CI head is 147bc82 (green in four jobs, run 41571031827) and no snapshot-commit check ran
 - [Phase 12]: 12-24: test-count ratchet raised to 2205 (jest 1658, e2e 547); 12-24 commits stay local, their CI run is UAT item (h)
+- [Phase 12]: 12-27: Tim approved both npm advisory bumps ("Approve both, 2.11.35 (Recommended)"): source-map-js 1.2.2 and baseline-browser-mapping 2.11.35, lockfile-only npm update (no override), floors raised; npm audit 44 to 42
+- [Phase 12]: 12-27: IN-01 name-too-long copy for 12-28 is Tim's "Shorten your name to 100 characters (now {n})." ({n} = formatCount(value.length)); IN-05 global-error title for 12-32 is "Something went wrong · Tim Lui"
+- [Phase 12]: 12-27: 404 header guard is option A ("A (Recommended)"): 12-29 drops purpose: prefetch from proxy config.matcher[0].missing; the residual is accepted risk AR-12-02 and 12-34 records IN-02 deferred, not fixed
 
 ### Pending Todos
 
@@ -532,6 +536,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-03T09:59:22.287Z
-Stopped at: Completed 12-24-PLAN.md
+Last session: 2026-11-03T12:23:35.475Z
+Stopped at: Completed 12-27-PLAN.md
 Resume file: None
