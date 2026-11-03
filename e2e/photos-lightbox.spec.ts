@@ -914,7 +914,10 @@ test.describe('Zoom (D-06)', () => {
     await expect(page).toHaveURL(new RegExp(`/photos/${nextPhoto.slug}$`));
   });
 
-  test('Escape twice from zoomed closes the lightbox (LBOX-03)', async ({ page }) => {
+  // @no-win-webkit: history Back while the open's View Transition commit settles crashes
+  // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
+  // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
+  test('Escape twice from zoomed closes the lightbox (LBOX-03) @no-win-webkit', async ({ page }) => {
     const dialog = await openZoomPhoto(page);
     await zoomButton(dialog).click();
     await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'true');
