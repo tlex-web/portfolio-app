@@ -7,13 +7,31 @@ const IMAGE_CACHE = `images-${BUILD_HASH}`;
 const DYNAMIC_CACHE = `dynamic-${BUILD_HASH}`;
 
 // Content-hashed same-origin URLs from data/generated/precache.json (the footer
-// contour strip, so /offline keeps its band). Postbuild replaces the whole
-// comment-plus-[] token with the JSON array; uninjected it is a valid empty list.
+// contour strip, so /offline keeps its band, and the hero contour, so its
+// edge-art sheet renders on a first offline visit; D-12). Postbuild replaces the
+// whole comment-plus-[] token with the JSON array; uninjected it is a valid
+// empty list.
 const PRECACHE = /*__PRECACHE_URLS__*/[];
 
 // --- Caching strategy helpers ---
 
-async function cacheFirst(request, cacheName) {
+// WR-04: stores a copy of `response` under the fetch event's lifetime. The copy
+// is cloned at once (the page consumes the original), and the write is handed
+// to event.waitUntil while respondWith is still pending, so the browser keeps
+// the worker alive until it is stored. A rejected put (QuotaExceededError, a
+// consumed body) is caught here: the visitor already has the network answer.
+function storeCopy(event, cacheName, request, response) {
+  const copy = response.clone();
+  event.waitUntil(
+    caches
+      .open(cacheName)
+      .then((cache) => cache.put(request, copy))
+      .catch(() => {})
+  );
+}
+
+async function cacheFirst(event, cacheName) {
+  const { request } = event;
   const cached = await caches.match(request);
   if (cached) {
     return cached;
@@ -22,8 +40,7 @@ async function cacheFirst(request, cacheName) {
   try {
     const response = await fetch(request);
     if (response && response.ok) {
-      const cache = await caches.open(cacheName);
-      cache.put(request, response.clone());
+      storeCopy(event, cacheName, request, response);
     }
     return response;
   } catch {
@@ -37,7 +54,8 @@ async function cacheFirst(request, cacheName) {
 // opaque answer is passed through and never stored, and a cached copy never
 // replaces a network answer (the proxy's neutral 404 included). Only a network
 // error falls back: the cached page, then the cached /offline, then a 503.
-async function networkFirstNavigation(request) {
+async function networkFirstNavigation(event) {
+  const { request } = event;
   let response;
   try {
     response = await fetch(request);
@@ -54,8 +72,7 @@ async function networkFirstNavigation(request) {
   }
 
   if (response.ok && response.type === 'basic' && !response.redirected) {
-    const cache = await caches.open(DYNAMIC_CACHE);
-    cache.put(request, response.clone());
+    storeCopy(event, DYNAMIC_CACHE, request, response);
   }
   return response;
 }
@@ -88,12 +105,12 @@ async function precacheOfflineAssets() {
   await cache.addAll([...new Set(['/', '/offline', ...PRECACHE, ...fromHtml, ...fromLink])]);
 }
 
-async function networkFirst(request, cacheName) {
+async function networkFirst(event, cacheName) {
+  const { request } = event;
   try {
     const response = await fetch(request);
     if (response && response.ok) {
-      const cache = await caches.open(cacheName);
-      cache.put(request, response.clone());
+      storeCopy(event, cacheName, request, response);
     }
     return response;
   } catch {
@@ -170,7 +187,7 @@ self.addEventListener('fetch', (event) => {
     url.pathname.startsWith('/terrain/') ||
     /\.(woff2|woff|ttf|otf)$/i.test(url.pathname)
   ) {
-    event.respondWith(cacheFirst(request, STATIC_CACHE));
+    event.respondWith(cacheFirst(event, STATIC_CACHE));
     return;
   }
 
@@ -179,18 +196,18 @@ self.addEventListener('fetch', (event) => {
     url.pathname.startsWith('/_next/image') ||
     request.destination === 'image'
   ) {
-    event.respondWith(cacheFirst(request, IMAGE_CACHE));
+    event.respondWith(cacheFirst(event, IMAGE_CACHE));
     return;
   }
 
   // Network-first for page navigations (EDGE-02)
   if (request.mode === 'navigate') {
-    event.respondWith(networkFirstNavigation(request));
+    event.respondWith(networkFirstNavigation(event));
     return;
   }
 
   // Network-first for everything else
-  event.respondWith(networkFirst(request, DYNAMIC_CACHE));
+  event.respondWith(networkFirst(event, DYNAMIC_CACHE));
 });
 
 // Message event: handle SKIP_WAITING
