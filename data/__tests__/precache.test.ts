@@ -2,8 +2,9 @@
  * SHELL-04, DATA-01: hashed terrain delivery (RESEARCH Pitfalls 9 and 10).
  *
  * - data/generated/precache.json (written by scripts/terrain/build-terrain.mjs)
- *   lists the footer contour strip, so the service worker precaches it and
- *   /offline keeps its band (UI-SPEC "Contour band").
+ *   lists the footer contour strip and the hero contour, so the service worker
+ *   precaches both: /offline keeps its band (UI-SPEC "Contour band") and its
+ *   edge-art sheet (EdgeArt's hero LOD) on a first offline visit (12-30 C2, D-12).
  * - The committed public/service-worker.js keeps both placeholders; postbuild
  *   (scripts/inject-build-hash.mjs) replaces them, and /terrain/ is cache-first.
  * - proxy.ts skips images/ and terrain/, so static assets get no per-request
@@ -21,8 +22,8 @@ const precache: unknown = JSON.parse(read('data/generated/precache.json'));
 const sw = read('public/service-worker.js');
 
 describe('precache.json', () => {
-  test('equals [terrain.assets.contours.strip]', () => {
-    expect(precache).toEqual([terrain.assets.contours.strip]);
+  test('equals [terrain.assets.contours.strip, terrain.assets.contours.hero]', () => {
+    expect(precache).toEqual([terrain.assets.contours.strip, terrain.assets.contours.hero]);
   });
 
   test('every entry is a content-hashed /terrain/ SVG that exists in public/', () => {

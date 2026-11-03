@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { projects } from '@/data/projects';
 import { site } from '@/data/site';
+import { terrain } from '@/data/generated/terrain';
 
 /**
  * The real production service worker (EDGE-02, D-12; PITFALLS #17).
@@ -18,6 +19,8 @@ import { site } from '@/data/site';
  *   visited gets the precached /offline, styled (Schibsted Grotesk loaded) and
  *   listing the saved pages.
  * - RSC payloads (`?_rsc=`) are never answered by the worker.
+ * - C2 (D-12): install precaches the hero contour (EdgeArt's sheet on /offline),
+ *   so the offline art never depends on a page having fetched it online.
  *
  * Tags: @chromium-only, because Playwright routes and reports service-worker
  * traffic only in Chromium; @prod-only, because the worker registers only in a
@@ -160,6 +163,42 @@ test.describe('Production service worker (EDGE-02, D-12)', () => {
       saved.getByRole('link', { name: new RegExp(`^${roadmap.label}`) })
     ).toHaveAttribute('href', roadmap.href);
 
+    await context.setOffline(false);
+  });
+
+  test('install precaches the hero contour, so offline art never waits on a first visit @chromium-only @prod-only', async ({
+    page,
+    context,
+  }) => {
+    const hero = terrain.assets.contours.hero;
+    // Every request the page makes, attached before the first navigation.
+    const requested: string[] = [];
+    page.on('request', (request) => requested.push(new URL(request.url()).pathname));
+
+    // /roadmap draws no hero-LOD ContourField (only PosterSheet, MapSheet and
+    // EdgeArt do), so its own requests never touch the hero URL.
+    await openControlled(page, '/roadmap');
+
+    // Control: the page never asked for the hero contour, so a cache entry for
+    // it can only come from the install precache.
+    expect(requested, 'the page never requests the hero contour').not.toContain(hero);
+    expect(
+      await page.evaluate(async (url) => (await caches.match(url))?.url ?? null, hero),
+      'caches.match(hero) right after navigator.serviceWorker.ready'
+    ).not.toBeNull();
+
+    // Offline, the worker answers the hero URL from that precache.
+    await context.setOffline(true);
+    expect(
+      await page.evaluate(
+        (url) =>
+          fetch(url).then(
+            (r) => r.ok,
+            () => false
+          ),
+        hero
+      )
+    ).toBe(true);
     await context.setOffline(false);
   });
 
