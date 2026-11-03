@@ -68,26 +68,31 @@ function proximityOrder(active: number, length: number): number[] {
  * React Compiler rules (07-02, VERIFY-01): render reads only state. The
  * texture list lives in state, set from the loader callback; the latest
  * sources and active index reach the async chain through refs written in an
- * effect. One effect run per source count owns its loader, its textures and
- * its `cancelled` flag: its cleanup disposes everything it created, and any
- * load that settles afterwards is disposed and ignored. That makes unmount,
- * a source-count change and the Strict Mode double run behave the same way.
+ * effect. One effect run per source list (keyed on `sourcesKey`, the joined
+ * URLs; 12-31 IN-03) owns its loader, its textures and its `cancelled` flag:
+ * its cleanup disposes everything it created, and any load that settles
+ * afterwards is disposed and ignored. That makes unmount, a source-list change
+ * (at any count) and the Strict Mode double run behave the same way.
  */
 export function useProgressiveTextures(
   sources: readonly ProgressiveTextureSource[],
   activeIndex: number
 ): UseProgressiveTexturesResult {
   const count = sources.length;
+  // The list's identity is its URLs, not the array (12-31 IN-03): a new array
+  // holding the same URLs keeps its textures, and different URLs at the same
+  // count start over.
+  const sourcesKey = sources.map((s) => `${s.thumbSrc}\n${s.fullSrc}`).join('\n');
   const [textures, setTextures] = useState<THREE.Texture[]>([]);
   const [loadState, setLoadState] = useState<LoadState[]>(() => sources.map(() => 'loading'));
   const [allThumbsLoaded, setAllThumbsLoaded] = useState(false);
 
-  // A different number of sources starts over. Adjusting state while
-  // rendering (React's documented pattern) drops the old list in the same
-  // render, so a consumer never sees textures the effect cleanup disposes.
-  const [trackedCount, setTrackedCount] = useState(count);
-  if (trackedCount !== count) {
-    setTrackedCount(count);
+  // A different source list starts over. Adjusting state while rendering
+  // (React's documented pattern) drops the old list in the same render, so a
+  // consumer never sees textures the effect cleanup disposes.
+  const [trackedKey, setTrackedKey] = useState(sourcesKey);
+  if (trackedKey !== sourcesKey) {
+    setTrackedKey(sourcesKey);
     setTextures([]);
     setAllThumbsLoaded(false);
     setLoadState(Array.from({ length: count }, (): LoadState => 'loading'));
@@ -189,7 +194,7 @@ export function useProgressiveTextures(
       cancelled = true;
       slots.forEach((texture) => texture.dispose());
     };
-  }, [count]);
+  }, [sourcesKey, count]);
 
   return { textures, loadState, allThumbsLoaded };
 }
