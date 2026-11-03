@@ -4,46 +4,44 @@ A modern, responsive portfolio website showcasing landscape photography and prog
 
 ## ✨ Features
 
-### Photography Gallery
-- **Interactive Grid & 3D Carousel**: View photos in a responsive grid or immersive 3D carousel
-- **Detailed Modal Views**: Zoom-in on high-resolution images with interactive hotspots
-- **Rich Metadata**: Camera settings, location, stories behind each photograph
+### Home
+- **The ascent**: scrolling climbs a terrain model of the Zermatt area built from a 10 m DEM, past four photo waypoints to the summit; a static poster stands in when WebGL or the device budget rules the canvas out
 
-### Projects Showcase
-- **Holographic Terminal**: Interactive 3D terminal demonstration for CLI projects
-- **Feature Highlights**: Animated showcases of project capabilities
-- **Tech Stack Display**: Visual representation of technologies used
-- **Detailed Documentation**: Markdown-rendered project descriptions with syntax highlighting
+### Photographs
+- **Map, grid and carousel views**: each photo is pinned on the terrain map where it was taken
+- **Lightbox and photo pages**: zoom, hotspots and an EXIF strip; every photo also has its own page
 
-### Interactive Elements
-- **3D Mountain Hero**: WebGL-based animated mountain terrain on homepage
-- **Animated Gradient Mesh**: Dynamic, GPU-accelerated background animations
-- **Particle Systems**: Dual-particle effects for visual enhancement
-- **Smooth Transitions**: Framer Motion animations throughout
+### Engineering and roadmap
+- **Case studies**: box (a command-line toolkit for PowerShell, with a terminal demo) and coin-flip (a 3D coin toss for Android, with a screen-recording clip)
+- **Route log**: the roadmap as finished, current and planned work, filtered by project and status
+
+### Contact and edge pages
+- **Summit register**: a contact form posting to `/api/feedback` (zod validation, Origin check, Upstash rate limit, Resend email)
+- **Edge pages**: designed 404, error and offline pages; the service worker keeps visited pages readable offline
 
 ### Development Features
 - **Full TypeScript**: Type-safe codebase with strict mode enabled
-- **Comprehensive Testing**: Jest + Testing Library with 16 passing tests
+- **Testing**: Jest + Testing Library unit tests, Playwright end-to-end and visual-regression specs
 - **Form Validation**: Client and server-side validation with Zod
 - **Rate Limiting**: Built-in API rate limiting for feedback form
 - **Responsive Design**: Mobile-first design that works on all screen sizes
-- **Dark Mode Support**: Automatic dark mode based on system preferences
-- **Accessibility**: WCAG 2.1 Level AA compliant with keyboard navigation and screen reader support
+- **One palette**: the dark topographic palette renders the same in light and dark colour schemes
+- **Accessibility**: keyboard navigation, reduced-motion support and accessible names, checked by axe and keyboard-only Playwright specs
 - **Performance**: Optimized builds with code splitting and lazy loading
 
 ## 🛠️ Tech Stack
 
 ### Core
-- **Framework**: Next.js 16 with App Router and Turbopack
-- **Language**: TypeScript 5.9
-- **Styling**: Tailwind CSS 4.1
+- **Framework**: Next.js 16 with the App Router (`next dev --webpack` locally)
+- **Language**: TypeScript 6
+- **Styling**: Tailwind CSS 4
 
 ### 3D & Animation
 - **Three.js**: 3D rendering and WebGL
 - **react-three-fiber**: React renderer for Three.js
 - **@react-three/drei**: Useful helpers for r3f
 - **@react-spring/three**: Spring physics-based animations
-- **Framer Motion**: Component animations and transitions
+- **Motion**: Component animations and transitions (`motion/react`)
 
 ### Validation & Data
 - **Zod**: Runtime type checking and validation
@@ -60,7 +58,7 @@ A modern, responsive portfolio website showcasing landscape photography and prog
 
 ### Prerequisites
 
-- **Node.js** 18+ and npm
+- **Node.js** (the version in `.node-version`) and npm
 - Modern browser with WebGL support
 
 ### Installation
@@ -92,7 +90,7 @@ FEEDBACK_EMAIL=your.email@example.com
 
 ### Development
 
-Run the development server with Turbopack:
+Run the development server:
 
 ```bash
 npm run dev
@@ -158,80 +156,84 @@ npm run type-check
 
 ## 📁 Project Structure
 
+The tree below lists the top-level folders and their key files (from `git ls-files`). Unit tests sit next to the code in `__tests__/` folders.
+
 ```
 portfolio-app/
-├── app/                           # Next.js App Router pages
-│   ├── api/
-│   │   └── feedback/
-│   │       └── route.ts          # Feedback API endpoint with rate limiting
-│   ├── contact/
-│   │   └── page.tsx              # Contact page with animated mesh background
-│   ├── photos/
-│   │   └── page.tsx              # Photography gallery with grid/3D views
-│   ├── projects/
-│   │   ├── [slug]/
-│   │   │   └── page.tsx          # Dynamic project detail pages
-│   │   └── page.tsx              # Projects listing page
-│   ├── roadmap/
-│   │   └── page.tsx              # Development roadmap with filters
-│   ├── error.tsx                 # Error boundary
-│   ├── globals.css               # Global styles and Tailwind directives
-│   ├── layout.tsx                # Root layout with metadata
-│   ├── not-found.tsx             # Custom 404 page
-│   └── page.tsx                  # Homepage with 3D mountain hero
+├── app/                                   # Next.js App Router
+│   ├── (site)/                            # every page that wears the site shell
+│   │   ├── layout.tsx                     # mounts SiteChrome (nav, skip link, footer)
+│   │   ├── page.tsx                       # Home: the ascent over the Zermatt terrain
+│   │   ├── photos/                        # map, grid and carousel views; [slug] photo page
+│   │   │   └── @modal/(.)[slug]/          # intercepted route: a photo opens in the lightbox
+│   │   ├── projects/                      # project index and the [slug] case studies
+│   │   ├── roadmap/page.tsx               # the route log with its project and status filters
+│   │   ├── contact/page.tsx               # the summit register (contact form) and direct contact
+│   │   ├── offline/page.tsx               # offline page with the pages saved on this device
+│   │   ├── error.tsx                      # error page inside the shell
+│   │   └── not-found.tsx                  # 404 inside the shell
+│   ├── api/feedback/route.ts              # POST /api/feedback: validation, CSRF, rate limit, email
+│   ├── layout.tsx                         # root layout and default metadata
+│   ├── global-error.tsx                   # last-resort error page
+│   ├── not-found.tsx                      # root 404
+│   ├── opengraph-image.tsx                # default Open Graph card
+│   ├── robots.ts, sitemap.ts              # robots.txt and sitemap.xml
+│   └── globals.css                        # Tailwind v4 theme and design tokens
 │
-├── components/                    # React components
-│   ├── __tests__/                # Component tests
-│   │   ├── FeedbackForm.test.tsx
-│   │   └── ProjectCard.test.tsx
-│   ├── AnimatedGradientMesh.tsx  # GPU-accelerated gradient backgrounds
-│   ├── FeatureShowcase.tsx       # Animated feature cards
-│   ├── FeedbackForm.tsx          # Contact form with validation
-│   ├── Footer.tsx                # Site footer
-│   ├── GalleryGrid.tsx           # Photo grid with filtering
-│   ├── GlassmorphismNav.tsx      # Glassmorphic navigation
-│   ├── Header.tsx                # Site header/navigation
-│   ├── HologramTerminal.tsx      # 3D holographic terminal
-│   ├── HologramTerminalDemo.tsx  # Terminal demo with typing effect
-│   ├── ImageDetailModal.tsx      # Full-screen image viewer
-│   ├── InteractiveHotspot.tsx    # Image annotation hotspots
-│   ├── PhotoCarousel3D.tsx       # 3D carousel for photos
-│   ├── ProjectCard.tsx           # Project preview cards
-│   ├── ProjectHighlights.tsx     # Project metrics display
-│   ├── RoadmapFilters.tsx        # Roadmap filtering controls
-│   ├── RoadmapProgress.tsx       # Progress visualization
-│   ├── RoadmapTimeline.tsx       # Timeline component
-│   └── TechStackDisplay.tsx      # Tech stack visualization
+├── components/
+│   ├── site/                              # the shell: SiteChrome, SiteNav, SiteFooter, SkipLink,
+│   │                                      #   EdgeLayout and EdgeArt for the 404, error and offline pages
+│   ├── home/                              # the Home ascent: hero, waypoint cards, altimeter rail,
+│   │   └── terrain/                       #   summit plaque, poster sheet; the lazy R3F terrain canvas
+│   ├── photos/                            # map sheet, justified grid, carousel, lightbox, EXIF strip
+│   ├── projects/                          # project panels, case-study layout, demo terminal and clip
+│   │   └── sections/                      #   the case-study sections (Problem, Pipeline, Metrics, ...)
+│   ├── roadmap/                           # route log, its filters and rows
+│   ├── contact/                           # SummitRegister form, DirectContactPanel, CopyEmailButton
+│   ├── terrain/ContourField.tsx           # contour art drawn as a CSS mask
+│   ├── providers/MotionProvider.tsx       # app-wide reduced-motion setting for Motion
+│   ├── SafeCanvas.tsx                     # error boundary that swaps a failed canvas for its fallback
+│   └── ServiceWorkerRegistration.tsx      # registers the service worker in production
 │
-├── data/                          # Content data
-│   ├── landscapes.ts             # Photography data with metadata
-│   ├── projects.ts               # Project information
-│   ├── roadmap.ts                # Development roadmap items
-│   └── types.ts                  # TypeScript type definitions
+├── data/                                  # content and generated data, checked by zod
+│   ├── schemas/                           # strict zod contracts (projects, route log, photos, terrain)
+│   ├── generated/                         # pipeline outputs (photos, image manifest, terrain, tokens)
+│   ├── photos/                            # EXIF sidecar, corrections and the editorial photo copy
+│   ├── terrain/source/                    # the DEM, its source record and the trail polylines
+│   ├── projects.ts                        # box and coin-flip
+│   ├── roadmap.ts                         # route-log rows
+│   ├── home.ts, sheet.ts                  # Home and photos-sheet copy
+│   └── site.ts                            # identity, nav and links (the single source)
 │
-├── lib/                           # Utilities
-│   └── useReducedMotion.ts       # Hook for respecting motion preferences
+├── lib/                                   # pure helpers and hooks
+│   ├── ascent/                            # the Home ascent: progress, framing, waypoints, summit
+│   ├── photos/                            # view model, grid justification, zoom, lightbox tiers
+│   ├── terrain/                           # DEM sampling, heightmap, hillshade, contour paths
+│   ├── og/template.tsx                    # the shared Open Graph template (fonts in og/fonts/)
+│   ├── metadata.ts                        # per-route title, description and canonical URL
+│   ├── route-log.ts                       # route-log bands and filters
+│   ├── demo-terminal.ts                   # the demo terminal's state machine
+│   ├── csrf.ts, rate-limit.ts, email.ts   # the contact API's Origin check, Upstash limiter, Resend
+│   └── sw-update.ts, saved-pages.ts       # service-worker reload guard and offline saved pages
 │
-├── public/                        # Static assets
-│   └── images/
-│       └── landscapes/           # Photography images
+├── public/
+│   ├── images/photos/                     # hashed photo derivatives (AVIF, WebP, JPEG)
+│   ├── terrain/                           # hashed contour SVGs, heightmaps and hillshades
+│   ├── media/                             # the coin-flip clip and its poster
+│   └── service-worker.js                  # offline support; build hash injected after the build
 │
-├── project_concept/              # Documentation
-│   ├── AGENT.md                 # AI agent guidelines
-│   ├── ANIMATION_PLAN.md        # Animation system planning
-│   ├── README_CLIX.md           # CLI_X project docs
-│   ├── README_CLIX_WEBSITE.md   # CLI_X website docs
-│   └── TESTING.md               # Testing documentation
+├── scripts/                               # data pipeline and guards (see scripts/README.md)
+│   ├── photos/, terrain/, media/, tokens/ # local generators with a --check mode for CI
+│   ├── guards/                            # palette, contrast, identity, parity, served-images, test-count
+│   └── inject-build-hash.mjs              # postbuild: build hash and precache list into the worker
 │
-├── .gitignore                    # Git ignore rules
-├── jest.config.js                # Jest configuration
-├── jest.setup.js                 # Jest setup file
-├── next.config.ts                # Next.js configuration
-├── next-env.d.ts                 # Next.js TypeScript declarations
-├── package.json                  # Dependencies and scripts
-├── postcss.config.js             # PostCSS configuration
-├── tailwind.config.ts            # Tailwind CSS configuration
-└── tsconfig.json                 # TypeScript configuration
+├── e2e/                                   # Playwright specs; visual/ holds the visual baselines
+├── proxy.ts                               # per-request CSP nonce and the 404 decision for unknown slugs
+├── next.config.ts                         # Next.js config and static-asset headers
+├── playwright.config.ts                   # Playwright projects and the dev or production server
+├── jest.config.js, jest.setup.js          # Jest config and setup
+├── eslint.config.mjs                      # ESLint flat config
+└── vercel.json                            # Vercel settings
 ```
 
 ## 📝 Content Management
@@ -242,109 +244,42 @@ All content is managed through TypeScript files in the `data/` directory. This a
 - Version control for content changes
 - Fast compile-time validation
 
-### Adding a Landscape Photo
+### Adding a Photograph
 
-1. Add your image to `public/images/landscapes/`
-2. Open `data/landscapes.ts`
-3. Add a new entry to the `landscapes` array:
+Photos go through a local pipeline; the originals never enter the repository. See `scripts/README.md` ("After adding or editing a photo"):
 
-```typescript
-{
-  id: 'unique-id',
-  src: '/images/landscapes/your-image.jpg',
-  alt: 'Descriptive alt text for accessibility',
-  title: 'Photo Title',
-  location: 'Location Name, Country',
-  story: 'The story behind this photograph...',
-  technicalDetails: {
-    camera: 'Camera Model',
-    lens: 'Lens Model',
-    aperture: 'f/8',
-    shutterSpeed: '1/125s',
-    iso: 200,
-    captureDate: '2024-01-01',
-  },
-  tags: ['mountains', 'sunrise', 'alpine'],
-  hotspots: [
-    {
-      x: 50,  // Percentage from left
-      y: 30,  // Percentage from top
-      title: 'Interesting Feature',
-      description: 'Details about this feature',
-    },
-  ],
-}
+```bash
+# Put the sRGB original in assets/photos-original/ (gitignored), then:
+npm run photos:exif     # EXIF sidecar (data/photos/exif-sidecar.json)
+npm run photos:derive   # hashed derivatives in public/images/photos/ and the image manifest
+npm run photos:build    # typed photo facts in data/generated/photos.ts
+npm run data:check      # what CI runs
 ```
 
-4. Rebuild and deploy: `npm run build`
+Titles, places and stories live in `data/photos/editorial.ts`; hand-placed positions and capture overrides in `data/photos/corrections.json`.
 
-### Adding a Project
+### Editing a Project
 
-1. Open `data/projects.ts`
-2. Add a new entry to the `projects` array:
-
-```typescript
-{
-  slug: 'project-slug',
-  name: 'Project Name',
-  tagline: 'Short, catchy tagline',
-  shortDescription: 'Brief description for cards...',
-  longDescription: `
-# Full Description
-
-Use **Markdown** for rich formatting:
-- Feature 1
-- Feature 2
-
-## Code Examples
-\`\`\`typescript
-const example = 'You can include code!';
-\`\`\`
-  `,
-  techStack: ['TypeScript', 'React', 'Next.js'],
-  links: {
-    github: 'https://github.com/username/repo',
-    demo: 'https://example.com',
-    docs: 'https://docs.example.com',
-  },
-  status: 'active',  // 'active' | 'beta' | 'complete' | 'archived'
-  featured: true,
-  version: 'v1.0.0',
-  features: [
-    {
-      icon: '🚀',
-      title: 'Fast',
-      description: 'Lightning-fast performance',
-    },
-  ],
-  highlights: {
-    performance: '99.9% uptime',
-    users: '1000+ users',
-    rating: '4.9/5 stars',
-  },
-}
-```
-
-3. Rebuild and deploy: `npm run build`
+Projects live in `data/projects.ts` and are checked by the strict zod contract in `data/schemas/project.ts`: a discriminated union on `slug` (`box` or `coin-flip`) whose case-study blocks are all optional. A block without data does not render, and the section order is fixed in `components/projects/CaseStudy.tsx`.
 
 ### Updating the Roadmap
 
-1. Open `data/roadmap.ts`
-2. Add or modify `RoadmapItem` entries:
+Route-log rows live in `data/roadmap.ts` and are checked by `data/schemas/roadmap.ts`:
 
 ```typescript
+// The box v2 row as committed:
 {
-  id: 'unique-id',
-  title: 'Feature Name',
-  description: 'Detailed description...',
-  area: 'frontend', // 'frontend' | 'backend' | 'cli' | 'design'
-  status: 'planned', // 'planned' | 'in-progress' | 'completed'
-  priority: 'high', // 'low' | 'medium' | 'high'
-  estimatedCompletion: '2024-Q1',
+  id: 'box-v2',              // lowercase slug: the row's DOM id and #fragment
+  title: 'v2.0 Toolbox → toolkit',
+  description: 'The tools became scriptable: JSON output, `--clip`, config-file defaults, ...',
+  area: 'box',               // 'portfolio' | 'box' | 'coin-flip'
+  status: 'completed',       // 'planned' | 'in-progress' | 'completed'
+  order: 3,                  // unique; places the row on the climb
+  completedAt: '2026-07-14', // YYYY-MM-DD, completed rows only; optional
 }
 ```
 
-3. Rebuild and deploy: `npm run build`
+`targetRelease` (a string) is optional too, and the portfolio v2.0 row carries `phases`. Then run `npx jest data` (the data tests check unique ids and order values, dates and areas).
 
 ## 🔧 Configuration
 
@@ -352,20 +287,24 @@ const example = 'You can include code!';
 
 Create a `.env.local` file for local development:
 
-```env
-# Optional: Email address to receive feedback (for production)
-FEEDBACK_EMAIL=your.email@example.com
+`.env.example` lists every variable. The contact form needs:
 
-# Optional: API keys for services
-# SENDGRID_API_KEY=your-api-key
+```env
+# Resend (email delivery)
+RESEND_API_KEY=
+FEEDBACK_RECIPIENT_EMAIL=
+FEEDBACK_FROM_EMAIL=
+
+# Upstash Redis (persistent rate limiting)
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
 ```
 
 ### Customization
 
-- **Colors**: Edit `tailwind.config.ts` for theme colors
-- **Fonts**: Add fonts in `app/layout.tsx`
-- **3D Settings**: Adjust particle counts and effects in respective component files
-- **Animation Timings**: Modify Framer Motion configs in components
+- **Colors and tokens**: the Tailwind v4 `@theme` block in `app/globals.css` (the palette and contrast guards check it; `npm run tokens:build` regenerates the shader colours)
+- **Fonts**: `app/layout.tsx`
+- **Motion durations**: the `--duration-*` tokens in `app/globals.css`
 
 ## 🚀 Deployment
 

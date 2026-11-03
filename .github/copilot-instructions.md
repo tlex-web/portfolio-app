@@ -9,15 +9,15 @@ This is a **Next.js 16 App Router** portfolio showcasing landscape photography a
 
 ### Key Design Decisions
 - **All interactive components are client components** (`'use client'`) - this includes anything using Three.js, Framer Motion, or browser APIs like `matchMedia`
-- **Centralized data model**: All content lives in `data/` (landscapes, projects, roadmap) with TypeScript interfaces in `data/types.ts`
-- **Component isolation**: Each 3D feature (mountain terrain, particle systems, carousels) is a separate component for reusability
+- **Centralized data model**: All content lives in `data/` (photos, projects, roadmap, site) with strict zod contracts in `data/schemas/` and generated data in `data/generated/`
+- **Component isolation**: Each 3D feature (the Home terrain canvas in `components/home/terrain/`, the photo carousel in `components/photos/PhotoCarousel3D.tsx`) is a separate, lazily loaded component
 - **Path aliases**: Use `@/` for all imports (configured in `tsconfig.json`)
 
 ## Development Workflow
 
 ### Running Locally
 ```bash
-npm run dev          # Start dev server with Turbopack (http://localhost:3000)
+npm run dev          # Start the dev server (webpack, http://localhost:3000)
 npm test             # Run Jest unit/integration tests (61 tests)
 npm run test:watch   # Watch mode for TDD
 npm run test:e2e     # Run Playwright end-to-end tests
@@ -48,12 +48,12 @@ npm run build        # Production build
 
 ### Key Commands
 - **Type checking**: `npm run type-check` (tsc --noEmit) - run before committing
-- **Linting**: `npm run lint` (ESLint 8 with .eslintrc.json) - checks code quality
+- **Linting**: `npm run lint` (ESLint 9 flat config in `eslint.config.mjs`, then the guards in `scripts/guards/` and `npm run data:check`)
 - **Format code**: `npm run format` (Prettier)
 - **Run all tests**: `npm test && npm run test:e2e`
 - **Test coverage**: `npm run test:coverage`
 
-**Note on ESLint**: This project uses ESLint 8 with `.eslintrc.json` configuration. ESLint 9's flat config format caused compatibility issues with Next.js plugins, so we stay on ESLint 8 for now.
+**Note on ESLint**: This project uses ESLint 9 with the flat config in `eslint.config.mjs`.
 
 **Note on TypeScript**: Test files (*.test.ts, *.test.tsx) may show TypeScript errors about missing Jest types when running `tsc --noEmit` or in your editor. This is expected and does not affect the build - Next.js excludes test files during compilation. Tests run correctly with Jest.
 
@@ -73,21 +73,21 @@ import { Canvas } from '@react-three/fiber';
 The codebase prioritizes accessibility:
 - Use `useReducedMotion()` hook (in `lib/useReducedMotion.ts`) for animation-heavy components
 - Check `prefersReducedMotion` and disable/reduce animations accordingly
-- Example: `Hero3DMountain.tsx` lines 14-24 show scroll animation respecting motion preferences
+- Example: `components/projects/DemoTerminal.tsx` stops typing and shows every command complete under reduced motion
 
 ### Data Flow
-1. Content defined in `data/*.ts` files (landscapes, projects, roadmap)
-2. TypeScript interfaces in `data/types.ts` enforce structure
+1. Content defined in `data/*.ts` files (projects, roadmap, site, home) and `data/photos/`
+2. zod schemas in `data/schemas/` enforce structure; `data/types.ts` holds the types inferred from them
 3. Pages import data directly: `import { projects } from '@/data/projects'`
 4. No CMS, no database - all content is compile-time static
 
 ## Styling Conventions
 
 - **Tailwind CSS 4.1** with dark mode support (`dark:` prefix)
-- **Color scheme**: Cyan/blue accents (`cyan-500`, `blue-500`) for interactive elements
-- **Glassmorphism**: Used for navigation (`GlassmorphismNav.tsx`) with backdrop blur + transparency
+- **Color scheme**: design tokens in the `@theme` block of `app/globals.css`; the palette and contrast guards (`npm run lint`) reject raw Tailwind colours
+- **Site shell**: `components/site/SiteChrome.tsx` mounts `SkipLink`, `SiteNav` (desktop nav from 768 px, mobile menu below) and `SiteFooter` for every page under `app/(site)/`; the 404, error and offline pages use `EdgeLayout` and `EdgeArt`
 - **Responsive**: Mobile-first with `sm:`, `md:`, `lg:` breakpoints
-- **Animations**: Framer Motion for UI transitions, react-spring for physics-based 3D animations
+- **Animations**: Motion (`motion/react`) for UI transitions, react-spring for physics-based 3D animations
 
 ## API Routes & Validation
 
@@ -124,22 +124,18 @@ When adding email service (e.g., Resend, SendGrid):
 ### Performance Considerations
 - 3D components lazy-load when possible
 - Use `<Canvas>` with `frameloop="demand"` for static scenes
-- Mountain terrain uses noise-based geometry generation (see `MountainTerrain3D.tsx`)
-- Particle systems capped at 50-100 particles for mobile performance
+- The Home terrain is a heightmap mesh built from the DEM (see `components/home/terrain/TerrainMesh.tsx`); the canvas loads lazily and falls back to a static poster
 
 ## Content Management
 
-### Adding New Projects
-1. Edit `data/projects.ts` and add a new `Project` object
-2. Required fields: `slug`, `name`, `tagline`, `shortDescription`, `techStack`, `status`
-3. Project detail pages auto-generate at `/projects/[slug]`
-4. Add `featured: true` to pin to homepage
+### Editing Projects
+1. Projects live in `data/projects.ts`, checked by the strict zod union in `data/schemas/project.ts` (`box` or `coin-flip`)
+2. Case-study blocks are optional; a block without data does not render, and the section order is fixed in `components/projects/CaseStudy.tsx`
+3. Case-study pages are generated at `/projects/[slug]`
 
 ### Adding New Photos
-1. Place image in `public/images/landscapes/`
-2. Add `LandscapeImage` object to `data/landscapes.ts`
-3. Include `technicalDetails` (camera, lens, ISO) and `story` for engagement
-4. Optional: Add `annotations` array for interactive hotspots
+1. Follow "After adding or editing a photo" in `scripts/README.md` (`photos:exif`, `photos:derive`, `photos:build`)
+2. Titles, places and stories go in `data/photos/editorial.ts`; hand-placed positions in `data/photos/corrections.json`
 
 ## Testing New Features
 
@@ -237,5 +233,5 @@ Set in Vercel dashboard (not in repo):
 - **Framer Motion + Next.js**: Some motion components need `'use client'` even if they seem static
 - **Image optimization**: Use Next.js `<Image>` component with `width`/`height` for all images
 - **TypeScript strict mode**: Enabled - all props must be typed, no implicit any
-- **Path imports**: Always use `@/` prefix (e.g., `@/components/Hero3DMountain`) not relative paths
+- **Path imports**: Always use `@/` prefix (e.g., `@/components/site/SiteNav`) not relative paths
 - **Vercel deployments**: Preview deployments work identically to production, test there first
