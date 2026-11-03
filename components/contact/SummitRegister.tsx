@@ -26,11 +26,16 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * The approved inline message for one issue on one field (12-01
- * copy.field-errors, cause plus fix, D-6). `value` is the field as typed; its
- * length fills the message's "(now {n})".
+ * copy.field-errors, cause plus fix, D-6; a name over the limit reads 12-27
+ * copy.field-error-name-long). `value` is the field as typed; its length fills
+ * the message's "(now {n})".
  */
 function issueMessage(field: FeedbackField, issue: FieldIssue, value: string): string {
-  if (field === 'name') return 'Enter your name.';
+  if (field === 'name') {
+    return issue === 'too_long'
+      ? `Shorten your name to 100 characters (now ${formatCount(value.length)}).`
+      : 'Enter your name.';
+  }
   if (field === 'email') {
     return issue === 'required'
       ? 'Enter your email address.'
@@ -118,6 +123,16 @@ interface Values {
 const EMPTY: Values = { name: '', email: '', message: '', interestedInCollaboration: false };
 
 type Errors = Partial<Record<FeedbackField, string>>;
+
+/** Every visible field's submit-time error (validateField); submit and Retry both check this first. */
+function validateAll(values: Values): Errors {
+  const next: Errors = {};
+  for (const field of FIELDS) {
+    const message = validateField(field, values[field]);
+    if (message) next[field] = message;
+  }
+  return next;
+}
 
 /** Why a send did not sign the register; each kind has its own approved copy. */
 type Failure =
@@ -491,12 +506,14 @@ export default function SummitRegister() {
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (sendingRef.current) return;
-    const next: Errors = {};
-    for (const field of FIELDS) {
-      const message = validateField(field, values[field]);
-      if (message) next[field] = message;
-    }
-    if (showErrors(next)) return;
+    if (showErrors(validateAll(values))) return;
+    void send(values);
+  }
+
+  /** Retry checks the fields the way submit does, so an invalid edit sends nothing (IN-06). */
+  function retry() {
+    if (sendingRef.current) return;
+    if (showErrors(validateAll(values))) return;
     void send(values);
   }
 
@@ -584,7 +601,7 @@ export default function SummitRegister() {
                 type="button"
                 aria-label="Retry sending"
                 aria-disabled={sending ? 'true' : undefined}
-                onClick={() => void send(values)}
+                onClick={retry}
                 className={`mt-4 ${SECONDARY}`}
               >
                 <ArrowClockwiseIcon size={20} aria-hidden="true" />
