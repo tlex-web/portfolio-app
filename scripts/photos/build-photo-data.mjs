@@ -114,14 +114,20 @@ const naiveMs = (local) => Date.parse(`${local}Z`);
 
 /**
  * The Europe/Zurich offset of a naive local wall time: the one candidate whose
- * instant formats back to the same wall time. A skipped (spring-forward) or
- * repeated (fall-back) wall time has zero or two candidates and fails.
+ * instant formats back to the same wall time. A repeated (fall-back) wall time
+ * has two candidates; the GPS UTC time, when present, keeps the one within
+ * MAX_GPS_DRIFT_S of it (08 IN-03). A skipped (spring-forward) wall time, or a
+ * repeated one with no GPS time, fails.
  */
-function zurichOffset(id, local) {
-  const candidates = [
+function zurichOffset(id, local, gpsUtc) {
+  let candidates = [
     { offset: '+01:00', s: 3600 },
     { offset: '+02:00', s: 7200 },
   ].filter((c) => wallTime(naiveMs(local) - c.s * 1000) === local);
+  if (candidates.length === 2 && gpsUtc) {
+    const deltaS = (naiveMs(local) - Date.parse(gpsUtc)) / 1000;
+    candidates = candidates.filter((c) => Math.abs(deltaS - c.s) < MAX_GPS_DRIFT_S);
+  }
   if (candidates.length !== 1) {
     throw new Error(
       `${id}: ${local} is not a unique ${TIME_ZONE} wall time (${candidates.length} offsets)`
@@ -138,7 +144,7 @@ function buildCapture(entry, fix) {
   if (!entry.dateTimeOriginal)
     throw new Error(`${entry.id}: no DateTimeOriginal and no captureOverride`);
   const local = entry.dateTimeOriginal;
-  const { offset, s } = zurichOffset(entry.id, local);
+  const { offset, s } = zurichOffset(entry.id, local, entry.gps?.utc);
   // WR-03: a camera-recorded offset must agree with the derived Zurich one.
   if (entry.offsetTimeOriginal != null && entry.offsetTimeOriginal !== offset) {
     throw new Error(
