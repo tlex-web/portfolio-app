@@ -217,12 +217,12 @@ export const config = {
     {
       // Static public assets (images/, terrain/, media/; trailing slash so a
       // future /images-x page still gets its CSP) skip the per-request nonce work.
+      // RSC prefetches (next-router-prefetch) are not documents and skip too;
+      // document prefetches (purpose: prefetch) pass the proxy so they get the
+      // CSP header and the section-header delete (C1, T-12-02).
       source:
         '/((?!api|_next/static|_next/image|favicon.ico|service-worker.js|images/|terrain/|media/).*)',
-      missing: [
-        { type: 'header', key: 'next-router-prefetch' },
-        { type: 'header', key: 'purpose', value: 'prefetch' },
-      ],
+      missing: [{ type: 'header', key: 'next-router-prefetch' }],
     },
   ],
 };
