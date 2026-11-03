@@ -72,6 +72,13 @@ describe('app/global-error (UI-SPEC E7 backstop)', () => {
     expect(doc.body.textContent).toContain('The site failed to load. Try again, or reload the page.');
   });
 
+  it("renders one React title holding Tim's meta.global-error-title string, so the document title is never empty (IN-05)", () => {
+    const { doc } = renderMarkup();
+    // 12-27-SUMMARY "Resolved values (follow-up)": meta.global-error-title, supplied.
+    expect(doc.title).toBe('Something went wrong · Tim Lui');
+    expect(doc.querySelectorAll('title')).toHaveLength(1);
+  });
+
   it('does not mount MotionProvider (no motion in the fallback)', () => {
     const { doc } = renderMarkup();
     // The chrome did render, so the absence of MotionProvider is meaningful.

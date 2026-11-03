@@ -123,6 +123,20 @@ describe('ErrorBody', () => {
     expect(mockLink).not.toHaveBeenCalled();
   });
 
+  it.each(['section', 'root'] as const)(
+    '%s: Report this error uses the ink-muted text-link style; Try again stays the one accent element (D1)',
+    (variant) => {
+      render(<ErrorBody variant={variant} onRetry={jest.fn()} />);
+
+      const report = screen.getByRole('link', { name: 'Report this error' });
+      for (const cls of ['text-ink-muted', 'underline', 'decoration-1', 'underline-offset-4', 'hover:text-ink', 'min-h-11']) {
+        expect(report).toHaveClass(cls);
+      }
+      expect(report.className).not.toMatch(/(^|\s)text-accent(\s|$)/);
+      expect(screen.getByRole('button', { name: 'Try again' })).toHaveClass('bg-accent');
+    }
+  );
+
   it('Try again calls onRetry once per activation and shows no pending UI', () => {
     const onRetry = jest.fn();
     render(<ErrorBody variant="section" onRetry={onRetry} />);
