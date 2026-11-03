@@ -41,7 +41,7 @@ findings:
     title: "Corrections can label a hand-typed position as an exact EXIF position"
   - id: IN-01
     severity: info
-    disposition: open
+    disposition: deferred
     title: "Hashed static assets are now served with no CSP at all"
   - id: IN-02
     severity: info
@@ -49,33 +49,33 @@ findings:
     title: "The legacy bridge drops `position.approximate`"
   - id: IN-03
     severity: info
-    disposition: open
+    disposition: fixed
     title: "An ambiguous fall-back hour fails even when GPS UTC could resolve it"
   - id: IN-04
     severity: info
-    disposition: open
+    disposition: deferred
     title: "`openRuns` does not join the first and last runs across the ring seam"
   - id: IN-05
     severity: info
-    disposition: open
+    disposition: fixed
     title: "Originals named `.jpeg` are skipped without a message"
   - id: IN-06
     severity: info
-    disposition: open
+    disposition: skipped
     title: "`Object.keys(project.highlights)` on a tuple array"
   - id: IN-07
     severity: info
-    disposition: open
+    disposition: skipped
     title: "Demo command 4 says \"High-risk operation\" but its level is `critical`"
   - id: IN-08
     severity: info
-    disposition: open
+    disposition: skipped
     title: "Unreferenced legacy variants are still served"
   - id: IN-09
     severity: info
-    disposition: open
+    disposition: skipped
     title: "`LegacyUrl` accepts `..`"
-open: 8
+open: 0
 total: 18
 recorded: 2026-10-24T20:22:34.612Z
 ---
@@ -93,15 +93,15 @@ recorded: 2026-10-24T20:22:34.612Z
 | WR-06 | warning | fixed | 10-02: extensions and ignore line fixed; pre-commit hook not added (no hook tooling; CI lint is the gate) |
 | WR-07 | warning | fixed | 10-02 (Phase 10) |
 | WR-08 | warning | fixed | 10-02 (Phase 10) |
-| IN-01 | info | open | - |
+| IN-01 | info | deferred | Executor outcome, 12-22: still applies (the proxy.ts matcher skips images/, terrain/ and media/; they get no static CSP). Deferred: the fix reverses a recorded 08-06 decision that e2e/data-privacy.spec.ts asserts by name ("served without CSP"), touches next.config.ts and that spec, and needs a three-engine visual check that a CSP header on the contour SVGs (drawn as CSS masks; Firefox applies CSP inside SVG image documents) leaves every contour unchanged. That check is outside 12-22. No script can run in today's files (contourSvg grammar and the svg-content guard). Picked up by the next milestone's security hardening. |
 | IN-02 | info | fixed | 10-09 bridge removed (`aa9dff6`); 10-11 hotspot height shows approx. (`d5b10f2`) |
-| IN-03 | info | open | - |
-| IN-04 | info | open | - |
-| IN-05 | info | open | - |
-| IN-06 | info | open | - |
-| IN-07 | info | open | - |
-| IN-08 | info | open | - |
-| IN-09 | info | open | - |
+| IN-03 | info | fixed | 12-22 `d5dde96`: zurichOffset keeps the fall-back candidate within MAX_GPS_DRIFT_S of local minus GPS UTC; photos:build --check output unchanged (executor outcome) |
+| IN-04 | info | deferred | Executor outcome, 12-22: still applies (`openRuns` in lib/terrain/contour-paths.ts emits the seam as two runs). Deferred: joining the runs changes every generated contour SVG, so it needs `npm run terrain:build` (new hashed assets and data/generated files outside 12-22's fix scope) and a visual re-baseline of every slug that draws contours. A cosmetic join kink, not a defect. Picked up by the next terrain-pipeline change. |
+| IN-05 | info | fixed | 12-22 `9a30297`: the originals filter is `/\.jpe?g$/i`; photos:exif --check passes on the local originals (executor outcome) |
+| IN-06 | info | skipped | Closed, executor outcome 12-22: no longer applies. 11-07 (`d526b7e`) rewrote app/(site)/projects/[slug]/page.tsx for box and coin-flip and removed the `Object.keys(project.highlights)` block and the v1 highlights field. |
+| IN-07 | info | skipped | Closed, executor outcome 12-22: no longer applies. The CLI_X demo data left the site in 11-07 (`d526b7e`); `git grep "High-risk"` finds no code or data hit, and box's demo schema has no risk field (11 D-24). |
+| IN-08 | info | skipped | Closed, executor outcome 12-22: no longer applies. 12-05 (`e78a010`) deleted the 60 legacy variants under public/images/optimized/ (VERIFY-01). |
+| IN-09 | info | skipped | Closed, executor outcome 12-22: no longer applies. 12-05 (`e78a010`) dropped `LegacyUrl` and the legacy block from data/schemas/image-manifest.ts and scripts/photos/build-derivatives.mjs. |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
