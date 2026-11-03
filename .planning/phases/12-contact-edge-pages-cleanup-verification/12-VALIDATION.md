@@ -167,6 +167,8 @@ Each of those plans states the rule in its context. A plan starts only when the 
 
 **Approval:** validated 2026-11-03 (validate-phase audit at the Phase 12 gates: 42/42 rows green; Jest 1658/1658 local at 4bf7f32; e2e chromium + firefox + webkit and visual green in CI run 41571031827 on 147bc82, source-identical to HEAD)
 
+**Approval (follow-up 12-27..12-34):** re-validated 2026-11-03 at the follow-up gates: the 21 new rows (12-27..12-34) have 15 automated and green, and 6 manual or doc-only (12-27 T1/T2 packet and checkpoint, 12-33 T1 README, 12-34 T3 ledgers, 12-34 T1/T2 as gates); 0 partial, 0 missing. Jest 1694/1694 (102 suites) local at 3814242; Playwright chromium + firefox + webkit 1360/1360 local on a fresh build; CI run 41648599366 on 53171db green in all four jobs (E2E 1373 under `--fail-on-flaky-tests`, Visual no diff); ratchet 2243. The `≥ 1749` and `82 suites` figures above are phase-start measurements and stay as recorded.
+
 ## Validation Audit 2026-11-03
 
 | Metric | Count |
