@@ -5,17 +5,17 @@ milestone_name: Topographic Identity
 current_phase: 12
 current_phase_name: Contact, Edge Pages, Cleanup & Verification
 status: executing
-stopped_at: Completed 12-28-PLAN.md
-last_updated: "2026-11-03T12:37:53.927Z"
+stopped_at: Completed 12-29-PLAN.md
+last_updated: "2026-11-03T12:52:00.256Z"
 last_activity: 2026-11-03
 last_activity_desc: Phase 12 execution started
-state_head: d1abb6f73a5e154d979acaef8b3b2b12a9c52a8e
+state_head: 338b451c76886b6142fd1d643844cbca44341f62
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 128
-  completed_plans: 122
-  percent: 95
+  completed_plans: 123
+  percent: 96
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-11-02)
 ## Current Position
 
 Phase: 12 (Contact, Edge Pages, Cleanup & Verification) — EXECUTING
-Plan: 29 of 34
+Plan: 30 of 34
 Status: Ready to execute
 Last activity: 2026-11-03 — Phase 12 execution started
 
-Progress: [█████████░] 95%
+Progress: [█████████░] 96%
 
 ## Performance Metrics
 
@@ -180,6 +180,7 @@ Progress: [█████████░] 95%
 | Phase 12 P24 | 4min | 2 tasks | 2 files |
 | Phase 12 P27 | 3min | 3 tasks | 4 files |
 | Phase 12 P28 | 9 min | 3 tasks | 5 files |
+| Phase 12 P29 | 9 min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -495,6 +496,8 @@ Recent decisions affecting current work:
 - [Phase 12]: 12-28: Retry runs validateAll + showErrors before send, like submit; an invalid edit sends no request and focuses the error summary (IN-06)
 - [Phase 12]: 12-28: IN-01 shipped: name too_long (client >100 and server too_long) reads 'Shorten your name to 100 characters (now {n}).' with formatCount; other name issues keep 'Enter your name.'
 - [Phase 12]: 12-28: feedbackSchema email is z.email() (IN-07); contract pinned first by 6 accept/reject cases green on the old schema
+- [Phase 12]: 12-29: option A applied (Tim, 12-27: "A (Recommended)"): purpose: prefetch left proxy config.matcher[0].missing; document prefetches get the CSP header and the x-edge-section delete; next-router-prefetch still skips (RSC prefetches are not documents)
+- [Phase 12]: 12-29: IN-02 narrowed, not fixed as written: matcher-skipped paths (RSC prefetches, api..., missing images/, terrain/, media/ files) are accepted residual AR-12-02; T-12-02 closed in 12-SECURITY.md, threats_open 0; 12-34 records IN-02 deferred
 
 ### Pending Todos
 
@@ -541,6 +544,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-03T12:37:52.250Z
-Stopped at: Completed 12-28-PLAN.md
+Last session: 2026-11-03T12:51:58.557Z
+Stopped at: Completed 12-29-PLAN.md
 Resume file: None
