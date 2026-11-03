@@ -5,16 +5,16 @@ milestone_name: Topographic Identity
 current_phase: 12
 current_phase_name: Contact, Edge Pages, Cleanup & Verification
 status: executing
-stopped_at: Completed 12-21-PLAN.md
-last_updated: "2026-11-03T01:09:04.409Z"
+stopped_at: Completed 12-22-PLAN.md
+last_updated: "2026-11-03T02:11:38.367Z"
 last_activity: 2026-11-02
 last_activity_desc: Phase 12 execution started
-state_head: 91c1972c848b06d5766a8656b4e958003cc72943
+state_head: 03e96ef9357f5f6f16ee9cd6afa359f4fb5608b5
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 120
-  completed_plans: 117
+  completed_plans: 118
   percent: 98
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-02)
 ## Current Position
 
 Phase: 12 (Contact, Edge Pages, Cleanup & Verification) — EXECUTING
-Plan: 24 of 26
+Plan: 25 of 26
 Status: Ready to execute
 Last activity: 2026-11-02 — Phase 12 execution started
 
@@ -175,6 +175,7 @@ Progress: [█████████░] 98%
 | Phase 12 P19 | 47 min | 3 tasks | 10 files |
 | Phase 12 P20 | 13 min | 3 tasks | 2 files |
 | Phase 12 P21 | 15 min | 2 tasks | 1 files |
+| Phase 12 P22 | 58min | 3 tasks | 23 files |
 
 ## Accumulated Context
 
@@ -474,6 +475,9 @@ Recent decisions affecting current work:
 - [Phase 12]: 12-19: Round 2 re-baselined contact, not-found and offline (9 PNGs, Tim's b743ca0); check-snapshot-commit with only those three --allow slugs; 39 shots byte-identical prove 12-14, 12-17, 12-18, 12-25 zero-pixel
 - [Phase 12]: [12-20] Audit gate live (e2e/audit.spec.ts, 18 tests per engine): 8 ROUTES + the 404 at 375/768/1440 and 9 D-21 states; zero app findings (axe 0, max CLS 0.019 on Home @375), 54/54 in three engines on a fresh build. ALLOWED_CONSOLE is one anchored pattern per engine for the Vercel loader 404s only; the 404 test removes only its own document's 404 console line; per-width loads resize on about:blank (a resize-then-goto cancels Next prefetches, which WebKit reports as page errors)
 - [Phase 12]: [12-21] Keyboard-only flows (e2e/keyboard.spec.ts, 11 per engine) assert exact focus order skip link to footer to end of page; zero app findings. WebKit drops link stops (Playwright WebKit never Tabs to links) and keeps the order of the remaining controls; the lightbox dialog steps run in Chromium and Firefox only. The error page is forced by an init script that makes matchMedia throw on /projects/box
+- [Phase 12]: 12-22: closed review rows are written as the ledger's skipped value with 'Closed, executor outcome' and the removing commit (the enum has no closed)
+- [Phase 12]: 12-22: e2e/photos-lightbox.spec.ts runs in order in one worker (describe.configure mode 'default'); 16-worker dev runs overloaded next dev, CI single-worker unaffected
+- [Phase 12]: 12-22: reproduced flakes in specs outside 12-22's list (shell.spec.ts:402 test.slow(), design-system G3 @prod-only) and the prefetch/CSP, hero precache and design-system comment rows are open for a follow-up quick plan with exact fixes
 
 ### Pending Todos
 
@@ -520,6 +524,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-03T01:09:03.080Z
-Stopped at: Completed 12-21-PLAN.md
+Last session: 2026-11-03T02:11:37.410Z
+Stopped at: Completed 12-22-PLAN.md
 Resume file: None

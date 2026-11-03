@@ -277,3 +277,10 @@ None.
 ---
 *Phase: 12-contact-edge-pages-cleanup-verification*
 *Completed: 2026-11-03*
+
+## Self-Check: PASSED
+
+- All 12 task commits are ancestors of HEAD (fc8da17, 37a3d8f, f6424d4, ba3dc6b, 716fff7, 7330a1b, 9a30297, d5dde96, d3025e2, dcfcd71, c048fda, cf03b3c); evaluation-scope resolves the plan commits.
+- Acceptance greps: 11 open info rows 0, 08 IN-01/03-09 open rows 0, one "## Round 3 expected diffs" heading, every code-fix file listed.
+- Plan verification re-run at the end: npm run lint exit 0, npm run type-check exit 0, npx jest 102 suites / 1658 tests passed; dev-server four-spec --repeat-each=3: 375 passed.
+- No server left on :3000; public/service-worker.js untouched (no build ran).
