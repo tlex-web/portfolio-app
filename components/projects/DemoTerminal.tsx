@@ -2,8 +2,8 @@
 
 import {
   Fragment,
+  useCallback,
   useEffect,
-  useRef,
   useState,
   useSyncExternalStore,
   type FocusEvent,
@@ -124,7 +124,9 @@ function CommandLines({ command, lines }: { command: TerminalCommand; lines: Vis
  * aria-pressed carries the state. The temporary sources clear on their own:
  * the pointer entering the region, focus entering it from outside (moving
  * between its own controls is not an entry), the region offscreen
- * (IntersectionObserver, threshold 0) and a hidden tab (visibilitychange);
+ * (IntersectionObserver, threshold 0, attached through the `observeRegion`
+ * callback ref so it follows the region node; 12-31 WR-02) and a hidden tab
+ * (visibilitychange);
  * a release never clears the last two. A pause mid-line freezes it, and
  * resuming continues from the same character.
  *
@@ -153,7 +155,6 @@ export default function DemoTerminal({
   commands: readonly TerminalCommand[];
 }) {
   const count = commands.length;
-  const regionRef = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<TerminalState>(initialState);
   const reduced = useReducedMotion();
   const [override, setOverride] = useState<boolean | null>(null);
@@ -174,9 +175,11 @@ export default function DemoTerminal({
     return () => window.clearTimeout(id);
   }, [state, playing, reduced, commands]);
 
-  useEffect(() => {
-    const region = regionRef.current;
-    if (!region || typeof IntersectionObserver === 'undefined') return;
+  // A callback ref, not a mount-only effect (12-31 WR-02): React calls it with
+  // each new region node and runs its cleanup when that node goes, so the
+  // observer follows the region through an empty list and a late first command.
+  const observeRegion = useCallback((node: HTMLDivElement | null) => {
+    if (!node || typeof IntersectionObserver === 'undefined') return;
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[entries.length - 1];
@@ -184,7 +187,7 @@ export default function DemoTerminal({
       },
       { threshold: 0 }
     );
-    observer.observe(region);
+    observer.observe(node);
     return () => observer.disconnect();
   }, []);
 
@@ -223,7 +226,7 @@ export default function DemoTerminal({
 
   return (
     <div
-      ref={regionRef}
+      ref={observeRegion}
       role="region"
       aria-label={`${name} demo`}
       data-playback={playing ? 'playing' : 'paused'}
