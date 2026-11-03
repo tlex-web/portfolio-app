@@ -407,6 +407,11 @@ test.describe('Footer map legend (SHELL-04)', () => {
   });
 
   test('every route credits the source with site.attribution.terrain', async ({ page }) => {
+    // Eight full page loads in one test. A cold dev server compiles each route
+    // on its first visit, which overran the 30 s budget (12-22 reproduced five
+    // timeouts at /offline); the slow marker triples it. CI's production run
+    // is unaffected.
+    test.slow();
     for (const [path] of ROUTES) {
       await page.goto(path);
       await expect(page.getByRole('contentinfo')).toContainText(site.attribution.terrain);

@@ -17,8 +17,9 @@ test.describe('Design system', () => {
   });
 
   // The base h1 rule is proven on a bare, class-less h1. Headings that carry
-  // Tailwind utilities (font-bold, text-shadow-glow*, colour classes) keep their
-  // own weight, glow and colour until their redesign phase (Phases 9-12):
+  // Tailwind utilities
+  // (font-bold, colour classes) keep their own weight and colour
+  // until their redesign phase (Phases 9-12):
   // the utilities layer beats @layer base, so only family and balance change.
   test('base h1 rule: Schibsted 40/44, weight 600, no text-shadow (bare h1)', async ({ page }) => {
     await page.goto('/');
@@ -144,7 +145,12 @@ test.describe('Scrollbar', () => {
   // a describe (it forces a new worker), so this test launches its own
   // Chromium without --hide-scrollbars instead of changing the whole file.
   // The @chromium-only tag keeps it out of the Firefox project.
-  test('scroll lock keeps the header box @chromium-only', async ({ baseURL }) => {
+  // @prod-only: on `next dev` the intercepted @modal/(.)[slug] route compiles
+  // on demand while another worker loads /photos/[slug] directly, so the tile
+  // click can navigate the document instead of opening the dialog (Phase 10
+  // deferred row, reproduced in 12-22). Production has no on-demand compile,
+  // and CI runs it there.
+  test('scroll lock keeps the header box @chromium-only @prod-only', async ({ baseURL }) => {
     const browser = await chromium.launch({ ignoreDefaultArgs: ['--hide-scrollbars'] });
     try {
       const context = await browser.newContext({

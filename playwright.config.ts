@@ -52,7 +52,9 @@ const reuse = !process.env.CI && !!process.env.PW_REUSE;
  * @prod-only tests need a production build (the service worker registers only
  * there; e2e/service-worker.spec.ts). Dev-server runs drop them from the list
  * instead of skipping them (test-count.mjs rejects skips); production runs keep
- * today's filters.
+ * today's filters. The tag's second reason is a test that breaks under
+ * dev-server on-demand compiles: e2e/design-system.spec.ts G3, whose intercepted
+ * modal route compiles mid-click on `next dev`.
  */
 const CHROMIUM_INVERT = prod ? undefined : /@prod-only/;
 const OTHER_ENGINE_INVERT = prod ? /@chromium-only/ : /@chromium-only|@prod-only/;
