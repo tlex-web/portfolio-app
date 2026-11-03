@@ -57,6 +57,14 @@ const reuse = !process.env.CI && !!process.env.PW_REUSE;
 const CHROMIUM_INVERT = prod ? undefined : /@prod-only/;
 const OTHER_ENGINE_INVERT = prod ? /@chromium-only/ : /@chromium-only|@prod-only/;
 
+/**
+ * @no-webkit leaves only the webkit project (12-23, D-18), for a test whose
+ * every step needs something Playwright's WebKit does not do (a Tab press
+ * onto a link); Chromium and Firefox keep it. Each tagged title has a comment
+ * above it naming the reason, and 12-23-SUMMARY.md lists them.
+ */
+const WEBKIT_INVERT = prod ? /@chromium-only|@no-webkit/ : /@chromium-only|@prod-only|@no-webkit/;
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -100,7 +108,7 @@ export default defineConfig({
     {
       name: 'webkit',
       testIgnore: [VISUAL, PERF],
-      grepInvert: OTHER_ENGINE_INVERT,
+      grepInvert: WEBKIT_INVERT,
       use: { ...devices['Desktop Safari'], serviceWorkers: 'block' },
     },
 

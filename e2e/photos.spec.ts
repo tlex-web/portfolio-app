@@ -2,6 +2,7 @@ import { test, expect, type Locator, type Page } from '@playwright/test';
 import { terrain } from '@/data/generated/terrain';
 import { buildPhotoViews } from '@/lib/photos/view-model';
 import { readViewTransitions, recordViewTransitions } from './helpers/view-transitions';
+import { clickFocusesButtons } from './helpers/engine';
 
 /**
  * The Map view in a browser (PHOTO-01, PHOTO-03; D-01 to D-04; 10-UI-SPEC
@@ -56,7 +57,9 @@ test.describe('Map view (PHOTO-01, PHOTO-03, D-01..D-04)', () => {
     }
   });
 
-  test('Tab reaches the four waypoint links in altitude order', async ({ page }) => {
+  // @no-webkit: the waypoints are links, and Playwright's WebKit never Tabs to a link
+  // (Safari's default, helpers/engine.ts); this test has no step left without Tab.
+  test('Tab reaches the four waypoint links in altitude order @no-webkit', async ({ page }) => {
     await page.goto('/photos');
     const links = mapLinks(page);
     await expect(links).toHaveCount(views.length);
@@ -449,6 +452,7 @@ test.describe('View switcher (PHOTO-02, D-14)', () => {
 
   test('at 375 x 600 switching replaces the URL with no history entry, no scroll jump and focus kept', async ({
     page,
+    browserName,
   }) => {
     await page.setViewportSize({ width: 375, height: 600 });
     await page.goto('/photos');
@@ -474,7 +478,8 @@ test.describe('View switcher (PHOTO-02, D-14)', () => {
     await expect(viewSections(page)).toHaveCount(1);
     expect(await page.evaluate(() => window.history.length)).toBe(historyLength);
     expect(await page.evaluate(() => window.scrollY)).toBe(100);
-    await expect(grid).toBeFocused();
+    // A click focuses the segment except in WebKit (helpers/engine.ts), so focus is kept only where it was given.
+    if (clickFocusesButtons(browserName)) await expect(grid).toBeFocused();
 
     await segment(page, 'Carousel').click();
     await expect(page).toHaveURL(/\/photos\?view=carousel$/);

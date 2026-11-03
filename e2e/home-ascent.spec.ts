@@ -12,6 +12,7 @@ import { countLabel } from '@/lib/home-format';
 import { formatMetres } from '@/lib/photo-format';
 import { readout, scrollBlockToCentre } from './helpers/ascent';
 import { disableWebGL, nextFrames } from './helpers/webgl';
+import { tabReachesLinks } from './helpers/engine';
 
 /**
  * Home's waypoint list in a browser (HOME-05; D-08, D-20, D-21; 09-UI-SPEC
@@ -887,12 +888,17 @@ test.describe('Ascent progress (HOME-03, HOME-04, HOME-05)', () => {
     await expect(page.locator('[data-pin][data-active]')).toHaveCount(0);
   });
 
-  test('keyboard focus on a card brings its stage to the centre', async ({ page }) => {
+  test('keyboard focus on a card brings its stage to the centre', async ({ page, browserName }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
 
     const link = page.getByRole('link', { name: `View photo: ${second.title}`, exact: true });
     let focused = false;
+    // The card is a link, which WebKit never Tabs to (helpers/engine.ts): focus it directly there.
+    if (!tabReachesLinks(browserName)) {
+      await link.focus();
+      focused = await link.evaluate((el) => el === document.activeElement);
+    }
     for (let i = 0; i < 30 && !focused; i++) {
       await page.keyboard.press('Tab');
       focused = await link.evaluate((el) => el === document.activeElement);

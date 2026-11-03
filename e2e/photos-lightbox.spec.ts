@@ -7,6 +7,7 @@ import {
   recordViewTransitions,
   removeViewTransitions,
 } from './helpers/view-transitions';
+import { pressButton, tabReachesLinks } from './helpers/engine';
 
 /**
  * The photo viewer in a browser (LBOX-01, LBOX-04, LBOX-07; D-05, D-08;
@@ -470,6 +471,7 @@ test.describe('Focus and Escape (LBOX-03)', () => {
 
   test('on the photo page at 375, the open nav menu keeps its keys: Escape closes it and the photo stays (10-REVIEW CR-01)', async ({
     page,
+    browserName,
   }) => {
     await recordNavigations(page);
     await page.setViewportSize({ width: 375, height: 800 });
@@ -497,7 +499,9 @@ test.describe('Focus and Escape (LBOX-03)', () => {
     await page.keyboard.press('Enter');
     await expect(menuButton).toHaveAttribute('aria-expanded', 'true');
     await expect(menu).toBeVisible();
-    await page.keyboard.press('Tab');
+    // The menu rows are links, which WebKit never Tabs to (helpers/engine.ts).
+    if (tabReachesLinks(browserName)) await page.keyboard.press('Tab');
+    else await menu.getByRole('link').first().focus();
     await expect(menu.getByRole('link').first()).toBeFocused();
 
     // The arrows, Z and H belong to the menu now, not to the photo behind it. A
@@ -552,6 +556,7 @@ test.describe('Moving between photos (LBOX-02)', () => {
 
   test('three Next presses in the lightbox: URL, title, counter, focus and no history entry', async ({
     page,
+    browserName,
   }) => {
     const dialog = await openFirstTile(page);
     const length = await page.evaluate(() => window.history.length);
@@ -559,7 +564,8 @@ test.describe('Moving between photos (LBOX-02)', () => {
     await expect(counter(dialog)).toHaveText(`1 / ${views.length}`);
     await expect(counter(dialog)).toHaveAttribute('aria-hidden', 'true');
 
-    for (let i = 0; i < 3; i++) await next.click();
+    // A click, or focus and Enter in WebKit, where a click does not focus a button (helpers/engine.ts).
+    for (let i = 0; i < 3; i++) await pressButton(next, browserName);
 
     await expect(page).toHaveURL(new RegExp(`/photos/${last.slug}$`));
     await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(last.title);
@@ -576,7 +582,7 @@ test.describe('Moving between photos (LBOX-02)', () => {
     await expect(page.getByRole('dialog')).toHaveCount(1);
   });
 
-  test('the arrow keys step, and nothing moves past either end', async ({ page }) => {
+  test('the arrow keys step, and nothing moves past either end', async ({ page, browserName }) => {
     const dialog = await openFirstTile(page);
     const prev = dialog.getByRole('button', { name: 'Previous photo', exact: true });
     await expect(prev).toHaveAttribute('aria-disabled', 'true');
@@ -591,7 +597,7 @@ test.describe('Moving between photos (LBOX-02)', () => {
 
     // At 1 / 4 neither ArrowLeft nor a press on the disabled Previous changes anything.
     await page.keyboard.press('ArrowLeft');
-    await prev.click({ force: true });
+    await pressButton(prev, browserName, { force: true });
     await expect(prev).toBeFocused();
     await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
     await expect(counter(dialog)).toHaveText(`1 / ${views.length}`);
@@ -683,6 +689,7 @@ test.describe('Moving between photos (LBOX-02)', () => {
 
   test('on the photo page Next shows the next photo with no dialog, and reload keeps it (Pitfall 1)', async ({
     page,
+    browserName,
   }) => {
     await page.goto(`/photos/${first.slug}`);
     const main = page.getByRole('main');
@@ -690,7 +697,7 @@ test.describe('Moving between photos (LBOX-02)', () => {
     await waitForHydration(next);
     const length = await page.evaluate(() => window.history.length);
 
-    await next.click();
+    await pressButton(next, browserName);
     await expect(page).toHaveURL(new RegExp(`/photos/${views[1].slug}$`));
     await expect(main.getByRole('heading', { level: 1 })).toHaveText(views[1].title);
     await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -903,10 +910,16 @@ test.describe('Zoom (D-06)', () => {
     const cy = box.y + box.height / 2;
     await page.mouse.click(cx, cy);
     await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'true');
-    // The clicked point (the photo's centre) stays under the pointer.
-    const centred = await stage(dialog).evaluate((el) => (el.scrollWidth - el.clientWidth) / 2);
+    // The clicked point (the photo's centre) stays under the pointer: the 1:1
+    // photo's x under cx is its middle column. Measured at the pointer, not as a
+    // centred scroll, because WebKit adds a classic scrollbar only once the stage
+    // scrolls, which moves the viewport's centre off the fitted photo's (12-23).
+    const underPointer = await stage(dialog).evaluate(
+      (el, x) => el.scrollLeft + x - el.getBoundingClientRect().left - el.clientLeft,
+      cx
+    );
+    expect(Math.abs(underPointer - photo.stage.width / 2)).toBeLessThanOrEqual(2);
     const start = await scrollOf(dialog);
-    expect(Math.abs(start.left - centred)).toBeLessThanOrEqual(2);
 
     await page.mouse.move(cx, cy);
     await page.mouse.down();

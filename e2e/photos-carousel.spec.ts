@@ -1,6 +1,7 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
 import { buildPhotoViews } from '@/lib/photos/view-model';
 import { countDraws, readDraws } from './helpers/webgl';
+import { pressButton } from './helpers/engine';
 
 /**
  * The Carousel view at /photos?view=carousel (PHOTO-02, PHOTO-03, PHOTO-04;
@@ -79,6 +80,7 @@ test.describe('Carousel stepper (reduced motion; PHOTO-02, PHOTO-04, D-12, D-13)
 
   test('the stepper shows one photo with the controls and never advances by itself', async ({
     page,
+    browserName,
   }) => {
     await page.goto(CAROUSEL_URL);
 
@@ -124,10 +126,11 @@ test.describe('Carousel stepper (reduced motion; PHOTO-02, PHOTO-04, D-12, D-13)
     await expect(carousel).toHaveAttribute('data-active-slug', views[1].slug);
 
     // The last photo disables Next (no wrap, UI-SPEC OQ4), which stays focusable.
-    for (let n = 3; n <= views.length; n++) await next(page).click();
+    // A click, or focus and Enter in WebKit, where a click does not focus a button (helpers/engine.ts).
+    for (let n = 3; n <= views.length; n++) await pressButton(next(page), browserName);
     await expect(counter(page)).toHaveText(`${views.length} / ${views.length}`);
     await expect(next(page)).toHaveAttribute('aria-disabled', 'true');
-    await next(page).click({ force: true });
+    await pressButton(next(page), browserName, { force: true });
     await expect(counter(page)).toHaveText(`${views.length} / ${views.length}`);
     await expect(next(page)).toBeFocused();
   });

@@ -4,6 +4,7 @@ import { projects } from '@/data/projects';
 import { roadmapItems } from '@/data/roadmap';
 import type { Project } from '@/data/types';
 import { plainText } from '@/lib/inline-code';
+import { clickFocusesButtons } from './helpers/engine';
 
 /**
  * The two case studies and box's terminal, all read from the data: the region
@@ -531,6 +532,7 @@ test.describe('Demo (ENG-05)', () => {
 
   test('releasing Pause resumes at once with the pointer still over the terminal (D-02 amended)', async ({
     page,
+    browserName,
   }) => {
     await page.goto(BOX);
     const region = page.getByRole('region', { name: regionName });
@@ -546,7 +548,8 @@ test.describe('Demo (ENG-05)', () => {
     // The pointer stays on the toggle and focus stays on it: no move, no blur.
     await toggle.click();
     await expect(toggle).toHaveAttribute('aria-pressed', 'false');
-    await expect(toggle).toBeFocused();
+    // A click focuses the toggle except in WebKit (helpers/engine.ts); there focus was never on it.
+    if (clickFocusesButtons(browserName)) await expect(toggle).toBeFocused();
     await expect(region).toHaveAttribute('data-playback', 'playing');
     await expect(region).not.toHaveAttribute('data-command', shown ?? '', { timeout: 8000 });
   });

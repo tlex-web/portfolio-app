@@ -3,6 +3,7 @@ import { site } from '@/data/site';
 import { terrain } from '@/data/generated/terrain';
 import { photos } from '@/data/generated/photos';
 import { ROUTES, type Label } from './routes';
+import { tabReachesLinks } from './helpers/engine';
 
 /**
  * Shell contract (SHELL-01, SHELL-02, DSGN-08 shell; UI-SPEC "Guardrail
@@ -53,7 +54,7 @@ async function settle(page: Page) {
 
 test.describe('Shell landmarks', () => {
   for (const [path, current] of ROUTES) {
-    test(`${path}: one shell, skip link first, current page ${current ?? 'none'}`, async ({ page }) => {
+    test(`${path}: one shell, skip link first, current page ${current ?? 'none'}`, async ({ page, browserName }) => {
       await page.goto(path);
 
       // E2/E3: exactly one of each landmark.
@@ -100,8 +101,11 @@ test.describe('Shell landmarks', () => {
       );
 
       // E1: the skip link is the first Tab stop; Enter moves focus to main.
-      await page.keyboard.press('Tab');
+      // WebKit never Tabs to a link (helpers/engine.ts), so there the skip link
+      // is focused directly and only its Enter behaviour is checked.
       const skip = page.getByRole('link', { name: 'Skip to main content' });
+      if (tabReachesLinks(browserName)) await page.keyboard.press('Tab');
+      else await skip.focus();
       await expect(skip).toBeFocused();
       await expect(skip).toHaveAttribute('href', '#main-content');
       await page.keyboard.press('Enter');
@@ -239,6 +243,7 @@ test.describe('Shell mobile menu', () => {
 
   test('Menu button and panel rows meet the touch-target sizes; Escape closes to the button', async ({
     page,
+    browserName,
   }) => {
     await page.goto('/roadmap');
 
@@ -272,7 +277,9 @@ test.describe('Shell mobile menu', () => {
     );
 
     // Move focus into the panel so "Escape returns focus to the button" is observable.
-    await page.keyboard.press('Tab');
+    // The rows are links, which WebKit never Tabs to (helpers/engine.ts): focus the first directly.
+    if (tabReachesLinks(browserName)) await page.keyboard.press('Tab');
+    else await rows.nth(0).focus();
     await expect(rows.nth(0)).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(panel).toBeHidden();

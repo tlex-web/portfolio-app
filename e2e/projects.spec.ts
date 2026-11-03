@@ -208,7 +208,9 @@ test.describe('Engineering route panels (ENG-01)', () => {
     await expect(page.getByText('Programming Projects')).toHaveCount(0);
   });
 
-  test('Tab reaches each panel title link', async ({ page }) => {
+  // @no-webkit: the panel titles are links, and Playwright's WebKit never Tabs to a link
+  // (Safari's default, helpers/engine.ts); this test has no step left without Tab.
+  test('Tab reaches each panel title link @no-webkit', async ({ page }) => {
     await page.goto('/projects');
     await expect(routes(page)).toBeVisible();
 
