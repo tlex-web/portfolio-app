@@ -785,6 +785,45 @@ describe('SummitRegister error summary (CONTACT-02, 12-26)', () => {
     ]);
     expect(messageField()).toHaveValue('x'.repeat(2002));
   });
+
+  // IN-06 (CONTACT-02): Retry validates like submit, so an invalid edit after
+  // a failure sends nothing and costs no rate-limit slot.
+  it('IN-06: Retry after an invalid edit sends no request and focuses the summary', async () => {
+    fetchMock.mockResolvedValueOnce(answer(500, { code: 'server-error' }));
+    const user = userEvent.setup();
+    render(<SummitRegister />);
+
+    fillValid();
+    await user.click(sendButton());
+    const retry = await screen.findByRole('button', { name: 'Retry sending' });
+    fireEvent.change(messageField(), { target: { value: 'x'.repeat(9) } });
+    await user.click(retry);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(inlineError('message')).toBe('Write at least 10 characters (now 9).');
+    const box = screen.getByRole('alert');
+    await waitFor(() => expect(box).toHaveFocus());
+    expect(box).toHaveAccessibleName('Check 1 field');
+    expect(box).not.toHaveTextContent("Couldn't send.");
+    expect(nameField()).toHaveValue('John Doe');
+    expect(messageField()).toHaveValue('x'.repeat(9));
+  });
+
+  // IN-01 (12-27 copy.field-error-name-long): a server too_long on the name
+  // reads the approved too-long copy, not "Enter your name.".
+  it('IN-01: a server name too_long answer shows the name too-long message inline', async () => {
+    fetchMock.mockResolvedValueOnce(answer(400, { code: 'validation', fields: { name: 'too_long' } }));
+    const user = userEvent.setup();
+    render(<SummitRegister />);
+
+    fillValid();
+    await user.click(sendButton());
+
+    await waitFor(() =>
+      expect(inlineError('name')).toBe('Shorten your name to 100 characters (now 8).'),
+    );
+    expect(screen.getByRole('alert')).toHaveAccessibleName('Check 1 field');
+  });
 });
 
 describe('counterStatus (UI-SPEC "Counter announcement")', () => {
@@ -815,6 +854,10 @@ describe('validateField (CONTACT-02, FEEDBACK_LIMITS)', () => {
     ['name', '', 'Enter your name.'],
     ['name', '   ', 'Enter your name.'],
     ['name', 'Tim', null],
+    // IN-01: 100 is the limit; past it the 12-27 copy.field-error-name-long string.
+    ['name', 'x'.repeat(100), null],
+    ['name', 'x'.repeat(101), 'Shorten your name to 100 characters (now 101).'],
+    ['name', 'x'.repeat(1234), 'Shorten your name to 100 characters (now 1,234).'],
     ['email', '', 'Enter your email address.'],
     ['email', 'tim@', 'Enter a full email address, with an @ and a domain.'],
     ['email', 'tim@example.com', null],
