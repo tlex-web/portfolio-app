@@ -5,16 +5,16 @@ milestone_name: Topographic Identity
 current_phase: 12
 current_phase_name: Contact, Edge Pages, Cleanup & Verification
 status: executing
-stopped_at: Completed 12-27-PLAN.md
-last_updated: "2026-11-03T12:23:37.064Z"
+stopped_at: Completed 12-28-PLAN.md
+last_updated: "2026-11-03T12:37:53.927Z"
 last_activity: 2026-11-03
 last_activity_desc: Phase 12 execution started
-state_head: 76c337514b4d9d81048f13c801b0d97a0043e598
+state_head: d1abb6f73a5e154d979acaef8b3b2b12a9c52a8e
 progress:
   total_phases: 6
   completed_phases: 10
   total_plans: 128
-  completed_plans: 121
+  completed_plans: 122
   percent: 95
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-02)
 ## Current Position
 
 Phase: 12 (Contact, Edge Pages, Cleanup & Verification) — EXECUTING
-Plan: 28 of 34
+Plan: 29 of 34
 Status: Ready to execute
 Last activity: 2026-11-03 — Phase 12 execution started
 
@@ -179,6 +179,7 @@ Progress: [█████████░] 95%
 | Phase 12 P23 | 1h 41m | 3 tasks | 16 files |
 | Phase 12 P24 | 4min | 2 tasks | 2 files |
 | Phase 12 P27 | 3min | 3 tasks | 4 files |
+| Phase 12 P28 | 9 min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -490,6 +491,10 @@ Recent decisions affecting current work:
 - [Phase 12]: 12-27: Tim approved both npm advisory bumps ("Approve both, 2.11.35 (Recommended)"): source-map-js 1.2.2 and baseline-browser-mapping 2.11.35, lockfile-only npm update (no override), floors raised; npm audit 44 to 42
 - [Phase 12]: 12-27: IN-01 name-too-long copy for 12-28 is Tim's "Shorten your name to 100 characters (now {n})." ({n} = formatCount(value.length)); IN-05 global-error title for 12-32 is "Something went wrong · Tim Lui"
 - [Phase 12]: 12-27: 404 header guard is option A ("A (Recommended)"): 12-29 drops purpose: prefetch from proxy config.matcher[0].missing; the residual is accepted risk AR-12-02 and 12-34 records IN-02 deferred, not fixed
+- [Phase 12]: 12-28: a validation answer naming no visible field (no fields, empty fields, or only non-visible keys) shows the copy.fail-send box with Retry and keeps every value (WR-01)
+- [Phase 12]: 12-28: Retry runs validateAll + showErrors before send, like submit; an invalid edit sends no request and focuses the error summary (IN-06)
+- [Phase 12]: 12-28: IN-01 shipped: name too_long (client >100 and server too_long) reads 'Shorten your name to 100 characters (now {n}).' with formatCount; other name issues keep 'Enter your name.'
+- [Phase 12]: 12-28: feedbackSchema email is z.email() (IN-07); contract pinned first by 6 accept/reject cases green on the old schema
 
 ### Pending Todos
 
@@ -536,6 +541,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-03T12:23:35.475Z
-Stopped at: Completed 12-27-PLAN.md
+Last session: 2026-11-03T12:37:52.250Z
+Stopped at: Completed 12-28-PLAN.md
 Resume file: None
