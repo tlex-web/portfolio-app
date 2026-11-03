@@ -11,7 +11,7 @@ const UNSUPPORTED = "This browser can't list saved pages.";
 
 const NOTE = 'mt-4 text-base text-ink-muted';
 const ROW =
-  'flex min-h-12 items-center justify-between gap-4 py-2 text-base text-ink hover:bg-surface-raised transition-colors duration-(--duration-fast) ease-erosion';
+  'flex min-h-12 items-center justify-between gap-4 py-2 text-base text-ink hover:bg-surface-overlay transition-colors duration-(--duration-fast) ease-erosion';
 
 type State =
   | { status: 'checking' }
