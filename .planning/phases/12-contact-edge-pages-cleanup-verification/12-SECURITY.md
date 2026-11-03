@@ -42,10 +42,10 @@ Register authored at plan time: every one of the 26 PLAN files carries a `<threa
 |-----------|------|----------|-----------|----------|-------------|------------|--------|----------|
 | T-12-01 | 12-01 | Repudiation | 12-01-SUMMARY Resolved values | medium | mitigate | Each supplied row backed by Tim's verbatim answer; absent key reads not supplied | closed | 12-01-SUMMARY.md:133-137, :139-145 |
 | T-12-SC (12-01) | 12-01 | Tampering | npm installs | low | accept | No package installed | closed | see Accepted Risks |
-| T-12-02 | 12-02 | Spoofing | x-edge-section request header | low | mitigate | Proxy deletes the client copy; parseEdgeSection allow-lists two values; spoof e2e | open — below high threshold (non-blocking) | proxy.ts:195, lib/edge-section.ts:23-25, e2e/not-found.spec.ts:138-147; gap: matcher `missing` rule skips prefetch requests (proxy.ts:222-225) — fix logged in deferred-items.md:13-16 |
-| T-12-03 | 12-02 | Tampering | 404 body and title | medium | mitigate | 404 reads only the proxy header, never params or pathname; random-token e2e | closed | app/not-found.tsx:27; e2e/not-found.spec.ts:83,112-114 |
-| T-12-04 | 12-02 | Tampering | CSP upgrade-insecure-requests | high | mitigate | Condition reads URL protocol + loopback set only; forged-proto unit test | closed | proxy.ts:160-161,174; lib/__tests__/proxy.test.ts:147-152 |
-| T-12-05 | 12-02 | Denial of service | prod script-src without 'unsafe-eval' | medium | mitigate | 'unsafe-eval' dev-only; fresh-build chunk grep 0; WebGL specs pass | closed | proxy.ts:164; proxy.test.ts:107-109,159-164 |
+| T-12-02 | 12-02 | Spoofing | x-edge-section request header | low | mitigate | Proxy deletes the client copy on every request it handles; document prefetches (`purpose: prefetch`) pass the proxy since 12-29 (C1); parseEdgeSection allow-lists two values; spoof and document-prefetch e2e | closed | proxy.ts:199 (header delete), proxy.ts:229 (matcher `missing` holds only `next-router-prefetch`), lib/edge-section.ts:30-32; lib/__tests__/proxy.test.ts:157 "skips only RSC prefetches: missing holds the next-router-prefetch entry alone"; e2e/not-found.spec.ts:138 "a client-sent x-edge-section header cannot choose the context link", :151 "a document prefetch with a client-sent x-edge-section gets the CSP header and the generic links", :166 "a document prefetch of an unknown photo slug gets the proxy miss handling" (12-29 commits 16deede, 099fab7; scoped comments 0b3b5c4); residual accepted: AR-12-02 |
+| T-12-03 | 12-02 | Tampering | 404 body and title | medium | mitigate | 404 reads only the proxy header, never params or pathname; random-token e2e | closed | app/not-found.tsx:36; e2e/not-found.spec.ts:83,112-114 |
+| T-12-04 | 12-02 | Tampering | CSP upgrade-insecure-requests | high | mitigate | Condition reads URL protocol + loopback set only; forged-proto unit test | closed | proxy.ts:160-161,174; lib/__tests__/proxy.test.ts:163-168 |
+| T-12-05 | 12-02 | Denial of service | prod script-src without 'unsafe-eval' | medium | mitigate | 'unsafe-eval' dev-only; fresh-build chunk grep 0; WebGL specs pass | closed | proxy.ts:164; proxy.test.ts:114-116,175-180 |
 | T-12-44 | 12-02 | Tampering | reused prod server (PW_REUSE) | medium | mitigate | Ignored when CI is set; reused run writes no snapshots | closed | playwright.config.ts:49,90,162 |
 | T-12-SC (12-02) | 12-02 | Tampering | npm installs | low | accept | No package installed | closed | see Accepted Risks |
 | T-12-06 | 12-03 | Information disclosure | console logs in route.ts / lib/email.ts | high | mitigate | Logs hold outcome, IP, timestamp only; Resend error name only; console spy test | closed | app/api/feedback/route.ts:37-44,140-144, lib/email.ts:57; app/api/__tests__/feedback.test.ts:33-38,86-91 |
@@ -102,7 +102,7 @@ Register authored at plan time: every one of the 26 PLAN files carries a `<threa
 | T-12-SC (12-22) | 12-22 | Tampering | npm installs | low | accept | No package installed | closed | see Accepted Risks |
 | T-12-39 | 12-23 | Repudiation | browser tags and retries | medium | mitigate | --fail-on-flaky-tests in CI; every tag (17/17) has a reason comment | closed | .github/workflows/ci.yml:104; playwright.config.ts:60-77 |
 | T-12-SC (12-23) | 12-23 | Tampering | npm installs | low | accept | No package installed | closed | see Accepted Risks |
-| T-12-40 | 12-24 | Tampering | production CSP header | high | mitigate | Unit test pins both variants; UAT item (d) reads the live header after deploy | closed | lib/__tests__/proxy.test.ts:77-100,147-164; 12-24-SUMMARY.md:157-163 |
+| T-12-40 | 12-24 | Tampering | production CSP header | high | mitigate | Unit test pins both variants; UAT item (d) reads the live header after deploy | closed | lib/__tests__/proxy.test.ts:84-107,163-180; 12-24-SUMMARY.md:157-163 |
 | T-12-41 | 12-24 | Repudiation | test-count ratchet | low | mitigate | --update refuses a lower total; selftest proves it | closed | scripts/guards/test-count.mjs:168-187; scripts/guards/selftest.mjs:161-173 |
 | T-12-SC (12-24) | 12-24 | Tampering | npm installs | low | accept | No package installed | closed | see Accepted Risks |
 | T-12-43 | 12-25 | Spoofing | canonical url rule (guard:identity) | medium | mitigate | Rejects non-https, trailing slash, localhost, example.com; bad-url selftest | closed | scripts/guards/check-identity.mjs:56,163-164; scripts/guards/selftest.mjs:532-536 |
@@ -117,12 +117,12 @@ Register authored at plan time: every one of the 26 PLAN files carries a `<threa
 
 ### Open below threshold
 
-- **T-12-02 (low, open, does not block).** All three controls exist, but the proxy matcher skips any request that carries `next-router-prefetch` or `purpose: prefetch` (proxy.ts:222-225). On those requests a visitor-supplied `x-edge-section` reaches app/not-found.tsx:27. `parseEdgeSection` still limits the value to `photos` or `projects`, and a visitor can only change their own response. Tim's decision on 2026-11-03 at the Phase 12 gates was "Keep open, non-blocking (Recommended)". This follows his earlier "Log it for 12-22 (Recommended)". The fix is logged in deferred-items.md:13-16: drop the `purpose: prefetch` entry from the matcher's `missing` list, or strip the header on that path, and add a test.
+- No threat is open. T-12-02, the one row that was open here (low, non-blocking), was closed by 12-29: the `purpose: prefetch` entry left the matcher's `missing` list (proxy.ts:229), so document prefetches get the proxy's header delete and CSP header. The paths the matcher still skips are the accepted residual AR-12-02 (Tim's 12-27 choice, "A (Recommended)").
 
 ### Unregistered flags (informational)
 
-- **Prefetch-path 404 without CSP (pre-existing).** The same prefetch path returns 404 HTML with no CSP header, because the proxy never runs (deferred-items.md:15). No threat ID covers it. The T-12-02 deferred fix closes it too.
-- **404 self-fetch outbound request (mitigated).** 12-02 added a server-side self-fetch for the neutral 404 (proxy.ts:73-103). It is pinned to loopback and the VERCEL_* hostnames (proxy.ts:135-143), and lib/__tests__/proxy.test.ts:378-429 tests that. It is folded into T-12-03, and no action is needed.
+- **Prefetch-path 404 without CSP (closed by C1).** A document prefetch (`purpose: prefetch`) used to get 404 HTML with no CSP header, because the proxy never ran (deferred-items.md:15). 12-29's C1 matcher fix (proxy.ts:229) sends it through the proxy, and e2e/not-found.spec.ts:151 and :166 assert the CSP header on both prefetch cases. RSC prefetches (`next-router-prefetch`) still skip the proxy; they are flight payloads, not documents.
+- **404 self-fetch outbound request (mitigated).** 12-02 added a server-side self-fetch for the neutral 404 (proxy.ts:73-103). It is pinned to loopback and the VERCEL_* hostnames (proxy.ts:135-143), and lib/__tests__/proxy.test.ts:394-445 tests that. It is folded into T-12-03, and no action is needed.
 - **Live-header checks (T-12-04, T-12-40).** The code controls and their unit tests are in place. Tim still reads the live production header at UAT item (d) (12-24-SUMMARY.md:157-163) after the deploy.
 
 ---
@@ -132,6 +132,7 @@ Register authored at plan time: every one of the 26 PLAN files carries a `<threa
 | Risk ID | Threat Ref | Rationale | Accepted By | Date |
 |---------|------------|-----------|-------------|------|
 | AR-12-01 | T-12-SC (12-01..12-05, 12-07..12-26) | These 25 plans install no package. `git log 8363f1f..HEAD -- package.json package-lock.json` returns only 646f3ac (12-06), so no other Phase 12 plan touched the manifests. Each plan's `<threat_model>` records the accept disposition. | plan-time threat model (planner; plans approved by Tim 2026-11-02) | 2026-11-02 |
+| AR-12-02 | T-12-02 | On the paths proxy.ts config.matcher skips (RSC prefetches with `next-router-prefetch`, paths starting with `api`, missing files under `images/`, `terrain/` and `media/`) the proxy's delete never runs, so a visitor-sent `x-edge-section` can pick the generic 404's context link. It affects only the sender's own response, and `parseEdgeSection` limits it to a two-value allow-list (`photos`, `projects`); the slug is never rendered (T-12-03). Next 16.4 hides `next-router-prefetch` from `headers()`, so the 404 render cannot tell those requests apart; the per-build proxy token (12-27 option C) was declined. IN-02 is narrowed, not fixed as written (12-34 records it deferred). | Tim, 12-27 checkpoint: "A (Recommended)" (12-27-SUMMARY.md Answers row 4, Resolved values `edge.header-guard`) | 2026-11-03 |
 
 *Accepted risks do not resurface in future audit runs.*
 
@@ -142,6 +143,7 @@ Register authored at plan time: every one of the 26 PLAN files carries a `<threa
 | Audit Date | Threats Total | Closed | Open | Run By |
 |------------|---------------|--------|------|--------|
 | 2026-11-03 | 70 | 69 | 1 (low, below high threshold) | gsd-security-auditor (ASVS L1) at the Phase 12 gates |
+| 2026-11-03 | 70 | 70 | 0 | 12-29 executor: T-12-02 closed (C1 matcher fix, residual AR-12-02) |
 
 ---
 
@@ -152,4 +154,4 @@ Register authored at plan time: every one of the 26 PLAN files carries a `<threa
 - [x] `threats_open: 0` confirmed
 - [x] `status: verified` set in frontmatter
 
-**Approval:** verified 2026-11-03 (threats_open 0; T-12-02 kept open below the high threshold by Tim's choice)
+**Approval:** verified 2026-11-03 (threats_open 0; T-12-02 was kept open below the high threshold by Tim's choice, then closed by 12-29 with residual AR-12-02)
