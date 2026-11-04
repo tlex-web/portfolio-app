@@ -12,7 +12,7 @@
 
 | capability | decision | reason |
 |---|---|---|
-| css2 stylesheet for a family and a single weight (static TTF served to a client without WOFF2 support) | INTEGRATE | |
+| css2 stylesheet, one family + weight, static TTF | INTEGRATE | static TTF: the request comes from a client without WOFF2 support |
 | fonts.gstatic.com font file download | INTEGRATE | |
 | `text=` glyph subsetting | OPT-OUT | not needed: OG strings come from data that can change; a fixed glyph subset would break on a new character |
 | variable-axis ranges (for example `wght@400..700`) | OPT-OUT | explicitly out of scope: Satori needs static instances (`04-functions/image-response.md`) |
