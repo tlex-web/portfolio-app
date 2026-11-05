@@ -43,6 +43,10 @@ npm run data:check      # what CI runs
 
 The manifest (`imageManifest`) is the only image source (DATA-08): every photo path a component renders comes from it, and it lists only the hashed derivatives in `public/images/photos/`. The v1 `-large` / `-thumb` files and their `public/images/optimized/` folder were deleted in Phase 12 (VERIFY-01), behind `data/__tests__/asset-exists.test.ts`, which fails when any path referenced from `data/` is missing under `public/`.
 
+### Icons
+
+`npm run icons:build` writes `app/favicon.ico` (16, 32 and 48 px) and `app/apple-icon.png` (180 px) from `app/icon.svg`. Run it after editing the SVG and commit the outputs.
+
 ## Guards (`scripts/guards/`)
 
 CI guards that run in `npm run lint` (`eslint . && guard:parity && guard:palette && guard:contrast && guard:identity && guard:selftest && data:check && guard:images`). Each guard prints one line per violation and exits 1 on any failure. `selftest.mjs` runs every guard against the fixtures in `scripts/guards/__selftest__/` and proves that each one can fail.
