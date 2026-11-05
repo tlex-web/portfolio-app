@@ -66,7 +66,7 @@ A modern, responsive portfolio website showcasing landscape photography and prog
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/portfolio-app.git
+git clone https://github.com/tlex-web/portfolio-app.git
 cd portfolio-app
 ```
 
@@ -432,8 +432,8 @@ This project is open source and available under the [MIT License](LICENSE).
 
 **Your Name**
 
-- Portfolio: [https://your-domain.com](https://your-domain.com)
-- GitHub: [@yourusername](https://github.com/yourusername)
+- Portfolio: [https://www.tlui.de](https://www.tlui.de)
+- GitHub: [tlex-web](https://github.com/tlex-web)
 - Email: your.email@example.com
 
 ## 🙏 Acknowledgments

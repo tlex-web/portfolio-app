@@ -202,7 +202,7 @@ Set in Vercel dashboard (not in repo):
 1. **Push to GitHub**: Code in `main` branch triggers deployment
 2. **GitHub Actions CI**: Runs lint, type-check, tests (must pass)
 3. **Vercel Build**: Auto-triggered after CI passes
-4. **Deploy**: Live at `https://your-project.vercel.app`
+4. **Deploy**: Live at `https://www.tlui.de`
 
 ### Performance Notes
 - Three.js/WebGL works on Vercel Edge with client-side rendering

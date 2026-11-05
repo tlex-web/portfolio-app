@@ -57,7 +57,7 @@
   "bugs": {
     "url": "https://github.com/tlex-web/portfolio-app/issues"
   },
-  "homepage": "https://github.com/tlex-web/portfolio-app#readme",
+  "homepage": "https://www.tlui.de",
   "dependencies": {
     "@phosphor-icons/react": "2.1.10",
     "@react-spring/three": "^10.0.3",
