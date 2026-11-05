@@ -15,10 +15,10 @@ import type { Site } from './types';
 export const site = {
   name: 'Tim Lui',
   role: 'Developer & photographer',
-  // D-13: the canonical host, the production deployment the GitHub repository
-  // names as its homepage. No trailing slash. Costly to change once indexed
-  // (it needs a redirect or a canonical plan on the old host).
-  url: 'https://portfolio-app-mocha-three.vercel.app',
+  // D-13: the canonical host. Tim chose www.tlui.de on 2026-11-02; tlui.de and
+  // the vercel.app host redirect here at Vercel. No trailing slash. Costly to
+  // change once indexed (it needs a redirect or a canonical plan on the old host).
+  url: 'https://www.tlui.de',
   email: 'old2shatterhand@gmail.com',
   links: {
     github: 'https://github.com/tlex-web',

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { projects } from '@/data/projects';
+import { site } from '@/data/site';
 import { EDGE_SECTION_HEADER, type EdgeSection } from '@/lib/edge-section';
 import { photoSlugs } from '@/lib/photos/view-model';
 
@@ -106,6 +107,13 @@ async function neutral404(request: NextRequest, section: EdgeSection): Promise<R
 const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]']);
 
 /**
+ * The canonical host (D-13), allowed by name so the neutral 404 does not depend
+ * on which production domain the Vercel variables hold. Domains that redirect
+ * to it at Vercel never reach the proxy, so only this one is listed.
+ */
+const CANONICAL_HOST = new URL(site.url).hostname;
+
+/**
  * The hostname of one Vercel system variable (a bare hostname such as
  * "portfolio-app-abc.vercel.app"), lower-cased, or null when it is unset,
  * empty or not a hostname. A scheme or path, should one appear, is ignored.
@@ -125,16 +133,17 @@ function envHostname(value: string | undefined): string | null {
  * Whether the proxy may fetch the neutral 404 from this host (T-12-03).
  *
  * The fetch goes to the request's own origin, and its answer is served under
- * this site's origin, so it runs only on loopback or on a hostname Vercel
- * names for this deployment (VERCEL_URL, VERCEL_BRANCH_URL,
- * VERCEL_PROJECT_PRODUCTION_URL, read per request). Exact matches only. Any
+ * this site's origin, so it runs only on loopback, on the canonical host or on
+ * a hostname Vercel names for this deployment (VERCEL_URL, VERCEL_BRANCH_URL,
+ * VERCEL_PROJECT_PRODUCTION_URL, read per request). Exact matches only, never a
+ * suffix or a subdomain, because the fetch forwards the visitor's cookies. Any
  * other host gets the plain rewrite: still the 404, with the slug in the
  * flight data. `hostname` is the host of request.url, the URL the fetch
  * resolves against.
  */
 export function canFetchNeutral(hostname: string): boolean {
   const host = hostname.toLowerCase();
-  if (LOOPBACK.has(host)) return true;
+  if (LOOPBACK.has(host) || host === CANONICAL_HOST) return true;
   return [
     process.env.VERCEL_URL,
     process.env.VERCEL_BRANCH_URL,
