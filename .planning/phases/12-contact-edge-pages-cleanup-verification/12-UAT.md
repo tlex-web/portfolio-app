@@ -1,9 +1,9 @@
 ---
-status: partial
+status: complete
 phase: 12-contact-edge-pages-cleanup-verification
 source: [12-VERIFICATION.md]
 started: 2026-11-03T11:05:00Z
-updated: 2026-11-05T16:37:15.609Z
+updated: 2026-11-05T20:24:42.196Z
 ---
 
 ## Current Test
@@ -35,14 +35,12 @@ automated: "2026-11-05, Edge against next start, DOM only, no screen reader hear
 expected: Photo card contain-fitted with the copyright line, project card shows route, grade and pitch, Home shows the default contour card; text legible
 result: pass
 automated: "2026-11-05. All three OG PNGs are 1200x630 and match on inspection: photo contain-fitted with the copyright line, project with route, grade and pitch, Home with the contour card, text legible. The link-preview paste is still open: the preview is behind Vercel SSO and production is pre-Phase 12."
-note: "Passed by Tim on 2026-11-05 on the PNG evidence. The paste into a link-preview tool was not done; it needs Phase 12 on production."
+note: "Passed by Tim on 2026-11-05 on the PNG evidence. On production the same day, the three OG images load publicly at 1200x630. Whether the paste into a link-preview tool was run is not recorded."
 
 ### 6. Production CSP header after deploy (12-24 UAT item d) and preview slug check on a deployed preview (12-24 UAT item k)
 expected: Header contains upgrade-insecure-requests, no raw.githubusercontent.com, no 'unsafe-eval'; view-source of /photos/nf-check has 0 hits for nf-check; a document prefetch (purpose: prefetch) of an unknown URL also carries the CSP header (new since 12-29)
-result: blocked
-blocked_by: release-build
-reason: "blocked: deploy"
-automated: "2026-11-05. Preview of 53171db (source-identical to HEAD): every expected value holds on /, a known photo, /photos/nf-check (404, 0 hits) and an unknown URL sent with purpose: prefetch. Production still serves a pre-Phase 12 build whose CSP has 'unsafe-eval' and raw.githubusercontent.com, so the production half cannot pass until Phase 12 is deployed."
+result: pass
+automated: "2026-11-05, production (portfolio-app-mocha-three.vercel.app, rebuilt from 53171db). Every expected value holds on /, a known photo, /photos/nf-check (404, 0 hits) and an unknown URL sent with purpose: prefetch. The preview of 53171db passed the same checks earlier. Was blocked on the deploy (Tim: 'blocked: deploy') until this rebuild went live."
 
 ### 7. Firefox footer contour band at 1 px strokes (12-24 UAT item b)
 expected: Reads as crisp 1 px strokes, not blurred or doubled
@@ -59,10 +57,10 @@ evidence: "Edge against next start, 2026-11-05. Try again is the only filled acc
 ## Summary
 
 total: 8
-passed: 7
+passed: 8
 issues: 0
 pending: 0
 skipped: 0
-blocked: 1
+blocked: 0
 
 ## Gaps
