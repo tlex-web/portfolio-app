@@ -3,6 +3,10 @@ status: awaiting_human_verify
 trigger: "Keep the requested slug of an unknown /photos/<slug> or /projects/<slug> URL out of the 404 response's script data (T-12-03). Tim: \"cover script data too\"."
 created: 2026-11-02T00:00:00Z
 updated: 2026-11-02T21:00:00Z
+audit_acknowledged:
+  milestone: v2.0
+  at: 2026-11-05
+  status: awaiting_human_verify
 ---
 
 ## Current Focus

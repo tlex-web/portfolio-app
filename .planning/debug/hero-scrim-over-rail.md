@@ -4,6 +4,10 @@ trigger: "G-09-4 (part N1): at 768-1023 px the hero scrim dims the altimeter rai
 created: 2026-10-25T16:00:00Z
 updated: 2026-10-25T17:30:00Z
 goal: find_root_cause_only
+audit_acknowledged:
+  milestone: v2.0
+  at: 2026-11-05
+  status: diagnosed
 ---
 
 ## Current Focus

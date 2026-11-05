@@ -23,6 +23,7 @@ result: pass
 ### 3. Require Visual Regression, Lint and Type Check and Unit Tests as status checks on main (07-USER-SETUP.md item 2)
 expected: GitHub -> Settings -> Branches/Rulesets -> main lists the three jobs as Required; a PR's merge box shows them as Required
 result: pass
+note: "v2.0 audit, 2026-11-05: live GitHub settings show no branch protection and no required checks on main (branches/main/protection answers 404; rules/branches/main is empty). This pass does not describe the repository as of that date."
 
 ### 4. Keyboard-only smoke pass of the shell in Firefox and WebKit (07-VALIDATION.md manual row)
 expected: Tab reaches the skip link first, then Primary nav, mobile menu opens/closes with Escape and route change, current page is visibly marked

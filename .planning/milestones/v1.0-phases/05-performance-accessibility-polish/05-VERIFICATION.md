@@ -23,6 +23,10 @@ human_verification:
   - test: "Visit /photos with reduced motion disabled and observe progressive texture loading"
     expected: "Gallery appears almost immediately with slightly blurry thumbnails (13-29KB), then the active photo and adjacent photos progressively sharpen to full resolution. No blank/black state during initial load."
     why_human: "Thumbnail-to-full-res visual quality difference and sequential load ordering require throttled network and live browser observation to confirm the priority queue (active, +1, -1) works as intended."
+audit_acknowledged:
+  milestone: v2.0
+  at: 2026-11-05
+  status: human_needed
 ---
 
 # Phase 5: Performance and Accessibility Polish Verification Report

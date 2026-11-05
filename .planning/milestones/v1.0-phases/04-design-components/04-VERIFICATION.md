@@ -26,6 +26,10 @@ human_verification:
   - test: "Scroll to the bottom of any page and inspect the footer"
     expected: "Footer has the deepest shadow layer (stratum-3); social link icons have frost glow on hover; background is alpine-950 (darkest alpine shade)"
     why_human: "Shadow depth and hover glow rendering require visual inspection"
+audit_acknowledged:
+  milestone: v2.0
+  at: 2026-11-05
+  status: human_needed
 ---
 
 # Phase 4: Design Components Verification Report

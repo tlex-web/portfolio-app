@@ -4,6 +4,10 @@ trigger: "UAT G-09-3: At 768 px the waypoint-2 pin label on the static poster is
 created: 2026-10-25T15:10:00Z
 updated: 2026-10-25T16:05:00Z
 goal: find_root_cause_only
+audit_acknowledged:
+  milestone: v2.0
+  at: 2026-11-05
+  status: diagnosed
 ---
 
 ## Current Focus

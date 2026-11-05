@@ -5,7 +5,7 @@ titles: json
 findings:
   - id: WR-01
     severity: warning
-    disposition: open
+    disposition: deferred
     title: "The compact summit plaque covers poster pin 3 on landscape phones; the sweep that should catch it filters those sizes out"
   - id: IN-01
     severity: info
@@ -39,7 +39,7 @@ findings:
     severity: info
     disposition: open
     title: "The server-HTML assertion escapes only the first `&`"
-open: 7
+open: 6
 total: 9
 recorded: 2026-10-25T21:42:43.118Z
 ---
@@ -48,7 +48,7 @@ recorded: 2026-10-25T21:42:43.118Z
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | open | - |
+| WR-01 | warning | deferred | Accepted by Tim at 09-UAT round 2, test 3: reply "pass" |
 | IN-01 | info | open | - |
 | IN-02 | info | open | - |
 | IN-03 | info | open | - |
