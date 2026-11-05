@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "photos": [
+    {
+      "id": "img-0605",
+      "file": "IMG_0605-Enhanced (2022_02_01 09_47_03 UTC).jpg",
+      "sha256": "2b9eebcbd80422a135a6cd211750e3987072d538a7818d9256c29c9d3860fb11",
+      "width": 12480,
+      "height": 8320,
+      "orientation": null,
+      "space": "srgb",
+      "iccDescription": "sRGB IEC61966-2.1",
+      "make": "Canon",
+      "model": "Canon EOS 6D Mark II",
+      "lens": "EF24-105mm f/4L IS II USM",
+      "focalLengthMm": 105,
+      "fNumber": 5.6,
+      "exposureTimeS": 0.002,
+      "iso": 100,
+      "dateTimeOriginal": "2021-09-06T10:48:46",
+      "offsetTimeOriginal": null,
+      "gps": {
+        "lat": 46.015,
+        "lon": 7.7414,
+        "altM": 1626.1,
+        "utc": "2021-09-06T08:48:44.8Z"
+      }
+    },
+    {
+      "id": "img-0629",
+      "file": "IMG_0629-Enhanced (2022_07_29 07_19_54 UTC).jpg",
+      "sha256": "90145a5d75e26778baa353b67b1f69890a93671e90a0a5d719e1f85a75d7528a",
+      "width": 12480,
+      "height": 8320,
+      "orientation": null,
+      "space": "srgb",
+      "iccDescription": "sRGB IEC61966-2.1",
+      "make": "Canon",
+      "model": "Canon EOS 6D Mark II",
+      "lens": "EF24-105mm f/4L IS II USM",
+      "focalLengthMm": 70,
+      "fNumber": 4,
+      "exposureTimeS": 0.00625,
+      "iso": 1600,
+      "dateTimeOriginal": "2021-09-06T11:22:57",
+      "offsetTimeOriginal": null,
+      "gps": {
+        "lat": 46.0081,
+        "lon": 7.7385,
+        "altM": 1714.9,
+        "utc": "2021-09-06T09:22:56.601Z"
+      }
+    },
+    {
+      "id": "img-0662",
+      "file": "IMG_0662-Enhanced (2022_07_29 07_19_54 UTC).jpg",
+      "sha256": "83631b6a94602e94d626597bb14745290927b1506625e996c16778c271150865",
+      "width": 12480,
+      "height": 8320,
+      "orientation": null,
+      "space": "srgb",
+      "iccDescription": "sRGB IEC61966-2.1",
+      "make": "Canon",
+      "model": "Canon EOS 6D Mark II",
+      "lens": "EF24-105mm f/4L IS II USM",
+      "focalLengthMm": 70,
+      "fNumber": 5.6,
+      "exposureTimeS": 0.0025,
+      "iso": 100,
+      "dateTimeOriginal": "2021-09-07T10:58:25",
+      "offsetTimeOriginal": null,
+      "gps": {
+        "lat": 45.9908,
+        "lon": 7.7103,
+        "altM": 2597.3,
+        "utc": "2021-09-07T08:58:25Z"
+      }
+    },
+    {
+      "id": "r004-011",
+      "file": "R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC).jpg",
+      "sha256": "c89db1dab9d96caed67bf57f0e4e9ab92663564235da04998f295f03a0c7f0f1",
+      "width": 4712,
+      "height": 3212,
+      "orientation": null,
+      "space": "srgb",
+      "iccDescription": "sRGB IEC61966-2.1",
+      "make": null,
+      "model": null,
+      "lens": null,
+      "focalLengthMm": null,
+      "fNumber": null,
+      "exposureTimeS": null,
+      "iso": null,
+      "dateTimeOriginal": "2020-02-12T15:38:16",
+      "offsetTimeOriginal": null,
+      "gps": null
+    }
+  ]
+}

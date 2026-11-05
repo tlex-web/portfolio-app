@@ -1,84 +1,574 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
+import { terrain } from '@/data/generated/terrain';
+import { buildPhotoViews } from '@/lib/photos/view-model';
+import { readViewTransitions, recordViewTransitions } from './helpers/view-transitions';
+import { clickFocusesButtons } from './helpers/engine';
 
-test.describe('Photo Gallery', () => {
-  test('should display gallery grid', async ({ page }) => {
+/**
+ * The Map view in a browser (PHOTO-01, PHOTO-03; D-01 to D-04; 10-UI-SPEC
+ * "Map View" and UI Considerations E2). /photos opens on the full survey sheet
+ * with one link per photo, lowest first; each link's box is its label plate,
+ * and it opens the photo in the lightbox with a plain enter. The six legacy
+ * gallery tests (hero, hotspot buttons, the old modal and the 3D toggle) were
+ * rewritten in 10-08 to map cases, none dropped. Expected values come from
+ * buildPhotoViews(), never hand-typed.
+ */
+test.describe('Map view (PHOTO-01, PHOTO-03, D-01..D-04)', () => {
+  const views = buildPhotoViews();
+  const MAP = 'Map of the photo locations';
+  const LIST = 'Photo locations, lowest first';
+  const names = views.map((v) => `${v.title}, ${v.altitudeLabel}`);
+
+  const mapLinks = (page: Page) =>
+    page.getByRole('region', { name: MAP }).getByRole('list', { name: LIST }).getByRole('link');
+
+  /** Wait until React has hydrated a link (a click before that is a document navigation). */
+  async function waitForHydration(link: Locator) {
+    await expect
+      .poll(
+        () => link.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))),
+        { timeout: 15000 }
+      )
+      .toBe(true);
+  }
+
+  /** Click a map plate (hydrated) and wait for the dialog. */
+  async function openFromMap(page: Page, index: number) {
+    const link = mapLinks(page).nth(index);
+    await waitForHydration(link);
+    await link.click();
+    const dialog = page.getByRole('dialog');
+    // The dev server compiles the intercepted route on its first request.
+    await expect(dialog).toBeVisible({ timeout: 20000 });
+    return { dialog, link };
+  }
+
+  test('opens on the map with four waypoint links in altitude order (PHOTO-01)', async ({
+    page,
+  }) => {
     await page.goto('/photos');
-
-    await expect(page.getByRole('heading', { name: /Landscape Gallery/i })).toBeVisible();
-
-    // Should have images
-    const images = page.getByRole('button', { name: /View details for/i });
-    await expect(images.first()).toBeVisible();
+    await expect(page.getByRole('region', { name: MAP })).toBeVisible();
+    const links = mapLinks(page);
+    await expect(links).toHaveCount(views.length);
+    for (const [i, view] of views.entries()) {
+      await expect(links.nth(i)).toHaveAccessibleName(names[i]);
+      await expect(links.nth(i)).toHaveAttribute('href', `/photos/${view.slug}`);
+      await expect(links.nth(i)).toHaveAttribute('data-photo-id', view.slug);
+    }
   });
 
-  test('should open image detail modal when clicking on image', async ({ page }) => {
+  // @needs-tab-to-links: the waypoints are links, and WebKit on Windows and macOS never Tabs
+  // to a link (Safari's default, helpers/engine.ts); no step is left without Tab, so only that
+  // webkit project drops it. Linux WebKit (CI) runs it (12-23 triage, run 41565046890).
+  test('Tab reaches the four waypoint links in altitude order @needs-tab-to-links', async ({ page }) => {
     await page.goto('/photos');
-
-    // Click first image (Playwright auto-waits for it to be actionable)
-    const firstImage = page.getByRole('button', { name: /View details for/i }).first();
-    await firstImage.click();
-
-    // Modal should be visible
-    await expect(page.getByRole('dialog')).toBeVisible();
-
-    // Should have close button (uses aria-label="Close modal")
-    await expect(page.getByLabel(/Close modal/i)).toBeVisible();
+    const links = mapLinks(page);
+    await expect(links).toHaveCount(views.length);
+    const focusedName = () =>
+      page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? '');
+    // Tab through the shell until the first waypoint has focus.
+    for (let i = 0; i < 40 && (await focusedName()) !== names[0]; i++) {
+      await page.keyboard.press('Tab');
+    }
+    await expect(links.nth(0)).toBeFocused();
+    for (let i = 1; i < views.length; i++) {
+      await page.keyboard.press('Tab');
+      await expect(links.nth(i)).toBeFocused();
+    }
   });
 
-  test('should close modal when clicking close button', async ({ page }) => {
+  test('a map plate opens the lightbox', async ({ page }) => {
     await page.goto('/photos');
-
-    // Open modal
-    const firstImage = page.getByRole('button', { name: /View details for/i }).first();
-    await firstImage.click();
-    await expect(page.getByRole('dialog')).toBeVisible();
-
-    // Close modal
-    await page.getByLabel(/Close modal/i).click();
-    await expect(page.getByRole('dialog')).not.toBeVisible();
+    const { dialog } = await openFromMap(page, 1);
+    await expect(page).toHaveURL(new RegExp(`/photos/${views[1].slug}$`));
+    await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(views[1].title);
   });
 
-  test('should close modal when pressing Escape key', async ({ page }) => {
+  test('Close photo closes the lightbox opened from the map', async ({ page }) => {
     await page.goto('/photos');
+    const { dialog } = await openFromMap(page, 1);
+    await dialog.getByRole('button', { name: 'Close photo', exact: true }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page).toHaveURL(/\/photos$/);
+  });
 
-    // Open modal
-    const firstImage = page.getByRole('button', { name: /View details for/i }).first();
-    await firstImage.click();
-    await expect(page.getByRole('dialog')).toBeVisible();
-
-    // Press Escape
+  test('Escape closes it and focus returns to the plate', async ({ page }) => {
+    await page.goto('/photos');
+    const { link } = await openFromMap(page, 1);
     await page.keyboard.press('Escape');
-    await expect(page.getByRole('dialog')).not.toBeVisible();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(link).toBeFocused();
   });
 
-  test('should switch to 3D carousel view', async ({ page }) => {
+  test('opening from the map is a plain enter: no photo-* pseudo-element @chromium-only', async ({
+    page,
+  }) => {
+    await recordViewTransitions(page);
     await page.goto('/photos');
-
-    // Wait for images to load before switching views
-    await expect(page.getByRole('button', { name: /View details for/i }).first()).toBeVisible();
-
-    // Click 3D view button
-    await page.getByRole('button', { name: /3D Carousel/i }).click();
-
-    // Wait for the lazy-loaded 3D canvas to appear (may take time to load WebGL)
-    const canvas = page.locator('canvas');
-    await expect(canvas).toBeAttached({ timeout: 15000 });
+    const before = (await readViewTransitions(page)).transitions.length;
+    await openFromMap(page, 1);
+    await page.waitForTimeout(800);
+    const after = (await readViewTransitions(page)).transitions.slice(before).flat();
+    expect(after.filter((pseudo) => pseudo.includes('photo-'))).toEqual([]);
   });
 
-  test('should switch between grid and 3D view', async ({ page }) => {
+  test('?view=carousel shows the carousel region', async ({ page }) => {
+    await page.goto('/photos?view=carousel');
+    await expect(page.getByRole('region', { name: 'Photographs' })).toBeVisible();
+    await expect(page.getByRole('region', { name: MAP })).toHaveCount(0);
+  });
+
+  test('?view=grid and ?view=xyz render the grid and the map', async ({ page }) => {
+    await page.goto('/photos?view=grid');
+    await expect(page.getByRole('list', { name: 'Photographs, lowest first' })).toBeVisible();
+    await expect(page.getByRole('region', { name: MAP })).toHaveCount(0);
+
+    await page.goto('/photos?view=xyz');
+    await expect(page.getByRole('region', { name: MAP })).toBeVisible();
+    await expect(mapLinks(page)).toHaveCount(views.length);
+  });
+
+  test('the Riffelsee dot is dashed and the summit is not a link', async ({ page }) => {
     await page.goto('/photos');
+    const links = mapLinks(page);
+    await expect(links).toHaveCount(views.length);
+    for (const [i, view] of views.entries()) {
+      const border = await links
+        .nth(i)
+        .locator('[data-map-dot]')
+        .evaluate((el) => {
+          const cs = getComputedStyle(el);
+          return `${cs.borderTopWidth} ${cs.borderTopStyle}`;
+        });
+      // Preflight gives every element a solid 0 px border; only the film scan draws one.
+      expect([view.slug, border]).toEqual([
+        view.slug,
+        view.approximate ? '2px dashed' : '0px solid',
+      ]);
+    }
+    const summit = page.locator('[data-summit-plate]');
+    await expect(summit).toHaveText(/Matterhorn/);
+    expect(await summit.evaluate((el) => el.closest('a') === null)).toBe(true);
+    expect(await summit.evaluate((el) => el.closest('[aria-hidden="true"]') !== null)).toBe(true);
+  });
 
-    // Wait for images to load first
-    await expect(page.getByRole('button', { name: /View details for/i }).first()).toBeVisible();
+  for (const width of [360, 375, 412, 768, 1024, 1440]) {
+    test(`at ${width} x 900 the plates keep their boxes, gaps and dots`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/photos');
+      await expect(mapLinks(page)).toHaveCount(views.length);
+      const geometry = await page.locator('[data-map-sheet]').evaluate((sheet) => {
+        const box = sheet.getBoundingClientRect();
+        const origin = { x: box.x + sheet.clientLeft, y: box.y + sheet.clientTop };
+        const rel = (r: DOMRect) => ({
+          x: r.x - origin.x,
+          y: r.y - origin.y,
+          width: r.width,
+          height: r.height,
+        });
+        const marks = [...sheet.querySelectorAll<HTMLElement>('[data-map-mark]')].map((el) => {
+          const dot = el.querySelector('[data-map-dot]')!.getBoundingClientRect();
+          return {
+            plate: rel(el.getBoundingClientRect()),
+            dot: { x: dot.x + dot.width / 2 - origin.x, y: dot.y + dot.height / 2 - origin.y },
+          };
+        });
+        const summit = rel(sheet.querySelector('[data-summit-plate]')!.getBoundingClientRect());
+        return { S: sheet.clientWidth, H: sheet.clientHeight, marks, summit };
+      });
+      const { S, marks, summit } = geometry;
+      expect(Math.abs(geometry.H - S)).toBeLessThanOrEqual(1);
+      const plates = marks.map((m) => m.plate);
+      for (const p of plates) {
+        expect([48, 68]).toContain(Math.round(p.height));
+        expect(p.x).toBeGreaterThanOrEqual(7.5);
+        expect(p.y).toBeGreaterThanOrEqual(7.5);
+        expect(p.x + p.width).toBeLessThanOrEqual(S - 7.5);
+        expect(p.y + p.height).toBeLessThanOrEqual(S - 7.5);
+      }
+      // 8 px (to 0.5 px) between waypoint plates; no overlap with the summit plate.
+      const all = [...plates, summit];
+      for (let i = 0; i < all.length; i++) {
+        for (let j = i + 1; j < all.length; j++) {
+          const a = all[i];
+          const b = all[j];
+          const gap = Math.max(
+            b.x - (a.x + a.width),
+            a.x - (b.x + b.width),
+            b.y - (a.y + a.height),
+            a.y - (b.y + b.height)
+          );
+          const min = j === all.length - 1 ? 0 : 7.5;
+          expect([i, j, gap >= min]).toEqual([i, j, true]);
+        }
+      }
+      marks.forEach((m, i) => {
+        expect(Math.abs(m.dot.x - views[i].uv.u * S)).toBeLessThanOrEqual(1);
+        expect(Math.abs(m.dot.y - views[i].uv.v * S)).toBeLessThanOrEqual(1);
+      });
+      expect(Math.abs(summit.x - (terrain.summit.uv.u * S + 14))).toBeLessThanOrEqual(1);
+      // Visual order (top to bottom, then left to right) is altitude order.
+      const order = [...plates.keys()].sort(
+        (a, b) => plates[a].y - plates[b].y || plates[a].x - plates[b].x
+      );
+      expect(order).toEqual([...views.keys()]);
+      const overflow = await page.evaluate(() => {
+        const root = document.documentElement;
+        return root.scrollWidth - root.clientWidth;
+      });
+      expect(overflow).toBeLessThanOrEqual(0);
+    });
+  }
 
-    // Check for view mode toggle buttons
-    const gridButton = page.getByRole('button', { name: /Grid View|grid/i });
-    const carousel3DButton = page.getByRole('button', { name: /3D|Carousel/i });
+  // The plate boxes are fixed sizes (lib/photos/label-layout.ts), so the text
+  // has to fit them on every renderer: in the Linux CI render the longest
+  // titles came out about 6 % wider than on Windows, wrapped inside the former
+  // 224 px content box and pushed the altitude out of the plate (10-13). Each
+  // line's client rects must sit inside the plate's padding box, the wide
+  // tier keeps the title on one line and the compact tier on at most two.
+  for (const width of [360, 375, 412, 768, 1024, 1440]) {
+    test(`at ${width} x 900 every plate's title and altitude fit inside the plate`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/photos');
+      await expect(mapLinks(page)).toHaveCount(views.length);
+      await page.evaluate(() => document.fonts.ready);
+      const plates = await page.locator('[data-map-mark]').evaluateAll((els) =>
+        els.map((el) => {
+          const box = el.getBoundingClientRect();
+          const lines = (sel: string) => {
+            const span = el.querySelector(sel)!;
+            const range = document.createRange();
+            range.selectNodeContents(span);
+            return {
+              rects: [...range.getClientRects()].map((r) => ({
+                left: r.left,
+                right: r.right,
+                top: r.top,
+                bottom: r.bottom,
+              })),
+              overflowX: span.scrollWidth - span.clientWidth,
+            };
+          };
+          return {
+            slug: (el as HTMLElement).dataset.mapMark!,
+            box: { left: box.left, right: box.right, top: box.top, bottom: box.bottom },
+            title: lines('[data-map-title]'),
+            altitude: lines('[data-map-altitude]'),
+          };
+        })
+      );
+      const wide = plates[0].box.right - plates[0].box.left > 200;
+      expect(wide).toBe(width >= 768);
+      for (const p of plates) {
+        // px-2 py-1: the text box is 8 px in from the sides and 4 px from the top and bottom.
+        const inner = {
+          left: p.box.left + 8 - 0.5,
+          right: p.box.right - 8 + 0.5,
+          top: p.box.top + 4 - 0.5,
+          bottom: p.box.bottom - 4 + 0.5,
+        };
+        expect([p.slug, p.title.rects.length]).toEqual([
+          p.slug,
+          wide ? 1 : Math.min(p.title.rects.length, 2),
+        ]);
+        expect([p.slug, p.altitude.rects.length]).toEqual([p.slug, 1]);
+        for (const [part, text] of [
+          ['title', p.title],
+          ['altitude', p.altitude],
+        ] as const) {
+          expect([p.slug, part, text.overflowX <= 0]).toEqual([p.slug, part, true]);
+          for (const r of text.rects) {
+            const inside =
+              r.left >= inner.left &&
+              r.right <= inner.right &&
+              r.top >= inner.top &&
+              r.bottom <= inner.bottom;
+            expect([p.slug, part, inside]).toEqual([p.slug, part, true]);
+          }
+        }
+      }
+    });
+  }
+});
 
-    // At least one view mode button should be visible
-    const hasGridButton = await gridButton.isVisible().catch(() => false);
-    const has3DButton = await carousel3DButton.isVisible().catch(() => false);
+/**
+ * The Grid view in a browser (PHOTO-02, PHOTO-03, D-15; 10-UI-SPEC "Grid View"
+ * and UI Considerations E3). Expected values come from buildPhotoViews(),
+ * never hand-typed. From 640 px the tiles are CSS-only justified rows: in each
+ * row the image boxes share one height (±1 px) and keep their true ratio
+ * (±1 %); with four photos that is two rows of two at 768 and 1440 (224 px
+ * rows from 640 px, 280 px from 1024 px, approved by Tim 2026-10-26). Below
+ * 640 px one column, with no horizontal overflow at 375. A tile click opens
+ * its photo in the lightbox dialog over the grid (10-05, LBOX-01).
+ */
+test.describe('Grid view (PHOTO-02, PHOTO-03, D-15)', () => {
+  const views = buildPhotoViews();
+  const DERIVATIVE = /^\/images\/photos\/[a-z0-9-]+\.[0-9a-f]{10}\.(avif|webp)$/;
+  const LIST = 'Photographs, lowest first';
 
-    expect(hasGridButton || has3DButton).toBe(true);
+  test('lists the four photos in the canonical order', async ({ page }) => {
+    await page.goto('/photos?view=grid');
+    const list = page.getByRole('list', { name: LIST });
+    const links = list.getByRole('link');
+    await expect(links).toHaveCount(views.length);
+    for (const [i, view] of views.entries()) {
+      await expect(links.nth(i)).toHaveAccessibleName(view.title);
+      await expect(links.nth(i)).toHaveAttribute('href', `/photos/${view.slug}`);
+      await expect(links.nth(i)).toHaveAttribute('data-photo-id', view.slug);
+    }
+  });
+
+  for (const size of [
+    { width: 768, height: 900 },
+    { width: 1440, height: 900 },
+  ]) {
+    test(`at ${size.width} x ${size.height}: two rows of two, one height per row, true ratios`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(size);
+      await page.goto('/photos?view=grid');
+      const boxes = page.getByRole('list', { name: LIST }).locator('[data-tile-box]');
+      await expect(boxes).toHaveCount(views.length);
+      const rects = await boxes.evaluateAll((els) =>
+        els.map((el) => {
+          const r = el.getBoundingClientRect();
+          return { x: r.x, y: r.y, width: r.width, height: r.height };
+        })
+      );
+
+      const rows = new Map<number, typeof rects>();
+      for (const rect of rects) {
+        const key = [...rows.keys()].find((y) => Math.abs(y - rect.y) <= 1) ?? rect.y;
+        rows.set(key, [...(rows.get(key) ?? []), rect]);
+      }
+      expect([...rows.values()].map((row) => row.length)).toEqual([2, 2]);
+      for (const row of rows.values()) {
+        expect(Math.abs(row[0].height - row[1].height)).toBeLessThanOrEqual(1);
+      }
+      rects.forEach((rect, i) => {
+        const aspect = views[i].aspect.w / views[i].aspect.h;
+        expect(Math.abs(rect.width / rect.height / aspect - 1)).toBeLessThanOrEqual(0.01);
+      });
+    });
+  }
+
+  test('at 375 x 800: one column and no horizontal overflow', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 800 });
+    await page.goto('/photos?view=grid');
+    const items = page.getByRole('list', { name: LIST }).getByRole('listitem');
+    await expect(items).toHaveCount(views.length);
+    const xs = await items.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().x));
+    for (const x of xs) expect(Math.abs(x - xs[0])).toBeLessThanOrEqual(1);
+    const overflow = await page.evaluate(() => {
+      const root = document.documentElement;
+      return root.scrollWidth - root.clientWidth;
+    });
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+
+  test('every tile image is a content-hashed manifest derivative', async ({ page }) => {
+    await page.goto('/photos?view=grid');
+    const imgs = page.getByRole('list', { name: LIST }).locator('img');
+    await expect(imgs).toHaveCount(views.length);
+    for (const [i, view] of views.entries()) {
+      const img = imgs.nth(i);
+      await img.scrollIntoViewIfNeeded();
+      await expect(img).toHaveAttribute('alt', view.alt);
+      await expect
+        .poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0))
+        .toBe(true);
+      const currentSrc = await img.evaluate(
+        (el: HTMLImageElement) => new URL(el.currentSrc).pathname
+      );
+      expect(currentSrc).toMatch(DERIVATIVE);
+    }
+  });
+
+  test('clicking the first tile opens its photo in the lightbox (LBOX-01)', async ({ page }) => {
+    await page.goto('/photos?view=grid');
+    const first = views[0];
+    const tile = page.getByRole('list', { name: LIST }).getByRole('link').first();
+    // Before hydration a click is a document navigation, which is never intercepted.
+    await expect
+      .poll(
+        () => tile.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))),
+        {
+          timeout: 15000,
+        }
+      )
+      .toBe(true);
+    await tile.click();
+    const dialog = page.getByRole('dialog');
+    // The dev server compiles the intercepted route on its first request.
+    await expect(dialog).toBeVisible({ timeout: 20000 });
+    await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
+    await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(first.title);
+  });
+});
+
+/**
+ * The view switcher in a browser (PHOTO-02, D-14; 10-UI-SPEC "Header Band
+ * (D-14)", View switcher table). A toggle group 'View' in the header band:
+ * pressing a segment replaces the URL (`/photos`, `?view=grid`,
+ * `?view=carousel`) with no new history entry and no scroll jump, focus stays
+ * on the pressed segment, exactly one view section is mounted, and the chosen
+ * view survives a reload and the Back button from a photo. The URL is the
+ * only source of view state (locked).
+ */
+test.describe('View switcher (PHOTO-02, D-14)', () => {
+  const views = buildPhotoViews();
+  const LIST = 'Photographs, lowest first';
+  const group = (page: Page) => page.getByRole('group', { name: 'View' });
+  const segment = (page: Page, name: 'Map' | 'Grid' | 'Carousel') =>
+    group(page).getByRole('button', { name });
+  const viewSections = (page: Page) => page.locator('section[aria-labelledby="view-title"]');
+
+  /** Wait until React has hydrated an element (a click before that does nothing). */
+  async function waitForHydration(el: Locator) {
+    await expect
+      .poll(
+        () => el.evaluate((node) => Object.keys(node).some((k) => k.startsWith('__reactProps'))),
+        { timeout: 15000 }
+      )
+      .toBe(true);
+  }
+
+  async function expectPressed(page: Page, pressed: 'Map' | 'Grid' | 'Carousel') {
+    for (const name of ['Map', 'Grid', 'Carousel'] as const) {
+      await expect(segment(page, name)).toHaveAttribute(
+        'aria-pressed',
+        name === pressed ? 'true' : 'false'
+      );
+    }
+  }
+
+  test('opens on Map with the three segments in order', async ({ page }) => {
+    await page.goto('/photos');
+    await expect(group(page).getByRole('button')).toHaveText(['Map', 'Grid', 'Carousel']);
+    await expectPressed(page, 'Map');
+    await expect(viewSections(page)).toHaveCount(1);
+  });
+
+  test('at 375 x 600 switching replaces the URL with no history entry, no scroll jump and focus kept', async ({
+    page,
+    browserName,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 600 });
+    await page.goto('/photos');
+    const grid = segment(page, 'Grid');
+    await waitForHydration(grid);
+    // 100 px, not more: at 375 the switcher's top is 184 px down the page and the sticky
+    // site header is 64 px tall, so a deeper scroll hides the switcher under the header and
+    // the click itself would scroll it back into view (measured in 10-09).
+    await page.evaluate(() => window.scrollTo(0, 100));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(100);
+    const headerBottom = await page
+      .locator('body > header, header')
+      .first()
+      .evaluate((el) => el.getBoundingClientRect().bottom);
+    const switcherTop = await group(page).evaluate((el) => el.getBoundingClientRect().top);
+    expect(switcherTop).toBeGreaterThanOrEqual(headerBottom);
+    const historyLength = await page.evaluate(() => window.history.length);
+
+    await grid.click();
+    await expect(page).toHaveURL(/\/photos\?view=grid$/);
+    await expectPressed(page, 'Grid');
+    await expect(page.getByRole('list', { name: LIST })).toBeVisible();
+    await expect(viewSections(page)).toHaveCount(1);
+    expect(await page.evaluate(() => window.history.length)).toBe(historyLength);
+    expect(await page.evaluate(() => window.scrollY)).toBe(100);
+    // A click focuses the segment except in WebKit (helpers/engine.ts), so focus is kept only where it was given.
+    if (clickFocusesButtons(browserName)) await expect(grid).toBeFocused();
+
+    await segment(page, 'Carousel').click();
+    await expect(page).toHaveURL(/\/photos\?view=carousel$/);
+    await expectPressed(page, 'Carousel');
+    await segment(page, 'Map').click();
+    await expect(page).toHaveURL(/\/photos$/);
+    await expectPressed(page, 'Map');
+    await expect(viewSections(page)).toHaveCount(1);
+    expect(await page.evaluate(() => window.history.length)).toBe(historyLength);
+  });
+
+  test('pressing the pressed segment changes nothing', async ({ page }) => {
+    await page.goto('/photos?view=grid');
+    const grid = segment(page, 'Grid');
+    await waitForHydration(grid);
+    const historyLength = await page.evaluate(() => window.history.length);
+    await grid.click();
+    await page.waitForTimeout(300);
+    await expect(page).toHaveURL(/\/photos\?view=grid$/);
+    await expectPressed(page, 'Grid');
+    expect(await page.evaluate(() => window.history.length)).toBe(historyLength);
+  });
+
+  // @no-win-webkit: history Back while the open's View Transition commit settles crashes
+  // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
+  // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
+  test('a reload keeps Grid, and Back from a photo returns to the grid with Grid pressed @no-win-webkit', async ({
+    page,
+  }) => {
+    await page.goto('/photos?view=grid');
+    await expectPressed(page, 'Grid');
+    await page.reload();
+    await expect(page).toHaveURL(/\/photos\?view=grid$/);
+    await expectPressed(page, 'Grid');
+
+    const tile = page.getByRole('list', { name: LIST }).getByRole('link').first();
+    await waitForHydration(tile);
+    await tile.click();
+    // The dev server compiles the intercepted route on its first request.
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 20000 });
+    await expect(page).toHaveURL(new RegExp(`/photos/${views[0].slug}$`));
+
+    await page.goBack();
+    await expect(page).toHaveURL(/\/photos\?view=grid$/);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expectPressed(page, 'Grid');
+    await expect(page.getByRole('list', { name: LIST })).toBeVisible();
+  });
+
+  test('Tab reaches the three segments in order and Space presses one', async ({ page }) => {
+    await page.goto('/photos');
+    const map = segment(page, 'Map');
+    await waitForHydration(map);
+    const focusedText = () => page.evaluate(() => document.activeElement?.textContent ?? '');
+    // Tab through the shell until the Map segment has focus.
+    for (let i = 0; i < 40 && !(await map.evaluate((el) => el === document.activeElement)); i++) {
+      await page.keyboard.press('Tab');
+    }
+    await expect(map).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(segment(page, 'Grid')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(segment(page, 'Carousel')).toBeFocused();
+    expect(await focusedText()).toBe('Carousel');
+
+    await page.keyboard.press('Space');
+    await expect(page).toHaveURL(/\/photos\?view=carousel$/);
+    await expectPressed(page, 'Carousel');
+    await expect(segment(page, 'Carousel')).toBeFocused();
+  });
+
+  test('a switch crossfades the view region as photos-view @chromium-only', async ({ page }) => {
+    await recordViewTransitions(page);
+    await page.goto('/photos');
+    const grid = segment(page, 'Grid');
+    await waitForHydration(grid);
+    const before = await readViewTransitions(page);
+    await grid.click();
+    await expect
+      .poll(async () => (await readViewTransitions(page)).count)
+      .toBeGreaterThan(before.count);
+    await expect
+      .poll(async () => (await readViewTransitions(page)).pseudos)
+      .toEqual(
+        expect.arrayContaining([
+          '::view-transition-old(photos-view)',
+          '::view-transition-new(photos-view)',
+        ])
+      );
   });
 });

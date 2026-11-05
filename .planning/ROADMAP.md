@@ -31,12 +31,12 @@
 
 **Execution order:** 7 → 8 → 9 → 10 ∥ 11 → 12. Phase 8 blocks everything after it. Phases 10 and 11 each depend only on Phase 8 (plus the Phase 7 shell) and not on each other, so they can run in parallel. Phase 9 also depends only on Phase 8 and keeps its numeric slot before 10. Phase 12 needs 9, 10 and 11.
 
-- [ ] **Phase 7: Foundation & Guardrails** - Regression nets, isolated dependency upgrades, tokens v2 and one site shell with Tim Lui's real identity
-- [ ] **Phase 8: Data & Terrain Pipeline** - Build-time swissALTIRegio terrain and EXIF photo data, privacy-safe images, typed highlights, and the footer map legend
-- [ ] **Phase 9: Home Ascent** - Real Matterhorn hero with a native-scroll ascent, altimeter rail and photo waypoints, plus a static fallback
-- [ ] **Phase 10: Photography** - Map / Grid / Carousel light table and a deep-linkable gallery-black lightbox with EXIF and hotspots
-- [ ] **Phase 11: Engineering & Roadmap** - Route-panel projects, case studies, trail-grade risk scale, tokenized terminal, and a route-log roadmap
-- [ ] **Phase 12: Contact, Edge Pages, Cleanup & Verification** - Summit-register contact, designed 404/error/offline pages, SEO, dead-code removal, and axe plus cross-browser verification
+- [x] **Phase 7: Foundation & Guardrails** - Regression nets, isolated dependency upgrades, tokens v2 and one site shell with Tim Lui's real identity (completed 2026-10-24)
+- [x] **Phase 8: Data & Terrain Pipeline** - Build-time swissALTIRegio terrain and EXIF photo data, privacy-safe images, typed highlights, and the footer map legend (completed 2026-10-24)
+- [x] **Phase 9: Home Ascent** - Real Matterhorn hero with a native-scroll ascent, altimeter rail and photo waypoints, plus a static fallback (completed 2026-10-25)
+- [x] **Phase 10: Photography** - Map / Grid / Carousel light table and a deep-linkable gallery-black lightbox with EXIF and hotspots (completed 2026-10-26)
+- [x] **Phase 11: Engineering & Roadmap** - Route-panel projects (box, coin-flip), case studies with a per-project safety slot, a tokenized terminal, and a route-log roadmap (completed 2026-11-02)
+- [x] **Phase 12: Contact, Edge Pages, Cleanup & Verification** - Summit-register contact, designed 404/error/offline pages, SEO, dead-code removal, and axe plus cross-browser verification (completed 2026-11-05)
 
 ## Phase Details
 
@@ -52,7 +52,7 @@
   4. On every page a keyboard user finds one skip link, exactly one primary navigation with a visible current-page indicator, and exactly one main landmark. On mobile the menu opens with touch targets of at least 44 px and closes on route change and on Escape.
   5. Every page shows Tim Lui's name, role line and real GitHub, LinkedIn and email links, with no placeholder text or links. `/gradient-mesh`, `/particle-buttons` and `/transitions` return a 404 inside the site shell and no page links to them. The Contact heading and form fields pass WCAG AA for light-OS and dark-OS visitors alike.
 
-**Plans**: 2/26 plans executed (sequential waves 1-26, one plan per wave; locked build order preserved)
+**Plans**: 27/27 plans complete: 26/26 executed (sequential waves 1-26, one plan per wave; locked build order preserved) + 1 gap-closure plan (07-27, wave 27)
 
 Plans:
 **Wave 1**
@@ -62,76 +62,79 @@ Plans:
 - [x] 07-02-PLAN.md — Step 1b: eslint-config-next flat config with jsx-a11y at error, pixel-neutral lint fixes
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 07-03-PLAN.md — Step 2a: visual projects, route matrix spec, baseline workflow, initial Linux baselines
+- [x] 07-03-PLAN.md — Step 2a: visual projects, route matrix spec, baseline workflow, initial Linux baselines
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 07-04-PLAN.md — Step 2b + 3: CI Visual Regression gate; delete the playground; re-baseline /photos
+- [x] 07-04-PLAN.md — Step 2b + 3: CI Visual Regression gate; delete the playground; re-baseline /photos
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 07-05-PLAN.md — Step 4: framer-motion -> motion 14.1 (zero diff)
+- [x] 07-05-PLAN.md — Step 4: framer-motion -> motion 14.1 (zero diff)
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 07-06-PLAN.md — Step 5: Next 16.4 + React 19.3 + R3F 9.8.1 + drei 10.7.9 (zero diff)
+- [x] 07-06-PLAN.md — Step 5: Next 16.4 + React 19.3 + R3F 9.8.1 + drei 10.7.9 (zero diff)
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 07-07-PLAN.md — Step 5b: Next 2026-10-14 security patch (gated on the advisory; folds into 5 if already out)
+- [x] 07-07-PLAN.md — Step 5b: Next 2026-10-14 security patch (gated on the advisory; folds into 5 if already out)
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 07-08-PLAN.md — Step 6: Playwright 1.64 + container tags (re-baseline only if Chromium forces it)
+- [x] 07-08-PLAN.md — Step 6: Playwright 1.64 + container tags (re-baseline only if Chromium forces it)
 
 **Wave 9** *(blocked on Wave 8 completion)*
-- [ ] 07-09-PLAN.md — Step 7a: tokens v2 L1/L2, motion tokens + parity test, MotionConfig, amber -> caution
+- [x] 07-09-PLAN.md — Step 7a: tokens v2 L1/L2, motion tokens + parity test, MotionConfig, amber -> caution
 
 **Wave 10** *(blocked on Wave 9 completion)*
-- [ ] 07-10-PLAN.md — Step 7b: v1 tokens retargeted as aliases; palette re-baseline
+- [x] 07-10-PLAN.md — Step 7b: v1 tokens retargeted as aliases; palette re-baseline
 
 **Wave 11** *(blocked on Wave 10 completion)*
-- [ ] 07-11-PLAN.md — Step 7c: Schibsted Grotesk + base type styles; design-system spec
+- [x] 07-11-PLAN.md — Step 7c: Schibsted Grotesk + base type styles; design-system spec
 
 **Wave 12** *(blocked on Wave 11 completion)*
-- [ ] 07-12-PLAN.md — Step 7d: visible thin scrollbar with stable gutter (G3 check)
+- [x] 07-12-PLAN.md — Step 7d: visible thin scrollbar with stable gutter (G3 check)
 
 **Wave 13** *(blocked on Wave 12 completion)*
-- [ ] 07-13-PLAN.md — Step 7e: Phosphor icon family replaces emoji icons; Roadmap tests rewritten
+- [x] 07-13-PLAN.md — Step 7e: Phosphor icon family replaces emoji icons; Roadmap tests rewritten
 
 **Wave 14** *(blocked on Wave 13 completion)*
-- [ ] 07-14-PLAN.md — Step 8a: neutralise dark: for everyone; light baselines assert dark
+- [x] 07-14-PLAN.md — Step 8a: neutralise dark: for everyone; light baselines assert dark
 
 **Wave 15** *(blocked on Wave 14 completion)*
-- [ ] 07-15-PLAN.md — Step 8b: collapse dark: pairs (zero diff)
+- [x] 07-15-PLAN.md — Step 8b: collapse dark: pairs (zero diff)
 
 **Wave 16** *(blocked on Wave 15 completion)*
-- [ ] 07-16-PLAN.md — Step 8c: map Contact stock palette to semantic tokens
+- [x] 07-16-PLAN.md — Step 8c: map Contact stock palette to semantic tokens
 
 **Wave 17** *(blocked on Wave 16 completion)*
-- [ ] 07-17-PLAN.md — Step 8c: map Roadmap stock palette to semantic tokens
+- [x] 07-17-PLAN.md — Step 8c: map Roadmap stock palette to semantic tokens
 
 **Wave 18** *(blocked on Wave 17 completion)*
-- [ ] 07-18-PLAN.md — Step 8c: map Projects stock palette to semantic tokens
+- [x] 07-18-PLAN.md — Step 8c: map Projects stock palette to semantic tokens
 
 **Wave 19** *(blocked on Wave 18 completion)*
-- [ ] 07-19-PLAN.md — Step 8c: map Photos + edge pages stock palette to semantic tokens
+- [x] 07-19-PLAN.md — Step 8c: map Photos + edge pages stock palette to semantic tokens
 
 **Wave 20** *(blocked on Wave 19 completion)*
-- [ ] 07-20-PLAN.md — Step 8d: remove dark variant; palette guard + white/black ratchet; contrast check from globals.css
+- [x] 07-20-PLAN.md — Step 8d: remove dark variant; palette guard + white/black ratchet; contrast check from globals.css
 
 **Wave 21** *(blocked on Wave 20 completion)*
-- [ ] 07-21-PLAN.md — Step 9a: BLOCKING INPUT (email, LinkedIn); data/site.ts and shell components
+- [x] 07-21-PLAN.md — Step 9a: BLOCKING INPUT (email, LinkedIn); data/site.ts and shell components
 
 **Wave 22** *(blocked on Wave 21 completion)*
-- [ ] 07-22-PLAN.md — Step 9b: git mv into app/(site), mount SiteChrome, Home identity, shell spec
+- [x] 07-22-PLAN.md — Step 9b: git mv into app/(site), mount SiteChrome, Home identity, shell spec
 
 **Wave 23** *(blocked on Wave 22 completion)*
-- [ ] 07-23-PLAN.md — Step 9c: 404 inside the shell; (site)/error + global-error with retry()
+- [x] 07-23-PLAN.md — Step 9c: 404 inside the shell; (site)/error + global-error with retry()
 
 **Wave 24** *(blocked on Wave 23 completion)*
-- [ ] 07-24-PLAN.md — Step 9d: Contact interim contrast fix with axe in both schemes (real email replaces the placeholder)
+- [x] 07-24-PLAN.md — Step 9d: Contact interim contrast fix with axe in both schemes (real email replaces the placeholder)
 
 **Wave 25** *(blocked on Wave 24 completion)*
-- [ ] 07-25-PLAN.md — Step 9e: identity metadata/author/email copy, forbidden-strings guard, emoji rule on
+- [x] 07-25-PLAN.md — Step 9e: identity metadata/author/email copy, forbidden-strings guard, emoji rule on
 
 **Wave 26** *(blocked on Wave 25 completion)*
-- [ ] 07-26-PLAN.md — Step 10: HOME-08 LCP/JS baseline; raise ratchet; restore Dependabot
+- [x] 07-26-PLAN.md — Step 10: HOME-08 LCP/JS baseline; raise ratchet; restore Dependabot
+
+**Wave 27** *(gap closure, blocked on Wave 26 completion)*
+- [x] 07-27-PLAN.md — SC4 / SHELL-01 gap: assert exactly one skip link per page (red in CI first), remove the hero's duplicate skip link, zero visual diff
 
 **Cross-cutting constraints:**
 - No v1 alias name, raw OKLCH, hex, rgba() or arbitrary colour value is introduced by the mapping
@@ -165,7 +168,40 @@ Plans:
   4. No full-resolution original or GPS-bearing image can be fetched from the public site. Every served image is resized, correctly rotated and metadata-free, which a CI scan enforces. Components take image paths from the pipeline manifest, not from hard-coded variant filenames.
   5. Project highlights type-check against a per-project schema, and every CLI_X risk example carries a numeric `riskScore`.
 
-**Plans**: TBD
+**Plans**: 13/13 plans complete in 9 waves
+
+Plans:
+**Wave 1**
+- [x] 08-01-PLAN.md — Coordinate contract (lib/geo.ts), pure terrain cores, generator-library import ban
+- [x] 08-02-PLAN.md — Originals out of /public, EXIF sidecar with 4-dp GPS (stage 1), data:check in lint
+- [x] 08-03-PLAN.md — Typed project highlights + legacy adapter, trail grade, Tim's real riskScores (checkpoint)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 08-04-PLAN.md — Sheet decisions from Tim (checkpoint), swissALTIRegio source raster, heightmaps, contour LODs, terrain.ts
+- [x] 08-05-PLAN.md — v1 alias codemod to v2 names (zero diff), accent-strong token, widened v1names guard
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 08-06-PLAN.md — Immutable /terrain delivery, proxy exclusion, SW precache; hillshade poster + Tim's review
+- [x] 08-07-PLAN.md — Hashed privacy-safe derivatives + image manifest; full-res copies and prebuild removed
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 08-08-PLAN.md — Typed photo facts (EXIF dates, corrections, DEM heights, derived tags, approximate pin), altimeter wording
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [x] 08-09-PLAN.md — Served-image CI guard, data-privacy e2e, CI and preview verification
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [x] 08-10-PLAN.md — Editorial copy draft, legacy bridge over the manifest, modal capture label, Tim's copy decision
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [x] 08-11-PLAN.md — Apply Tim's copy decision; photos re-baseline (Tim commits PNGs)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [x] 08-12-PLAN.md — Footer map-sheet margin: contour band, ticks, true scale bar, attribution (SHELL-04)
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [x] 08-13-PLAN.md — All-route footer re-baseline (Tim commits PNGs), phase-close test ratchet
+
 **UI hint**: yes
 **Scope notes**:
   - Schemas and libraries: zod schemas (photos; project highlights as a discriminated union); `lib/geo.ts` (WGS84 ↔ LV95 ↔ terrain grid) with tests; `lib/trail-grade.ts`.
@@ -197,12 +233,76 @@ Plans:
 **Requirements**: HOME-01, HOME-02, HOME-03, HOME-04, HOME-05, HOME-06, HOME-07, HOME-08
 **Success Criteria** (what must be TRUE):
   1. The first viewport shows Tim Lui's name, role and primary call to action. They are readable before any script runs, with no animation, and without WebGL.
-  2. On a capable device the hero shows the real Matterhorn terrain with contour lines. Native scrolling (no scroll-jacking) moves the camera up the mountain while an altimeter rail climbs from 1,626 m to 4,478 m; the rail is decorative, hidden from assistive tech and hidden below 768 px. A skip link jumps past the ascent.
+  2. On a capable device the hero shows the real Matterhorn terrain with contour lines. Native scrolling (no scroll-jacking) moves the camera up the mountain while an altimeter rail climbs from 1,617 m to 4,478 m; the rail is decorative, hidden from assistive tech and hidden below 768 px. A skip link jumps past the ascent.
   3. Photo waypoints appear at their real positions and heights during the ascent, with the film-scan photo labelled approximate. An always-rendered list links to every photo. Two trail-sign links lead to Photographs and Engineering, and key stats read as a summit plaque.
   4. With reduced motion, Save-Data, no WebGL2, low device memory or a lost WebGL context, a static contour poster renders and every Home section shows its final readable state. The WebGL canvas renders on demand and pauses when scrolled off-screen.
   5. Mobile LCP and Home JavaScript size are no worse than the baseline recorded at the end of Phase 7.
 
-**Plans**: TBD
+**Plans**: 22/22 plans complete: 14/14 executed in 11 waves, plus 8 gap-closure plans (09-15 to 09-22, waves 12-19, sequential) for UAT gaps G-09-2 to G-09-5
+
+Plans:
+**Wave 1**
+- [x] 09-01-PLAN.md — Server Component Home: ascent grid, relief poster (LCP), hero copy, trail signs; carries the pre-execution gate on C1-C8 and Defaults 1-15
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 09-02-PLAN.md — Dead hero chain deleted, guards tightened, RSC boundary test, HOME-01 proven with JavaScript disabled
+- [x] 09-03-PLAN.md — Waypoint cards as the always-rendered HOME-05 list; /photos#slug fragment ids
+- [x] 09-04-PLAN.md — Generated shader colour tokens from globals.css with --check
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 09-05-PLAN.md — Summit plaque (derived stats), About and contact (DRAFT), Start the ascent / Skip to the summit cues
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 09-06-PLAN.md — One damped progress value: altimeter rail, lit poster pins, focus contract, native-scroll e2e
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [x] 09-07-PLAN.md — Capability gate, lazy TerrainStage chunk, static modes, composed-contrast backstops
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [x] 09-08-PLAN.md — fast-png terrain mesh, CSS-parity contour shader, plan-view reveal over the poster
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [x] 09-09-PLAN.md — Visual shots at fixed ascent positions; HOME-08 perf spec counts the lazy chunk; early local byte check
+- [x] 09-10-PLAN.md — Camera route (tilt-in, legs, summit look-back), mobile view offset, 3D pins
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [x] 09-11-PLAN.md — Context loss, demand-aware frame budget, off-screen pause, SwiftShader resilience e2e
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [x] 09-12-PLAN.md — Tim's review: About copy (D-14) and terrain tuning; apply (checkpoints)
+
+**Wave 10** *(blocked on Wave 9 completion)*
+- [x] 09-13-PLAN.md — Tim's go-ahead for ci/09-NN; CI and container perf numbers; HOME-08 gate decision (checkpoints)
+
+**Wave 11** *(blocked on Wave 10 completion)*
+- [x] 09-14-PLAN.md — Apply the frame-budget choice; Home re-baseline (Tim commits PNGs); ratchet raise
+
+Gap closure (09-UAT.md, sequential on the main working tree):
+
+**Wave 12** *(blocked on Wave 11 completion)*
+- [x] 09-15-PLAN.md — G-09-5: hidden-tab reveal burst restarts (WR-01), IN-05 documented, WR-02 measure-only context-loss test
+
+**Wave 13** *(blocked on Wave 12 completion)*
+- [x] 09-16-PLAN.md — G-09-3 b / G-09-4 N2: explicit break points for the card kicker and place line
+
+**Wave 14** *(blocked on Wave 13 completion)*
+- [x] 09-17-PLAN.md — G-09-4 N1: altimeter rail in its own layer above the hero scrim; composed-contrast test
+
+**Wave 15** *(blocked on Wave 14 completion)*
+- [x] 09-18-PLAN.md — G-09-2 static: compact summit plaque, stats after the frame, poster clearance at eleven sizes
+
+**Wave 16** *(blocked on Wave 15 completion)*
+- [x] 09-19-PLAN.md — G-09-3 a static: card- and rail-aware poster pin labels; pins above the rail scrim
+
+**Wave 17** *(blocked on Wave 16 completion)*
+- [x] 09-20-PLAN.md — G-09-2 3D: summit framing measured from the plaque; md switch on the CSS width source
+
+**Wave 18** *(blocked on Wave 17 completion)*
+- [x] 09-21-PLAN.md — G-09-3 a 3D: md stages frame the lit waypoint clear of its card; 3D labels share the poster rule
+
+**Wave 19** *(blocked on Wave 18 completion)*
+- [x] 09-22-PLAN.md — One Home re-baseline (Tim commits PNGs), CI green twice, ratchet raise (checkpoints)
+
 **UI hint**: yes
 **Scope notes**:
   - `AscentHero` has a server-rendered hillshade poster as the LCP and a DOM waypoint list beneath a lazy R3F canvas.
@@ -230,7 +330,38 @@ Plans:
      - map-style hotspot callouts with leader lines, operable by tap and keyboard, with a legend on mobile and a toggle that hides them
      - "© {capture year} Tim Lui, all rights reserved", with no download button
 
-**Plans**: TBD
+**Plans**: 13/13 plans complete in 8 waves (10-06 and 10-13 carry blocking checkpoints for Tim)
+
+Plans:
+**Wave 1**
+- [x] 10-01-PLAN.md — Tracer: /photos/[slug] photo page from one view-model, EXIF strip, rights line, 404 for unknown slugs (WR-04)
+- [x] 10-02-PLAN.md — Phase 8 review carry-overs in the photo pipeline and privacy guard (WR-01..03, WR-05..08)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 10-03-PLAN.md — Viewer layout tiers (lb-scroll/key/gutter), contain-fit stage, two-column strip, loading and error states, gallery contrast pairs
+- [x] 10-04-PLAN.md — Grid view at ?view=grid: justified rows, slide-mount captions, rewritten GalleryGrid test
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 10-05-PLAN.md — In-site lightbox: @modal slot, intercepted route, native dialog, focus trap and return, scroll lock (G3), Home links to photo pages
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 10-06-PLAN.md — Previous/next without history entries (history.replaceState on both surfaces, Tim's OQ1 answer 2026-10-26), counter, swipe, grid-to-lightbox morph
+- [x] 10-07-PLAN.md — Carousel view: capability gate, flat stepper, restyled 3D carousel, no auto-advance, manifest textures
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [x] 10-08-PLAN.md — Map as the default view: deterministic label layout, survey-sheet MapSheet, header band, shared sheet title
+- [x] 10-10-PLAN.md — Zoom fit/1:1 with drag and key pan and the Escape layer
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [x] 10-09-PLAN.md — Map · Grid · Carousel switcher in the URL; legacy photo UI and bridge deleted, tests rewritten
+- [x] 10-11-PLAN.md — Hotspot callouts: gutter labels, numbered key, Hide labels (localStorage), strip legend
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [x] 10-12-PLAN.md — Cross-view e2e sweep and visual coverage for the map, grid, carousel, photo page and lightbox
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [x] 10-13-PLAN.md — One CI re-baseline (Tim commits PNGs), CI green twice, ratchet raise, review and deferred records (checkpoints)
+
 **UI hint**: yes
 **Parallelism**: Can run in parallel with Phase 11. They share only the Phase 7 shell and the Phase 8 data.
 **Scope notes**:
@@ -251,23 +382,64 @@ Plans:
 
 ### Phase 11: Engineering & Roadmap
 
-**Goal**: Visitors read Tim's engineering work as surveyed routes (route-panel projects, case studies with honest metrics, and CLI_X's risk bands as Swiss trail grades) and follow his roadmap as a route log.
+**Goal**: Visitors read Tim's engineering work, box and coin-flip, as surveyed routes (route-panel projects and case studies with honest metrics and a per-project safety slot) and follow his roadmap as a route log.
 **Depends on**: Phase 8
 **Requirements**: ENG-01, ENG-02, ENG-03, ENG-04, ENG-05, ROUTE-01, ROUTE-02, ROUTE-03
 **Success Criteria** (what must be TRUE):
   1. `/projects` shows each project as a full-width route panel with name, pitch, metric strip, trail-grade badge and elevation-profile glyph. No hexagon cards remain anywhere on the site.
   2. Each project page reads as a case study (problem, pipeline diagram, safety, metrics, demo, stack, next steps) and omits any section without data. Metrics appear as an instrument panel in tabular numerals with a context line, and every claim is either sourced or softened.
-  3. CLI_X's four risk bands appear as Swiss trail grades: T1 yellow, T2–T3 white-red-white, T4–T5 white-blue-white, and unmarked. Each has its marker glyph, text label and score range, and an equivalent data table follows, so the scale reads without color.
+  3. Each case study's safety slot is set per project: box's Safety section shows real preview output from a gated destructive command and says what --force would change, and coin-flip's Privacy section lists its approved privacy facts. Trail grades appear only as the real SAC badge of the trail each profile glyph draws, with its marker glyph and text label. ENG-03 is dropped (D-24; see REQUIREMENTS.md).
   4. The terminal demo is styled in tokens v2, stops auto-playing on focus, on hover and under reduced motion, and has a pause button.
   5. `/roadmap` places items in order on a vertical elevation axis: completed items below with their completion dates, in-progress items at the current camp, planned items above. It lists v2.0 as in progress and shows a "last surveyed" date. A segmented control filters by project and status, the filter lives in the URL, and empty filters are removed or disabled.
 
-**Plans**: TBD
+**Plans**: 19/19 plans complete: 18/18 in 8 waves (re-planned 2026-11-01 for box + coin-flip; 11-02, 11-15, 11-16 and 11-17 carry blocking checkpoints for Tim), plus 1 gap-closure plan (11-19, wave 9) for UAT gap G-11-4
+
+Plans:
+**Wave 1**
+- [x] 11-01-PLAN.md — Tracer: flat DemoTerminal on the server-rendered case-study route, sticky Pause and every pause source, no three.js (ENG-05)
+- [x] 11-02-PLAN.md — ENG-03 retired in the planning docs (D-24); box v2.0 built and real output captured (D-34); new content packet; one checkpoint for Tim (claims, copy, route-log rows, surveyedAt, UI defaults) (ENG-03, ENG-04)
+- [x] 11-04-PLAN.md — Trail geometry for Hörnliweg No. 27 and Zmutt path No. 2 fetched once with provenance; offline build-trails --check in data:check (ENG-01)
+- [x] 11-05-PLAN.md — Route-log pure functions and formatLogDate; RouteLog and RouteRow on the elevation axis (ROUTE-01, ROUTE-02, ROUTE-03)
+- [x] 11-06-PLAN.md — Route panels on a server /projects page; hexagon cards and hex code removed (ENG-01)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 11-03-PLAN.md — Terminal ready for box: releasing Pause resumes at once (D-02), optional note line (D-26) (ENG-05)
+- [x] 11-08-PLAN.md — Roadmap zod contract, confirmed rows and surveyedAt; /roadmap as a Server Component (ROUTE-01, ROUTE-02, ROUTE-03)
+- [x] 11-09-PLAN.md — Video guard (MP4 box walker and selftest), clip:derive with --check, service-worker media bypass, /media headers (ENG-02)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 11-07-PLAN.md — Atomic swap to the box and coin-flip schema and data from Tim's answers; CaseStudy skeleton, Trailhead and Demo slot; old project tests rewritten (ENG-01 to ENG-05)
+- [x] 11-10-PLAN.md — RouteLogFilters in the URL (optimistic, router.replace); roadmap e2e and axe (ROUTE-02)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 11-11-PLAN.md — Problem, Pipeline, Safety (box) and Privacy (coin-flip) sections (ENG-02)
+- [x] 11-18-PLAN.md — Trail-grade marker vocabulary without score bands, Home About sentence (D-33), visual route table, last project-side references (ENG-01, ENG-02, ENG-03)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [x] 11-12-PLAN.md — Trail paint and contrast pairs, TrailGradeMark, RouteProfile, panel metric strip and figure (ENG-01, ENG-04)
+- [x] 11-13-PLAN.md — Metrics instrument panel, Stack, Next steps linked into the route log (ENG-02, ENG-04, ROUTE-01)
+- [x] 11-15-PLAN.md — DemoClip wired; Tim records the coin-flip clip (checkpoint); encode and draft description (ENG-02)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [x] 11-14-PLAN.md — RouteIndex island, end block, case-study page e2e (index, filler scan, axe) (ENG-02)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [x] 11-16-PLAN.md — Tim approves or rejects the clip; the description goes live or the media is removed (ENG-02)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [x] 11-17-PLAN.md — CI on ci/11-17, one Tim-reviewed visual re-baseline (old project folders removed), CI green twice, ratchet raised
+
+Gap closure (11-UAT.md):
+
+**Wave 9** *(gap closure, blocked on Wave 8 completion)*
+- [x] 11-19-PLAN.md — G-11-4: each box metric Source link gets an sr-only suffix from its tile label ('Source (Tools)'), visible text and pixels unchanged (proved at 375/768/1440), no re-baseline (ENG-04)
+
 **UI hint**: yes
 **Parallelism**: Can run in parallel with Phase 10.
 **Scope notes**:
   - `RoutePanel` replaces the hex cards.
-  - The `CaseStudy` template's data-optional sections are driven by the Phase 8 typed highlights.
-  - `RiskScale` is built on `lib/trail-grade.ts`, with trail yellow kept outside `--color-*` so it can never become a text color.
+  - The `CaseStudy` template's data-optional sections are driven by the box and coin-flip project schema.
+  - TrailGradeMark draws the real SAC grade of each profile trail; trail paint stays outside --color-* so it can never become a text color.
   - `DemoTerminal` is restyled and gains a pause control. Step controls and a transcript are deferred (ENG-F1).
   - `RouteLog` keeps its filter state in the URL via `router.replace`.
   - Project routes stay Server Components that export metadata, so Phase 12 can attach OG images (SEO-02).
@@ -275,10 +447,11 @@ Plans:
 
 **Research**: No research step needed (established patterns), but the phase is gated on content: collect the inputs below before planning.
 **Inputs from Tim**:
-  - CLI_X behavior per trail grade, and Medium and Critical demo commands with a `riskScore`.
-  - Sources for the "95% accuracy" and "40% faster" claims; without them the claims are softened.
-  - Roadmap item order, `completedAt` dates and the "last surveyed" date.
-  - Confirmation that route panels use a generated elevation-profile glyph rather than screenshots.
+  - The claims audit: each box and coin-flip claim marked source, soften or cut (D-09).
+  - The copy, including the box terminal transcript, the box preview capture and the Home About sentence (D-16, D-25, D-26, D-33).
+  - Route-log confirmation and the surveyedAt date (D-17, D-20, D-32).
+  - The UI-SPEC defaults (11-UI-SPEC "Defaults to Confirm at Plan Review").
+  - The coin-flip clip (D-27).
 
 ### Phase 12: Contact, Edge Pages, Cleanup & Verification
 
@@ -296,7 +469,82 @@ Plans:
   4. `Header`, `GlassmorphismNav`, `ParticleButton`, `AnimatedGradientMesh`, `useHexGrid`/`hex-clip`, the legacy image variants, the v1 token aliases and unused CSP origins are gone from the repo, and the build, tests and baselines stay green.
   5. axe reports zero violations on every route, and a keyboard-only pass through navigation, map, lightbox and contact form succeeds. Chromium, Firefox and WebKit runs pass, including the View Transitions and WebGL fallbacks. No route has CLS above 0.1, broken internal links, missing images or CSP console errors.
 
-**Plans**: TBD
+**Plans**: 34/34 plans complete (follow-up plans 12-27 to 12-34 added 2026-11-03 for the gate findings, 12-FOLLOWUP-SCOPE.md)
+Plans:
+**Wave 1**
+- [x] 12-01-PLAN.md — Content packet: Tim approves copy, coordinates, route-log dates, UI-SPEC defaults and open decisions
+- [x] 12-02-PLAN.md — Tracer: proxy rewrite gives unknown slugs a server-rendered 404; CSP builder (D-17); SW-blocked Playwright, WebKit project, shared routes
+- [x] 12-03-PLAN.md — Feedback API contract: error codes, honeypot after CSRF and rate limit, metadata-only logs
+- [x] 12-04-PLAN.md — Dead v1 components and guard lists drained; v1 aliases removed; colour reset backstop
+- [x] 12-05-PLAN.md — Legacy image variants deleted behind an asset-exists test
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 12-06-PLAN.md — Dependency hygiene: zod and fflate advisories behind a legitimacy checkpoint; D-25 dispositions
+- [x] 12-07-PLAN.md — Round-1 visual fixes (EndBlock, DemoTerminal, Source names, HEADS), route-log dates, Phase 9 dispositions
+- [x] 12-08-PLAN.md — Service worker: network-first navigations, offline precache, no-cache script, reload-once guard
+- [x] 12-09-PLAN.md — site.url, metadataBase, per-route metadata, sitemap.xml and robots.txt
+- [x] 12-10-PLAN.md — Shared OG template with committed fonts and the default card
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 12-11-PLAN.md — Re-baseline round 1
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 12-12-PLAN.md — Edge art and layout; the marked-trail 404 with context links
+- [x] 12-13-PLAN.md — Summit register: server Contact page, the SummitRegister states and submit-time validation, the formatters
+- [x] 12-14-PLAN.md — Per-slug photo and project OG images
+- [x] 12-25-PLAN.md — Identity guard covers site.url; Zürich location stored at 2 decimals (split from 12-09)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [x] 12-15-PLAN.md — Error and global-error in the edge layout; offline page with saved pages
+- [x] 12-16-PLAN.md — Direct contact panel (email, Copy, coordinates); gradient mesh deleted
+- [x] 12-26-PLAN.md — Summit register validation: blur-then-live errors, the focused error summary, the character counter (split from 12-13)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [x] 12-17-PLAN.md — Every route's head tags; service-worker update and offline e2e
+- [x] 12-18-PLAN.md — Compiler-clean progressive textures; compiler exemption list drained
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [x] 12-19-PLAN.md — Re-baseline round 2
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [x] 12-20-PLAN.md — Permanent audit gate: axe, CLS, links, images, CSP and console on every route and state
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [x] 12-21-PLAN.md — Keyboard-only flows
+
+**Wave 10** *(blocked on Wave 9 completion)*
+- [x] 12-22-PLAN.md — Review-row and flake dispositions; README tree and Copilot notes
+
+**Wave 11** *(blocked on Wave 10 completion)*
+- [x] 12-23-PLAN.md — WebKit in CI, three-engine run, round 3 if needed
+
+**Wave 12** *(blocked on Wave 11 completion)*
+- [x] 12-24-PLAN.md — Phase close: final CI, ratchet, PROJECT.md, UAT checklist
+
+**Wave 13** *(follow-up; blocked on Wave 12 completion)*
+- [x] 12-27-PLAN.md — One Tim checkpoint: npm prod-tree advisories (source-map-js, baseline-browser-mapping), IN-01 and IN-05 copy, the 404 header-guard option; approved bumps with floors
+
+**Wave 14** *(blocked on Wave 13 completion)*
+- [x] 12-28-PLAN.md — Contact form: fieldless validation answer shows the send failure (WR-01), Retry validates (IN-06), name too-long copy (IN-01), z.email() (IN-07)
+
+**Wave 15** *(blocked on Wave 14 completion)*
+- [x] 12-29-PLAN.md — Document prefetches pass the proxy (C1) and the 404 section guard per Tim's option (IN-02); T-12-02 closed
+
+**Wave 16** *(blocked on Wave 15 completion)*
+- [x] 12-30-PLAN.md — Service worker: hero contour precached (C2), cache writes under waitUntil (WR-04)
+
+**Wave 17** *(blocked on Wave 16 completion)*
+- [x] 12-31-PLAN.md — DemoTerminal observer follows its region (WR-02); texture loader keyed on source URLs (IN-03); SW update check cleanup (IN-04)
+
+**Wave 18** *(blocked on Wave 17 completion)*
+- [x] 12-32-PLAN.md — Error-page Report link in the ink-muted style (D1), saved-page hover token (D2), global-error title (IN-05)
+
+**Wave 19** *(blocked on Wave 18 completion)*
+- [x] 12-33-PLAN.md — README env names and Node 24 (WR-03); credit test slow marker (C3); G3 production-only and the stale comment (C4)
+
+**Wave 20** *(blocked on Wave 19 completion)*
+- [x] 12-34-PLAN.md — Follow-up close: three-engine local and CI runs, ratchet, review, security, deferred and validation ledgers
+
 **UI hint**: yes
 **Scope notes**:
   - `SummitRegister` is a restyle: `/api/feedback`, CSRF, Upstash rate limiting and accessible names stay. It adds the honeypot and the error summary.
@@ -325,9 +573,9 @@ Plans:
 | 4. Design Components | v1.0 | 6/6 | Complete | 2026-02-17 |
 | 5. Performance & Accessibility Polish | v1.0 | 5/5 | Complete | 2026-03-11 |
 | 6. Integration Wiring Fixes | v1.0 | 1/1 | Complete | 2026-03-12 |
-| 7. Foundation & Guardrails | v2.0 | 2/26 | In Progress | - |
-| 8. Data & Terrain Pipeline | v2.0 | 0/TBD | Not started | - |
-| 9. Home Ascent | v2.0 | 0/TBD | Not started | - |
-| 10. Photography | v2.0 | 0/TBD | Not started | - |
-| 11. Engineering & Roadmap | v2.0 | 0/TBD | Not started | - |
-| 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 0/TBD | Not started | - |
+| 7. Foundation & Guardrails | v2.0 | 27/27 | Complete    | 2026-10-24 |
+| 8. Data & Terrain Pipeline | v2.0 | 13/13 | Complete    | 2026-10-24 |
+| 9. Home Ascent | v2.0 | 22/22 | Complete    | 2026-10-25 |
+| 10. Photography | v2.0 | 13/13 | Complete    | 2026-10-26 |
+| 11. Engineering & Roadmap | v2.0 | 19/19 | Complete    | 2026-11-02 |
+| 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 34/34 | Complete    | 2026-11-05 |

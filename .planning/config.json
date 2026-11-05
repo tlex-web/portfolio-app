@@ -4,15 +4,18 @@
   "commit_docs": true,
   "model_profile": "quality",
   "search_gitignored": false,
-  "branching_strategy": "none",
   "phase_branch_template": "gsd/phase-{phase}-{slug}",
   "milestone_branch_template": "gsd/{milestone}-{slug}",
   "workflow": {
     "research": true,
     "plan_check": true,
     "verifier": true,
-    "_auto_chain_active": false
+    "_auto_chain_active": false,
+    "live_dom_uat": true
   },
   "brave_search": false,
-  "granularity": "standard"
+  "granularity": "standard",
+  "git": {
+    "branching_strategy": "phase"
+  }
 }

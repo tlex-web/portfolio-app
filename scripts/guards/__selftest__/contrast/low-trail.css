@@ -1,0 +1,28 @@
+/* Fixture: a waymark bar too close to its white neighbour must fail (11-UI-SPEC "Trail
+   paint", WCAG 1.4.11): trail-mountain at luminance 0.3 on trail-blaze at 0.2 */
+:root {
+  --trail-blaze: color(xyz-d65 0.2 0.2 0.2);
+  --trail-mountain: color(xyz-d65 0.3 0.3 0.3);
+  --trail-alpine: #fff;
+  --trail-yellow: #fff;
+}
+
+@theme inline {
+  --color-surface: #000;
+  --color-surface-raised: #000;
+  --color-surface-overlay: #000;
+  --color-gallery: #000;
+  --color-ink: #fff;
+  --color-ink-muted: #fff;
+  --color-ink-inverse: #000;
+  --color-line: #222;
+  --color-line-strong: #fff;
+  --color-accent: #fff;
+  --color-accent-hover: #fff;
+  --color-accent-strong: #fff;
+  --color-focus: #fff;
+  --color-danger: #fff;
+  --color-caution: #fff;
+  --color-success: #fff;
+  --color-contour: oklch(0.94 0.008 85 / 0.14);
+}

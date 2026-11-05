@@ -29,7 +29,7 @@ jobs:
     # The tag must equal the lockfile @playwright/test version
     # (enforced by scripts/guards/check-install-parity.mjs).
     container:
-      image: mcr.microsoft.com/playwright:v1.60.0-noble
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
       options: --ipc=host
 
     steps:
@@ -48,9 +48,11 @@ jobs:
         run: npm ls --depth=0
 
       # Inputs reach the shell only through env, never through ${{ }} in run.
+      # Dark project only (since 07-14): the light project compares against the
+      # dark PNGs, so updating it would overwrite them with light output.
       - name: Generate visual baselines
         if: inputs.suite == 'visual'
-        run: npx playwright test --project=visual-dark --project=visual-light --update-snapshots="$UPDATE_MODE"
+        run: npx playwright test --project=visual-dark --update-snapshots="$UPDATE_MODE"
         env:
           UPDATE_MODE: ${{ inputs.update_mode }}
           CI: '1'
@@ -58,12 +60,15 @@ jobs:
           FEEDBACK_RECIPIENT_EMAIL: test@example.com
           FEEDBACK_FROM_EMAIL: noreply@example.com
 
-      # The perf project arrives in plan 07-26.
+      # HOME-08 (plan 07-26): writes test-results/home-baseline.json. The
+      # container tag below must equal the job image (the parity guard checks
+      # both strings against the lockfile).
       - name: Record Home performance baseline
         if: inputs.suite == 'perf'
         run: npx playwright test --project=perf
         env:
           CI: '1'
+          PW_CONTAINER_TAG: mcr.microsoft.com/playwright:v1.64.0-noble
           RESEND_API_KEY: dummy_key_for_tests
           FEEDBACK_RECIPIENT_EMAIL: test@example.com
           FEEDBACK_FROM_EMAIL: noreply@example.com

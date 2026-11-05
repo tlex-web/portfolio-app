@@ -1,0 +1,47 @@
+# Generated data that a --check compares byte for byte (D-10). Keep LF in every
+# working tree, also under core.autocrlf=true on Windows, or a plain checkout
+# would make the committed file differ from a fresh extraction.
+data/photos/exif-sidecar.json text eol=lf
+
+# Terrain (08-04): build-terrain --check byte-compares these against a fresh build.
+data/terrain/source/source.json text eol=lf
+data/generated/terrain.ts text eol=lf
+data/generated/precache.json text eol=lf
+public/terrain/*.svg text eol=lf
+# 16-bit PNGs: never touch the bytes (source sha256 and hashed file names).
+data/terrain/source/*.png binary
+public/terrain/*.png binary
+# Lossy hillshade posters (08-06): hashed by their bytes, never normalised.
+public/terrain/*.avif binary
+public/terrain/*.webp binary
+
+# Photo derivatives (08-07): the manifest is byte-compared with a rebuild from disk;
+# the lossy derivatives are hashed by their bytes, never normalised.
+data/generated/image-manifest.ts text eol=lf
+public/images/photos/* binary
+
+# Typed photo facts (08-08): photos:build --check byte-compares this with a fresh build.
+data/generated/photos.ts text eol=lf
+
+# Served-image guard fixtures (08-09): hashed names and planted EXIF/XMP must keep
+# their exact bytes, so no fixture file is ever EOL-normalised.
+scripts/guards/__selftest__/served-images/** -text
+
+# Shader colour tokens (09-04): tokens:build --check byte-compares this with a fresh build.
+data/generated/tokens.ts text eol=lf
+
+# Trail profiles (11-04): trails:build --check byte-compares the module with a fresh
+# build, and fetch-trails writes trails.json with LF.
+data/terrain/source/trails.json text eol=lf
+data/generated/trail-profiles.ts text eol=lf
+
+# Clip pipeline (11-09): clip:derive --check byte-compares the manifest with a rebuild
+# from disk and the sidecar; the clip and poster are hashed by their bytes, never normalised.
+data/media/clips.json text eol=lf
+data/generated/media-manifest.ts text eol=lf
+public/media/* binary
+
+# Open Graph fonts (12-10): README.md records each file's SHA-256, so the TTFs and
+# their OFL texts keep their exact bytes on every checkout.
+lib/og/fonts/*.ttf binary
+lib/og/fonts/*.txt text eol=lf

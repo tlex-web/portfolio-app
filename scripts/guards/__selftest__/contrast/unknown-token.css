@@ -1,0 +1,31 @@
+/* Fixture: an unrecognised --color-foo token must fail, even though every pair passes */
+:root {
+  /* Trail paint (11-UI-SPEC): every trail pair passes here (blaze at luminance 0.2
+     sits >= 3:1 from both the white bars and a black surface), so the case still
+     tests only what its name says */
+  --trail-blaze: color(xyz-d65 0.2 0.2 0.2);
+  --trail-mountain: #fff;
+  --trail-alpine: #fff;
+  --trail-yellow: #fff;
+}
+
+@theme inline {
+  --color-surface: #000;
+  --color-surface-raised: #000;
+  --color-surface-overlay: #000;
+  --color-gallery: #000;
+  --color-ink: #fff;
+  --color-ink-muted: #fff;
+  --color-ink-inverse: #000;
+  --color-line: #222;
+  --color-line-strong: #fff;
+  --color-accent: #fff;
+  --color-accent-hover: #fff;
+  --color-accent-strong: #fff;
+  --color-focus: #fff;
+  --color-danger: #fff;
+  --color-caution: #fff;
+  --color-success: #fff;
+  --color-contour: oklch(0.94 0.008 85 / 0.14);
+  --color-foo: #fff;
+}

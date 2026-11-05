@@ -29,6 +29,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { evaluate, pickRun } from '../ci/check-visual-run.mjs';
 import { evaluateSnapshotChanges } from '../ci/check-snapshot-commit.mjs';
+import { checkMp4 } from './lib/mp4-boxes.mjs';
+import { LEGACY_DEAD_FILES, assertNoImporters, isLegacyDeadFile } from './lib/legacy-dead-files.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '..', '..');
@@ -38,7 +40,17 @@ const TEST_COUNT = path.join(here, 'test-count.mjs');
 const ESLINT = path.join(repoRoot, 'node_modules', 'eslint', 'bin', 'eslint.js');
 const SAME_CLASSNAMES = path.join(here, 'same-classnames.mjs');
 const SNAPSHOT_COMMIT = path.join(repoRoot, 'scripts', 'ci', 'check-snapshot-commit.mjs');
+const PALETTE = path.join(here, 'check-palette.mjs');
+const CONTRAST = path.join(here, 'check-contrast.mjs');
+const IDENTITY = path.join(here, 'check-identity.mjs');
+const SERVED = path.join(here, 'check-served-images.mjs');
+const con = (name) => path.join(fixtures, 'contrast', name);
+const idf = (name) => path.join(fixtures, 'identity', name);
+const si = (name) => path.join(fixtures, 'served-images', name);
+/** The clean 0.2 s fixture clip (see served-images/good-mp4/README.md). */
+const goodMp4 = () => fs.readFileSync(path.join(si('good-mp4'), 'public', 'media', 'coin-flip-toss.d423c62633.mp4'));
 const tc = (...parts) => path.join(fixtures, 'test-count', ...parts);
+const pal = (...parts) => path.join(fixtures, 'palette', ...parts);
 const sc = (...parts) => path.join(fixtures, 'same-classnames', ...parts);
 const tap = process.argv.includes('--tap');
 
@@ -74,6 +86,16 @@ function tempBaseline(fixtureName) {
 }
 let lowerUpdateBaseline = null;
 let raiseUpdateBaseline = null;
+
+/** Copies a palette fixture ratchet into a fresh temp dir so --update cases never touch the fixture. */
+function tempRatchet(fixtureName) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
+  const file = path.join(dir, 'palette-ratchet.json');
+  fs.copyFileSync(pal(fixtureName, 'palette-ratchet.json'), file);
+  return file;
+}
+let raisePaletteRatchet = null;
+let lowerPaletteRatchet = null;
 
 const cases = [
   {
@@ -179,6 +201,53 @@ const cases = [
     expectOutput: ['jsx-a11y/'],
   },
   {
+    // A bare R3F <Canvas> has no error boundary: without WebGL it replaces the route (R3F >= 9.8).
+    name: 'bare R3F Canvas import probe',
+    guard: ESLINT,
+    args: ['--stdin', '--stdin-filename', 'probe.tsx'],
+    input: "import { Canvas } from '@react-three/fiber';\nexport const X = Canvas;\n",
+    cwd: repoRoot,
+    expectExit: 1,
+    expectOutput: ['no-restricted-imports', 'SafeCanvas'],
+  },
+  {
+    // DATA-01: generator libraries are build-time only and never reach shipped code.
+    name: 'generator import ban: d3-contour in components/ fails',
+    guard: ESLINT,
+    args: ['--stdin', '--stdin-filename', 'components/probe.tsx'],
+    input: "import { contours } from 'd3-contour';\nexport const X = contours;\n",
+    cwd: repoRoot,
+    expectExit: 1,
+    expectOutput: ['no-restricted-imports', 'Build-time only'],
+  },
+  {
+    name: 'generator import ban: d3-contour in scripts/**/*.mjs passes',
+    guard: ESLINT,
+    args: ['--stdin', '--stdin-filename', 'scripts/terrain/probe.mjs'],
+    input: "import { contours } from 'd3-contour';\nexport const X = contours;\n",
+    cwd: repoRoot,
+    expectExit: 0,
+  },
+  {
+    name: 'generator import ban: sharp in lib/ fails',
+    guard: ESLINT,
+    args: ['--stdin', '--stdin-filename', 'lib/probe.ts'],
+    input: "import sharp from 'sharp';\nexport const X = sharp;\n",
+    cwd: repoRoot,
+    expectExit: 1,
+    expectOutput: ['no-restricted-imports', 'Build-time only'],
+  },
+  {
+    // The scripts/**/*.mjs override must restate the old bans (flat config replaces options).
+    name: 'generator import ban: framer-motion in scripts/**/*.mjs still fails',
+    guard: ESLINT,
+    args: ['--stdin', '--stdin-filename', 'scripts/terrain/probe.mjs'],
+    input: "import { motion } from 'framer-motion';\nexport const X = motion;\n",
+    cwd: repoRoot,
+    expectExit: 1,
+    expectOutput: ['no-restricted-imports', 'motion/react'],
+  },
+  {
     name: 'same-classnames: entity escape, <a> to <Link> and a JSX comment are neutral',
     guard: SAME_CLASSNAMES,
     args: ['--files', sc('before.tsx.txt'), sc('after-neutral.tsx.txt')],
@@ -263,6 +332,441 @@ const cases = [
     expectExit: 2,
     expectOutput: ['git show no-such-rev-for-selftest failed'],
   },
+  {
+    name: 'palette: semantic utilities, (c), the prompt glyph and a white utility at its ratchet pass',
+    guard: PALETTE,
+    args: ['--root', pal('good')],
+    expectExit: 0,
+    expectOutput: ['palette: OK'],
+  },
+  {
+    name: 'palette: a dark: variant utility fails',
+    guard: PALETTE,
+    args: ['--root', pal('bad-dark')],
+    expectExit: 1,
+    expectOutput: ['app/page.tsx:3 dark dark:'],
+  },
+  {
+    name: 'palette: a stock palette class inside an object map fails',
+    guard: PALETTE,
+    args: ['--root', pal('bad-stock')],
+    expectExit: 1,
+    expectOutput: ['app/badges.tsx:4 stock hover:text-red-500/80'],
+  },
+  {
+    name: 'palette: one white/black utility above the ratchet fails',
+    guard: PALETTE,
+    args: ['--root', pal('bad-wb')],
+    expectExit: 1,
+    expectOutput: ['app/page.tsx wb 2 white/black utilities above the ratchet of 1', 'app/page.tsx:6 wb hover:bg-white/10'],
+  },
+  {
+    name: 'palette: a white/black count below the ratchet fails until --update records it',
+    guard: PALETTE,
+    args: ['--root', pal('wb-tighten')],
+    expectExit: 1,
+    expectOutput: ['app/page.tsx wb 1 white/black utilities below the ratchet of 2', 'ratchet can tighten'],
+  },
+  {
+    name: 'palette: a non-linux PNG under e2e/ fails',
+    guard: PALETTE,
+    args: ['--root', pal('bad-png')],
+    expectExit: 1,
+    expectOutput: ['e2e/x-win32.png:0 png'],
+  },
+  {
+    name: 'palette: an emoji in a data map fails',
+    guard: PALETTE,
+    args: ['--root', pal('bad-emoji')],
+    expectExit: 1,
+    expectOutput: ['data/tags.ts:3 emoji'],
+  },
+  {
+    name: 'palette: --skip emoji turns the emoji rule off',
+    guard: PALETTE,
+    args: ['--root', pal('bad-emoji'), '--skip', 'emoji'],
+    expectExit: 0,
+    expectOutput: ['palette: OK'],
+  },
+  {
+    name: 'palette: an emoji in a non-legacy component fails',
+    guard: PALETTE,
+    args: ['--root', pal('bad-emoji-component')],
+    expectExit: 1,
+    expectOutput: ['components/Badge.tsx:3 emoji ❤'],
+  },
+  {
+    name: 'palette: the same emoji in an unimported components/Footer.tsx fails (no dead-file exemption)',
+    guard: PALETTE,
+    args: ['--root', pal('bad-emoji-former-dead')],
+    expectExit: 1,
+    expectOutput: ['components/Footer.tsx:3 emoji ❤', 'palette: 1 violations'],
+  },
+  {
+    name: 'palette: an imported components/Footer.tsx fails on its emoji alone, with no importer line',
+    guard: PALETTE,
+    args: ['--root', pal('bad-emoji-former-dead-imported')],
+    expectExit: 1,
+    expectOutput: ['components/Footer.tsx:3 emoji ❤', 'palette: 1 violations'],
+  },
+  {
+    name: 'palette: @custom-variant dark and a stock class in CSS @apply fail',
+    guard: PALETTE,
+    args: ['--root', pal('bad-variant')],
+    expectExit: 1,
+    expectOutput: ['app/globals.css:3 variant @custom-variant dark', 'app/globals.css:6 stock text-amber-400'],
+  },
+  {
+    name: 'palette: a v1 alias name in a new shell file fails',
+    guard: PALETTE,
+    args: ['--root', pal('bad-v1names')],
+    expectExit: 1,
+    expectOutput: ['components/site/SiteNav.tsx:3 v1names frost-4'],
+  },
+  {
+    name: 'palette: a v1 alias name in a live (non-shell) component fails',
+    guard: PALETTE,
+    args: ['--root', pal('bad-v1names-live')],
+    expectExit: 1,
+    expectOutput: ['components/Card.tsx:1 v1names frost-500'],
+  },
+  {
+    name: 'palette: a v1 alias name in an unimported components/Header.tsx fails (no dead-file exemption)',
+    guard: PALETTE,
+    args: ['--root', pal('bad-v1names-former-dead')],
+    expectExit: 1,
+    expectOutput: ['components/Header.tsx:3 v1names snow-50', 'palette: 1 violations'],
+  },
+  {
+    name: 'palette: a --color-<v1>-NNN alias definition line in app/globals.css fails (no alias exemption)',
+    guard: PALETTE,
+    args: ['--root', pal('bad-v1names-alias-defs')],
+    expectExit: 1,
+    expectOutput: [
+      'app/globals.css:3 v1names alpine-950',
+      'app/globals.css:4 v1names frost-600',
+      'app/globals.css:5 v1names rust-400',
+      'palette: 3 violations',
+    ],
+  },
+  {
+    name: 'palette: --update refuses a raise and leaves the ratchet unchanged',
+    guard: PALETTE,
+    args: ['--root', pal('bad-wb'), '--update'],
+    setup: () => {
+      raisePaletteRatchet = tempRatchet('bad-wb');
+      return ['--ratchet', raisePaletteRatchet];
+    },
+    expectExit: 1,
+    expectOutput: ['--update refused'],
+    check: () =>
+      fs.readFileSync(raisePaletteRatchet, 'utf-8') === fs.readFileSync(pal('bad-wb', 'palette-ratchet.json'), 'utf-8')
+        ? null
+        : 'ratchet copy was modified by a refused --update',
+  },
+  {
+    name: 'palette: --update records a lower count',
+    guard: PALETTE,
+    args: ['--root', pal('wb-tighten'), '--update'],
+    setup: () => {
+      lowerPaletteRatchet = tempRatchet('wb-tighten');
+      return ['--ratchet', lowerPaletteRatchet];
+    },
+    expectExit: 0,
+    expectOutput: ['palette: ratchet written', 'palette: OK'],
+    check: () => {
+      const written = JSON.parse(fs.readFileSync(lowerPaletteRatchet, 'utf-8'));
+      return written['app/page.tsx'] === 1 && Object.keys(written).length === 1
+        ? null
+        : `ratchet not lowered: ${JSON.stringify(written)}`;
+    },
+  },
+  {
+    name: 'identity: real record, derived author, in-word Portfolio and a record-driven components/Footer.tsx pass',
+    guard: IDENTITY,
+    args: ['--root', idf('good')],
+    expectExit: 0,
+    expectOutput: ['identity: OK'],
+  },
+  {
+    name: 'identity: contact@example.com in a live component fails',
+    guard: IDENTITY,
+    args: ['--root', idf('bad-placeholder')],
+    expectExit: 1,
+    expectOutput: ['components/ContactCard.tsx:3 forbidden contact@example.com', 'identity: 1 violations'],
+  },
+  {
+    name: 'identity: the split P + ortfolio wordmark fails',
+    guard: IDENTITY,
+    args: ['--root', idf('bad-wordmark')],
+    expectExit: 1,
+    expectOutput: ['components/Brand.tsx:6 forbidden split wordmark', 'identity: 1 violations'],
+  },
+  {
+    name: 'identity: a package.json author that drifts from data/site.ts fails',
+    guard: IDENTITY,
+    args: ['--root', idf('bad-author')],
+    expectExit: 1,
+    expectOutput: ['package.json: author', 'expected "Tim Lui (https://github.com/tlex-web)"', 'identity: 1 violations'],
+  },
+  {
+    name: 'identity: a bare https://linkedin.com in data/site.ts fails',
+    guard: IDENTITY,
+    args: ['--root', idf('bad-linkedin')],
+    expectExit: 1,
+    // Line 9: the fixture's url line (D-13, 12-25) sits above links.linkedin.
+    expectOutput: [
+      'data/site.ts:9 forbidden bare LinkedIn root href',
+      'links.linkedin "https://linkedin.com" is not a full',
+      'identity: 2 violations',
+    ],
+  },
+  {
+    name: 'identity: an example.com email in data/site.ts fails the shape check',
+    guard: IDENTITY,
+    args: ['--root', idf('bad-email')],
+    expectExit: 1,
+    expectOutput: ['data/site.ts: email "hello@example.com" is not a real address', 'identity: 1 violations'],
+  },
+  {
+    name: 'identity: an http, trailing-slash example.com base url in data/site.ts fails the url rule (D-13)',
+    guard: IDENTITY,
+    args: ['--root', idf('bad-url')],
+    expectExit: 1,
+    expectOutput: ['data/site.ts: url "http://example.com/" is not an https origin', 'identity: 1 violations'],
+  },
+  {
+    name: 'identity: v1 placeholders in components/Header.tsx and Footer.tsx fail like any file; their importers add nothing',
+    guard: IDENTITY,
+    args: ['--root', idf('bad-former-dead-files')],
+    expectExit: 1,
+    expectOutput: [
+      'components/Footer.tsx:3 forbidden My Portfolio',
+      'components/Header.tsx:6 forbidden split wordmark',
+      'identity: 2 violations',
+    ],
+  },
+  {
+    name: 'legacy-dead-files: the list stays empty and the repository has no dead-file importer (VERIFY-01)',
+    fn: () =>
+      LEGACY_DEAD_FILES.length !== 0
+        ? `LEGACY_DEAD_FILES must stay empty, got ${JSON.stringify(LEGACY_DEAD_FILES)}`
+        : isLegacyDeadFile('components/Header.tsx') || assertNoImporters(repoRoot).length !== 0
+          ? 'an empty list must exempt no file and report no importer'
+          : null,
+  },
+  {
+    name: 'served-images: a listed hashed WebP and strip SVG, both manifests and a clean derivative script pass',
+    guard: SERVED,
+    args: ['--root', si('good')],
+    expectExit: 0,
+    expectOutput: ['served-images: OK'],
+  },
+  {
+    name: 'served-images: a JPEG with an EXIF GPS IFD fails the metadata rule',
+    guard: SERVED,
+    args: ['--root', si('bad-exif-gps')],
+    expectExit: 1,
+    expectOutput: ['public/images/a.jpg metadata: exif'],
+  },
+  {
+    name: 'served-images: a JPEG with XMP but no EXIF fails the metadata rule',
+    guard: SERVED,
+    args: ['--root', si('bad-xmp-only')],
+    expectExit: 1,
+    expectOutput: ['public/images/x.jpg metadata: xmp'],
+  },
+  {
+    name: 'served-images: a public/ WebP 2600 px wide fails the size rule',
+    guard: SERVED,
+    args: ['--root', si('bad-oversize')],
+    expectExit: 1,
+    expectOutput: ['public/images/big.webp oversize: 2600x1'],
+  },
+  {
+    name: 'served-images: a public/ JPEG with orientation 6 fails the orientation rule',
+    guard: SERVED,
+    args: ['--root', si('bad-orientation')],
+    expectExit: 1,
+    expectOutput: ['public/images/o.jpg orientation: tag 6'],
+  },
+  {
+    name: 'served-images: a raw camera file under public fails as unreadable',
+    guard: SERVED,
+    args: ['--root', si('bad-raw')],
+    expectExit: 1,
+    expectOutput: ['public/images/x.dng metadata: unreadable by sharp'],
+  },
+  {
+    name: 'served-images: a terrain file whose name hash does not match its bytes fails',
+    guard: SERVED,
+    args: ['--root', si('bad-hash-name')],
+    expectExit: 1,
+    expectOutput: ['public/terrain/contours-strip.0000000000.svg hash-name: name hash 0000000000'],
+  },
+  {
+    name: 'served-images: a correctly hashed SVG with a script element fails',
+    guard: SERVED,
+    args: ['--root', si('bad-svg-script')],
+    expectExit: 1,
+    expectOutput: ['svg-content: script element'],
+  },
+  {
+    name: 'served-images: a hashed photo no manifest lists fails as an orphan',
+    guard: SERVED,
+    args: ['--root', si('bad-orphan')],
+    expectExit: 1,
+    expectOutput: ['public/images/photos/y-640.7a4b0211a0.webp orphan:'],
+  },
+  {
+    name: 'served-images: a manifest URL with no file behind it fails as missing',
+    guard: SERVED,
+    args: ['--root', si('bad-missing')],
+    expectExit: 1,
+    expectOutput: ['public/images/photos/z-640.0123456789.webp missing: listed in data/generated/image-manifest.ts'],
+  },
+  {
+    name: 'served-images: a scripts/photos call to withMetadata() fails',
+    guard: SERVED,
+    args: ['--root', si('bad-metadata-call')],
+    expectExit: 1,
+    expectOutput: ['scripts/photos/x.mjs metadata-call: line 2 calls .withMetadata()'],
+  },
+  {
+    name: 'served-images: a clean faststart MP4 and its WebP poster, hashed and listed in the media manifest, pass',
+    guard: SERVED,
+    args: ['--root', si('good-mp4')],
+    expectExit: 0,
+    expectOutput: ['served-images: OK'],
+  },
+  {
+    name: 'served-images: an MP4 with a planted creation_time and location fails the video rule',
+    guard: SERVED,
+    args: ['--root', si('bad-mp4-metadata')],
+    expectExit: 1,
+    expectOutput: [
+      'public/media/coin-flip-toss.59f6287d49.mp4 video: mvhd timestamps not zero',
+      'public/media/coin-flip-toss.59f6287d49.mp4 video: forbidden box loci',
+      'public/media/coin-flip-toss.59f6287d49.mp4 video: metadata items in ilst',
+    ],
+  },
+  {
+    name: 'served-images: an MP4 with an AAC audio track fails the video rule',
+    guard: SERVED,
+    args: ['--root', si('bad-mp4-audio')],
+    expectExit: 1,
+    expectOutput: ['public/media/coin-flip-toss.4c95121c6a.mp4 video: tracks: vide,soun'],
+  },
+  {
+    name: 'served-images: an MP4 without +faststart (mdat before moov) fails the video rule',
+    guard: SERVED,
+    args: ['--root', si('bad-mp4-order')],
+    expectExit: 1,
+    expectOutput: ['public/media/coin-flip-toss.08507707c1.mp4 video: moov must precede mdat'],
+  },
+  {
+    name: 'served-images: an MP4 with a top-level uuid box fails the video rule',
+    guard: SERVED,
+    args: ['--root', si('bad-mp4-uuid')],
+    expectExit: 1,
+    expectOutput: ['public/media/coin-flip-toss.fe7f168ef1.mp4 video: forbidden box uuid'],
+  },
+  {
+    name: 'served-images: an MP4 with an XMP packet in a udta XMP_ box fails the video and metadata rules',
+    guard: SERVED,
+    args: ['--root', si('bad-mp4-xmp')],
+    expectExit: 1,
+    expectOutput: [
+      'public/media/coin-flip-toss.41c2fd1ba3.mp4 video: forbidden box XMP_',
+      'public/media/coin-flip-toss.41c2fd1ba3.mp4 metadata: XMP packet marker in bytes, XMP namespace marker in bytes',
+    ],
+  },
+  {
+    name: 'served-images: a WebM under public/media fails as a non-MP4 video',
+    guard: SERVED,
+    args: ['--root', si('bad-video-format')],
+    expectExit: 1,
+    expectOutput: ['public/media/coin-flip-toss.eebff415df.webm video-format: only MP4 is served'],
+  },
+  {
+    name: 'mp4-boxes: checkMp4 finds no violation in the clean fixture clip',
+    fn: () => expectEqual('violations', checkMp4(goodMp4()).join('; '), ''),
+  },
+  {
+    name: 'mp4-boxes: checkMp4 with a 100-byte budget reports the size',
+    fn: () => expectEqual('violations', checkMp4(goodMp4(), { maxBytes: 100 }).join('; '), `size ${goodMp4().length} B over 100 B`),
+  },
+  {
+    name: 'mp4-boxes: checkMp4 reports only the forbidden uuid box in the bad-mp4-uuid clip',
+    fn: () => expectEqual('violations', checkMp4(fs.readFileSync(path.join(si('bad-mp4-uuid'), 'public', 'media', 'coin-flip-toss.fe7f168ef1.mp4'))).join('; '), 'forbidden box uuid'),
+  },
+  {
+    name: 'mp4-boxes: checkMp4 reports only the forbidden XMP_ box in the bad-mp4-xmp clip',
+    fn: () => expectEqual('violations', checkMp4(fs.readFileSync(path.join(si('bad-mp4-xmp'), 'public', 'media', 'coin-flip-toss.41c2fd1ba3.mp4'))).join('; '), 'forbidden box XMP_'),
+  },
+  {
+    name: 'contrast: the real app/globals.css passes all 47 pairs (28 UI-SPEC + 4 accent-strong + 4 gallery + 1 toggle + 10 trail) in table order',
+    guard: CONTRAST,
+    args: ['--css', path.join(repoRoot, 'app', 'globals.css')],
+    expectExit: 0,
+    expectOutput: ['ink/surface 16.03 4.5 PASS', 'danger/surface-raised 6.74 4.5 PASS', 'line-strong/surface-overlay 4.17 3 PASS', 'ink-inverse/accent-strong 7.40 4.5 PASS', 'accent-strong/surface-overlay 6.37 3 PASS', 'accent/gallery 11.88 4.5 PASS', 'line-strong/gallery 5.10 3 PASS', 'ink-inverse/ink 16.03 4.5 PASS', 'trail-mountain/trail-blaze 3.65 3 PASS', 'trail-alpine/trail-blaze 4.12 3 PASS', 'trail-alpine/surface-overlay 3.34 3 PASS', 'trail-yellow/surface-raised 10.89 3 PASS', 'contrast: OK (47 pairs)'],
+  },
+  {
+    name: 'contrast: a pair exactly at 4.5:1 passes (inclusive raw-float threshold)',
+    guard: CONTRAST,
+    args: ['--css', con('at-threshold.css')],
+    expectExit: 0,
+    expectOutput: ['ink-muted/surface 4.50 4.5 PASS', 'ink-muted/surface-overlay 4.50 4.5 PASS', 'contrast: OK (47 pairs)'],
+  },
+  {
+    name: 'contrast: a pair 0.01 below 4.5:1 fails',
+    guard: CONTRAST,
+    args: ['--css', con('below-threshold.css')],
+    expectExit: 1,
+    expectOutput: ['ink-muted/surface 4.49 4.5 FAIL'],
+  },
+  {
+    name: 'contrast: --color-ink resolving to 3:1 on surface fails',
+    guard: CONTRAST,
+    args: ['--css', con('low-ink.css')],
+    expectExit: 1,
+    expectOutput: ['ink/surface 3.00 4.5 FAIL', 'contrast: 1 failures'],
+  },
+  {
+    name: 'contrast: a waymark bar below 3:1 on its white neighbour fails (trail paint read from :root)',
+    guard: CONTRAST,
+    args: ['--css', con('low-trail.css')],
+    expectExit: 1,
+    expectOutput: ['trail-mountain/trail-blaze 1.40 3 FAIL', 'trail-alpine/trail-blaze 4.20 3 PASS', 'contrast: 1 failures'],
+  },
+  {
+    name: 'contrast: an unknown --color-foo token fails',
+    guard: CONTRAST,
+    args: ['--css', con('unknown-token.css')],
+    expectExit: 1,
+    expectOutput: ['unknown token --color-foo'],
+  },
+  {
+    name: 'contrast: a missing --color-danger fails its pairs',
+    guard: CONTRAST,
+    args: ['--css', con('missing-danger.css')],
+    expectExit: 1,
+    expectOutput: ['missing token for pair danger/surface', 'missing token for pair danger/surface-overlay'],
+  },
+  {
+    name: 'contrast: a file with no :root or @theme block fails',
+    guard: CONTRAST,
+    args: ['--css', con('empty.css')],
+    expectExit: 1,
+    expectOutput: ['no :root or @theme block'],
+  },
+  {
+    name: 'contrast: a var() cycle fails instead of recursing',
+    guard: CONTRAST,
+    args: ['--css', con('var-cycle.css')],
+    expectExit: 1,
+    expectOutput: ['var() cycle'],
+  },
 ];
 
 let failed = 0;
@@ -317,7 +821,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 

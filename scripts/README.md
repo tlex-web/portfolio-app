@@ -4,106 +4,108 @@ This directory contains utility scripts for maintaining and optimizing the portf
 
 ## Available Scripts
 
-### `optimize-images.mjs`
+### Data pipeline (local generators, committed outputs)
 
-Image optimization script that converts and compresses images for production use.
+The generators below need inputs that CI does not have (the photo originals, the network), so their write mode runs only on Tim's machine and their outputs are committed. `npm run data:check`, the last step of `npm run lint`, re-checks every committed output in CI without those inputs:
 
-**Purpose:** Reduces image file sizes by 85-90% while maintaining visual quality, improving page load times from 500ms+ to <150ms.
-
-**Usage:**
 ```bash
-# Basic usage (optimizes all images in public/images/landscapes/)
-npm run optimize-images
-
-# Custom input directory
-node scripts/optimize-images.mjs --input ./path/to/images
-
-# Custom output directory
-node scripts/optimize-images.mjs --output ./public/images/custom
-
-# Custom quality (default: 85)
-node scripts/optimize-images.mjs --quality 80
-
-# Combine options
-node scripts/optimize-images.mjs --input ./photos --output ./optimized --quality 90
+npm run data:check   # terrain:build -- --check && photos:exif -- --check && photos:derive -- --check && photos:build -- --check && tokens:build -- --check
 ```
 
-**What It Does:**
-1. Converts images to WebP format (30-50% smaller than JPEG)
-2. Generates multiple responsive sizes:
-   - Thumbnail: 400px width
-   - Medium: 1200px width
-   - Large: 2400px width
-   - Original: Full size, optimized
-3. Creates JPEG fallbacks for browser compatibility
-4. Preserves EXIF metadata (camera settings, dates)
-5. Generates optimization manifest with statistics
+| Script | Reads (local) | Writes (committed) |
+|--------|---------------|--------------------|
+| `photos:exif` (`photos/extract-exif.mjs`) | originals in `assets/photos-original/` (gitignored, never committed; D-09) | `data/photos/exif-sidecar.json` (EXIF facts, sha256 per original, GPS rounded to 4 decimals) |
+| `photos:derive` (`photos/build-derivatives.mjs`) | the originals and the sidecar | `public/images/photos/<id>-<edge>.<hash>.<ext>` and `data/generated/image-manifest.ts` |
+| `photos:build` (`photos/build-photo-data.mjs`) | the sidecar, `data/photos/corrections.json` and the committed DEM source (no originals) | `data/generated/photos.ts` (capture, position, DEM height, UV, exposure and tags per photo) |
+| `terrain:fetch` (`terrain/fetch-dem.mjs`) | swisstopo STAC + COG over the network (manual, never in CI) | `data/terrain/source/dem-10m.png` and `source.json` |
+| `terrain:build` (`terrain/build-terrain.mjs`) | the committed DEM source | `public/terrain/*`, `data/generated/terrain.ts` and `data/generated/precache.json` (the URLs the service worker precaches) |
+| `tokens:build` (`tokens/build-tokens.mjs`) | `app/globals.css` | `data/generated/tokens.ts` (the shader colour tokens) |
 
-**Output:**
-```
-public/images/optimized/
-├── IMG_0605-Enhanced-thumb.webp (150 KB)
-├── IMG_0605-Enhanced-thumb.jpg (250 KB)
-├── IMG_0605-Enhanced-medium.webp (800 KB)
-├── IMG_0605-Enhanced-medium.jpg (1.2 MB)
-├── IMG_0605-Enhanced-large.webp (2.5 MB)
-├── IMG_0605-Enhanced-large.jpg (4.0 MB)
-└── optimization-manifest.json
-```
+Nothing image-related runs at build time: there is no `prebuild` step, so a Vercel build needs neither the originals nor full-resolution copies (D-11).
 
-**Requirements:**
-- Node.js 18+
-- `sharp` package (automatically installed with `npm install`)
+**After adding or editing a photo:**
 
-**Configuration:**
-Edit the `CONFIG` object in `optimize-images.mjs`:
-```javascript
-const CONFIG = {
-  quality: {
-    webp: 85,  // WebP quality (0-100)
-    jpeg: 85,  // JPEG quality (0-100)
-  },
-  sizes: {
-    thumbnail: { width: 400, suffix: '-thumb' },
-    medium: { width: 1200, suffix: '-medium' },
-    large: { width: 2400, suffix: '-large' },
-  },
-  formats: ['webp', 'jpeg'],
-  preserveMetadata: true,
-};
-```
-
-**Performance Impact:**
-- **Before:** 51-77 MB per image
-- **After:** 2-5 MB per image (90% reduction)
-- **Page Load:** 500ms+ → <150ms (70% improvement)
-- **LCP:** 4-6s → <2.5s (60% improvement)
-
-**Troubleshooting:**
-
-*Error: Cannot find module 'sharp'*
 ```bash
-npm install
+# 1. Put the original (an sRGB JPEG) in assets/photos-original/
+npm run photos:exif     # refresh the sidecar (sha256, EXIF facts)
+npm run photos:derive   # hashed AVIF/WebP at 640/1024/1600/2560 + one 1200 JPEG, image manifest
+npm run photos:build    # typed photo facts (data/generated/photos.ts) from the sidecar and corrections
+npm run data:check      # what CI runs
+# 2. Commit the sidecar, public/images/photos/, data/generated/image-manifest.ts and
+#    data/generated/photos.ts. Never commit an original.
 ```
 
-*Error: ENOENT: no such file or directory*
+**`photos:build`** fails the build, rather than publish a wrong fact, when a position lies outside the DEM extent (no pin or height can be placed off the sheet), when a recorded EXIF `OffsetTimeOriginal` is not the derived Europe/Zurich offset, or when a `corrections.json` position is not `hand-placed`. A GPS fix without an altitude keeps its latitude and longitude; heights come from the DEM.
+
+**`photos:derive`** rotates each original from its EXIF orientation, resizes it on the long edge without enlarging it (at most 2560 px, D-13) and encodes it with sharp's default output, which keeps no EXIF, XMP, IPTC or ICC data. The script never calls a metadata-retaining sharp method, because those re-leak the GPS block. It refuses an original that is not sRGB (dropping the ICC profile must stay colour-neutral) and an original whose sha256 differs from the sidecar (run `photos:exif` first). Each file name carries the first 10 hex characters of the sha256 of its bytes. Lossy encoders are not byte-stable across platforms, so the committed files are authoritative. Write mode encodes everything in memory, builds and validates the manifest from those buffers, only then writes the files and the manifest, and deletes stale files in `public/images/photos/` last, so a failed run leaves the committed files untouched.
+
+`photos:derive -- --check` needs no originals. It fails when a manifest file is missing, its name hash does not match its bytes, its format or size differs from the manifest, or it carries EXIF, XMP, IPTC, ICC or an orientation tag; when a file in `public/images/photos/` is not in the manifest; when a `sourceSha256` differs from the sidecar's sha256 (derivatives built from an older original); or when the manifest text differs from a rebuild from disk and the sidecar.
+
+The manifest (`imageManifest`) is the only image source (DATA-08): every photo path a component renders comes from it, and it lists only the hashed derivatives in `public/images/photos/`. The v1 `-large` / `-thumb` files and their `public/images/optimized/` folder were deleted in Phase 12 (VERIFY-01), behind `data/__tests__/asset-exists.test.ts`, which fails when any path referenced from `data/` is missing under `public/`.
+
+## Guards (`scripts/guards/`)
+
+CI guards that run in `npm run lint` (`eslint . && guard:parity && guard:palette && guard:contrast && guard:identity && guard:selftest && data:check && guard:images`). Each guard prints one line per violation and exits 1 on any failure. `selftest.mjs` runs every guard against the fixtures in `scripts/guards/__selftest__/` and proves that each one can fail.
+
+### `check-palette.mjs` (GUARD-04)
+
+Raw-text scan of `app/`, `components/`, `lib/`, `data/` and `e2e/` (every `__tests__` included), so object maps, template literals, tests and CSS `@apply` are covered.
+
+| Rule | Fails on |
+|------|----------|
+| `dark` | any `dark:` variant |
+| `stock` | any stock Tailwind palette class (`bg-red-500`, `hover:text-cyan-400/50`, ...) |
+| `variant` | a `@custom-variant dark` line in CSS |
+| `wb` | a file's `white`/`black` utility count differing from `palette-ratchet.json` (absent entry = 0) |
+| `png` | a `.png` under `e2e/` that does not end in `-linux.png` |
+| `v1names` | a v1 alias name (`frost-500`, ...) in any scanned file (the v1 dead files are exempt only while nothing imports them) |
+| `emoji` | emoji in `.ts/.tsx/.js/.mjs` (©, ®, ™ and ❯ allowed; ✓ ✔ ✗ ✘ banned); skipped in lint until plan 07-25 |
+
 ```bash
-# Ensure input directory exists
-mkdir -p public/images/landscapes
+npm run guard:palette                     # read-only check (never writes the ratchet)
+npm run guard:palette -- --update         # record lower white/black counts
+node scripts/guards/check-palette.mjs --root <dir> [--ratchet <file>] [--skip <rule,...>]
 ```
 
-*Images look too compressed*
+The ratchet only goes down: a higher count fails, a lower count fails until `--update` records it, and `--update` refuses to raise any count. Never raise a count or add an exemption to make the guard pass.
+
+### `check-contrast.mjs` (GUARD-05)
+
+Reads every token from `app/globals.css` (`:root` and all `@theme` blocks), resolves `var()` chains and measures 36 pairs (the 28 UI-SPEC pairs, 4 `accent-strong` pairs and the 4 photo-viewer `gallery` pairs: `accent`/`gallery`, `gallery`/`ink`, `focus`/`gallery`, `line-strong`/`gallery`) with `colorjs.io` (`contrast(…, 'WCAG21')`): text pairs need 4.5:1, non-text pairs (focus, line-strong) 3:1, compared as raw floats. An unknown `--color-*` token, a missing pair token, an alpha token in a measured pair or a file without token blocks fails. v1 alias tokens are skipped; `line` and `contour` are decorative and exempt. Adding a semantic token means adding it and its pairs to the script in the same commit.
+
 ```bash
-# Increase quality
-node scripts/optimize-images.mjs --quality 95
+npm run guard:contrast
+node scripts/guards/check-contrast.mjs --css <file>
 ```
 
-*Need to re-optimize after changes*
+This replaces the old `verify-contrast.mjs` postbuild step, which checked a hand-copied hex table.
+
+### `check-served-images.mjs` (DATA-05)
+
+Keeps photo originals and their GPS out of the repository and out of what is served. In repo mode it scans every tracked image anywhere in the repo (`git ls-files`, case-insensitive): `.jpg`, `.jpeg`, `.jfif`, `.png`, `.webp`, `.avif`, `.gif`, `.tif`, `.tiff`, `.heic`, `.heif`, `.jxl`, `.bmp`, `.svg` and the camera raws `.dng`, `.cr2`, `.cr3`, `.nef`, `.arw`. The `__selftest__` fixtures are excluded; with `--root <dir>` it walks a fixture folder instead.
+
+| Rule | Fails on |
+|------|----------|
+| `metadata` | a raster with EXIF, XMP or IPTC, or one sharp cannot read (most raw formats fail here) |
+| `oversize` | a raster under `public/` above 2560 px on its long edge (D-13) |
+| `orientation` | an image under `public/` with an orientation tag |
+| `hash-name` | a file in `public/terrain/` or `public/images/photos/` whose name hash is not the first 10 hex of its sha256 |
+| `orphan` / `missing` | a hashed file no generated manifest lists, or a manifest URL with no file |
+| `svg-content` | an SVG under `public/` with a script element, an `on*=` handler, an `href` or a `foreignObject` |
+| `metadata-call` | a `scripts/photos/` or `scripts/terrain/` source calling a metadata-keeping sharp method |
+
 ```bash
-# Delete optimized folder and re-run
-rm -rf public/images/optimized
-npm run optimize-images
+npm run guard:images
+node scripts/guards/check-served-images.mjs --root <dir>
 ```
+
+It runs in `npm run lint` and CI, so it catches a committed original only after the push; there is no pre-commit hook. Never stage `assets/photos-original/` or `public/images/landscapes/` (both gitignored).
+
+### Other guards
+
+- `check-install-parity.mjs` (`guard:parity`): npm ci everywhere, Node 24 pins, Playwright image matches the lockfile, version floors.
+- `test-count.mjs` (`guard:tests`, CI unit job): the test count may only go up; no skipped or focused tests.
+- `same-classnames.mjs`: proves a refactor left every `className` literal unchanged.
 
 ## Adding New Scripts
 

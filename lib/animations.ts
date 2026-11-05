@@ -18,10 +18,16 @@ export const EASING = {
   tectonic: [0.33, 0.0, 0.2, 1.0] as readonly [number, number, number, number],
   /** Gradual, patient, revealing — like erosion */
   erosion: [0.4, 0.0, 0.2, 1.0] as readonly [number, number, number, number],
+  /** Accelerating exit — leaves decisively, for elements moving out of view */
+  descent: [0.4, 0.0, 1.0, 1.0] as readonly [number, number, number, number],
 } as const;
 
 /** Animation durations in seconds (Framer Motion convention). */
 export const DURATION = {
+  /** Colour and opacity feedback; closing the mobile menu */
+  fast: 0.15,
+  /** Opening the mobile menu panel */
+  panel: 0.25,
   /** Hover state changes (300-400ms range) */
   hover: 0.35,
   /** Page enter animations */
@@ -31,6 +37,18 @@ export const DURATION = {
   /** Crystal fracture on click */
   fracture: 0.3,
 } as const;
+
+const kebab = (k: string) => k.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`);
+
+/** CSS custom property reference for a DURATION token, e.g. `var(--duration-fast)`. */
+export function cssDuration(k: keyof typeof DURATION): string {
+  return `var(--duration-${kebab(k)})`;
+}
+
+/** CSS custom property reference for an EASING token, e.g. `var(--ease-geological)`. */
+export function cssEase(k: keyof typeof EASING): string {
+  return `var(--ease-${kebab(k)})`;
+}
 
 /** Perspective tilt configuration for crystalline card interactions. */
 export const TILT_CONFIG = {

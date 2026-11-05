@@ -1,161 +1,96 @@
-import { RoadmapItem } from './types';
+/**
+ * The route log at /roadmap (ROUTE-01, ROUTE-03; D-17, D-18, D-20, D-31, D-32).
+ *
+ * Every row, title, description and date below was drafted by Claude and
+ * confirmed by Tim at the 11-02 content checkpoint (11-02-SUMMARY "Resolved
+ * values": log.rows, log.descriptions, log.surveyedAt; Reply 5, 2026-11-01).
+ * Nothing here is guessed: a date Tim did not confirm is left out (D-17).
+ *
+ * The rows cover this site (`portfolio`), `box` and `coin-flip`. `order` rises
+ * from the oldest completed work (1) to the furthest plan; the route log groups
+ * rows by status into Base, Current camp and Summit (lib/route-log.ts).
+ *
+ * Phase 11's completion date, Phase 12's status and `surveyedAt` come from
+ * Phase 12's first data edit (11-08 Q3 rule), confirmed by Tim at the 12-01
+ * content checkpoint (12-01-SUMMARY "Resolved values": log.phase11; reply of
+ * 2026-11-02): Phase 11 completed 2026-11-02, Phase 12 in progress, surveyed
+ * 2026-11-02. The D-20 test (data/__tests__/roadmap.test.ts) keeps surveyedAt
+ * between the newest date here and today whenever either changes.
+ */
+import type { RoadmapItem } from './schemas/roadmap';
 
 export const roadmapItems: RoadmapItem[] = [
-  // Portfolio Website
   {
-    id: 'portfolio-3d-gallery',
-    title: '3D Image Gallery Enhancement',
-    description:
-      'Add Three.js powered 3D transitions and parallax effects to the landscape gallery for a more immersive viewing experience.',
+    id: 'coin-flip-play-store',
+    title: 'Play Store release',
+    description: 'Releasing the app through the Play Store.',
+    area: 'coin-flip',
+    status: 'planned',
+    order: 7,
+  },
+  {
+    id: 'coin-flip-v1-1',
+    title: 'v1.1 Smoother toss',
+    description: 'Smoothing the toss and the camera follow.',
+    area: 'coin-flip',
+    status: 'planned',
+    order: 6,
+  },
+  {
+    id: 'portfolio-v2',
+    title: 'v2.0 Topographic Identity',
+    description: 'This redesign: the whole site rebuilt around the real Matterhorn terrain.',
     area: 'portfolio',
-    status: 'planned',
-    targetRelease: 'v1.1.0',
-    priority: 'medium',
+    status: 'in-progress',
+    order: 5,
+    phases: [
+      { n: 7, name: 'Foundation & guardrails', status: 'completed', completedAt: '2026-10-24' },
+      { n: 8, name: 'Data & terrain pipeline', status: 'completed', completedAt: '2026-10-24' },
+      { n: 9, name: 'Home ascent', status: 'completed', completedAt: '2026-10-25' },
+      { n: 10, name: 'Photography', status: 'completed', completedAt: '2026-10-26' },
+      { n: 11, name: 'Engineering & roadmap', status: 'completed', completedAt: '2026-11-02' },
+      { n: 12, name: 'Contact, edge pages & cleanup', status: 'in-progress' },
+    ],
   },
   {
-    id: 'portfolio-blog',
-    title: 'Photography Blog',
+    id: 'coin-flip-v1',
+    title: 'v1.0 First release on device',
     description:
-      'Add a blog section with MDX support for sharing photography stories, techniques, and behind-the-scenes content.',
+      'The first release, running on my own device: a fair draw, a 3D toss, no permissions and no network.',
+    area: 'coin-flip',
+    status: 'completed',
+    order: 4,
+    completedAt: '2026-08-09',
+  },
+  {
+    id: 'box-v2',
+    title: 'v2.0 Toolbox → toolkit',
+    description:
+      'The tools became scriptable: JSON output, `--clip`, config-file defaults, BLAKE3 hashing and previews before destructive changes.',
+    area: 'box',
+    status: 'completed',
+    order: 3,
+    completedAt: '2026-07-14',
+  },
+  {
+    id: 'box-v1',
+    title: 'v1.0 Full toolbox',
+    description: 'All 23 tools in one Rust binary, installed from PowerShell 7.',
+    area: 'box',
+    status: 'completed',
+    order: 2,
+    completedAt: '2026-06-24',
+  },
+  {
+    id: 'portfolio-v1',
+    title: 'v1.0 Stabilization & Visual Identity',
+    description: 'The first version of this site, stabilized and given its own visual identity.',
     area: 'portfolio',
-    status: 'planned',
-    targetRelease: 'v1.2.0',
-    priority: 'low',
-  },
-
-  // CLI_X Tool
-  {
-    id: 'cli-conversation-export',
-    title: 'Enhanced Conversation Export',
-    description:
-      'Expand conversation export capabilities to support multiple formats (Markdown, JSON, PDF) with syntax highlighting and rich formatting for documentation.',
-    area: 'cli',
-    status: 'in-progress',
-    targetRelease: 'v2.5.0',
-    priority: 'high',
-  },
-  {
-    id: 'cli-workflow-scheduling',
-    title: 'Advanced Workflow Scheduling',
-    description:
-      'Implement cron-based workflow scheduling with timezone support, retry logic, and notification systems for automated command execution.',
-    area: 'cli',
-    status: 'in-progress',
-    targetRelease: 'v2.5.0',
-    priority: 'high',
-  },
-  {
-    id: 'cli-plugin-system',
-    title: 'Plugin System Architecture',
-    description:
-      'Design and implement a plugin system allowing users to create custom command generators, safety rules, and LLM providers. Includes plugin marketplace and hot-reloading.',
-    area: 'cli',
-    status: 'planned',
-    targetRelease: 'v3.0.0',
-    priority: 'high',
-  },
-  {
-    id: 'cli-autocomplete',
-    title: 'Shell Autocomplete Integration',
-    description:
-      'Add native shell autocomplete for bash, zsh, fish, and PowerShell with context-aware suggestions and template completions.',
-    area: 'cli',
-    status: 'planned',
-    targetRelease: 'v2.6.0',
-    priority: 'medium',
-  },
-  {
-    id: 'cli-collaborative-commands',
-    title: 'Collaborative Command Building',
-    description:
-      'Enable team collaboration features including shared command history, team templates, and real-time command suggestions based on team patterns.',
-    area: 'cli',
-    status: 'planned',
-    targetRelease: 'v3.0.0',
-    priority: 'low',
-  },
-  {
-    id: 'cli-web-interface',
-    title: 'Web Interface (Terminal in Browser)',
-    description:
-      'Build a web-based terminal interface using xterm.js for CLI_X, enabling browser-based access with full command history and collaboration features.',
-    area: 'cli',
-    status: 'planned',
-    targetRelease: 'v3.1.0',
-    priority: 'medium',
-  },
-
-  // CLI_X Website
-  {
-    id: 'webshop-team-management',
-    title: 'Team License Management',
-    description:
-      'Add enterprise features for team license management including user provisioning, role-based access control, usage analytics, and centralized billing.',
-    area: 'webshop',
-    status: 'planned',
-    targetRelease: 'v1.1.0',
-    priority: 'high',
-  },
-  {
-    id: 'webshop-analytics',
-    title: 'Advanced Usage Analytics Dashboard',
-    description:
-      'Build comprehensive analytics dashboard showing command usage patterns, cost optimization opportunities, popular templates, and team productivity metrics.',
-    area: 'webshop',
-    status: 'planned',
-    targetRelease: 'v1.2.0',
-    priority: 'medium',
-  },
-  {
-    id: 'webshop-api-marketplace',
-    title: 'API Key Marketplace',
-    description:
-      'Create a marketplace for users to purchase pre-configured API access to various LLM providers with tiered pricing and usage tracking.',
-    area: 'webshop',
-    status: 'planned',
-    targetRelease: 'v1.3.0',
-    priority: 'low',
-  },
-  {
-    id: 'webshop-mobile-app',
-    title: 'Mobile App (iOS/Android)',
-    description:
-      'Develop native mobile apps using React Native for CLI_X management, command history browsing, and quick command execution on-the-go.',
-    area: 'webshop',
-    status: 'planned',
-    targetRelease: 'v2.0.0',
-    priority: 'medium',
-  },
-
-  // Recently Completed
-  {
-    id: 'cli-conversation-mode',
-    title: 'Conversation Mode with Context Retention',
-    description:
-      'Multi-turn conversations with persistent storage in SQLite, context-aware responses, thread management, and export capabilities.',
-    area: 'cli',
     status: 'completed',
-    targetRelease: 'v2.4.0',
-    priority: 'high',
-  },
-  {
-    id: 'cli-ollama-integration',
-    title: 'Complete Ollama Integration',
-    description:
-      'Local model management with lifecycle controls, model pre-loading, custom model creation, and performance tuning for privacy-focused users.',
-    area: 'cli',
-    status: 'completed',
-    targetRelease: 'v2.4.0',
-    priority: 'high',
-  },
-  {
-    id: 'cli-template-analytics',
-    title: 'Template Analytics & Optimization',
-    description:
-      'Data-driven template optimization with usage tracking, effectiveness scoring, failure pattern analysis, and team collaboration features.',
-    area: 'cli',
-    status: 'completed',
-    targetRelease: 'v2.4.0',
-    priority: 'medium',
+    order: 1,
+    completedAt: '2026-03-12',
   },
 ];
+
+/** The day Tim last checked the route log (log.phase11, 12-01). Required: the kicker reads it. */
+export const surveyedAt = '2026-11-02';

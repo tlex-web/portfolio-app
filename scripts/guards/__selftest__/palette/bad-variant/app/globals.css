@@ -1,0 +1,7 @@
+/* Fixture: the dark variant declaration and a stock class in @apply must fail */
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+.badge {
+  @apply bg-surface-raised text-amber-400;
+}

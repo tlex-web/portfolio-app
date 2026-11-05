@@ -1,84 +1,55 @@
 // Data types for the portfolio application
 
-/** Primitive value types that can appear in project highlights. */
-type HighlightPrimitive = string | number | boolean;
+import type { z } from 'zod';
+import type { DemoCommandSchema, ProjectSchema } from './schemas/project';
 
-/** Recursive type for nested highlight data structures. */
-export type HighlightValue = HighlightPrimitive | HighlightValue[] | { [key: string]: HighlightValue };
+/**
+ * A portfolio project, inferred from the zod contract (DATA-07): a discriminated
+ * union on `slug`, box | coin-flip, each with its own case-study fields.
+ * Type-only imports keep zod out of client bundles.
+ */
+export type Project = z.infer<typeof ProjectSchema>;
 
-export interface LandscapeImage {
-  id: string; // Unique identifier
-  src: string; // Path to image file
-  thumbnail?: string; // Optional optimized thumbnail
-  fallbackSrc?: string; // JPEG fallback for WebP
-  thumbnailSrc?: string; // Thumbnail for blur placeholder
-  alt: string; // Accessibility description
-  title: string; // Display title
-  location: string; // Where the photo was taken
-  story: string; // Narrative description
-  technicalDetails: {
-    camera?: string;
-    lens?: string;
-    aperture?: string;
-    shutterSpeed?: string;
-    iso?: number;
-    captureDate?: string; // ISO 8601 format (YYYY-MM-DD)
-  };
-  tags: string[]; // e.g., ['mountains', 'sunrise', 'long-exposure']
-  annotations?: ImageAnnotation[]; // Optional interactive hotspots
+/**
+ * One box terminal example: the command line as typed and its captured output,
+ * with an optional approved note (D-26).
+ */
+export type DemoCommand = z.infer<typeof DemoCommandSchema>;
+
+/** One primary navigation destination (SHELL-01). */
+export interface NavItem {
+  label: string;
+  href: string;
 }
 
-export interface Project {
-  slug: string; // URL-friendly identifier
-  name: string; // Display name
-  tagline: string; // Short one-liner
-  shortDescription: string; // 1-2 sentences for cards/previews
-  longDescription: string; // Full description (plain text or Markdown)
-  techStack: string[]; // Technologies used
+/**
+ * Site identity, links and nav (SHELL-03). `email` and `links.linkedin` are
+ * required strings, so removing either fails `tsc` instead of rendering an
+ * empty link.
+ */
+export interface Site {
+  name: string;
+  role: string;
+  /**
+   * Required: the canonical base URL (D-13), https with no trailing slash.
+   * metadataBase, every page canonical, sitemap.xml and robots.txt build their
+   * absolute URLs from it, so removing it fails tsc.
+   */
+  url: string;
+  email: string;
   links: {
-    github?: string;
-    demo?: string;
-    docs?: string;
+    github: string;
+    linkedin: string;
   };
-  status: 'active' | 'beta' | 'complete' | 'archived';
-  featured: boolean; // Pin to top of projects list
-  thumbnailImage?: string; // Optional project screenshot/logo
-  roadmapItems?: string[]; // IDs of related RoadmapItems
-  version?: string; // Current version
-  features?: string[]; // Key features list
-  highlights?: Record<string, HighlightValue>; // Performance metrics, stats, etc.
-  demoCommands?: DemoCommand[]; // For CLI tools - example commands
-}
-
-export interface DemoCommand {
-  input: string; // Natural language input
-  output: string; // Generated command
-  riskLevel?: 'low' | 'medium' | 'high' | 'critical';
-  warning?: string; // Optional warning message
-  explanation?: string; // Optional explanation
-}
-
-export interface RoadmapItem {
-  id: string; // Unique identifier
-  title: string; // Short title
-  description: string; // Detailed explanation
-  area: 'portfolio' | 'cli' | 'webshop' | 'other'; // Categorization
-  status: 'planned' | 'in-progress' | 'completed';
-  targetRelease?: string; // e.g., 'Q2 2025', 'v2.0'
-  priority?: 'low' | 'medium' | 'high';
-}
-
-export interface ImageAnnotation {
-  id: string; // Unique identifier
-  title: string; // Feature name
-  description: string; // Detailed information
-  position: { x: number; y: number }; // Percentage-based positioning (0-100)
-  icon: 'mountain' | 'water' | 'glacier' | 'trail' | 'lake' | 'peak'; // Icon type
-  details?: {
-    elevation?: string; // e.g., "4,478m"
-    temperature?: string; // e.g., "2-4°C"
-    distance?: string; // e.g., "5.2 km"
-    facts?: string[]; // Additional interesting facts
-  };
+  nav: readonly NavItem[];
+  /**
+   * Optional: Tim's contact location (D-01, CONTACT-01), written only as he
+   * confirmed it. `lat` and `lon` carry 2 decimals at most (about 1 km), never
+   * more; `source` cites where the coordinates come from. When absent, the
+   * Contact panel leaves out its Location row.
+   */
+  location?: { name: string; lat: number; lon: number; source: string };
+  /** Required: the swissALTIRegio source reference (D-15); removing it fails tsc. */
+  attribution: { terrain: string };
 }
 

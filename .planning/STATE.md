@@ -2,44 +2,43 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Topographic Identity
-current_phase: 07
-current_phase_name: Foundation & Guardrails
-status: executing
-stopped_at: Completed 07-02-PLAN.md
-last_updated: "2026-10-10T20:19:02.338Z"
-last_activity: 2026-10-10
-last_activity_desc: Phase 07 execution started
-state_head: 18a4f9916154ed9ead47981ad8a9b3454daebf6e
+current_phase: 12
+status: completed
+stopped_at: Phase 12 complete — all phases complete
+last_updated: "2026-11-05T20:35:14.562Z"
+last_activity: 2026-11-05
+last_activity_desc: "Phase 12 shipped as PR #109"
+state_head: 082cfb8ff071706877cfa26072472640085a3272
 progress:
   total_phases: 6
-  completed_phases: 6
-  total_plans: 26
-  completed_plans: 2
-  percent: 8
+  completed_phases: 10
+  total_plans: 128
+  completed_plans: 128
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-10)
+See: .planning/PROJECT.md (updated 2026-11-05)
 
 **Core value:** A portfolio that is visually memorable and distinctive (not another generic Tailwind site) while being stable and well-maintained under the hood.
-**Current focus:** Phase 07 — Foundation & Guardrails
+**Current focus:** Milestone v2.0: all phases complete; merge to `main` and milestone close are next
 
 ## Current Position
 
-Phase: 07 (Foundation & Guardrails) — EXECUTING
-Plan: 3 of 26
-Status: Ready to execute
-Last activity: 2026-10-10 — Phase 07 execution started
+Phase: 12
+Plan: Not started
+Status: All phases complete
+Last activity: 2026-11-05 -- Phase 12 shipped as PR #109
 
-Progress: [█░░░░░░░░░] 8%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity (v2.0):**
-- Total plans completed: 0
+- Total plans completed: 128
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -47,7 +46,12 @@ Progress: [█░░░░░░░░░] 8%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 07 | 27 | - | - |
+| 08 | 13 | - | - |
+| 09 | 22 | - | - |
+| 10 | 13 | - | - |
+| 11 | 19 | - | - |
+| 12 | 34 | - | - |
 
 *Updated after each plan completion. v1.0 history: 24 plans across Phases 1-6 (see MILESTONES.md).*
 **Per-Plan Metrics:**
@@ -56,6 +60,132 @@ Progress: [█░░░░░░░░░] 8%
 |------|----------|-------|-------|
 | Phase 07 P01 | 11 min | 3 tasks | 35 files |
 | Phase 07 P02 | 6 min | 2 tasks | 16 files |
+| Phase 07 P03 | 45 min | 3 tasks | 88 files |
+| Phase 07 P04 | 2h 38m | 3 tasks | 21 files |
+| Phase 07 P05 | 43 min | 3 tasks | 30 files |
+| Phase 07 P06 | 10h 24m | 3 tasks | 20 files |
+| Phase 07 P07 | 26 min | 3 tasks | 3 files |
+| Phase 07 P08 | 3h 42m | 3 tasks | 11 files |
+| Phase 07 P09 | 19 min | 2 tasks | 6 files |
+| Phase 07 P10 | 41 min | 2 tasks | 73 files |
+| Phase 07 P11 | 2h 48m | 2 tasks | 76 files |
+| Phase 07 P12 | 1h 0m | 2 tasks | 74 files |
+| Phase 07 P13 | 44 min | 2 tasks | 48 files |
+| Phase 07 P14 | 14 min | 2 tasks | 41 files |
+| Phase 07 P15 | 16 min | 3 tasks | 18 files |
+| Phase 07 P16 | 18 min | 2 tasks | 5 files |
+| Phase 07 P17 | 19 min | 2 tasks | 7 files |
+| Phase 07 P18 | 46 min | 2 tasks | 13 files |
+| Phase 07 P19 | 24 min | 2 tasks | 18 files |
+| Phase 07 P20 | 13 min | 3 tasks | 28 files |
+| Phase 07 P21 | 9 min | 3 tasks | 9 files |
+| Phase 07 P22 | 1h 28m | 3 tasks | 47 files |
+| Phase 07 P23 | 1h 9m | 3 tasks | 15 files |
+| Phase 07 P24 | 20 min | 2 tasks | 8 files |
+| Phase 07 P25 | 6 min | 2 tasks | 36 files |
+| Phase 07 P26 | 20 min | 3 tasks | 6 files |
+| Phase 07 P27 | 17 min | 2 tasks | 3 files |
+| Phase 08 P01 | 9 min | 3 tasks | 10 files |
+| Phase 08 P02 | 7 min | 2 tasks | 8 files |
+| Phase 08 P03 | 19 min | 3 tasks | 9 files |
+| Phase 08 P04 | 10 min | 3 tasks | 15 files |
+| Phase 08 P05 | 44 min | 3 tasks | 21 files |
+| Phase 08 P07 | 10 min | 2 tasks | 54 files |
+| Phase 08 P06 | 30 min | 3 tasks | 17 files |
+| Phase 08 P08 | 8 min | 2 tasks | 12 files |
+| Phase 08 P09 | 1h 8m | 3 tasks | 30 files |
+| Phase 08 P10 | 15 min | 3 tasks | 7 files |
+| Phase 08 P11 | 47 min | 2 tasks | 4 files |
+| Phase 08 P12 | 14 min | 3 tasks | 11 files |
+| Phase 08 P13 | 26 min | 2 tasks | 28 files |
+| Phase 09 P01 | 13 min | 2 tasks | 14 files |
+| Phase 09 P02 | 8 min | 3 tasks | 12 files |
+| Phase 09 P03 | 20 min | 3 tasks | 11 files |
+| Phase 09 P04 | 5 min | 2 tasks | 5 files |
+| Phase 09 P05 | 15 min | 3 tasks | 11 files |
+| Phase 09 P06 | 17 min | 3 tasks | 12 files |
+| Phase 09 P07 | 14 min | 3 tasks | 13 files |
+| Phase 09 P08 | 18 min | 3 tasks | 9 files |
+| Phase 09 P09 | 7min | 2 tasks | 3 files |
+| Phase 09 P10 | 28 min | 3 tasks | 11 files |
+| Phase 09 P11 | 45 min | 3 tasks | 8 files |
+| Phase 09 P12 | 17 min | 3 tasks | 7 files |
+| Phase 09 P13 | 33 min | 3 tasks | 2 files |
+| Phase 09 P14 | 40min | 3 tasks | 28 files |
+| Phase 09 P15 | 8 min | 2 tasks | 8 files |
+| Phase 09 P16 | 7 min | 2 tasks | 6 files |
+| Phase 09 P17 | 8 min | 2 tasks | 6 files |
+| Phase 09 P18 | 14 min | 3 tasks | 9 files |
+| Phase 09 P19 | 17 min | 3 tasks | 13 files |
+| Phase 09 P20 | 17 min | 3 tasks | 9 files |
+| Phase 09 P21 | 12 min | 2 tasks | 6 files |
+| Phase 09 P22 | 3h 20m | 3 tasks | 17 files |
+| Phase 10 P01 | 15 min | 3 tasks | 12 files |
+| Phase 10 P02 | 10 min | 2 tasks | 11 files |
+| Phase 10 P03 | 20 min | 2 tasks | 10 files |
+| Phase 10 P04 | 10 min | 2 tasks | 8 files |
+| Phase 10 P05 | 34 min | 3 tasks | 15 files |
+| Phase 10 P06 | 45 min | 3 tasks | 11 files |
+| Phase 10 P07 | 29 min | 2 tasks | 10 files |
+| Phase 10 P08 | 34 min | 3 tasks | 12 files |
+| Phase 10 P10 | 21 min | 2 tasks | 5 files |
+| Phase 10 P09 | 25 min | 2 tasks | 20 files |
+| Phase 10 P11 | 29 min | 2 tasks | 13 files |
+| Phase 10 P12 | 18 min | 2 tasks | 4 files |
+| Phase 10 P13 | 1h 52m | 3 tasks | 23 files |
+| Phase 11 P01 | 17 min | 2 tasks | 11 files |
+| Phase 11 P04 | 12 min | 2 tasks | 10 files |
+| Phase 11 P05 | 9 min | 2 tasks | 7 files |
+| Phase 11 P06 | 15 min | 2 tasks | 9 files |
+| Phase 11 P02 | 2h 3m | 3 tasks | 6 files |
+| Phase 11 P03 | 8 min | 2 tasks | 8 files |
+| Phase 11 P08 | 11 min | 2 tasks | 10 files |
+| Phase 11 P09 | 12 min | 3 tasks | 30 files |
+| Phase 11 P07 | 11 min | 1 tasks | 17 files |
+| Phase 11 P10 | 15 min | 2 tasks | 7 files |
+| Phase 11 P11 | 8 min | 2 tasks | 8 files |
+| Phase 11 P18 | 4 min | 2 tasks | 8 files |
+| Phase 11 P12 | 13 min | 3 tasks | 20 files |
+| Phase 11 P13 | 10 min | 2 tasks | 9 files |
+| Phase 11 P15 | 20 min | 3 tasks | 17 files |
+| Phase 11 P14 | 16 min | 3 tasks | 17 files |
+| Phase 11 P16 | about 7 min (continuation) | 2 tasks | 5 files |
+| Phase 11 P17 | 1h 55m | 3 tasks | 7 files |
+| Phase 11 P19 | 9 min | 2 tasks | 3 files |
+| Phase 12 P02 | 17 min | 3 tasks | 9 files |
+| Phase 12 P01 | 25min | 2 tasks | 1 files |
+| Phase 12 P03 | 6 min | 2 tasks | 5 files |
+| Phase 12 P04 | 14 min | 2 tasks | 28 files |
+| Phase 12 P05 | 7 min | 2 tasks | 67 files |
+| Phase 12 P07 | 17 min | 3 tasks | 13 files |
+| Phase 12 P08 | 9min | 2 tasks | 7 files |
+| Phase 12 P09 | 7 min | 2 tasks | 15 files |
+| Phase 12 P10 | 17 min | 2 tasks | 16 files |
+| Phase 12 P06 | 11 min | 3 tasks | 7 files |
+| Phase 12 P11 | 41 min | 3 tasks | 4 files |
+| Phase 12 P12 | 10min | 2 tasks | 11 files |
+| Phase 12 P13 | 16 min | 2 tasks | 10 files |
+| Phase 12 P14 | 12 min | 2 tasks | 4 files |
+| Phase 12 P25 | 8 min | 2 tasks | 18 files |
+| Phase 12 P15 | 12 min | 2 tasks | 12 files |
+| Phase 12 P16 | 13min | 2 tasks | 9 files |
+| Phase 12 P26 | 17 min | 2 tasks | 3 files |
+| Phase 12 P17 | 8min | 2 tasks | 3 files |
+| Phase 12 P18 | 10 min | 2 tasks | 3 files |
+| Phase 12 P19 | 47 min | 3 tasks | 10 files |
+| Phase 12 P20 | 13 min | 3 tasks | 2 files |
+| Phase 12 P21 | 15 min | 2 tasks | 1 files |
+| Phase 12 P22 | 58min | 3 tasks | 23 files |
+| Phase 12 P23 | 1h 41m | 3 tasks | 16 files |
+| Phase 12 P24 | 4min | 2 tasks | 2 files |
+| Phase 12 P27 | 3min | 3 tasks | 4 files |
+| Phase 12 P28 | 9 min | 3 tasks | 5 files |
+| Phase 12 P29 | 9 min | 3 tasks | 6 files |
+| Phase 12 P30 | 8 min | 2 tasks | 8 files |
+| Phase 12 P31 | 13 min | 3 tasks | 7 files |
+| Phase 12 P32 | 5 min | 2 tasks | 7 files |
+| Phase 12 P33 | 5 min | 2 tasks | 4 files |
+| Phase 12 P34 | 71 min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -75,18 +205,353 @@ Recent decisions affecting current work:
 - [Phase 07]: [07-02] jsx-a11y recommended rules run at error on all JSX/TSX; React Compiler rules warn only for LEGACY_COMPILER_FILES, which must shrink to zero by Phase 12
 - [Phase 07]: [07-02] Zero-diff plans run node scripts/guards/same-classnames.mjs <ref> before committing (className literal parity)
 - [Phase 07]: [07-02] Plan 07-04 removes the 3 temporary globalIgnores entries and TerminalDemo.tsx from LEGACY_COMPILER_FILES when it deletes those files
+- [Phase 07]: [07-03] Visual baselines come only from the workflow_dispatch job in mcr.microsoft.com/playwright:v1.60.0-noble (contents: read, artifact only); Tim reviews and commits them by hand
+- [Phase 07]: [07-03] Baseline-commit checks use per-slug --allow (e.g. --allow photos); --allow-all turns off the routes.spec.ts-snapshots/<slug>/ folder check
+- [Phase 07]: [07-03] Unzip the visual-baselines artifact's contents directly into e2e/visual/routes.spec.ts-snapshots/; never keep the Windows 'Extract all' wrapper folder
+- [Phase 07]: [07-03] The hero scroll-arrow pin in e2e/visual/hide-canvas.css must be removed when Phase 9 replaces the hero
+- [Phase 07]: [07-04] Re-baselines should use gh: gh workflow run visual-baselines.yml --ref ci/07-NN -f suite=visual -f update_mode=changed, then gh run download <id> -n visual-baselines -D e2e/visual/routes.spec.ts-snapshots (the browser dialog defaults to main)
+- [Phase 07]: [07-04] The visual-baselines artifact carries the whole snapshot folder, so stray subfolders come back; review git status against the expected list on every re-baseline
+- [Phase 07]: [07-04] GUARD-02 complete (CI Visual Regression gate live); SHELL-05 stays Pending until 07-23 ships the shell 404
+- [Phase 07]: [07-05] Zero-diff exception policy: a diff that is a verified upstream bug fix, matching the code's intent, may be re-baselined with Tim's explicit approval and a documented reason (verify with check-snapshot-commit.mjs --some --allow <slug>, never --allow-all)
+- [Phase 07]: [07-05] motion 14.1.0 replaces framer-motion; import from motion/react only (ESLint no-restricted-imports block, extended by 07-13); 6 home scroll-50 baselines re-baselined under the exception policy (motion 13.4.7 ViewTimeline offset fix)
+- [Phase 07]: [07-05] DEPS-03 complete
+- [Phase 07]: [07-06] Platform set landed on next 16.4.0 (no patched 16.4.x published yet, 5b not folded); DEPS-04 was completed by 07-07 (Next 16.4.2 security release, fdeb9fe)
+- [Phase 07]: [07-06] R3F canvases render only through components/SafeCanvas.tsx (error boundary + inert canvas fallback; ESLint bans importing Canvas from @react-three/fiber), because R3F >= 9.8 rethrows WebGL-creation errors through React; scene errors now leave a blank canvas (Tim accepted)
+- [Phase 07]: [07-06] 6 offline reduced-motion baselines re-baselined under the zero-diff exception policy (Option C): old baselines encoded a Next 16.2.6 SWC JSX-whitespace bug; app/offline/page.tsx now uses an explicit {' '} after </strong>
+- [Phase 07]: [07-07] DEPS-04 complete: next + eslint-config-next 16.4.2, react/react-dom 19.3.1, sharp 0.35.5 (devDependency) in zero-diff commit fdeb9fe, beyond the advisory's next@16.4.1 on Tim's approval ("approve all, including later versions not specifically named"); CI run 39775685353 all green
+- [Phase 07]: [07-07] version-floors.json gains a sharp floor (0.35.5, advisory minimum for CVE-2026-96889); advisory-named transitive packages get their own floor even as devDependencies
+- [Phase 07]: [07-08] DEPS-05 complete: @playwright/test 1.64.0 (Chromium 156) + both workflow containers on v1.64.0-noble + floor 1.64.0 in one commit (fdd2652); 6 contact/*-reduced baselines re-baselined (Tim's option A) for the Chromium 156 textarea resize-grabber glyph (36 px in an 8x8 box), no layout/content change; CI run 39809853089 all green
+- [Phase 07]: [07-08] GUARD-01 stays Pending although 07-08 is its last declaring plan: the Vercel build-log check (Node 24.x + npm ci, 07-USER-SETUP.md) from 07-01 is unconfirmed; flip it to Complete once Tim confirms
+- [Phase 07]: [07-09] Tokens v2 L1 primitives (:root) + 16 L2 semantic tokens (@theme inline) + motion tokens (--duration-* in :root, --ease-* in @theme static) mirrored by lib/animations.ts and held by motion-tokens.test.ts (13 tests); MotionConfig reducedMotion="user" wraps the app; v1 amber renamed caution, no alias (cd5ac18). DSGN-06/DSGN-08 stay Pending: later plans (07-10, 07-16..07-20, 07-22) still declare them
+- [Phase 07]: [07-09] Task 2 closed as zero-diff (Tim's option A): CI visual green on cd5ac18 and update_mode=changed rewrote 0 of 72 PNGs, because the amber-500 -> caution-400 stop (YIQ ~355) is below Playwright's default per-pixel threshold 0.2 (~1409); no baseline commit, no amend, no force-push; the cd5ac18 body's "Re-baseline ... clix-cli/clix-website" line is superseded by 07-09-SUMMARY
+- [Phase 07]: [post-07-09, Tim's option A] Visual guard hardened to per-pixel `threshold: 0` (playwright.config.ts, e2e/visual/README.md; 850c80e). Threshold 0 exposed 26 shots of drift hidden by 0.2: home (14) and photos (6) image-codec noise (sharp 0.35.5 / Chromium 156, max channel delta 48), clix-cli (6) caching-icon caution-400 stop. CI renders are deterministic at threshold 0: three independent runs produced pixel-identical shots. All 26 re-baselined by Tim; CI run 39827903461 all green. **Updated by 07-11 (Tim's option A, 2d96f50): threshold is now 0.01**, because roadmap/1440-reduced-visual-light flipped at random between two renders 9 px apart (±1 RGB level on the AA edge of the "v2.5.0" pill) that includeAA:false does not exclude. Verified with Playwright's own comparator: 0.01 passes that flake and still fails the 07-09 caution stop alone (1953 px), the 07-08 textarea grabber (36 px) and the 07-10 palette shift; no baselines changed; CI run 39851101533 green. `update_mode=changed` captures every change above ±1-level AA noise, so re-baselines still need no `all` mode
+- [Phase 07]: [post-07-09, Tim's option A] HologramTerminalDemo starts paused under prefers-reduced-motion (0cf000b): its 3s auto-advance made the clix-cli reduced shots timing-dependent (baseline showed command 1/4, CI had drifted to 2/4) and auto-rotating content must stop under reduced motion (WAI / WCAG 2.2.2). Play and the command dots still work; motion users unchanged
+- [Phase 07]: [07-10] Every v1 colour token (alpine, granite, snow, frost, ember, pine, rust) is now a `@theme inline` L3 alias onto a tokens v2 primitive (27 aliases, each "@deprecated v1 alias, removed in Phase 12"); body uses --color-ink / --color-surface; /NN opacity modifiers compile to color-mix(in oklab, var(--glacier-400) NN%, transparent). All 72 baselines re-baselined (colour-only, Tim reviewed, amended into e200fb2; CI run 39834067428 green). DSGN-06 stays Pending: 07-16..07-20 still declare it. Watch item: roadmap/1440-reduced-visual-light showed 9 px of ±1 AA noise on the "2.5.0" pill edge once; post-amend CI passed
+- [Phase 07]: [07-10] Next 16.4 (Turbopack) writes compiled CSS to .next/static/chunks/*.css, not .next/static/css/; plans that grep compiled CSS (07-16..07-20 may carry the stale path) should use `grep -r ... .next/static/ --include=*.css`
+- [Phase 07]: [07-11, Tim's option D] 7c type stack live (497780d): Schibsted Grotesk via next/font as --font-display (--font-heading deprecated alias), @layer base h1/h2 Schibsted 600 no glow, Inter body/h3/h4, tabular-nums on code/kbd/samp/pre/.font-mono, 2px focus-visible ring; 70/72 baselines re-baselined (Tim reviewed); CI run 39851101533 green; DSGN-07 Complete. Tailwind utilities beat @layer base, so the base rule is proven on an injected bare <h1> and the real-page check asserts only the Schibsted family; utility-styled headings keep weight/glow/colour until Phases 9-12 (only family + h1 balance change now). The UI-SPEC/plan line "only family, weight, colour and glow change for them" is inaccurate. Rejected: sweep 20 files, fix only the home h1, !important
+- [Phase 07]: [07-11, Tim's option A] RoadmapTimeline badge spans get whitespace-nowrap (folded into 497780d): the narrower Schibsted card heading stopped holding the flex-1 header column open at 375 px (flex min-content: monospace "Scheduling" ~120 px vs Schibsted ~105 px), so badges wrapped internally and cards grew 16 px. Medium Priority release pills now sit up to ~9 px into the card's right padding, unclipped (Tim accepted). Check flex-1 text columns next to fixed-width pills at 375 px after any font-family change
+- [Phase 07]: [07-12] DSGN-09 visible scrollbar live (f14d82c): global hide rules removed; html color-scheme dark, scrollbar-gutter stable, scrollbar-width thin, scrollbar-color night-500 on night-950 (4.85:1); @supports-not webkit fallback; @utility scrollbar-none. Assumption A2 is false: scrollbar-gutter: stable reserves a 10px gutter even under --hide-scrollbars, so all 72 baselines were re-baselined in the 7d commit (layout 10px narrower, centred content 5px left; Tim reviewed; CI run 39862935420 green). The 375px baselines are therefore 10px narrower than real phones, whose overlay scrollbars reserve no gutter (test-environment quirk, not a site bug). DSGN-09 Complete
+- [Phase 07]: [07-12] Assumption A3 holds: body overflow:hidden keeps the gutter on html (G3 header box {0,0,1430,82} before and after opening the /photos modal; a scrollbar-gutter: auto negative control went 1430 -> 1440), so no scroll-lock change was needed and ImageDetailModal / GlassmorphismNav are untouched. G3 launches its own Chromium with ignoreDefaultArgs ['--hide-scrollbars'] (test.use launchOptions in a describe forces a new worker), reads the box only once two reads agree, and asserts a gutter > 0 first; future scroll-locking overlays (Phase 10 lightbox, 07-22 SiteNav menu) extend it
+- [Phase 07]: [07-12] Playwright's headless Firefox forces the root's scrollbar-width to none (computed scrollbarGutter is still stable, so the html rule applies): scrollbar assertions omit only the scrollbarWidth check when browserName === 'firefox' (an in-test condition, not test.skip); gutter and color-scheme are asserted in every browser
+- [Phase 07]: [07-12] G3 (and any browser-scoped test) must never use test.skip: scripts/guards/test-count.mjs rejects any .skip( ("tests are rewritten, never skipped"; CI run 39860744640 Unit failed on it). Scope a test with the @chromium-only title tag instead; G3 running in the WebKit project is harmless because it launches its own Chromium
+- [Phase 07]: [07-13] DSGN-10 live UI (82d0cd0): @phosphor-icons/react 2.1.10 (exact pin) replaces every live emoji icon in app/page.tsx, FeatureShowcase (Circle fallback), ProjectHighlights (ChartBar fallback), RoadmapFilters/Progress/Timeline and PhotoCarousel3D; 20px, aria-hidden, beside the visible label, no weight prop. ESLint no-restricted-imports bans the @phosphor-icons/react root ("Import icons from @phosphor-icons/react/dist/ssr (DSGN-10)") and the pattern @phosphor-icons/react/dist/csr*, so icons import only from dist/ssr. RoadmapFilters/Timeline tests rewritten (labels, one svg[aria-hidden] per option, aria-pressed instead of colour classes; Jest 82 unchanged). 36/72 baselines re-baselined (home 18, clix-cli 6, clix-website 6, roadmap 6; Tim reviewed; CI run 39871752110 green). DSGN-10 stays Pending: 07-25 also declares it (emoji guard rule, lib/email.ts sparkle)
+- [Phase 07]: [07-13, Tim's option A] The 375px roadmap release-pill overflow is accepted: 20px icons make the RoadmapTimeline badges 144.5x32 instead of 140x28, so the "Target Release" pill and label cross the card's right border by up to ~7px in the CI 375px render (Medium Priority cards and at least one completed card, v2.4.0; ~5px of it from 7e on top of the 07-12 gutter). Measured locally without a gutter (real-phone-like 375px), the pill crosses the inner border edge on 5 of 6 Medium cards by 0.8-5.1px. Rejected: B 16px icons in the badges only, C card layout change. The locked 20px stays; Phase 11 fixes the card header
+- [Phase 07]: [07-13] Note for a future lint: in @phosphor-icons/react 2.1.10 the locked bare icon names (Camera, Path, ...) are @deprecated aliases of the *Icon exports (same component). No change now; a deprecation lint would flag them, so new code should prefer the *Icon names and a later plan can rename the existing imports mechanically
+- [Phase 07]: [07-14] DSGN-05 stage 1 neutralise (5737aeb): dark: is class-based via html.dark (@custom-variant dark (&:where(.dark, .dark *)) in app/globals.css, temporary, removed in 07-20); <html> carries the dark class permanently (LOCKED shell contract); color-scheme: dark was already on html (07-12). Zero markup change; compiled CSS has 0 prefers-color-scheme rules and 87 :where(.dark,.dark *) selectors. DSGN-05 stays Pending: 07-15 and 07-20 also declare it
+- [Phase 07]: [07-14] visual-light asserts against the visual-dark PNGs (expect.toHaveScreenshot pathTemplate: DARK_PATH); the 36 *-visual-light-linux.png are deleted and visual-baselines.yml updates --project=visual-dark only (0 visual-light strings), so an update can never overwrite dark files with light output. CI run 39873723006 green on the first push (Visual 72 passed: dark unchanged, light identical to dark at threshold 0.01); no re-baseline. Re-baselines from now on produce dark PNGs only
+- [Phase 07]: [07-14] A project-level expect in Playwright REPLACES the top-level expect (takeFirst(projectConfig.expect, config.expect, {}), node_modules/playwright/lib/common/index.js:607), so a project override without the shared options silently falls back to threshold 0.2. playwright.config.ts now has const SCREENSHOT = { animations: disabled, caret: hide, threshold: 0.01 }, used at the top level and spread into visual-light; any future project override must spread SCREENSHOT
+- [Phase 07]: [07-15] DSGN-05 stage 2 collapse (0951de8, d114b42): every `A dark:B` pair in the 18 files collapsed to `B` (228 dark: tokens on 177 lines -> 0; 6 unpaired FeedbackForm dark: utilities lost their prefix). The 8b collapse is zero-diff: CI run 39875749247 green (Visual, Unit, E2E), 0 PNGs changed, no re-baseline. The dark: utilities are gone from code (app, components, lib, data, e2e count 0); only @custom-variant dark in app/globals.css remains (removed in 07-20). DSGN-05 stays Pending: 07-20 also declares it
+- [Phase 07]: [07-16] 8c map, group Contact (1807682): every stock palette class in app/contact/page.tsx and components/FeedbackForm.tsx mapped to L2 semantic utilities (stock count 0; no v1 alias, hex, oklch, rgba or arbitrary colour added; focus:ring-* removed for the global focus-visible ring). Status boxes outlined (bg-surface-overlay border border-success/danger text-ink) and pending submit is the faded accent (bg-accent text-ink-inverse opacity-50), Tim's D1/D2 choices recorded in 1807682. contact/{375,768,1440}-reduced-visual-dark re-baselined in the same commit (check-snapshot-commit --allow contact --some OK, 3 changed); CI run 39879694150 green (Visual, Unit, E2E). DSGN-06 and GUARD-04 stay Pending: 07-17..07-20 also declare them
+- [Phase 07]: [07-17] 8c map, group Roadmap (b7b56cf): all 98 stock palette classes in app/roadmap/page.tsx, RoadmapTimeline, RoadmapProgress and RoadmapFilters mapped to L2 semantic utilities (stock count 0; no v1 alias, hex, oklch, rgba, arbitrary colour, text-white, bg-white or black left, so the 07-20 white/black ratchet starts at 0 for this group). Tim's D1 = A outlined status on neutral (cards bg-surface-raised border-2 border-success/accent/line, badges bg-surface-overlay border text-success/accent), D2 = A neutral hero and CTA bands (bg-surface-raised border-y border-line; Contact Me the one bg-accent text-ink-inverse CTA), D3 = A neutral area chips (bg-surface-overlay text-ink border-line-strong) with bg-accent Breakdown bars, chip edge kept mechanical; recorded in b7b56cf. White on accent/success fails (1.69/1.77:1), so icons on those fills use text-ink-inverse. Page height grew (1440/768 +4px from the two border-y bands; 375 +34px, +2px per card from the 1px area-chip border where badges stack). roadmap/{375,768,1440}-reduced-visual-dark re-baselined in the same commit (check-snapshot-commit --allow roadmap --some OK, 3 changed); CI run 39995314853 green (Visual, Unit, E2E). DSGN-06 and GUARD-04 stay Pending: 07-18..07-20 also declare them
+- [Phase 07]: [07-18] 8c map, group Projects (2d87a01): all 198 stock palette classes in app/projects/[slug]/page.tsx, TechStackDisplay, FeatureShowcase, ProjectHighlights, ProjectDetailClient, HologramTerminalDemo and HologramTerminal mapped to L2 semantic utilities (stock count 0; white/black utilities 29 -> 0, so the 07-20 white/black ratchet starts at 0 for this group; no v1 alias, hex, oklch, rgba or arbitrary colour added). Tim's answer 'All recommended': D1 = A neutral hero (bg-surface-raised border-y border-line) and flat What's Next card with border-line; D2 = A GitHub the one bg-accent text-ink-inverse primary, Live Demo and Documentation secondary (bg-surface-overlay text-ink border-line-strong); D3 = A outlined status badge on neutral; D4 = A one neutral tech-chip class (hue map and getTechStyle removed) and neutral feature/highlight tiles, label + icon only; D5 = A no alpha tints (solid surface/line tokens, coloured shadow tints dropped); D6 high risk = danger, window dots bg-line-strong, USER label muted with accent prompt/command; recorded in 2d87a01. Dark ink on accent fails (1.42:1), so accent fills carry text-ink-inverse. Page height +2px from the hero border-y (clix-website 375 +4px with the bordered Live Demo button on its own row). clix-cli/* and clix-website/* {375,768,1440}-reduced-visual-dark re-baselined in the same commit (check-snapshot-commit --allow clix-cli --allow clix-website --allow projects --some OK, 6 changed; projects/* unchanged, the index renders none of the 7 components); CI run 40003018857 green (Visual, Unit, E2E). DSGN-06 and GUARD-04 stay Pending: 07-19 and 07-20 also declare them
+- [Phase 07]: [07-19] 8c map, group Photos + edge pages, the last group (baffad8): all 87 stock palette classes in app/photos/page.tsx, PhotosPageClient, GalleryGrid, ImageDetailModal, InteractiveHotspot, PhotoCarousel3D, app/offline/page.tsx, app/error.tsx and app/not-found.tsx mapped to L2 semantic utilities (no v1 alias, hex, oklch, rgba or arbitrary colour added). The stock count is now 0 across the whole scan set (app, components, lib, data, e2e incl. app/api/__tests__, components/__tests__, lib/__tests__); the 87 left at b1ea33d were all in this group, so 07-20 can enable the palette guard at 0. White/black utilities in the group 56 -> 10, all deliberate black scrims/frames over photos and canvas plus the carousel hover:bg-white/10 (listed in 07-19-SUMMARY; the 07-20 ratchet starts there). Tim's answer 'All recommended': D1 = A photos hero + toggle strip one neutral bg-surface-raised band with border-t/border-b border-line, accent active segment; D2 = B neutral outlined hotspot-count badge; D3 = A black scrims kept, text on them text-ink/text-accent; D4 = A solid bg-accent text-ink-inverse hotspot markers, neutral hover label; D5 = A solid bg-surface hotspot info card, neutral icon tile; D6 = A neutral carousel pill, bg-black frame kept; D7 offline box border-2 border-line-strong, icon text-ink-muted; recorded in baffad8. Fixes the pre-existing offline failures from the 07-14 concern (icon 2.35:1, box border 2.01:1, offline:61 small text now text-ink-muted 8.92:1) and white on the cyan hotspot badge / 3D pill (2.36 / 3.60:1). Page height photos +2px (D1 band hairlines); offline and not-found unchanged. photos/*, offline/* and not-found/* {375,768,1440}-reduced-visual-dark re-baselined in the same commit (check-snapshot-commit --allow photos --allow offline --allow not-found --some OK, 9 changed); CI run 40007564121 green (Visual, Unit, E2E). DSGN-06 and GUARD-04 stay Pending: 07-20 also declares them
+- [Phase 07]: [07-20] 8d remove + enable (9656640, 565f319): @custom-variant dark removed (the dark class stays on <html>, LOCKED shell contract, inert without the variant); scripts/guards/check-palette.mjs (GUARD-04: dark, stock, wb, variant, png, v1names, emoji rules over app, components, lib, data, e2e incl. every __tests__; read-only unless --update, which refuses a raise) with palette-ratchet.json at 17 white/black utilities in 8 files; scripts/guards/check-contrast.mjs (GUARD-05: reads :root and every @theme block of app/globals.css via colorjs.io 0.7.1, 28 UI-SPEC pairs as raw floats, contrast: OK (28 pairs), lowest text danger/surface-overlay 6.18, non-text line-strong/surface-overlay 4.17); lint = eslint + parity + palette + contrast + selftest (45/45). verify-contrast.mjs, its postbuild hook and wcag-contrast removed. guard:palette runs --skip emoji until 07-25 (Footer.tsx:186, email.ts:123). @source not ../.planning, ../.claude, ../graphify-out, ../scripts added to globals.css (compiled CSS 32 dark / 126 stock selectors -> 0 / 0, strict subset), otherwise default dark: would compile to prefers-color-scheme. Zero-diff: CI run 40010907977 green, no re-baseline; Tim approved. GUARD-04, GUARD-05, DSGN-05, DSGN-06 Complete (ready-ids: all ready)
+- [Phase 07]: [07-21] Tim supplied the public email and LinkedIn URL at the Task 1 checkpoint (his reply in session); written verbatim to data/site.ts (old2shatterhand@gmail.com, https://www.linkedin.com/in/luitim/), not derived from git config or account metadata
+- [Phase 07]: [07-21] Shell components built and tested in jsdom, not yet mounted (1ae6ea8, bfb981b RED, 1676756 GREEN): SiteChrome {children, variant default|static}; static SiteNav header is min-h-16 (wrapping row); desktop <ul> precedes the Menu button in DOM order; menu closes on route change (state adjusted during render), Escape, second press, outside pointerdown, focusout to outside the header (null relatedTarget ignored) and (min-width: 768px). SHELL-01/02/03 stay Pending (07-22, 07-23, 07-25 still declare them)
+- [Phase 07]: [07-21] v1 .sr-only/.not-sr-only removed from app/globals.css (77010e7): its clip: rect(0,0,0,0) survived Tailwind's focus:not-sr-only, so focused skip links (new SkipLink and Hero3DMountain) were invisible. globals.css also gained --nav-h/--z-* and html scroll-padding-top; none of these global CSS changes is CI-verified yet (no push), so 07-22's visual run covers them
+- [Phase 07]: [07-21 post-close] The sticky-nav offset is :where(*) { scroll-margin-top: calc(var(--nav-h) + 16px) } in @layer base, never scroll-padding on html: Motion useScroll({ target }) is a native ViewTimeline whose auto inset equals the container's scroll-padding, which faded the home hero to ~0.7 at scrollY 0 (CI 40016881820; Tim's choice A; fix 5544cc3)
+- [Phase 07]: [07-22] Shell mounted (0c57f7f, one atomic commit with Tim's 33-PNG amend): every content route git mv'd into app/(site)/ (renames 89-100%), app/(site)/layout.tsx renders <SiteChrome>, root layout drops MotionProvider, v1 Header/Footer/GlassmorphismNav gone; app/api, layout.tsx, globals.css, not-found.tsx stay at the root, URLs unchanged. Home: inner anchor #home-content, hero h-[calc(100svh-var(--nav-h))], h1 {site.name}, pill {site.role}. palette-ratchet.json key app/page.tsx -> app/(site)/page.tsx (count 5). Re-baseline: 33 PNGs (home, photos, projects, clix-cli, clix-website, roadmap, contact, offline; not-found unchanged), pages 247-629 px shorter (v1 header + tall footer -> 64 px nav + plain footer); CI run 40028858703 green
+- [Phase 07]: [07-22] e2e/shell.spec.ts (fbdbd1d, 17 tests, chromium + firefox green in CI run 40030195076): landmarks via toHaveCount(1) per route, skip link first Tab, aria-current, footer hrefs = site values, 768 header 64 px, mobile menu, reduced motion (getAnimations = 0). No-horizontal-scroll is asserted as scrollWidth <= clientWidth (07-12 stable gutter makes innerWidth wrong). SHELL-02 and DSGN-08 Complete (ready-ids); SHELL-01 waits for 07-23, SHELL-03 for 07-25
+- [Phase 07]: [07-23] 404 and error boundaries inside the shell (ecf7670 with Tim's 3-PNG not-found amend, af5434c RED, e1cbdc7 GREEN): app/not-found.tsx renders <SiteChrome><NotFoundBody /></SiteChrome> because Next 16.4.2's root not-found is wrapped only by the root layout; app/(site)/not-found.tsx renders <NotFoundBody /> for notFound() in the group; no redirects. /__no-such-page__, /gradient-mesh, /particle-buttons, /transitions and /projects/no-such-slug return 404 with no redirect and one nav/main (e2e 'Shell 404', 6 tests). ErrorBody {variant section|root, onRetry} never receives the error (T-07-31), focuses its h1 on mount; Try again calls retry() (reset unused, user-approved 2026-10-10); global-error has its own html.dark/body, globals.css and fonts, SiteChrome variant=static, no MotionProvider. CI run 40038984475 on d3ec816 green (E2E 116, 0 flaky). SHELL-01 and SHELL-05 Complete (ready-ids: both ready)
+- [Phase 07]: [07-23] Touch-target e2e measured inside an animated panel must wait until getAnimations() is empty (and assert none left) before measuring: the 07-22 mobile-menu row test read 47.99998 vs >= 48 mid-transition (flaky on Firefox and chromium; control 3/20 failed). Fixed test-only in 6a82527, threshold unchanged, 20/20 dev and PW_PROD
+- [Phase 07]: [07-24] Contact interim contrast fix (c9aac91, Tim's 3-PNG contact amend of 9e5a579): hero, form card and three info cards on solid bg-surface-raised border-line panels above the unchanged AnimatedGradientMesh (Phase 12 removes it); Phosphor Clock/EnvelopeSimple/MapPin in bg-surface-overlay tiles; Email card shows site.email (old2shatterhand@gmail.com) with wrap-anywhere and a <wbr> after '@'; FeedbackForm labels text-ink + aria-hidden text-danger asterisk, inputs bg-surface-overlay border-line-strong (border-danger when invalid), errors text-danger; required added to Name/Email/Message (noValidate keeps validation); Tim's 07-16 D1/D2 kept. e2e/a11y-contact.spec.ts (3 tests: dark, light, light with canvases hidden; empty-submit errors and mocked 500 failure box; asserts axe measured the key nodes) passes with zero color-contrast violations and no incomplete nodes. @axe-core/playwright 4.13.0 exact pin (axe-core deduped 4.11.2 -> 4.13.0 under eslint-plugin-jsx-a11y). contact/{375,768,1440} re-baselined (+46/+86/+62 px); CI run 40041886574 green (E2E 122, 0 flaky). SHELL-06 Complete (ready-ids: ready)
+- [Phase 07]: 07-25: data/site.ts is the single identity record; package.json author is a derived copy checked by check-identity.mjs; v1 Header/Footer/GlassmorphismNav are exempt from the identity and emoji rules only while assertNoImporters() finds no importer
+- [Phase 07]: 07-25: CI verification of 168f176 and 44612f3 is pending (no pixel changes, no baseline checkpoint); the orchestrator pushes next and 07-26's CI check covers these commits
+- [Phase 07]: [07-26] HOME-08 baseline for Phase 9 (e2e/perf/home-baseline.json, 38b9704): Home on Pixel 7, 4x CPU, 150 ms, 200000/93750 B/s, 5 runs, medians, recorded in mcr.microsoft.com/playwright:v1.64.0-noble (Playwright 1.64.0, Chromium 156.0.8078.4) at b21dbc9: LCP 4692 ms (samples 4264/4748/4692/4700/4688), script transfer 468770 B, decoded 1625352 B. Phase 9 re-measures with --project=perf in the same container and must not exceed these
+- [Phase 07]: [07-26] Phase close (8eddb50): test-count ratchet 91 -> 206 (jest 107 + e2e 99); Phase 8 ratchets from 206. dependabot.yml restored byte-identical to pre-07-01 (next/react/react-dom semver-major-only ignores; the eight temporary holds removed)
+- [Phase 07]: [07-27] SHELL-01 gap closed: the v1 hero's own 'Skip to content' anchor (#home-content) was deleted, so the shell SkipLink is the only skip link; e2e/shell.spec.ts asserts getByRole('link', { name: /skip to/i }) toHaveCount(1) on 7 routes + 5 404 paths. RED 5f403af failed CI E2E only on / (Expected 1 Received 2, run 40086334529); GREEN 460b3a4 passed all five jobs, zero visual diff (run 40086883766). IN-04 fixed. A Phase 9 hero skip link must not reintroduce a second 'Skip to ...' link
+- [Phase 07]: UAT 2026-10-24 (07-UAT.md, 5/5 pass): Vercel builds on Node 24.x with npm ci (GUARD-01 confirmed); Visual Regression, Lint and Type Check and Unit Tests are required checks on main; Tim ratified the three SC2 zero-diff re-baselines ("all three exceptions are acceptable, add the overrides"), recorded as an override in 07-VERIFICATION.md; Firefox/WebKit keyboard pass and real-device visual sign-off passed
+- [Phase 08]: [08-01] lib/geo.ts is the one coordinate contract (swisstopo approx. WGS84<->LV95 within 1 m of REFRAME; UV u east / v south, row 0 = north); lib/terrain/{contour-paths,hillshade,dem-sample}.ts are import-free erasable TS that scripts/*.mjs import with explicit .ts under node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON
+- [Phase 08]: [08-01] contourSvg rejects path data outside M/L/Z + numbers (TypeError) and non-positive canvases (RangeError), enforcing T-08-02; stripBbox throws RangeError when the strip cannot fit the extent
+- [Phase 08]: [08-01] ESLint bans d3-contour, geotiff, simplify-js, exif-reader and sharp outside scripts/**/*.mjs; the scripts block and the global block share BANNED_PATHS/BANNED_PATTERNS so the framer-motion, Canvas and phosphor bans cannot drift (selftest 55 -> 59)
+- [Phase 08]: 08-02: sidecar GPS is rounded to 4 dp at extraction; img-0662 lon is 7.7103 under the specified half-up rule (CONTEXT's 7.7104 was approximate), so stage 2 samples the DEM at sidecar values
+- [Phase 08]: 08-02: .gitattributes pins byte-compared generated files to LF (core.autocrlf=true on Tim's machine would make a checkout fail --check)
+- [Phase 08]: 08-03: CLI_X riskScores are Tim's verbatim (0.05, 0.15, 0.29, 0.87); levels derived from his confirmed band rule (low [0,0.3), medium [0.3,0.6), high [0.6,0.8), critical [0.8,1.0]), so pkill -f chrome moves high -> critical (badge text change, review at 08-05)
+- [Phase 08]: 08-03: trail-grade mapping confirmed by Tim: low T1 yellow, medium T2-T3 white-red-white, high T4-T5 white-blue-white, critical T6 unmarked (lib/trail-grade.ts RISK_BANDS)
+- [Phase 08]: Terrain extent LV95 [2616000, 1088000, 2627000, 1099000] confirmed by Tim ("defaults"); heightmaps in decimetres (heightScale 0.1); edition 2026-05 from the STAC datetime, footer reads May 2026
+- [Phase 08]: Attribution Option A (verbatim 2025+ swissALTIRegio string, ships in 08-12), no (c) prefix; e2e asserts site.attribution.terrain
+- [Phase 08]: terrain --check: SVG/terrain.ts byte-compared; heightmap PNGs checked by name hash == sha256(bytes) and decoded pixels; source raster by sha256 in source.json
+- [Phase 08]: v1 frost-600 maps to new L2 token --color-accent-strong: var(--glacier-500) (option A, Tim replied "a"); pixel-identical, CI Visual Regression green on existing baselines
+- [Phase 08]: v1names palette rule now checks every scanned file; exemptions are LEGACY_DEAD_FILES while unimported and the --color-<v1>-NNN alias definition lines in app/globals.css (Phase 12 deletes both)
+- [Phase 08]: Open for Tim: command 4 (pkill -f chrome) explanation "High-risk operation" beside its CRITICAL RISK badge was not answered; data/projects.ts left unchanged
+- [Phase 08]: [08-07] Photo derivatives are generated locally by npm run photos:derive (rotate + long-edge resize + default sharp output, AVIF/WebP 640/1024/1600/2560 + 1200 JPEG, <id>-<edge>.<sha256[:10]>.<ext> in public/images/photos/) and committed; data/generated/image-manifest.ts is rebuilt from disk + sidecar and byte-checked by photos:derive -- --check inside npm run lint
+- [Phase 08]: [08-07] D-11 applied: the 8 full-res copies, optimization-manifest.json, scripts/optimize-images.mjs and the prebuild step are gone from HEAD (normal git rm); D-12 history exposure recorded in PROJECT.md Key Decisions, no history rewrite
+- [Phase 08]: [08-06] Hillshade poster (D-16) approved by Tim as built ("approved"), no tuning: lights 315/45 w0.75 + 270/55 w0.25, gamma 1, AVIF q50 / WebP q75. The light tone (valley floor ~73% grey) and near-black SE faces were shown with tuning options (gamma 1.6/2.25, black floor 0.08, softer altitudes/fill weight) and declined, so they are deliberate; tune only via the HILLSHADE block in build-terrain.mjs (terrain.ts records the parameters, --check catches an un-rebuilt edit)
+- [Phase 08]: [08-06] SW precache comes only from data/generated/precache.json (content-hashed /terrain/ URLs, injected at postbuild into /*__PRECACHE_URLS__*/[]); /terrain/:path* is immutable and proxy.ts skips images/ and terrain/. A second local npm run build needs git checkout -- public/service-worker.js first (postbuild now fails instead of keeping a stale hash); CI/Vercel unaffected
+- [Phase 08]: 08-08: img-0629 DEM height is 1,668 m at the committed 4-dp coordinates (RESEARCH's 1,674.9 m was full-precision GPS); the defined sampler wins and 08-10 copy must use 1,668 m
+- [Phase 08]: 08-08: lowestDemM = 1617 (img-0605); HOME-04, ROADMAP Phase 9 SC2 and PROJECT.md now start the altimeter rail at 1,617 m
+- [Phase 08]: 08-08: photo formatters are pure with U+00A0 before every unit; meteorological seasons (Sep 2021 = autumn) pending Tim's look at 08-10
+- [Phase 08]: 08-09: served-image guard (guard:images in lint) scans every git-tracked image: EXIF/XMP/IPTC anywhere (sharp metadata() plus a marker byte scan; unreadable fails), oversize >2560 / orientation in public/, hash-name + orphan/missing against the generated manifests (URLs matched only in quoted strings), unsafe SVG, metadata-keeping sharp calls in scripts/photos|terrain (ICC exempt)
+- [Phase 08]: 08-09: DATA-05 verified on the Vercel preview by Tim (SSO protection blocks anonymous curl): old full-res URL 404, /terrain/contours-strip.e1af353f82.svg 200 with public, max-age=31536000, immutable; CSP absence on hashed assets is asserted by the CI production-server e2e
+- [Phase 08]: [08-10] Tim approved the photo copy, slugs, tags, season rule and Riffelsee pin exactly as drafted (literal reply: "approve"): slugs matterhorn-from-zermatt, gornerschlucht-waterfall, matterhorn-glacier-trail, riffelsee-reflection are the Phase 10 /photos/[slug] contract; 08-11 carries no edits and needs no photos.ts regeneration, it only records the approval and re-baselines photos
+- [Phase 08]: [08-10] Seasons are meteorological (Sep 2021 = autumn); Riffelsee pin 45.9837 N 7.7623 E, radius 100 m, approximate, DEM 2,760 m (north shore); data/landscapes.ts is a bridge over photos.ts + editorial.ts + imageManifest (no image-path literals) and the modal shows the preformatted captureLabel ('2019', never a locale date)
+- [Phase 08]: 08-11: Tim's 08-10 reply was 'approve', so editorial.ts only gained the decision line; no copy, slug, pin or season edits and no photos.ts regeneration
+- [Phase 08]: 08-11: Tim committed the photos PNGs as downloaded (c0f2418, reply 'pushed'), option A by action; the GalleryGrid '1 hotspots' plural is deferred to the Phase 10 grid rebuild
+- [Phase 08]: 08-12: footer attribution is site.attribution.terrain, the verbatim swissALTIRegio 2025+ reference re-copied from the live page on 2026-10-24 (equal to the UI-SPEC transcription), Option A, no copyright sign
+- [Phase 08]: 08-12: scale-bar tier beyond lg is written min-[112rem]: (1792 px); Tailwind emits px arbitrary min-width variants before lg:, which showed two tiers at once
+- [Phase 08]: 08-13: Tim accepted the footer baselines by committing them (88191d0, literal reply: pushed); no review notes given, recorded as accepted by commit
+- [Phase 08]: 08-13: test-count ratchet raised at Phase 8 close to jest 416 / e2e 117 / total 533 (from 107/99/206), commit 88191d0
+- [Phase 09]: Trail-sign accessible names use an explicit aria-label built from site.nav label + countLabel ('Photographs, 4 waypoints'), not an sr-only comma: the flex plate blockifies its children and accname then reads 'Photographs , 4 waypoints'
+- [Phase 09]: Poster <img> sits inside <picture> with no eslint-disable: @next/next/no-img-element exempts img in picture
+- [Phase 09]: [09-02] components/home boundary test discovers files itself; import type is exempt, import()/require() count; WebGL code lives in components/home/terrain/ and is reached only via import()
+- [Phase 09]: 09-03: buildWaypoints() in lib/ascent/waypoints.ts is the single waypoint ordering (DEM height asc, ties by id) for cards, pins and rail; it throws RangeError on empty/orphan/invalid photo data
+- [Phase 09]: 09-03: View photo links use an explicit aria-label 'View photo: {title}' (flex link; same accname issue as the trail signs)
+- [Phase 09]: 09-03: .ascent-card-fade runs ascent-card-in (fill both) and ascent-card-out (fill forwards only) so the fade-out never masks the fade-in
+- [Phase 09]: 09-03: breakpoint variants sort after motion-reduce in Tailwind 4.3; use sm:motion-reduce: where a breakpoint class would otherwise override a reduced-motion one
+- [Phase 09]: 09-04: shader colours come only from data/generated/tokens.ts (build-tokens.mjs from app/globals.css, colorjs.io); tokens:build -- --check runs in data:check, so editing --relief-opacity at 09-12 needs npm run tokens:build
+- [Phase 09]: 09-05: summitPlaque() in lib/ascent/summit.ts derives every summit-plaque value (height gained, highest photograph with approx. note, year span, LV95 distance from the first waypoint); altitude ties keep the earlier waypoint
+- [Phase 09]: 09-05: e2e/shell.spec.ts counts the global skip link by exact name 'Skip to main content'; 'Skip to the summit' on / is the only other /skip to/i link allowed (2 on /, 1 elsewhere and on 404s)
+- [Phase 09]: 09-05: the summit repeats the hero kicker and trail signs (D-13), so Home-wide e2e checks for those must scope to [data-ascent-block=hero] or #summit
+- [Phase 09]: 09-06: one page useScroll() -> mapProgress over a measured layout -> one useSpring (DURATION.panel, no bounce), jump past one leg; rail, pins and the 3D camera read that spring
+- [Phase 09]: 09-06: altitude and rail position interpolate between plateau edges, so the readout never jumps at a plateau
+- [Phase 09]: 09-06: pin label flip measures 240 px from the clear stage edge (stage minus rail scrim from 768 px); refines UI-SPEC E7, flagged for Tim
+- [Phase 09]: 09-06: later pin layers render PinMark under data-ascent-root and call useAscent().syncPins() on mount
+- [Phase 09]: 09-07: useAscentMode decides on the cheap signals before the one WebGL2 probe, so Save-Data, low-memory and reduced-motion visitors are never probed
+- [Phase 09]: 09-07: TerrainCanvas sets position absolute / inset 0 inline because R3F writes position relative inline on its wrapper
+- [Phase 09]: 09-07: composed-contrast backstops (B7/B8) sample the text's Range line boxes, not the block box; hero scrim lg: breakpoint vs UI-SPEC 768 px flagged for 09-14
+- [Phase 09]: 09-08: the terrain texture is a detached copy of the poster image's currentSrc, not the rendered <img> (three sizes texture storage from image.width, the layout width); no second download
+- [Phase 09]: 09-08: the terrain bounding sphere covers relief 0..1 so frustum culling stays on; 09-10 must widen it if uExaggeration > 1
+- [Phase 09]: 09-08: contour width uWidthPx follows R3F viewport.dpr through a material ref; CameraRig keeps invalidating while p moved > 1e-4 since the last frame (D-06)
+- [Phase 09]: 09-09: HOME-08 early signal: total script bytes with the lazy chunk 441170 B (mode 3d), 27600 B under 468770 B; no trim needed
+- [Phase 09]: 09-09: On the HOME-08 profile the stage arms before the load event, so initialJsTransferBytes equals total; perf JSON adds loadEventStartMs and scriptTimeline; gate choice at 09-13 must account for it
+- [Phase 09]: 09-09: Home motion baselines are home/{w}-ascent-{start,waypoint-2,summit}.png on the forced static poster path; 09-14 deletes the 9 home/*-scroll-* PNGs
+- [Phase 09]: 09-10: stage cameras look back NE down each waypoint-summit line (yaw 4-18 deg per leg, waypoint centred on phones); a summit-facing flight would need a 170 deg turn at the top. Flagged for Tim at 09-12
+- [Phase 09]: 09-10: below 768 px the view offset is vertical (D-20) and horizontal (20 % of the width) so the active waypoint sits at 30 % and its label fits on the right
+- [Phase 09]: 09-10: pin anchors cross from the server AscentHero as props; route-curve routeCurvesFor/anchorAt is the one route builder for CameraRig and the clearance e2e
+- [Phase 09]: 09-11 Rule-4: Tim chose "A: measure-only flag (Recommended)" - test-only window.__ascentBudgetMeasureOnly keeps the frame-budget verdict without acting on it; only six desktop-size 3D e2e opt in; real decline proven at 1440x900 with no flag; 09-14 Task 1 applies option A (no relax, no webdriver skip)
+- [Phase 09]: 09-11: real-decline e2e forces 60 ms frames instead of test.skip (test-count guard forbids .skip()
+- [Phase 09]: 09-12: Tim approved the drafted About/contact copy ("approve"); about.status is 'approved'
+- [Phase 09]: 09-12: terrain tuning stays at the defaults ("defaults (Recommended)"): exaggeration 1.0, pull-back 450 m, relief opacity 0.32
+- [Phase 09]: 09-12: summit plaque occlusion fixed through the projection ("Fix in 09-12 (Recommended)"): wide summit HFOV 75 and a right shift of 0.095 x width; the narrow summit lift of 0.08 x height is flagged for Tim
+- [Phase 09]: 09-13: HOME-08 gate is total-keep (Tim: "total-keep (Recommended)"): total JS after canvas ready plus LCP; initial and legacy bytes recorded beside it. CI perf run 40189690406 (v1.64.0-noble): totalJsTransferBytes 444,761 <= 468,770 B PASS, LCP 3,112 <= 4,692 ms PASS, so HOME-08 is met by the measurement (initial 180,578 B, legacy 444,761 B; perf mode cannot prove "stayed 3D", resolved by B1)
+- [Phase 09]: 09-13: phone-size frame budget under automation is B1 (Tim: "B1: extend option A (Recommended)"), applied in 09-14: budgetMeasureOnly on the 10 phone-size 3D tests in e2e/home-canvas.spec.ts and window.__ascentBudgetMeasureOnly on the perf contexts; both "records the frame-budget verdict" tests and "a slow device declines to the poster" keep the real budget; FRAME_BUDGET_DEFAULTS.maxMedianMs stays 50; real visitors unchanged
+- [Phase 09]: 09-13: CSP e2e (cspMessages) ignores exactly the off-Vercel /_vercel/insights and /_vercel/speed-insights 404 MIME refusals (b82c57f); every other Refused-to message still fails
+- [Phase 09]: 09-14: B1 applied in the e2e layer (budgetMeasureOnly on the ten 412 x 839 3D tests and the perf contexts; verdict and forced-decline tests keep the real 50 ms budget), guarded by lib/__tests__/frame-budget-policy.test.ts; HOME-08 met under total-keep (444,761 <= 468,770 B, LCP 3,112 <= 4,692 ms)
+- [Phase 09]: 09-14: Home baselines committed as-is by Tim (284f433, "pushed"); the 768 waypoint-2 label and the 375 kicker orphan join the plaque overlaps in the gap plan after 09-14 (Tim: "Add to the gap plan (Recommended)"); 768 rail readout and pin-4 approx ring unconfirmed
+- [Phase 09]: 09-14: test-count ratchet raised at Phase 9 close: jest 416 -> 646, e2e 117 -> 186, total 533 -> 832
+- [Phase 09]: 09-15: WR-01 fixed in CameraRig update(): a running reveal burst is dropped on the shown -> hidden flag change (a background tab runs no frame); useFrame drop kept as off-screen fallback; no gap-based restart, FRAME_BUDGET_DEFAULTS unchanged
+- [Phase 09]: 09-15: IN-05 kept sticky and documented (downgrade and dpr step-down last the session, until a full reload); WR-02 context-loss e2e on the measure-only budget
+- [Phase 09]: 09-16: card kicker renders as two nowrap parts ('{altitude} ·', 'Waypoint k of n') and the place line as place text glued to a nowrap ' · date' tail (separator hidden and date its own line docked); waypointKicker and placeDate strings unchanged
+- [Phase 09]: 09-17: altimeter rail box in its own sticky aria-hidden layer ([data-ascent-rail-layer]) after the track (Tim's option B); rail scrim stays in the stage for flipPinLabels and CameraRig; composed rail contrast at 768-1280 x 900, p 0 and 0.05 is 5.20-8.76:1 (was 1.17-2.48 at 768)
+- [Phase 09]: 09-17: composedContrast (fill-vs-transparent-text shots) is the contrast method for text an overlay may cover; worstContrastBehind stays for text above a scrim (B7)
+- [Phase 09]: 09-18: Full summit plaque only on landscape viewports 1100 to below 1944 px (SUMMIT_FULL_MEDIA in lib/ascent/summit-layout.ts, guarded against app/globals.css); compact elsewhere, motion-safe only
+- [Phase 09]: 09-18: Compact summit stats move after the ascent into [data-summit-details], a group named by the summit h2 (no disclosure, no new heading); the summit block scrim is removed
+- [Phase 09]: 09-19: placePinLabel (lib/ascent/framing.ts) places the lit poster label right, left, above or below the head, 4 px clear of the stage edge, the active card and the rail marks; above/below also slide along the head when no fixed alignment is clear (pin 4 at 768-778 px)
+- [Phase 09]: 09-19: poster and 3D pin layers are z-10 inside the stage (above the rail scrim, under the rail box layer); stage geometry is shared as useAscent().geometry for 09-20/09-21
+- [Phase 09]: Summit framing is measured: fitCluster over summitClearRects (16 px inside the stage, clear of the plaque column and rail zone), capped at the 60/75 degree summit zoom (09-20)
+- [Phase 09]: View offset and FOV follow one key track (stageViewKeys, viewTrackAt); route.ts lost the seven share-based helpers (09-20)
+- [Phase 09]: CameraRig decides narrow/wide with matchMedia('(min-width: 48rem)'), the CSS md width source (09-20)
+- [Phase 09]: 09-21: md stages take a measured view offset per waypoint (waypointTarget: natural, beside, above, below the card), applied as natural - target on the 09-20 key track; the lit 3D label uses placePinLabel like the poster
+- [Phase 09]: 09-21: measured, 768-900 px stages (and 768 x 1024) put the lit pin 8 px beside the card, 1023 px and up keep the natural position; no row needed above or below
+- [Phase 09]: 09-22: Home re-baselined once for the gap closure by Tim (e9ebee7, 12 home PNGs, 'pushed'; checklist S1-S4, W1-W2, T1, R1-R2 not commented); ratchet jest 646 -> 725, e2e 186 -> 241, total 832 -> 966; CI green twice on 05a5e8c (run 40232792001 attempts 1 and 2, same PNG tree)
+- [Phase 09]: 09-22: the production service worker (skipWaiting, clients.claim, cache-first /terrain/) answers the heightmap, so page.route never sees it; an e2e that holds or delays a /terrain/ request must run with serviceWorkers: 'block' (05a5e8c, 'pins hand over at the reveal' + holdHeightmap, Tim's 'b'); the four other delayHeightmap users share the bypass and are open in deferred-items
+- [Phase 09]: UAT round 2 (2026-10-25, 09-UAT.md): Tim answered "pass" to all four checkpoints, so the portrait-phone summit poster (pin 4 and the triangle past the edges), reduced motion at 375 x 667 (full plaque over the poster pins) and landscape phones (poster pin 3 under the compact plaque, WR-01) are accepted as is, and the real-device 3D and comfort check passed (devices not named). Round 1's gaps G-09-2 to G-09-5 were reconciled as resolved by 09-22 and 09-15
+- [Phase 10]: 10-01: lib/photos/view-model.ts (buildPhotoViews on top of buildWaypoints, never re-sorted) is the one photo source; /photos/[slug] uses generateStaticParams + dynamicParams = false + notFound, and both photo routes export photoMetadata(slug)
+- [Phase 10]: 10-01: strip data comes from stripFields() (missing or invalid facts get no row, D-07); ExifStrip puts the aria-hidden ' ·' separator inside each dd so the dl stays valid; WR-04 fixed in formatExposureTime (seconds from 0.3 s, RangeError for non-positive or non-finite)
+- [Phase 10]: 10-02: Phase 8 warnings WR-01, WR-02, WR-03, WR-05, WR-06, WR-07 and WR-08 fixed (PhotoFacts.uv in [0, 1] and out-of-extent build error; altitude-less GPS kept; OffsetTimeOriginal must match Zurich; corrections positions hand-placed only; photos:derive validates in memory then writes and unlinks stale last; guard scans raw/HEIF; public/images/landscapes/ ignored again; scripts README corrected)
+- [Phase 10]: 10-02: WR-06 pre-commit hook not added (no hook tooling; CI lint is the gate); WR-04 and IN-02 disposition rows left open for 10-13; disposition open count is 10 (generator counts 'open' rows only)
+- [Phase 10]: 10-03: the stage layers share one grid cell instead of absolute positioning; positioned layers would paint over the sticky scroll-tier chrome and need a z-index the UI-SPEC rules out (357a668)
+- [Phase 10]: 10-03: 'All photographs' is rendered once per tier (own row on lb-scroll, first in the chrome on lb-key/lb-gutter), the other display:none, because the scroll-tier row sits outside the sticky chrome (e1d86de)
+- [Phase 10]: 10-03: the opener img sits in a source-less picture (no-img-element convention); e2e target [data-stage-layer="large"] img; Retry moves focus to the stage root (357a668)
+- [Phase 10]: 10-03: guard:contrast now measures 36 pairs (4 gallery pairs added); the selftest expectations moved with it (e1d86de)
+- [Phase 10]: 10-04: grid --row-h is 224 px from 640 px and 280 px from 1024 px (Tim: "Accept 224/280 (Recommended)"); e2e confirms two rows of two at 768 and 1440 (7dd8760)
+- [Phase 10]: 10-04: JustifiedGrid is a hook-free Server Component; tiles are a[data-photo-id][scroll=false] slide mounts with [data-tile-box] aspect-ratio boxes and [data-caption-part] nowrap caption parts; /photos?view=grid mounts it, map/carousel keep the legacy gallery until 10-07/10-08 (7dd8760)
+- [Phase 10]: 10-04: lib/photos/justify.ts exports flexLines (flex-wrap line model) alongside justifyTile/rowHeights; the grid view container carries the UI-SPEC header-to-view pt-6 (4fa61c1, 7dd8760)
+- [Phase 10]: 10-05: the lightbox handles Escape and Tab on a document keydown listener (not the dialog's onKeyDown), so presses are caught wherever focus sits
+- [Phase 10]: 10-05: close() calls router.back() at most once per lightbox instance, so a repeated Escape cannot go back past the gallery
+- [Phase 10]: 10-05: the modal viewer is h-full on the key and gutter tiers; a height-less size-container stage would leave the photo box 0 px wide
+- [Phase 10]: 10-05: local Playwright WebKit cannot load scripts because proxy.ts's CSP upgrade-insecure-requests applies to localhost; deferred (security-header change), Safari Tab wrap stays a UAT item
+- [Phase 10]: 10-06: Task 1 recorded Tim's OQ1 answer from the plan gate row, 'A: replaceState both (Recommended)' (2026-10-26); previous/next uses history.replaceState on the photo page and in the lightbox
+- [Phase 10]: 10-06: the viewer owns the shown slug (seeded from slugFromPath(usePathname())); steps read the last written slug from a ref because React holds commits while a view transition runs
+- [Phase 10]: 10-06: keyboard listeners that must work during the open morph register in useLayoutEffect; passive effects wait for the view transition
+- [Phase 10]: 10-06: the viewer's photo-{slug} ViewTransition is keyed by slug and named only while the pathname names a photo (complement of TileTransition), so no name is ever registered twice
+- [Phase 10]: 10-06: the root crossfade is off on the root group and its old/new snapshots while a viewer is shown
+- [Phase 10]: 10-07: the carousel region is a named <section> (implicit region role), not role="region", because jsx-a11y/no-redundant-roles rejects the explicit role; ← → use a scoped onKeyDown with an eslint-disable reason
+- [Phase 10]: 10-07: LightboxDialog.close() dispatches LIGHTBOX_CLOSE_EVENT ('photos:lightbox-close', detail = slug shown) on document before router.back(); CarouselView sets its front photo from it, because usePathname trails a replaceState step by up to ~300 ms in Chromium
+- [Phase 10]: 10-07: 3D carousel frames face the camera every frame (the legacy ring faced inwards, so its front photo was mirrored); CameraFit sizes the camera distance so the front frame fills at most 72 % of the stage height and 84 % of its width
+- [Phase 10]: 10-07: 3D colours: clear and fog night-900 (= surface-raised frame box), mounts and ground night-950, one mist-300 light plus ambient; legacy reflections and shadows dropped; float and 'always' frameloop only while visible and not hidden
+- [Phase 10]: 10-07: useProgressiveTextures disposes a Texture before swapping in a larger image (WebGL2 immutable storage made the 640->1024 swap fail with 'Offset overflows texture dimensions')
+- [Phase 10]: 10-08: map plates clear a 16 px dot square (12 px dot plus its 2 px casing each side); a 20 px square fails compact slot 1 at S = 312-313, contradicting the UI-SPEC measured floor
+- [Phase 10]: 10-08: map label positions are a branch-traced pure layout emitted as cascade-only @container map-sheet (min-width) rules with calc(<frac> * 100cqw + <px>px) lengths (13 segments, ~7 KB); a Jest cascade check matches the layout within 0.5 px at every side 312-1100
+- [Phase 10]: 10-08: /photos renders PhotosHeader (derived kicker, h1 from site.nav, children slot for the 10-09 switcher) above one view section keyed by the view; data/sheet.ts is the one sheet title for footer, map margin line and kicker
+- [Phase 10]: 10-10: ZoomStage renders [data-viewer-stage] and wraps the whole photo box (zoomed, the stage is the scroll box); children stay mounted (hidden) while zoomed
+- [Phase 10]: 10-10: click-to-zoom is decided by the photo box rectangle on the stage handlers, because during the open morph Chromium hit-tests the stage instead of the named box
+- [Phase 10]: 10-10: zoom keys and the page Escape layer use a capture-phase document listener that prevents the press; the lightbox layer registers via registerEscape. Image drag-and-drop is prevented only on the zoomed photo, where a drag pans
+- [Phase 10]: 10-09: the switcher e2e scrolls the 375 x 600 page by 100 px: the switcher's top is 184 px down under a 64 px sticky header, so a deeper scroll makes Playwright's click scroll it back
+- [Phase 10]: 10-09: /photos wraps the one view section in ViewTransition key={view} name photos-view (share/enter auto, default none); the switch calls router.replace(viewHref(v), { scroll: false }) and the pressed segment returns early
+- [Phase 10]: 10-09: a Jest guard walks app, components and lib for a manifest .legacy read (pattern assembled at run time); data/landscapes.ts, the v1 photo UI and LandscapeImage/ImageAnnotation are deleted
+- [Phase 10]: [orchestrator, after 10-10] Zoomed-photo drag block kept: native image drag-and-drop is suppressed only while zoomed (so a mouse drag pans); right-click and Save image work in both states and fitted drag is native. Tim, asked directly 2026-10-26: "Keep, record exception (Recommended)". 10-13 records it as an approved exception to UI-SPEC line 393 ("no right-click or drag blocking", LBOX-07)
+- [Phase 10]: [orchestrator, after 10-08] Map waypoint clearance is a 16 px square (12 px dot plus its 2 px casing), the reading that reproduces the UI-SPEC 312 px compact floor. Tim, asked directly 2026-10-26: "16 px, as built (Recommended)"; no change to lib/photos/label-layout.ts
+- [Phase 10]: 10-11: Hotspots.tsx exports HotspotMarks (glyphs and dots inside the photo box), HotspotOverlay (gutter labels and leaders over the stage) and HotspotKey (strip key); the stage and photo box are positioned (relative)
+- [Phase 10]: 10-11: the label preference is one 'photos.labels' on/off localStorage value read through useSyncExternalStore (server true), try/catch on every access, a visit-only fallback when storage refuses, storage-event sync
+- [Phase 10]: 10-11: the callout Escape layer runs before zoom: registerEscape from PhotoViewer in the lightbox (newest layer), a window capture listener on the page; photo-ref heights reuse altitudeLabel (IN-02)
+- [Phase 10]: 10-12: visual settle() awaits only rendered images (img.complete or no layout box); the map's hidden lazy hover previews hung every /photos shot since 10-08
+- [Phase 10]: 10-12: the visual matrix is 48 per scheme: photos-grid, photos-carousel (stepper), photo (film scan) and lightbox shots added for the one 10-13 re-baseline
+- [Phase 10]: 10-13: wide map plate 240 -> 256 px (w-64, PLATE_WIDE 256 x 48) with nowrap title (wide tier) and altitude, an approved UI-SPEC deviation (Tim: 'A: widen + nowrap (Recommended)'); the Linux CI render of the longest title wrapped inside the old 224 px content box (487e113)
+- [Phase 10]: 10-13: zoomed-photo drag prevention (10-10) kept as a recorded exception to UI-SPEC line 393 / LBOX-07 (Tim: 'Keep, record exception (Recommended)'); map plate clearance stays a 16 px dot square (Tim: '16 px, as built (Recommended)')
+- [Phase 10]: 10-13: Phase 10 re-baseline in Tim's commit 483895b (3 changed photos/*, 12 new; reply 'pushed', no review notes); CI green twice on it (run 40367226761 attempts 1 and 2); test-count ratchet raised to jest 942 / e2e 358 / total 1300
+- [Phase 11]: 2026-11-01 project swap, Tim's literal reply at the 11-02 checkpoint: "A. yes. regarding the other project, there has been a recent development. the cli_x project is discontinued. I would like to replace the clix_x project entirely with this one: https://github.com/tlex-web/box and a private project that you can find here: https://github.com/tlex-web/coin-flip". Follow-up answers: scope "Both CLI_X projects out" (clix-cli and clix-website, and their route-log rows, are removed; box and coin-flip are the two engineering projects); process "Pause and re-plan (Recommended)" (stop after 11-01, update ENG-03/ENG-05 and the CONTEXT decisions, re-plan 11-02 onward; 11-01's DemoTerminal and server route are kept and retargeted to box). "A. yes" is recorded verbatim only: the trail-to-project assignment is re-asked for the new pair.
+- [Phase 11]: 11-01: DemoTerminal draws its lines aria-hidden at all times; the sr-only block (aria-live off while playing, polite while paused) is the single screen-reader source, so a completed command is never read twice. 11-03 adds the grade sentence there
+- [Phase 11]: 11-01: /projects/[slug] is a Server Component with dynamicParams = false, generateStaticParams and generateMetadata ({ title: project.name }); DemoTerminal is imported directly and takes only demoCommands props; three.js never loads on project pages
+- [Phase 11]: 11-01: one pending timeout per terminal state (lib/demo-terminal.ts pure machine); e2e on the terminal scroll it into view and move pointer and focus out after clicks, because offscreen, hover and focus-within are pause sources (D-02)
+- [Phase 11]: 11-04: Zmutt path No. 2 routes station -> via Zen Stecken -> Zmutt 56 (hamlet's western edge), 4,291 m vs 4,300 m; the gazetteer Zmutt centre routes only 3,614 m (-16 %) because the listing track runs past the hamlet (Tim to confirm, 11-04 coverage D4)
+- [Phase 11]: 11-04: profile captions from the DEM (08 D-17): Hörnliweg 2,587 -> 3,262 m (4,316 m); Zmutt path 1,606 -> 1,950 m (4,291 m); trails:build -- --check runs in data:check
+- [Phase 11]: 11-05: compact RouteRow meta is '{Status}' plus ' · {target}' (UI-SPEC Next steps); log rows read '{Project} · …'
+- [Phase 11]: 11-05: only log-variant li carries id = item id; compact li has no id
+- [Phase 11]: 11-05: routeLogHref re-validates whitelist values and drops forged ones (T-11-10)
+- [Phase 11]: 11-06: RoutePanel keeps one min-w-0 content column inside its lg 3fr/2fr grid; 11-12 adds the profile figure as the second child
+- [Phase 11]: 11-06: /projects reads project fields only through toPanelProps(project); 11-07 rewrites that mapper for the new schema
+- [Phase 11]: 11-02: section B, Tim accepted the Proposed column for all 19 claims (reply "1. B", confirmed "Accept all, preflight soft (Recommended)"): box-preflight softened to "box checks the whole job before it changes the first file", box-loc-timeline cut, cf-network-calls softened (no tile; the fact stays as Privacy fact 2), cf-reduced-motion and cf-font-scaling unused (not supplied)
+- [Phase 11]: 11-02: box terminal replays C1.1 hash, C1.2 uuid --json, C1.3 the du pipeline and C1.4 color with their drafted notes ("1–4, notes ok (Recommended)"); the box Safety block is the bulk-rename preview with caption "Preview run · box bulk-rename" and the drafted --force line ("Approve both (Recommended)"); exact captures in 11-02-SUMMARY.md
+- [Phase 11]: 11-02: section D approved as drafted ("approve-all"); the coin-flip Rendering stack group is not supplied and is left out; coin-flip tiles are Permissions and Result split only
+- [Phase 11]: 11-02: route log ships the 7 drafted rows, the v2.0 phase lines 7-12 and every description ("Rows + descriptions ok (Recommended)"), surveyedAt 2026-11-01 ("2026-11-01, today (Recommended)"); all UI-SPEC defaults ("All defaults (Recommended)"); ci/11-17 go-ahead for 11-17 ("Approve (Recommended)"; force, phase-branch, main and PNG commits excluded)
+- [Phase 11]: 11-04 D4 resolved 2026-11-01: Tim chose A, the Zmutt path ends at Zmutt 56 as 11-04 built it (quote "1. B 2. A")
+- [Phase 11]: 11-03: releasing the demo Pause applies releaseSticky (sticky, hover, focusWithin cleared; offscreen and hidden kept) and focus pauses only on entry from outside (D-02 amended)
+- [Phase 11]: 11-03: DemoTerminal takes only name and commands (TerminalCommand with optional note, D-26); §I #8 and #11 stay default (constant Pause label, no copy button)
+- [Phase 11]: 11-08: route-log description code spans (backticks in data) render as nowrap <code>; box v2.0 keeps Tim's quoted --clip span
+- [Phase 11]: 11-08: Phase 11 completion date and next surveyedAt are entered in Phase 12's first data edit with Tim's confirmation (Q3)
+- [Phase 11]: 11-09 Q4: clip budget MAX_CLIP_BYTES = 1,572,864 bytes (1.5 MiB) in data/schemas/media-manifest.ts; the served-asset guard holds the same literal for every MP4 under public/
+- [Phase 11]: 11-09: MP4 track handlers are read from hdlr boxes whose parent is mdia (not depth 3, which also matches udta>meta>hdlr 'mdir'); the walker also enforces the RESEARCH C box-tree whitelist
+- [Phase 11]: 11-09: mediaManifest is {} until 11-15 commits Tim's clip; the Demo slot (11-16) must handle a missing coin-flip-toss entry
+- [Phase 11]: 11-07: approved prose ships without the review copy's inline-code backticks; renderers style flags (11-11 splits forceLine on '--force')
+- [Phase 11]: 11-07: /projects intro lives in data/projects.ts as projectsIntro; Trailhead owns its container and takes an optional figure (11-12)
+- [Phase 11]: 11-10: §I #10 default applied (counts shown, 2 x 2 tracks below 640 px); RouteLogFilters uses useOptimistic in startTransition around router.replace, zero-count segments aria-disabled but focusable, per-state class constants used exclusively
+- [Phase 11]: 11-11: Section renderers take ({ id, label, ...data }) from slotMeta, heading id '{id}-title', and return null when nothing is approved; Pipeline columns come from a literal COLS record (3 and 4 only, G11)
+- [Phase 11]: 11-11: box Safety renders only with an intro or a capture; the preview is static (no copy button, default.11) and only the --force line gets inline code; Problem prose stays plain until Tim answers the --clip/ConvertFrom-Json question
+- [Phase 11]: 11-18: trail-grade suite rewritten as 16 Jest tests (test.each rows count in numTotalTests) so the ratchet does not fall; markerForGrade throws RangeError outside T1..T6
+- [Phase 11]: 11-18: Home About ships the supplied copy.home-about row verbatim (D-33); WINDOWS row 4 fixed since copy.demo-intro-box renders
+- [Phase 11]: 11-12: trail paint is three :root --trail-* primitives with background-only bg-trail-* utilities, measured as ten non-text pairs plus ink-inverse/ink in check-contrast (47 pairs); all §I answers default, so --trail-yellow and Home are unchanged
+- [Phase 11]: 11-12: coin-flip's caption reads 'Zermatt 1,606 m → Zmutt 1,950 m · T1' (generator ends at Zmutt 56, Tim's 11-04 D4), not the UI-SPEC's 1,934 m; 11-17 re-baselines /projects and both trailheads, Home unchanged
+- [Phase 11]: [11-13] Next steps rows (RouteRow compact) are a plain <a>, not next/link: next/link's pushState navigation never sets :target, so the landed /roadmap row lost its target: highlight; cost is no prefetch and a full load of static /roadmap (open for Tim, revert in components/roadmap/RouteRow.tsx if soft navigation is preferred)
+- [Phase 11]: [11-13] Case-study Metrics panel: literal GRID per tile count and a last-tile span from literal maps (odd count: sm:col-span-2; count mod 3: lg span 3/2, or lg:col-span-1 to reset); box 3 tiles (third spans the sm row), coin-flip 2 tiles; releaseLine stays in the route panel strip only
+- [Phase 11]: 11-15: D-27 clip length is 4-10 s, MIN_CLIP_SECONDS = 4 (Tim, 2026-11-01, verbatim: "Lower minimum to 4 s (Recommended)"); his 4.42 s one-flip recording ships unedited
+- [Phase 11]: 11-15: coin-flip clip committed (public/media/coin-flip-toss.9b55947b70.mp4, 211,784 B, 4.417 s, posterAt 3.5, CRF 26, 60 fps); description draft in packet section I is NOT approved, data/projects.ts has no clip block until 11-16
+- [Phase 11]: 11-14: case-study primary CTA is 'Ask for a walkthrough' -> /contact (default.6); RouteIndex scroll-spy marks the first section in the band below the nav, else the last above it, and the last section at the page end (the plan's 40 %-line rule mis-marked after anchor jumps)
+- [Phase 11]: 11-14 (orchestrator-added, Tim's verbatim "yes", 2026-11-01): box Problem, Output stage, Safety intro and --force line carry the 11-02 backticks byte-identically; one InlineCode renderer (lib/inline-code.ts + components/InlineCode.tsx, font-mono whitespace-nowrap) serves the route log and case-study prose
+- [Phase 11]: 11-13 open item resolved: Tim chose "A" (verbatim, 2026-11-01), keep the plain <a> in RouteRow's compact Next steps row (:target highlight works; no prefetch); no code change
+- [Phase 11]: 11-16: Tim approved the coin-flip clip, 3.5 s poster, description and intro as drafted ("approve"); the clip block ships verbatim and coin-flip's Demo section and index entry are live
+- [Phase 11]: 11-17: Tim chose option B ("B. Fix first ... run **one more** visual-baselines dispatch"): RouteIndex's scroll handler re-measures every section against the band, so a jump back to the top after a sweep leaves no stale current stage; the extra dispatch is used (41366534214), the CI re-run on Tim's baseline commit stays reserved for Task 3
+- [Phase 11]: 11-17: native video controls hidden in visual shots (hide-canvas.css) so the coin-flip Demo poster is deterministic; RouteIndex re-measures on scroll (Tim's option B); ratchet raised 1300 -> 1749 at Tim's baseline commit e511d7a; CI green twice (run 41367381672 attempts 1 and 2)
+- [Phase 11]: [11-19] G-11-4 closed: box Metrics source links are named 'Source (Tools)', 'Source (Tests)', 'Source (Binary)' via an sr-only ' ({tile label})' suffix (FactSource pattern, no new words; Tim's reply 'yes change to a suffix on each link' approved a suffix, not a wording). New e2e proves zero geometry change at 375/768/1440 in chromium + firefox; no PNG changed, no re-baseline dispatched; CI Visual Regression on the next push is the remaining gate. Counts jest 1307 + e2e 462 = 1769 (baseline 1749 not raised)
+- [Phase 12]: 12-02: A1 holds - proxy rewrite of unknown photo/project slugs to /__missing yields a server-rendered root 404 (HTTP 404, h1, one main); D-11 context labels via the x-edge-section header
+- [Phase 12]: 12-02: 'unsafe-eval' removed from the production CSP (0 eval chunks in a fresh build; WebGL/carousel specs green); connect-src 'self'; upgrade-insecure-requests dropped only for http on loopback (D-17). Tim can veto via info.csp in 12-01
+- [Phase 12]: 12-02: no-slug-echo is asserted on rendered markup, body text and title; the Next flight payload's canonical URL and the Speed Insights data-route attribute carry the path as escaped script data (flagged for review)
+- [Phase 12]: 12-01: Tim answered the content packet 2026-11-02 (verbatim in 12-01-SUMMARY): 51/52 keys supplied; all Contact/edge/meta/OG copy approved, form lead option 2 (no claim); geo.location 47.37 N · 8.54 E · Zürich; UI-SPEC defaults #1-#14 = default
+- [Phase 12]: 12-01: copy.heads-sentence not supplied (Tim: heads skip) - coin-flip figcaption stays as approved, D-24 item stays open
+- [Phase 12]: 12-01: log.phase11 supplied (Phase 11 completed 2026-11-02, Phase 12 in-progress, surveyedAt 2026-11-02); sw.reload-once yes; docs.stale-refs fix in 12-22; vercel.plan Hobby; ci.push yes (plain ci/12-NN pushes, never force); info.csp no veto
+- [Phase 12]: 12-03: feedback API field issues map empty/missing/wrong-type to required, too_small to too_short, too_big to too_long, else invalid_email; fields omitted when no visible field is invalid
+- [Phase 12]: 12-03: zod runs before the trail_note honeypot (locked order), so an invalid bot submission gets 400 validation, not the quiet 200
+- [Phase 12]: 12-04: the colour reset @theme { --color-*: initial; } sits right after the @source not lines; check-contrast skips --<ns>-* namespace resets
+- [Phase 12]: 12-04: LEGACY_DEAD_FILES and palette-ratchet.json are empty for good; former dead-file selftest fixtures now expect failures with exact violation counts
+- [Phase 12]: 12-05: asset-exists guard matches whole quoted literals in data/**/*.{ts,json} (comments stripped, ${} templates skipped); the plan's bare regex broke on the v1 names' spaces and parentheses
+- [Phase 12]: 12-05: legacy v1 variants deleted (60 files); photos:derive rewrote only the manifest, all 36 derivatives byte-identical
+- [Phase 12]: 12-07: metric Source links named by aria-label 'Source for {label}' (label in name), not an sr-only suffix
+- [Phase 12]: 12-07: RouteLog camp marker lives in the relative camp h2, left calc(var(--axis-x) * -1) + -translate-x-1/2; measured 0 px moved at 375/768/1440
+- [Phase 12]: 12-07: Phase 9 D-24 items follow Tim's defaults (09 spec scrim row to lg:, wedge closed, tick accepted); copy.heads-sentence pending Tim
+- [Phase 12]: 12-08: SW install puts /offline in the single all-or-nothing addAll (no separate put); the no-store /offline fetch only supplies asset URLs and must be ok
+- [Phase 12]: 12-08: sw.reload-once = yes built as a once-per-tab sessionStorage guard; no reload on first install, with a dirty text field, or when sessionStorage is unavailable
+- [Phase 12]: 12-09: root description lives in SITE_DESCRIPTION (lib/metadata.ts), shared by app/layout.tsx and Home; per-route metadata goes through pageMetadata, which never sets openGraph or twitter
+- [Phase 12]: 12-09: site.url = https://portfolio-app-mocha-three.vercel.app is the one canonical host (D-13); metadataBase, canonicals, sitemap.xml and robots.txt all derive from it
+- [Phase 12]: 12-10: OG fonts are the full static TTF instances (not Google's latin subset, which lacks the U+2192 caption arrow); read from disk at build, never served
+- [Phase 12]: 12-10: Twitter reuses the file-based OG image under the root summary_large_image card; no twitter-image file
+- [Phase 12]: 12-10: coin-flip's approved pitch wraps to 4 lines on the project OG card (UI-SPEC assumed <= 3); the card fits it without clipping. Resolved 2026-11-02, Tim: "Keep 4 lines (Recommended)"
+- [Phase 12]: 12-06: zod ^4.6.7 and version-scoped fflate overrides (fflate@^0.8.0 -> 0.8.3, fflate@^0.6.0 -> 0.6.11) patch both advisories on Tim's approval; floors zod 4.6.7, fflate 0.8.3; npm audit 46 -> 44
+- [Phase 12]: 12-06: lockfile bumps are patched entry-by-entry and proven with npm ci --dry-run; a plain npm install on Windows/npm 11.6.1 drops the optional @emnapi entries and npm ci then rejects the lockfile
+- [Phase 12]: 12-06: THREE.Clock warning deferred on Tim's "Defer (Recommended)" (upstream console.warn, ignored by the D-20 errors-only gate, owned by the next r3f release that moves to THREE.Timer)
+- [Phase 12]: 12-06: TerrainStage's idle arm waits for the window load event on Tim's "Canvas fix"; loadEventStart now precedes the three/R3F chunk on the HOME-08 profile, LCP unchanged
+- [Phase 12]: [12-11] Round 1 re-baseline closed: only roadmap/{375,768,1440}-reduced changed (kicker 1 Nov -> 2 Nov 2026), Tim committed them in a046347 (reply "pushed"); check-snapshot-commit --some --allow roadmap OK (3 changed); 45 byte-identical shots prove 12-02..12-06 and 12-08..12-10 zero-diff, and the box/coin-flip D-24 fixes zero-pixel; CI run 41522964315 green (Visual, E2E, Unit, Lint)
+- [Phase 12]: [12-12] Marked-trail 404 shipped with the square edge sheet (default #7 kept by Tim): EdgeLayout + zero-JS EdgeArt (7-point switchback, dot 72.4 units off), Tim's 404 sentences, title 'Page not found · Tim Lui'; round 2 expects not-found 375/768/1440 diffs
+- [Phase 12]: 12-13: Task 1 tracer ships validateField with the approved copy (its e2e/a11y verify needs field errors); Task 2 RED/GREEN on the Error prefix, error-then-hint, entry timestamp and formatters
+- [Phase 12]: 12-13: rate-limit minutes read Retry-After, falling back to body retryAfterS; neither gives 'Try again later'
+- [Phase 12]: 12-13: until 12-26's summary, an invalid submit focuses the first invalid field
+- [Phase 12]: 12-13: the register form declares method=post so a pre-hydration submit never puts visitor text in a URL (D-04)
+- [Phase 12]: 12-14: per-slug OG cards keep per-slug alt (generateImageMetadata) and drop generateStaticParams/dynamicParams; Next 16.4 cannot list the slug of such a route, so cards render on first request and are cached (dynamicParams=false made every card 404; the duplicate export broke next dev)
+- [Phase 12]: 12-25: guard:identity url rule is host-agnostic (https origin, no trailing slash/path/port, no localhost/example.com), so the deferred www.tlui.de switch needs no guard change; site.url unchanged
+- [Phase 12]: 12-25: site.location = Zürich 47.37 / 8.54 from the 12-01 geo.location row (Tim: B confirm); 2 decimals max, pinned by data/__tests__/site.test.ts (D-01)
+- [Phase 12]: 12-15: savedPageRows(urls, catalog) takes a server-built catalog (site.nav, photoViews, projects) so the /offline client island ships no data modules
+- [Phase 12]: 12-15: a cached URL with a query string never makes a saved-pages row on its own (the SW matches offline navigations by exact URL); it collapses into its bare path's row
+- [Phase 12]: 12-15: saved-page rows and the global-error Report this error link are plain anchors (offline document navigations hit the SW cache; global-error must not depend on the router)
+- [Phase 12]: 12-16: default.2 and default.3 shipped as defaults (form then panel, order-first below 1024; quiet select-the-address fallback when the clipboard fails)
+- [Phase 12]: 12-16: WebKit e2e checks Tab order up to Copy only; Playwright WebKit never Tabs onto links (Safari default)
+- [Phase 12]: 12-26: the error summary closes when no field is left to fix; after the first fix it sets aria-live=off so updates are not re-announced; each invalid submit mounts a fresh focused alert
+- [Phase 12]: 12-26: a field blur during a pointer press inside the contact form waits until the press is over, so a blur error never swallows the Send click
+- [Phase 12]: 12-26: counterStatus over the limit is singular only for exactly one character (1 character over the limit), matching Check 1 field / Check {n} fields
+- [Phase 12]: 12-17: the simulated SW deploy rewrites every copy of the title (head and flight data); hydration resets document.title from the flight payload, so a <title>-only edit is undone after load
+- [Phase 12]: 12-17: A5 holds - context.setOffline(true) cuts the service worker's own fetches in Chromium
+- [Phase 12]: 12-17: hero-contour precache stays deferred (fix in scripts/terrain/build-terrain.mjs precacheText + regenerated data/generated/precache.json; no service-worker.js change)
+- [Phase 12]: 12-18: useProgressiveTextures keeps textures in state (empty until every thumbnail settles) and one effect run per source count owns its loader, slots and cancelled flag; a source-count change resets the hook in the same render
+- [Phase 12]: 12-18: LEGACY_COMPILER_FILES removed; the React Compiler rules apply at error to every file (07-02 rule reached zero)
+- [Phase 12]: 12-19: Per-slug OG cards keep rendering on first request with per-slug alt; Tim chose "Keep runtime render (Recommended)" (2026-11-03)
+- [Phase 12]: 12-19: Round 2 re-baselined contact, not-found and offline (9 PNGs, Tim's b743ca0); check-snapshot-commit with only those three --allow slugs; 39 shots byte-identical prove 12-14, 12-17, 12-18, 12-25 zero-pixel
+- [Phase 12]: [12-20] Audit gate live (e2e/audit.spec.ts, 18 tests per engine): 8 ROUTES + the 404 at 375/768/1440 and 9 D-21 states; zero app findings (axe 0, max CLS 0.019 on Home @375), 54/54 in three engines on a fresh build. ALLOWED_CONSOLE is one anchored pattern per engine for the Vercel loader 404s only; the 404 test removes only its own document's 404 console line; per-width loads resize on about:blank (a resize-then-goto cancels Next prefetches, which WebKit reports as page errors)
+- [Phase 12]: [12-21] Keyboard-only flows (e2e/keyboard.spec.ts, 11 per engine) assert exact focus order skip link to footer to end of page; zero app findings. WebKit drops link stops (Playwright WebKit never Tabs to links) and keeps the order of the remaining controls; the lightbox dialog steps run in Chromium and Firefox only. The error page is forced by an init script that makes matchMedia throw on /projects/box
+- [Phase 12]: 12-22: closed review rows are written as the ledger's skipped value with 'Closed, executor outcome' and the removing commit (the enum has no closed)
+- [Phase 12]: 12-22: e2e/photos-lightbox.spec.ts runs in order in one worker (describe.configure mode 'default'); 16-worker dev runs overloaded next dev, CI single-worker unaffected
+- [Phase 12]: 12-22: reproduced flakes in specs outside 12-22's list (shell.spec.ts:402 test.slow(), design-system G3 @prod-only) and the prefetch/CSP, hero precache and design-system comment rows are open for a follow-up quick plan with exact fixes
+- [Phase 12]: [12-23] CI E2E Tests runs chromium, firefox and webkit with --fail-on-flaky-tests (28f141d); green on 147bc82, run 41571031827 (501 + 432 + 430, 0 flaky); timeout-minutes stays 60 (job about 36.5 min); no round 3 (Tim: "No round 3")
+- [Phase 12]: [12-23] WebKit exclusions are per platform, never @chromium-only or test.skip: @needs-tab-to-links (webkit on win32/darwin), @no-win-webkit (WinCairo history-Back crash during the lightbox View Transition, media outside page.route), @no-linux-webkit (GStreamer fetches preload-none MP4); 17 tags, each with a reason comment; Firefox and Chromium keep every test
+- [Phase 12]: [12-23] Safari focus conventions (Tab skips links, a click does not focus a button) apply to WebKit off Linux only; specs branch through e2e/helpers/engine.ts (tabReachesLinks, clickFocusesButtons, pressButton), so Linux WebKit in CI walks every link stop
+- [Phase 12]: [12-23] PhotoViewer re-applies the shown photo's document title through WebKit's late head writes (aeb3d0f); real Safari checks Back right after opening a photo and a quick Next after a photo page loads in 12-24 UAT (D-19)
+- [Phase 12]: 12-24: no round 3 on ci/12-23, so the CI head is 147bc82 (green in four jobs, run 41571031827) and no snapshot-commit check ran
+- [Phase 12]: 12-24: test-count ratchet raised to 2205 (jest 1658, e2e 547); 12-24 commits stay local, their CI run is UAT item (h)
+- [Phase 12]: 12-27: Tim approved both npm advisory bumps ("Approve both, 2.11.35 (Recommended)"): source-map-js 1.2.2 and baseline-browser-mapping 2.11.35, lockfile-only npm update (no override), floors raised; npm audit 44 to 42
+- [Phase 12]: 12-27: IN-01 name-too-long copy for 12-28 is Tim's "Shorten your name to 100 characters (now {n})." ({n} = formatCount(value.length)); IN-05 global-error title for 12-32 is "Something went wrong · Tim Lui"
+- [Phase 12]: 12-27: 404 header guard is option A ("A (Recommended)"): 12-29 drops purpose: prefetch from proxy config.matcher[0].missing; the residual is accepted risk AR-12-02 and 12-34 records IN-02 deferred, not fixed
+- [Phase 12]: 12-28: a validation answer naming no visible field (no fields, empty fields, or only non-visible keys) shows the copy.fail-send box with Retry and keeps every value (WR-01)
+- [Phase 12]: 12-28: Retry runs validateAll + showErrors before send, like submit; an invalid edit sends no request and focuses the error summary (IN-06)
+- [Phase 12]: 12-28: IN-01 shipped: name too_long (client >100 and server too_long) reads 'Shorten your name to 100 characters (now {n}).' with formatCount; other name issues keep 'Enter your name.'
+- [Phase 12]: 12-28: feedbackSchema email is z.email() (IN-07); contract pinned first by 6 accept/reject cases green on the old schema
+- [Phase 12]: 12-29: option A applied (Tim, 12-27: "A (Recommended)"): purpose: prefetch left proxy config.matcher[0].missing; document prefetches get the CSP header and the x-edge-section delete; next-router-prefetch still skips (RSC prefetches are not documents)
+- [Phase 12]: 12-29: IN-02 narrowed, not fixed as written: matcher-skipped paths (RSC prefetches, api..., missing images/, terrain/, media/ files) are accepted residual AR-12-02; T-12-02 closed in 12-SECURITY.md, threats_open 0; 12-34 records IN-02 deferred
+- [Phase 12]: 12-30: the hero contour joins the install precache through the terrain build (precache.json = [contours.strip, contours.hero]); +45,632 bytes per install (C2)
+- [Phase 12]: 12-30: every service-worker cache write goes through storeCopy (clone at once, event.waitUntil(open.then(put).catch(() => {}))); network-first freshness and never-stored rules unchanged (WR-04)
+- [Phase 12]: 12-31 WR-02: DemoTerminal observes its region via the observeRegion callback ref (React 19 ref cleanup); a 4->2 shrink never removed the node (render-phase update discards the null), the real removed-node path is empty-then-refill
+- [Phase 12]: 12-31 IN-03: useProgressiveTextures keys its loader on sourcesKey (joined thumbSrc/fullSrc) with a tracked-key reset; same URLs in a new array start no load
+- [Phase 12]: 12-31 IN-04: startUpdateChecks(container, scriptUrl, everyMs) in lib/sw-update.ts returns a stop function and catches update(); ServiceWorkerRegistration stops it in the effect cleanup
+- [Phase 12]: 12-32 D1: error-page Report this error uses the ink-muted text-link style (REPORT_LINK); NotFoundBody keeps its 07 accent links; 12-UI-SPEC amended 2026-11-03
+- [Phase 12]: 12-32 IN-05: global-error ships Tim's 12-27 title 'Something went wrong · Tim Lui' as a React title element
+- [Phase 12]: 12-32 D2: saved-page rows hover to surface-overlay
+- [Phase 12]: 12-33: README contact-form block lists the five variables lib/email.ts and lib/rate-limit.ts read; the unread analytics names in .env.example stay untouched (outside WR-03)
+- [Phase 12]: 12-33: G3 scroll-lock case tagged @prod-only (dev listing drops it, PW_PROD and CI keep it); the eight-route credit test carries test.slow() (C3, C4)
+- [Phase 12]: 12-34: IN-02 recorded deferred (option A, residual AR-12-02); the other ten review findings fixed with commits; review open 0
+- [Phase 12]: 12-34: A5 offline-control deferred row closed as not reproduced (local 1360/1360 at 16 workers, CI 41648599366 under --fail-on-flaky-tests); caniuse-lite row stays open pending Tim
 
 ### Pending Todos
 
-- Legacy image variants (-thumb/-medium/-large) are still live in `data/landscapes.ts`. Delete them in Phase 12 (VERIFY-01), only after the Phase 8 manifest exists and Phase 10 has migrated the consumers.
+- [Deploy, from 10-13] The service worker serves cached HTML stale-while-revalidate, so a returning visitor may see the old /photos (legacy gallery) once after the Phase 10 deploy. Check /photos after one reload on the production build.
+- [Consumers migrated by 10-09 (aa9dff6): data/landscapes.ts and the v1 photo UI are deleted, and a Jest guard (lib/__tests__/photos-view-model.test.ts) fails if any app, components or lib file reads a manifest `.legacy` path] Legacy image variants (-thumb/-medium/-large, 60 files) are still on disk and in the manifest's `legacy` entries. Delete them in Phase 12 (VERIFY-01) (code review IN-08).
+- [Phase 10, from 08-11; RESOLVED 2026-10-26: 10-04 rewrote GalleryGrid.test.tsx against JustifiedGrid (no badge), 10-09 deleted components/GalleryGrid.tsx, and Tim re-baselined photos/* in 483895b (10-13, reply "pushed")] The /photos grid badge reads "1 hotspots": `components/GalleryGrid.tsx:60` always prints `{n} hotspots` and `components/__tests__/GalleryGrid.test.tsx:83` asserts the literal '1 hotspots'. Two photos have one hotspot since the 08-10 copy, so the photos/* baselines (c0f2418) show it. Tim committed those baselines as-is (option A by action), so fix the plural, update the test and re-baseline photos/* in the Phase 10 GalleryGrid rebuild.
+- [Phase 12, from 08-13; RESOLVED 2026-11-05: 12-UAT test 7 passed in Playwright Firefox 157 at 1x, single strokes, not blurred or doubled] Firefox 1 px stroke check for the footer contour band (08-13 Task 1 step 6, RESEARCH A2) was NOT reported by Tim (his only reply was "pushed"). Open the local production build (`npm run build && npm run start`, then `git checkout -- public/service-worker.js`) in Firefox (and Safari if available) and record whether the band's lines read as 1 px strokes; carry any difference into the Phase 12 cross-browser pass.
+- [Phase 7, from 07-11; RESOLVED 2026-10-25 at 09-13: Tim answered "Commit it" ("Track it, so the tree stays clean and agents get the Next.js warning."); AGENTS.md tracked unedited in c4d00d0] Open item for Tim: `next dev` created an untracked `AGENTS.md` at the repo root. It is left untracked; Tim decides whether to keep and commit it, gitignore it, or delete it.
 
 ### Blockers/Concerns
 
-- [Phase 7] Local node_modules lag the lockfile (next 16.1.6 / framer-motion 12.35.1 vs 16.2.6 / 12.39.0). Run `npm ci` before capturing any baseline.
-- [Phase 7] A Next.js security release is due 2026-10-14; DEPS-04 must include it.
-- [Phase 7] Needs from Tim: real GitHub, LinkedIn, email and role line; display-face choice in the UI-SPEC.
-- [Phase 8] Needs from Tim: waterfall name/location, photo copy corrections, the swissALTIRegio attribution string, an approximate position for the film-scan photo (R004-011), and where the originals should live.
-- [Phase 11] Needs from Tim: CLI_X per-grade content and Medium/Critical demo commands with `riskScore`, metric sources, roadmap order and dates.
+- [Milestone v2.0, 2026-11-05] Production serves a rebuild of preview `53171db`, promoted by Tim for 12-UAT test 6, but `origin/main` is still `2c4e106`, 857 commits behind the Phase 12 tip. Until the merge, any production deploy from `main`, a Dependabot merge included, puts the old site back.
+- [Milestone v2.0, 2026-11-05] A real send from the contact form has not been tested on production.
+- [Phase 12, from Phase 11 (2026-11-02)] Open after Phase 11: the CI Visual Regression job has not run on the 11-19 commits (box baselines expected unchanged; pushing the branch or its PR is Tim's call); 11-REVIEW-DISPOSITION.md has 14 untriaged info rows (IN-01 to IN-14); the 11-UI-REVIEW.md fixes (19/24) are open; Phase 12 carry-overs are in `.planning/phases/11-engineering-roadmap/deferred-items.md`; 11-UAT.md still lists G-11-4 as diagnosed until `/gsd-verify-work 11` reconciles it (fix verified in code by 11-VERIFICATION, passed 11/11)
+- [Phase 11] gsd/phase-11-engineering-roadmap is stacked on the Phase 10 tip (2b699a6); none of Phases 7-11 is on origin/main yet: merge 07, 08, 09, 10, then 11
+- [Phase 11, BLOCKER 2026-11-01; RESOLVED 2026-11-02: re-planned as 11-02..11-18 (2c7ac01), executed, gap plan 11-19 closed G-11-4, verification passed] Re-plan required before further execution: CLI_X is discontinued and box (github.com/tlex-web/box, public, Rust CLI toolkit, 23 tools, v2.0 shipped) plus coin-flip (github.com/tlex-web/coin-flip, private, native Android 3D coin toss, Kotlin) replace clix-cli and clix-website. ENG-03 (CLI_X risk bands as trail grades) has no counterpart in either project and needs a decision; ENG-05 terminal demo retargets to box; coin-flip has no terminal (clip/stills, still no three.js on project pages) and shows the private-repo note. Plans 11-02 and 11-03..11-15 embed CLI_X content, slugs and fixtures. [DISCUSSED 2026-11-01: 11-CONTEXT.md updated (fa51720). ENG-03 retired (D-24), box Safety + coin-flip Privacy (D-25), box terminal captured locally (D-26), coin-flip clip (D-27), trails box Hörnliweg T4 / coin-flip Zmutt T1 (D-07), route log per milestone (D-31, D-32), Home About CLI_X sentence rewritten (D-33).] Next: /gsd-ui-phase 11 (revise the CLI_X-heavy UI-SPEC), then /gsd-plan-phase 11 --research (RESEARCH.md is CLI_X-specific; keep 11-01 as complete).
+- [Phase 11; SUPERSEDED 2026-11-01 by the CLI_X discontinuation] Needs from Tim: CLI_X per-grade content and Medium/Critical demo commands with `riskScore` (not supplied at 08-03, where they were optional), metric sources, roadmap order and dates.
+- [Phase 11; SUPERSEDED 2026-11-01: CLI_X data leaves the site] [from 08-03; answered by Tim 2026-10-25 at 09-13: "Leave for Phase 11" ("Keep it open; the Phase 11 Engineering/CLI_X rework rewrites demo content anyway.")] Demo command 4 (`pkill -f chrome`) is riskLevel `critical` (score 0.87) and shows a CRITICAL RISK badge, but its explanation in `data/projects.ts` still reads "High-risk operation - requires explicit confirmation". The fix moves to the Phase 11 Engineering/CLI_X rework; it is no longer an open question. data/projects.ts stays unchanged until then (code review IN-07).
+- [Phase 10, from 08 code review; RESOLVED 2026-10-26: WR-04 fixed in code by 10-01 (6bb5fb6); WR-01, WR-02, WR-03, WR-05, WR-06 (hook part accepted), WR-07 and WR-08 fixed and recorded by 10-02 (ae5cf28, 9e3db72); WR-04 and IN-02 rows recorded fixed by 10-13 (b73b101), 08-REVIEW-DISPOSITION open 10 -> 8 (CR-01 deferred and IN-01, IN-03..IN-09 remain)] 08-REVIEW-DISPOSITION.md has 8 open warnings, latent for the current four photos: WR-01 out-of-extent photo gets clamped height and UV outside 0–1; WR-02 `gpsOf` drops lat/lon when GPSAltitude is missing; WR-03 offsetTimeOriginal ignored (Europe/Zurich assumed); WR-04 `formatExposureTime` wrong for 0.25–1 s and 0; WR-05 `photos:derive` write mode not atomic; WR-06 guard skips HEIF/raw formats and `.gitignore` lost the `public/images/landscapes/` line; WR-07 scripts/README.md omits `photos:build`; WR-08 corrections can claim `source: exif` for a hand-typed position. Fold into the first Phase 9/10 plan that adds photo data or surfaces (or run `/gsd-code-review 08 --fix`). Also IN-02: the legacy bridge drops `position.approximate` (footer unaffected; Phase 10 must carry it). [IN-02 code RESOLVED by 10-09: the bridge is deleted and the view-model carries `approximate` (altitudeLabel, strip ≈ and approx note); the disposition row stays for 10-13.]
+- [Phase 7; RESOLVED at Phase 07 UAT 2026-10-24, test 3: Tim confirmed the three jobs are Required on main] Required status checks (Visual Regression, Lint and Type Check, Unit Tests) on main are not set yet; until Tim sets them a red visual job does not block merges (07-USER-SETUP.md)
+- [Phase 7] main (Vercel production) lacks the Next 16.4.2 / sharp 0.35.5 security patch until Tim merges gsd/phase-07-foundation-guardrails; GitHub reported 84 Dependabot alerts on the default branch (9 critical). Merge recommended soon. Phase 8 lives on gsd/phase-08-data-terrain-pipeline, stacked on the unmerged Phase 7 tip (39836df) by Tim's choice, so merge Phase 7 first; until Phase 7 is on origin/main, worktree base-check degrades every phase to sequential execution.
+- [Phase 7, from 07-10; RESOLVED by 09-02: `components/Hero3DMountain.tsx` deleted with the Home rebuild] Hero badge `components/Hero3DMountain.tsx:73` (text-snow-50 on from-frost-500 to-frost-600, 18px semibold = not large text) is now 1.42-2.17:1 after the locked v1->v2 alias map (v1 was 2.10-2.93:1, also failing). No Phase 7 plan fixes it explicitly: catch it in the 07-20 contrast guard or the Phase 9 hero rework
+- [Phase 7, from 07-10; updated by 08-05; RESOLVED by the Phase 9 Home rebuild: no `hover:bg-ink` left in `app/(site)/page.tsx` or `components/home/`, Hero3DMountain deleted in 09-02] Lost hover background: after the 08-05 codemod `app/(site)/page.tsx:234` and `components/Hero3DMountain.tsx:97` read `bg-ink hover:bg-ink`, so the hover background does not change (shadow/scale remain). Restore a distinct hover state in the Phase 9 Home rebuild
+- [Phase 9-12, from 07-11] 37 utility-styled headings in 20 files (e.g. Hero3DMountain.tsx:65 font-bold text-snow-50 drop-shadow-2xl; /projects text-shadow-glow; /contact, /error, /not-found, /offline text-gray-900 dark:text-white) still carry font-bold, glow and v1 colours because utilities beat the 7c @layer base rules; they get the 7c weight/no-glow/ink only when their redesign phase removes those utilities
+- [Phase 11, from 07-13; RESOLVED by 11-08 (e37f2af): RoadmapTimeline and its "Target Release" pill were deleted when /roadmap became the route log] Roadmap card header overflows at narrow widths: at 375px the RoadmapTimeline "Target Release" pill and its label cross the card's right border by up to ~7px (CI render; 0.8-5.1px on 5 of 6 Medium cards without the CI gutter), after the 20px 7e icons grew the badges to 144.5x32. Tim accepted it for now (07-13 option A); the Phase 11 route-log roadmap redesign must fix the card header so the release block cannot overflow at narrow widths
+- [Phase 7, from 07-14, updated by 07-15 and 07-16; RESOLVED by 07-20: the contrast guard measures danger/surface-overlay 6.18:1 and line-strong/surface-overlay 4.17:1, and 07-19 fixed the offline items] (07-16: the FeedbackForm error text and input borders below are now text-danger and border-line-strong on bg-surface-overlay; their ratios were not re-measured, so the 07-20 contrast guard must confirm them.) Stock dark values now reach every visitor, not only dark-OS ones (since 07-15 collapsed as plain classes, e.g. text-gray-400 on bg-gray-800), and the contrast guard is not active until 07-20. Measured failures to fix in 07-16..07-20: FeedbackForm error text-red-600 on the dark card ~3.2:1 (needs 4.5:1), FeedbackForm input borders border-gray-600 on bg-gray-800 ~1.9:1 (needs 3:1 non-text), app/offline/page.tsx:61 text-gray-500 small text on the gray-900/800 gradient ~3.6:1 (offline:15 icon text-gray-600 ~2.3:1 is fine only if decorative). The FeedbackForm placeholder/autofill part is RESOLVED by 07-15: the light base classes are gone and the inputs have no placeholder class, so the browser default under color-scheme: dark applies
+- [Phase 7, from 07-15, for 07-20; RESOLVED by 07-20 (9656640): `@source not` for ../.planning, ../.claude, ../graphify-out and ../scripts; compiled CSS now has 0 dark and 0 stock selectors] Add `@source not` for `.planning` and `.claude` in app/globals.css before any compiled-CSS guard: Tailwind v4 source detection reads tracked Markdown (.planning/milestones/v1.0-phases/04-design-components/04-03-PLAN.md, 04-05-PLAN.md, 04-RESEARCH.md, .claude/skills/ui-styling/references/shadcn-theming.md), so the compiled CSS (.next/static/chunks/*.css) still has 41 phantom :where(.dark,.dark *) selectors (e.g. dark:scale-0, dark:-rotate-90, dark:group-hover:text-cyan-400) and dead stock classes (07-09's .to-amber-500) that no code uses. No visual effect, but a palette or dark: guard over the compiled CSS would count them
+- [Phase 7, from 07-16, for 07-24; RESOLVED by 07-24 (c9aac91): Contact page.tsx has no whileHover, rgba(, rotate, shadow-* or backdrop-blur left; the info cards are solid panels with no hover glow] app/contact/page.tsx:67/93/119 keep hue-coloured hover glows as inline motion props (whileHover boxShadow rgba(6,182,212,0.3), rgba(59,130,246,0.3), rgba(168,85,247,0.3)); they are not classes, so the stock-palette grep and a class-based palette guard miss them. Move them to tokens or drop them in the 07-24 Contact interim restyle
+- [Phase 9/12, from 07-18; RESOLVED by 11-01 (cf369b5): components/HologramTerminal.tsx is deleted (flat token-styled DemoTerminal) and ProjectDetailClient.tsx is gone] Colours the class grep cannot see stay in the Projects group: components/HologramTerminal.tsx keeps Three.js material/light hex (L26-330) and a <style jsx global> block with rgba/hex (L368-486, incl. the .hologram-content navy panel the terminal demo text sits on), out of scope until Phase 9 (UI-SPEC v2-only rule); a class-based palette guard misses them. components/ProjectDetailClient.tsx's 4 v1 aliases were codemodded to v2 names in 08-05 (RESOLVED; no live v1 names remain, enforced by the widened v1names guard)
+- [Phase 10, from 07-19; RESOLVED 2026-10-26: 10-07 (ee46a53) rebuilt the 3D carousel without drei Html or a window key listener, 10-09 (aa9dff6) deleted components/ImageDetailModal.tsx (bg-opacity classes), the legacy components/PhotoCarousel3D.tsx (inline hex, text-snow-200) and the legacy grid/3D toggle (PhotosPageClient), and the 10-12 (ebe0569) console assertion across view switches passes locally and in CI E2E; recorded in the 09 deferred-items by 10-13] During the local e2e/photos.spec.ts run the dev server logged three deprecation warnings and a React 'removeChild ... not a child' console error on the /photos grid/3D toggle; the tests pass. Class-string edits cannot cause a DOM removal error, so it very likely predates 07-19, but it was not checked at HEAD~1 and CI E2E logs do not capture the browser console. Reproduce and fix in the Phase 10 photos/lightbox rework. Also for Phase 10: components/ImageDetailModal.tsx L46/L60 use Tailwind v3 bg-opacity-* classes that Tailwind 4.3 does not generate, so the modal backdrop and close button render fully opaque (pre-existing); components/PhotoCarousel3D.tsx keeps Three.js inline hex (L75, L215, L264, L265, L268 fog) and the v1 alias text-snow-200 (L183)
+- [Phase 9, from 07-22; RESOLVED by 09-01/09-02: the legacy cards are gone and 09-02's no-JavaScript test at 375 px asserts scrollWidth <= clientWidth] Home overflows horizontally before its v1 whileInView animations fire: a 'Programming Projects' card starts at initial x: 50, so unsettled scrollWidth is 399 at 375 px and 784 at 768 px (passes only after settling). Real for visitors who have not scrolled yet; the Phase 9 Home rebuild must not translate content past the viewport edge (or clip it)
+- [Phase 12 / EDGE-01, from 07-23, pre-existing] notFound() inside /projects/[slug] returns HTTP 404 but the server HTML is an empty <html id="__next_error__">; the shell and 404 UI render client-side from the RSC payload (same with app/(site)/not-found.tsx removed), so that path has no server-rendered 404 without JS. Root unmatched URLs are server-rendered. Investigate before EDGE-01 sign-off
+- [Phase 10-12, from Phase 9] 11 open items in `.planning/phases/09-home-ascent/deferred-items.md`: README tree line for `app/page.tsx`, fflate 0.8.2 advisory in the canvas chunk, R3F 9 `THREE.Clock` deprecation warning, canvas chunk holding the load event back about 1.5 s on the HOME-08 profile, hero scrim switching at `lg:` instead of 768 px, the "2,760 m approx." tick at 4.81:1, a dark wedge in the 1440 px summit frame, Prettier drift in `e2e/home-canvas.spec.ts` and `lib/useAscentMode.ts`, four `delayHeightmap` e2e users bypassed by the production service worker, and a parallel-run e2e flake (no-webgl). [The photos 3D carousel flake is resolved by 10-07/10-09/10-12, recorded by 10-13.]
+- [Phase 9] gsd/phase-09-home-ascent is stacked on the Phase 8 tip (itself stacked on unmerged Phase 7): merge 07, then 08, then 09
+- [Phase 10] gsd/phase-10-photography is stacked on the Phase 9 tip (4a3a69c); of Phases 7-10 is on origin/main yet: merge 07, 08, 09, then 10
+- [Phase 11-12, from Phase 10] 6 open items in `.planning/phases/10-photography/deferred-items.md`: five dev-server e2e flakes under parallel load or after hot reloads (cold `/photos/[slug]` race, the intercepted route stops intercepting twice, G3 scroll-lock and reduced-motion stepper cross-talk), and local Playwright WebKit blocked by the CSP `upgrade-insecure-requests` on localhost (Phase 12 VERIFY-04 needs a WebKit path; Safari passed by hand at Phase 10 UAT)
+- [Phase 11, from 11-01; ANSWERED 2026-11-01 at discuss-phase: "Press resumes at once (B)", recorded as amended D-02 in 11-CONTEXT.md] Open question for Tim (not blocking): with D-02's temporary hover and focus pauses, resuming the demo by mouse leaves it paused until the pointer and focus leave the terminal. Keep as built (A) or let an explicit un-press clear the current temporary pauses (B)? Options table in 11-01-SUMMARY.md
 
 ## Deferred Items
 
@@ -98,6 +563,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-10T20:19:02.315Z
-Stopped at: Completed 07-02-PLAN.md
+Last session: 2026-11-05T20:26:05.352Z
+Stopped at: Phase 12 complete — all phases complete
 Resume file: None

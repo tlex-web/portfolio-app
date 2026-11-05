@@ -1,0 +1,168 @@
+/**
+ * Home display formatters (HOME-01, HOME-06; D-11, D-13; 09-UI-SPEC
+ * "Typography" new pure formatters table).
+ *
+ * Pure and import-free on purpose, like lib/photo-format.ts: no locale APIs, so
+ * Node and every browser print the same string and hydration never mismatches.
+ * Keep it to erasable TypeScript and never add an import. The capture shape is
+ * declared structurally here instead of imported from data/schemas/photo.ts.
+ * Units and coordinate letters follow U+00A0 so they never wrap away from
+ * their number.
+ */
+
+/** A capture as stored in data/generated/photos.ts (see `Capture` in data/schemas/photo.ts). */
+export type CaptureLike =
+  | { precision: 'second'; local: string }
+  | { precision: 'year'; year: number };
+
+const NBSP = ' ';
+const MIDDOT = '·';
+const EN_DASH = '–';
+const MONTHS_SHORT = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+] as const;
+
+/** Absolute value at `d` decimals, rounded half up: fixedDecimals(1.23455, 4) -> '1.2346'. */
+function fixedDecimals(v: number, d: number): string {
+  const scale = 10 ** d;
+  return (Math.round(Math.abs(v) * scale) / scale).toFixed(d);
+}
+
+/** Absolute value at four decimals, rounded half up: 1.23455 -> '1.2346'. */
+function fourDecimals(v: number): string {
+  return fixedDecimals(v, 4);
+}
+
+/**
+ * WGS84 coordinates as the kicker prints them (D-11): four decimals by
+ * default, round half up, the hemisphere letter by sign after U+00A0, joined
+ * by ' · ': { lat: 45.97644, lon: 7.65861 } -> '45.9764 N · 7.6586 E'. The
+ * Contact location (12 D-01) passes `{ decimals: 2 }`: '47.37 N · 8.54 E'.
+ */
+export function formatLatLon(
+  { lat, lon }: { lat: number; lon: number },
+  { decimals = 4 }: { decimals?: 2 | 4 } = {},
+): string {
+  const ns = `${fixedDecimals(lat, decimals)}${NBSP}${lat < 0 ? 'S' : 'N'}`;
+  const ew = `${fixedDecimals(lon, decimals)}${NBSP}${lon < 0 ? 'W' : 'E'}`;
+  return `${ns} ${MIDDOT} ${ew}`;
+}
+
+/**
+ * WGS84 coordinates as the viewer strip prints them (D-07; 10-UI-SPEC Strip
+ * field 6): the same four decimals and round-half-up rule as formatLatLon, the
+ * hemisphere letter after U+00A0, and one plain space between the halves:
+ * { lat: 46.015, lon: 7.7414 } -> '46.0150 N 7.7414 E'.
+ */
+export function formatCoordinates({ lat, lon }: { lat: number; lon: number }): string {
+  return `${fourDecimals(lat)}${NBSP}${lat < 0 ? 'S' : 'N'} ${fourDecimals(lon)}${NBSP}${lon < 0 ? 'W' : 'E'}`;
+}
+
+/**
+ * A capture's month and year for the card line: 'Sep 2021' for an EXIF capture
+ * (fixed English month names), the year alone for a year-only capture, which
+ * never gains an invented month (08 D-03).
+ */
+export function formatCaptureMonth(capture: CaptureLike): string {
+  if (capture.precision === 'year') return String(capture.year);
+  const [year, month] = capture.local.split('-');
+  return `${MONTHS_SHORT[Number(month) - 1]} ${year}`;
+}
+
+/** A distance in metres as kilometres at one decimal: 7716 -> '7.7 km'. */
+export function formatKilometres(m: number): string {
+  return `${(Math.round(m / 100) / 10).toFixed(1)}${NBSP}km`;
+}
+
+/**
+ * The span of distinct years, joined by an en dash: [2021, 2019] ->
+ * '2019–2021'; one distinct year prints once.
+ *
+ * @throws RangeError for an empty list.
+ */
+export function formatYearRange(years: readonly number[]): string {
+  if (years.length === 0) throw new RangeError('formatYearRange: years must not be empty');
+  const min = Math.min(...years);
+  const max = Math.max(...years);
+  return min === max ? String(min) : `${min}${EN_DASH}${max}`;
+}
+
+/** Whole metres with comma thousands separators, as formatMetres in lib/photo-format.ts. */
+function groupedMetres(m: number): string {
+  return formatCount(m);
+}
+
+/**
+ * A height range for the /photos kicker (D-14; 10-UI-SPEC "Header Band"): both
+ * ends grouped and rounded to whole metres, an en dash between them and one
+ * unit after the upper value: (1617, 2760) -> '1,617–2,760 m'. An equal range
+ * prints once.
+ *
+ * @throws RangeError when lo is above hi or either end is not finite.
+ */
+export function formatMetreRange(lo: number, hi: number): string {
+  if (!Number.isFinite(lo) || !Number.isFinite(hi) || lo > hi) {
+    throw new RangeError(`formatMetreRange: expected lo <= hi, got ${lo} and ${hi}`);
+  }
+  const low = groupedMetres(lo);
+  const high = groupedMetres(hi);
+  return low === high ? `${high}${NBSP}m` : `${low}${EN_DASH}${high}${NBSP}m`;
+}
+
+/**
+ * A count with its noun for the trail signs: '4 waypoints', '1 route'. Zero
+ * returns '' so the sign shows its destination only.
+ *
+ * @throws RangeError for a negative or non-integer count.
+ */
+export function countLabel(n: number, one: string, many: string): string {
+  if (!Number.isInteger(n) || n < 0) {
+    throw new RangeError(`countLabel: n must be a non-negative integer, got ${n}`);
+  }
+  if (n === 0) return '';
+  return `${n} ${n === 1 ? one : many}`;
+}
+
+/**
+ * The short place name: the override name when given, else the first comma
+ * segment of the location ('Zermatt, Switzerland' -> 'Zermatt').
+ */
+export function shortPlace(location: string, overrideName?: string | null): string {
+  if (overrideName) return overrideName;
+  return location.split(',')[0].trim();
+}
+
+/** Two digits with a leading zero: 7 -> '07'. */
+const twoDigits = (n: number) => String(n).padStart(2, '0');
+
+/**
+ * The register entry's time stamp (12 D-03; 12-UI-SPEC "Register entry") in
+ * the visitor's local time from Date getters, with the fixed English month
+ * names and a 24-hour clock: new Date(2026, 10, 2, 14, 32) ->
+ * '2 Nov 2026 · 14:32'. Seconds are dropped.
+ */
+export function formatEntryTime(date: Date): string {
+  const day = `${date.getDate()} ${MONTHS_SHORT[date.getMonth()]} ${date.getFullYear()}`;
+  return `${day} ${MIDDOT} ${twoDigits(date.getHours())}:${twoDigits(date.getMinutes())}`;
+}
+
+/**
+ * A whole count with comma thousands separators, for the Contact character
+ * counter and the too-long error: 1950 -> '1,950'.
+ */
+export function formatCount(n: number): string {
+  const whole = Math.round(n);
+  const digits = String(Math.abs(whole)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return `${whole < 0 ? '-' : ''}${digits}`;
+}

@@ -1,0 +1,87 @@
+/**
+ * SHELL-04, DATA-01: hashed terrain delivery (RESEARCH Pitfalls 9 and 10).
+ *
+ * - data/generated/precache.json (written by scripts/terrain/build-terrain.mjs)
+ *   lists the footer contour strip and the hero contour, so the service worker
+ *   precaches both: /offline keeps its band (UI-SPEC "Contour band") and its
+ *   edge-art sheet (EdgeArt's hero LOD) on a first offline visit (12-30 C2, D-12).
+ * - The committed public/service-worker.js keeps both placeholders; postbuild
+ *   (scripts/inject-build-hash.mjs) replaces them, and /terrain/ is cache-first.
+ * - proxy.ts skips images/ and terrain/, so static assets get no per-request
+ *   CSP nonce; next.config.ts marks /terrain/* immutable, which is safe because
+ *   every file there carries a content hash in its name.
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import { terrain } from '@/data/generated/terrain';
+
+const ROOT = process.cwd();
+const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+
+const precache: unknown = JSON.parse(read('data/generated/precache.json'));
+const sw = read('public/service-worker.js');
+
+describe('precache.json', () => {
+  test('equals [terrain.assets.contours.strip, terrain.assets.contours.hero]', () => {
+    expect(precache).toEqual([terrain.assets.contours.strip, terrain.assets.contours.hero]);
+  });
+
+  test('every entry is a content-hashed /terrain/ SVG that exists in public/', () => {
+    expect(Array.isArray(precache)).toBe(true);
+    for (const url of precache as string[]) {
+      expect(url).toMatch(/^\/terrain\/[a-z0-9-]+\.[0-9a-f]{10}\.svg$/);
+      expect(fs.existsSync(path.join(ROOT, 'public', url))).toBe(true);
+    }
+  });
+});
+
+describe('service worker (committed form)', () => {
+  test('keeps the build hash and precache placeholders', () => {
+    expect(sw).toContain("'__BUILD_HASH__'");
+    expect(sw).toContain('/*__PRECACHE_URLS__*/[]');
+  });
+
+  test('precaches the PRECACHE list on install', () => {
+    // 12-08 (D-12): install adds /offline's own assets to the same addAll list;
+    // the behaviour is covered in lib/__tests__/service-worker-navigation.test.ts.
+    expect(sw).toMatch(/cache\.addAll\(\[\.\.\.new Set\(\['\/', '\/offline', \.\.\.PRECACHE,/);
+  });
+
+  test('serves /terrain/ cache-first', () => {
+    expect(sw).toContain("startsWith('/terrain/')");
+  });
+});
+
+describe('delivery config', () => {
+  test('proxy matcher skips images/ and terrain/', () => {
+    expect(read('proxy.ts')).toContain('images/|terrain/');
+  });
+
+  test('next.config marks /terrain/:path* immutable', () => {
+    const config = read('next.config.ts');
+    expect(config).toContain("source: '/terrain/:path*'");
+    expect(config).toContain('immutable');
+  });
+  test('proxy matcher skips media/ so clips and posters get no per-request nonce (D-27)', () => {
+    const matcher = read('proxy.ts').match(/source:\s*'([^']+)'/s)?.[1] ?? '';
+    const skipped = matcher.match(/\(\?!([^)]*)\)/)?.[1].split('|') ?? [];
+    expect(skipped).toEqual(expect.arrayContaining(['images/', 'terrain/', 'media/']));
+  });
+
+  test('next.config marks /media/:path* immutable for a year (D-27)', () => {
+    const config = read('next.config.ts');
+    const at = config.indexOf("source: '/media/:path*'");
+    expect(at).toBeGreaterThan(-1);
+    const block = config.slice(at, config.indexOf('}', config.indexOf('headers:', at) + 10));
+    expect(block).toContain("key: 'Cache-Control'");
+    expect(block).toContain('max-age=31536000');
+    expect(block).toContain('immutable');
+  });
+
+  test('the raw clip recordings in assets/clips-original/ are gitignored (D-27)', () => {
+    const lines = read('.gitignore')
+      .split(/\r?\n/)
+      .map((l) => l.trim());
+    expect(lines).toContain('assets/clips-original/');
+  });
+});

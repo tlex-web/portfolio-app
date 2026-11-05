@@ -1,0 +1,1 @@
+`ffmpeg -hide_banner -loglevel error -y -f lavfi -i testsrc=size=64x64:rate=10 -t 0.2 -vf format=yuv420p -c:v libx264 -profile:v high -preset slow -crf 40 -movflags +faststart -metadata creation_time=2026-10-31T10:00:00Z -metadata location=+46.0207+007.7491/` (no strip flags). Fails: timestamps, loci box, ilst items.

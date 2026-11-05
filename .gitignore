@@ -54,8 +54,11 @@ lerna-debug.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Original unoptimized images (keep locally, not in Git)
-# Optimized images in public/images/optimized/ are committed
+# Original photos with GPS EXIF (D-09): local only, never committed, not even with LFS (public repo)
+assets/photos-original/
+# Raw screen recordings for clip:derive (D-27): a device recording may carry its creation time, location and device tags
+assets/clips-original/
+# The old originals path, ignored again so a clone that still has them there cannot add them (08-REVIEW WR-06)
 public/images/landscapes/
 
 # IDEs

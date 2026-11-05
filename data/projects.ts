@@ -1,187 +1,232 @@
 import { Project } from './types';
 
+/**
+ * The site's two projects, box then coin-flip (D-22; ENG-01 order).
+ *
+ * Every string is a fact settled in 11-CONTEXT (names per default.N1, slugs,
+ * kicker versions, trail ids, the box repository URL) or a value Tim approved
+ * on 2026-11-01, copied from a 'supplied' row of 11-02-SUMMARY.md "Resolved
+ * values" (D-16, D-21). An element without an approved value is left out,
+ * never filled. Captures (the terminal commands and the Safety preview) are
+ * copied byte for byte from "Approved captures (verbatim)"; nothing in them
+ * is trimmed or reworded (08 D-22). Prose keeps Tim's wording and, in box's
+ * Problem paragraph, Output stage, Safety intro and --force line, the review
+ * copy's inline-code backticks exactly as drafted: InlineCode sets each
+ * backticked token as code and never shows the backticks (11-14, Tim's "yes",
+ * 2026-11-01). Backticks appear nowhere else in the prose (data test).
+ *
+ * coin-flip's repository is private (D-12, D-23): its entry carries only
+ * approved public wording, no link and nothing copied from the repository.
+ */
+
+/** copy.projects-intro: the paragraph under the /projects h1. */
+export const projectsIntro =
+  'Two things I build: box, a command-line toolkit for PowerShell 7 written in Rust, and coin-flip, an Android app that tosses a fair 3D coin. Each route opens a case study.';
+
 export const projects: Project[] = [
   {
-    slug: 'clix-cli',
-    name: 'CLI_X - AI Command Line Tool',
-    tagline: 'Transform natural language into safe, executable shell commands',
-    shortDescription:
-      'An intelligent Rust-based CLI tool that converts natural language to platform-specific shell commands using LLM technology with enterprise-grade safety.',
-    longDescription: `I built CLI_X to eliminate the mental overhead of translating intent into shell syntax. Type what you want in plain English and get a platform-aware command you can trust.\n\nIt runs a 4-stage intelligence pipeline across GPT-4, Claude, Groq, and Ollama, all in Rust for a 90ms startup and 36MB footprint.\n\nThe differentiator is safety: an ML-inspired risk scorer evaluates every command against 11 rules before execution. Over 850 tests enforce that contract.`,
-    techStack: [
-      'Rust',
-      'Tokio',
-      'OpenAI GPT-4',
-      'Anthropic Claude 3.5',
-      'Groq Llama 3.3',
-      'Ollama',
-      'SQLite',
-      'Docker',
-      'Clap',
-      'Serde',
+    slug: 'box',
+    name: 'box',
+    pitch:
+      'Twenty-three command-line tools in one Rust binary, built for PowerShell 7. Anything destructive previews first.',
+    outcome:
+      'v2.0 shipped on 14 July 2026: 23 tools in one binary, JSON output for scripts, and a preview before anything destructive.',
+    kicker: { version: 'v2.0', status: 'shipped' },
+    route: 'hoernliweg-27',
+    links: { github: 'https://github.com/tlex-web/box' },
+    problem: [
+      'box gathers the small jobs I do in PowerShell 7 on Windows into one command: hashing a file, making a UUID, flattening a folder, renaming a batch of files. v1.0 put 23 tools in one Rust binary. v2.0 made them scriptable: JSON output that `ConvertFrom-Json` reads, `--clip` for the clipboard, and defaults in a config file.',
     ],
-    links: {
-      github: 'https://github.com/tlex-web/cli_x',
-      docs: 'https://docs.cli-x.com',
+    pipeline: {
+      stages: [
+        {
+          name: 'Settings',
+          description:
+            'A flag beats an environment variable, which beats the config file, which beats the built-in default.',
+        },
+        { name: 'Command', description: 'One of the 23 tools runs with those settings.' },
+        {
+          name: 'Output',
+          description:
+            'Plain text for people, `--json` for the next command, `--clip` for the clipboard.',
+        },
+      ],
     },
-    status: 'active',
-    version: 'v2.4.0',
-    featured: true,
-    features: [
-      'Natural language to shell command conversion (95% accuracy)',
-      '4-stage intelligence pipeline (intent analysis, context enrichment, prompt optimization, response parsing)',
-      'Multi-provider LLM support (OpenAI, Anthropic, Groq, Ollama)',
-      'ML-inspired safety system with 11 comprehensive rules',
-      'Cross-platform command generation (PowerShell, Bash, Sh, Cmd)',
-      'Conversation mode with persistent context retention',
-      'Workflow automation with pattern detection and recommendations',
-      'Template system with 60+ pre-built templates and interactive TUI',
-      'Ollama integration for complete local model management',
-      'Template analytics with usage tracking and effectiveness scoring',
-      'Command suggestions with proactive assistance',
-      'Intelligent caching (40-60% API cost reduction)',
-      'Async context loading (<100ms startup)',
-      'Comprehensive audit logging and command history',
-    ],
-    highlights: {
-      performance: {
-        startupTime: '~90ms (40% faster)',
-        memoryUsage: '~36MB typical',
-        binarySize: '4-6MB stripped',
-        cacheSpeed: '~1.5ms lookup',
-        intelligenceOverhead: '~28ms',
+    safety: {
+      intro:
+        'Commands that delete, move or rename files run as a preview by default: box shows what it would do and renames, moves or deletes nothing until you add `--force`. box checks the whole job before it changes the first file.',
+      capture: {
+        command: 'bulk-rename',
+        input: "box bulk-rename ./sample '^(.*)\\.txt$' '$1.md'",
+        output: [
+          '  - copies (skipped: directory)',
+          '  ~ hut.txt   -> hut.md',
+          '  ~ zmutt.txt -> zmutt.md',
+          '',
+          'Dry run: 2 to rename, 0 unchanged, 1 skipped. Re-run with --force to apply.',
+        ].join('\n'),
       },
-      testing: {
-        totalTests: '850+',
-        passRate: '100%',
-        newTests: '+90 from v2.3.0',
-        documentation: '6,700+ lines',
-        newDocs: '3,200+ for v2.4.0',
-      },
-      safety: {
-        rules: 11,
-        riskLevels: ['Low (0.0-0.3)', 'Medium (0.3-0.6)', 'High (0.6-0.8)', 'Critical (0.8-1.0)'],
-        contextAware: true,
-        impactAnalysis: true,
-        alternatives: true,
-      },
-      features: {
-        providers: 4,
-        templates: '60+',
-        commands: '40+',
-        intentTypes: 17,
-        contextSources: 5,
-      },
+      forceLine:
+        'With `--force`, box would rename `hut.txt` to `hut.md` and `zmutt.txt` to `zmutt.md`, and leave the `copies` folder alone.',
     },
-    demoCommands: [
-      {
-        input: 'show me all Python files larger than 1MB',
-        output: 'find . -name "*.py" -size +1M -ls',
-        riskLevel: 'low',
-        explanation: 'Safe file search operation with no modifications',
-      },
-      {
-        input: 'check how much disk space is available',
-        output: 'df -h',
-        riskLevel: 'low',
-        explanation: 'Read-only system information query',
-      },
-      {
-        input: 'create a backup of my documents folder',
-        output: 'tar -czf documents_backup_$(date +%Y%m%d).tar.gz ~/Documents/',
-        riskLevel: 'low',
-        explanation: 'Safe backup operation with timestamped filename',
-      },
-      {
-        input: 'kill all Chrome processes',
-        output: 'pkill -f chrome',
-        riskLevel: 'high',
-        warning: 'This command terminates running processes',
-        explanation: 'High-risk operation - requires explicit confirmation',
-      },
-    ],
-    roadmapItems: ['cli-conversation-export', 'cli-workflow-scheduling', 'cli-plugin-system'],
+    metrics: {
+      releaseLine: 'Measured at v2.0',
+      tiles: [
+        {
+          key: 'tools',
+          label: 'Tools',
+          value: '23',
+          context: 'Tools in the README at v2.0, plus config and completions',
+          sourceUrl: 'https://github.com/tlex-web/box#readme',
+        },
+        {
+          key: 'tests',
+          label: 'Tests',
+          value: '507',
+          context: 'At the v2.0 milestone',
+          sourceUrl: 'https://github.com/tlex-web/box/blob/main/.planning/MILESTONES.md',
+        },
+        {
+          key: 'binary',
+          label: 'Binary',
+          value: '1',
+          context: 'All tools ship in one executable',
+          sourceUrl: 'https://github.com/tlex-web/box#readme',
+        },
+      ],
+    },
+    demo: {
+      intro: 'Four commands I ran with box, replayed with the output they returned.',
+      commands: [
+        {
+          input: 'box hash sample/hut.txt',
+          output:
+            'a113912ef20f332e35c86601e1c90df90a110e260827f0ae9f861611927ecf1d  sample/hut.txt',
+          note: 'BLAKE3 is the default hash.',
+        },
+        {
+          input: 'box uuid --json',
+          output: [
+            '{',
+            '  "results": [',
+            '    {',
+            '      "uuid": "e8487bbf-77c8-4aa7-86c6-76bf11e8c9e2",',
+            '      "version": "v4"',
+            '    }',
+            '  ],',
+            '  "count": 1',
+            '}',
+          ].join('\n'),
+          note: 'With --json, a command prints one JSON document and nothing else.',
+        },
+        {
+          input:
+            'box du ./sample --json | ConvertFrom-Json | Select-Object -ExpandProperty results | Sort-Object size -Descending | Select-Object -First 3 name, size',
+          output: [
+            '',
+            'name      size',
+            '----      ----',
+            'copies      20',
+            'hut.txt     20',
+            'zmutt.txt   14',
+            '',
+          ].join('\n'),
+          note: 'ConvertFrom-Json reads it, so the rest is plain PowerShell.',
+        },
+        {
+          input: "box color '#70d5ed'",
+          output: [
+            '  Hex   : #70D5ED',
+            '  RGB   : rgb(112, 213, 237)',
+            '  Tuple : 112 213 237',
+            '  HSL   : hsl(192, 78%, 68%)',
+            '  Name  : ~skyblue',
+            '',
+            '  ██████████',
+          ].join('\n'),
+          note: 'Hex in; RGB, HSL and a color name out.',
+        },
+      ],
+    },
+    stack: {
+      groups: [
+        { label: 'Language', items: ['Rust 2021'] },
+        {
+          label: 'Crates',
+          items: ['clap', 'serde_json', 'blake3', 'regex', 'rayon', 'chrono', 'image', 'crossterm'],
+        },
+        { label: 'Platform', items: ['Windows', 'PowerShell 7'] },
+      ],
+    },
   },
   {
-    slug: 'clix-website',
-    name: 'CLI_X Website & Licensing Platform',
-    tagline: 'Modern licensing and distribution platform for CLI_X',
-    shortDescription:
-      'A Next.js 14 web application featuring subscription management, secure license generation, cross-platform binary distribution, and an interactive demo playground.',
-    longDescription: `The commercial platform for CLI_X -- handling discovery, subscriptions, licensing, and multi-platform binary distribution from a single Next.js 14 application.\n\nBuilt on the App Router with PostgreSQL via Prisma, Stripe for payments, and NextAuth.js v5 for OAuth. All sensitive logic runs in server-side route handlers.\n\nVisitors can try CLI_X in-browser without an account. Subscribers receive cryptographic license keys and access to premium LLM providers from one dashboard.`,
-    techStack: [
-      'Next.js 14',
-      'TypeScript',
-      'React 18',
-      'Tailwind CSS',
-      'shadcn/ui',
-      'PostgreSQL',
-      'Prisma ORM',
-      'NextAuth.js v5',
-      'Stripe',
-      'Vercel',
-      'Zod',
-      'React Hook Form',
+    slug: 'coin-flip',
+    name: 'coin-flip',
+    pitch:
+      'A 3D coin toss for Android that settles a fair result before the coin leaves your hand, with no permissions and no network.',
+    outcome:
+      'v1.0 has run on my own device since 9 August 2026. A smoother toss and a Play Store release come next.',
+    kicker: { version: 'v1', status: 'on device' },
+    route: 'zmutt-2',
+    repository: 'private',
+    problem: [
+      'coin-flip is an Android app for one job: settling a call with a coin toss you can trust. The result is drawn first, and the 3D toss is choreographed to land on it. It asks for no permissions and works offline, and the result is announced to TalkBack. v1 runs on my own device, but it is not done: smoothing the toss and the camera follow, and then a Play Store release, are still ahead.',
     ],
-    links: {
-      demo: 'https://cli-x.com',
-      github: 'https://github.com/tlex-web/cli_x-website',
-      docs: 'https://docs.cli-x.com',
-    },
-    status: 'active',
-    version: 'v1.0.0',
-    featured: true,
-    features: [
-      'Interactive demo playground with live command generation',
-      'Subscription management with Stripe integration',
-      'Secure license key generation and validation',
-      'Cross-platform binary distribution (Windows, macOS, Linux)',
-      'User authentication with NextAuth.js and OAuth',
-      'PostgreSQL database with Prisma ORM',
-      'Responsive, modern UI with dark theme',
-      'Rate limiting and abuse prevention',
-      'Download analytics and tracking',
-      'Email notifications for licenses',
-      'User dashboard for license management',
-      'Real-time payment webhook processing',
-      'SEO optimized with meta tags and sitemaps',
-      'Accessibility compliant (WCAG 2.1)',
-    ],
-    highlights: {
-      pricingTiers: {
-        free: {
-          price: 'Free',
-          commands: '10/day',
-          models: 'Basic',
-          features: ['BYOK (Bring Your Own Keys)', 'Local history', 'Community support'],
+    pipeline: {
+      intro:
+        'The result is decided first. A cryptographic 50/50 draw picks heads or tails before the toss, and the animation is choreographed to land on it.',
+      in: 'a tap',
+      out: 'a fair result, felt and announced',
+      stages: [
+        { name: 'Fair draw', description: 'A cryptographic 50/50 draw picks heads or tails.' },
+        {
+          name: 'Choreographed toss',
+          description: 'The 3D toss is choreographed to land on the drawn result.',
         },
-        pro: {
-          price: '$9.99/mo or $99/yr',
-          commands: 'Unlimited',
-          models: 'Premium (GPT-4, Claude)',
-          features: [
-            'Pre-configured API keys',
-            'Cloud sync',
-            'Priority support',
-            'Advanced analytics',
-            'Early access',
-          ],
+        { name: 'Landing and settle', description: 'The coin comes to rest on the drawn face.' },
+        {
+          name: 'Haptic pulse and announcement',
+          description: 'A short pulse, and TalkBack announces the result.',
         },
-      },
-      security: [
-        'Bcrypt password hashing',
-        'Cryptographically signed licenses',
-        'PCI-compliant payments',
-        'Input sanitization',
-        'Rate limiting',
-        'HTTPS/TLS 1.3',
       ],
-      techStack: {
-        frontend: ['Next.js 14', 'React 18', 'TypeScript', 'Tailwind CSS', 'shadcn/ui'],
-        backend: ['Next.js API Routes', 'NextAuth.js', 'Prisma', 'PostgreSQL', 'Stripe'],
-        deployment: ['Vercel', 'Edge Network', 'Serverless Functions'],
-      },
     },
-    roadmapItems: ['webshop-team-management', 'webshop-analytics', 'webshop-api-marketplace'],
+    privacy: {
+      intro: 'coin-flip keeps everything on the device.',
+      facts: [
+        'No permissions: the release build asks for none.',
+        'Fully offline: no internet permission and no remote services.',
+        'No ads, no trackers, no accounts.',
+      ],
+    },
+    metrics: {
+      releaseLine: 'Checked on the v1.0 release build',
+      tiles: [
+        {
+          key: 'permissions',
+          label: 'Permissions',
+          value: '0',
+          context: 'Checked on the release APK',
+        },
+        {
+          key: 'result-split',
+          label: 'Result split',
+          value: '50/50',
+          context: 'A cryptographic draw decides each result',
+        },
+      ],
+    },
+    clip: {
+      id: 'coin-flip-toss',
+      intro: 'One toss, recorded from the screen of my own device.',
+      description:
+        'A coin lies flat on a dark screen. About a second and a half in, it is flipped: it rises toward the viewer, turns over several times, then drops back and lands flat. It comes to rest face up, and the word HEADS appears below it.',
+    },
+    stack: {
+      groups: [
+        { label: 'Language', items: ['Kotlin'] },
+        { label: 'Platform', items: ['native Android'] },
+      ],
+    },
+    nextSteps: ['coin-flip-v1-1', 'coin-flip-play-store'],
   },
 ];
