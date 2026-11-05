@@ -18,9 +18,10 @@
  * T-12-03: a miss is answered with the 404 rendered under the neutral slug,
  * fetched by the proxy, for every request kind; fetch is mocked here (no
  * network). The
- * fetch runs only on loopback and on the hostnames Vercel names in
- * VERCEL_URL, VERCEL_BRANCH_URL and VERCEL_PROJECT_PRODUCTION_URL; the tests
- * clear those variables and set them where needed.
+ * fetch runs only on loopback, on the canonical host (the hostname of
+ * site.url, D-13) and on the hostnames Vercel names in VERCEL_URL,
+ * VERCEL_BRANCH_URL and VERCEL_PROJECT_PRODUCTION_URL; the tests clear those
+ * variables and set them where needed.
  */
 
 import { NextRequest } from 'next/server';
@@ -33,6 +34,7 @@ import {
   proxy,
 } from '../../proxy';
 import { projects } from '@/data/projects';
+import { site } from '@/data/site';
 import { photoSlugs } from '@/lib/photos/view-model';
 
 const NONCE = 'bm9uY2U=';
@@ -49,7 +51,10 @@ function directive(csp: string, name: string): string | undefined {
 const run = (url: string, headers: Record<string, string> = {}) =>
   proxy(new NextRequest(url, { headers }));
 
-/** The production host the tests use, and the Vercel variables that can allow a host. */
+/**
+ * The vercel.app host, a Vercel-named host only where a test sets a variable,
+ * and the Vercel variables that can allow a host.
+ */
 const PROD_HOST = 'portfolio-app-mocha-three.vercel.app';
 const VERCEL_HOST_VARS = [
   'VERCEL_URL',
@@ -184,7 +189,7 @@ describe('proxy(): CSP header', () => {
 });
 
 describe('proxy(): unknown-slug rewrite (EDGE-01)', () => {
-  // No Vercel variable is set here, so the production host is not allowed to
+  // No Vercel variable is set here, so the vercel.app host is not allowed to
   // fetch the neutral 404 and every miss takes the plain rewrite.
   it('rewrites an unknown project slug to /__missing with x-edge-section=projects', async () => {
     const response = await run(
@@ -391,7 +396,7 @@ describe('proxy(): neutral 404 for a miss (T-12-03)', () => {
   });
 });
 
-describe('proxy(): the neutral fetch runs only on loopback and Vercel hosts (T-12-03)', () => {
+describe('proxy(): the neutral fetch runs only on loopback, the canonical host and Vercel hosts (T-12-03)', () => {
   const miss = (host: string) => `https://${host}/photos/nf-token`;
 
   it('a forged host gets the plain rewrite and no fetch', async () => {
@@ -463,4 +468,56 @@ describe('proxy(): the neutral fetch runs only on loopback and Vercel hosts (T-1
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(new URL(String(fetchMock.mock.calls[0][0])).hostname).toBe(PROD_HOST);
   });
+});
+
+describe('proxy(): the canonical host self-fetches with no Vercel variable set (T-12-03, D-13)', () => {
+  const CANONICAL_HOST = new URL(site.url).hostname;
+
+  it('allows the hostname of site.url, in any letter case', () => {
+    expect(canFetchNeutral(CANONICAL_HOST)).toBe(true);
+    expect(canFetchNeutral(CANONICAL_HOST.toUpperCase())).toBe(true);
+  });
+
+  it.each(['photos', 'projects'])(
+    'answers a %s miss from the neutral render on that same host',
+    async (section) => {
+      const html = '<!DOCTYPE html><html><body><h1>Page not found</h1></body></html>';
+      fetchMock.mockResolvedValueOnce(
+        new Response(html, {
+          status: 404,
+          headers: { 'content-type': 'text/html; charset=utf-8' },
+        })
+      );
+      const response = await run(`https://${CANONICAL_HOST}/${section}/nf-token`);
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(String(fetchMock.mock.calls[0][0])).toBe(
+        `https://${CANONICAL_HOST}/${section}/${NEUTRAL_SLUG}`
+      );
+      expect(response.status).toBe(404);
+      expect(await response.text()).toBe(html);
+      expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+    }
+  );
+
+  it('rewrites the neutral slug itself without fetching', async () => {
+    const response = await run(`https://${CANONICAL_HOST}/photos/${NEUTRAL_SLUG}`);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(response.headers.get('x-middleware-rewrite')).toMatch(/\/__missing$/);
+  });
+
+  // The apex is listed because it must not be allowed: Vercel redirects it to www first.
+  it.each(['tlui.de', 'evil-www.tlui.de', 'www.tlui.de.evil.com', 'sub.www.tlui.de'])(
+    'only the exact hostname matches (%s gets no fetch)',
+    async (host) => {
+      expect(canFetchNeutral('www.tlui.de')).toBe(true);
+
+      const response = await run(`https://${host}/photos/nf-token`);
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(response.headers.get('x-middleware-rewrite')).toMatch(/\/__missing$/);
+      expect(forwarded(response).get('x-edge-section')).toBe('photos');
+    }
+  );
 });
