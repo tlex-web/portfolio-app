@@ -39,9 +39,13 @@ plan_head_after: 2b923714ef3fe1f3a3cb1606fa366e08e1933b11
 
 # Quick Task 261105-wty: Switch the canonical host to www.tlui.de
 
-`site.url` is now `https://www.tlui.de`, and `canFetchNeutral` allows exactly that hostname, read from `site.url`, so a miss on www can get the neutral 404. The code is done and tested locally. **The live retest has not run.**
+`site.url` is now `https://www.tlui.de`, and `canFetchNeutral` allows exactly that hostname, read from `site.url`, so a miss on www can get the neutral 404. The code is done and tested locally. **The live retest passed after the deploy (see the next section).**
 
-## Live retest: not run
+## Live retest: passed on 2026-11-05 at 23:42 UTC
+
+PR #113 merged as `8cc1df4` and production picked it up 107 s later. `/photos/nope` answered 404 in 0.41 to 0.79 s on three runs and `/projects/nope` answered 404 in 0.20 s, with `nope` absent from both bodies. The flight data reads `"c":["","photos","_"]`, also through the service worker in Edge. robots, the 11 sitemap URLs and the canonicals name www, and the home and project HTML hold no old host. The host allowance and the redeploy landed together, so this run cannot separate them as the cause of the earlier behaviour. The text below is the plan as it stood before the deploy.
+
+## Live retest: the plan
 
 The www miss path runs only on production, and a production deploy happens only after Tim merges to main. No local run can reach it, because `next start` builds `request.url` from its own hostname. Locally, that branch is proved only by the unit tests, which drive `proxy()` with a real `NextRequest` and a mocked fetch.
 
