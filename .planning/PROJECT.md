@@ -76,7 +76,7 @@ A portfolio that is visually memorable and distinctive — not another generic T
 
 - [x] Summit-register contact and designed edge pages (Phase 12, see Validated)
 - [x] Playground routes and dead code removed (playground routes in Phase 7; dead code in Phase 12, see Validated)
-- [x] No visual or functional regressions (screenshot baselines, tests rewritten not deleted, axe clean): automated in Phase 12; the D-19 hand checks are in the 12-24 UAT checklist
+- [x] No visual or functional regressions (screenshot baselines, tests rewritten not deleted, axe clean): automated in Phase 12; the D-19 hand checks passed in 12-UAT on 2026-11-05 (8 of 8, CSP and slug checks on production)
 
 ### Out of Scope
 
@@ -197,6 +197,8 @@ UI audit (2026-10-10, before v2.0):
 | WebKit in CI next to Chromium and Firefox, with `--fail-on-flaky-tests` and retries unchanged; per-platform WebKit tags with reason comments, never `test.skip` (12-23) | Playwright's Linux and Windows WebKit fail different tests; one engine-wide tag would hide passing coverage. Tim on the re-baseline: "No round 3" | ✓ Good — green on 147bc82 (run 41571031827, 501 + 432 + 430, 0 flaky); real Safari stays a hand check |
 | Permanent production audit gate: axe, CLS, CSP events, console and page errors, images and same-origin links on every route at three widths and in 9 states (12-20) | VERIFY-02 and VERIFY-04 as one spec that fails CI on any finding, not a one-off audit | ✓ Good — 54/54 in three engines with zero findings; no app change needed |
 | Package and D-25 hygiene (12-06) | Tim: zod "Approve (Recommended)"; fflate "Approve scoped (Recommended)"; THREE.Clock warning "Defer (Recommended)"; Home canvas arm after the load event "Canvas fix" | ✓ Good — zod 4.6.7, fflate 0.8.3 and 0.6.11 overrides, npm audit 46 → 44 |
+| Phase 12 reached production before the merge: Tim promoted the `53171db` preview so 12-UAT test 6 could check the real site (2026-11-05) | `/gsd-ship` only accepts a passed verification, and test 6 needed production | Production passed test 6. `origin/main` is still `2c4e106`, so a production deploy from `main` before the merge puts the old site back |
+| Two keyboard findings accepted unfixed at 12-UAT test 3 (Tim: "pass", 2026-11-05) | Focus can land off-screen after stepping in the lightbox then pressing Escape in short windows; the 375 px mobile menu clips the sides of the focus ring | Accepted; root cause of the Escape case not diagnosed |
 
 ## Evolution
 
@@ -216,4 +218,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-11-02 after Phase 11*
+*Last updated: 2026-11-05 after Phase 12*

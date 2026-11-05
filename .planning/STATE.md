@@ -3,13 +3,12 @@ gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Topographic Identity
 current_phase: 12
-current_phase_name: Contact, Edge Pages, Cleanup & Verification
-status: executing
-stopped_at: Completed 12-34-PLAN.md
-last_updated: "2026-11-03T14:58:41.075Z"
-last_activity: 2026-11-03
-last_activity_desc: Phase 12 execution started
-state_head: dc2e6cf4dea531050fc8fe2eb14b4546e783565a
+status: completed
+stopped_at: Phase 12 complete — all phases complete
+last_updated: "2026-11-05T20:25:05.855Z"
+last_activity: 2026-11-05
+last_activity_desc: Phase 12 complete
+state_head: 94d4278021513b284a33cd6b53f558356d31773a
 progress:
   total_phases: 6
   completed_phases: 10
@@ -22,24 +21,24 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-11-02)
+See: .planning/PROJECT.md (updated 2026-11-05)
 
 **Core value:** A portfolio that is visually memorable and distinctive (not another generic Tailwind site) while being stable and well-maintained under the hood.
-**Current focus:** Phase 12 — Contact, Edge Pages, Cleanup & Verification
+**Current focus:** Milestone v2.0: all phases complete; merge to `main` and milestone close are next
 
 ## Current Position
 
-Phase: 12 (Contact, Edge Pages, Cleanup & Verification) — EXECUTING
-Plan: 34 of 34
-Status: 34 of 34 plans executed; the orchestrator re-runs the verifier (phase status unchanged)
-Last activity: 2026-11-03 — Phase 12 execution started
+Phase: 12
+Plan: Not started
+Status: All phases complete
+Last activity: 2026-11-05 — Phase 12 complete
 
 Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity (v2.0):**
-- Total plans completed: 94
+- Total plans completed: 128
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -52,6 +51,7 @@ Progress: [██████████] 100%
 | 09 | 22 | - | - |
 | 10 | 13 | - | - |
 | 11 | 19 | - | - |
+| 12 | 34 | - | - |
 
 *Updated after each plan completion. v1.0 history: 24 plans across Phases 1-6 (see MILESTONES.md).*
 **Per-Plan Metrics:**
@@ -521,11 +521,13 @@ Recent decisions affecting current work:
 - [Deploy, from 10-13] The service worker serves cached HTML stale-while-revalidate, so a returning visitor may see the old /photos (legacy gallery) once after the Phase 10 deploy. Check /photos after one reload on the production build.
 - [Consumers migrated by 10-09 (aa9dff6): data/landscapes.ts and the v1 photo UI are deleted, and a Jest guard (lib/__tests__/photos-view-model.test.ts) fails if any app, components or lib file reads a manifest `.legacy` path] Legacy image variants (-thumb/-medium/-large, 60 files) are still on disk and in the manifest's `legacy` entries. Delete them in Phase 12 (VERIFY-01) (code review IN-08).
 - [Phase 10, from 08-11; RESOLVED 2026-10-26: 10-04 rewrote GalleryGrid.test.tsx against JustifiedGrid (no badge), 10-09 deleted components/GalleryGrid.tsx, and Tim re-baselined photos/* in 483895b (10-13, reply "pushed")] The /photos grid badge reads "1 hotspots": `components/GalleryGrid.tsx:60` always prints `{n} hotspots` and `components/__tests__/GalleryGrid.test.tsx:83` asserts the literal '1 hotspots'. Two photos have one hotspot since the 08-10 copy, so the photos/* baselines (c0f2418) show it. Tim committed those baselines as-is (option A by action), so fix the plural, update the test and re-baseline photos/* in the Phase 10 GalleryGrid rebuild.
-- [Phase 12, from 08-13] Firefox 1 px stroke check for the footer contour band (08-13 Task 1 step 6, RESEARCH A2) was NOT reported by Tim (his only reply was "pushed"). Open the local production build (`npm run build && npm run start`, then `git checkout -- public/service-worker.js`) in Firefox (and Safari if available) and record whether the band's lines read as 1 px strokes; carry any difference into the Phase 12 cross-browser pass.
+- [Phase 12, from 08-13; RESOLVED 2026-11-05: 12-UAT test 7 passed in Playwright Firefox 157 at 1x, single strokes, not blurred or doubled] Firefox 1 px stroke check for the footer contour band (08-13 Task 1 step 6, RESEARCH A2) was NOT reported by Tim (his only reply was "pushed"). Open the local production build (`npm run build && npm run start`, then `git checkout -- public/service-worker.js`) in Firefox (and Safari if available) and record whether the band's lines read as 1 px strokes; carry any difference into the Phase 12 cross-browser pass.
 - [Phase 7, from 07-11; RESOLVED 2026-10-25 at 09-13: Tim answered "Commit it" ("Track it, so the tree stays clean and agents get the Next.js warning."); AGENTS.md tracked unedited in c4d00d0] Open item for Tim: `next dev` created an untracked `AGENTS.md` at the repo root. It is left untracked; Tim decides whether to keep and commit it, gitignore it, or delete it.
 
 ### Blockers/Concerns
 
+- [Milestone v2.0, 2026-11-05] Production serves a rebuild of preview `53171db`, promoted by Tim for 12-UAT test 6, but `origin/main` is still `2c4e106`, 857 commits behind the Phase 12 tip. Until the merge, any production deploy from `main`, a Dependabot merge included, puts the old site back.
+- [Milestone v2.0, 2026-11-05] A real send from the contact form has not been tested on production.
 - [Phase 12, from Phase 11 (2026-11-02)] Open after Phase 11: the CI Visual Regression job has not run on the 11-19 commits (box baselines expected unchanged; pushing the branch or its PR is Tim's call); 11-REVIEW-DISPOSITION.md has 14 untriaged info rows (IN-01 to IN-14); the 11-UI-REVIEW.md fixes (19/24) are open; Phase 12 carry-overs are in `.planning/phases/11-engineering-roadmap/deferred-items.md`; 11-UAT.md still lists G-11-4 as diagnosed until `/gsd-verify-work 11` reconciles it (fix verified in code by 11-VERIFICATION, passed 11/11)
 - [Phase 11] gsd/phase-11-engineering-roadmap is stacked on the Phase 10 tip (2b699a6); none of Phases 7-11 is on origin/main yet: merge 07, 08, 09, 10, then 11
 - [Phase 11, BLOCKER 2026-11-01; RESOLVED 2026-11-02: re-planned as 11-02..11-18 (2c7ac01), executed, gap plan 11-19 closed G-11-4, verification passed] Re-plan required before further execution: CLI_X is discontinued and box (github.com/tlex-web/box, public, Rust CLI toolkit, 23 tools, v2.0 shipped) plus coin-flip (github.com/tlex-web/coin-flip, private, native Android 3D coin toss, Kotlin) replace clix-cli and clix-website. ENG-03 (CLI_X risk bands as trail grades) has no counterpart in either project and needs a decision; ENG-05 terminal demo retargets to box; coin-flip has no terminal (clip/stills, still no three.js on project pages) and shows the private-repo note. Plans 11-02 and 11-03..11-15 embed CLI_X content, slugs and fixtures. [DISCUSSED 2026-11-01: 11-CONTEXT.md updated (fa51720). ENG-03 retired (D-24), box Safety + coin-flip Privacy (D-25), box terminal captured locally (D-26), coin-flip clip (D-27), trails box Hörnliweg T4 / coin-flip Zmutt T1 (D-07), route log per milestone (D-31, D-32), Home About CLI_X sentence rewritten (D-33).] Next: /gsd-ui-phase 11 (revise the CLI_X-heavy UI-SPEC), then /gsd-plan-phase 11 --research (RESEARCH.md is CLI_X-specific; keep 11-01 as complete).
@@ -561,6 +563,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-03T14:58:39.471Z
-Stopped at: Completed 12-34-PLAN.md
+Last session: 2026-11-05T20:26:05.352Z
+Stopped at: Phase 12 complete — all phases complete
 Resume file: None
