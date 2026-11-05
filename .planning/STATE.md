@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
 milestone: v2.0
-milestone_name: Topographic Identity
 status: Awaiting next milestone
 stopped_at: Milestone v2.0 archived
-last_updated: "2026-11-05T22:10:00.000Z"
+last_updated: "2026-11-05T22:30:47.289Z"
 last_activity: 2026-11-05
 last_activity_desc: Milestone v2.0 completed and archived
-state_head: 559bd720ec538bb91f95f8a20c846022d21b7aea
+state_head: 789c933be4aa66187caad595dcbc4ae162158aa6
 progress:
   total_phases: 6
   completed_phases: 6
   total_plans: 128
   completed_plans: 128
   percent: 100
+milestone_name: Topographic Identity
 current_phase: 12
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-05)
 
 Phase: none. v2.0 is archived, and the next milestone starts at Phase 13.
 Status: Awaiting next milestone
-Last activity: 2026-11-05 -- Milestone v2.0 completed and archived
+Last activity: 2026-11-05 - Completed quick task 261105-wlf: Verify unknown-slug miss path returns 404 on www.tlui.de
 
 Progress: [██████████] 100% of v2.0
 
@@ -53,6 +53,13 @@ None carried from v2.0.
 - [v2.0 close, 2026-11-05] A real send from the contact form has not been tested on production, and the production Resend and Upstash variables are not confirmed. `lib/email.ts` throws without `RESEND_API_KEY`; `lib/rate-limit.ts` allows every request without the Upstash variables.
 - [v2.0 audit, 2026-11-05] `main` has no branch protection or required checks, so a red PR can merge and Vercel deploys it. Dependabot PRs #110 and #111 are red today and should not be merged. Commits marked `[ci skip]` produce no checks, which matters once checks are required.
 - [v2.0 close, 2026-11-05] CI run 42105427622 on `559bd72` shows `cancelled`: E2E hung in `npx playwright install --with-deps` and ran no tests. The same source passed in run 42104591800 on `082cfb8`. To clear the status: `gh run rerun 42105427622 --failed`.
+- [quick 261105-wlf, 2026-11-05] www.tlui.de is live, so the deferred canonical host switch is now due. `data/site.ts` still names the vercel.app host, and 404s on www carry the typed slug in their flight data (T-12-03), most likely because `canFetchNeutral` rejects www.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 261105-wlf | Verify unknown-slug miss path returns 404 on www.tlui.de | 2026-11-05 | none (no code change) | [261105-wlf-verify-unknown-slug-miss-path-returns-40](./quick/261105-wlf-verify-unknown-slug-miss-path-returns-40/) |
 
 ## Deferred Items
 
