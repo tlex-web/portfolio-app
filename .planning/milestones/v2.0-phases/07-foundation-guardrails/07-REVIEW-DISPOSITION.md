@@ -5,7 +5,7 @@ titles: json
 findings:
   - id: CR-01
     severity: critical
-    disposition: open
+    disposition: fixed
     title: "Every route shares one document title, so client-side navigations (including the 404) are never announced"
   - id: WR-01
     severity: warning
@@ -37,11 +37,11 @@ findings:
     title: "`SafeCanvas` swallows every error below it, with no logging"
   - id: WR-08
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "HologramTerminalDemo keeps typing and advancing after Pause (timers are not cleaned up)"
   - id: WR-09
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "The skip-link guard only catches links named \"Skip to ...\", but the comment says it catches any second skip link (and the 07-27 handoff advises naming around it)"
   - id: IN-01
     severity: info
@@ -111,7 +111,7 @@ findings:
     severity: info
     disposition: open
     title: "The skip-link count passes as soon as it first reads 1, so a link added after hydration is not counted"
-open: 26
+open: 23
 total: 27
 recorded: 2026-10-24T11:04:00.678Z
 ---
@@ -120,7 +120,7 @@ recorded: 2026-10-24T11:04:00.678Z
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| CR-01 | critical | open | - |
+| CR-01 | critical | fixed | 12-09: per-route titles and the root title template (v2.0 audit) |
 | WR-01 | warning | open | - |
 | WR-02 | warning | open | - |
 | WR-03 | warning | open | - |
@@ -128,8 +128,8 @@ recorded: 2026-10-24T11:04:00.678Z
 | WR-05 | warning | open | - |
 | WR-06 | warning | open | - |
 | WR-07 | warning | open | - |
-| WR-08 | warning | open | - |
-| WR-09 | warning | open | - |
+| WR-08 | warning | fixed | cf369b5: component deleted (v2.0 audit) |
+| WR-09 | warning | fixed | 76e7a10: exact-name count plus a /skip to/i helper (v2.0 audit) |
 | IN-01 | info | open | - |
 | IN-02 | info | open | - |
 | IN-03 | info | open | - |

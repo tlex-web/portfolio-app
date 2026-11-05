@@ -4,6 +4,10 @@ trigger: "UAT G-09-2: At 375x667, 768x1024, 820x1180 and 1024x768 the four 3D pi
 created: 2026-10-25T13:59:55Z
 updated: 2026-10-25T14:45:00Z
 goal: find_root_cause_only
+audit_acknowledged:
+  milestone: v2.0
+  at: 2026-11-05
+  status: diagnosed
 ---
 
 ## Current Focus

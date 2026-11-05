@@ -32,7 +32,7 @@
   **D-24 (carried from 12-07-SUMMARY "D-24 Phase 9 dispositions", item #10):** Tim's choice is the 12-01 Resolved values row default.10, supplied: "Default: Hero scrim: amend the 09 spec to `lg:`". Outcome (12-07): the 09-UI-SPEC Hero row is amended to `lg:` as built (the built `lg:` gradient stops: via 60%, to 90%), citing the 6.84:1 measured at 768 px (09-07 B7). Code unchanged.
 
 - Rail tick label "2,760 m approx." measures 4.81:1 at 768 px with the summit centred
-  status: accepted
+  status: acknowledged
   **What:** 09-07's B8 backstop passes every tick (4.5 floor), but the Riffelsee label at 768 px is the closest to the floor (5.42:1 at 1440 px; the other ticks are 6.8 or better). The rail scrim is narrower than the label run at that width.
   **Found by:** 09-07 Task 3.
   **Owner:** 09-14 visual review; recheck after 09-08 puts the live canvas behind the rail (B8 samples the poster today).
@@ -53,7 +53,7 @@
   **12-22 (executor outcome): closed, obsolete.** Both tests waited 15 s for three's "Error creating WebGL context" message. 11-01 (project detail: the flat DemoTerminal, no canvas) and 12-13 (contact: the gradient mesh is gone) rewrote them to assert no canvas and the complete page, so there is no message to wait for. On a fresh dev server `npx playwright test e2e/no-webgl.spec.ts -g "contact keeps the form|project detail keeps its content" --project=chromium --repeat-each=5` gave "10 passed (18.1s)", and the four-spec dev-server run `npx playwright test e2e/case-study.spec.ts e2e/photos-lightbox.spec.ts e2e/photos.spec.ts e2e/no-webgl.spec.ts --project=chromium --repeat-each=3` (16 workers): "375 passed (4.4m)".
 
 - R3F 9 logs "THREE.Clock: This module has been deprecated. Please use THREE.Timer instead." on every canvas mount
-  status: deferred
+  status: acknowledged
   **What:** `@react-three/fiber` creates `new THREE.Clock()` in its store (events-9ce18a08.esm.js:1054), and three 0.184 deprecates Clock. The warning appears in the dev-server browser log for every canvas, including the Home terrain canvas since 09-08. It is a library warning, not an error, and comes from no project file.
   **Found by:** 09-08 Task 3 run.
   **Owner:** the next R3F upgrade (watch for a release that switches to THREE.Timer).
@@ -138,14 +138,14 @@
   **D-25 (carried from 12-06-SUMMARY):** closed by 12-02. 12-02-SUMMARY "delayHeightmap result": "`PW_PROD=1 PW_REUSE=1 npx playwright test e2e/home-canvas.spec.ts --project=chromium` gave 45 passed, including all four `delayHeightmap` users"; its stub probe saw 1 hit with `serviceWorkers: 'block'` (the functional projects now block service workers). 12-06 re-confirmed home-canvas on the bumped tree (62 passed together with contact-form and not-found).
 
 - In the static poster at about 768-1090 px, waypoint 3's pin label is hidden while waypoint 3 is active
-  status: accepted
+  status: acknowledged
   **What:** The poster pins keep fixed plan-view positions (UV, D-16) and the card sits on the side away from the rail (left card, D-07), so at about 768-1090 px stage width pin 3's head lies under its own card. Since 09-19 a poster label is hidden while the lit head's centre lies inside its own card, so the pin carries `data-label="none"` and its label has computed visibility `hidden` there. Live 3D has no such case (09-21).
   **Source:** the D-09 amendment in 09-CONTEXT.md (amended 2026-10-25 at gap planning), from Tim's literal answer "Accept, amend D-09" (09-UAT.md, Gap Plan Decisions). Recorded in the UI-SPEC Pins "Label" row.
   **Scope check:** 09-19-SUMMARY.md lists "Outside the D-09 amendment: none" (every head-under-card case is waypoint 3 at 768-1024 px), so no open entry is added for another case.
   **09-22:** Tim's Task 2 reply was "pushed", with no comment on this case.
 
 - S3 (09-22 review checklist): on the phone summit shots, pin 4 is cut off at the right edge and the summit triangle is off the left edge
-  status: accepted
+  status: acknowledged
   **What:** On the `home/375-ascent-summit` shot, pin 4 is cut off at the right edge: its head is at x 377-401 in a 375 x 900 viewport and at x 403-427 in 412 x 915. The summit triangle is off the left edge at every phone size. At 375 x 667 and 360 x 640 all four pins are on screen.
   **Not a plan-22 regression:** pins 1 and 2 are in the same spots in the old (`284f433`) and new (`e9ebee7`) shots, so it predates plan 22.
   **Found by:** 09-22 Task 2 review (visual dispatch 40228415066).
@@ -153,7 +153,7 @@
   **UAT round 2 (2026-10-25):** accepted. Tim answered the accept-or-route checkpoint (09-UAT.md test 1) with "pass".
 
 - Under reduced motion the full summit plaque covers the poster pins at 375 x 667 with the summit centred
-  status: accepted
+  status: acknowledged
   **What:** Reduced motion keeps the full plaque at natural height (09-18 pairs the compact layout with motion-safe). With `#summit` centred at 375 x 667, the plaque column covers all four poster pins: gaps of -105.0 / -117.2 / -120.5 / -15.5 px in Chromium and -108.6 / -120.8 / -126.9 / -19.1 px in Firefox (pins 1-4), so about 15-127 px. 09-18 recorded it without a gate, because reduced motion is the stacked layout with no fixed summit frame.
   **Found by:** 09-18 Task 3 (flagged for Tim in 09-18-SUMMARY "Next Phase Readiness"); not logged here until 09-22.
   **Owner:** Tim. One possible follow-up is to apply the compact layout under reduced motion as well. Tim has not commented on it (09-22 Task 2 reply: "pushed").
