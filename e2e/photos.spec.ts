@@ -314,7 +314,11 @@ test.describe('Grid view (PHOTO-02, PHOTO-03, D-15)', () => {
     const links = list.getByRole('link');
     await expect(links).toHaveCount(views.length);
     for (const [i, view] of views.entries()) {
-      await expect(links.nth(i)).toHaveAccessibleName(view.title);
+      // The title and the caption in visible order, so nothing shown is missing from the name
+      // (WCAG 2.5.3; axe label-content-name-mismatch runs in the audit).
+      await expect(links.nth(i)).toHaveAccessibleName(
+        `${view.title}, ${view.shortPlace}, ${view.altitudeLabel}, ${view.captureMonth}`
+      );
       await expect(links.nth(i)).toHaveAttribute('href', `/photos/${view.slug}`);
       await expect(links.nth(i)).toHaveAttribute('data-photo-id', view.slug);
     }

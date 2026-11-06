@@ -21,7 +21,9 @@ const TIP_CLIP = { clipPath: 'polygon(0 0, 100% 50%, 0 100%)' } as const;
  * The sign's accessible name is an explicit aria-label, '{other name}, next
  * route', built from the visible strings (label in name), for the reason
  * TrailSigns gives: the plate is a flex box, so an sr-only comma would gain a
- * leading space in name computation. The destination wraps with text-balance;
+ * leading space in name computation. The space between the plate's spans renders
+ * nothing; it keeps the strings apart for label-in-name checks, as on TrailSigns.
+ * The destination wraps with text-balance;
  * 'Next route' stays on one line. The yellow tip is decorative.
  */
 export default function EndBlock({ current }: { current: Project }) {
@@ -36,7 +38,7 @@ export default function EndBlock({ current }: { current: Project }) {
           className="group flex min-h-14 w-full max-w-md items-stretch rounded-sm"
         >
           <span className={PLATE}>
-            <span className="text-base font-semibold text-balance text-ink">{other.name}</span>
+            <span className="text-base font-semibold text-balance text-ink">{other.name}</span>{' '}
             <span className="font-mono text-sm whitespace-nowrap text-ink-muted">Next route</span>
           </span>
           <span aria-hidden="true" className="w-6 shrink-0 bg-trail" style={TIP_CLIP} />

@@ -36,9 +36,9 @@ update run on visual-light would overwrite the dark files with light output.
   One differing pixel fails the run unless its colour moved by only 1-2 RGB
   levels, which is Chromium's anti-aliasing noise on some edges (roadmap
   release pill, 07-11). Playwright's default per-pixel threshold (0.2) hides
-  token-level colour shifts. One exception: `home/1440-ascent-waypoint-2` allows
-  3 differing pixels, because that shot has two stable renders (see the comment
-  in `routes.spec.ts`).
+  token-level colour shifts. One exception: `home/1440-ascent-waypoint-2` and
+  `home/1440-ascent-summit` allow 3 differing pixels, because the poster's triangle
+  mark in those shots has two stable renders (see the comment in `routes.spec.ts`).
 - Baselines are captured only from a production build inside
   `mcr.microsoft.com/playwright:v<lockfile @playwright/test version>-noble`,
   by the **Update visual baselines** workflow (`workflow_dispatch`, read-only

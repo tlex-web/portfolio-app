@@ -23,7 +23,10 @@ function navLabel(href: string): string {
  * routes". The name is an explicit aria-label built from the same strings: the
  * plate is a flex box, so its children are blockified and name computation
  * would put a space before an sr-only comma ("Photographs , 4 waypoints"). The
- * label starts with the visible destination (label in name). A zero count
+ * label starts with the visible destination (label in name). The space between
+ * the plate's two spans renders nothing in a flex box; it keeps the strings apart
+ * in the text that label-in-name checks read (axe label-content-name-mismatch,
+ * WCAG 2.5.3). A zero count
  * prints, and names, the destination only. The plate is a dark surface-raised panel; the yellow arrow tip is the
  * only use of bg-trail and is decorative. Hover changes colour only, never
  * scale or position; the focus ring draws on the link rectangle, unclipped.
@@ -44,7 +47,7 @@ export default function TrailSigns() {
             className="group flex min-h-14 w-full items-stretch rounded-sm"
           >
             <span className={PLATE}>
-              <span className="text-base font-semibold text-ink">{label}</span>
+              <span className="text-base font-semibold text-ink">{label}</span>{' '}
               {count ? <span className="font-mono text-sm text-ink-muted tabular-nums">{count}</span> : null}
             </span>
             <span aria-hidden="true" className="w-6 shrink-0 bg-trail" style={TIP_CLIP} />

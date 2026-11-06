@@ -38,8 +38,11 @@ const MOUNT =
  *
  * Each li sets `--tile-flex` from justifyTile and applies it only from 640 px,
  * so phones get one full-width column. The link's accessible name is an
- * explicit aria-label with the title, as on WaypointCard: name computation
- * over the image alt and the caption would read every photo twice.
+ * explicit aria-label with the title and the caption in visible order (label in
+ * name, WCAG 2.5.3, so screen-reader users also get the place, altitude and
+ * date): name computation over the image alt and the caption would read every
+ * photo twice. The space between the title and caption blocks renders nothing;
+ * it keeps them apart for label-in-name checks (axe label-content-name-mismatch).
  *
  * Each image box is wrapped in TileTransition (a small client component; the
  * grid itself stays a Server Component), which names it photo-{slug} only
@@ -62,7 +65,7 @@ export default function JustifiedGrid({ photos }: { photos: readonly PhotoView[]
               href={`/photos/${slug}`}
               scroll={false}
               data-photo-id={slug}
-              aria-label={title}
+              aria-label={`${title}, ${shortPlace}, ${altitudeLabel}, ${captureMonth}`}
               className={MOUNT}
             >
               <TileTransition slug={slug}>
@@ -96,7 +99,7 @@ export default function JustifiedGrid({ photos }: { photos: readonly PhotoView[]
                 </div>
               </TileTransition>
               <div className="px-1 pt-2 pb-1">
-                <p className="text-base font-semibold text-ink">{title}</p>
+                <p className="text-base font-semibold text-ink">{title}</p>{' '}
                 <p className="font-mono text-sm text-ink-muted tabular-nums">
                   <span data-caption-part="place" className="whitespace-nowrap">
                     {shortPlace}
