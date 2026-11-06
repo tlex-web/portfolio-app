@@ -52,7 +52,6 @@ None carried from v2.0.
 
 - [v2.0 close, 2026-11-05] The production Upstash variables are not confirmed, and `lib/rate-limit.ts` allows every request without them. Seeing them set in Vercel settles it, or `PROD_FORM_LIMIT=1 npm run test:prod-form`, which locks the IP out for up to an hour. A real send was confirmed on 2026-11-06: Tim sent the live form and received the email.
 - [v2.0 audit, 2026-11-05] `main` has no branch protection or required checks, so a red PR can merge and Vercel deploys it. Dependabot PRs #110 and #111 are red today and should not be merged. Commits marked `[ci skip]` produce no checks, which matters once checks are required.
-- [v2.0 close, 2026-11-05] CI run 42105427622 on `559bd72` shows `cancelled`: E2E hung in `npx playwright install --with-deps` and ran no tests. The same source passed in run 42104591800 on `082cfb8`. To clear the status: `gh run rerun 42105427622 --failed`.
 
 ### Quick Tasks Completed
 

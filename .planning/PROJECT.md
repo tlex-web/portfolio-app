@@ -12,7 +12,7 @@ A portfolio that is visually memorable and distinctive — not another generic T
 
 **Shipped:** v2.0 Topographic Identity on 2026-11-05 (PR #109, merge commit `559bd72`, live on Vercel): 6 phases and 128 plans. The audit status is `tech_debt`: 67 of 67 active requirements satisfied and ENG-03 dropped by D-24 (`.planning/milestones/v2.0-MILESTONE-AUDIT.md`).
 
-**Not yet confirmed on production:** a real send from the contact form.
+**Confirmed on production:** a real send from the contact form. `PROD_FORM_SEND=1 npm run test:prod-form` passed on `e19890d` on 2026-11-06, and the email arrived.
 
 ## Next Milestone Goals
 
