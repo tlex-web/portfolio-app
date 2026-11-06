@@ -7,7 +7,7 @@ updated: 2026-11-06T13:39:24Z
 
 ## Current Focus
 
-status_note: fix implemented and locally verified (constraints 1-8 pass on a fresh build); awaiting a human check of the self-fetch on a Vercel preview
+status_note: fix implemented and locally verified (constraints 1-8 pass on a fresh build); awaiting a human check of the self-fetch on a Vercel preview (not run; closed on the production evidence in Resolution, closure_check)
 bug_class: Bohrbug (deterministic: every document miss embeds the slug)
 
 reasoning_checkpoint:
