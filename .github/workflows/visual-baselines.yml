@@ -29,7 +29,7 @@ jobs:
     # The tag must equal the lockfile @playwright/test version
     # (enforced by scripts/guards/check-install-parity.mjs).
     container:
-      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
       options: --ipc=host
 
     steps:
@@ -68,7 +68,7 @@ jobs:
         run: npx playwright test --project=perf
         env:
           CI: '1'
-          PW_CONTAINER_TAG: mcr.microsoft.com/playwright:v1.64.0-noble
+          PW_CONTAINER_TAG: mcr.microsoft.com/playwright:v1.64.1-noble
           RESEND_API_KEY: dummy_key_for_tests
           FEEDBACK_RECIPIENT_EMAIL: test@example.com
           FEEDBACK_FROM_EMAIL: noreply@example.com
