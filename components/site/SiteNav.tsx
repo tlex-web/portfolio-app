@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { List, X } from '@phosphor-icons/react/dist/ssr';
 import { site } from '@/data/site';
+import { slugFromPath } from '@/lib/photos/stepping';
 
 type SiteNavVariant = 'default' | 'static';
 
@@ -76,11 +77,14 @@ function DefaultNav() {
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   // Close trigger 1: route change. Adjusting state while rendering (not in an
-  // effect) closes the panel in the same render that shows the new route.
+  // effect) closes the panel in the same render that shows the new route. A step
+  // between photos is not a route change: the viewer replaces the URL in place, and
+  // usePathname can report that late, after the menu has opened (no menu link goes
+  // from one photo to another, so nothing here needs to close it).
   const [menuPath, setMenuPath] = useState(pathname);
   if (pathname !== menuPath) {
     setMenuPath(pathname);
-    setOpen(false);
+    if (slugFromPath(pathname) === null || slugFromPath(menuPath) === null) setOpen(false);
   }
 
   // Close triggers 2, 4, 5 and 6, attached only while the panel is open.

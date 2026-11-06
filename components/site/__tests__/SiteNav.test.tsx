@@ -118,6 +118,42 @@ describe('SiteNav mobile menu (disclosure)', () => {
     expect(panel()).not.toBeVisible();
   });
 
+  it('stays open when usePathname reports a step between photos', async () => {
+    mockUsePathname.mockReturnValue('/photos/first');
+    const user = userEvent.setup();
+    const { menuButton, panel, rerender } = renderNav();
+
+    await user.click(menuButton());
+    mockUsePathname.mockReturnValue('/photos/second');
+    rerender(
+      <>
+        <SiteNav />
+        <button type="button">Outside</button>
+      </>
+    );
+
+    expect(menuButton()).toHaveAttribute('aria-expanded', 'true');
+    expect(panel()).toBeVisible();
+  });
+
+  it('closes when the route goes from a photo to the gallery', async () => {
+    mockUsePathname.mockReturnValue('/photos/first');
+    const user = userEvent.setup();
+    const { menuButton, panel, rerender } = renderNav();
+
+    await user.click(menuButton());
+    mockUsePathname.mockReturnValue('/photos');
+    rerender(
+      <>
+        <SiteNav />
+        <button type="button">Outside</button>
+      </>
+    );
+
+    expect(menuButton()).toHaveAttribute('aria-expanded', 'false');
+    expect(panel()).not.toBeVisible();
+  });
+
   it('closes when focus leaves the header (Tab past the last menu link)', async () => {
     const user = userEvent.setup();
     const { menuButton, panel, outside } = renderNav();
