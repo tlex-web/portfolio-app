@@ -16,6 +16,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
+    "test:prod-form": "playwright test --config=playwright.prod.config.ts",
     "postbuild": "node scripts/inject-build-hash.mjs",
     "guard:parity": "node scripts/guards/check-install-parity.mjs",
     "guard:palette": "node scripts/guards/check-palette.mjs",
@@ -32,6 +33,7 @@
     "trails:fetch": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/terrain/fetch-trails.mjs",
     "trails:build": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/terrain/build-trails.mjs",
     "clip:derive": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/media/build-clip.mjs",
+    "icons:build": "node scripts/icons/build-icons.mjs",
     "tokens:build": "node scripts/tokens/build-tokens.mjs",
     "data:check": "npm run terrain:build -- --check && npm run photos:exif -- --check && npm run photos:derive -- --check && npm run photos:build -- --check && npm run tokens:build -- --check && npm run trails:build -- --check && npm run clip:derive -- --check"
   },
@@ -56,7 +58,7 @@
   "bugs": {
     "url": "https://github.com/tlex-web/portfolio-app/issues"
   },
-  "homepage": "https://github.com/tlex-web/portfolio-app#readme",
+  "homepage": "https://www.tlui.de",
   "dependencies": {
     "@phosphor-icons/react": "2.1.10",
     "@react-spring/three": "^10.0.3",
