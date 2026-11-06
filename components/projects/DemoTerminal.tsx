@@ -88,7 +88,7 @@ function CommandLines({ command, lines }: { command: TerminalCommand; lines: Vis
         {lines.typing === 'output' && <Caret />}
       </p>
       {lines.complete && command.note && (
-        <p data-note className="mt-2 font-sans text-sm text-ink">
+        <p data-note className="mt-2 font-body text-sm text-ink">
           {command.note}
         </p>
       )}
