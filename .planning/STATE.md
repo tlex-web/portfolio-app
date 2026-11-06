@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-05)
 
 Phase: none. v2.0 is archived, and the next milestone starts at Phase 13.
 Status: Awaiting next milestone
-Last activity: 2026-11-06 - Completed quick task 261106-joo: Dependabot cleanup A+D (config, parity fixture manifests, one-shot flake tolerance, seven debug sessions closed)
+Last activity: 2026-11-06 - Completed quick task 261106-mzc: E2E reliability (E2E in the Playwright image, three flakes fixed at their causes)
 
 Progress: [██████████] 100% of v2.0
 
@@ -61,6 +61,7 @@ None carried from v2.0.
 | 261105-wlf | Verify unknown-slug miss path returns 404 on www.tlui.de | 2026-11-05 | none (no code change) | [261105-wlf-verify-unknown-slug-miss-path-returns-40](./quick/261105-wlf-verify-unknown-slug-miss-path-returns-40/) |
 | 261105-wty | Switch canonical host to www.tlui.de (site.url, canFetchNeutral, seo/og/not-found specs) | 2026-11-05 | 2b92371 | [261105-wty-switch-canonical-host-to-www-tlui-de-sit](./quick/261105-wty-switch-canonical-host-to-www-tlui-de-sit/) |
 | 261106-joo | Dependabot cleanup A+D: dependabot.yml, parity fixture manifests, one-shot flake tolerance, seven debug sessions closed | 2026-11-06 | 85d7248 | [261106-joo-dependabot-cleanup-a-d-dependabot-yml-fi](./quick/261106-joo-dependabot-cleanup-a-d-dependabot-yml-fi/) |
+| 261106-mzc | E2E reliability: E2E in the Playwright image, focus trap skips hidden controls, nav menu ignores photo steps, case-study axe measures final colours | 2026-11-06 | 8239f91 | [261106-mzc-e2e-reliability-run-e2e-in-the-playwrigh](./quick/261106-mzc-e2e-reliability-run-e2e-in-the-playwrigh/) |
 
 ## Deferred Items
 
