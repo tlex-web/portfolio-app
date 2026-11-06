@@ -1,13 +1,9 @@
 ---
-status: diagnosed
+status: resolved
 trigger: "G-09-5 / WR-01: a reveal burst interrupted by a hidden tab (rAF suspended) restarts on return instead of declining: at pixel ratio 1 the 'ascent-frame-budget' verdict is 'ok' and data-ascent-mode stays '3d' (HOME-07 pause contract)"
 created: 2026-10-25T16:00:00Z
-updated: 2026-10-25T17:05:00Z
+updated: 2026-11-06T13:39:24Z
 goal: find_root_cause_only
-audit_acknowledged:
-  milestone: v2.0
-  at: 2026-11-05
-  status: diagnosed
 ---
 
 ## Current Focus
@@ -15,7 +11,7 @@ audit_acknowledged:
 hypothesis: CONFIRMED. CameraRig drops a running reveal burst only inside useFrame (the `running && !shown` branch). A hidden tab runs no frame, so the burst is never dropped and burstPaused stays false. On return, visibilitychange fires before the held frame, update() sees shown() true with burstPaused false and keeps the stale budget. The first frame after return samples it: now - start >= burstWindowMs with frames < minSamples, so frame-budget.ts:54 returns 'decline'. At pixel ratio 1 that calls downgradeAscent('frame-budget') (Home static); above 1 it steps the canvas down to 1 and re-measures.
 test: done. Real hidden tab (Chromium 156, connectOverCDP noDefaults, second tab to front) plus page-side rAF hold under the normal Playwright launch, with no-hide, after-verdict and fake-visibility controls.
 expecting: n/a
-next_action: none. Diagnose-only. Hand back to the orchestrator for the gap plan.
+next_action: none, closed 2026-11-06, see Resolution
 
 reasoning_checkpoint:
   hypothesis: "The stale burst survives a hidden tab because the only drop is in useFrame (CameraRig.tsx:338-342), which needs a frame to run while hidden, and update() (263-273) only restarts a burst that useFrame already marked as paused. On return the first frame feeds the stale budget, and frame-budget.ts:54 declines because the hidden time counts as burst time with fewer than 20 frames."
@@ -89,6 +85,24 @@ started: discovered in code review (09-REVIEW.md WR-01); manual UAT could not re
 ## Resolution
 
 root_cause: "CameraRig drops an interrupted reveal burst only in useFrame (components/home/terrain/CameraRig.tsx:338-342, `running && !shown`), which requires a frame to run while the stage is not shown. A hidden tab suspends rAF, so no such frame runs. burstPaused stays false, and the flag handler update() (CameraRig.tsx:263-273) returns early on the way to hidden (line 266) and, on the way back, restarts only when burstPaused is true (267-271), so it keeps the stale budget. Chromium fires visibilitychange before the held frame, so that frame runs with shown === true and samples the stale budget (CameraRig.tsx:343-346). AND lib/ascent/frame-budget.ts:50-54 measures the burst window in wall-clock time from the first burst frame, so the hidden time counts against it: now - start >= 1000 ms with frames < 20 -> 'decline'. At dpr 1 CameraRig.tsx:359-360 calls downgradeAscent('frame-budget'): Home goes static for the session (module-level `downgraded`, lib/useAscentMode.ts:43). Above 1, 353-358 steps the canvas down to dpr 1 for the session (module-level dprSteppedDown, TerrainCanvas.tsx:64). The comment at CameraRig.tsx:91-93 promises a restart that only happens when a frame is drawn during the pause."
-fix: ""
-verification: "Diagnose-only. Reproduced 6/6 with a real hidden tab and 2/2 with a page-side rAF hold. All controls pass."
-files_changed: []
+fix: |
+  Plan 09-15. 9f35845: CameraRig update() drops the interrupted burst when the stage stops being shown (`burstPaused` in components/home/terrain/CameraRig.tsx), so a fresh burst starts on show without needing a frame to run while hidden.
+  450b2a6 added the regression test (RED). 49a3dac made the context-loss test measure-only and documented the session-long downgrade (WR-02, IN-05).
+commits: [450b2a6, 9f35845, 49a3dac]
+verification: |
+  Diagnosis: Diagnose-only. Reproduced 6/6 with a real hidden tab and 2/2 with a page-side rAF hold. All controls pass.
+  Closure, 2026-11-06 (read-only checks by an agent, no new browser run):
+  - e2e/home-canvas.spec.ts holds the test "a tab hidden during the reveal burst restarts it at device scale 1 / 2 @chromium-only"; `burstPaused` occurs 5 times in CameraRig.tsx at HEAD.
+  - 09-VERIFICATION lists G-09-5 / WR-01 under `gaps_closed` and rates it "VERIFIED (behavioral)": 2 passed on the production build, in that verifier's session.
+  - CI run 40232792001 on 05a5e8c reads success (attempt 2), with E2E 355 passed as 09-VERIFICATION reports it.
+  Not covered: the test is Chromium-only and models the hidden tab with a page-side rAF hold; the Firefox and WebKit show order and real-GPU timing in this session's blind_spots were not checked.
+files_changed: [components/home/terrain/CameraRig.tsx, components/home/terrain/TerrainCanvas.tsx, lib/useAscentMode.ts, lib/__tests__/frame-budget-policy.test.ts, e2e/helpers/webgl.ts, e2e/home-canvas.spec.ts]
+
+## Prevention
+
+blameless_5_whys: not produced (retroactive closure)
+why_not_caught: |
+  test: the e2e setVisibility helper fakes visibility while frames keep running, so a frame still runs while "hidden" and takes the useFrame drop path; it cannot catch this even during the burst (Evidence 16:50, candidate_causes).
+  Manual UAT could not hit the window: at 60 Hz the verdict lands at about 350 ms, before the fade completes (Evidence 16:55).
+recurrence_guard: |
+  e2e/home-canvas.spec.ts "a tab hidden during the reveal burst restarts it at device scale 1 / 2 @chromium-only", using holdFramesWhileHidden from e2e/helpers/webgl.ts, which really holds rAF while hidden.

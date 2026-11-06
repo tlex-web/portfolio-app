@@ -1,13 +1,9 @@
 ---
-status: diagnosed
+status: resolved
 trigger: "UAT G-09-3: At 768 px the waypoint-2 pin label on the static poster is hidden behind its card, and at 375 px the docked waypoint card's kicker '1,668 m · Waypoint 2 of 4' wraps with a lone '4'."
 created: 2026-10-25T15:10:00Z
-updated: 2026-10-25T16:05:00Z
+updated: 2026-11-06T13:39:24Z
 goal: find_root_cause_only
-audit_acknowledged:
-  milestone: v2.0
-  at: 2026-11-05
-  status: diagnosed
 ---
 
 ## Current Focus
@@ -16,7 +12,7 @@ bug_class: Bohrbug (deterministic layout; the same render on every run at a give
 hypothesis: CONFIRMED for both (see Resolution). (a) and (b) are independent mechanisms; (b) also covers G-09-4 N2.
 test: done. Scratch Playwright measurements on `next dev` (static poster, md sweep, 3D md sweep, phone sweep with and without the scrollbar gutter), plus ink measurement of the CI baseline PNG.
 expecting: n/a
-next_action: return ROOT CAUSE FOUND to the orchestrator (diagnose-only mode). The dev server was started for this session and has been stopped.
+next_action: none, closed 2026-11-06, see Resolution
 
 reasoning_checkpoint:
   hypothesis: "(a) At 768 the clear band between the md card (x 24-472) and the rail scrim (x 534-758) is 62 px, but a lit label needs 150-260 px (20 px offset + 130-240 px label). flipPinLabels tests only the right obstacle, so pin 2 (head x 487-511, 35 px from the scrim) flips left and its label (x 296-479) lands under the card, which paints above the whole stage. (b) The kicker and place line are plain strings whose only non-breaking joint is the NBSP in formatMetres; in the docked 1fr column (stage width - 176 px) they always wrap on phones, and the greedy line breaker breaks at whichever U+0020 falls at the column edge. 'Lone 4' is the case where the column fits 23 but not 25 mono characters."
@@ -136,6 +132,23 @@ root_cause: |
   (b) 375 kicker orphaning "4" (and G-09-4 N2, the leading "·"). One mechanism:
     The docked text column is stage width - 176 px (components/home/WaypointCard.tsx:21 `-mx-4 p-4`, :53 `grid-cols-[128px_1fr] gap-4`): 189 px at 375 with the scrollbar gutter (CI, desktop), 199 px on a phone with overlay scrollbars. The kicker (WaypointCard.tsx:54-56; lib/ascent/waypoints.ts:143-145 `${metres} · Waypoint ${k} of ${n}`, 25 chars) and the place line (WaypointCard.tsx:78; waypoints.ts:130 `${location} · ${month year}`, lib/home-format.ts:60) are plain strings; only formatMetres' NBSP (lib/photo-format.ts:104) is unbreakable. They are wider than the column on every phone, and greedy line breaking breaks at whichever plain space sits at the column edge. When the column fits 23 but not 25 characters, the kicker ends "of" / "4" and the place line ends "Zermatt" / "· Sep 2021" (both have 23-char first lines). That happens in CI (189 px / 8.0 px Linux whole-pixel advance = 23.6) and on real 375 px phones (199 / 8.4 = 23.7), but not on desktop Windows/macOS (189 / 8.4 = 22.5 -> "of 4"). Across 360-412 the same strings also split "Sep / 2021" and "Waypoint 4 / of 4".
   Test gap: no test intersects a lit label or pin head with the card box (home-ascent.spec.ts:403-410 only toBeVisible; home-canvas.spec.ts:441-453 only inside the stage), and none reads kicker/place line breaks.
-fix:
-verification:
-files_changed: []
+fix: |
+  (b) 09-16 (d307211, d4ed0b3): explicit break points for the kicker and place line: `waypointKickerParts` in lib/ascent/waypoints.ts and `data-kicker-part` in components/home/WaypointCard.tsx.
+  (a) 09-19 (7ef7ea2, ce1b985, 68fd6d5): card- and rail-aware poster labels through `placePinLabel` in lib/ascent/framing.ts.
+  (a, 3D) 09-21 (40c50f9, e8c85f8): md stages frame the lit waypoint clear of its card through `waypointTarget`; 3D labels share the poster rule.
+commits: [d307211, d4ed0b3, 7ef7ea2, ce1b985, 68fd6d5, 40c50f9, e8c85f8]
+verification: |
+  Closure, 2026-11-06 (read-only checks by an agent, no new browser run):
+  - e2e/home-ascent.spec.ts holds the describes "Card line breaks (G-09-3 b, G-09-4 N2)" and "Lit poster label clears its card and the rail (G-09-3 a)"; e2e/home-canvas.spec.ts holds "md stages keep the lit 3D pin and its label clear of the card (G-09-3 a)".
+  - At HEAD `placePinLabel` occurs 4 times in AscentController.tsx, `data-kicker-part` 2 times in WaypointCard.tsx and `waypointTarget` 5 times in framing.ts.
+  - 09-VERIFICATION lists G-09-3 a, G-09-3 b and G-09-4 N2 under `gaps_closed` and rates them "VERIFIED".
+  Accepted residue: waypoint 3's label is hidden in the static poster at about 768-1090 px while waypoint 3 is active. This is the D-09 amendment, from Tim's literal "Accept, amend D-09" (09-UAT-round1.md:183; 09/deferred-items.md).
+files_changed: [components/home/AltimeterRail.tsx, components/home/AscentController.tsx, components/home/AscentHero.tsx, components/home/PinMark.tsx, components/home/PosterSheet.tsx, components/home/WaypointCard.tsx, components/home/__tests__/waypoints.test.tsx, components/home/terrain/CameraRig.tsx, lib/ascent/framing.ts, lib/ascent/waypoints.ts, lib/__tests__/ascent-waypoints.test.ts, lib/__tests__/frame-budget-policy.test.ts, lib/__tests__/framing.test.ts, e2e/home-ascent.spec.ts, e2e/home-canvas.spec.ts]
+
+## Prevention
+
+blameless_5_whys: not produced (retroactive closure)
+why_not_caught: |
+  Test gap (Resolution): no test intersected a lit label or pin head with the card box, and none read the kicker or place line breaks. The visual baselines caught both, but only as pixels (Evidence 15:58).
+recurrence_guard: |
+  e2e/home-ascent.spec.ts describes "Card line breaks (G-09-3 b, G-09-4 N2)" and "Lit poster label clears its card and the rail (G-09-3 a)"; e2e/home-canvas.spec.ts describe "md stages keep the lit 3D pin and its label clear of the card (G-09-3 a)".
