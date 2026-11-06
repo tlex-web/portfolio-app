@@ -57,7 +57,9 @@ const PREVIEW =
  * them opens the photo, and the intercepted route shows it in the lightbox
  * with a plain enter, since no image here carries a view-transition name
  * (D-03). The link has an explicit aria-label because a flex or multi-span
- * link's computed name is unreliable (09 STATE). The approximate film scan is
+ * link's computed name is unreliable (09 STATE); the space between the title and
+ * altitude spans renders nothing and keeps them apart for label-in-name checks
+ * (axe label-content-name-mismatch, WCAG 2.5.3). The approximate film scan is
  * marked by shape, a hollow dashed dot, and by 'approx.' on the plate and in
  * the name (08 D-02; DATA-04).
  *
@@ -152,7 +154,7 @@ export default function MapSheet({ photos }: { photos: readonly PhotoView[] }) {
                   className="block text-sm font-semibold text-ink @min-[35rem]:whitespace-nowrap"
                 >
                   {p.title}
-                </span>
+                </span>{' '}
                 <span
                   data-map-altitude
                   className="block font-mono text-sm whitespace-nowrap text-ink-muted tabular-nums"
