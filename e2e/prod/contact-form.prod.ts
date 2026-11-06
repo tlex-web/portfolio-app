@@ -19,8 +19,9 @@ import { HONEYPOT_FIELD } from '../../lib/contact/api-contract';
  *
  * The limiter silently allows everything when the Upstash variables are missing,
  * and the default level cannot see that: only PROD_FORM_LIMIT=1 can. Set both
- * flags to run the send first and the lockout last. A test skipped for "rate
- * limited" proved nothing, so run it again once the window has passed.
+ * flags to run the send first and the lockout last. The opt-in tests exist only
+ * when their flag is set. A failure that says "rate limited" is no finding about
+ * the route: run it again once the window has passed.
  */
 const SEND = process.env.PROD_FORM_SEND === '1';
 const LIMIT = process.env.PROD_FORM_LIMIT === '1';
@@ -51,7 +52,7 @@ async function openContact(page: Page) {
   expect(response?.status()).toBe(200);
   await expect
     .poll(() =>
-      sendButton(page).evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))),
+      sendButton(page).evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps')))
     )
     .toBe(true);
 }
@@ -61,9 +62,12 @@ function postFeedback(request: APIRequestContext, origin: string, data: unknown)
   return request.post(FEEDBACK_PATH, { headers: { origin }, data });
 }
 
-/** A used-up window says nothing about the route, so it skips instead of failing. */
-function skipIfRateLimited(status: number, retryAfter: string | undefined) {
-  test.skip(status === 429, `Rate limited from this IP. Run again in ${retryAfter ?? '?'} s.`);
+/** A used-up window says nothing about the route, so the failure says that and not more. */
+function expectNotRateLimited(status: number, retryAfter: string | undefined) {
+  expect(
+    status,
+    `Rate limited from this IP, so no result. Run again in ${retryAfter ?? '?'} s.`
+  ).not.toBe(429);
 }
 
 test.describe.configure({ mode: 'serial' });
@@ -95,11 +99,11 @@ test.describe('Contact form on production, no email sent', () => {
 
   test('a same-origin invalid body reaches validation', async ({ request, baseURL }) => {
     const response = await postFeedback(request, originOf(baseURL), INVALID_BODY);
-    skipIfRateLimited(response.status(), response.headers()['retry-after']);
+    expectNotRateLimited(response.status(), response.headers()['retry-after']);
 
     expect(
       response.status(),
-      '500 here means the route crashed, most likely on bad Upstash credentials',
+      '500 here means the route crashed, most likely on bad Upstash credentials'
     ).toBe(400);
     expect(await response.json()).toEqual({
       code: 'validation',
@@ -114,7 +118,7 @@ test.describe('Contact form on production, no email sent', () => {
       message: probeMessage(),
       [HONEYPOT_FIELD]: 'filled by a bot',
     });
-    skipIfRateLimited(response.status(), response.headers()['retry-after']);
+    expectNotRateLimited(response.status(), response.headers()['retry-after']);
 
     expect(response.status()).toBe(200);
     expect(await response.json()).toEqual({ code: 'ok' });
@@ -122,47 +126,48 @@ test.describe('Contact form on production, no email sent', () => {
 });
 
 test.describe('Contact form on production, opt-in', () => {
-  test('a real send goes through the form and signs the register', async ({ page }) => {
-    test.skip(!SEND, 'Sends a real email: set PROD_FORM_SEND=1 to run it.');
+  if (SEND) {
+    test('a real send goes through the form and signs the register', async ({ page }) => {
+      await openContact(page);
+      await nameField(page).fill('Production form test');
+      await emailField(page).fill(PROBE_EMAIL);
+      await messageField(page).fill(probeMessage());
 
-    await openContact(page);
-    await nameField(page).fill('Production form test');
-    await emailField(page).fill(PROBE_EMAIL);
-    await messageField(page).fill(probeMessage());
+      const answer = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname === FEEDBACK_PATH &&
+          response.request().method() === 'POST'
+      );
+      await sendButton(page).click();
+      const response = await answer;
+      expectNotRateLimited(response.status(), response.headers()['retry-after']);
 
-    const answer = page.waitForResponse(
-      (response) =>
-        new URL(response.url()).pathname === FEEDBACK_PATH && response.request().method() === 'POST',
-    );
-    await sendButton(page).click();
-    const response = await answer;
-    skipIfRateLimited(response.status(), response.headers()['retry-after']);
+      expect(
+        response.status(),
+        '502 send-failed: check RESEND_API_KEY, FEEDBACK_RECIPIENT_EMAIL and the Vercel logs for [feedback]'
+      ).toBe(200);
+      expect(await response.json()).toEqual({ code: 'ok' });
+      await expect(page.getByRole('status').getByText('Register signed')).toBeVisible();
+    });
+  }
 
-    expect(
-      response.status(),
-      '502 send-failed: check RESEND_API_KEY, FEEDBACK_RECIPIENT_EMAIL and the Vercel logs for [feedback]',
-    ).toBe(200);
-    expect(await response.json()).toEqual({ code: 'ok' });
-    await expect(page.getByRole('status').getByText('Register signed')).toBeVisible();
-  });
-
-  test('the limiter refuses requests past its window', async ({ request, baseURL }) => {
-    test.skip(!LIMIT, 'Locks this IP out for up to an hour: set PROD_FORM_LIMIT=1 to run it.');
-
-    let retryAfter: string | undefined;
-    for (let probe = 0; probe < LIMIT_PROBES && retryAfter === undefined; probe += 1) {
-      const response = await postFeedback(request, originOf(baseURL), INVALID_BODY);
-      if (response.status() === 429) {
-        retryAfter = response.headers()['retry-after'];
-      } else {
-        expect(response.status()).toBe(400);
+  if (LIMIT) {
+    test('the limiter refuses requests past its window', async ({ request, baseURL }) => {
+      let retryAfter: string | undefined;
+      for (let probe = 0; probe < LIMIT_PROBES && retryAfter === undefined; probe += 1) {
+        const response = await postFeedback(request, originOf(baseURL), INVALID_BODY);
+        if (response.status() === 429) {
+          retryAfter = response.headers()['retry-after'];
+        } else {
+          expect(response.status()).toBe(400);
+        }
       }
-    }
 
-    expect(
-      retryAfter,
-      `No 429 after ${LIMIT_PROBES} requests: the Upstash variables are missing, so every request is allowed`,
-    ).toBeDefined();
-    expect(Number(retryAfter)).toBeGreaterThan(0);
-  });
+      expect(
+        retryAfter,
+        `No 429 after ${LIMIT_PROBES} requests: the Upstash variables are missing, so every request is allowed`
+      ).toBeDefined();
+      expect(Number(retryAfter)).toBeGreaterThan(0);
+    });
+  }
 });
