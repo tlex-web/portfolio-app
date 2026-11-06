@@ -181,9 +181,18 @@ for (const w of WIDTHS) {
         await scrollBlockToCentre(page, selector);
       }
       await freezeTimeAnimations(page);
+      // home/1440-ascent-waypoint-2 alone tolerates differing pixels. This shot
+      // renders in two stable states: runs 42105785881 (PR #103, visual-dark),
+      // 42127714611 (a50956e, visual-light) and 42149842086 (8270572, visual-light)
+      // each reported exactly 2 pixels, at identical coordinates on the slanted
+      // edge of the poster's triangle mark, about x 137-141, y 710-717. So the
+      // limit of 3 is the observed 2 plus a margin of 1, and no other shot gets a
+      // tolerance. The per-call option merges over SCREENSHOT, so its threshold
+      // stays in force.
       await expect(page).toHaveScreenshot(['home', `${w}-ascent-${shot}.png`], {
         stylePath,
         animations: 'allow',
+        ...(w === 1440 && shot === 'waypoint-2' ? { maxDiffPixels: 3 } : {}),
       });
     });
   }
