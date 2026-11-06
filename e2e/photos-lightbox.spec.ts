@@ -419,6 +419,22 @@ test.describe('Focus and Escape (LBOX-03)', () => {
     }
   });
 
+  // The gutter labels stay visibility: hidden until their first measure, which React defers
+  // while the open's view transition starts, so a Tab can arrive in that moment. They have
+  // boxes but take no focus: counted as tabbable, Close would not be the last control and Tab
+  // would leave the dialog. Holding them hidden makes that moment deterministic.
+  test('Tab stays inside the dialog while the gutter labels are still hidden', async ({ page }) => {
+    const dialog = await openFirstTile(page);
+    await page
+      .locator('dialog [data-hotspot-gutters]')
+      .evaluate((el: HTMLElement) => el.style.setProperty('visibility', 'hidden'));
+    await dialog.getByRole('button', { name: 'Close photo', exact: true }).focus();
+    await page.keyboard.press('Tab');
+    expect(await focusInDialog(page), 'after Tab from Close').toBe(true);
+    await page.keyboard.press('Shift+Tab');
+    expect(await focusInDialog(page), 'after Shift+Tab back').toBe(true);
+  });
+
   // @no-win-webkit: history Back while the open's View Transition commit settles crashes
   // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
   // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.

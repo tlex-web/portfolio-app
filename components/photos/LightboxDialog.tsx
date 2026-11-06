@@ -92,10 +92,19 @@ function slugOf(pathname: string | null): string | null {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
-/** The dialog's tabbable controls in DOM order, skipping hidden ones (display: none per tier). */
+/**
+ * The dialog's tabbable controls in DOM order, skipping hidden ones: display: none per tier
+ * (no boxes), and visibility: hidden, which keeps its boxes but takes no focus. The gutter
+ * labels are hidden that way until their first measure, which React defers while the open's
+ * view transition starts. Counting them would leave the browser no next control after Close
+ * and let Tab out of the dialog.
+ */
 function tabbables(root: HTMLElement): HTMLElement[] {
   return Array.from(root.querySelectorAll<HTMLElement>(TABBABLE)).filter(
-    (el) => el.tabIndex >= 0 && el.getClientRects().length > 0
+    (el) =>
+      el.tabIndex >= 0 &&
+      el.getClientRects().length > 0 &&
+      getComputedStyle(el).visibility === 'visible'
   );
 }
 
