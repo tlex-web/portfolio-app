@@ -97,18 +97,44 @@ function tempRatchet(fixtureName) {
 let raisePaletteRatchet = null;
 let lowerPaletteRatchet = null;
 
+/**
+ * Copies a parity fixture into a fresh temp dir and restores its real manifest
+ * names. The fixtures are stored under other names because GitHub's dependency
+ * graph scans every manifest in the repository, and the guard reads the real
+ * names through --root. Nested one level down so the cleanup loop's
+ * path.dirname removes the mkdtemp directory.
+ */
+function tempParityRoot(fixtureName) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
+  const root = path.join(dir, 'root');
+  fs.cpSync(path.join(fixtures, 'parity', fixtureName), root, { recursive: true });
+  fs.renameSync(path.join(root, 'package.fixture.json'), path.join(root, 'package.json'));
+  fs.renameSync(path.join(root, 'package-lock.fixture.json'), path.join(root, 'package-lock.json'));
+  return root;
+}
+let parityGoodRoot = null;
+let parityBadRoot = null;
+
 const cases = [
   {
     name: 'parity: good fixture passes',
     guard: PARITY,
-    args: ['--root', path.join(fixtures, 'parity', 'good')],
+    args: [],
+    setup: () => {
+      parityGoodRoot = tempParityRoot('good');
+      return ['--root', parityGoodRoot];
+    },
     expectExit: 0,
     expectOutput: ['parity: OK'],
   },
   {
     name: 'parity: bad fixture fails (npm install, node-version 20, container tag drift)',
     guard: PARITY,
-    args: ['--root', path.join(fixtures, 'parity', 'bad')],
+    args: [],
+    setup: () => {
+      parityBadRoot = tempParityRoot('bad');
+      return ['--root', parityBadRoot];
+    },
     expectExit: 1,
     expectOutput: [
       'vercel.json: installCommand is "npm install"',
@@ -821,7 +847,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, parityGoodRoot, parityBadRoot]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 
