@@ -19,7 +19,9 @@ export const site = {
   // the vercel.app host redirect here at Vercel. No trailing slash. Costly to
   // change once indexed (it needs a redirect or a canonical plan on the old host).
   url: 'https://www.tlui.de',
-  email: 'old2shatterhand@gmail.com',
+  // The public address: a tlui.de alias that forwards to the inbox, so it can be
+  // replaced if it draws spam. The form's recipient is FEEDBACK_RECIPIENT_EMAIL.
+  email: 'contact@tlui.de',
   links: {
     github: 'https://github.com/tlex-web',
     linkedin: 'https://www.linkedin.com/in/luitim/',
