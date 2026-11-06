@@ -27,8 +27,8 @@ export const DARK_PATH =
  * Near-zero tolerance: no maxDiffPixels and a per-pixel colour tolerance of
  * 0.01, which only absorbs the +/-1 anti-aliasing noise Chromium leaves on some
  * edges. The default threshold (0.2) let 07-09's amber -> caution stop pass.
- * One exception: `home/1440-ascent-waypoint-2` allows maxDiffPixels 3 at its
- * call site in `e2e/visual/routes.spec.ts`.
+ * One exception: `home/1440-ascent-waypoint-2` and `home/1440-ascent-summit` allow
+ * maxDiffPixels 3 at their call site in `e2e/visual/routes.spec.ts`.
  * Shared, because a project-level `expect` replaces the top-level one whole
  * (Playwright takeFirst), so visual-light must spread it in again.
  */
