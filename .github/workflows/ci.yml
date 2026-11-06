@@ -63,7 +63,7 @@ jobs:
         run: npm run guard:tests
 
       - name: Upload coverage reports
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         if: always()
         with:
           files: ./coverage/lcov.info
