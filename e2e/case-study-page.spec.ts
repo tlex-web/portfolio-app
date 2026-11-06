@@ -1,6 +1,7 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { projects } from '@/data/projects';
+import { waitForAnimations } from './helpers/audit';
 
 /**
  * The case-study page as a whole (ENG-02 structure and navigation, ENG-05;
@@ -232,6 +233,12 @@ for (const project of projects) {
       await page.goto(path);
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
       await page.evaluate(() => document.fonts.ready);
+      // Under reduced motion the terminal's Pause toggle turns pressed at hydration and fades
+      // its colours; about a third of the way through, text and background cross at 1.21:1.
+      // Axe has to measure the final colours, so wait for the press and then for the fade.
+      const pause = page.getByRole('button', { name: 'Pause demo', exact: true });
+      if ((await pause.count()) > 0) await expect(pause).toHaveAttribute('aria-pressed', 'true');
+      await waitForAnimations(page);
 
       const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
       expect(
