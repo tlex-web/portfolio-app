@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
           cache: 'npm'
@@ -45,7 +45,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
           cache: 'npm'
@@ -82,14 +82,14 @@ jobs:
     # 60 minutes on them (run 42223932292). The tag must equal the lockfile
     # @playwright/test version (enforced by scripts/guards/check-install-parity.mjs).
     container:
-      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
       options: --ipc=host
 
     steps:
       - uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
           cache: 'npm'
@@ -135,14 +135,14 @@ jobs:
     # The tag must equal the lockfile @playwright/test version
     # (enforced by scripts/guards/check-install-parity.mjs).
     container:
-      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
       options: --ipc=host
 
     steps:
       - uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
           cache: 'npm'
@@ -180,7 +180,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
           cache: 'npm'
@@ -235,7 +235,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
           cache: 'npm'
