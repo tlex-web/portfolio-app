@@ -1,13 +1,9 @@
 ---
-status: diagnosed
+status: resolved
 trigger: "UAT G-09-2: At 375x667, 768x1024, 820x1180 and 1024x768 the four 3D pins at #summit are hidden behind the summit plaque, and below 1280 px the static poster pins are under the plaque (D-03)."
 created: 2026-10-25T13:59:55Z
-updated: 2026-10-25T14:45:00Z
+updated: 2026-11-06T13:39:24Z
 goal: find_root_cause_only
-audit_acknowledged:
-  milestone: v2.0
-  at: 2026-11-05
-  status: diagnosed
 ---
 
 ## Current Focus
@@ -16,7 +12,7 @@ bug_class: Bohrbug (deterministic geometry; the same overlap on every render at 
 hypothesis: CONFIRMED (see Resolution). The pins are placed by stage-relative framing (3D) or a fixed p=0 crop (poster); the plaque is a fixed-pixel, content-sized box. Nothing ties one to the other, so whenever the plaque's share of the stage grows past what the framing was tuned for, they overlap.
 test: done. Scratch Playwright measurements on the dev server at 11 sizes, 3D and poster.
 expecting: n/a
-next_action: return ROOT CAUSE FOUND to the orchestrator (diagnose-only mode)
+next_action: none, closed 2026-11-06, see Resolution
 
 reasoning_checkpoint:
   hypothesis: "Summit pins sit under the plaque because (a) the plaque is content-sized (478-538 px tall, 448 px wide from md), so its share of the stage grows as the stage shrinks (89% of the height at 375x667, 62% of the width at 768); (b) the 3D summit framing is open-loop: fixed shares of the stage size (narrow lift 0.28h; wide shift 0.095w at 75 deg hfov) tuned at 412x839 and 1280/1440, with a cluster whose px size scales with stage width; (c) the poster pins are fixed UVs of the p=0 crop with no summit placement at all. (d) At 758-767 px canvas widths the rig's narrow switch disagrees with the CSS md breakpoint (scrollbar gutter)."
@@ -133,6 +129,25 @@ root_cause: |
      - Poster: components/home/PosterSheet.tsx:36,80-90 pins each waypoint at its fixed UV on the p=0 crop from lib/ascent/poster-frame.ts:139-155 (the D-16 parity rule). There is no summit placement at all, so pin 3 (u 0.459, v 0.52) lands near the stage centre on every aspect, under the left column below ~1072 px and under the bottom dock on every phone; pin 4 (v 0.59) can never clear a phone dock.
   Contributing (not causal): app/globals.css:254 `scrollbar-gutter: stable` makes the canvas 10 px narrower than the viewport, so at 768-777 px the rig's narrow switch (CameraRig.tsx:98,315) disagrees with the CSS md breakpoint and frames for a bottom dock under a centred plaque. It changes which pins overlap at 768 (pin 3 vs pins 1-3 with the wide framing), not whether they do.
   Test gap: e2e/home-canvas.spec.ts:609-648 asserts plaque intersection only at 1440x900, 1280x720 and 412x839 (all clear), and no test checks the static poster at the summit.
-fix:
-verification:
-files_changed: []
+fix: |
+  09-18 (d4fc6c7, dd7c5aa, 3799586): a compact summit plaque where the full one covers the poster pins; lib/ascent/summit-layout.ts ties the CSS thresholds to posterFrame; `summit-compact` variant in app/globals.css.
+  09-20 (3a8f228, bcdb0fe, 8798b71): 3D summit framing measured from the plaque (lib/ascent/framing.ts), the md switch on the CSS width source, and the share-based helpers dropped from route.ts.
+commits: [d4fc6c7, dd7c5aa, 3799586, 3a8f228, bcdb0fe, 8798b71]
+verification: |
+  Closure, 2026-11-06 (read-only checks by an agent, no new browser run):
+  - e2e/home-ascent.spec.ts holds the describe "Summit plaque clears the poster pins (G-09-2, static)"; `summitLayoutAt` occurs 2 times in lib/ascent/summit-layout.ts at HEAD.
+  - 09-VERIFICATION lists G-09-2 under `gaps_closed` and rates it "VERIFIED for the 11 sizes".
+  The overlap is not gone at every size. Accepted residue, put as accept-or-route items in 09-UAT round 2, each with the recorded result `pass`:
+  - Test 1: the phone summit crop (S3), where pin 4 is past the right edge and the summit triangle off the left edge.
+  - Test 2: reduced motion at 375x667, where the full plaque covers the poster pins by 15-127 px.
+  - Test 3: landscape phones at 667x375 and 740x360, where the compact plaque covers poster pin 3.
+files_changed: [app/globals.css, components/home/AscentController.tsx, components/home/AscentHero.tsx, components/home/SummitDetails.tsx, components/home/SummitPlaque.tsx, components/home/__tests__/summit.test.tsx, components/home/terrain/CameraRig.tsx, components/home/terrain/route-curve.ts, lib/ascent/framing.ts, lib/ascent/route.ts, lib/ascent/summit-layout.ts, e2e/home-ascent.spec.ts, e2e/home-canvas.spec.ts]
+
+## Prevention
+
+blameless_5_whys: not produced (retroactive closure)
+why_not_caught: |
+  Test gap (Resolution): the plaque intersection test ran only at 1440x900, 1280x720 and 412x839, all clear sizes, and no test checked the static poster at the summit.
+recurrence_guard: |
+  e2e/home-ascent.spec.ts describe "Summit plaque clears the poster pins (G-09-2, static)"; e2e/home-canvas.spec.ts describe "summit pins clear the plaque"; components/home/__tests__/summit.test.tsx.
+  Stages under 480 px tall stay outside the sweep (09-VERIFICATION), so no gate covers the landscape-phone residue.

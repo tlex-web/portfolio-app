@@ -1,12 +1,8 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "Keep the requested slug of an unknown /photos/<slug> or /projects/<slug> URL out of the 404 response's script data (T-12-03). Tim: \"cover script data too\"."
 created: 2026-11-02T00:00:00Z
-updated: 2026-11-02T21:00:00Z
-audit_acknowledged:
-  milestone: v2.0
-  at: 2026-11-05
-  status: awaiting_human_verify
+updated: 2026-11-06T13:39:24Z
 ---
 
 ## Current Focus
@@ -29,7 +25,7 @@ reasoning_checkpoint:
     - "code (3rd-party): Speed Insights route derivation falls back to raw pathname"
   and_gate: "yes - two independent sources; the target (token absent from full HTML and outerHTML) needs both fixed"
 
-next_action: Tim checks a Vercel preview: curl -s https://<preview>/photos/nf-check | grep -c nf-check must print 0 (1 means the self-fetch fell back), and the page must still be the 404 with "All photographs"
+next_action: none, closed 2026-11-06, see Resolution
 
 ## Symptoms
 
@@ -146,7 +142,8 @@ started: since 12-02 (proxy rewrite to /__missing)
 ## Resolution
 
 root_cause: "Two independent sources (AND-gate). (1) Next 16.4.2 serializes the rendered request's URL into flight row 0 as \"c\" (server/app-render/app-render.js:1155-1157 prepareInitialCanonicalUrl, :1239 getRSCPayload, url from :1902 parseRelativeUrl(req.url)); a proxy rewrite only changes the routing parsedUrl (server/lib/router-utils/resolve-routes.js:468-472), never req.url, so the rewrite to /__missing still renders with the typed URL. c is only read on the server (SSR usePathname), never for browser history (client/components/router-reducer/create-initial-router-state.js:27-29). (2) @vercel/speed-insights 2.0.0 next export derives route = computeRoute(usePathname(), useParams() || searchParams) (dist/next/index.mjs:206-217, :41-62); the root not-found has no params, so the raw path went into data-route (loadProps :113-115, injectSpeedInsights :144-147)."
-fix: "proxy.ts: every missed request on an allowed host (the sec-fetch-dest gate was removed after the SW-path leak, see Evidence 20:10) is answered with the 404 the proxy fetches for /<section>/_ (NEUTRAL_SLUG, itself an ordinary miss handled by the existing rewrite), served at the typed URL with the neutral render's CSP and status 404; x-middleware-*/hop/encoding headers dropped; any failure, non-404 status or no headers within 5 s falls back to the old rewrite. The neutral slug keeps the rewrite. components/SpeedInsightsRoute.tsx: Speed Insights via the package's React export with an explicit route = /404 on the root not-found (useSelectedLayoutSegment() === '/_not-found'), else computeRoute(pathname, params); framework/basePath/configString as the next export passes them. e2e/not-found.spec.ts checks the full HTML and full outerHTML."
+fix: "proxy.ts: every missed request on an allowed host (the sec-fetch-dest gate was removed after the SW-path leak, see Evidence 20:10) is answered with the 404 the proxy fetches for /<section>/_ (NEUTRAL_SLUG, itself an ordinary miss handled by the existing rewrite), served at the typed URL with the neutral render's CSP and status 404; x-middleware-*/hop/encoding headers dropped; any failure, non-404 status or no headers within 5 s falls back to the old rewrite. The neutral slug keeps the rewrite. components/SpeedInsightsRoute.tsx: Speed Insights via the package's React export with an explicit route = /404 on the root not-found (useSelectedLayoutSegment() === '/_not-found'), else computeRoute(pathname, params); framework/basePath/configString as the next export passes them. e2e/not-found.spec.ts checks the full HTML and full outerHTML. Quick task 261105-wty added www.tlui.de to the hosts canFetchNeutral allows."
+commits: [b32eb35, 67970b3, d9df0bf, 945a8c5, ce4c99c]
 verification:
   target_test: { result: pass, detail: "e2e/not-found.spec.ts token checks on the full HTML and full outerHTML + data-route=/404; chromium, firefox, webkit; 105/105 with --repeat-each=5" }
   mutation_check: { result: pass, reason_if_skipped: "no Stryker configured; 9 manual mutants at the fix sites instead", mutant_killed: "9/9 (x-middleware filter, sec-fetch-dest gate, neutral-slug guard, status check, content-encoding drop, header forwarding, fetch disabled, timeout signal, clearTimeout)" }
@@ -154,8 +151,22 @@ verification:
   adjacent_tests: { result: pass, suites_run: ["jest full: 84 suites / 1379 tests", "lib/__tests__/proxy.test.ts 33/33", "e2e not-found+shell chromium+firefox 80/80", "e2e not-found webkit 7/7", "npm run lint exit 0", "npm run type-check exit 0"] }
   revert_and_reconfirm: { result: pass, bug_returned_on_revert: true, fixed_on_reapply: true, detail: "source reverted, tightened spec kept, fresh build: 4 failures (body token x2, data-route=/photos|projects/<token> x2); reapplied, fresh build: all pass" }
   guardrail_verdict: accepted
-files_changed: [proxy.ts, components/SpeedInsightsRoute.tsx, app/layout.tsx, lib/__tests__/proxy.test.ts, e2e/not-found.spec.ts]
+  closure_check: |
+    The open item was a self-fetch check on a Vercel preview. The preview itself was not checked. Production is the stronger environment, because the blind spot was Vercel-only. An agent ran the checks below, not Tim.
+    - 261105-wty live retest, passed 2026-11-05 23:42 UTC: 404 on both sections, with the flight data reading "c":["","photos","_"] (261105-wty-SUMMARY.md).
+    - Fresh-token probe on www.tlui.de, 2026-11-06: /photos/nf-check-<ts> and /projects/nf-check-<ts> each returned 404 with 0 token occurrences, "c" read ["","photos","_"] and ["","projects","_"], and "All photographs" is in the photos miss body. The apex https://tlui.de/photos/<slug> answers 308 to www.tlui.de.
+    The prefetch gap this session logged has status resolved in 12/deferred-items.md: 12-29 fixed document prefetches (16deede, 099fab7), and RSC prefetches stay the accepted residual AR-12-02 (12-SECURITY.md).
+files_changed: [proxy.ts, components/SpeedInsightsRoute.tsx, app/layout.tsx, lib/__tests__/proxy.test.ts, e2e/not-found.spec.ts, data/site.ts, data/__tests__/site.test.ts]
 sw_path: "Found by the wave 1 live-DOM check: a navigation the service worker re-fetches reaches the proxy with sec-fetch-dest empty and took the plain rewrite. The proxy cannot see the rsc header (Next strips it), so neutral404 no longer gates on the request kind; a flight request answered with the HTML 404 makes the router load the URL as a document, which comes back neutral."
 host_pin: "Tim chose option A (literal reply: \"A\"): the neutral self-fetch runs only when new URL(request.url).hostname is loopback or exactly a hostname from VERCEL_URL, VERCEL_BRANCH_URL or VERCEL_PROJECT_PRODUCTION_URL (proxy.ts canFetchNeutral). Any other host keeps the plain rewrite: 404, slug in c, silent."
 other_404s: "Tim, 2026-11-02, asked whether every other 404 (e.g. /photos/<x>/extra, /no-such-page-<x>) should also be scrubbed of its typed path: \"Leave as is (Recommended)\". Only unknown /photos/<slug> and /projects/<slug> are scrubbed; other 404s keep the path as escaped, unrendered flight data."
 prefetch_gap: "Logged for 12-22 on Tim's \"Log it for 12-22 (Recommended)\" (phase deferred-items.md)."
+
+## Prevention
+
+blameless_5_whys: not produced (retroactive closure)
+why_not_caught: |
+  The 12-02 executor found the leak as an assertion-level failure (Symptoms). The service-worker path slipped past every e2e run because the functional Playwright projects block service workers (Eliminated 20:00).
+recurrence_guard: |
+  e2e/not-found.spec.ts: the "no slug echo" tests on the server HTML, the hydrated-DOM tests, and the describe "Unknown detail slugs with the service worker in control (T-12-03)"; lib/__tests__/proxy.test.ts.
+  These run on localhost. A failed self-fetch in production falls back to the plain rewrite silently, with the slug back in "c" (blind_spots), so no gate watches the live host.

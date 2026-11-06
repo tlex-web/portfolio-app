@@ -1,13 +1,9 @@
 ---
-status: diagnosed
+status: resolved
 trigger: "G-09-4 (part N1): at 768-1023 px the hero scrim dims the altimeter rail labels and readout (UI-REVIEW N1); N2 covered by waypoint2-label-and-kicker.md (b); N3 accepted"
 created: 2026-10-25T16:00:00Z
-updated: 2026-10-25T17:30:00Z
+updated: 2026-11-06T13:39:24Z
 goal: find_root_cause_only
-audit_acknowledged:
-  milestone: v2.0
-  at: 2026-11-05
-  status: diagnosed
 ---
 
 ## Current Focus
@@ -15,7 +11,7 @@ audit_acknowledged:
 hypothesis: CONFIRMED (see Resolution). The full-bleed hero scrim paints above the sticky stage and, below lg:, is a full-width vertical gradient, so it covers the rail at 0.54-0.90
 test: done (static + 3D sweeps, scrim-hidden counterfactual, z-index/clip/lift prototypes)
 expecting: n/a
-next_action: none (diagnose only); hand off to /gsd-plan-phase 09 --gaps
+next_action: none, closed 2026-11-06, see Resolution
 bug_class: Bohrbug (deterministic CSS layering)
 n2_note: G-09-4 N2 (375 place line leading "·") is diagnosed in .planning/debug/waypoint2-label-and-kicker.md part (b); not re-investigated here
 relation_to_deferred_item: Separate defect with a shared trigger. The deferred "hero scrim switches at lg: not 768" item is about the hero text alpha (copy side); N1 is the rail side. Amending the spec to lg: leaves N1 fully in place; reverting to the spec's 768 to-r stops clears the rail but brings back the C6 copy-edge problem (copy glyphs end at 552, long label starts at 576 at 768). N1 needs its own fix and test
@@ -105,6 +101,20 @@ reasoning_summary:
 ## Resolution
 
 root_cause: "AND-gate of two conditions; ships because of a third. (1) Layering/geometry: HeroBlock's scrim (components/home/HeroBlock.tsx:51, SCRIM at :17-18) is absolute inset-0 on a full-width hero block, so its box spans the whole stage, and the track (AscentHero.tsx:72) paints after the sticky stage, which is its own stacking context, so the scrim lies above the rail (AltimeterRail.tsx:64-115). (2) Gradient below lg: C6 kept the full-width vertical gradient (surface/50 at the top to /90 at the bottom) up to 1023 px, so the alpha over the rail is 0.54-0.89 at p=0 and up to 0.90 during the tilt-in (p 0 to about 0.18). Composed contrast falls to 1.29-2.47:1 against 4.45-7.30:1 at 1280. (3) Test gap: B8 is summit-only, and its helper (home-modes.spec.ts:122-183) compares the raw text colour, so it is blind to an overlay painted above the text."
-fix: "not applied (diagnose only)"
-verification: "n/a"
-files_changed: []
+fix: |
+  Plan 09-17. 1da76cd: the altimeter rail moved to its own layer above the hero scrim (`data-ascent-rail-layer` in components/home/AscentHero.tsx). fc54409: composed rail contrast test across 768-1280 at p 0 and 0.05.
+commits: [1da76cd, fc54409]
+verification: |
+  Closure, 2026-11-06 (read-only checks by an agent, no new browser run):
+  - `composedContrast` occurs 3 times in e2e/home-modes.spec.ts at HEAD, under the describe "N1: rail labels and readout over the hero, composed through every overlay".
+  - 09-VERIFICATION lists G-09-4 N1 under `gaps_closed` and rates it "VERIFIED", noting there: "green in CI. Not pixel-measured by me." Nothing here adds a pixel measurement.
+  Scope: N1 only. N2 is in waypoint2-label-and-kicker; "2,760 m approx." at 768 px is its own acknowledged row in 09/deferred-items.md.
+files_changed: [components/home/AltimeterRail.tsx, components/home/AscentHero.tsx, components/home/__tests__/rail.test.tsx, e2e/home-ascent.spec.ts, e2e/home-modes.spec.ts]
+
+## Prevention
+
+blameless_5_whys: not produced (retroactive closure)
+why_not_caught: |
+  Test gap (Resolution): B8 is summit-only, and its helper compares the raw text colour, so it is blind to an overlay painted above the text. C6 was judged on B7, hero text only (candidate_causes). The 768 start baseline encoded the defect (Evidence 17:00).
+recurrence_guard: |
+  e2e/home-modes.spec.ts describe "N1: rail labels and readout over the hero, composed through every overlay", which uses `composedContrast`; components/home/__tests__/rail.test.tsx.

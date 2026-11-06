@@ -67,13 +67,13 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 | Category | Item | Status | Deferred At | Milestone |
 |----------|------|--------|-------------|-----------|
-| debug_sessions | 12-slug-script-data | awaiting_human_verify | 2026-11-05 | v2.0 |
-| debug_sessions | e2e-test-ci-failures | awaiting_human_verify | 2026-11-05 | v2.0 |
-| debug_sessions | eslint10-ci-failures | awaiting_human_verify | 2026-11-05 | v2.0 |
-| debug_sessions | hero-scrim-over-rail | diagnosed | 2026-11-05 | v2.0 |
-| debug_sessions | hidden-tab-burst-decline | diagnosed | 2026-11-05 | v2.0 |
-| debug_sessions | summit-pins-under-plaque | diagnosed | 2026-11-05 | v2.0 |
-| debug_sessions | waypoint2-label-and-kicker | diagnosed | 2026-11-05 | v2.0 |
+| debug_sessions | 12-slug-script-data | resolved | 2026-11-05 | v2.0 |
+| debug_sessions | e2e-test-ci-failures | resolved | 2026-11-05 | v2.0 |
+| debug_sessions | eslint10-ci-failures | superseded | 2026-11-05 | v2.0 |
+| debug_sessions | hero-scrim-over-rail | resolved | 2026-11-05 | v2.0 |
+| debug_sessions | hidden-tab-burst-decline | resolved | 2026-11-05 | v2.0 |
+| debug_sessions | summit-pins-under-plaque | resolved | 2026-11-05 | v2.0 |
+| debug_sessions | waypoint2-label-and-kicker | resolved | 2026-11-05 | v2.0 |
 | uat_gaps | 03/03-UAT.md (archived v1.0) | diagnosed | 2026-11-05 | v2.0 |
 | verification_gaps | 04/04-VERIFICATION.md (archived v1.0) | human_needed | 2026-11-05 | v2.0 |
 | verification_gaps | 05/05-VERIFICATION.md (archived v1.0) | human_needed | 2026-11-05 | v2.0 |
@@ -86,7 +86,7 @@ Items acknowledged and deferred at milestone close, most recent first:
 | deferred_items | 12/deferred-items.md: Switch the canonical host to www.tlui.de once the domain is live | resolved | 2026-11-05 | v2.0 |
 | deferred_items | 12/deferred-items.md: caniuse-lite is 7 months old in the production build | acknowledged | 2026-11-05 | v2.0 |
 
-Acknowledging records the item; it doesn't fix it. Still open from this table: the `THREE.Clock` warning and the `caniuse-lite` refresh. The four Phase 9 debug sessions were fixed by plans 09-15 to 09-21 but their files were never closed.
+Acknowledging records the item; it doesn't fix it. Still open from this table: the `THREE.Clock` warning and the `caniuse-lite` refresh. The seven debug sessions were closed on 2026-11-06 and moved to `.planning/debug/resolved/`: the four Phase 9 ones were fixed by plans 09-15 to 09-21, `12-slug-script-data` by Phase 12 and 261105-wty, `e2e-test-ci-failures` by 241cbbf, and `eslint10-ci-failures` is superseded, because 5deb55c took ESLint back to 9.x.
 
 ## Session Continuity
 
