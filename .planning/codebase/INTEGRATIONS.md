@@ -136,7 +136,6 @@
 - `FEEDBACK_FROM_EMAIL` - "From" address for sent emails (defaults to `onboarding@resend.dev`)
 
 **Optional env vars:**
-- `NEXT_PUBLIC_GA_ID` - Google Analytics tracking ID
 - `NEXT_PUBLIC_VERCEL_ANALYTICS_ID` - Vercel Analytics ID (auto-configured on Vercel)
 - `NODE_ENV` - Environment mode (production/development)
 - `CI` - CI environment indicator for test configuration
