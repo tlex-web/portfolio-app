@@ -57,7 +57,7 @@ describe('EndBlock', () => {
     expect(sign).toHaveClass('min-h-14', 'items-stretch');
     // The plate is the sign's first child; the banned 12 px vertical padding is gone.
     const plate = sign.firstElementChild as HTMLElement;
-    expect(plate).toHaveTextContent('coin-flipNext route');
+    expect(plate).toHaveTextContent('coin-flip Next route');
     expect(plate).not.toHaveClass('py-3');
   });
 });

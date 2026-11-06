@@ -79,11 +79,12 @@ describe('JustifiedGrid (PHOTO-02, PHOTO-03, D-15)', () => {
     expect(heights).toEqual([...heights].sort((a, b) => a - b));
   });
 
-  it('names the list and gives each link its photo title as an explicit aria-label', () => {
+  it('names the list and gives each link its title and caption as an explicit aria-label', () => {
     const { links } = renderGrid();
     photoViews.forEach((view, i) => {
-      expect(links[i]).toHaveAttribute('aria-label', view.title);
-      expect(links[i]).toHaveAccessibleName(view.title);
+      const name = `${view.title}, ${view.shortPlace}, ${view.altitudeLabel}, ${view.captureMonth}`;
+      expect(links[i]).toHaveAttribute('aria-label', name);
+      expect(links[i]).toHaveAccessibleName(name);
     });
   });
 
