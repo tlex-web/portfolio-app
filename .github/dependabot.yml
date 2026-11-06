@@ -20,18 +20,38 @@ updates:
       - "tlex-web"
     assignees:
       - "tlex-web"
-    # Group minor and patch updates together
+    # Group minor and patch updates together. A dependency goes in the first
+    # group it matches, so tailwind comes first.
     groups:
+      # tailwindcss is a dev dependency and @tailwindcss/postcss a production one,
+      # and the two versions must move together. No dependency-type and no
+      # update-types on purpose: the group spans both types, and a major arrives
+      # as one PR too.
+      tailwind:
+        patterns:
+          - "tailwindcss"
+          - "@tailwindcss/postcss"
       development-dependencies:
         dependency-type: "development"
         update-types:
           - "minor"
           - "patch"
+        exclude-patterns:
+          - "tailwindcss"
+          - "@tailwindcss/postcss"
+          # Playwright opens on its own: the parity guard requires the
+          # mcr.microsoft.com/playwright:vX.Y.Z-noble tags in ci.yml and
+          # visual-baselines.yml to equal the lockfile version, so a lone bump
+          # is red until those tags change in the same PR.
+          - "@playwright/test"
       production-dependencies:
         dependency-type: "production"
         update-types:
           - "minor"
           - "patch"
+        exclude-patterns:
+          - "tailwindcss"
+          - "@tailwindcss/postcss"
     # Ignore specific packages if needed
     ignore:
       # Major version updates for these packages require manual review
@@ -40,6 +60,15 @@ updates:
       - dependency-name: "react"
         update-types: ["version-update:semver-major"]
       - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      # ESLint 10: the latest eslint-plugin-jsx-a11y, eslint-plugin-react and
+      # eslint-plugin-import all cap their eslint peer at 9.
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@eslint/js"
+        update-types: ["version-update:semver-major"]
+      # TypeScript 7: the latest typescript-eslint (8.72.1) needs typescript below 6.1.0.
+      - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
 
   # Enable version updates for GitHub Actions
