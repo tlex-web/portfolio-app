@@ -130,6 +130,14 @@ Generate test coverage report:
 npm run test:coverage
 ```
 
+Check the contact form on the live site. It runs against production, not in CI, and sends no email by default:
+
+```bash
+npm run test:prod-form
+```
+
+`PROD_FORM_SEND=1` adds one real email through the form, and `PROD_FORM_LIMIT=1` proves the rate limiter is on but locks your IP out for up to an hour. `e2e/prod/contact-form.prod.ts` lists what each level costs.
+
 ### Build for Production
 
 Build the application:

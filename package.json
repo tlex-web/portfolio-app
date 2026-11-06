@@ -16,6 +16,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
+    "test:prod-form": "playwright test --config=playwright.prod.config.ts",
     "postbuild": "node scripts/inject-build-hash.mjs",
     "guard:parity": "node scripts/guards/check-install-parity.mjs",
     "guard:palette": "node scripts/guards/check-palette.mjs",
