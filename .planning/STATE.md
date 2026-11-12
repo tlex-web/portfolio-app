@@ -1,20 +1,16 @@
 ---
 gsd_state_version: "1.0"
-milestone: v2.0
-status: Awaiting next milestone
-stopped_at: Milestone v2.0 archived
-last_updated: "2026-11-06T22:51:19.024Z"
-last_activity: 2026-11-06
-last_activity_desc: Milestone v2.0 completed and archived
-state_head: 35ff92b8178752403fdb336d42fcecb606ea29eb
+milestone: v2.1
+milestone_name: Survey Expansion
+status: planning
+last_updated: "2026-11-12T20:36:32.120Z"
+last_activity: 2026-11-12
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 128
-  completed_plans: 128
-  percent: 100
-milestone_name: Topographic Identity
-current_phase: 12
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -28,11 +24,10 @@ See: .planning/PROJECT.md (updated 2026-11-05)
 
 ## Current Position
 
-Phase: none. v2.0 is archived, and the next milestone starts at Phase 13.
-Status: Awaiting next milestone
-Last activity: 2026-11-06 - Completed quick task 261106-www: Drop the unused Google Analytics env placeholder and correct the codebase docs that name it
-
-Progress: [██████████] 100% of v2.0
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-11-12 — Milestone v2.1 started
 
 ## Performance Metrics
 

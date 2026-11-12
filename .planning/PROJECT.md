@@ -14,12 +14,22 @@ A portfolio that is visually memorable and distinctive — not another generic T
 
 **Confirmed on production:** a real send from the contact form. `PROD_FORM_SEND=1 npm run test:prod-form` passed on `e19890d` on 2026-11-06, and the email arrived.
 
-## Next Milestone Goals
+## Current Milestone: v2.1 Survey Expansion
 
-Not defined yet; `/gsd-new-milestone` starts that. Candidates, none of them decided:
+**Goal:** Grow the topographic survey from one mountain to photo series from regions across the Alps, shown immersively without losing the survey identity, and close the v2.0 debt.
 
-- Require CI checks on `main`, and fix the v2.0 tech debt listed under Context
-- The deferred ideas PHOTO-F1 to F4, ENG-F1 and PLAT-F1 to F4 (`.planning/milestones/v2.0-REQUIREMENTS.md`)
+**Target features:**
+- Region series: photos grouped by region. Zermatt becomes the first region and gets new photos, and 1–2 new regions launch with it, at least one in Italy or Austria
+- Map model: an Alps-wide contour overview with one pin per region; each region opens on its own local terrain plate, as the Matterhorn map works today
+- Terrain pipeline for more than one region, with a second elevation source for Italy and Austria next to swissALTIRegio
+- A fresh, more immersive photo layout (large full-bleed images, less chrome) that stays topographic: contours, coordinates and altitudes frame everything
+- Drone video: research formats, hosting and file size first, then commit to a shape within this milestone
+- Deferred ideas: PHOTO-F2 Share (Web Share API), PHOTO-F4 LV95 next to WGS84 (Swiss photos only), ENG-F1 terminal step controls and transcript, PLAT-F1 JSON-LD, PLAT-F2 offline page that lists cached pages
+- v2.0 debt: repo safety (branch protection and required checks on `main`, including the `[ci skip]` gap; Upstash confirmed in production; the Playwright 1.65 re-baseline), test gaps (audit gate over coin-flip and every photo slug, Nyquist G5 and G6, triage of the open review-ledger rows), UI fixes (mobile menu on the current page, 375 px Home overflow, focus after lightbox Escape, clipped menu focus ring, the 4.81:1 rail label) and small leftovers
+
+**Unchanged:** Home stays the Matterhorn ascent with its four waypoints and links to the wider album. Existing `/photos/[slug]` links and their OG cards keep working through the series URL change.
+
+**Not in v2.1:** PHOTO-F1 "Ask about this photo", PHOTO-F3 tag filters, PLAT-F3 blog, PLAT-F4 print licensing.
 
 <details>
 <summary>v2.0 goal and target features, as planned on 2026-10-10</summary>
@@ -89,7 +99,15 @@ Not defined yet; `/gsd-new-milestone` starts that. Candidates, none of them deci
 
 ### Active
 
-(None yet. `/gsd-new-milestone` defines the next set.)
+v2.1 Survey Expansion. The REQ-IDs are in `.planning/REQUIREMENTS.md`.
+
+- [ ] Photos are organised as region series (Zermatt plus 1–2 new regions, at least one in Italy or Austria)
+- [ ] An Alps-wide overview map leads to a local terrain plate per region
+- [ ] The terrain pipeline builds more than one region from swissALTIRegio and a second source for Italy and Austria
+- [ ] The photo pages get an immersive layout inside the topographic identity
+- [ ] Drone video is researched and given a decided shape
+- [ ] Deferred ideas PHOTO-F2, PHOTO-F4, ENG-F1, PLAT-F1 and PLAT-F2 ship
+- [ ] The v2.0 debt is closed: repo safety, test gaps, UI fixes and small leftovers
 
 ### Out of Scope
 
@@ -220,6 +238,10 @@ UI audit (2026-10-10, the starting point for v2.0):
 | Two keyboard findings accepted unfixed at 12-UAT test 3 (Tim: "pass", 2026-11-05) | Focus can land off-screen after stepping in the lightbox then pressing Escape in short windows; the 375 px mobile menu clips the sides of the focus ring | Accepted; root cause of the Escape case not diagnosed |
 | Ship Phases 7-12 as one milestone PR, not six stacked PRs (2026-11-05) | Tim: "One milestone PR (Recommended)"; planning docs cite SHAs, so it merged with a merge commit | ✓ Good — PR #109, merge commit `559bd72` |
 | Close v2.0 carrying its tech debt instead of adding a cleanup phase (2026-11-05) | All active requirements met and the site is live; Tim chose option A after the audit | Override closeout: Phases 7-11 read `stale` and 18 open artifacts were acknowledged. The debt is listed under Context |
+| v2.1 photo series are grouped by region, not by trip or theme (2026-11-12) | Tim's choice at milestone start; Zermatt becomes the first region and grows | — Pending |
+| Alps-wide contour overview plus one local terrain plate per region (2026-11-12) | Keeps the Matterhorn map model per region while the album spans the Alps (Tim: "Overview + local") | — Pending |
+| Home ascent stays the Matterhorn with its four waypoints (2026-11-12) | The Matterhorn remains the site's signature; Home links to the wider album | — Pending |
+| Drone video: research first, then decide the shape within v2.1 (2026-11-12) | Tim has footage but no settled format; hosting and size have to fit the same-origin CSP and Vercel | — Pending |
 
 ## Evolution
 
@@ -239,4 +261,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-11-05 after v2.0 milestone*
+*Last updated: 2026-11-12 after starting milestone v2.1 Survey Expansion*
