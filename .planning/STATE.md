@@ -3,10 +3,10 @@ gsd_state_version: "1.0"
 milestone: v2.0
 status: Awaiting next milestone
 stopped_at: Milestone v2.0 archived
-last_updated: "2026-11-06T13:43:26.471Z"
-last_activity: 2026-11-05
+last_updated: "2026-11-06T22:51:19.024Z"
+last_activity: 2026-11-06
 last_activity_desc: Milestone v2.0 completed and archived
-state_head: 85d7248456b1ba1ba64d20ffaffc6d72fb477f7c
+state_head: 35ff92b8178752403fdb336d42fcecb606ea29eb
 progress:
   total_phases: 6
   completed_phases: 6
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-05)
 
 Phase: none. v2.0 is archived, and the next milestone starts at Phase 13.
 Status: Awaiting next milestone
-Last activity: 2026-11-06 - Completed quick task 261106-qvn: Dependabot group C (dependency batches, axe 4.14 names, Tailwind 4.3.4)
+Last activity: 2026-11-06 - Completed quick task 261106-www: Drop the unused Google Analytics env placeholder and correct the codebase docs that name it
 
 Progress: [██████████] 100% of v2.0
 
@@ -62,6 +62,7 @@ None carried from v2.0.
 | 261106-joo | Dependabot cleanup A+D: dependabot.yml, parity fixture manifests, one-shot flake tolerance, seven debug sessions closed | 2026-11-06 | 85d7248 | [261106-joo-dependabot-cleanup-a-d-dependabot-yml-fi](./quick/261106-joo-dependabot-cleanup-a-d-dependabot-yml-fi/) |
 | 261106-mzc | E2E reliability: E2E in the Playwright image, focus trap skips hidden controls, nav menu ignores photo steps, case-study axe measures final colours | 2026-11-06 | 8239f91 | [261106-mzc-e2e-reliability-run-e2e-in-the-playwrigh](./quick/261106-mzc-e2e-reliability-run-e2e-in-the-playwrigh/) |
 | 261106-qvn | Dependabot group C: next, resend, upstash, three, motion, Playwright 1.64.1, axe 4.14 with 14 names, Tailwind 4.3.4 with the note in Inter | 2026-11-06 | a5fa14a | [261106-qvn-dependabot-group-c-dependency-batches-ax](./quick/261106-qvn-dependabot-group-c-dependency-batches-ax/) |
+| 261106-www | Drop the unused Google Analytics env placeholder and correct the codebase docs that name it | 2026-11-06 | 35ff92b | [261106-www-drop-the-unused-google-analytics-env-pla](./quick/261106-www-drop-the-unused-google-analytics-env-pla/) |
 
 ## Deferred Items
 

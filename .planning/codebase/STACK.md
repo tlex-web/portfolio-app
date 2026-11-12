@@ -90,7 +90,7 @@
 **Environment:**
 - Environment variables configured via `.env` file (see `.env.example`)
 - Required for production: `RESEND_API_KEY`, `FEEDBACK_RECIPIENT_EMAIL`, `FEEDBACK_FROM_EMAIL`
-- Optional analytics variables: `NEXT_PUBLIC_GA_ID`, `NEXT_PUBLIC_VERCEL_ANALYTICS_ID`
+- Optional analytics variable: `NEXT_PUBLIC_VERCEL_ANALYTICS_ID`
 - Development/test can use dummy values for email vars
 
 **Build:**
