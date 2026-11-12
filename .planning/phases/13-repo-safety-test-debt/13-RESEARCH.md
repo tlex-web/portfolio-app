@@ -739,9 +739,9 @@ REST format: path-style commands with `Authorization: Bearer $TOKEN`; success JS
 | A9 | Re-running an old workflow run uses the old workflow file | Pitfall 9 | Minor: an old run might produce `CI OK` |
 | A10 | `gh run watch --exit-status --interval` flags as written | Pattern 2 | Adjust flags at implementation |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **D-06 mechanism (blocks GUARD-08 design; needs Tim's checkpoint before the relay is built)**
+1. **D-06 mechanism (blocks GUARD-08 design; needs Tim's checkpoint before the relay is built)** — **RESOLVED:** Tim chose option A, the relay mirror, with fallback B then C (13-CONTEXT.md D-06 Amendment, 2026-11-12). 13-10 builds the relay; 13-19 Tasks 2-3 run the A1 acceptance proof and record `relay.decision`; 13-21 applies B or C if that proof requires it.
    - What we know: GitHub docs say `workflow_dispatch` job checks "do not satisfy a required status check in a branch ruleset"; `pull_request_target` is eligible and not affected by skip markers; job names can use `needs`.
    - What's unclear: whether a `pull_request_target` job check attaches to the head SHA (LOW, undocumented).
    - Options:
@@ -753,15 +753,15 @@ REST format: path-style commands with `Authorization: Bearer $TOKEN`; success JS
      | C. No companion | Check stays pending (fail-closed) until a new push | Nothing to build | Does not meet D-06; "pending" until someone pushes |
    - Recommendation: A, with B as the fallback if D-10's `[ci skip]` proof shows the check is not counted (then C, recorded as accepted risk).
 
-2. **Production Upstash variable names** — not confirmed (no Vercel CLI, project not linked). Tim runs `npx vercel@latest link` (decline env pull) and `npx vercel@latest env ls production` before the GUARD-09 code merges.
+2. **Production Upstash variable names** — not confirmed (no Vercel CLI, project not linked). Tim runs `npx vercel@latest link` (decline env pull) and `npx vercel@latest env ls production` before the GUARD-09 code merges. — **RESOLVED (planned):** 13-05 Task 1 checkpoint records the names Tim reports (names only); 13-15 Task 1 refuses to open the mid-phase PR until a complete pair is recorded (Pitfall 2).
 
-3. **Vercel Deployment Checks on Hobby and the System Environment Variables checkbox** — Tim checks both in the dashboard.
+3. **Vercel Deployment Checks on Hobby and the System Environment Variables checkbox** — Tim checks both in the dashboard. — **RESOLVED (planned):** 13-05 Task 1 records both answers; 13-15 Task 1 blocks on `VERCEL_ENV` exposure; 13-16 Task 3 enables Deployment Checks if offered, otherwise 13-22 records the D-07 residual risk in PROJECT.md Key Decisions.
 
-4. **Keep-alive command and token** — `SET` with the full token (stronger) vs `PING` with a read-only token (least privilege). Recommend `PING` first; switch if an Upstash archival warning arrives.
+4. **Keep-alive command and token** — `SET` with the full token (stronger) vs `PING` with a read-only token (least privilege). Recommend `PING` first; switch if an Upstash archival warning arrives. — **RESOLVED (planned):** 13-05 Task 1 is the decision checkpoint (`ping-readonly` recommended, `set-full` alternative); 13-05 Task 2 builds whichever Tim picks; 13-17 runs it live.
 
-5. **Three ledger rows need Tim's call** (07 WR-07, 07 IN-08 after measurement, 12 IN-08).
+5. **Three ledger rows need Tim's call** (07 WR-07, 07 IN-08 after measurement, 12 IN-08). — **RESOLVED (planned):** 13-06 Task 2 measures 07 IN-08; 13-06 Task 3 records Tim's three owner calls; 13-11 Task 2 carries out the "fix" calls.
 
-6. **Mid-phase PR contents** — recommend: CI gate (`changes`, `CI OK`, `workflow_dispatch`, relay, keep-alive file, `check-ci-gate.mjs`), the CLEAN-01 CI comment removal, and the dual-pair limiter **only if** Tim has confirmed the names; otherwise ship the limiter in a second PR. The milestone branch `gsd/v2.1-survey-expansion` is local and unpushed, so the PR also carries the v2.1 planning docs (all docs-only paths).
+6. **Mid-phase PR contents** — recommend: CI gate (`changes`, `CI OK`, `workflow_dispatch`, relay, keep-alive file, `check-ci-gate.mjs`), the CLEAN-01 CI comment removal, and the dual-pair limiter **only if** Tim has confirmed the names; otherwise ship the limiter in a second PR. The milestone branch `gsd/v2.1-survey-expansion` is local and unpushed, so the PR also carries the v2.1 planning docs (all docs-only paths). — **RESOLVED:** 13-15's objective fixes the contents (CI gate, relay, keep-alive, fail-closed limiter, audit sweep, G5/G6, CLEAN-01, approved ledger fixes, v2.1 planning docs) as one PR; instead of a second limiter PR, 13-15 Task 1 blocks the push until 13-05 records the production names, and Tim approves the push at 13-15 Task 2.
 
 ## Environment Availability
 

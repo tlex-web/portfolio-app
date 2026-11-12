@@ -68,7 +68,54 @@ Full details: [milestones/v2.0-ROADMAP.md](milestones/v2.0-ROADMAP.md)
   3. Playwright 1.65 and its container image tag land in one commit that is re-baselined on its own, before any intended visual change, and Dependabot PR #140 is closed by it.
   4. The production audit gate runs `/projects/coin-flip` and every photo slug (each page template in all three engines, each slug at least once in Chromium) and takes its routes from the site's data, so a new photo or region page cannot ship outside it. A wrong capture-time offset fails the photo data build (G5), and an invalid source leaves existing derivatives in place with exit code 1 (G6).
   5. Every open review-ledger row from Phases 7, 9, 10 and 12 is fixed, accepted with a recorded reason, or turned into a requirement, and `TILT_CONFIG`, the test-only `cssDuration` and `cssEase`, the unused `next.config` images block, the service-worker `/_next/image` branch, the commented CI steps and the vercel.com `dns-prefetch` are gone with no visual diff.
-**Plans**: TBD
+**Plans**: 22 plans in 12 waves
+
+Plans:
+**Wave 1**
+- [ ] 13-01-PLAN.md — `CI OK` aggregate job, `scripts/ci/ci-ok.jq` and the `check-ci-gate` guard (phase tracer, GUARD-07)
+- [ ] 13-02-PLAN.md — Rate limiter fails closed in production; both Upstash name pairs; route 503 (GUARD-09)
+- [ ] 13-03-PLAN.md — Audit gate routes from the sitemap; coin-flip and every photo slug; template coverage test (VERIFY-05)
+- [ ] 13-04-PLAN.md — CLEAN-01 removals in app, config, service worker and motion helpers
+- [ ] 13-05-PLAN.md — Tim's production facts (Upstash names, VERCEL_ENV, Deployment Checks) and the daily Upstash keep-alive
+- [ ] 13-06-PLAN.md — Ledger triage of the 44 open rows and Tim's single approval (VERIFY-07)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 13-07-PLAN.md — Docs-only fast path inside `CI OK`, `workflow_dispatch`, path-filter ban; commented CI steps removed
+- [ ] 13-08-PLAN.md — Ledger fixes: Phase 7 and 9 docs, naming and test rows
+- [ ] 13-09-PLAN.md — Ledger fixes: Phase 10 photo-component rows
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 13-10-PLAN.md — `[ci skip]` relay mirror on `pull_request_target` (D-06 option A) with guard rules (GUARD-08)
+- [ ] 13-11-PLAN.md — Ledger fixes: contact and service-worker rows, Tim's owner calls
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 13-12-PLAN.md — G5/G6 photo-script characterization tests via `--root` (VERIFY-06)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 13-13-PLAN.md — Ledger fixes: contrast and palette guard rows
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 13-14-PLAN.md — Ledger fixes: same-classnames, snapshot-commit and parity guard rows; catch-all for rows Tim moves into fix-now
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 13-15-PLAN.md — Mid-phase PR to `main` (D-05) with green `CI OK` and zero-pixel-diff proof
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 13-16-PLAN.md — Tim merges; Tim applies the `main` ruleset, deletes 10401314, sets Deployment Checks; API verification
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [ ] 13-17-PLAN.md — Limiter live: production deployment, first keep-alive run, the 429 probe (GUARD-09)
+- [ ] 13-18-PLAN.md — Playwright 1.65 and container tag in one commit after Tim's package check (DEPS-06)
+- [ ] 13-19-PLAN.md — D-10 live proofs (red, docs-only, `[ci skip]`) and the relay decision
+
+**Wave 10** *(blocked on Wave 9 completion)*
+- [ ] 13-20-PLAN.md — Playwright 1.65 three-engine CI and the re-baseline alone; Tim commits PNGs; #140
+
+**Wave 11** *(blocked on Wave 10 completion)*
+- [ ] 13-21-PLAN.md — D-06 fallback B or C if 13-19 chose it (otherwise a recorded no-op)
+
+**Wave 12** *(blocked on Wave 11 completion)*
+- [ ] 13-22-PLAN.md — Ledger write-back (D-19), hand-overs to later phases, PROJECT.md Key Decisions
 **Research**: Not needed (known GitHub ruleset and aggregate-check pattern). Before Tim applies anything, confirm each identifier in its UI or CLI: Vercel Deployment Checks on Hobby, the GitHub Actions integration id, the admin role id, and the production Upstash variable names (`vercel env ls production`; the Marketplace may inject `KV_*` instead of `UPSTASH_*`).
 **UI-SPEC**: Not needed. No UI change; the only pixel change is the Playwright 1.65 re-baseline.
 **Inputs from Tim**: Review and apply the `main` ruleset and any Vercel setting (the agent prepares the JSON, Tim applies it); decide whether the inert `automated-actions` ruleset is removed or replaced; confirm the production Upstash variables; run or approve the live 429 probe (it locks the probing IP out for up to an hour); commit the Playwright 1.65 PNGs; decide the ledger rows that need an owner call.
