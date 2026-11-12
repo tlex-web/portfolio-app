@@ -117,13 +117,52 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (filled by the roadmapper) | | |
+| GUARD-07 | Phase 13 | Pending |
+| GUARD-08 | Phase 13 | Pending |
+| GUARD-09 | Phase 13 | Pending |
+| DEPS-06 | Phase 13 | Pending |
+| VERIFY-05 | Phase 13 | Pending |
+| VERIFY-06 | Phase 13 | Pending |
+| VERIFY-07 | Phase 13 | Pending |
+| CLEAN-01 | Phase 13 | Pending |
+| SHELL-07 | Phase 14 | Pending |
+| SHELL-08 | Phase 14 | Pending |
+| HOME-09 | Phase 14 | Pending |
+| HOME-10 | Phase 14 | Pending |
+| LBOX-08 | Phase 14 | Pending |
+| DATA-09 | Phase 15 | Pending |
+| DATA-10 | Phase 15 | Pending |
+| DATA-11 | Phase 15 | Pending |
+| DATA-12 | Phase 16 | Pending |
+| DATA-13 | Phase 16 | Pending |
+| DATA-14 | Phase 16 | Pending |
+| DATA-15 | Phase 15 | Pending |
+| REGION-01 | Phase 18 | Pending |
+| REGION-02 | Phase 18 | Pending |
+| REGION-03 | Phase 18 | Pending |
+| REGION-04 | Phase 18 | Pending |
+| REGION-05 | Phase 18 | Pending |
+| REGION-06 | Phase 18 | Pending |
+| REGION-07 | Phase 17 | Pending |
+| PHOTO-05 | Phase 17 | Pending |
+| PHOTO-06 | Phase 18 | Pending |
+| PHOTO-07 | Phase 18 | Pending |
+| PHOTO-08 | Phase 18 | Pending |
+| LBOX-09 | Phase 18 | Pending |
+| VIDEO-01 | Phase 19 | Pending |
+| VIDEO-02 | Phase 19 | Pending |
+| VIDEO-03 | Phase 19 | Pending |
+| ENG-06 | Phase 14 | Pending |
+| SEO-04 | Phase 17 | Pending |
+| EDGE-03 | Phase 17 | Pending |
 
 **Coverage:**
 - v2.1 requirements: 38 total
-- Mapped to phases: 0
-- Unmapped: 38 ⚠️
+- Mapped to phases: 38
+- Unmapped: 0 ✓
+
+**Per phase:** Phase 13: 8 · Phase 14: 6 · Phase 15: 4 · Phase 16: 3 · Phase 17: 4 · Phase 18: 10 · Phase 19: 3
 
 ---
 *Requirements defined: 2026-11-12*
-*Last updated: 2026-11-12 after initial definition*
+*Last updated: 2026-11-12 after roadmap creation (Phases 13-19)*

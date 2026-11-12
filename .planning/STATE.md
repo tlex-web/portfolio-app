@@ -3,10 +3,10 @@ gsd_state_version: "1.0"
 milestone: v2.1
 milestone_name: Survey Expansion
 status: planning
-last_updated: "2026-11-12T20:36:32.120Z"
+last_updated: "2026-11-12T21:30:00.000Z"
 last_activity: 2026-11-12
 progress:
-  total_phases: 0
+  total_phases: 7
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,27 +17,47 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-11-05)
+See: .planning/PROJECT.md (updated 2026-11-12)
 
 **Core value:** A portfolio that is visually memorable and distinctive (not another generic Tailwind site) while being stable and well-maintained under the hood.
-**Current focus:** Planning the next milestone
+**Current focus:** Phase 13 — Repo Safety & Test Debt
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-11-12 — Milestone v2.1 started
+Phase: 13 of 19 (Repo Safety & Test Debt)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-11-12 — v2.1 roadmap created (Phases 13-19, 38/38 requirements mapped)
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
-**v2.0:** 128 plans in 6 phases, about 70 hours of plan execution. The per-plan table is in `.planning/milestones/v2.0-STATE.md`.
+**Velocity (v2.1):**
+- Total plans completed: 0
+- Average duration: -
+- Total execution time: 0 hours
+
+**By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| - | - | - | - |
+
+*Updated after each plan completion. v2.0: 128 plans in 6 phases, about 70 hours of plan execution; the per-plan table is in `.planning/milestones/v2.0-STATE.md`.*
 
 ## Accumulated Context
 
 ### Decisions
 
 Key decisions are in the PROJECT.md Key Decisions table. The full per-plan log for v2.0 is in `.planning/milestones/v2.0-STATE.md`.
+Recent decisions affecting current work:
+
+- [Roadmap]: 7 phases (13-19) in strict order: repo safety → UI fixes → pixel-neutral data model → new content → routes and SEO → immersive layout → drone loops
+- [Phase 15]: The data and plate refactor is pixel- and hash-neutral (every baseline unchanged, Matterhorn terrain hashes unchanged); new content waits for Phase 16
+- [Phase 16]: Launch regions stay inside the swissALTIRegio footprint; Copernicus GLO-90 feeds only the overview; proj4 only if the measured `lib/geo.ts` error requires it
+- [Phase 17]: Photo URLs stay `/photos/<slug>` with no redirects; the region path is fixed after the static-sibling intercept spike
+- [Phase 18]: The Map/Grid/Carousel switch is retired; map collar, altimeter rail, sheet-index rectangles and 3-5 reference summits are in scope; credits go in each sheet margin plus a `/sources` page
 
 ### Pending Todos
 
@@ -45,8 +65,10 @@ None carried from v2.0.
 
 ### Blockers/Concerns
 
-- [v2.0 close, 2026-11-05] The production Upstash variables are not confirmed, and `lib/rate-limit.ts` allows every request without them. Seeing them set in Vercel settles it, or `PROD_FORM_LIMIT=1 npm run test:prod-form`, which locks the IP out for up to an hour. A real send was confirmed on 2026-11-06: Tim sent the live form and received the email.
-- [v2.0 audit, 2026-11-05] `main` has no branch protection or required checks, so a red PR can merge and Vercel deploys it. Commits marked `[ci skip]` produce no checks, which matters once checks are required.
+- [Phase 13] The production Upstash variables are not confirmed, and `lib/rate-limit.ts` allows every request without them (GUARD-09). Seeing them set in Vercel settles the names; `PROD_FORM_LIMIT=1 npm run test:prod-form` proves the 429 but locks the IP out for up to an hour.
+- [Phase 13] `main` has no branch protection or required checks, so a red PR can merge and Vercel deploys it; `[ci skip]` commits produce no checks (GUARD-07, GUARD-08). Tim applies the settings.
+- [Phase 16] Needs Tim's inputs before planning can finish: the launch regions (inside the footprint, at least one in Italy or Austria), the new originals and the coarse-location choice per photo.
+- [Phase 19] Needs a graded drone clip from Tim before any byte budget is fixed.
 
 ### Quick Tasks Completed
 
@@ -75,8 +97,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 | uat_gaps | 03/03-UAT.md (archived v1.0) | diagnosed | 2026-11-05 | v2.0 |
 | verification_gaps | 04/04-VERIFICATION.md (archived v1.0) | human_needed | 2026-11-05 | v2.0 |
 | verification_gaps | 05/05-VERIFICATION.md (archived v1.0) | human_needed | 2026-11-05 | v2.0 |
-| deferred_items | 08/deferred-items.md: Home overflows horizontally at 375 px | acknowledged | 2026-11-05 | v2.0 |
-| deferred_items | 09/deferred-items.md: Rail tick label "2,760 m approx." measures 4.81:1 at 768 px | acknowledged | 2026-11-05 | v2.0 |
+| deferred_items | 08/deferred-items.md: Home overflows horizontally at 375 px | acknowledged (now HOME-09, Phase 14) | 2026-11-05 | v2.0 |
+| deferred_items | 09/deferred-items.md: Rail tick label "2,760 m approx." measures 4.81:1 at 768 px | acknowledged (now HOME-10, Phase 14) | 2026-11-05 | v2.0 |
 | deferred_items | 09/deferred-items.md: R3F 9 logs the THREE.Clock deprecation warning on every canvas mount | acknowledged | 2026-11-05 | v2.0 |
 | deferred_items | 09/deferred-items.md: Static poster at about 768-1090 px hides waypoint 3's pin label while it is active | acknowledged | 2026-11-05 | v2.0 |
 | deferred_items | 09/deferred-items.md: S3, phone summit shots cut off pin 4 and the summit triangle | acknowledged | 2026-11-05 | v2.0 |
@@ -88,6 +110,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-05
-Stopped at: Milestone v2.0 archived
+Last session: 2026-11-12
+Stopped at: v2.1 roadmap created; awaiting Tim's approval, then `/gsd-plan-phase 13`
 Resume file: None
