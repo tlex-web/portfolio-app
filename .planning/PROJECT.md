@@ -21,10 +21,10 @@ A portfolio that is visually memorable and distinctive — not another generic T
 **Target features:**
 - Region series: photos grouped by region. Zermatt becomes the first region and gets new photos, and 1–2 new regions launch with it, at least one in Italy or Austria
 - Map model: an Alps-wide contour overview with one pin per region; each region opens on its own local terrain plate, as the Matterhorn map works today
-- Terrain pipeline for more than one region, with a second elevation source for Italy and Austria next to swissALTIRegio
+- Terrain pipeline for more than one region. Launch regions sit inside the swissALTIRegio footprint (about 4.5–12.0° E, including its Italian and Austrian fill), so local plates need no second elevation source; Copernicus GLO-90 feeds only the Alps overview
 - A fresh, more immersive photo layout (large full-bleed images, less chrome) that stays topographic: contours, coordinates and altitudes frame everything
-- Drone video: research formats, hosting and file size first, then commit to a shape within this milestone
-- Deferred ideas: PHOTO-F2 Share (Web Share API), PHOTO-F4 LV95 next to WGS84 (Swiss photos only), ENG-F1 terminal step controls and transcript, PLAT-F1 JSON-LD, PLAT-F2 offline page that lists cached pages
+- Drone video: one silent, same-origin loop per region page (decided after research; films with sound deferred)
+- Deferred ideas: PHOTO-F2 Share (Web Share API), PHOTO-F4 LV95 next to WGS84 (Swiss photos only), ENG-F1 terminal step controls and transcript, PLAT-F1 JSON-LD, and the PLAT-F2 saved-pages list (shipped in v2.0) extended to the new pages
 - v2.0 debt: repo safety (branch protection and required checks on `main`, including the `[ci skip]` gap; Upstash confirmed in production; the Playwright 1.65 re-baseline), test gaps (audit gate over coin-flip and every photo slug, Nyquist G5 and G6, triage of the open review-ledger rows), UI fixes (mobile menu on the current page, 375 px Home overflow, focus after lightbox Escape, clipped menu focus ring, the 4.81:1 rail label) and small leftovers
 
 **Unchanged:** Home stays the Matterhorn ascent with its four waypoints and links to the wider album. Existing `/photos/[slug]` links and their OG cards keep working through the series URL change.
@@ -103,10 +103,10 @@ v2.1 Survey Expansion. The REQ-IDs are in `.planning/REQUIREMENTS.md`.
 
 - [ ] Photos are organised as region series (Zermatt plus 1–2 new regions, at least one in Italy or Austria)
 - [ ] An Alps-wide overview map leads to a local terrain plate per region
-- [ ] The terrain pipeline builds more than one region from swissALTIRegio and a second source for Italy and Austria
+- [ ] The terrain pipeline builds a plate per region from swissALTIRegio, plus an Alps overview from Copernicus GLO-90
 - [ ] The photo pages get an immersive layout inside the topographic identity
-- [ ] Drone video is researched and given a decided shape
-- [ ] Deferred ideas PHOTO-F2, PHOTO-F4, ENG-F1, PLAT-F1 and PLAT-F2 ship
+- [ ] Each region page can carry one silent drone loop
+- [ ] Deferred ideas PHOTO-F2, PHOTO-F4, ENG-F1 and PLAT-F1 ship, and the PLAT-F2 saved-pages list covers the new pages
 - [ ] The v2.0 debt is closed: repo safety, test gaps, UI fixes and small leftovers
 
 ### Out of Scope
@@ -241,7 +241,12 @@ UI audit (2026-10-10, the starting point for v2.0):
 | v2.1 photo series are grouped by region, not by trip or theme (2026-11-12) | Tim's choice at milestone start; Zermatt becomes the first region and grows | — Pending |
 | Alps-wide contour overview plus one local terrain plate per region (2026-11-12) | Keeps the Matterhorn map model per region while the album spans the Alps (Tim: "Overview + local") | — Pending |
 | Home ascent stays the Matterhorn with its four waypoints (2026-11-12) | The Matterhorn remains the site's signature; Home links to the wider album | — Pending |
-| Drone video: research first, then decide the shape within v2.1 (2026-11-12) | Tim has footage but no settled format; hosting and size have to fit the same-origin CSP and Vercel | — Pending |
+| Drone video: one silent, same-origin loop per region page, in a slot near the header; films with sound deferred (2026-11-12, after research) | Loops reuse the clip pipeline and need no CSP change; films can't be self-hosted on Vercel Hobby (100 GB/month shared transfer, 30-day pause on overrun) | — Pending |
+| v2.1 launch regions stay inside the swissALTIRegio footprint (2026-11-12) | Its Italian and Austrian fill (TINITALY, DGM Österreich) is already credited, so local plates need no second source, library or credit; regions further east are deferred (DATA-F1) | — Pending |
+| Photo URLs stay `/photos/<slug>`; regions get their own pages on a non-colliding path (2026-11-12) | No redirects, every existing link and OG card keeps working, and the lightbox intercept and proxy 404 handling stay as they are (Tim chose this over nesting photos under regions) | — Pending |
+| The Map/Grid/Carousel view switch is retired; the overview and region pages replace it (2026-11-12) | The Carousel was built for 4 photos; old `?view=` URLs land on the matching new page and their tests are rewritten, not deleted; a Grid toggle is deferred (REGION-F2) | — Pending |
+| Data credits: a short credit in each map's sheet margin plus a `/sources` page linked from the footer (2026-11-12) | The footer can't change per page on client navigation, and Copernicus needs its full notice | — Pending |
+| JSON-LD without `license`; per-photo coarser location override (2026-11-12) | No image-rights page in v2.1; new photos and drone take-off points near homes can be shown coarser than 4 decimals | — Pending |
 
 ## Evolution
 
