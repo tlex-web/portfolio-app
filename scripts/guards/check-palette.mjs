@@ -16,7 +16,10 @@
  *   - wb:       per-file white/black utility count above its palette-ratchet.json
  *               entry (no entry means 0); a count below the entry also fails
  *               until `--update` records it, so the ratchet only tightens
- *   - png:      any .png under <root>/e2e whose name does not end in -linux.png
+ *   - png:      any .png under <root>/e2e whose name does not end in -linux.png,
+ *               among the files git lists there (tracked plus untracked, ignored
+ *               files skipped, so local -win32.png output passes); the disk walk
+ *               when <root> is not a git work tree
  *   - v1names:  a v1 alias name (frost-500, alpine-900, ...) in any scanned file,
  *               CSS included (08-05 codemodded every live use to its v2 name; Phase 12
  *               deleted the alias definitions, so no app/globals.css line is exempt)
@@ -37,6 +40,7 @@
  *   (Runs from `npm run lint` via `npm run guard:palette`, every rule on since 07-25)
  */
 
+import { spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -117,6 +121,22 @@ function walk(dir, skipSnapshots, out = []) {
 
 const toPosix = (p) => p.split(path.sep).join('/');
 
+/**
+ * Lists the files under <root>/e2e for the png rule, relative to root in posix form.
+ * In a git work tree this is `git ls-files -co --exclude-standard`: tracked plus
+ * untracked files, minus ignored ones, so the -win32.png files a local visual run
+ * writes (ignored in .gitignore) do not fail lint (07 WR-03). A tracked file deleted
+ * from disk is dropped, as the walk never saw it. Outside a work tree, or when git
+ * is unavailable, it falls back to the disk walk.
+ */
+function e2eFiles(root) {
+  const git = spawnSync('git', ['ls-files', '-z', '-co', '--exclude-standard', '--', 'e2e'], { cwd: root, encoding: 'utf-8' });
+  if (git.status !== 0 || git.error) {
+    return walk(path.join(root, 'e2e'), false).map((full) => toPosix(path.relative(root, full)));
+  }
+  return [...new Set(git.stdout.split('\0').filter(Boolean))].filter((rel) => fs.existsSync(path.join(root, rel)));
+}
+
 /** Returns [{ line, match }] for every regex hit in the text, 1-based lines. */
 function hits(lines, regex) {
   const found = [];
@@ -175,8 +195,7 @@ function main() {
   }
 
   if (on('png')) {
-    const pngs = walk(path.join(args.root, 'e2e'), false)
-      .map((full) => toPosix(path.relative(args.root, full)))
+    const pngs = e2eFiles(args.root)
       .filter((rel) => rel.endsWith('.png') && !rel.endsWith('-linux.png'))
       .sort();
     for (const rel of pngs) report(rel, 0, 'png', 'only -linux.png snapshots may exist under e2e/');
