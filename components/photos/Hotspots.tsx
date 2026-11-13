@@ -85,8 +85,10 @@ function Panel({ hotspot, id, open }: { hotspot: HotspotView; id: string; open: 
       <p>{hotspot.description}</p>
       {hotspot.facts.length > 0 && (
         <ul>
-          {hotspot.facts.map((fact) => (
-            <li key={fact.text} className="mt-2">
+          {/* Facts have no id in the data and their text need not be unique (10-REVIEW
+              IN-07); the list is static per hotspot, so its id and the index are stable. */}
+          {hotspot.facts.map((fact, i) => (
+            <li key={`${hotspot.id}-${i}`} className="mt-2">
               {fact.text} <FactSource source={fact.source} />
             </li>
           ))}
