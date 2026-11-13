@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 13
 current_phase_name: Repo Safety & Test Debt
 status: executing
-stopped_at: Completed 13-04-PLAN.md
-last_updated: "2026-11-13T10:47:15.437Z"
+stopped_at: Completed 13-07-PLAN.md
+last_updated: "2026-11-13T11:01:45.227Z"
 last_activity: 2026-11-13
 last_activity_desc: Phase 13 execution started
-state_head: d11b58216e98c01fcacdda6dec8b3b2da579291f
+state_head: d66137d61d8059154e55082bbb1cd2baaf655e65
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 22
-  completed_plans: 5
+  completed_plans: 6
   percent: 0
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 13 (Repo Safety & Test Debt) — EXECUTING
-Plan: 6 of 22
+Plan: 7 of 22
 Status: Ready to execute
 Last activity: 2026-11-13 — Phase 13 execution started
 
@@ -59,6 +59,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 13 P06 | 36min | 3 tasks | 3 files |
 | Phase 13 P03 | 4min | 2 tasks | 3 files |
 | Phase 13 P04 | 3min | 2 tasks | 5 files |
+| Phase 13 P07 | 11min | 3 tasks | 17 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,8 @@ Recent decisions affecting current work:
 - [Phase 13]: 13-03: the audit gate reads app/sitemap.ts: ROUTES keeps one named representative per page template (photo = matterhorn-from-zermatt, throws if missing), AUDIT_SWEEP (every other sitemap path, sitemap order, no dedupe) runs once in Chromium at 1440 in one @chromium-only test; lib/__tests__/audit-routes.test.ts fails on a page template with no ROUTES entry
 - [Phase 13]: 13-04: CLEAN-01 app-side removals are two commits for 13-15's per-commit check-snapshot-commit --none: 6ff759d (images block, SW /_next/image condition, vercel.com dns-prefetch) and d69b42c (cssDuration, cssEase, kebab, TILT_CONFIG and their 2 tests)
 - [Phase 13]: 13-04: proxy.ts keeps _next/image in its matcher exclusion (scoped out, inert); with no next/image caller the loader runs on Next 16 defaults
+- [Phase 13]: 13-07: docs-only fast path = changes job (one compare API call BASE...HEAD, main for workflow_dispatch; new and old names piped to scripts/ci/classify-changes.mjs, exact D-09 list, no *.md rule); no base, failed call, empty or 300+ files, or a line-break name = full CI; ci-ok.jq requires changes success and accepts heavy skips only on docs_only "true"
+- [Phase 13]: 13-07: ci.yml has workflow_dispatch (no inputs); check-ci-gate.mjs rules 8-10 fail on a missing push/pull_request/workflow_dispatch trigger, any paths or paths-ignore in on:, and a docs-only job set that differs from the single IN(...) list in ci-ok.jq or lacks needs changes; a new heavy job needs all three edits in one commit
 
 ### Pending Todos
 
@@ -135,6 +138,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-13T10:47:15.409Z
-Stopped at: Completed 13-04-PLAN.md
+Last session: 2026-11-13T11:01:45.200Z
+Stopped at: Completed 13-07-PLAN.md
 Resume file: None
