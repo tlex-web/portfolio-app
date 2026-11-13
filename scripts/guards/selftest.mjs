@@ -186,6 +186,29 @@ let raisePaletteRatchet = null;
 let lowerPaletteRatchet = null;
 
 /**
+ * Copies the bad-png-untracked fixture (only an e2e/.gitkeep is committed) into a
+ * fresh temp git work tree, with the repo's visual-baseline ignore rule and a
+ * git-ignored local Playwright PNG, as a local visual run leaves them (07 WR-03).
+ * `stray` adds an untracked PNG that no rule ignores. Nothing is committed in the
+ * temp repo, so both PNGs are untracked. Nested one level down so the cleanup
+ * loop's path.dirname removes the mkdtemp directory.
+ */
+function tempPngRoot({ stray }) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
+  const root = path.join(dir, 'root');
+  fs.cpSync(pal('bad-png-untracked'), root, { recursive: true });
+  const init = spawnSync('git', ['init', '-q'], { cwd: root, encoding: 'utf-8' });
+  if (init.status !== 0) throw new Error(`selftest: git init failed in ${root}: ${init.stderr}`);
+  fs.writeFileSync(path.join(root, '.gitignore'), 'e2e/**/*-win32.png\n');
+  fs.mkdirSync(path.join(root, 'e2e', 'visual'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'e2e', 'visual', 'home-visual-dark-win32.png'), '');
+  if (stray) fs.writeFileSync(path.join(root, 'e2e', 'stray.png'), '');
+  return root;
+}
+let pngIgnoredRoot = null;
+let pngStrayRoot = null;
+
+/**
  * Copies a parity fixture into a fresh temp dir and restores its real manifest
  * names. The fixtures are stored under other names because GitHub's dependency
  * graph scans every manifest in the repository, and the guard reads the real
@@ -660,6 +683,28 @@ const cases = [
     args: ['--root', pal('bad-png')],
     expectExit: 1,
     expectOutput: ['e2e/x-win32.png:0 png'],
+  },
+  {
+    name: 'palette: a git-ignored local -win32.png under e2e/ passes, so lint survives a local visual run (07 WR-03)',
+    guard: PALETTE,
+    args: [],
+    setup: () => {
+      pngIgnoredRoot = tempPngRoot({ stray: false });
+      return ['--root', pngIgnoredRoot];
+    },
+    expectExit: 0,
+    expectOutput: ['palette: OK'],
+  },
+  {
+    name: 'palette: an untracked PNG under e2e/ that no rule ignores still fails beside an ignored one (07 WR-03)',
+    guard: PALETTE,
+    args: [],
+    setup: () => {
+      pngStrayRoot = tempPngRoot({ stray: true });
+      return ['--root', pngStrayRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['e2e/stray.png:0 png', 'palette: 1 violations'],
   },
   {
     name: 'palette: an emoji in a data map fails',
@@ -1549,7 +1594,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, parityGoodRoot, parityBadRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDeriveRoot]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, parityGoodRoot, parityBadRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDeriveRoot]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 
