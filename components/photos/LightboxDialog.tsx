@@ -4,6 +4,7 @@ import { createContext, useContext, useLayoutEffect, useMemo, useRef } from 'rea
 import type { ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
+import { cssEscape } from '@/lib/photos/css-escape';
 
 /**
  * The lightbox shell (LBOX-01, LBOX-03; 10-UI-SPEC "Photo Viewer", Surfaces
@@ -106,12 +107,6 @@ function tabbables(root: HTMLElement): HTMLElement[] {
       el.getClientRects().length > 0 &&
       getComputedStyle(el).visibility === 'visible'
   );
-}
-
-/** CSS.escape, with a quote-and-backslash fallback where it is missing (jsdom). */
-function cssEscape(value: string): string {
-  if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(value);
-  return value.replace(/["\\]/g, '\\$&');
 }
 
 /**
