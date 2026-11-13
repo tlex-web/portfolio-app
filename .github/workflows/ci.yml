@@ -10,9 +10,74 @@ permissions:
   contents: read
 
 jobs:
+  # GUARD-08 (D-08, D-09): the docs-only fast path. This job classifies the
+  # diff; the six heavy jobs below carry `if: needs.changes.outputs.docs_only
+  # != 'true'`, and scripts/ci/ci-ok.jq accepts their skips only when this job
+  # succeeded with docs_only "true". Anything it cannot classify (no base, a
+  # failed compare call, an empty or 300-file list, any path outside the D-09
+  # list in scripts/ci/classify-changes.mjs) runs the full CI. The fast path
+  # must live here, never in a workflow-level paths filter: a workflow skipped
+  # that way leaves the required check pending (check-ci-gate.mjs enforces it).
+  changes:
+    name: Classify changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      docs_only: ${{ steps.classify.outputs.docs_only }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: scripts/ci
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+
+      # Event fields reach the shell only through env; file names come from the
+      # compare API and go to the classifier on stdin, never into a command.
+      - name: Classify the diff
+        id: classify
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = workflow_dispatch ]; then BASE=main; fi
+          # An empty or all-zero base (a new branch) leaves nothing to compare.
+          if [ -z "$BASE" ] || [ -z "${BASE//0/}" ]; then
+            echo "No base commit to compare against; running the full CI."
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          compare="$RUNNER_TEMP/compare.json"
+          if ! gh api "repos/$REPO/compare/$BASE...$HEAD" > "$compare"; then
+            echo "::warning::The compare call for $BASE...$HEAD failed; running the full CI."
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          count=$(jq '(.files // []) | length' "$compare")
+          flags=()
+          if [ "$count" -ge 300 ]; then flags=(--truncated); fi
+          # New and old names of every file; a name with a line break becomes a
+          # marker that is never docs-only.
+          jq -r '(.files // [])[] | .filename, (.previous_filename // empty) | if test("[\\r\\n]") then ":line-break-in-file-name:" else . end' "$compare" \
+            | node scripts/ci/classify-changes.mjs "${flags[@]}" > "$RUNNER_TEMP/classify.txt"
+          echo "Compared $BASE...$HEAD: $count file(s)."
+          cat "$RUNNER_TEMP/classify.txt"
+          grep '^docs_only=' "$RUNNER_TEMP/classify.txt" >> "$GITHUB_OUTPUT"
+
   lint-and-typecheck:
     name: Lint and Type Check
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: needs.changes.outputs.docs_only != 'true'
 
     steps:
       - uses: actions/checkout@v7
@@ -38,6 +103,8 @@ jobs:
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: needs.changes.outputs.docs_only != 'true'
     permissions:
       contents: read
 
@@ -74,6 +141,8 @@ jobs:
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: needs.changes.outputs.docs_only != 'true'
     timeout-minutes: 60
     permissions:
       contents: read
@@ -129,6 +198,8 @@ jobs:
   visual-regression:
     name: Visual Regression
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: needs.changes.outputs.docs_only != 'true'
     timeout-minutes: 45
     permissions:
       contents: read
@@ -172,7 +243,8 @@ jobs:
   build:
     name: Build Application
     runs-on: ubuntu-latest
-    needs: [lint-and-typecheck, unit-tests]
+    needs: [changes, lint-and-typecheck, unit-tests]
+    if: needs.changes.outputs.docs_only != 'true'
     permissions:
       contents: read
 
@@ -228,6 +300,8 @@ jobs:
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: needs.changes.outputs.docs_only != 'true'
     permissions:
       contents: read
 
@@ -262,7 +336,7 @@ jobs:
     name: CI OK
     runs-on: ubuntu-latest
     if: always()
-    needs: [lint-and-typecheck, unit-tests, e2e-tests, visual-regression, build, dependency-review, security-audit]
+    needs: [changes, lint-and-typecheck, unit-tests, e2e-tests, visual-regression, build, dependency-review, security-audit]
     timeout-minutes: 5
     permissions:
       contents: read
