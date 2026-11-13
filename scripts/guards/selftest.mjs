@@ -44,6 +44,8 @@ const PALETTE = path.join(here, 'check-palette.mjs');
 const CONTRAST = path.join(here, 'check-contrast.mjs');
 const IDENTITY = path.join(here, 'check-identity.mjs');
 const SERVED = path.join(here, 'check-served-images.mjs');
+const CI_GATE = path.join(here, 'check-ci-gate.mjs');
+const cig = (name) => path.join(fixtures, 'ci-gate', name);
 const con = (name) => path.join(fixtures, 'contrast', name);
 const idf = (name) => path.join(fixtures, 'identity', name);
 const si = (name) => path.join(fixtures, 'served-images', name);
@@ -841,6 +843,27 @@ const cases = [
   {
     name: 'ci-ok.jq: an empty needs object fails',
     fn: () => ciOkCase('push', {}, 1),
+  },
+  {
+    name: 'ci-gate: good fixture passes (needs in block form, out of job order)',
+    guard: CI_GATE,
+    args: ['--root', cig('good')],
+    expectExit: 0,
+    expectOutput: ['ci-gate: OK'],
+  },
+  {
+    name: 'ci-gate: a job missing from ci-ok needs fails (flow form)',
+    guard: CI_GATE,
+    args: ['--root', cig('bad-missing-need')],
+    expectExit: 1,
+    expectOutput: ['ci-ok needs is missing build'],
+  },
+  {
+    name: 'ci-gate: CI OK with if: success() fails',
+    guard: CI_GATE,
+    args: ['--root', cig('bad-ci-ok-if')],
+    expectExit: 1,
+    expectOutput: ['CI OK must use if: always()'],
   },
 ];
 
