@@ -20,9 +20,12 @@
  *      (order never matters; a missing or an extra id always fails)
  *   4. the ci-ok job runs jq with `-f scripts/ci/ci-ok.jq`, and that file exists
  *   5. no workflow other than ci.yml has a job whose `name:` includes CI OK
- *      (a second CI OK that an `if:` skips would report Success). The list
- *      CI_OK_ELSEWHERE_ALLOWED is empty; plan 13-10 adds the skip-marker
- *      relay as its single entry
+ *      (a second CI OK that an `if:` skips would report Success). The one
+ *      exception, CI_OK_ELSEWHERE_ALLOWED, is the skip-marker relay (D-06,
+ *      job `relay` in ci-skip-relay.yml), and only while CI OK sits inside
+ *      a single `${{ ... }}` name expression that reads `needs.`, on a
+ *      job that has `needs:` (so the name is CI OK only when an earlier job
+ *      said so; a literal `name: CI OK` there still fails)
  *   6. no workflow line grants `checks: write`, directly or through
  *      `permissions: write-all` (such a job could post a forged CI OK check run)
  *   7. every job's token scope is explicit: the workflow has a top-level
@@ -58,8 +61,14 @@ const CI_FILE = `${WORKFLOW_DIR}/ci.yml`;
 const CI_OK_ID = 'ci-ok';
 const CI_OK_NAME = 'CI OK';
 const CI_OK_JQ = 'scripts/ci/ci-ok.jq';
-/** Rule 5 exceptions as { file, job } (file name under .github/workflows). Empty until 13-10. */
-const CI_OK_ELSEWHERE_ALLOWED = [];
+/**
+ * Rule 5 exceptions as { file, job } (file name under .github/workflows): the
+ * skip-marker relay (D-06 option A), whose job is named CI OK only on a PR head
+ * GitHub skipped. Allowed only in the needs-based name-expression shape.
+ */
+const RELAY_FILE = 'ci-skip-relay.yml';
+const RELAY_JOB = 'relay';
+const CI_OK_ELSEWHERE_ALLOWED = [{ file: RELAY_FILE, job: RELAY_JOB }];
 const CHECKS_WRITE = /(^|[\s{,])['"]?checks['"]?\s*:\s*['"]?write\b/;
 const WRITE_ALL = /(^|[\s{,])['"]?permissions['"]?\s*:\s*['"]?write-all\b/;
 /** Rule 8: the relay (D-06) dispatches ci.yml, so workflow_dispatch must stay. */
@@ -424,15 +433,31 @@ function readWorkflows() {
   });
 }
 
-/** Jobs outside ci.yml whose name includes CI OK, except the `allowed` { file, job } pairs. */
+/**
+ * True when a job's name is one `${{ ... }}` expression that reads `needs.`
+ * and the job has `needs:`: its CI OK then depends on an earlier job's output.
+ */
+function isNeedsNameExpression(job) {
+  const name = jobName(job) ?? '';
+  const m = /^\$\{\{(.*)\}\}$/.exec(name);
+  if (!m || m[1].includes('}}') || m[1].includes('${{')) return false;
+  return m[1].includes(CI_OK_NAME) && /\bneeds\./.test(m[1]) && readNeeds(job).length > 0;
+}
+
+/**
+ * Jobs outside ci.yml whose name includes CI OK, except the `allowed` { file, job }
+ * pairs in the needs-based name-expression shape. Returns [{ rel, job, shape }],
+ * where `shape` is true for an allowed pair that broke the shape.
+ */
 function findCiOkOutsideCi(workflows, allowed) {
   const found = [];
   for (const { file, rel, jobs } of workflows) {
     if (file === 'ci.yml') continue;
     for (const job of jobs) {
       if (!(jobName(job) ?? '').includes(CI_OK_NAME)) continue;
-      if (allowed.some((a) => a.file === file && a.job === job.id)) continue;
-      found.push({ rel, job: job.id });
+      const isAllowed = allowed.some((a) => a.file === file && a.job === job.id);
+      if (isAllowed && isNeedsNameExpression(job)) continue;
+      found.push({ rel, job: job.id, shape: isAllowed });
     }
   }
   return found;
@@ -441,8 +466,13 @@ function findCiOkOutsideCi(workflows, allowed) {
 const workflows = readWorkflows();
 
 // 5. CI OK is emitted by ci.yml only
-for (const { rel, job } of findCiOkOutsideCi(workflows, CI_OK_ELSEWHERE_ALLOWED)) {
-  fail(rel, `a job named CI OK outside ci.yml: ${rel} (job ${job})`);
+for (const { rel, job, shape } of findCiOkOutsideCi(workflows, CI_OK_ELSEWHERE_ALLOWED)) {
+  fail(
+    rel,
+    shape
+      ? `a job named CI OK outside ci.yml: ${rel} (job ${job}); the relay may carry CI OK only inside one \${{ }} name expression that reads needs., on a job with needs:`
+      : `a job named CI OK outside ci.yml: ${rel} (job ${job})`,
+  );
 }
 
 for (const { rel, lines, jobs } of workflows) {

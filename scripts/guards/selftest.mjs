@@ -161,22 +161,24 @@ let parityGoodRoot = null;
 let parityBadRoot = null;
 
 /**
- * Copies the ci-gate good fixture into a fresh temp dir and rewrites its
- * ci.yml with `edit(text)`. Nested one level down so the cleanup loop's
- * path.dirname removes the mkdtemp directory.
+ * Copies the ci-gate good fixture into a fresh temp dir and rewrites one of its
+ * workflows (ci.yml unless `file` names another) with `edit(text)`. Nested one
+ * level down so the cleanup loop's path.dirname removes the mkdtemp directory.
  */
-function tempCiGateRoot(edit) {
+function tempCiGateRoot(edit, file = 'ci.yml') {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
   const root = path.join(dir, 'root');
   fs.cpSync(cig('good'), root, { recursive: true });
-  const ci = path.join(root, '.github', 'workflows', 'ci.yml');
-  const before = fs.readFileSync(ci, 'utf-8');
+  const workflow = path.join(root, '.github', 'workflows', file);
+  const before = fs.readFileSync(workflow, 'utf-8');
   const after = edit(before);
   if (after === before) throw new Error('tempCiGateRoot: the edit changed nothing');
-  fs.writeFileSync(ci, after);
+  fs.writeFileSync(workflow, after);
   return root;
 }
 let ciGateRenamedRoot = null;
+let ciGateRelayLiteralRoot = null;
+let ciGateRelayNoNeedsRoot = null;
 let ciGateNoChangesNeedRoot = null;
 let ciGateUnconditionedRoot = null;
 let ciGatePathsIgnoreRoot = null;
@@ -994,7 +996,7 @@ const cases = [
     expectOutput: ['unknown argument --docs'],
   },
   {
-    name: 'ci-gate: good fixture passes (needs in block form, out of job order; changes, one heavy job, dispatch)',
+    name: 'ci-gate: good fixture passes (needs in block form, out of job order; changes, one heavy job, dispatch; the skip-marker relay)',
     guard: CI_GATE,
     args: ['--root', cig('good')],
     expectExit: 0,
@@ -1040,6 +1042,34 @@ const cases = [
     args: ['--root', cig('bad-duplicate-ci-ok')],
     expectExit: 1,
     expectOutput: ['a job named CI OK outside ci.yml: .github/workflows/other.yml (job shadow)'],
+  },
+  {
+    name: 'ci-gate: the relay job with a literal name: CI OK fails',
+    guard: CI_GATE,
+    args: [],
+    setup: () => {
+      ciGateRelayLiteralRoot = tempCiGateRoot(
+        (text) => text.replace(/^ {4}name: \$\{\{ needs\.detect\.outputs\.skipped == 'true' && 'CI OK' \|\| 'CI skip relay' \}\}(?=\r?$)/m, '    name: CI OK'),
+        'ci-skip-relay.yml',
+      );
+      return ['--root', ciGateRelayLiteralRoot];
+    },
+    expectExit: 1,
+    expectOutput: [
+      'a job named CI OK outside ci.yml: .github/workflows/ci-skip-relay.yml (job relay); the relay may carry CI OK only inside one ${{ }} name expression',
+      'ci-gate: 1 failure(s)',
+    ],
+  },
+  {
+    name: 'ci-gate: the relay name expression on a job without needs fails',
+    guard: CI_GATE,
+    args: [],
+    setup: () => {
+      ciGateRelayNoNeedsRoot = tempCiGateRoot((text) => text.replace(/^ {4}needs: detect\r?\n/m, ''), 'ci-skip-relay.yml');
+      return ['--root', ciGateRelayNoNeedsRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['a job named CI OK outside ci.yml: .github/workflows/ci-skip-relay.yml (job relay); the relay may carry CI OK only'],
   },
   {
     name: 'ci-gate: a job granting checks: write fails (the comment saying so does not)',
@@ -1166,7 +1196,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, parityGoodRoot, parityBadRoot, ciGateRenamedRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, parityGoodRoot, parityBadRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 

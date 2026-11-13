@@ -1,0 +1,163 @@
+name: CI skip relay
+
+# Skip-marker relay (D-06, amended: option A, the relay mirror).
+#
+# GitHub creates no `pull_request` run for a head commit whose message carries
+# a skip marker ([skip ci], [ci skip], [no ci], [skip actions], [actions skip]
+# or a `skip-checks: true` trailer), so ci.yml's required `CI OK` would stay
+# pending forever. The GSD ship note writes exactly such a commit. Skip markers
+# do not apply to `pull_request_target`, and a check from a
+# `pull_request_target` job counts for a ruleset, while one from a
+# `workflow_dispatch` run does not. So this workflow:
+#   1. reads the PR head commit message through the API and, only when it
+#      carries a marker AND GitHub created no `pull_request` CI run for that
+#      SHA, reports `skipped=true`;
+#   2. on such a head, names its relay job `CI OK`, dispatches ci.yml on the
+#      head ref, waits for that run on the same SHA and exits with its
+#      conclusion. A fork head with a marker gets a red `CI OK` instead.
+#   3. on every other head, names its relay job `CI skip relay` and does
+#      nothing, so ci.yml's own `CI OK` is the only one.
+#
+# Safety (pull_request_target runs from main's copy of this file, with the base
+# repository's token and secrets, on possibly untrusted PRs):
+#   - it never checks out or runs PR code: no checkout step, no git or gh
+#     checkout, nothing from the PR is executed;
+#   - every event field (head SHA, head ref, head repo, repository) reaches
+#     the shell only through env: and is quoted; no expression sits in a run
+#     block;
+#   - top-level permissions are empty; `detect` reads, and only the relay job
+#     gets `actions: write` (to dispatch ci.yml), never checks: write;
+#   - the relay job has no job-level if:, because a job skipped by its if:
+#     reports Success; its name changes instead.
+# scripts/guards/check-ci-gate.mjs enforces each of these (`npm run guard:ci`).
+#
+# Vercel Deployment Checks (Pitfall 8): the relay's `CI OK` appears only on PR
+# heads with a skip marker, and this workflow never runs on push, so the
+# production commits Vercel checks only ever carry ci.yml's `CI OK`.
+#
+# It exists for GitHub only once it is on main (pull_request_target reads the
+# default branch). A branch cut before ci.yml gained workflow_dispatch makes the
+# dispatch fail red until it is rebased.
+
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions: {}
+
+concurrency:
+  group: ci-skip-relay-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  detect:
+    name: Skip-marker check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      skipped: ${{ steps.detect.outputs.skipped }}
+    steps:
+      - id: detect
+        name: Did GitHub skip CI for this head?
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          msg=$(gh api "repos/$REPO/commits/$SHA" --jq .commit.message)
+          marker=false
+          if printf '%s\n' "$msg" | grep -qiF -e '[skip ci]' -e '[ci skip]' -e '[no ci]' -e '[skip actions]' -e '[actions skip]'; then
+            marker=true
+          fi
+          if printf '%s\n' "$msg" | grep -qiE '^skip-checks: ?true[[:space:]]*$'; then
+            marker=true
+          fi
+          skipped=false
+          if [ "$marker" = true ]; then
+            # Give GitHub time to create the pull_request run it would make
+            # for an unmarked head, then count CI runs for this SHA.
+            sleep 45
+            runs=$(gh api -X GET "repos/$REPO/actions/runs" -f head_sha="$SHA" -f event=pull_request -f per_page=100 \
+              --jq '[.workflow_runs[] | select(.name == "CI")] | length')
+            echo "Skip marker on $SHA; pull_request CI runs for it: $runs"
+            if [ "$runs" = 0 ]; then
+              skipped=true
+            fi
+          else
+            echo "No skip marker on $SHA."
+          fi
+          # Written last, so a failure above can never leave skipped=true behind.
+          echo "skipped=$skipped" >> "$GITHUB_OUTPUT"
+
+  relay:
+    # No job-level if: (a job skipped by its if: reports Success). The name is
+    # CI OK only on a head GitHub really skipped.
+    name: ${{ needs.detect.outputs.skipped == 'true' && 'CI OK' || 'CI skip relay' }}
+    needs: detect
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Nothing to relay
+        if: needs.detect.outputs.skipped != 'true'
+        run: echo "GitHub did not skip CI on this head; ci.yml reports CI OK itself."
+
+      - name: Dispatch ci.yml and mirror its conclusion
+        if: needs.detect.outputs.skipped == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          REF: ${{ github.event.pull_request.head.ref }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          # A fork's head ref is not in this repository, and its code must not
+          # run with this token: fail red instead of dispatching.
+          if [ "$HEAD_REPO" != "$REPO" ]; then
+            echo "::error::This fork PR head carries a CI skip marker, so GitHub ran no CI for it. Push a commit without the marker."
+            exit 1
+          fi
+          since=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          gh workflow run ci.yml --repo "$REPO" --ref "$REF"
+          # Find the run that dispatch created: the first workflow_dispatch run
+          # of ci.yml on this ref created at or after the dispatch.
+          id=""
+          run_sha=""
+          for _ in $(seq 1 30); do
+            found=$(gh api -X GET "repos/$REPO/actions/workflows/ci.yml/runs" \
+              -f event=workflow_dispatch -f branch="$REF" -f per_page=20 \
+              --jq "[.workflow_runs[] | select(.created_at >= \"$since\")] | sort_by(.created_at) | first | select(. != null) | \"\(.id) \(.head_sha)\"" \
+              || true)
+            if [ -n "$found" ]; then
+              id=${found%% *}
+              run_sha=${found#* }
+              break
+            fi
+            sleep 10
+          done
+          if [ -z "$id" ]; then
+            echo "::error::The dispatched CI run did not appear within 5 minutes."
+            exit 1
+          fi
+          # The branch moved between the push and the dispatch: that run tested
+          # another commit, and the newer head's own relay run reports for it.
+          if [ "$run_sha" != "$SHA" ]; then
+            echo "::error::The dispatched CI run $id tested $run_sha, not this PR head $SHA (the branch moved)."
+            exit 1
+          fi
+          echo "Mirroring CI run $id on $SHA"
+          gh run watch "$id" --repo "$REPO" --exit-status --interval 60
+          conclusion=$(gh api "repos/$REPO/actions/runs/$id" --jq .conclusion)
+          echo "CI run $id concluded: $conclusion"
+          if [ "$conclusion" != success ]; then
+            echo "::error::The dispatched CI run $id concluded $conclusion."
+            exit 1
+          fi
