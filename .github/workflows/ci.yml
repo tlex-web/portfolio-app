@@ -249,3 +249,33 @@ jobs:
           if [ $(npm audit --json | jq '.metadata.vulnerabilities.moderate + .metadata.vulnerabilities.high + .metadata.vulnerabilities.critical') -gt 0 ]; then
             echo "::warning::Security vulnerabilities found. Please review npm audit output."
           fi
+
+  # GUARD-07 (D-01): the only required check. The main ruleset requires CI OK
+  # and nothing else, so it must turn red whenever any job above fails.
+  # `if: always()` makes it run and report even when an upstream job fails or
+  # is cancelled; any other condition could skip it, and a skipped job reports
+  # Success. Every new job in this file must join `needs` below:
+  # scripts/guards/check-ci-gate.mjs fails `npm run lint` when one is missing.
+  # The verdict lives in scripts/ci/ci-ok.jq (no setup-node here: the parity
+  # guard pairs every setup-node with node-version-file).
+  ci-ok:
+    name: CI OK
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [lint-and-typecheck, unit-tests, e2e-tests, visual-regression, build, dependency-review, security-audit]
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: scripts/ci
+
+      - name: Every needed job passed or skipped on purpose
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          printf '%s\n' "$NEEDS" | jq -c 'map_values(.result)'
+          printf '%s\n' "$NEEDS" | jq -e --arg event "$EVENT" -f scripts/ci/ci-ok.jq

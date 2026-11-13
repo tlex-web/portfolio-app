@@ -54,6 +54,23 @@ const pal = (...parts) => path.join(fixtures, 'palette', ...parts);
 const sc = (...parts) => path.join(fixtures, 'same-classnames', ...parts);
 const tap = process.argv.includes('--tap');
 
+// scripts/ci/ci-ok.jq: the CI OK verdict over toJSON(needs) (GUARD-07)
+const CI_OK_JQ = path.join(repoRoot, 'scripts', 'ci', 'ci-ok.jq');
+const CI_JOBS = ['lint-and-typecheck', 'unit-tests', 'e2e-tests', 'visual-regression', 'build', 'dependency-review', 'security-audit'];
+/** A `needs` object for the seven ci.yml jobs: every result "success" unless overridden. */
+const needsOf = (overrides = {}) =>
+  Object.fromEntries(CI_JOBS.map((id) => [id, { result: overrides[id] ?? 'success', outputs: {} }]));
+/** Runs `jq -e --arg event <event> -f ci-ok.jq` on `needs`; null when the exit status is `expectExit`. */
+function ciOkCase(event, needs, expectExit) {
+  const r = spawnSync('jq', ['-e', '--arg', 'event', event, '-f', CI_OK_JQ], {
+    encoding: 'utf-8',
+    input: JSON.stringify(needs),
+  });
+  if (r.error) return `jq could not run (${r.error.code ?? r.error.message}); install jq 1.6+ for the CI OK cases`;
+  if (r.status === expectExit) return null;
+  return `jq exited ${r.status}, expected ${expectExit} (stdout ${JSON.stringify(r.stdout.trim())}, stderr ${JSON.stringify(r.stderr.trim())})`;
+}
+
 // check-visual-run.mjs: CI API responses captured as fixtures (no network here)
 const vr = (name) => JSON.parse(fs.readFileSync(path.join(fixtures, 'visual-run', name), 'utf-8'));
 const VISUAL_JOB = { workflow: 'CI', job: 'Visual Regression' };
@@ -792,6 +809,38 @@ const cases = [
     args: ['--css', con('var-cycle.css')],
     expectExit: 1,
     expectOutput: ['var() cycle'],
+  },
+  {
+    name: 'ci-ok.jq: push, all success, dependency-review skipped passes',
+    fn: () => ciOkCase('push', needsOf({ 'dependency-review': 'skipped' }), 0),
+  },
+  {
+    name: 'ci-ok.jq: pull_request, all seven success passes',
+    fn: () => ciOkCase('pull_request', needsOf(), 0),
+  },
+  {
+    name: 'ci-ok.jq: pull_request with dependency-review skipped fails',
+    fn: () => ciOkCase('pull_request', needsOf({ 'dependency-review': 'skipped' }), 1),
+  },
+  {
+    name: 'ci-ok.jq: workflow_dispatch with dependency-review skipped passes',
+    fn: () => ciOkCase('workflow_dispatch', needsOf({ 'dependency-review': 'skipped' }), 0),
+  },
+  {
+    name: 'ci-ok.jq: e2e-tests failure fails',
+    fn: () => ciOkCase('push', needsOf({ 'dependency-review': 'skipped', 'e2e-tests': 'failure' }), 1),
+  },
+  {
+    name: 'ci-ok.jq: unit-tests cancelled fails (a cancelled re-run never reports green)',
+    fn: () => ciOkCase('pull_request', needsOf({ 'unit-tests': 'cancelled' }), 1),
+  },
+  {
+    name: 'ci-ok.jq: build skipped on push fails (only dependency-review may skip)',
+    fn: () => ciOkCase('push', needsOf({ 'dependency-review': 'skipped', build: 'skipped' }), 1),
+  },
+  {
+    name: 'ci-ok.jq: an empty needs object fails',
+    fn: () => ciOkCase('push', {}, 1),
   },
 ];
 
