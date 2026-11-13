@@ -572,8 +572,12 @@ test.describe('Focus and Escape (LBOX-03)', () => {
 
     // From the content, Escape still goes to the gallery (D-08), and the
     // recorder sees that navigation (so its silence above is meaningful).
+    // Polled: router.push may issue its RSC fetch after the key handler
+    // returns, and a loaded WebKit runner read [] here once (13-15, PR #143).
     await page.keyboard.press('Escape');
-    expect(await navigations(page)).toEqual([...before, '/photos']);
+    await expect
+      .poll(() => navigations(page), { message: 'Escape from the content did not navigate' })
+      .toEqual([...before, '/photos']);
     await expect(page).toHaveURL(/\/photos$/);
   });
 });
