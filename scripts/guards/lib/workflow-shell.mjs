@@ -130,6 +130,9 @@ const STUBS = `gh() {
         body="{\\"workflow_runs\\": \${STUB_RUNS:-[]}}" ;;
       repos/*/compare/*)
         if [ "\${STUB_COMPARE_FAIL:-}" = 1 ]; then echo "gh: HTTP 404" >&2; return 1; fi
+        case "$apipath" in
+          repos/*/compare/main...*) if [ -n "\${STUB_COMPARE_MAIN_FILE:-}" ]; then cat "$STUB_COMPARE_MAIN_FILE"; return $?; fi ;;
+        esac
         cat "$STUB_COMPARE_FILE"; return $? ;;
       *) echo "stub gh: unknown api path $apipath" >&2; return 97 ;;
     esac
@@ -155,11 +158,13 @@ const WIN32_JQ = 'jq() { command jq --binary "$@"; }\n';
  * { status, stdout, stderr, output, calls, cwdFiles }:
  *   - env: the step's env (REPO, SHA, ...); STUB_* entries steer the stubs
  *   - compare: a value written as JSON to a file the stub serves for the compare API
+ *   - compareMain: when given, served instead of `compare` for a compare against main
+ *     (`compare/main...<head>`), so a case can give the branch and the push different diffs
  *   - cwd: where the block runs (default: the temp work dir, so a stray file lands there)
  *   - output: the text appended to GITHUB_OUTPUT; calls: one entry per gh/sleep call
  *   - cwdFiles: the names in the work dir afterwards (only when cwd is the work dir)
  */
-export function runStep(block, { env = {}, compare, cwd } = {}) {
+export function runStep(block, { env = {}, compare, compareMain, cwd } = {}) {
   const bash = requireBash();
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-shell-'));
   try {
@@ -189,6 +194,11 @@ export function runStep(block, { env = {}, compare, cwd } = {}) {
       const file = path.join(dir, 'compare-body.json');
       fs.writeFileSync(file, JSON.stringify(compare));
       stepEnv.STUB_COMPARE_FILE = posix(file);
+    }
+    if (compareMain !== undefined) {
+      const file = path.join(dir, 'compare-main-body.json');
+      fs.writeFileSync(file, JSON.stringify(compareMain));
+      stepEnv.STUB_COMPARE_MAIN_FILE = posix(file);
     }
     const r = spawnSync(bash, ['--noprofile', '--norc', '-eo', 'pipefail', posix(script)], {
       cwd: cwd ?? work,

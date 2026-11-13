@@ -49,6 +49,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
           BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
           HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
@@ -60,6 +61,12 @@ jobs:
             echo "docs_only=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          # The previous tip covers only this push: a docs-only commit on top of
+          # a failed or cancelled code push would skip the heavy jobs over
+          # untested code. So a push to any branch but main compares with its
+          # merge-base with main, as the dispatch does. main keeps the previous
+          # tip, because main moves only by merged PRs that CI OK gated.
+          if [ "$EVENT" = push ] && [ "$REF" != refs/heads/main ]; then BASE=main; fi
           compare="$RUNNER_TEMP/compare.json"
           if ! gh api "repos/$REPO/compare/$BASE...$HEAD" > "$compare"; then
             echo "::warning::The compare call for $BASE...$HEAD failed; running the full CI."

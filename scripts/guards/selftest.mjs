@@ -210,11 +210,15 @@ const relayEnv = (over = {}) => ({
 const runRelay = (over) => runStep(relayBlock(), { env: relayEnv(over) });
 const dispatchCalls = (r) => r.calls.filter((c) => c.startsWith('gh workflow run'));
 
-/** The classify step with a canned compare body; null when it exits 0 with GITHUB_OUTPUT exactly docs_only=<expected>. */
-function changesCase(compare, expected, { env = {}, calls } = {}) {
+/**
+ * The classify step with a canned compare body (and, when given, a separate one for a
+ * compare against main); null when it exits 0 with GITHUB_OUTPUT exactly docs_only=<expected>.
+ */
+function changesCase(compare, expected, { env = {}, calls, compareMain } = {}) {
   const r = runStep(classifyBlock(), {
     cwd: repoRoot,
     compare,
+    compareMain,
     env: { GH_TOKEN: 'dummy', REPO: REPO_SLUG, EVENT: 'pull_request', BASE: BASE_SHA, HEAD: HEAD_SHA, ...env },
   });
   const problems = [];
@@ -376,6 +380,40 @@ const WORKFLOW_SHELL_CASES = [
       changesCase(filesOf('README.md'), 'true', { env: { EVENT: 'workflow_dispatch', BASE: '' }, calls: [`gh api repos/${REPO_SLUG}/compare/main...${HEAD_SHA}`] }) ??
       changesCase(filesOf('README.md'), 'true', { env: { EVENT: 'workflow_dispatch', BASE: BASE_SHA }, calls: [`gh api repos/${REPO_SLUG}/compare/main...${HEAD_SHA}`] }) ??
       changesCase(filesOf('README.md'), 'true', { calls: [`gh api repos/${REPO_SLUG}/compare/${BASE_SHA}...${HEAD_SHA}`] }),
+  },
+  {
+    name: 'workflow-shell changes: a push to a branch other than main compares main...HEAD, not the previous tip (13 WR-01)',
+    fn: () =>
+      firstProblem(['refs/heads/ci/13-proof-docs', 'refs/heads/develop', 'refs/heads/feature/main'], (ref) => {
+        const error = changesCase(filesOf('README.md'), 'true', {
+          env: { EVENT: 'push', REF: ref, BASE: BASE_SHA },
+          calls: [`gh api repos/${REPO_SLUG}/compare/main...${HEAD_SHA}`],
+        });
+        return error && `ref ${ref}: ${error}`;
+      }),
+  },
+  {
+    name: 'workflow-shell changes: a docs-only push on top of an untested code push to a ci/ branch runs the full CI (13 WR-01)',
+    fn: () =>
+      changesCase(filesOf('README.md'), 'false', {
+        env: { EVENT: 'push', REF: 'refs/heads/ci/13-proof-docs', BASE: BASE_SHA },
+        compareMain: filesOf('lib/site.ts', 'README.md'),
+      }),
+  },
+  {
+    name: 'workflow-shell changes: a push to main still compares the previous tip with HEAD',
+    fn: () =>
+      changesCase(filesOf('README.md'), 'true', {
+        env: { EVENT: 'push', REF: 'refs/heads/main', BASE: BASE_SHA },
+        compareMain: filesOf('lib/site.ts'),
+        calls: [`gh api repos/${REPO_SLUG}/compare/${BASE_SHA}...${HEAD_SHA}`],
+      }),
+  },
+  {
+    name: 'workflow-shell changes: a new-branch push (all-zero or empty before) still runs the full CI with no gh call',
+    fn: () =>
+      changesCase(filesOf('README.md'), 'false', { env: { EVENT: 'push', REF: 'refs/heads/ci/13-new', BASE: '0'.repeat(40) }, calls: [] }) ??
+      changesCase(filesOf('README.md'), 'false', { env: { EVENT: 'push', REF: 'refs/heads/ci/13-new', BASE: '' }, calls: [] }),
   },
   {
     name: 'workflow-shell changes: an empty BASE gives docs_only=false, exit 0 and no gh call',
