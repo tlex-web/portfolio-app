@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 13
 current_phase_name: Repo Safety & Test Debt
 status: executing
-stopped_at: Completed 13-13-PLAN.md
-last_updated: "2026-11-13T12:16:27.173Z"
+stopped_at: Completed 13-14-PLAN.md
+last_updated: "2026-11-13T12:41:19.608Z"
 last_activity: 2026-11-13
 last_activity_desc: Phase 13 execution started
-state_head: 05328a885f770ab09692c20ebcafc78657a66fee
+state_head: e76993cc9ab190c9c5dc6e70d74033594d187645
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 22
-  completed_plans: 12
+  completed_plans: 13
   percent: 0
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 13 (Repo Safety & Test Debt) — EXECUTING
-Plan: 13 of 22
+Plan: 14 of 22
 Status: Ready to execute
 Last activity: 2026-11-13 — Phase 13 execution started
 
@@ -66,6 +66,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 13 P11 | 13min | 2 tasks | 6 files |
 | Phase 13 P12 | 6min | 2 tasks | 3 files |
 | Phase 13 P13 | 9min | 2 tasks | 7 files |
+| Phase 13 P14 | 14min | 3 tasks | 19 files |
 
 ## Accumulated Context
 
@@ -105,6 +106,8 @@ Recent decisions affecting current work:
 - [Phase 13]: 13-13 (07 WR-01): the contrast guard merges only top-level :root/@theme blocks; a token block nested in any at-rule (@media, @supports, @container, @layer) that declares a custom property fails the guard
 - [Phase 13]: 13-13 (07 IN-06): the real-file contrast selftest asserts the OK line, table order and each pair against its own threshold (0.005 display tolerance), per the approved triage row; exact ratios stay in fixtures
 - [Phase 13]: 13-13 (07 WR-02/WR-03): widened palette prefixes found no new real-tree hit and no wb count change (ratchet unmoved); the png rule lists files with git ls-files -co --exclude-standard
+- [Phase 13]: 13-14 (12 IN-12, Tim option A): version floors are checked on every lockfile copy, per version line for list floors; fflate floor ["0.6.11", "0.8.3"] keeps the 12-06 pinned three-stdlib copy checked, and a copy on an unfloored line fails
+- [Phase 13]: 13-14: same-classnames pairs renames and fails on zero compared (07 WR-04); check-snapshot-commit checks merge commits against their first parent with CLI flags unchanged (07 IN-07); catch-all: none
 
 ### Pending Todos
 
@@ -157,6 +160,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-13T12:16:27.138Z
-Stopped at: Completed 13-13-PLAN.md
+Last session: 2026-11-13T12:41:19.577Z
+Stopped at: Completed 13-14-PLAN.md
 Resume file: None
