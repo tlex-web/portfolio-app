@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 13
 current_phase_name: Repo Safety & Test Debt
 status: executing
-stopped_at: Completed 13-07-PLAN.md
-last_updated: "2026-11-13T11:01:45.227Z"
+stopped_at: Completed 13-08-PLAN.md
+last_updated: "2026-11-13T11:14:39.070Z"
 last_activity: 2026-11-13
 last_activity_desc: Phase 13 execution started
-state_head: d66137d61d8059154e55082bbb1cd2baaf655e65
+state_head: 6be7f9d59f77349c4a144b05f24f7ea8eec233ec
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 22
-  completed_plans: 6
+  completed_plans: 7
   percent: 0
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 13 (Repo Safety & Test Debt) — EXECUTING
-Plan: 7 of 22
+Plan: 8 of 22
 Status: Ready to execute
 Last activity: 2026-11-13 — Phase 13 execution started
 
@@ -60,6 +60,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 13 P03 | 4min | 2 tasks | 3 files |
 | Phase 13 P04 | 3min | 2 tasks | 5 files |
 | Phase 13 P07 | 11min | 3 tasks | 17 files |
+| Phase 13 P08 | 11min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -86,6 +87,7 @@ Recent decisions affecting current work:
 - [Phase 13]: 13-04: proxy.ts keeps _next/image in its matcher exclusion (scoped out, inert); with no next/image caller the loader runs on Next 16 defaults
 - [Phase 13]: 13-07: docs-only fast path = changes job (one compare API call BASE...HEAD, main for workflow_dispatch; new and old names piped to scripts/ci/classify-changes.mjs, exact D-09 list, no *.md rule); no base, failed call, empty or 300+ files, or a line-break name = full CI; ci-ok.jq requires changes success and accepts heavy skips only on docs_only "true"
 - [Phase 13]: 13-07: ci.yml has workflow_dispatch (no inputs); check-ci-gate.mjs rules 8-10 fail on a missing push/pull_request/workflow_dispatch trigger, any paths or paths-ignore in on:, and a docs-only job set that differs from the single IN(...) list in ci-ok.jq or lacks needs changes; a new heavy job needs all three edits in one commit
+- [Phase 13]: 13-08: seven ledger rows fixed one commit each (07 IN-01/03/11/17, 09 IN-03/04/07); 09 IN-03 asserts the plaque height through summitColumnBox().height so summit-layout.ts is unchanged; 09 IN-04 fixes the shared fixedDecimals (exponent-shift rounding) and pins the four waypoint strings literally
 
 ### Pending Todos
 
@@ -138,6 +140,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-13T11:01:45.200Z
-Stopped at: Completed 13-07-PLAN.md
+Last session: 2026-11-13T11:14:39.034Z
+Stopped at: Completed 13-08-PLAN.md
 Resume file: None
