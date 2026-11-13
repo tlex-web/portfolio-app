@@ -177,6 +177,9 @@ function tempCiGateRoot(edit) {
   return root;
 }
 let ciGateRenamedRoot = null;
+let ciGateNoChangesNeedRoot = null;
+let ciGateUnconditionedRoot = null;
+let ciGatePathsIgnoreRoot = null;
 
 const cases = [
   {
@@ -991,7 +994,7 @@ const cases = [
     expectOutput: ['unknown argument --docs'],
   },
   {
-    name: 'ci-gate: good fixture passes (needs in block form, out of job order)',
+    name: 'ci-gate: good fixture passes (needs in block form, out of job order; changes, one heavy job, dispatch)',
     guard: CI_GATE,
     args: ['--root', cig('good')],
     expectExit: 0,
@@ -1043,7 +1046,61 @@ const cases = [
     guard: CI_GATE,
     args: ['--root', cig('bad-checks-write')],
     expectExit: 1,
-    expectOutput: ['ci.yml: line 19 grants checks: write', 'ci-gate: 2 failure(s)'],
+    expectOutput: ['ci.yml: line 20 grants checks: write', 'ci-gate: 2 failure(s)'],
+  },
+  {
+    name: 'ci-gate: a paths filter under pull_request fails',
+    guard: CI_GATE,
+    args: ['--root', cig('bad-paths-filter')],
+    expectExit: 1,
+    expectOutput: ['workflow-level paths filter in .github/workflows/ci.yml'],
+  },
+  {
+    name: 'ci-gate: a paths-ignore filter under push fails',
+    guard: CI_GATE,
+    args: [],
+    setup: () => {
+      ciGatePathsIgnoreRoot = tempCiGateRoot((text) => text.replace(/^ {2}push:(\r?\n)/m, "  push:$1    paths-ignore:$1      - '.planning/**'$1"));
+      return ['--root', ciGatePathsIgnoreRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['workflow-level paths filter in .github/workflows/ci.yml', 'paths-ignore'],
+  },
+  {
+    name: 'ci-gate: ci.yml without workflow_dispatch fails',
+    guard: CI_GATE,
+    args: ['--root', cig('bad-no-dispatch')],
+    expectExit: 1,
+    expectOutput: ['ci.yml has no workflow_dispatch trigger'],
+  },
+  {
+    name: 'ci-gate: a docs-only job missing from the ci-ok.jq heavy list fails',
+    guard: CI_GATE,
+    args: ['--root', cig('bad-heavy-mismatch')],
+    expectExit: 1,
+    expectOutput: ['docs-only skip set differs from scripts/ci/ci-ok.jq', 'unit-tests'],
+  },
+  {
+    name: 'ci-gate: a ci-ok.jq heavy id whose job lacks the docs-only condition fails',
+    guard: CI_GATE,
+    args: [],
+    setup: () => {
+      ciGateUnconditionedRoot = tempCiGateRoot((text) => text.replace(/^ {4}if: needs\.changes\.outputs\.docs_only != 'true'\r?\n/m, ''));
+      return ['--root', ciGateUnconditionedRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['docs-only skip set differs from scripts/ci/ci-ok.jq'],
+  },
+  {
+    name: 'ci-gate: a docs-only job that does not need changes fails',
+    guard: CI_GATE,
+    args: [],
+    setup: () => {
+      ciGateNoChangesNeedRoot = tempCiGateRoot((text) => text.replace(/^ {4}needs: \[changes\]\r?\n/m, ''));
+      return ['--root', ciGateNoChangesNeedRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['job build has the docs-only condition but does not need changes'],
   },
   {
     name: 'ci-gate: write-all and a job on the default token scope fail',
@@ -1109,7 +1166,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, parityGoodRoot, parityBadRoot, ciGateRenamedRoot]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, parityGoodRoot, parityBadRoot, ciGateRenamedRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 

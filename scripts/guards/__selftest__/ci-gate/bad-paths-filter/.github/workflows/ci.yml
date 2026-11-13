@@ -1,0 +1,38 @@
+# Selftest fixture for scripts/guards/check-ci-gate.mjs: a paths filter under
+# pull_request. A workflow skipped by its trigger filter leaves the required
+# CI OK check pending forever (D-08).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo build
+
+  ci-ok:
+    name: CI OK
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: scripts/ci
+      - name: Every needed job passed or skipped on purpose
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          EVENT: ${{ github.event_name }}
+        run: printf '%s\n' "$NEEDS" | jq -e --arg event "$EVENT" -f scripts/ci/ci-ok.jq
