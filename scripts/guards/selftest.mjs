@@ -101,6 +101,46 @@ const runsCompleted = runs.map((r) => (r.id === 102 ? { ...r, status: 'completed
 const expectEqual = (label, actual, expected) =>
   actual === expected ? null : `${label}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`;
 
+// check-contrast.mjs on a real stylesheet (07 IN-06): the table order and each pair
+// against its own threshold, never pinned ratios, so retuning a token that still
+// passes cannot break lint. Exact ratios stay in the fixture cases.
+const CONTRAST_SURFACES = ['surface', 'surface-raised', 'surface-overlay'];
+const contrastPairs = (fgs, bgs) => fgs.flatMap((fg) => bgs.map((bg) => `${fg}/${bg}`));
+/** The GUARD-05 pair labels in table order (07-, 08-, 10- and 11-UI-SPEC "Color"). */
+const CONTRAST_ORDER = [
+  ...contrastPairs(['ink', 'ink-muted'], [...CONTRAST_SURFACES, 'gallery']),
+  ...contrastPairs(['accent', 'danger', 'caution', 'success'], CONTRAST_SURFACES),
+  ...contrastPairs(['ink-inverse'], ['accent', 'accent-hover']),
+  ...contrastPairs(['focus', 'line-strong'], CONTRAST_SURFACES),
+  ...contrastPairs(['ink-inverse'], ['accent-strong']),
+  ...contrastPairs(['accent-strong'], CONTRAST_SURFACES),
+  ...contrastPairs(['accent'], ['gallery']),
+  ...contrastPairs(['gallery'], ['ink']),
+  ...contrastPairs(['focus', 'line-strong'], ['gallery']),
+  ...contrastPairs(['ink-inverse'], ['ink']),
+  ...contrastPairs(['trail-mountain', 'trail-alpine'], ['trail-blaze']),
+  ...contrastPairs(['trail-mountain', 'trail-alpine'], CONTRAST_SURFACES),
+  ...contrastPairs(['trail-blaze', 'trail-yellow'], ['surface-raised']),
+];
+// The table prints ratios to 2 dp; the guard compares raw floats, so a pair that
+// passes at 4.4996 prints 4.50. Half a display step absorbs that rounding.
+const CONTRAST_TOLERANCE = 0.005;
+/** Runs the contrast guard on `css`; returns null when it passes every pair in table order, else an error string. */
+function contrastTableCheck(css) {
+  const result = spawnSync(process.execPath, [CONTRAST, '--css', css], { encoding: 'utf-8' });
+  const out = `${result.stdout ?? ''}${result.stderr ?? ''}`.replace(/\r\n/g, '\n');
+  const problems = [];
+  if (result.status !== 0) problems.push(`expected exit 0, got ${result.status}`);
+  if (!out.includes(`contrast: OK (${CONTRAST_ORDER.length} pairs)`)) problems.push(`output lacks: contrast: OK (${CONTRAST_ORDER.length} pairs)`);
+  const rows = [...out.matchAll(/^(\S+\/\S+) (\S+) (\S+) (PASS|FAIL)$/gm)].map(([, label, ratio, min, verdict]) => ({ label, ratio: Number(ratio), min: Number(min), verdict }));
+  const order = rows.map((r) => r.label).join(', ');
+  if (order !== CONTRAST_ORDER.join(', ')) problems.push(`table order differs: got ${order}`);
+  for (const r of rows) {
+    if (r.verdict !== 'PASS' || !(r.ratio >= r.min - CONTRAST_TOLERANCE)) problems.push(`${r.label} ${r.ratio} is below ${r.min}:1 (${r.verdict})`);
+  }
+  return problems.length === 0 ? null : problems.join('; ');
+}
+
 // scripts/ci/classify-changes.mjs: the docs-only verdict of the `changes` job (D-08, D-09)
 const CLASSIFY = path.join(repoRoot, 'scripts', 'ci', 'classify-changes.mjs');
 /** classify(paths, opts).docsOnly must equal `expected` and come with a non-empty reason. */
@@ -932,11 +972,19 @@ const cases = [
     fn: () => expectEqual('violations', checkMp4(fs.readFileSync(path.join(si('bad-mp4-xmp'), 'public', 'media', 'coin-flip-toss.41c2fd1ba3.mp4'))).join('; '), 'forbidden box XMP_'),
   },
   {
-    name: 'contrast: the real app/globals.css passes all 47 pairs (28 UI-SPEC + 4 accent-strong + 4 gallery + 1 toggle + 10 trail) in table order',
-    guard: CONTRAST,
-    args: ['--css', path.join(repoRoot, 'app', 'globals.css')],
-    expectExit: 0,
-    expectOutput: ['ink/surface 16.03 4.5 PASS', 'danger/surface-raised 6.74 4.5 PASS', 'line-strong/surface-overlay 4.17 3 PASS', 'ink-inverse/accent-strong 7.40 4.5 PASS', 'accent-strong/surface-overlay 6.37 3 PASS', 'accent/gallery 11.88 4.5 PASS', 'line-strong/gallery 5.10 3 PASS', 'ink-inverse/ink 16.03 4.5 PASS', 'trail-mountain/trail-blaze 3.65 3 PASS', 'trail-alpine/trail-blaze 4.12 3 PASS', 'trail-alpine/surface-overlay 3.34 3 PASS', 'trail-yellow/surface-raised 10.89 3 PASS', 'contrast: OK (47 pairs)'],
+    name: 'contrast: the real app/globals.css passes all 47 pairs (28 UI-SPEC + 4 accent-strong + 4 gallery + 1 toggle + 10 trail) in table order, each against its own threshold (07 IN-06)',
+    fn: () => contrastTableCheck(path.join(repoRoot, 'app', 'globals.css')),
+  },
+  {
+    name: 'contrast: the table check accepts other passing ratios (at-threshold.css), so retuning a passing token cannot fail it (07 IN-06)',
+    fn: () => contrastTableCheck(con('at-threshold.css')),
+  },
+  {
+    name: 'contrast: the table check fails when a pair drops below its threshold (low-ink.css) (07 IN-06)',
+    fn: () => {
+      const error = contrastTableCheck(con('low-ink.css'));
+      return error?.includes('ink/surface 3 is below 4.5:1 (FAIL)') ? null : `expected the ink/surface pair to fail the check, got: ${error}`;
+    },
   },
   {
     name: 'contrast: a pair exactly at 4.5:1 passes (inclusive raw-float threshold)',
