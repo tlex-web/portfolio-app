@@ -152,14 +152,17 @@ function classifyCase(paths, opts, expected) {
   return expectEqual(`${label}.docsOnly`, result.docsOnly, expected);
 }
 
-// Workflow shell: the run blocks of the real workflows, run under stub gh/sleep (GUARD-08, 13-VALIDATION G1).
-// GUARD_SELFTEST_WORKFLOW_DIR points the cases at a mutated copy of the workflows, to prove they can fail.
+// Workflow shell: the run blocks of the real workflows, run under stub gh/sleep (GUARD-08, 13-VALIDATION G1/G2).
+// GUARD_SELFTEST_WORKFLOW_DIR points the cases at a mutated copy of the two workflows, to prove they can fail.
 const WORKFLOW_DIR = process.env.GUARD_SELFTEST_WORKFLOW_DIR ?? path.join(repoRoot, '.github', 'workflows');
 const RELAY_YML = path.join(WORKFLOW_DIR, 'ci-skip-relay.yml');
+const CI_YML = path.join(WORKFLOW_DIR, 'ci.yml');
 const detectBlock = () => extractRunBlock(RELAY_YML, { id: 'detect' });
 const relayBlock = () => extractRunBlock(RELAY_YML, { name: 'Dispatch ci.yml and mirror its conclusion' });
+const classifyBlock = () => extractRunBlock(CI_YML, { name: 'Classify the diff' });
 const REPO_SLUG = 'octo/site';
 const HEAD_SHA = '1234567890abcdef1234567890abcdef12345678';
+const BASE_SHA = 'abcdef1234567890abcdef1234567890abcdef12';
 const tail = (r) => `(exit ${r.status}; stdout ${JSON.stringify(r.stdout.trim())}; stderr ${JSON.stringify(r.stderr.trim())}; calls ${JSON.stringify(r.calls)})`;
 /** `${problemsOf(problems)} ${tail(r)}` when there are problems, else null. */
 const withTail = (problems, r) => (problems.length === 0 ? null : `${problems.join('; ')} ${tail(r)}`);
@@ -206,6 +209,22 @@ const relayEnv = (over = {}) => ({
 });
 const runRelay = (over) => runStep(relayBlock(), { env: relayEnv(over) });
 const dispatchCalls = (r) => r.calls.filter((c) => c.startsWith('gh workflow run'));
+
+/** The classify step with a canned compare body; null when it exits 0 with GITHUB_OUTPUT exactly docs_only=<expected>. */
+function changesCase(compare, expected, { env = {}, calls } = {}) {
+  const r = runStep(classifyBlock(), {
+    cwd: repoRoot,
+    compare,
+    env: { GH_TOKEN: 'dummy', REPO: REPO_SLUG, EVENT: 'pull_request', BASE: BASE_SHA, HEAD: HEAD_SHA, ...env },
+  });
+  const problems = [];
+  if (r.status !== 0) problems.push(`expected exit 0, got ${r.status}`);
+  if (r.output !== `docs_only=${expected}\n`) problems.push(`GITHUB_OUTPUT is ${JSON.stringify(r.output)}, expected docs_only=${expected}`);
+  if (calls && JSON.stringify(r.calls) !== JSON.stringify(calls)) problems.push(`gh calls ${JSON.stringify(r.calls)}, expected ${JSON.stringify(calls)}`);
+  return withTail(problems, r);
+}
+const filesOf = (...names) => ({ files: names.map((filename) => (typeof filename === 'string' ? { filename } : filename)) });
+const manyDocs = (n) => filesOf(...Array.from({ length: n }, (_, i) => `.planning/phases/note-${i}.md`));
 
 const WORKFLOW_SHELL_CASES = [
   // detect (G1)
@@ -349,6 +368,59 @@ const WORKFLOW_SHELL_CASES = [
         const error = withTail(problems, r);
         return error && `ref ${JSON.stringify(ref)}: ${error}`;
       }),
+  },
+  // changes / Classify the diff (G2)
+  {
+    name: 'workflow-shell changes: workflow_dispatch compares main...HEAD whatever BASE the event carried',
+    fn: () =>
+      changesCase(filesOf('README.md'), 'true', { env: { EVENT: 'workflow_dispatch', BASE: '' }, calls: [`gh api repos/${REPO_SLUG}/compare/main...${HEAD_SHA}`] }) ??
+      changesCase(filesOf('README.md'), 'true', { env: { EVENT: 'workflow_dispatch', BASE: BASE_SHA }, calls: [`gh api repos/${REPO_SLUG}/compare/main...${HEAD_SHA}`] }) ??
+      changesCase(filesOf('README.md'), 'true', { calls: [`gh api repos/${REPO_SLUG}/compare/${BASE_SHA}...${HEAD_SHA}`] }),
+  },
+  {
+    name: 'workflow-shell changes: an empty BASE gives docs_only=false, exit 0 and no gh call',
+    fn: () => changesCase(filesOf('README.md'), 'false', { env: { BASE: '' }, calls: [] }),
+  },
+  {
+    name: 'workflow-shell changes: an all-zero BASE (a new branch) gives docs_only=false, exit 0 and no gh call',
+    fn: () => changesCase(filesOf('README.md'), 'false', { env: { BASE: '0'.repeat(40) }, calls: [] }),
+  },
+  {
+    name: 'workflow-shell changes: a failing compare call gives docs_only=false, exit 0 and the ::warning:: line',
+    fn: () => {
+      const r = runStep(classifyBlock(), { cwd: repoRoot, env: { GH_TOKEN: 'dummy', REPO: REPO_SLUG, EVENT: 'pull_request', BASE: BASE_SHA, HEAD: HEAD_SHA, STUB_COMPARE_FAIL: '1' } });
+      const problems = [];
+      if (r.status !== 0) problems.push(`expected exit 0, got ${r.status}`);
+      if (r.output !== 'docs_only=false\n') problems.push(`GITHUB_OUTPUT is ${JSON.stringify(r.output)}`);
+      if (!r.stdout.includes(`::warning::The compare call for ${BASE_SHA}...${HEAD_SHA} failed; running the full CI.`)) problems.push('no ::warning:: line');
+      return withTail(problems, r);
+    },
+  },
+  {
+    name: 'workflow-shell changes: only docs files give docs_only=true',
+    fn: () => changesCase(filesOf('.planning/phases/13-x/13-01-PLAN.md', 'README.md', 'scripts/README.md', 'AGENTS.md'), 'true'),
+  },
+  {
+    name: 'workflow-shell changes: a code file among docs files gives docs_only=false',
+    fn: () => changesCase(filesOf('README.md', 'lib/site.ts'), 'false') ?? changesCase(filesOf('docs/README.md'), 'false'),
+  },
+  {
+    name: 'workflow-shell changes: 300 files pass --truncated and give docs_only=false, while 299 docs files stay docs-only',
+    fn: () => changesCase(manyDocs(300), 'false') ?? changesCase(manyDocs(299), 'true'),
+  },
+  {
+    name: 'workflow-shell changes: a rename from lib/ into .planning/ gives docs_only=false (the old name counts)',
+    fn: () =>
+      changesCase(filesOf({ filename: '.planning/notes/x.ts', previous_filename: 'lib/x.ts', status: 'renamed' }), 'false') ??
+      changesCase(filesOf({ filename: '.planning/notes/y.md', previous_filename: '.planning/old/y.md', status: 'renamed' }), 'true'),
+  },
+  {
+    name: 'workflow-shell changes: a file name containing a line break gives docs_only=false',
+    fn: () => changesCase(filesOf('.planning/a\nb.md'), 'false') ?? changesCase(filesOf('.planning/a\rb.md'), 'false') ?? changesCase(filesOf('.planning/ab.md'), 'true'),
+  },
+  {
+    name: 'workflow-shell changes: a compare body with no files key gives docs_only=false',
+    fn: () => changesCase({ status: 'identical' }, 'false'),
   },
 ];
 
