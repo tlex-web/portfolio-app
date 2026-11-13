@@ -20,7 +20,7 @@ Requirements for milestone v2.1 Survey Expansion. Each maps to exactly one roadm
 - [x] **VERIFY-05**: The production audit gate covers `/projects/coin-flip` and every photo slug (each page template in all three engines, every slug at least once in Chromium), and every new region page joins it when it ships
 - [x] **VERIFY-06**: The photo build scripts have the two deferred Phase 10 regression tests: a wrong capture-time offset fails the photo data build (G5), and an invalid source leaves existing derivatives in place with exit code 1 (G6)
 - [ ] **VERIFY-07**: Every open review-ledger row from Phases 7, 9, 10 and 12 is triaged: fixed, accepted with a recorded reason, or turned into a requirement
-- [ ] **CLEAN-01**: Unused code and config are removed: `TILT_CONFIG`, the test-only `cssDuration` and `cssEase`, the unused `next.config` images block, the service-worker `/_next/image` branch, commented CI steps and the `dns-prefetch` to vercel.com
+- [x] **CLEAN-01**: Unused code and config are removed: `TILT_CONFIG`, the test-only `cssDuration` and `cssEase`, the unused `next.config` images block, the service-worker `/_next/image` branch, commented CI steps and the `dns-prefetch` to vercel.com
 
 ### Shell & UI Fixes
 
@@ -126,7 +126,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VERIFY-05 | Phase 13 | Complete |
 | VERIFY-06 | Phase 13 | Complete |
 | VERIFY-07 | Phase 13 | Pending |
-| CLEAN-01 | Phase 13 | Pending |
+| CLEAN-01 | Phase 13 | Complete |
 | SHELL-07 | Phase 14 | Pending |
 | SHELL-08 | Phase 14 | Pending |
 | HOME-09 | Phase 14 | Pending |

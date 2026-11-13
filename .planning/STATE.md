@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 13
 current_phase_name: Repo Safety & Test Debt
 status: executing
-stopped_at: Completed 13-05-PLAN.md
-last_updated: "2026-11-13T12:54:27.993Z"
+stopped_at: Completed 13-15-PLAN.md
+last_updated: "2026-11-13T13:35:55.080Z"
 last_activity: 2026-11-13
 last_activity_desc: Phase 13 execution started
-state_head: 4c9c7462325e6dacc5e91422b0278ecf90d90000
+state_head: b39c355c4848a64807cb7a6cf1e421a67cf4d281
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 22
-  completed_plans: 14
+  completed_plans: 15
   percent: 0
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 13 (Repo Safety & Test Debt) — EXECUTING
-Plan: 15 of 22
+Plan: 16 of 22
 Status: Ready to execute
 Last activity: 2026-11-13 — Phase 13 execution started
 
@@ -68,6 +68,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 13 P13 | 9min | 2 tasks | 7 files |
 | Phase 13 P14 | 14min | 3 tasks | 19 files |
 | Phase 13 P05 | 3min | 2 tasks | 1 files |
+| Phase 13 P15 | 45min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -110,6 +111,8 @@ Recent decisions affecting current work:
 - [Phase 13]: 13-14 (12 IN-12, Tim option A): version floors are checked on every lockfile copy, per version line for list floors; fflate floor ["0.6.11", "0.8.3"] keeps the 12-06 pinned three-stdlib copy checked, and a copy on an unfloored line fails
 - [Phase 13]: 13-14: same-classnames pairs renames and fails on zero compared (07 WR-04); check-snapshot-commit checks merge commits against their first parent with CLI flags unchanged (07 IN-07); catch-all: none
 - [Phase 13]: 13-05: production has the complete UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN pair (REDIS_URL unused), System Environment Variables on, Deployment Checks offered on Hobby; keep-alive is ping-readonly via secrets UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN (read-only token unverified); Pitfall 2 resolved for production, 13-15 unblocked on the pair
+- [Phase 13]: 13-15: PR #143 opened on Tim's "Push and pr" (mapped to push-and-pr); CI OK success (app 15368) and all 13 check runs green on head 90758db; Visual Regression PASS with update mode none and check-snapshot-commit --none OK on 6ff759d and d69b42c; E2E baseline 28m31s for 13-20; no fix push
+- [Phase 13]: 13-15: Security Audit warns on 25 dev-only npm audit advisories (3 low, 22 moderate; --omit=dev finds 0); the step is warn-only on main too; logged in deferred-items.md, not changed
 
 ### Pending Todos
 
@@ -162,6 +165,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-13T12:54:20.142Z
-Stopped at: Completed 13-05-PLAN.md
+Last session: 2026-11-13T13:35:55.040Z
+Stopped at: Completed 13-15-PLAN.md
 Resume file: None

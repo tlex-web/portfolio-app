@@ -68,7 +68,7 @@ Full details: [milestones/v2.0-ROADMAP.md](milestones/v2.0-ROADMAP.md)
   3. Playwright 1.65 and its container image tag land in one commit that is re-baselined on its own, before any intended visual change, and Dependabot PR #140 is closed by it.
   4. The production audit gate runs `/projects/coin-flip` and every photo slug (each page template in all three engines, each slug at least once in Chromium) and takes its routes from the site's data, so a new photo or region page cannot ship outside it. A wrong capture-time offset fails the photo data build (G5), and an invalid source leaves existing derivatives in place with exit code 1 (G6).
   5. Every open review-ledger row from Phases 7, 9, 10 and 12 is fixed, accepted with a recorded reason, or turned into a requirement, and `TILT_CONFIG`, the test-only `cssDuration` and `cssEase`, the unused `next.config` images block, the service-worker `/_next/image` branch, the commented CI steps and the vercel.com `dns-prefetch` are gone with no visual diff.
-**Plans**: 14/22 plans executed in 12 waves
+**Plans**: 15/22 plans executed in 12 waves
 
 Plans:
 **Wave 1**
@@ -98,7 +98,7 @@ Plans:
 - [x] 13-14-PLAN.md — Ledger fixes: same-classnames, snapshot-commit and parity guard rows; catch-all for rows Tim moves into fix-now
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 13-15-PLAN.md — Mid-phase PR to `main` (D-05) with green `CI OK` and zero-pixel-diff proof
+- [x] 13-15-PLAN.md — Mid-phase PR to `main` (D-05) with green `CI OK` and zero-pixel-diff proof
 
 **Wave 8** *(blocked on Wave 7 completion)*
 - [ ] 13-16-PLAN.md — Tim merges; Tim applies the `main` ruleset, deletes 10401314, sets Deployment Checks; API verification
@@ -250,7 +250,7 @@ Plans:
 | 10. Photography | v2.0 | 13/13 | Complete | 2026-10-26 |
 | 11. Engineering & Roadmap | v2.0 | 19/19 | Complete | 2026-11-02 |
 | 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 34/34 | Complete | 2026-11-05 |
-| 13. Repo Safety & Test Debt | v2.1 | 14/22 | In Progress | - |
+| 13. Repo Safety & Test Debt | v2.1 | 15/22 | In Progress | - |
 | 14. UI Fixes & Terminal Controls | v2.1 | 0/TBD | Not started | - |
 | 15. Region & Plate Data Model | v2.1 | 0/TBD | Not started | - |
 | 16. New Regions & Alps Overview Data | v2.1 | 0/TBD | Not started | - |
