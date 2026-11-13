@@ -9,7 +9,7 @@
  * that cannot fail on a bad fixture is not a guard.
  *
  * Case shape: { name, guard, args, expectExit, expectOutput?, input?, cwd?, nodeArgs?, setup?, check? }
- *   or { name, fn } for pure helpers (fn returns an error string or null; no spawn)
+ *   or { name, fn } for pure helpers (fn returns, or resolves to, an error string or null; no spawn)
  *   - input: optional, piped to the guard's stdin
  *   - nodeArgs: optional, node flags placed before the guard path
  *   - cwd: optional, working directory of the spawn (defaults to this process's cwd)
@@ -29,6 +29,7 @@ import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
+import { createRequire } from 'module';
 import sharp from 'sharp';
 import { evaluate, pickRun } from '../ci/check-visual-run.mjs';
 import { evaluateSnapshotChanges, snapshotDiffArgs } from '../ci/check-snapshot-commit.mjs';
@@ -150,6 +151,30 @@ function classifyCase(paths, opts, expected) {
   const label = `classify(${JSON.stringify(paths)}${opts ? `, ${JSON.stringify(opts)}` : ''})`;
   if (typeof result?.reason !== 'string' || result.reason === '') return `${label} gave no reason: ${JSON.stringify(result)}`;
   return expectEqual(`${label}.docsOnly`, result.docsOnly, expected);
+}
+
+// app/globals.css vs DOCS_ONLY_FILES (13 WR-02): a diff of only those files skips build and visual
+// regression, so none may be a Tailwind source. The scan is Tailwind's own, set up the way
+// @tailwindcss/postcss sets it up (its automatic root, **/* at the directory next build runs in,
+// plus the stylesheet's compiled @source entries), with the plugin's own node and oxide packages.
+const GLOBALS_CSS = path.join(repoRoot, 'app', 'globals.css');
+const tailwindRequire = createRequire(createRequire(import.meta.url).resolve('@tailwindcss/postcss'));
+/** The repo-relative files Tailwind's scanner reads for `css`, compiled as app/globals.css. */
+async function tailwindSourceFiles(css) {
+  const { compile } = tailwindRequire('@tailwindcss/node');
+  const { Scanner } = tailwindRequire('@tailwindcss/oxide');
+  const compiler = await compile(css, { base: path.dirname(GLOBALS_CSS), onDependency: () => {} });
+  const root =
+    compiler.root === 'none' ? [] : compiler.root === null ? [{ base: repoRoot, pattern: '**/*', negated: false }] : [{ ...compiler.root, negated: false }];
+  const scanner = new Scanner({ sources: [...root, ...compiler.sources] });
+  scanner.scan();
+  return scanner.files.map((f) => path.relative(repoRoot, f).split(path.sep).join('/'));
+}
+/** The DOCS_ONLY_FILES entries Tailwind reads for `css`, or an error string when the scan reads no app/ source at all. */
+async function docsOnlyTailwindSources(css) {
+  const files = await tailwindSourceFiles(css);
+  if (!files.includes('app/layout.tsx')) return { error: `the scan read ${files.length} files but not app/layout.tsx, so it proves nothing` };
+  return { scanned: DOCS_ONLY_FILES.filter((f) => files.includes(f)) };
 }
 
 // Workflow shell: the run blocks of the real workflows, run under stub gh/sleep (GUARD-08, 13-VALIDATION G1/G2).
@@ -1796,6 +1821,25 @@ const cases = [
       classifyCase([...DOCS_ONLY_FILES, '.planning/phases/13-x/13-07-PLAN.md'], undefined, true),
   },
   {
+    name: 'tailwind-sources: no DOCS_ONLY_FILES entry is a Tailwind source of app/globals.css (13 WR-02)',
+    fn: async () => {
+      const { error, scanned } = await docsOnlyTailwindSources(fs.readFileSync(GLOBALS_CSS, 'utf-8'));
+      if (error) return error;
+      return scanned.length === 0 ? null : `Tailwind scans ${scanned.join(', ')}; add @source not "../<file>" to app/globals.css`;
+    },
+  },
+  {
+    name: 'tailwind-sources: the same scan reports README.md and AGENTS.md once their @source not lines are removed',
+    fn: async () => {
+      const css = fs.readFileSync(GLOBALS_CSS, 'utf-8');
+      const stripped = DOCS_ONLY_FILES.reduce((text, f) => text.split(`@source not "../${f}";`).join(''), css);
+      if (stripped === css) return 'app/globals.css has no @source not line for any DOCS_ONLY_FILES entry';
+      const { error, scanned } = await docsOnlyTailwindSources(stripped);
+      if (error) return error;
+      return ['README.md', 'AGENTS.md'].every((f) => scanned.includes(f)) ? null : `expected README.md and AGENTS.md among the scanned docs files, got ${JSON.stringify(scanned)}`;
+    },
+  },
+  {
     name: 'classify: a guard selftest fixture README is code (no *.md rule)',
     fn: () => classifyCase(['scripts/guards/__selftest__/served-images/a/README.md'], undefined, false),
   },
@@ -2157,7 +2201,8 @@ for (const [index, c] of cases.entries()) {
   if (c.fn) {
     let error;
     try {
-      error = c.fn();
+      // A case may be async (the Tailwind scan cases); a sync one is unchanged by await.
+      error = await c.fn();
     } catch (err) {
       error = `threw: ${err.message}`;
     }

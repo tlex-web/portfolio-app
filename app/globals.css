@@ -6,6 +6,14 @@
 @source not "../.claude";
 @source not "../graphify-out";
 @source not "../scripts";
+/* The CI docs-only files (DOCS_ONLY_FILES in scripts/ci/classify-changes.mjs):
+   a diff of only these skips build and visual regression, so none of them may
+   feed the stylesheet. scripts/README.md is covered by "../scripts" above.
+   A selftest scans with Tailwind's own scanner and fails if one is still read */
+@source not "../README.md";
+@source not "../AGENTS.md";
+@source not "../e2e/visual/README.md";
+@source not "../.github/copilot-instructions.md";
 
 /* Remove Tailwind's default palette: only the L2 semantic tokens below compile to
    colour utilities. Must precede every --color-* definition (12-RESEARCH Pitfall 7) */
