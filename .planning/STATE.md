@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 13
 current_phase_name: Repo Safety & Test Debt
 status: executing
-stopped_at: Completed 13-17-PLAN.md
-last_updated: "2026-11-13T16:59:37.374Z"
+stopped_at: Completed 13-18-PLAN.md
+last_updated: "2026-11-13T17:05:24.215Z"
 last_activity: 2026-11-13
 last_activity_desc: Phase 13 execution started
-state_head: e3ebfd42add2c26b65ff1303b7d339a24b98a055
+state_head: bec99fd957f1f846a46a7b472c47891a1866774f
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 22
-  completed_plans: 17
+  completed_plans: 18
   percent: 0
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 13 (Repo Safety & Test Debt) — EXECUTING
-Plan: 18 of 22
+Plan: 19 of 22
 Status: Ready to execute
 Last activity: 2026-11-13 — Phase 13 execution started
 
@@ -71,6 +71,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 13 P15 | 45min | 3 tasks | 2 files |
 | Phase 13 P16 | 1h50m | 3 tasks | 3 files |
 | Phase 13 P17 | 15min | 3 tasks | 2 files |
+| Phase 13 P18 | 6min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -121,6 +122,9 @@ Recent decisions affecting current work:
 - [Phase 13]: 13-17: production serves merge d48af99 (deployment 7770069186, success, predates Deployment Checks); first Upstash keep-alive run 43466849915 on main succeeded with PONG, so the repository secrets and the REST call work
 - [Phase 13]: 13-17: Tim ran the live 429 probe himself (selection "I run it (tim-runs)"); run B with PROD_FORM_LIMIT=1 passed 5/5, proving a 429 with Retry-After > 0 and no 503; the request number and Retry-After value were not printed, the sixth-in-window position (loop post 2) is inferred
 - [Phase 13]: 13-17: GUARD-09 stays Pending in REQUIREMENTS.md by the shared-ID gate (13-22 also declares it); the concurrency truth is a backstop (Upstash sliding-window atomicity), not tested live
+- [Phase 13]: 13-18: Tim replied "verified" to the @playwright/test 1.65.0 legitimacy checkpoint; Playwright 1.65.0 and container tag v1.65.0-noble landed together in the single five-file commit 5ab6d15 (parity guard OK, type-check, lint and jest green; chromium homepage smoke 7/7)
+- [Phase 13]: 13-18: the lockfile was written with Node 26's bundled npm 11.20.0, not the shadowing global npm 11.6.1, whose install rewrote unrelated metadata (peer/dev flags, dropped libc arrays); the committed lockfile diff touches only the root spec and the three Playwright entries
+- [Phase 13]: 13-18: DEPS-06 stays Pending in REQUIREMENTS.md by the shared-ID gate (13-20 and 13-22 also declare it and have no SUMMARY yet)
 
 ### Pending Todos
 
@@ -173,6 +177,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-13T16:59:37.341Z
-Stopped at: Completed 13-17-PLAN.md
+Last session: 2026-11-13T17:05:24.182Z
+Stopped at: Completed 13-18-PLAN.md
 Resume file: None
