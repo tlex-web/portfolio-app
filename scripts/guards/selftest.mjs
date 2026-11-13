@@ -527,6 +527,118 @@ let ciGateNoChangesNeedRoot = null;
 let ciGateUnconditionedRoot = null;
 let ciGatePathsIgnoreRoot = null;
 
+// check-ci-gate.mjs parser edge cases (GUARD-07, GUARD-08, 13-VALIDATION G3): flow, scalar and quoted
+// `on:` forms, CRLF workflows, and the relay rules 11, 12, 14 and 15 on shapes the fixtures do not hold.
+const ciGateTempRoots = [];
+/** The top-level `on:` block of a workflow, up to the `permissions:` key that follows it. */
+const ON_BLOCK = /^on:\r?\n(?:[ \t].*\r?\n|\r?\n)*?(?=permissions:)/m;
+/** A temp copy of the good fixture whose ci.yml `on:` block is replaced by `replacement`. */
+const tempOnForm = (replacement, file = 'ci.yml') => {
+  const root = tempCiGateRoot((text) => text.replace(ON_BLOCK, () => replacement), file);
+  ciGateTempRoots.push(root);
+  return root;
+};
+/** A temp copy of the good fixture with `edit` applied to ci-skip-relay.yml. */
+const tempRelayEdit = (edit) => {
+  const root = tempCiGateRoot(edit, 'ci-skip-relay.yml');
+  ciGateTempRoots.push(root);
+  return root;
+};
+/**
+ * A temp copy of the good fixture with every workflow and scripts/ci/ci-ok.jq
+ * rewritten to CRLF line endings (a checkout with core.autocrlf=true), after
+ * `edit(text)` is applied to ci.yml when given.
+ */
+function tempCrlfRoot(edit) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
+  const root = path.join(dir, 'root');
+  fs.cpSync(cig('good'), root, { recursive: true });
+  const files = [
+    ...fs.readdirSync(path.join(root, '.github', 'workflows')).map((f) => path.join(root, '.github', 'workflows', f)),
+    path.join(root, 'scripts', 'ci', 'ci-ok.jq'),
+  ];
+  for (const file of files) {
+    let text = fs.readFileSync(file, 'utf-8').replace(/\r\n/g, '\n');
+    if (edit && path.basename(file) === 'ci.yml') {
+      const after = edit(text);
+      if (after === text) throw new Error('tempCrlfRoot: the edit changed nothing');
+      text = after;
+    }
+    fs.writeFileSync(file, text.replace(/\n/g, '\r\n'));
+  }
+  ciGateTempRoots.push(root);
+  return root;
+}
+const ALL_THREE_FLOW = 'on: [push, pull_request, workflow_dispatch]\n\n';
+const RELAY_ON_TARGET = 'on:\n  pull_request_target:\n    branches: [main]\n\n';
+const ciGateCase = (name, makeRoot, expectExit, expectOutput) => ({
+  name: `ci-gate: ${name}`,
+  guard: CI_GATE,
+  args: [],
+  setup: () => ['--root', makeRoot()],
+  expectExit,
+  expectOutput,
+});
+
+const CI_GATE_PARSER_CASES = [
+  ciGateCase('ci.yml on: in flow-list form with all three triggers passes', () => tempOnForm(ALL_THREE_FLOW), 0, ['ci-gate: OK']),
+  ciGateCase('ci.yml on: in flow-list form without workflow_dispatch fails rule 8', () => tempOnForm('on: [push, pull_request]\n\n'), 1, [
+    'ci.yml has no workflow_dispatch trigger',
+    'ci-gate: 1 failure(s)',
+  ]),
+  ciGateCase(
+    'ci.yml on: in flow-map form carrying a paths: filter fails rule 9',
+    () => tempOnForm('on: { push: {}, pull_request: { paths: [app] }, workflow_dispatch: {} }\n\n'),
+    1,
+    ['workflow-level paths filter in .github/workflows/ci.yml', 'declares paths:'],
+  ),
+  ciGateCase('ci.yml on: in flow-map form with all three triggers and no filter passes', () => tempOnForm('on: { push: {}, pull_request: {}, workflow_dispatch: {} }\n\n'), 0, ['ci-gate: OK']),
+  ciGateCase('ci.yml scalar on: push fails rule 8 for the two missing triggers', () => tempOnForm('on: push\n\n'), 1, [
+    'ci.yml has no pull_request trigger',
+    'ci.yml has no workflow_dispatch trigger',
+    'ci-gate: 2 failure(s)',
+  ]),
+  ciGateCase('ci.yml with a quoted "on": key is read like on: and passes with all three triggers', () => tempOnForm('"on":\n  push:\n  pull_request:\n  workflow_dispatch:\n\n'), 0, ['ci-gate: OK']),
+  ciGateCase('ci.yml with a quoted "on": key and no workflow_dispatch still fails rule 8', () => tempOnForm('"on":\n  push:\n  pull_request:\n\n'), 1, ['ci.yml has no workflow_dispatch trigger']),
+  ciGateCase('a CRLF copy of the good fixture still passes', () => tempCrlfRoot(), 0, ['ci-gate: OK']),
+  ciGateCase(
+    'a CRLF copy without workflow_dispatch still fails',
+    () => tempCrlfRoot((text) => text.replace(/^ {2}workflow_dispatch:\n/m, '')),
+    1,
+    ['ci.yml has no workflow_dispatch trigger'],
+  ),
+  ciGateCase(
+    'relay with ${{ }} inside a shell comment of a run block fails rule 12',
+    () => tempRelayEdit((text) => text.replace(/^( {10})since=\$\(date/m, '$1# the actor is ${{ github.actor }}\n$1since=$(date')),
+    1,
+    ['ci-skip-relay.yml: expression inside a run block', 'ci-gate: 1 failure(s)'],
+  ),
+  ciGateCase(
+    'relay running git clone in a run block fails rule 11',
+    () => tempRelayEdit((text) => text.replace(/^( {10})since=\$\(date/m, '$1git clone "https://github.com/$HEAD_REPO.git" pr\n$1since=$(date')),
+    1,
+    ['ci-skip-relay.yml: relay checks out code', 'git clone', 'ci-gate: 1 failure(s)'],
+  ),
+  ciGateCase(
+    'relay with actions: write on the detect job fails rule 15',
+    () => tempRelayEdit((text) => text.replace(/^( {6})actions: read$/m, '$1actions: write')),
+    1,
+    ['relay grants actions: write in job detect', 'ci-gate: 1 failure(s)'],
+  ),
+  ciGateCase(
+    'relay with an extra workflow_dispatch: trigger fails rule 14',
+    () => tempRelayEdit((text) => text.replace(ON_BLOCK, () => `${RELAY_ON_TARGET.trimEnd()}\n  workflow_dispatch:\n\n`)),
+    1,
+    ['relay may trigger only on pull_request_target (on: declares pull_request_target, workflow_dispatch)'],
+  ),
+  ciGateCase(
+    'relay with a flow-form on: [pull_request_target, push] fails rule 14',
+    () => tempRelayEdit((text) => text.replace(ON_BLOCK, () => 'on: [pull_request_target, push]\n\n')),
+    1,
+    ['relay may trigger only on pull_request_target (on: declares pull_request_target, push)'],
+  ),
+];
+
 // scripts/photos/: characterization of the photo scripts through --root (VERIFY-06, 10-VALIDATION G5/G6)
 const PHOTO_DATA = path.join(repoRoot, 'scripts', 'photos', 'build-photo-data.mjs');
 /** The flag the npm photo scripts pass: the .ts schema imports otherwise warn on stderr. */
@@ -1998,6 +2110,7 @@ const cases = [
     check: () => treeUnchanged(photoDeriveRoot, photoDeriveBefore),
   },
   ...WORKFLOW_SHELL_CASES,
+  ...CI_GATE_PARSER_CASES,
 ];
 
 let failed = 0;
@@ -2052,7 +2165,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDeriveRoot]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDeriveRoot, ...ciGateTempRoots]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 
