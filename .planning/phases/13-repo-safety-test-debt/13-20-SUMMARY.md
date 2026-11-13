@@ -2,7 +2,7 @@
 phase: 13-repo-safety-test-debt
 plan: 20
 subsystem: e2e-toolchain
-status: partial
+status: complete
 tags: [deps-06, playwright, firefox-crash, ci, visual-regression]
 
 requires:
@@ -16,7 +16,8 @@ provides:
   - "GUARD-03 conflict: the test-count ratchet rejects every .fixme( under e2e/, so Unit Tests and CI OK fail on 3757994 (second decision needed)"
   - "Tag commit cffcf99 (firefox.exclusion A-tag): the 7 cases carry @firefox-43967 and only the firefox project excludes it (FIREFOX_INVERT). Run 43494117521 on it: every job green, CI OK success (check run 132142890020); E2E chromium 512, firefox 434, webkit 439, 0 skipped, 0 flaky, no Page crashed"
   - "The one approved baseline dispatch (run 43500162579, update_mode=changed, head cffcf99): 48 PNGs, all 48 blob-identical to HEAD, so no PNG changed"
-affects: [13-20 Task 3 (Tim's resume reply, expected "none"), 13-22 (DEPS-06 also declared there; hand-over: remove the @firefox-43967 tags and the Firefox invert entry)]
+  - "Task 3 closed with Tim's reply \"none\": no PNG commit, no push; check-visual-run PASS on cffcf99 (Visual Regression and CI OK), check-snapshot-commit --none OK (0 changed) on 5ab6d15, 3757994 and cffcf99, and no PNG in origin/main..cffcf99"
+affects: [13-22 (hand-overs: remove the @firefox-43967 tags and the Firefox invert entry after the fixing Playwright release; the guard:tests-in-lint suggestion; E2E duration 37m24s against the 45-minute line), phase PR (#140 closes when main has 1.65.0; ci/13-pw165 cleanup)]
 
 ci:
   approval: approve-leave-140   # Tim's literal AskUserQuestion selection: "approve-leave-140 (Recommended)"
@@ -44,13 +45,26 @@ fallout_commits:
   - cffcf99a9ba6928ddfba4ab3c0bd29e9120344be   # test(13): exclude 7 Firefox cases via @firefox-43967 instead of fixme (GUARD-03, #43967)
 baseline_run: 43500162579   # visual-baselines.yml, suite visual, update_mode changed, headBranch ci/13-pw165, headSha cffcf99
 changed_pngs: []   # 48 downloaded, 48 SAME by git blob hash against HEAD; nothing placed
+task3:
+  reply: none   # Tim's literal AskUserQuestion selection: "none"
+  png_commit: null
+  ci_ok_head: cffcf99a9ba6928ddfba4ab3c0bd29e9120344be   # "none" path: CI OK on the bump/fallout head (check run 132142890020)
+  check_visual_run: "PASS https://github.com/tlex-web/portfolio-app/actions/runs/43494117521/job/132122726931"
+  check_visual_run_ci_ok: "PASS https://github.com/tlex-web/portfolio-app/actions/runs/43494117521/job/132142890020"
+  check_snapshot_commit_none:
+    - { sha: 5ab6d15f24c362f0579a10685e23f776e8cdf414, output: "snapshot-commit: OK (0 changed)" }
+    - { sha: 375799436c703f5f62fcad1aa0ef7e6ec68e7773, output: "snapshot-commit: OK (0 changed)" }
+    - { sha: cffcf99a9ba6928ddfba4ab3c0bd29e9120344be, output: "snapshot-commit: OK (0 changed)" }
+  png_diff_vs_main: ""   # git diff --stat origin/main..cffcf99 -- '*.png' printed nothing (origin/main d48af99)
+  pr_140: { state: OPEN, mergeable: MERGEABLE, mergeStateStatus: BLOCKED, headRefOid: 0af0c6de85679f77da1e95ac18bdbe852be2fe4c, updatedAt: "2026-11-09T09:14:47Z" }
+  ci_branch_left: "ci/13-pw165 at cffcf99 stays on origin (cleanup item for Tim after the phase PR merges)"
 
 actuals:
-  tokens: 15000    # chars/4 over the realized diff: this SUMMARY (~46,000 chars), the spec edits of 3757994 and cffcf99 (~2,400 + ~7,100 chars of diff) and deferred-items (~3,500 chars)
-  tasks: 2         # Task 1 resolved before dispatch; Task 2 complete (CI OK green, baseline compared); Task 3 awaits Tim
-  commits: 4       # MEASURED: git rev-list --count 515c7df..HEAD before this docs commit = 4 (72525ff docs, 3757994 test, 157139c docs, cffcf99 test)
+  tokens: 18000    # chars/4 over the realized diff: this SUMMARY (~58,000 chars), the spec edits of 3757994 and cffcf99 (~2,400 + ~7,100 chars of diff) and deferred-items (~3,500 chars)
+  tasks: 3         # Task 1 resolved before dispatch; Task 2 complete (CI OK green, baseline compared); Task 3 closed with Tim's "none"
+  commits: 5       # MEASURED: git rev-list --count 515c7df..HEAD at this SUMMARY write = 5 (72525ff docs, 3757994 test, 157139c docs, cffcf99 test, 1222358 docs). The docs commit finalizing this SUMMARY and the STATE/ROADMAP/REQUIREMENTS commit follow. The bump 5ab6d15 belongs to 13-18
 plan_head_before: 515c7df4baf1aaf2e6a99c5b2bbd09171994c716
-plan_head_after: cffcf99a9ba6928ddfba4ab3c0bd29e9120344be
+plan_head_after: 1222358a0ec55c6717704023da72906df607b1d9
 
 tech-stack:
   added: []
@@ -74,14 +88,20 @@ key-decisions:
   - "13-20: Tim's literal answer on the Firefox stop was the AskUserQuestion selection \"A: Firefox-only fixme (Recommended)\"; recorded as firefox.decision A and implemented as 3757994 (test.fixme on Firefox for exactly the 7 cases)"
   - "13-20: GUARD-03 (test-count ratchet, v2.0 phase 7) fails on any .fixme( under e2e/, so option A as worded cannot reach CI OK; the executor did not bypass or edit the guard and stopped for a second decision"
   - "13-20: Tim's literal answer on the GUARD-03 stop was the AskUserQuestion selection \"A-tag (Recommended)\"; recorded as firefox.exclusion A-tag and implemented as cffcf99 (title tag @firefox-43967 on the 7 cases, excluded only by the firefox project's FIREFOX_INVERT; guard untouched)"
+  - "13-20: Tim's literal answer to Task 3 was the AskUserQuestion selection \"none\"; no PNG commit, nothing pushed, and the \"none\" path's CI OK is the one on cffcf99"
+  - "13-20: under approve-leave-140, #140 is left to Dependabot; it closes once main has 1.65.0 (the phase PR) and now also needs a rebase to get CI OK under the ruleset"
 
-requirements-completed: []   # DEPS-06 not marked yet: Task 3 (Tim's reply) is still open
+requirements-completed: [DEPS-06]   # requirements.ready-ids on 13-20-PLAN.md returned ready [DEPS-06], blocked []; 13-22's frontmatter does not declare it. The "(closes #140)" half lands with the phase PR
 
-duration: 50min + 45min (continuation) + 55min (second continuation)
-completed: null
+duration: 50min + 45min (continuation) + 55min (second continuation) + 10min (final continuation)
+completed: 2026-11-13
 ---
 
-# Phase 13 Plan 20: Playwright 1.65 in CI and Re-baseline Summary (partial)
+# Phase 13 Plan 20: Playwright 1.65 in CI and Re-baseline Summary
+
+**Playwright 1.65.0 runs green on all three engines in CI (CI OK on cffcf99). Seven Firefox cases crash on an upstream Firefox 159 bug (#43967), so they are excluded on Firefox only through an `@firefox-43967` title tag. The re-baseline changed no PNG, and Tim replied "none", so no PNG was committed.**
+
+**Final continuation (2026-11-13):** Tim's literal answer to Task 3 was the AskUserQuestion selection "none". Nothing was committed or pushed for Task 3. The "none" path was verified by GET only. `check-visual-run` printed PASS on cffcf99 for Visual Regression and for CI OK. `check-snapshot-commit --none` printed `snapshot-commit: OK (0 changed)` for each code commit in the push range (5ab6d15, 3757994, cffcf99). `git diff --stat origin/main..cffcf99 -- '*.png'` printed nothing. #140 is OPEN and untouched, and ci/13-pw165 stays on origin at cffcf99. See "Task 3" below.
 
 **Second continuation (2026-11-13):** Tim chose "A-tag (Recommended)". Commit cffcf99 replaces the five `test.fixme` calls with a ` @firefox-43967` title tag on the same 7 cases, and only the firefox project excludes the tag (`FIREFOX_INVERT` in `playwright.config.ts`). GUARD-03 is untouched. Run 43494117521 on cffcf99 went green on every job, and CI OK passed (check run 132142890020). E2E ran chromium 512, firefox 434 and webkit 439, with 0 skipped, 0 flaky and no `Page crashed`, in 37m24s. The one approved baseline dispatch (run 43500162579, `update_mode=changed`) returned 48 PNGs, and all 48 are blob-identical to HEAD, so no PNG changed. Task 3 waits for Tim's reply, which is expected to be "none".
 
@@ -97,6 +117,7 @@ completed: null
 - **Tasks:** Task 1 resolved before dispatch. Task 2 stopped at a decision after the first CI run. Task 3 not reached.
 - **Continuation:** 2026-11-13T18:52Z to about 19:40Z. The fixme commit was pushed at 18:55:53Z, run 43487342878 finished at 19:27:01Z, and Task 2 stopped at a second decision (GUARD-03, see "Continuation" below).
 - **Second continuation:** about 2026-11-13T19:28Z to 20:25Z. The tag commit cffcf99 was pushed at 19:38:31Z, run 43494117521 finished at 20:16:18Z, and baseline run 43500162579 finished at 20:19:44Z. Task 2 is complete, and Task 3 is returned as a checkpoint.
+- **Final continuation:** about 2026-11-13T20:22Z to 20:35Z. Task 3 was closed with Tim's "none", the read-only checks were run, and the SUMMARY, STATE, ROADMAP and REQUIREMENTS were updated. All 3 tasks are done.
 
 ## Task 1: Approval (checkpoint:decision, gate blocking-human)
 
@@ -314,15 +335,55 @@ The job log contains no `Page crashed`. The container was `mcr.microsoft.com/pla
 - **No PNG changed**, so nothing was copied into `e2e/visual/routes.spec.ts-snapshots/`, and `git status --porcelain` on it is empty.
 - `GITHUB_TOKEN=$(gh auth token) node scripts/ci/check-visual-run.mjs --sha cffcf99a9ba6928ddfba4ab3c0bd29e9120344be --wait 30` printed `PASS https://github.com/tlex-web/portfolio-app/actions/runs/43494117521/job/132122726931` and exited 0. With `--job "CI OK"` it printed `PASS https://github.com/tlex-web/portfolio-app/actions/runs/43494117521/job/132142890020`.
 
-### Not done yet
+### Not done yet at the second continuation (closed by the final continuation below)
 
-- Task 3: Tim's resume reply. With no PNG changed, the expected reply is "none", and no PNG commit or extra CI run is needed.
-- STATE.md and ROADMAP.md are not updated yet, and DEPS-06 is not marked complete.
-- Dependabot #140 was not touched. Under approve-leave-140 it stays open for Dependabot.
+- Task 3: Tim's resume reply.
+- STATE.md, ROADMAP.md and DEPS-06.
+
+## Task 3: Tim's reply "none" (checkpoint:human-action, gate blocking-human)
+
+**task3.reply: none.** This is Tim's literal answer, an AskUserQuestion selection: "none". The plan's instructions say: "If no PNG changed, reply "none" and nothing is committed." So there is no Tim commit, no push and no CI re-run. The "none" acceptance criterion applies: CI OK success on the bump/fallout head, which is cffcf99 (check run 132142890020, run 43494117521).
+
+All checks below ran at about 2026-11-13T20:25Z and were read-only (GET calls, local git). `GITHUB_TOKEN` came from `gh auth token` and was not printed.
+
+**check-visual-run** (re-run in this continuation):
+
+```
+$ node scripts/ci/check-visual-run.mjs --sha cffcf99a9ba6928ddfba4ab3c0bd29e9120344be --wait 30
+PASS https://github.com/tlex-web/portfolio-app/actions/runs/43494117521/job/132122726931
+exit 0
+$ node scripts/ci/check-visual-run.mjs --sha cffcf99a9ba6928ddfba4ab3c0bd29e9120344be --job "CI OK" --wait 30
+PASS https://github.com/tlex-web/portfolio-app/actions/runs/43494117521/job/132142890020
+exit 0
+```
+
+**check-snapshot-commit, one per code commit.** No slug changed, so there is no `--allow <slug>` to run. Instead, each non-docs commit in the push range (`git log origin/main..cffcf99 -- . ':!.planning'` lists exactly these three) was checked with `--none`, the same way 13-15 checked its removal commits. `--allow-all` was not used.
+
+| Commit | What | Output | Exit |
+|--------|------|--------|------|
+| 5ab6d15f24c362f0579a10685e23f776e8cdf414 | 13-18 bump: Playwright 1.65.0 with container tag v1.65.0-noble | `snapshot-commit: OK (0 changed)` | 0 |
+| 375799436c703f5f62fcad1aa0ef7e6ec68e7773 | fixme commit (superseded by cffcf99) | `snapshot-commit: OK (0 changed)` | 0 |
+| cffcf99a9ba6928ddfba4ab3c0bd29e9120344be | `@firefox-43967` tag commit | `snapshot-commit: OK (0 changed)` | 0 |
+
+**No PNG against main.** After `git fetch origin main` (origin/main still at `d48af99994a419aced1473f56b8cfa9b8d0a5c11`), `git diff --stat origin/main..cffcf99 -- '*.png'` printed nothing and exited 0. `git status --porcelain -- e2e/visual/routes.spec.ts-snapshots` is empty.
+
+**Guards and tags.** `git grep -nE "\.(fixme|skip|only)\(" -- e2e` finds nothing. `git grep -c "@firefox-43967"` gives `e2e/audit.spec.ts:7`, `e2e/case-study.spec.ts:2`, `e2e/roadmap.spec.ts:2` and `playwright.config.ts:2`, the same set the second continuation recorded. `scripts/guards/test-count.mjs` (GUARD-03) has no diff against origin/main. The only change under `scripts/guards` is 13-18's `version-floors.json` floor bump.
+
+**#140** (`gh pr view 140 --json state,mergeable,headRefOid,updatedAt`, plus `mergeStateStatus`):
+
+```json
+{"headRefOid":"0af0c6de85679f77da1e95ac18bdbe852be2fe4c","mergeStateStatus":"BLOCKED","mergeable":"MERGEABLE","state":"OPEN","title":"chore(deps-dev)(deps-dev): bump @playwright/test from 1.64.1 to 1.65.0","updatedAt":"2026-11-09T09:14:47Z"}
+```
+
+Under approve-leave-140 it was not touched, and no close was run (that step is for approve-close-140 only). Dependabot closes it once main has 1.65.0, that is, when the phase PR merges. As it stands, it would also need a rebase to get CI OK under the ruleset (`mergeStateStatus` BLOCKED). The plan's must-have "#140 is closed by the version reaching main" is therefore checked at ship, not here.
+
+**ci/13-pw165.** `git ls-remote origin refs/heads/ci/13-pw165` returns `cffcf99a9ba6928ddfba4ab3c0bd29e9120344be`. The plan does not delete the branch, so it stays on origin. Tim may delete it after the phase PR merges.
 
 ## Hand-over to 13-22
 
 - **Remove the `@firefox-43967` tags and the Firefox invert entry.** Do this after the Playwright release with the Firefox roll that fixes https://github.com/microsoft/playwright/issues/43967 (Mozilla bug 2090055), then re-run the three-engine E2E. The mechanism is in cffcf99, which replaced the 3757994 fixmes: drop the tag from the 7 titles (in `audit.spec.ts`, `FIREFOX_43967_VIEWS` and its title suffix), delete `FIREFOX_ONLY_TAGS` and `FIREFOX_INVERT`, and point the firefox project back at `OTHER_ENGINE_INVERT`. `npx playwright test --list --project=firefox` must go from 434 back to 441. The cases are `e2e/audit.spec.ts` photos Map and Carousel views, contact error summary and contact register signed; `e2e/case-study.spec.ts` section order on /projects/box and /projects/coin-flip; and `e2e/roadmap.spec.ts` @1280 layout. After removing them, re-run the three-engine E2E and confirm Firefox runs all 441 with no `Page crashed`. Also logged in `deferred-items.md`.
+- **Run GUARD-03 locally (suggestion, not implemented).** `npm run lint` does not run `guard:tests`, so a `.fixme(`, `.skip(` or `.only(` under `e2e/` passes every local gate and fails only in the CI Unit Tests job (that is how 3757994 failed). The options are in `deferred-items.md`: a `guard:tests:local` script, a pre-push hook, or running the guard's focus/skip scan inside `npm run lint`. None of them may weaken GUARD-03.
+- **E2E duration.** The green 1.65 run took 37m24s for the E2E Tests job on cffcf99, against 30m48s on 3757994, 38m43s on 515c7df and the 13-15 baselines of 28m31s and 37m40s. That is under the 45-minute line, so it is not flagged. With all 7 Firefox cases back after the fix, it should stay about the same. Watch the line when the tags come off.
 
 ## Deviations from Plan
 
@@ -344,6 +405,14 @@ The job log contains no `Page crashed`. The container was `mcr.microsoft.com/pla
 - **Fix:** commit cffcf99, ` @firefox-43967` on exactly the 7 titles, plus a Firefox-only `FIREFOX_INVERT` (`OTHER_ENGINE_INVERT` plus the tag) in `playwright.config.ts`, per Tim's selection "A-tag (Recommended)". GUARD-03 and its selftests are unchanged, and no tag allowlist exists to update.
 - **Files modified:** e2e/audit.spec.ts, e2e/case-study.spec.ts, e2e/roadmap.spec.ts, playwright.config.ts
 - **Commit:** cffcf99
+
+**4. Notes on the three deviations above**
+- **The fixme wording came from the orchestrator, and it conflicted with GUARD-03.** Option A's "mark the 7 tests `test.fixme`" text was written by the orchestrator when it framed the first decision. Nobody checked it against `scripts/guards/test-count.mjs`, which forbids `.fixme(` under `e2e/`. GUARD-03 was never edited or bypassed.
+- **The A-tag resolution.** Tim's selection "A-tag (Recommended)" kept the outcome he chose with A (Firefox-only exclusion of the same 7 cases, with Chromium and WebKit still running them) and changed only the mechanism, to the repo's existing title-tag plus `grepInvert` route.
+- **3757994 is superseded but still in history.** It is on ci/13-pw165 and on the phase branch, and cffcf99 reverts its five `test.fixme` calls. `git log` shows both commits. The phase PR's squash or merge will carry the net cffcf99 state. On its own, 3757994 fails CI OK (run 43487342878).
+
+**5. Task 3 "none" path checks**
+- The plan's Task 3 verification is written for a Tim PNG commit (`check-snapshot-commit --allow <slug>` per changed slug). No slug changed, so each code commit in the push range was checked with `--none` instead, and `check-visual-run` was run against cffcf99, the "none" head. `--allow-all` was not used.
 
 ## Issues Encountered
 
@@ -367,6 +436,15 @@ None. The 7 Firefox exclusions are tracked as a hand-over to 13-22, not as stubs
 - `git status --porcelain -- e2e/visual/routes.spec.ts-snapshots` is empty, and no PNG was placed or committed.
 - Port 3000 is free, and no watcher or background shell is left running.
 
+**Final continuation re-check (2026-11-13T20:25Z):**
+- `git merge-base --is-ancestor` holds for 5ab6d15, 3757994, cffcf99 and 1222358 against HEAD.
+- `git ls-remote origin refs/heads/ci/13-pw165` still returns cffcf99a9ba6928ddfba4ab3c0bd29e9120344be, and nothing was pushed in this continuation.
+- `check-visual-run` printed PASS twice (Visual Regression job 132122726931, CI OK job 132142890020), and both exited 0.
+- `check-snapshot-commit --none` printed `snapshot-commit: OK (0 changed)` with exit 0 for 5ab6d15, 3757994 and cffcf99.
+- `git diff --stat origin/main..cffcf99 -- '*.png'` is empty, and no PNG was committed.
+- #140 is OPEN and was not touched. ci/13-pw165 was not deleted.
+- `requirements.ready-ids` on 13-20-PLAN.md returned ready `[DEPS-06]` (total 1).
+
 ---
 *Phase: 13-repo-safety-test-debt*
-*Status: partial (Task 2 complete: CI OK green on cffcf99, baseline compared with no PNG changed; Task 3 awaits Tim's reply)*
+*Status: complete (CI OK green on cffcf99; no PNG changed; Tim's Task 3 reply "none")*
