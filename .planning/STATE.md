@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 13
 current_phase_name: Repo Safety & Test Debt
 status: executing
-stopped_at: Phase 13 context gathered
-last_updated: "2026-11-12T23:21:06.095Z"
-last_activity: 2026-11-12
-last_activity_desc: v2.1 roadmap created (Phases 13-19, 38/38 requirements mapped)
-state_head: aea3fae947951e7d82f67874067d860cdd360e13
+stopped_at: Completed 13-01-PLAN.md
+last_updated: "2026-11-13T10:20:35.148Z"
+last_activity: 2026-11-13
+last_activity_desc: Phase 13 execution started
+state_head: 9e8cf0382927a50103a238d232a5a823d053937e
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 22
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
 ---
 
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 
 ## Current Position
 
-Phase: 13 (Repo Safety & Test Debt) — READY TO EXECUTE
-Plan: Not started
+Phase: 13 (Repo Safety & Test Debt) — EXECUTING
+Plan: 2 of 22
 Status: Ready to execute
-Last activity: 2026-11-12 — v2.1 roadmap created (Phases 13-19, 38/38 requirements mapped)
+Last activity: 2026-11-13 — Phase 13 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -50,6 +50,11 @@ Progress: [░░░░░░░░░░] 0%
 | - | - | - | - |
 
 *Updated after each plan completion. v2.0: 128 plans in 6 phases, about 70 hours of plan execution; the per-plan table is in `.planning/milestones/v2.0-STATE.md`.*
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 13 P01 | 11min | 3 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -63,6 +68,8 @@ Recent decisions affecting current work:
 - [Phase 16]: Launch regions stay inside the swissALTIRegio footprint; Copernicus GLO-90 feeds only the overview; proj4 only if the measured `lib/geo.ts` error requires it
 - [Phase 17]: Photo URLs stay `/photos/<slug>` with no redirects; the region path is fixed after the static-sibling intercept spike
 - [Phase 18]: The Map/Grid/Carousel switch is retired; map collar, altimeter rail, sheet-index rectangles and 3-5 reference summits are in scope; credits go in each sheet margin plus a `/sources` page
+- [Phase 13]: 13-01: CI OK verdict is scripts/ci/ci-ok.jq (jq -e over toJSON(needs)); only dependency-review may skip, and only outside pull_request; empty needs fails
+- [Phase 13]: 13-01: check-ci-gate.mjs also fails on permissions: write-all and on any job without an explicit token scope, since either hands a job checks: write; CI_OK_ELSEWHERE_ALLOWED is empty until the 13-10 relay
 
 ### Pending Todos
 
@@ -115,6 +122,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-12T21:42:03.478Z
-Stopped at: Phase 13 context gathered
-Resume file: .planning/phases/13-repo-safety-test-debt/13-CONTEXT.md
+Last session: 2026-11-13T10:20:35.122Z
+Stopped at: Completed 13-01-PLAN.md
+Resume file: None
