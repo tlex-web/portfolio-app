@@ -363,6 +363,47 @@ const classnamesMovedChangedRoot = tempClassnamesRepo((root) => {
 });
 const classnamesUnchangedRoot = tempClassnamesRepo(() => {});
 
+// 07 IN-07: the git-reading layer of check-snapshot-commit, read through the module
+// namespace so a missing export fails its case instead of the whole selftest load.
+const snapshotCommitModule = await import('../ci/check-snapshot-commit.mjs');
+
+/**
+ * 07 IN-07 fixture: a temp git repo with two --no-ff merge commits.
+ * - tag merge-png: the merged branch added a Linux PNG under contact/.
+ * - tag merge-text: the merged branch changed only e2e/visual/routes.spec.ts,
+ *   while the first-parent branch added a PNG under photos/ before the merge.
+ *   Diffed against the first parent the merge changes no PNG; diffed against
+ *   the second parent it would show the photos/ PNG.
+ * Nested one level down so the cleanup loop's path.dirname removes the mkdtemp
+ * directory.
+ */
+function tempMergeRepo() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
+  const root = path.join(dir, 'root');
+  fs.mkdirSync(root);
+  gitIn(root, 'init', '-q', '-b', 'main');
+  const commit = (files, message) => {
+    putFiles(root, files);
+    gitIn(root, 'add', '-A');
+    gitIn(root, 'commit', '-q', '-m', message);
+  };
+  commit({ 'e2e/visual/README.md': 'baselines\n', 'e2e/visual/routes.spec.ts': 'export {};\n' }, 'base');
+  gitIn(root, 'checkout', '-q', '-b', 'side-png');
+  commit({ [`${SNAP}/contact/375-reduced-visual-dark-linux.png`]: 'png-bytes\n' }, 'side: contact baseline');
+  gitIn(root, 'checkout', '-q', 'main');
+  commit({ 'notes.txt': 'main moves on\n' }, 'main: notes');
+  gitIn(root, 'merge', '-q', '--no-ff', '-m', 'merge side-png', 'side-png');
+  gitIn(root, 'tag', 'merge-png');
+  gitIn(root, 'checkout', '-q', '-b', 'side-text');
+  commit({ 'e2e/visual/routes.spec.ts': 'export const routes = [];\n' }, 'side: spec text');
+  gitIn(root, 'checkout', '-q', 'main');
+  commit({ [`${SNAP}/photos/375-reduced-visual-dark-linux.png`]: 'png-bytes\n' }, 'main: photos baseline');
+  gitIn(root, 'merge', '-q', '--no-ff', '-m', 'merge side-text', 'side-text');
+  gitIn(root, 'tag', 'merge-text');
+  return root;
+}
+const snapshotMergeRoot = tempMergeRepo();
+
 const PHOTO_DERIVE = path.join(repoRoot, 'scripts', 'photos', 'build-derivatives.mjs');
 /** Every file under `root`, as a posix relative path -> its bytes. */
 function snapshotTree(root) {
@@ -739,6 +780,37 @@ const cases = [
     cwd: repoRoot,
     expectExit: 2,
     expectOutput: ['git show no-such-rev-for-selftest failed'],
+  },
+  {
+    // 07 IN-07: a merge is read against its first parent, a single-parent or root commit with git show
+    name: 'snapshot-commit: a merge commit is diffed against its first parent (07 IN-07)',
+    fn: () => {
+      const { snapshotDiffArgs } = snapshotCommitModule;
+      if (typeof snapshotDiffArgs !== 'function') return 'check-snapshot-commit exports no snapshotDiffArgs(sha, parents)';
+      const show = (sha) => ['show', '--no-renames', '--name-status', '--format=', sha, '--', 'e2e'];
+      const same = (label, actual, expected) => expectEqual(label, JSON.stringify(actual), JSON.stringify(expected));
+      return (
+        same('merge', snapshotDiffArgs('m1', ['p1', 'p2']), ['diff', '--no-renames', '--name-status', 'p1', 'm1', '--', 'e2e']) ??
+        same('single parent', snapshotDiffArgs('c1', ['p1']), show('c1')) ??
+        same('root commit', snapshotDiffArgs('r1', []), show('r1'))
+      );
+    },
+  },
+  {
+    name: 'snapshot-commit: a merge commit that brings in a PNG outside the allow-list fails (07 IN-07)',
+    guard: SNAPSHOT_COMMIT,
+    args: ['--sha', 'merge-png', '--allow', 'photos'],
+    cwd: snapshotMergeRoot,
+    expectExit: 1,
+    expectOutput: [`${SNAP}/contact/375-reduced-visual-dark-linux.png: outside the allowed snapshot directories (--allow photos)`],
+  },
+  {
+    name: 'snapshot-commit: a merge commit with no PNG change against its first parent passes --none (07 IN-07)',
+    guard: SNAPSHOT_COMMIT,
+    args: ['--sha', 'merge-text', '--none'],
+    cwd: snapshotMergeRoot,
+    expectExit: 0,
+    expectOutput: ['snapshot-commit: OK (0 changed)'],
   },
   {
     name: 'palette: semantic utilities, (c), the prompt glyph and a white utility at its ratchet pass',
@@ -1712,7 +1784,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDeriveRoot]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDeriveRoot]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 
