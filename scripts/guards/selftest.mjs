@@ -28,6 +28,8 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import crypto from 'crypto';
+import sharp from 'sharp';
 import { evaluate, pickRun } from '../ci/check-visual-run.mjs';
 import { evaluateSnapshotChanges } from '../ci/check-snapshot-commit.mjs';
 import { DOCS_ONLY_FILES, classify } from '../ci/classify-changes.mjs';
@@ -235,6 +237,84 @@ const sidecarEntry = (sidecar, id) => {
 };
 let photoDataControlRoot = null;
 let photoDataOffsetRoot = null;
+let photoDataGpsRoot = null;
+let photoDataOffPlateRoot = null;
+
+const PHOTO_DERIVE = path.join(repoRoot, 'scripts', 'photos', 'build-derivatives.mjs');
+/** Every file under `root`, as a posix relative path -> its bytes. */
+function snapshotTree(root) {
+  const files = new Map();
+  const walk = (dir) => {
+    for (const d of fs.readdirSync(dir, { withFileTypes: true })) {
+      const abs = path.join(dir, d.name);
+      if (d.isDirectory()) walk(abs);
+      else files.set(path.relative(root, abs).split(path.sep).join('/'), fs.readFileSync(abs));
+    }
+  };
+  walk(root);
+  return files;
+}
+/** Null when `root` holds exactly the files in `before`, byte for byte; else what changed. */
+function treeUnchanged(root, before) {
+  const after = snapshotTree(root);
+  const problems = [];
+  for (const [rel, bytes] of before) {
+    if (!after.has(rel)) problems.push(`${rel} was deleted`);
+    else if (!after.get(rel).equals(bytes)) problems.push(`${rel} changed`);
+  }
+  for (const rel of after.keys()) if (!before.has(rel)) problems.push(`${rel} is new`);
+  return problems.length ? `fixture tree changed: ${problems.join(', ')}` : null;
+}
+/**
+ * G6 fixture (generated, no camera data): a temp root with two originals in
+ * assets/photos-original/ (img-0001 a 32 x 24 sRGB JPEG, img-0002 bytes sharp
+ * cannot decode), a sidecar listing both in ascending order with each file's
+ * real sha256, one stale derivative in public/images/photos/ and an existing
+ * data/generated/image-manifest.ts. The valid photo comes first, so a script
+ * that writes as it encodes, or unlinks stale files before validating, changes
+ * the tree. Built with top-level await because case setup hooks are synchronous.
+ */
+async function tempDeriveRoot() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
+  const root = path.join(dir, 'root');
+  const valid = await sharp({ create: { width: 32, height: 24, channels: 3, background: { r: 90, g: 120, b: 150 } } })
+    .jpeg()
+    .toBuffer();
+  const originals = { 'img-0001': valid, 'img-0002': Buffer.from('selftest: these bytes are not an image\n') };
+  const put = (rel, bytes) => {
+    fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
+    fs.writeFileSync(path.join(root, rel), bytes);
+  };
+  const photos = Object.entries(originals).map(([id, bytes]) => {
+    put(`assets/photos-original/${id}.jpg`, bytes);
+    return {
+      id,
+      file: `${id}.jpg`,
+      sha256: crypto.createHash('sha256').update(bytes).digest('hex'),
+      width: 32,
+      height: 24,
+      orientation: null,
+      space: 'srgb',
+      iccDescription: null,
+      make: null,
+      model: null,
+      lens: null,
+      focalLengthMm: null,
+      fNumber: null,
+      exposureTimeS: null,
+      iso: null,
+      dateTimeOriginal: null,
+      offsetTimeOriginal: null,
+      gps: null,
+    };
+  });
+  put('data/photos/exif-sidecar.json', `${JSON.stringify({ schemaVersion: 1, photos }, null, 2)}\n`);
+  put('public/images/photos/img-0001-640.0123456789.webp', await sharp(valid).webp().toBuffer());
+  put('data/generated/image-manifest.ts', '// selftest: the committed manifest before the run\nexport const imageManifest = {} as const;\n');
+  return root;
+}
+const photoDeriveRoot = await tempDeriveRoot();
+const photoDeriveBefore = snapshotTree(photoDeriveRoot);
 
 const cases = [
   {
@@ -1293,6 +1373,49 @@ const cases = [
     expectExit: 1,
     expectOutput: ['img-0605: EXIF OffsetTimeOriginal +01:00 is not the Europe/Zurich offset +02:00', 'photos:build: stale'],
   },
+  {
+    name: 'G5 photos:build --check: a GPS UTC time one hour off the capture time fails (D-04)',
+    guard: PHOTO_DATA,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--check'],
+    setup: () => {
+      photoDataGpsRoot = tempPhotoDataRoot(({ sidecar }) => {
+        const gps = sidecarEntry(sidecar, 'img-0605').gps;
+        if (!gps?.utc) throw new Error('selftest: img-0605 has no GPS UTC time');
+        gps.utc = new Date(Date.parse(gps.utc) + 3600 * 1000).toISOString();
+      });
+      return ['--root', photoDataGpsRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['img-0605: local 2021-09-06T10:48:46 minus GPS UTC', 'not +02:00 within 60 s (D-04)', 'photos:build: stale'],
+  },
+  {
+    name: 'G5 photos:build --check: a hand-placed position off the plate fails (WR-01)',
+    guard: PHOTO_DATA,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--check'],
+    setup: () => {
+      photoDataOffPlateRoot = tempPhotoDataRoot(({ corrections }) => {
+        const position = corrections.photos['r004-011']?.position;
+        if (position?.source !== 'hand-placed') throw new Error('selftest: r004-011 has no hand-placed position');
+        // Sion, about 40 km west of the Zermatt plate.
+        position.lat = 46.2333;
+        position.lon = 7.36;
+      });
+      return ['--root', photoDataOffPlateRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['r004-011: position lies outside the DEM extent', 'photos:build: stale'],
+  },
+  {
+    name: 'G6 photos:derive: an undecodable source after a valid one exits 1 and leaves every file in place (WR-05)',
+    guard: PHOTO_DERIVE,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--root', photoDeriveRoot],
+    expectExit: 1,
+    expectOutput: ['photos:derive: encoded img-0001 (9 files)', 'unsupported image format'],
+    check: () => treeUnchanged(photoDeriveRoot, photoDeriveBefore),
+  },
 ];
 
 let failed = 0;
@@ -1347,7 +1470,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, parityGoodRoot, parityBadRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, parityGoodRoot, parityBadRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDeriveRoot]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 
