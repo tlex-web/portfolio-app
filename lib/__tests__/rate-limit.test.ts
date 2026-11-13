@@ -282,6 +282,7 @@ describe('module import (T-13-07)', () => {
     const env = jest.replaceProperty(process, 'env', { NODE_ENV: 'test', VERCEL_ENV: 'production' });
     try {
       jest.isolateModules(() => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports -- fresh registry under the swapped env
         expect(() => require('@/lib/rate-limit')).not.toThrow();
       });
     } finally {
