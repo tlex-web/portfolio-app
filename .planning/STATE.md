@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 13
 current_phase_name: Repo Safety & Test Debt
 status: executing
-stopped_at: Completed 13-16-PLAN.md
-last_updated: "2026-11-13T16:49:44.606Z"
+stopped_at: Completed 13-17-PLAN.md
+last_updated: "2026-11-13T16:59:37.374Z"
 last_activity: 2026-11-13
 last_activity_desc: Phase 13 execution started
-state_head: bdc86d290a5cdd9267ed1f83130ba601144ae77e
+state_head: e3ebfd42add2c26b65ff1303b7d339a24b98a055
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 22
-  completed_plans: 16
+  completed_plans: 17
   percent: 0
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 13 (Repo Safety & Test Debt) — EXECUTING
-Plan: 17 of 22
+Plan: 18 of 22
 Status: Ready to execute
 Last activity: 2026-11-13 — Phase 13 execution started
 
@@ -70,6 +70,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 13 P05 | 3min | 2 tasks | 1 files |
 | Phase 13 P15 | 45min | 3 tasks | 2 files |
 | Phase 13 P16 | 1h50m | 3 tasks | 3 files |
+| Phase 13 P17 | 15min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -117,6 +118,9 @@ Recent decisions affecting current work:
 - [Phase 13]: 13-16: PR #143 merged by Tim ("merged") as merge commit d48af99 (parents b81d6f2, 962e732); push run 43459507776 CI OK success (app 15368) at 16:39:08Z, before the ruleset (D-05)
 - [Phase 13]: 13-16: Tim applied the main ruleset and deleted 10401314 ("applied, deployment checks on"); live ruleset 27216079 matches main-ruleset.json on every set field (no bypass, never, active, ~DEFAULT_BRANCH, merge only, 0 approvals, strict off, CI OK@15368); 10401314 returns 404
 - [Phase 13]: 13-16: Deployment Checks on CI OK recorded from Tim's reply only (agent cannot read Vercel); d48af99 production deploy (16:09:27Z) predates the setting; live evidence = first production deploy after the next merge to main, owned by 13-22
+- [Phase 13]: 13-17: production serves merge d48af99 (deployment 7770069186, success, predates Deployment Checks); first Upstash keep-alive run 43466849915 on main succeeded with PONG, so the repository secrets and the REST call work
+- [Phase 13]: 13-17: Tim ran the live 429 probe himself (selection "I run it (tim-runs)"); run B with PROD_FORM_LIMIT=1 passed 5/5, proving a 429 with Retry-After > 0 and no 503; the request number and Retry-After value were not printed, the sixth-in-window position (loop post 2) is inferred
+- [Phase 13]: 13-17: GUARD-09 stays Pending in REQUIREMENTS.md by the shared-ID gate (13-22 also declares it); the concurrency truth is a backstop (Upstash sliding-window atomicity), not tested live
 
 ### Pending Todos
 
@@ -169,6 +173,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-13T16:49:44.574Z
-Stopped at: Completed 13-16-PLAN.md
+Last session: 2026-11-13T16:59:37.341Z
+Stopped at: Completed 13-17-PLAN.md
 Resume file: None
