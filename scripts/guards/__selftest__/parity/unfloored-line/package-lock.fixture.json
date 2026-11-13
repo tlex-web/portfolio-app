@@ -1,0 +1,29 @@
+{
+  "lockfileVersion": 3,
+  "requires": true,
+  "packages": {
+    "": {
+      "engines": {
+        "node": "24.x"
+      }
+    },
+    "node_modules/@playwright/test": {
+      "version": "1.60.0"
+    },
+    "node_modules/fflate": {
+      "version": "0.8.3"
+    },
+    "node_modules/next": {
+      "version": "16.2.6"
+    },
+    "node_modules/three-stdlib/node_modules/fflate": {
+      "version": "0.6.11"
+    },
+    "node_modules/unzip-lite/node_modules/fflate": {
+      "version": "0.7.4"
+    },
+    "node_modules/zip-next/node_modules/fflate": {
+      "version": "1.0.0"
+    }
+  }
+}

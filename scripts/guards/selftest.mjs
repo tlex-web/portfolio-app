@@ -225,6 +225,8 @@ function tempParityRoot(fixtureName) {
 }
 let parityGoodRoot = null;
 let parityBadRoot = null;
+let parityNestedFloorRoot = null;
+let parityUnflooredLineRoot = null;
 
 /**
  * Copies the ci-gate good fixture into a fresh temp dir and rewrites one of its
@@ -410,6 +412,39 @@ const cases = [
       'Playwright image v1.58.0-noble does not match lockfile @playwright/test 1.60.0',
       'next 16.2.6 is below the floor 16.3.0',
       'framer-motion is a forbidden direct dependency',
+    ],
+  },
+  {
+    // 12 IN-12: the hoisted copies meet their floors, the nested copies do not
+    name: 'parity: nested-floor fixture fails on nested lockfile copies below their floor (12 IN-12)',
+    guard: PARITY,
+    args: [],
+    setup: () => {
+      parityNestedFloorRoot = tempParityRoot('nested-floor');
+      return ['--root', parityNestedFloorRoot];
+    },
+    expectExit: 1,
+    expectOutput: [
+      'next 16.1.4 at node_modules/eslint-config-next/node_modules/next is below the floor 16.2.0',
+      'fflate 0.6.10 at node_modules/three-stdlib/node_modules/fflate is below the floor 0.6.11',
+      'parity: 2 failure(s)',
+    ],
+  },
+  {
+    // 12 IN-12 (option A, per-line floors): a copy on a line with no floor fails,
+    // lower or higher; the 0.6.11 and 0.8.3 copies meet their own lines' floors
+    name: 'parity: unfloored-line fixture fails on lockfile copies whose version line has no floor (12 IN-12)',
+    guard: PARITY,
+    args: [],
+    setup: () => {
+      parityUnflooredLineRoot = tempParityRoot('unfloored-line');
+      return ['--root', parityUnflooredLineRoot];
+    },
+    expectExit: 1,
+    expectOutput: [
+      'fflate 0.7.4 at node_modules/unzip-lite/node_modules/fflate has no floor for version line 0.7 (floors 0.6.11, 0.8.3)',
+      'fflate 1.0.0 at node_modules/zip-next/node_modules/fflate has no floor for version line 1 (floors 0.6.11, 0.8.3)',
+      'parity: 2 failure(s)',
     ],
   },
   {
@@ -1594,7 +1629,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, parityGoodRoot, parityBadRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDeriveRoot]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDeriveRoot]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 
