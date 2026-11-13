@@ -995,6 +995,17 @@ const cases = [
     expectOutput: ['var() cycle'],
   },
   {
+    name: 'contrast: a :root nested in @media cannot mask a failing base token, and is reported (07 WR-01)',
+    guard: CONTRAST,
+    args: ['--css', con('media-override.css')],
+    expectExit: 1,
+    expectOutput: [
+      'ink/surface 3.00 4.5 FAIL',
+      ':root inside @media (prefers-color-scheme: light) declares --dim',
+      'contrast: 2 failures',
+    ],
+  },
+  {
     name: 'ci-ok.jq: push, all success, dependency-review skipped passes',
     fn: () => ciOkCase('push', needsOf({ 'dependency-review': 'skipped' }), 0),
   },
