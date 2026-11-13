@@ -107,4 +107,38 @@ describe('SafeCanvas', () => {
       expect(screen.queryByTestId('r3f-canvas')).not.toBeInTheDocument();
     });
   });
+
+  // 07 WR-07: the boundary used to swallow every error below it. A scene bug (anything but
+  // the expected no-WebGL failure) is now logged once, and still reaches onCanvasError.
+  describe('logging (07 WR-07)', () => {
+    /** The boundary's own console.error calls (React logs caught errors separately). */
+    const ownLogs = () => consoleError.mock.calls.filter((args) => args[0] === '[SafeCanvas]');
+
+    it('logs a non-WebGL error once and still forwards it to onCanvasError', () => {
+      const error = new TypeError("Cannot read properties of undefined (reading 'position')");
+      mockCanvasError = error;
+      const onCanvasError = jest.fn();
+
+      const { container } = render(<SafeCanvas onCanvasError={onCanvasError} />);
+
+      expect(ownLogs()).toEqual([['[SafeCanvas]', error]]);
+      expect(onCanvasError).toHaveBeenCalledTimes(1);
+      expect(onCanvasError).toHaveBeenCalledWith(error);
+      expect(container.querySelector('canvas')).toBeInTheDocument();
+    });
+
+    it.each([
+      'THREE.WebGLRenderer: Error creating WebGL context.',
+      'THREE.WebGLRenderer: Error creating WebGL context with your selected attributes.',
+    ])('stays silent for the expected no-WebGL failure: %s', (message) => {
+      const error = new Error(message);
+      mockCanvasError = error;
+      const onCanvasError = jest.fn();
+
+      render(<SafeCanvas onCanvasError={onCanvasError} />);
+
+      expect(ownLogs()).toEqual([]);
+      expect(onCanvasError).toHaveBeenCalledWith(error);
+    });
+  });
 });
