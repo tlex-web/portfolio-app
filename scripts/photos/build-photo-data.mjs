@@ -39,6 +39,9 @@
  *   (default)  write data/generated/photos.ts.
  *   --check    rebuild the text in memory and compare bytes with the committed
  *              file; `photos:build: OK` or `photos:build: stale` (exit 1).
+ *   --root <dir>  read the inputs and the output under <dir> instead of the
+ *              repository root (default unchanged). The guard selftest runs
+ *              `--check --root <temp copy>` for the G5 cases (VERIFY-06).
  *
  * Usage:
  *   npm run photos:build
@@ -56,13 +59,50 @@ import { lv95ToUv, round4, wgs84ToLv95 } from '../../lib/geo.ts';
 import { sampleAtLv95 } from '../../lib/terrain/dem-sample.ts';
 import { seasonOf, yearTag } from '../../lib/photo-format.ts';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const NAME = 'photos:build';
+
+/**
+ * `--check` and `--root <dir>`. The root defaults to the repository above this
+ * script; the guard selftest points it at a temp copy of the inputs (VERIFY-06).
+ * Parsed before any ROOT-derived path, so every read and write follows --root.
+ */
+function parseArgs(argv) {
+  const args = {
+    check: false,
+    root: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..'),
+  };
+  const unknown = [];
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '--check') {
+      args.check = true;
+    } else if (argv[i] === '--root') {
+      const value = argv[i + 1];
+      if (!value || value.startsWith('--')) {
+        console.log(`${NAME}: --root needs a directory`);
+        process.exit(1);
+      }
+      args.root = path.resolve(value);
+      i++;
+    } else {
+      unknown.push(argv[i]);
+    }
+  }
+  if (unknown.length > 0) {
+    console.log(
+      `${NAME}: unknown argument(s) ${unknown.join(' ')}; the flags are --check and --root <dir>`
+    );
+    process.exit(1);
+  }
+  return args;
+}
+
+const ARGS = parseArgs(process.argv.slice(2));
+const ROOT = ARGS.root;
 const SIDECAR_REL = 'data/photos/exif-sidecar.json';
 const CORRECTIONS_REL = 'data/photos/corrections.json';
 const SOURCE_REL = 'data/terrain/source';
 const OUT_REL = 'data/generated/photos.ts';
 const OUT_PATH = path.join(ROOT, OUT_REL);
-const NAME = 'photos:build';
 const TIME_ZONE = 'Europe/Zurich';
 const MAX_GPS_DRIFT_S = 60;
 
@@ -298,20 +338,13 @@ async function check() {
   console.log(`${NAME}: OK`);
 }
 
-const args = process.argv.slice(2);
-const unknown = args.filter((a) => a !== '--check');
-if (unknown.length > 0) {
-  console.log(`${NAME}: unknown argument(s) ${unknown.join(' ')}; the only flag is --check`);
-  process.exit(1);
-}
-
-(args.includes('--check') ? check() : write()).catch((e) => {
+(ARGS.check ? check() : write()).catch((e) => {
   if (e && Array.isArray(e.issues)) {
     for (const l of formatIssues(e)) console.log(l);
     console.log(`${NAME}: ${e.issues.length} schema violations`);
   } else {
     console.log(`${NAME}: ${e && e.message ? e.message : String(e)}`);
   }
-  console.log(args.includes('--check') ? `${NAME}: stale` : `${NAME}: nothing written`);
+  console.log(ARGS.check ? `${NAME}: stale` : `${NAME}: nothing written`);
   process.exit(1);
 });

@@ -8,9 +8,10 @@
  * given, required output fragments) with what the case expects. A guard
  * that cannot fail on a bad fixture is not a guard.
  *
- * Case shape: { name, guard, args, expectExit, expectOutput?, input?, cwd?, setup?, check? }
+ * Case shape: { name, guard, args, expectExit, expectOutput?, input?, cwd?, nodeArgs?, setup?, check? }
  *   or { name, fn } for pure helpers (fn returns an error string or null; no spawn)
  *   - input: optional, piped to the guard's stdin
+ *   - nodeArgs: optional, node flags placed before the guard path
  *   - cwd: optional, working directory of the spawn (defaults to this process's cwd)
  *   - setup(): optional, runs before the spawn and may return extra args
  *   - check(): optional, runs after the spawn; returns an error string or null
@@ -185,6 +186,55 @@ let ciGateRelayWriteScopeRoot = null;
 let ciGateNoChangesNeedRoot = null;
 let ciGateUnconditionedRoot = null;
 let ciGatePathsIgnoreRoot = null;
+
+// scripts/photos/: characterization of the photo scripts through --root (VERIFY-06, 10-VALIDATION G5/G6)
+const PHOTO_DATA = path.join(repoRoot, 'scripts', 'photos', 'build-photo-data.mjs');
+/** The flag the npm photo scripts pass: the .ts schema imports otherwise warn on stderr. */
+const PHOTO_NODE_ARGS = ['--disable-warning=MODULE_TYPELESS_PACKAGE_JSON'];
+/** Every input build-photo-data.mjs reads (sidecar, corrections, DEM source) and the output --check compares. */
+const PHOTO_DATA_INPUTS = [
+  'data/photos/exif-sidecar.json',
+  'data/photos/corrections.json',
+  'data/terrain/source/source.json',
+  'data/terrain/source/dem-10m.png',
+  'data/generated/photos.ts',
+];
+/**
+ * Copies the photo data build's inputs into a fresh temp root. `edit`, when
+ * given, receives the parsed { sidecar, corrections } JSON and mutates it in
+ * place; the result is written back and must differ from the original. Nested
+ * one level down so the cleanup loop's path.dirname removes the mkdtemp directory.
+ */
+function tempPhotoDataRoot(edit) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
+  const root = path.join(dir, 'root');
+  for (const rel of PHOTO_DATA_INPUTS) {
+    fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
+    fs.copyFileSync(path.join(repoRoot, rel), path.join(root, rel));
+  }
+  if (edit) {
+    const files = { sidecar: PHOTO_DATA_INPUTS[0], corrections: PHOTO_DATA_INPUTS[1] };
+    const before = Object.fromEntries(Object.entries(files).map(([k, rel]) => [k, fs.readFileSync(path.join(root, rel), 'utf-8')]));
+    const data = Object.fromEntries(Object.entries(before).map(([k, text]) => [k, JSON.parse(text)]));
+    edit(data);
+    let changed = false;
+    for (const [k, rel] of Object.entries(files)) {
+      const after = `${JSON.stringify(data[k], null, 2)}\n`;
+      if (JSON.stringify(JSON.parse(before[k])) !== JSON.stringify(data[k])) changed = true;
+      fs.writeFileSync(path.join(root, rel), after);
+    }
+    if (!changed) throw new Error('tempPhotoDataRoot: the edit changed nothing');
+  }
+  return root;
+}
+/** The sidecar entry `id`, or a throw (a fixture edit must never miss silently). */
+const sidecarEntry = (sidecar, id) => {
+  const entry = sidecar.photos.find((p) => p.id === id);
+  if (!entry) throw new Error(`selftest: ${id} is not in the sidecar`);
+  return entry;
+};
+let photoDataControlRoot = null;
+let photoDataOffsetRoot = null;
 
 const cases = [
   {
@@ -1215,6 +1265,34 @@ const cases = [
       'other.yml: job inherits has no permissions block and the workflow sets none',
     ],
   },
+  {
+    name: 'G5 photos:build --check: an unmodified copy of the inputs passes',
+    guard: PHOTO_DATA,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--check'],
+    setup: () => {
+      photoDataControlRoot = tempPhotoDataRoot();
+      return ['--root', photoDataControlRoot];
+    },
+    expectExit: 0,
+    expectOutput: ['photos:build: OK'],
+  },
+  {
+    name: 'G5 photos:build --check: an EXIF offset +01:00 on a September Zurich capture fails (WR-03)',
+    guard: PHOTO_DATA,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--check'],
+    setup: () => {
+      photoDataOffsetRoot = tempPhotoDataRoot(({ sidecar }) => {
+        const entry = sidecarEntry(sidecar, 'img-0605');
+        if (!entry.dateTimeOriginal?.startsWith('2021-09-')) throw new Error('selftest: img-0605 is no longer a September capture');
+        entry.offsetTimeOriginal = '+01:00';
+      });
+      return ['--root', photoDataOffsetRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['img-0605: EXIF OffsetTimeOriginal +01:00 is not the Europe/Zurich offset +02:00', 'photos:build: stale'],
+  },
 ];
 
 let failed = 0;
@@ -1231,7 +1309,7 @@ for (const [index, c] of cases.entries()) {
     continue;
   }
   const extraArgs = c.setup ? c.setup() ?? [] : [];
-  const result = spawnSync(process.execPath, [c.guard, ...c.args, ...extraArgs], {
+  const result = spawnSync(process.execPath, [...(c.nodeArgs ?? []), c.guard, ...c.args, ...extraArgs], {
     encoding: 'utf-8',
     input: c.input,
     cwd: c.cwd,
@@ -1269,7 +1347,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, parityGoodRoot, parityBadRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, parityGoodRoot, parityBadRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 
