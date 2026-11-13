@@ -1,0 +1,18 @@
+# Selftest fixture for scripts/guards/check-ci-gate.mjs: a second workflow
+# whose job is also named CI OK. An if: could skip it, and a skipped job reports Success.
+name: Other
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  shadow:
+    name: CI OK
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - run: echo always green

@@ -865,6 +865,30 @@ const cases = [
     expectExit: 1,
     expectOutput: ['CI OK must use if: always()'],
   },
+  {
+    name: 'ci-gate: a second workflow with a job named CI OK fails',
+    guard: CI_GATE,
+    args: ['--root', cig('bad-duplicate-ci-ok')],
+    expectExit: 1,
+    expectOutput: ['a job named CI OK outside ci.yml: .github/workflows/other.yml (job shadow)'],
+  },
+  {
+    name: 'ci-gate: a job granting checks: write fails (the comment saying so does not)',
+    guard: CI_GATE,
+    args: ['--root', cig('bad-checks-write')],
+    expectExit: 1,
+    expectOutput: ['ci.yml: line 19 grants checks: write', 'ci-gate: 2 failure(s)'],
+  },
+  {
+    name: 'ci-gate: write-all and a job on the default token scope fail',
+    guard: CI_GATE,
+    args: ['--root', cig('bad-token-scope')],
+    expectExit: 1,
+    expectOutput: [
+      'other.yml: line 20 grants checks: write (permissions: write-all)',
+      'other.yml: job inherits has no permissions block and the workflow sets none',
+    ],
+  },
 ];
 
 let failed = 0;
