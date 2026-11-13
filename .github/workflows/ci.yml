@@ -173,10 +173,6 @@ jobs:
       - name: Verify lockfile install
         run: npm ls --depth=0
 
-      # Skip image optimization - using pre-optimized images from repo
-      # - name: Optimize images for tests
-      #   run: npm run optimize-images
-
       - name: Run Playwright tests
         run: npx playwright test --project=chromium --project=firefox --project=webkit --fail-on-flaky-tests
         env:
@@ -266,10 +262,6 @@ jobs:
 
       - name: Verify lockfile install
         run: npm ls --depth=0
-
-      # Skip image optimization - using pre-optimized images from repo
-      # - name: Optimize images for build
-      #   run: npm run optimize-images
 
       - name: Build Next.js application
         run: npm run build
