@@ -11,17 +11,23 @@ import { HONEYPOT_FIELD } from '../../lib/contact/api-contract';
  * | Level                 | Sends email | Slots | Proves                               |
  * |-----------------------|-------------|-------|--------------------------------------|
  * | default               | no          | 2     | page, client validation, origin      |
- * |                       |             |       | check, limiter reachable, honeypot   |
+ * |                       |             |       | check, limiter answering, honeypot   |
  * | PROD_FORM_SEND=1      | YES, one    | +1    | Resend and the recipient are set up: |
  * |                       |             |       | the whole path through the real form |
- * | PROD_FORM_LIMIT=1     | no          | rest  | the Upstash limiter is really on.    |
- * |                       |             |       | Locks this IP out for up to an hour  |
+ * | PROD_FORM_LIMIT=1     | no          | rest  | the Upstash limiter really counts:   |
+ * |                       |             |       | honeypot posts until a 429. Locks    |
+ * |                       |             |       | this IP out for up to an hour        |
  *
- * The limiter silently allows everything when the Upstash variables are missing,
- * and the default level cannot see that: only PROD_FORM_LIMIT=1 can. Set both
- * flags to run the send first and the lockout last. The opt-in tests exist only
- * when their flag is set. A failure that says "rate limited" is no finding about
- * the route: run it again once the window has passed.
+ * Production fails closed (GUARD-09): with the Upstash variables missing, or
+ * Upstash unreachable, the limiter refuses and every same-origin POST answers
+ * 503, which the default level already reports. A 500 means the route crashed.
+ * What the default level cannot see is a limiter that answers but never counts;
+ * only PROD_FORM_LIMIT=1 proves the 429. In a fresh window the sixth rapid
+ * request is refused; after the two default posts that is the fourth honeypot
+ * post of the loop. Set both flags to run the send first and the lockout last.
+ * The opt-in tests exist only when their flag is set. A failure that says
+ * "rate limited" is no finding about the route: run it again once the window
+ * has passed.
  */
 const SEND = process.env.PROD_FORM_SEND === '1';
 const LIMIT = process.env.PROD_FORM_LIMIT === '1';
@@ -38,6 +44,18 @@ const probeMessage = () =>
   `Automated production form test, ${new Date().toISOString()}. No reply needed.`;
 
 const INVALID_BODY = { name: '', email: 'not-an-email', message: 'short' };
+
+/** A valid body with the honeypot filled: the route answers 200 ok and sends nothing. */
+const honeypotBody = () => ({
+  name: 'Production form probe',
+  email: PROBE_EMAIL,
+  message: probeMessage(),
+  [HONEYPOT_FIELD]: 'filled by a bot',
+});
+
+/** The message for a 503: the production limiter could not answer, so it refused. */
+const LIMITER_UNAVAILABLE =
+  '503 means the limiter is unavailable in production (Upstash variables missing or Upstash unreachable), so it refuses every request';
 
 const originOf = (baseURL: string | undefined) => new URL(baseURL ?? '').origin;
 
@@ -103,7 +121,7 @@ test.describe('Contact form on production, no email sent', () => {
 
     expect(
       response.status(),
-      '500 here means the route crashed, most likely on bad Upstash credentials'
+      `${LIMITER_UNAVAILABLE}; 500 means the route crashed`
     ).toBe(400);
     expect(await response.json()).toEqual({
       code: 'validation',
@@ -112,14 +130,10 @@ test.describe('Contact form on production, no email sent', () => {
   });
 
   test('the honeypot answers like a success without sending', async ({ request, baseURL }) => {
-    const response = await postFeedback(request, originOf(baseURL), {
-      name: 'Production form probe',
-      email: PROBE_EMAIL,
-      message: probeMessage(),
-      [HONEYPOT_FIELD]: 'filled by a bot',
-    });
+    const response = await postFeedback(request, originOf(baseURL), honeypotBody());
     expectNotRateLimited(response.status(), response.headers()['retry-after']);
 
+    expect(response.status(), LIMITER_UNAVAILABLE).not.toBe(503);
     expect(response.status()).toBe(200);
     expect(await response.json()).toEqual({ code: 'ok' });
   });
@@ -155,17 +169,20 @@ test.describe('Contact form on production, opt-in', () => {
     test('the limiter refuses requests past its window', async ({ request, baseURL }) => {
       let retryAfter: string | undefined;
       for (let probe = 0; probe < LIMIT_PROBES && retryAfter === undefined; probe += 1) {
-        const response = await postFeedback(request, originOf(baseURL), INVALID_BODY);
+        const response = await postFeedback(request, originOf(baseURL), honeypotBody());
         if (response.status() === 429) {
           retryAfter = response.headers()['retry-after'];
         } else {
-          expect(response.status()).toBe(400);
+          expect(response.status(), LIMITER_UNAVAILABLE).not.toBe(503);
+          expect(response.status()).toBe(200);
+          expect(await response.json()).toEqual({ code: 'ok' });
         }
       }
 
       expect(
         retryAfter,
-        `No 429 after ${LIMIT_PROBES} requests: the Upstash variables are missing, so every request is allowed`
+        `No 429 after ${LIMIT_PROBES} requests: the limiter allowed every request, so production is not ` +
+          "reading the Upstash variables (check that VERCEL_ENV reaches the function as 'production')"
       ).toBeDefined();
       expect(Number(retryAfter)).toBeGreaterThan(0);
     });
