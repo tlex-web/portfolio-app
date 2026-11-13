@@ -12,7 +12,9 @@ provides:
   - "ci/13-pw165 pushed at 515c7df (the 1.65 bump plus docs only since main d48af99)"
   - "First three-engine CI run on 1.65 (run 43478232610): chromium and webkit green, Visual Regression green with zero pixel diff, 7 deterministic Firefox 'Page crashed' failures"
   - "Root cause of the 7 failures: Firefox 159 content-process segfault when ariaLabelledByElements is read in two JS worlds (Playwright issue #43967, Mozilla bug 2090055), reproduced locally"
-affects: [13-20 Task 2 continuation (decision needed), 13-22 (DEPS-06 also declared there)]
+  - "Fixme commit 3757994 (firefox.decision A): the 7 cases are fixme on Firefox only. Run 43487342878 on it: E2E green on all three engines (chromium 512, firefox 434 + 7 fixme, webkit 439, no Page crashed), Visual Regression green, Security Audit green"
+  - "GUARD-03 conflict: the test-count ratchet rejects every .fixme( under e2e/, so Unit Tests and CI OK fail on 3757994 (second decision needed)"
+affects: [13-20 Task 2 continuation (GUARD-03 decision needed), 13-22 (DEPS-06 also declared there; hand-over: remove the 7 Firefox exclusions)]
 
 ci:
   approval: approve-leave-140   # Tim's literal AskUserQuestion selection: "approve-leave-140 (Recommended)"
@@ -22,16 +24,24 @@ ci:
   conclusion: failure
   node_version: v24.22.2
   e2e_duration: 38m43s
-fallout_commits: []
-baseline_run: null   # not dispatched: E2E is not green (brief: dispatch only when E2E is green)
-changed_pngs: null   # not produced yet
+  runs:
+    - { run: 43478232610, sha: 515c7df, conclusion: failure, cause: "7 Firefox Page crashed; Security Audit runner lost" }
+    - { run: 43487342878, sha: 3757994, conclusion: failure, cause: "Unit Tests: GUARD-03 rejects the 5 .fixme( calls; E2E, Visual Regression, Security Audit green", e2e_duration: 30m48s }
+firefox:
+  decision: A   # Tim's literal AskUserQuestion selection: "A: Firefox-only fixme (Recommended)"
+  fixme_commit: 375799436c703f5f62fcad1aa0ef7e6ec68e7773
+  guard_conflict: "scripts/guards/test-count.mjs (GUARD-03) fails on any .fixme( under e2e/; decision pending"
+fallout_commits:
+  - 375799436c703f5f62fcad1aa0ef7e6ec68e7773   # test(13): fixme 7 Firefox cases crashed by Playwright #43967 (DEPS-06 fallout)
+baseline_run: null   # held: CI OK is red on 3757994 and the head changes with the GUARD-03 decision; the one approved dispatch is kept for that head
+changed_pngs: null   # not produced yet (Visual Regression was 96/96 zero-diff on both 515c7df and 3757994)
 
 actuals:
-  tokens: 6500     # chars/4 over the realized diff: this SUMMARY only (~26,000 chars); no code changed
-  tasks: 1         # Task 1 resolved before dispatch; Task 2 stopped at a decision; Task 3 not reached
-  commits: 0       # MEASURED: git rev-list --count 515c7df..HEAD before this docs commit = 0 (docs-only plan so far)
+  tokens: 11000    # chars/4 over the realized diff: this SUMMARY (~38,000 chars), the 3 spec edits (~2,400 chars) and deferred-items (~1,200 chars)
+  tasks: 1         # Task 1 resolved before dispatch; Task 2 stopped at a second decision; Task 3 not reached
+  commits: 2       # MEASURED: git rev-list --count 515c7df..HEAD before this docs commit = 2 (72525ff docs, 3757994 test)
 plan_head_before: 515c7df4baf1aaf2e6a99c5b2bbd09171994c716
-plan_head_after: 515c7df4baf1aaf2e6a99c5b2bbd09171994c716
+plan_head_after: 375799436c703f5f62fcad1aa0ef7e6ec68e7773
 
 tech-stack:
   added: []
@@ -42,19 +52,28 @@ tech-stack:
 key-files:
   created:
     - .planning/phases/13-repo-safety-test-debt/13-20-SUMMARY.md
-  modified: []
+  modified:
+    - e2e/audit.spec.ts
+    - e2e/case-study.spec.ts
+    - e2e/roadmap.spec.ts
+    - .planning/phases/13-repo-safety-test-debt/deferred-items.md
 
 key-decisions:
   - "13-20: Tim's literal answer to Task 1 was the AskUserQuestion selection \"approve-leave-140 (Recommended)\"; recorded as ci.approval approve-leave-140"
   - "13-20: the 7 Firefox failures on 1.65 are an upstream browser crash (Playwright #43967 / Mozilla 2090055), not 1.65 accessible-name, inert-wait or test.slow fallout; no app code is involved, so the executor stopped for Tim's decision instead of fixing"
+  - "13-20: Tim's literal answer on the Firefox stop was the AskUserQuestion selection \"A: Firefox-only fixme (Recommended)\"; recorded as firefox.decision A and implemented as 3757994 (test.fixme on Firefox for exactly the 7 cases)"
+  - "13-20: GUARD-03 (test-count ratchet, v2.0 phase 7) fails on any .fixme( under e2e/, so option A as worded cannot reach CI OK; the executor did not bypass or edit the guard and stopped for a second decision"
 
-requirements-completed: []   # DEPS-06 not yet verifiable: E2E red on Firefox, no re-baseline yet
+requirements-completed: []   # DEPS-06 not yet verifiable: CI OK red on the GUARD-03 conflict, no re-baseline yet
 
-duration: 50min
+duration: 50min + 45min (continuation)
 completed: null
 ---
 
 # Phase 13 Plan 20: Playwright 1.65 in CI and Re-baseline Summary (partial)
+
+**Continuation (2026-11-13):** Tim chose "A: Firefox-only fixme (Recommended)". Commit 3757994 marks exactly the 7 cases `test.fixme` on Firefox. On run 43487342878, E2E went green on all three engines (chromium 512, firefox 434 plus 7 fixme, webkit 439, no `Page crashed`, 30m48s), and Visual Regression and Security Audit were green too. CI OK still failed, because the Unit Tests job's GUARD-03 test-count ratchet rejects every `.fixme(` under `e2e/`. The executor stopped for a second decision, and the baseline dispatch is held for the head that decision produces.
+
 
 **The first three-engine CI run on Playwright 1.65 (run 43478232610 on `ci/13-pw165`, node v24.22.2) passed chromium (512/512), webkit (439/439), and Visual Regression with zero pixel diff (96/96). Firefox failed 7 of 441 tests, each one deterministically with `Page crashed` on all 3 attempts. The cause is an upstream Firefox 159 segfault (Playwright issue #43967, Mozilla bug 2090055), reproduced locally. Fixing it means choosing between a coverage trade-off and a delay, so the executor stopped for Tim's decision. Nothing was dispatched, re-baselined or changed in code.**
 
@@ -63,6 +82,7 @@ completed: null
 - **Started:** 2026-11-13T17:59:32Z
 - **Stopped at the decision:** about 2026-11-13T18:50Z (about 50 min, most of it the CI run)
 - **Tasks:** Task 1 resolved before dispatch. Task 2 stopped at a decision after the first CI run. Task 3 not reached.
+- **Continuation:** 2026-11-13T18:52Z to about 19:40Z. The fixme commit was pushed at 18:55:53Z, run 43487342878 finished at 19:27:01Z, and Task 2 stopped at a second decision (GUARD-03, see "Continuation" below).
 
 ## Task 1: Approval (checkpoint:decision, gate blocking-human)
 
@@ -132,34 +152,119 @@ Every failure is `Page crashed`, on the first attempt and on both retries:
 
 **Why the executor stopped instead of fixing.** This is not fallout from the 1.65 changes the brief expects (accessible-name rules, inert waits, the `test.slow` signature). None of those caused a failure: chromium and webkit are fully green, and the bare `test.slow()` calls type-check and run. It is a browser crash with no app defect behind it. Every fix trades Firefox coverage, test style or schedule, so it needs Tim's decision (Task 2 brief: "needs a design decision, stop and return a checkpoint"). The options are in the checkpoint returned with this SUMMARY.
 
-### Not done yet (blocked on the decision)
+### State at the first stop (superseded by the continuation below)
 
 - No fallout commit.
-- No "Update visual baselines" dispatch, because E2E is not green. No PNG was downloaded, placed or changed: `git status --porcelain -- e2e/visual/routes.spec.ts-snapshots` is empty.
-- Task 3 (Tim's PNG commit, CI OK, check-visual-run, check-snapshot-commit) was not reached.
+- No "Update visual baselines" dispatch, because E2E was not green. No PNG was downloaded, placed or changed.
+- Task 3 was not reached. Dependabot #140 was not touched.
+
+## Continuation: firefox.decision A and the GUARD-03 conflict
+
+### The decision
+
+**firefox.decision: A.** This is Tim's literal answer, an AskUserQuestion selection: "A: Firefox-only fixme (Recommended)". The option text he chose: one test-only commit marks the 7 tests `test.fixme` on Firefox, citing #43967. Chromium and WebKit still run all 7, and the baseline step continues afterwards. Firefox loses 7 checks until a later Playwright bump, and 13-22 hands over a follow-up to remove the fixmes.
+
+### Fixme commit 3757994 (test-only, pixel-neutral)
+
+`test(13): fixme 7 Firefox cases crashed by Playwright #43967 (DEPS-06 fallout)`, 3 files, +30/-1, no app code, no visual spec, no snapshot. Each call is `test.fixme(<condition>, '<reason>')` at the top of the test body, with `browserName` taken from the fixture args. The reason string is `Playwright #43967 / Firefox 159: page crash on a named role lookup followed by a main-world aria-labelledby read; remove after the next Playwright Firefox roll`, and each file links the issue URL once in a comment.
+
+| # | Case | Condition | What still runs on Firefox |
+|---|------|-----------|----------------------------|
+| 1, 2 | `audit.spec.ts` "photos Map view", "photos Carousel view" (one loop body over `PHOTO_VIEWS`) | `browserName === 'firefox' && FIREFOX_43967_VIEWS.has(name)` (the set `['Map', 'Carousel']`, keyed on the tuple's own `name`) | "photos Grid view" |
+| 3 | `audit.spec.ts` "contact error summary" | `browserName === 'firefox'` | |
+| 4 | `audit.spec.ts` "contact register signed" | `browserName === 'firefox'` | |
+| 5, 6 | `case-study.spec.ts` section order, loop over `[box, coinFlip]` | `browserName === 'firefox'` (both loop cases failed, so the loop body is the exact scope) | the Metrics test and the rest of the file |
+| 7 | `roadmap.spec.ts` "@1280: each track is one row ..." | `browserName === 'firefox'` | "@375: each track is two columns ..." |
+
+**Local checks.** `npm run lint` exited 0 and `npm run type-check` exited 0. Prettier is clean on the three files. Prettier also wanted to rewrap a pre-existing line in `case-study.spec.ts:103`, and that hunk was reverted to keep the commit scoped. On Windows with the dev server, the 7 cases plus the Grid view and @375 neighbours gave Firefox `7 skipped, 2 passed` and Chromium `9 passed`, with `--retries=0`. The dev server stopped afterwards, port 3000 is free, and no `next build` ran.
+
+**Push.** `git ls-remote` showed origin `ci/13-pw165` at 515c7df. `git merge-base --is-ancestor 515c7df HEAD` held, so `git push origin HEAD:refs/heads/ci/13-pw165` was a fast-forward (`515c7df..3757994`). It carried the docs commit 72525ff and the fixme commit. No force push was used.
+
+### CI run 43487342878 (push, head 3757994), conclusion failure
+
+| Job | Result | Started | Completed | Duration |
+|-----|--------|---------|-----------|----------|
+| Classify changes | success | 18:55:57Z | 18:56:04Z | 7s |
+| Lint and Type Check | success | 18:56:06Z | 18:58:01Z | 1m55s |
+| Unit Tests | **failure**: Jest 105 suites / 1757 tests passed, then `guard:tests` failed | 18:56:06Z | 18:57:25Z | 1m19s |
+| Build Application | skipped (needs Unit Tests) | | | |
+| Visual Regression | **success**, zero diff again | 18:56:07Z | 18:59:05Z | 2m58s |
+| **E2E Tests** | **success**: 1385 passed, 7 skipped, 0 flaky, 0 failed (29.6m) | 18:56:06Z | 19:26:54Z | **30m48s** |
+| Security Audit | success (the runner-loss failure on 515c7df did not recur; no re-run used) | 18:56:06Z | 18:57:08Z | 1m02s |
+| Dependency Review | skipped (push event) | | | |
+| CI OK | failure (Unit Tests) | 19:26:57Z | 19:27:01Z | 4s |
+
+**E2E per engine** (from the run's HTML report, `projectName` x `outcome`):
+
+| Engine | Passed | Skipped (fixme) | Failed | Flaky |
+|--------|--------|-----------------|--------|-------|
+| chromium | 512 | 0 | 0 | 0 |
+| firefox | 434 | **7** | 0 | 0 |
+| webkit | 439 | 0 | 0 | 0 |
+| Total | 1385 | 7 | 0 | 0 (1392 tests, 1 worker) |
+
+All 7 skipped entries are Firefox, each carries the `fixme` annotation, and they are exactly the 7 cases above. The job log contains no `Page crashed`, and no other Firefox test crashed. The container was `mcr.microsoft.com/playwright:v1.65.0-noble`, and the log shows `node: v24.22.2`. E2E took 30m48s, against 38m43s on 515c7df and the 13-15 baselines of 28m31s and 37m40s. That is under the 45-minute line, so it is not flagged.
+
+### The GUARD-03 conflict (why the executor stopped again)
+
+The Unit Tests job ran `npm run guard:tests` (`scripts/guards/test-count.mjs`, the v2.0 phase 7 test-count ratchet). It printed `test-count: jest 1757 + e2e 561 = 2318 (baseline 2243)`, so the count passed. Then it failed on every `.fixme(` call:
+
+```
+test-count: FAIL e2e/audit.spec.ts:304: focused/skipped call ".fixme(" (tests are rewritten, never skipped)
+test-count: FAIL e2e/audit.spec.ts:335: focused/skipped call ".fixme(" (tests are rewritten, never skipped)
+test-count: FAIL e2e/audit.spec.ts:362: focused/skipped call ".fixme(" (tests are rewritten, never skipped)
+test-count: FAIL e2e/case-study.spec.ts:263: focused/skipped call ".fixme(" (tests are rewritten, never skipped)
+test-count: FAIL e2e/roadmap.spec.ts:401: focused/skipped call ".fixme(" (tests are rewritten, never skipped)
+```
+
+The guard rejects any line under `e2e/` that matches `/\.(only|skip|fixme)\(/`, with no exception mechanism. So option A, as worded with `test.fixme`, can never reach CI OK. The local `npm run lint` does not run `guard:tests`, which is why the conflict did not show before the push. Getting past it means either editing the guard or reaching the same exclusion another way. Both change what Tim approved, so the executor did not bypass the guard (for example with `test['fixme']`) and did not edit it. The options are in the checkpoint returned with this SUMMARY. The repo already has an engine-exclusion route that passes the guard: a title tag plus that project's `grepInvert` in `playwright.config.ts` (`@chromium-only`, and the 12-23 D-18 WebKit platform tags).
+
+### Baseline dispatch held
+
+The "Update visual baselines" dispatch was not run. CI OK is red on 3757994, and the GUARD-03 decision will add a commit, so the one approved dispatch is kept for that head. Visual Regression passed with zero diff on both 515c7df and 3757994, so `update_mode=changed` is still expected to return no changed PNG. `git status --porcelain -- e2e/visual/routes.spec.ts-snapshots` is empty.
+
+### Not done yet
+
+- The GUARD-03 decision and its commit, then a green CI OK on ci/13-pw165.
+- The baseline dispatch, download and compare. Task 3 (Tim's PNG commit, or "none"; check-visual-run; check-snapshot-commit per changed slug).
 - Dependabot #140 was not touched. Under approve-leave-140 it stays open for Dependabot.
+
+## Hand-over to 13-22
+
+- **Remove the 7 Firefox exclusions for Playwright #43967.** Do this after the first Playwright release that includes the Firefox roll fixing https://github.com/microsoft/playwright/issues/43967 (Mozilla bug 2090055). The exclusions are `test.fixme` in 3757994, or whatever mechanism the GUARD-03 decision puts in its place. The cases are `e2e/audit.spec.ts` photos Map and Carousel views, contact error summary and contact register signed; `e2e/case-study.spec.ts` section order on /projects/box and /projects/coin-flip; and `e2e/roadmap.spec.ts` @1280 layout. After removing them, re-run the three-engine E2E and confirm Firefox runs all 441 with no `Page crashed`. Also logged in `deferred-items.md`.
 
 ## Deviations from Plan
 
-None so far. The stop is the plan's own route for a failure that needs a design decision.
+**1. [Rule 1 - Bug, upstream] Firefox-only exclusion of 7 tests (Tim's decision A)**
+- **Found during:** Task 2, run 43478232610
+- **Issue:** Firefox 159 crashes the page in 7 tests under Playwright 1.65 (#43967)
+- **Fix:** commit 3757994, `test.fixme` on Firefox for exactly those cases, per Tim's selection "A: Firefox-only fixme (Recommended)"
+- **Files modified:** e2e/audit.spec.ts, e2e/case-study.spec.ts, e2e/roadmap.spec.ts
+- **Commit:** 3757994
+
+**2. [Rule 4 - stop] GUARD-03 rejects `.fixme(`**
+- **Found during:** Task 2, run 43487342878 (Unit Tests, `guard:tests`)
+- **Issue:** the test-count ratchet forbids skipped tests under `e2e/`, so the decision-A mechanism fails CI OK
+- **Action:** stopped for Tim's decision. No guard edit, no bypass, and the baseline dispatch is held.
 
 ## Issues Encountered
 
 - `gh run view --job <id> --log` refuses while any job in the run is still in progress. The job-log API (`gh api --allow-escape-sequences .../actions/jobs/<id>/logs`) works per completed job.
-- The Security Audit runner lost contact with GitHub (infrastructure). See the table above.
+- The Security Audit runner lost contact with GitHub on 515c7df (infrastructure). It did not recur on 3757994, so the one allowed infrastructure re-run was not used.
+- The local `npm run lint` chain does not include `guard:tests`, so a `.fixme(` or `.skip(` passes locally and fails only in the CI unit job. Running `npx jest --json --outputFile=<tmp>` and then `node scripts/guards/test-count.mjs --jest <tmp>` before a push would catch it.
 
 ## Known Stubs
 
-None. No code changed.
+None. The 7 Firefox exclusions are tracked as a hand-over to 13-22, not as stubs.
 
 ## Self-Check: PASSED
 
 - `.planning/phases/13-repo-safety-test-debt/13-20-SUMMARY.md` exists.
-- `git ls-remote origin refs/heads/ci/13-pw165` returns `515c7df4baf1aaf2e6a99c5b2bbd09171994c716`, which is HEAD before this docs commit.
-- Run 43478232610: headSha 515c7df, event push, conclusion failure, with the jobs as tabled.
-- `git status --short` before this commit shows only the four untracked paths (`.claude/`, `.planning/state.json`, `.planning/ui-reviews/`, `graphify-out/`). No PNG was modified.
+- `git ls-remote origin refs/heads/ci/13-pw165` returns `375799436c703f5f62fcad1aa0ef7e6ec68e7773`, which is HEAD before this docs commit. `git merge-base --is-ancestor 3757994 HEAD` holds.
+- Run 43487342878: headSha 3757994, event push, conclusion failure (Unit Tests only), with the jobs as tabled.
+- `git status --porcelain -- e2e/visual/routes.spec.ts-snapshots` is empty, and no PNG was downloaded or placed.
 - Port 3000 is free, and no watcher or background shell is left running.
 
 ---
 *Phase: 13-repo-safety-test-debt*
-*Status: partial (stopped at a Task 2 decision)*
+*Status: partial (stopped at a second Task 2 decision: GUARD-03 versus the decision-A fixmes)*
