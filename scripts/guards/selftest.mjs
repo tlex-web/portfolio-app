@@ -642,7 +642,8 @@ let ciGateUnconditionedRoot = null;
 let ciGatePathsIgnoreRoot = null;
 
 // check-ci-gate.mjs parser edge cases (GUARD-07, GUARD-08, 13-VALIDATION G3): flow, scalar and quoted
-// `on:` forms, CRLF workflows, and the relay rules 11, 12, 14 and 15 on shapes the fixtures do not hold.
+// `on:` forms, CRLF workflows, the relay rules 11, 12, 14 and 15 on shapes the fixtures do not hold, and
+// rule 16 (a timeout-minutes on every job; 13 WR-05).
 const ciGateTempRoots = [];
 /** The top-level `on:` block of a workflow, up to the `permissions:` key that follows it. */
 const ON_BLOCK = /^on:\r?\n(?:[ \t].*\r?\n|\r?\n)*?(?=permissions:)/m;
@@ -658,6 +659,14 @@ const tempRelayEdit = (edit) => {
   ciGateTempRoots.push(root);
   return root;
 };
+/** A temp copy of the good fixture with `edit` applied to ci.yml. */
+const tempCiEdit = (edit) => {
+  const root = tempCiGateRoot(edit);
+  ciGateTempRoots.push(root);
+  return root;
+};
+/** The good fixture's build-job `timeout-minutes: 5` line (group 1: the job's lines before it; group 2: the line ending). */
+const BUILD_TIMEOUT = /^( {2}build:\r?\n(?: {4}.*\r?\n)*?) {4}timeout-minutes: 5(\r?\n)/m;
 /**
  * A temp copy of the good fixture with every workflow and scripts/ci/ci-ok.jq
  * rewritten to CRLF line endings (a checkout with core.autocrlf=true), after
@@ -695,6 +704,19 @@ const ciGateCase = (name, makeRoot, expectExit, expectOutput) => ({
 });
 
 const CI_GATE_PARSER_CASES = [
+  ciGateCase('a ci.yml job without timeout-minutes fails rule 16 (13 WR-05)', () => tempCiEdit((text) => text.replace(BUILD_TIMEOUT, '$1')), 1, [
+    "ci.yml: job build has no timeout-minutes (it would run to GitHub's 360-minute default",
+    'ci-gate: 1 failure(s)',
+  ]),
+  ciGateCase('a relay job without timeout-minutes fails rule 16 (13 WR-05)', () => tempRelayEdit((text) => text.replace(/^ {4}timeout-minutes: 100\r?\n/m, '')), 1, [
+    'ci-skip-relay.yml: job relay has no timeout-minutes',
+    'ci-gate: 1 failure(s)',
+  ]),
+  ciGateCase('a ci.yml timeout-minutes of 0 fails rule 16', () => tempCiEdit((text) => text.replace(BUILD_TIMEOUT, '$1    timeout-minutes: 0$2')), 1, [
+    'ci.yml: job build has timeout-minutes: 0; expected a positive whole number of minutes',
+    'ci-gate: 1 failure(s)',
+  ]),
+  ciGateCase("a quoted timeout-minutes: '15' passes rule 16", () => tempCiEdit((text) => text.replace(BUILD_TIMEOUT, "$1    timeout-minutes: '15'$2")), 0, ['ci-gate: OK']),
   ciGateCase('ci.yml on: in flow-list form with all three triggers passes', () => tempOnForm(ALL_THREE_FLOW), 0, ['ci-gate: OK']),
   ciGateCase('ci.yml on: in flow-list form without workflow_dispatch fails rule 8', () => tempOnForm('on: [push, pull_request]\n\n'), 1, [
     'ci.yml has no workflow_dispatch trigger',

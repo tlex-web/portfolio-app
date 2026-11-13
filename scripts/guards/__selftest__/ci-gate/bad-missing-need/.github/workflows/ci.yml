@@ -15,6 +15,7 @@ jobs:
   build:
     name: Build Application
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - run: echo build
 
@@ -22,6 +23,7 @@ jobs:
     name: Dependency Review
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    timeout-minutes: 5
     steps:
       - run: echo review
 
@@ -30,6 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     needs: [dependency-review]
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
         with:

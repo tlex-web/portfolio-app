@@ -129,6 +129,7 @@ The docs-only fast path (D-08, D-09): `scripts/ci/classify-changes.mjs` gets eve
 | relay: no job-level `if:` | a job-level `if:` on the relay job whose name can be `CI OK` |
 | relay: one trigger | any relay trigger other than `pull_request_target` |
 | relay: token scope | relay top-level `permissions:` other than `{}`, or any write scope other than `actions: write` on the `CI OK` relay job |
+| timeouts | a job in `ci.yml` or `ci-skip-relay.yml` without a job-level `timeout-minutes`, or with one that is not a positive whole number (a hung step would run to GitHub's 360-minute default and hold `CI OK` pending) |
 
 ```bash
 npm run guard:ci

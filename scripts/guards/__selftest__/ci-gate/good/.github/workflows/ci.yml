@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       docs_only: ${{ steps.classify.outputs.docs_only }}
+    timeout-minutes: 5
     steps:
       - id: classify
         run: echo "docs_only=false" >> "$GITHUB_OUTPUT"
@@ -29,6 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [changes]
     if: needs.changes.outputs.docs_only != 'true'
+    timeout-minutes: 5
     steps:
       - run: echo build
 
@@ -36,6 +38,7 @@ jobs:
     name: Dependency Review
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    timeout-minutes: 5
     steps:
       - run: echo review
 
@@ -47,6 +50,7 @@ jobs:
       - dependency-review
       - build
       - changes
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
         with:
