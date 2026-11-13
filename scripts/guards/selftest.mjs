@@ -305,6 +305,64 @@ let photoDataOffsetRoot = null;
 let photoDataGpsRoot = null;
 let photoDataOffPlateRoot = null;
 
+/**
+ * Runs git in a temp fixture repo with a fixed identity (no global config needed)
+ * and throws on failure, so a broken fixture never reads as a guard result.
+ */
+const GIT_FIXTURE_CONFIG = ['-c', 'user.name=selftest', '-c', 'user.email=selftest@example.invalid', '-c', 'commit.gpgsign=false', '-c', 'core.autocrlf=false'];
+function gitIn(root, ...args) {
+  const r = spawnSync('git', [...GIT_FIXTURE_CONFIG, ...args], { cwd: root, encoding: 'utf-8' });
+  if (r.status !== 0) throw new Error(`selftest: git ${args.join(' ')} failed in ${root}: ${r.stderr}`);
+  return r.stdout;
+}
+/** Writes { rel: text } into root, creating directories. */
+function putFiles(root, files) {
+  for (const [rel, text] of Object.entries(files)) {
+    fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
+    fs.writeFileSync(path.join(root, rel), text);
+  }
+}
+
+/**
+ * 07 WR-04 fixture: a temp git repo with app/card.tsx committed, then `edit(root)`
+ * applied to the work tree (same-classnames compares HEAD with the work tree).
+ * Nested one level down so the cleanup loop's path.dirname removes the mkdtemp
+ * directory.
+ */
+const CARD_TSX = [
+  'export function Card({ title }: { title: string }) {',
+  '  return (',
+  '    <section className="flex flex-col gap-4 p-6">',
+  '      <h2 className="text-xl font-semibold">{title}</h2>',
+  '      <p className={`text-sm ${title ? "text-ink" : "text-dim"}`}>Body copy for the card.</p>',
+  '      <footer className="mt-auto border-t pt-4">Footer</footer>',
+  '    </section>',
+  '  );',
+  '}',
+  '',
+].join('\n');
+function tempClassnamesRepo(edit) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
+  const root = path.join(dir, 'root');
+  fs.mkdirSync(root);
+  gitIn(root, 'init', '-q');
+  putFiles(root, { 'app/card.tsx': CARD_TSX });
+  gitIn(root, 'add', '-A');
+  gitIn(root, 'commit', '-q', '-m', 'base');
+  edit(root);
+  return root;
+}
+const classnamesMovedRoot = tempClassnamesRepo((root) => {
+  fs.mkdirSync(path.join(root, 'app', '(site)'));
+  gitIn(root, 'mv', 'app/card.tsx', 'app/(site)/card.tsx');
+});
+const classnamesMovedChangedRoot = tempClassnamesRepo((root) => {
+  fs.mkdirSync(path.join(root, 'app', '(site)'));
+  gitIn(root, 'mv', 'app/card.tsx', 'app/(site)/card.tsx');
+  putFiles(root, { 'app/(site)/card.tsx': CARD_TSX.replace('gap-4 p-6', 'gap-4 p-8') });
+});
+const classnamesUnchangedRoot = tempClassnamesRepo(() => {});
+
 const PHOTO_DERIVE = path.join(repoRoot, 'scripts', 'photos', 'build-derivatives.mjs');
 /** Every file under `root`, as a posix relative path -> its bytes. */
 function snapshotTree(root) {
@@ -585,6 +643,31 @@ const cases = [
     args: ['--files', sc('before.tsx.txt'), sc('after-changed.tsx.txt')],
     expectExit: 1,
     expectOutput: ['className literals differ', '- "flex gap-4 p-2"', '+ "flex gap-4 p-3"'],
+  },
+  {
+    // 07 WR-04: a move used to show as D + A and was skipped, so nothing was compared
+    name: 'same-classnames: a moved file with identical classNames is compared and passes (07 WR-04)',
+    guard: SAME_CLASSNAMES,
+    args: ['HEAD'],
+    cwd: classnamesMovedRoot,
+    expectExit: 0,
+    expectOutput: ['same-classnames: OK (1 file(s) compared'],
+  },
+  {
+    name: 'same-classnames: a moved file whose classNames changed fails (07 WR-04)',
+    guard: SAME_CLASSNAMES,
+    args: ['HEAD'],
+    cwd: classnamesMovedChangedRoot,
+    expectExit: 1,
+    expectOutput: ['className literals differ: app/card.tsx -> app/(site)/card.tsx', '- "flex flex-col gap-4 p-6"', '+ "flex flex-col gap-4 p-8"'],
+  },
+  {
+    name: 'same-classnames: a run that compared zero files fails (07 WR-04)',
+    guard: SAME_CLASSNAMES,
+    args: ['HEAD'],
+    cwd: classnamesUnchangedRoot,
+    expectExit: 1,
+    expectOutput: ['same-classnames: compared 0 files'],
   },
   {
     name: 'visual-run: the newest run of the named workflow is chosen',
@@ -1629,7 +1712,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDeriveRoot]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDeriveRoot]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 
