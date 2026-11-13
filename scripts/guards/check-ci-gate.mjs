@@ -222,10 +222,12 @@ if (ciLines === null) {
     } else {
       if (!named.includes(ciOk)) fail(CI_FILE, `${CI_OK_ID} is named ${JSON.stringify(jobName(ciOk))}, expected "${CI_OK_NAME}"`);
       const cond = jobKey(ciOk, 'if');
+      // A job skipped by its `if:` reports Success, so anything but always()
+      // could let CI OK pass without running; no `if:` at all means success().
       if (!cond) {
-        fail(CI_FILE, `${CI_OK_ID} has no job-level if:; it needs exactly always()`);
+        fail(CI_FILE, `CI OK must use if: always() (${CI_OK_ID} has no job-level if:, which defaults to success())`);
       } else if (normalizeIf(cond.value) !== 'always()') {
-        fail(CI_FILE, `${CI_OK_ID} has if: ${cond.value}; it needs exactly always()`);
+        fail(CI_FILE, `CI OK must use if: always() (${CI_OK_ID} has if: ${cond.value})`);
       }
 
       // 3. needs = every other job id, as sets
