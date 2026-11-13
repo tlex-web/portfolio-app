@@ -4,17 +4,17 @@ milestone: v2.1
 milestone_name: Survey Expansion
 current_phase: 13
 current_phase_name: Repo Safety & Test Debt
-status: executing
-stopped_at: Completed 13-21-PLAN.md
-last_updated: "2026-11-13T20:32:13.454Z"
+status: verifying
+stopped_at: Completed 13-22-PLAN.md
+last_updated: "2026-11-13T20:42:46.945Z"
 last_activity: 2026-11-13
 last_activity_desc: Phase 13 execution started
-state_head: 8147e76350e8cdb9f054d5b82b4361e70532d919
+state_head: 06c9280fab2ef65d54c125c68c1a0210dddc34b0
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 22
-  completed_plans: 21
+  completed_plans: 22
   percent: 0
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 
 Phase: 13 (Repo Safety & Test Debt) — EXECUTING
 Plan: 22 of 22
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-11-13 — Phase 13 execution started
 
 Progress: [░░░░░░░░░░] 0%
@@ -75,6 +75,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 13 P19 | 55min | 3 tasks | 1 files |
 | Phase 13 P20 | 2h40m | 3 tasks | 6 files |
 | Phase 13 P21 | 4min | 3 tasks | 1 files |
+| Phase 13 P22 | 10min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -137,6 +138,9 @@ Recent decisions affecting current work:
 - [Phase 13]: 13-20: hand-overs to 13-22: remove the @firefox-43967 tags and FIREFOX_INVERT after the Playwright release with the fixing Firefox roll (firefox --list 434 back to 441); optional local guard:tests step (npm run lint does not run GUARD-03)
 - [Phase 13]: 13-21: D-06 fallback not needed: relay.decision a-confirmed copied from 13-19 (Tim's 13-19 selection "a-confirmed (Recommended)"); ci-skip-relay.yml, check-ci-gate.mjs and selftest.mjs unchanged, relay identical to origin/main d48af99
 - [Phase 13]: 13-21: fallback.approval skip: Tim was not asked for 13-21; Tasks 2 and 3 (fallback PR, ci/13-proof-skip-2 re-proof) skipped by the plan's a-confirmed branch; nothing pushed; GUARD-08 stays Pending by the shared-ID gate (13-22 also declares it)
+- [Phase 13]: 13-22: VERIFY-07 closed: all 44 ledger rows final in 13-LEDGER-TRIAGE.md (Final column) and in the four archived disposition files (fixed 32 with resolvable SHAs, deferred 9 with owners, skipped 3 with approved reasons); every final enum equals the approved Enum cell
+- [Phase 13]: 13-22: hand-overs: ROADMAP scope notes under Phases 14 (07 WR-06/SHELL-07, 10 IN-01, Deployment Checks proof fallback), 15 (GUARD-10, guard:tests suggestion, scripts/README 47 pairs), 17 (10 IN-03, E2E duration trend), 18 (10 IN-04, IN-05, IN-08, IN-09 switchTo wait); deferred-items.md names owner and trigger for the Firefox tag removal, limit-probe output, relay long-mirror path, Deployment Checks proof, npm audit decision and ci/13-pw165; no new requirement
+- [Phase 13]: 13-22: PROJECT.md Key Decisions: main ruleset 27216079, [ci skip] relay option A (a-confirmed), keep-alive monitor (60-day schedule pause, ~1 h Hobby logs), docs-only fast path; production gate recorded as Deployment Checks on CI OK (Tim, 2026-11-13) with the live proof pending the phase-close merge
 
 ### Pending Todos
 
@@ -189,6 +193,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-13T20:32:13.416Z
-Stopped at: Completed 13-21-PLAN.md
+Last session: 2026-11-13T20:42:46.905Z
+Stopped at: Completed 13-22-PLAN.md
 Resume file: None
