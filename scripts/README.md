@@ -58,10 +58,10 @@ Raw-text scan of `app/`, `components/`, `lib/`, `data/` and `e2e/` (every `__tes
 | Rule | Fails on |
 |------|----------|
 | `dark` | any `dark:` variant |
-| `stock` | any stock Tailwind palette class (`bg-red-500`, `hover:text-cyan-400/50`, ...) |
+| `stock` | any stock Tailwind palette class (`bg-red-500`, `hover:text-cyan-400/50`, `border-t-red-500`, `ring-offset-red-500`, `drop-shadow-red-500`, ...), directional borders, ring offsets and the `inset-ring`/`inset-shadow`/`drop-shadow`/`text-shadow` colours included (the `wb` rule reads the same prefixes) |
 | `variant` | a `@custom-variant dark` line in CSS |
 | `wb` | a file's `white`/`black` utility count differing from `palette-ratchet.json` (absent entry = 0) |
-| `png` | a `.png` under `e2e/` that does not end in `-linux.png` |
+| `png` | a `.png` under `e2e/` that does not end in `-linux.png`, among the files git lists (`git ls-files -co --exclude-standard`: tracked plus untracked, ignored skipped), so the git-ignored `-win32.png` files a local visual run writes do not fail lint; outside a git work tree it walks the disk |
 | `v1names` | a v1 alias name (`frost-500`, ...) in any scanned file (the v1 dead files are exempt only while nothing imports them) |
 | `emoji` | emoji in `.ts/.tsx/.js/.mjs` (©, ®, ™ and ❯ allowed; ✓ ✔ ✗ ✘ banned) |
 
@@ -75,7 +75,7 @@ The ratchet only goes down: a higher count fails, a lower count fails until `--u
 
 ### `check-contrast.mjs` (GUARD-05)
 
-Reads every token from `app/globals.css` (`:root` and all `@theme` blocks), resolves `var()` chains and measures 36 pairs (the 28 UI-SPEC pairs, 4 `accent-strong` pairs and the 4 photo-viewer `gallery` pairs: `accent`/`gallery`, `gallery`/`ink`, `focus`/`gallery`, `line-strong`/`gallery`) with `colorjs.io` (`contrast(…, 'WCAG21')`): text pairs need 4.5:1, non-text pairs (focus, line-strong) 3:1, compared as raw floats. An unknown `--color-*` token, a missing pair token, an alpha token in a measured pair or a file without token blocks fails. v1 alias tokens are skipped; `line` and `contour` are decorative and exempt. Adding a semantic token means adding it and its pairs to the script in the same commit.
+Reads every token from `app/globals.css` (the top-level `:root` and `@theme` blocks; a token block nested in an at-rule such as `@media` or `@supports` is not merged, and fails if it declares a custom property, because media-scoped palettes are not measured), resolves `var()` chains and measures 36 pairs (the 28 UI-SPEC pairs, 4 `accent-strong` pairs and the 4 photo-viewer `gallery` pairs: `accent`/`gallery`, `gallery`/`ink`, `focus`/`gallery`, `line-strong`/`gallery`) with `colorjs.io` (`contrast(…, 'WCAG21')`): text pairs need 4.5:1, non-text pairs (focus, line-strong) 3:1, compared as raw floats. An unknown `--color-*` token, a missing pair token, an alpha token in a measured pair or a file without token blocks fails. v1 alias tokens are skipped; `line` and `contour` are decorative and exempt. Adding a semantic token means adding it and its pairs to the script in the same commit.
 
 ```bash
 npm run guard:contrast
