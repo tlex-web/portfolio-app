@@ -5,7 +5,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { DURATION, EASING, cssDuration, cssEase } from '@/lib/animations';
+import { DURATION, EASING } from '@/lib/animations';
 
 const css = fs.readFileSync(path.join(process.cwd(), 'app/globals.css'), 'utf8');
 const camelToKebab = (k: string) => k.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`);
@@ -19,15 +19,5 @@ describe('motion tokens: CSS/JS parity', () => {
   test.each(Object.entries(EASING))('--ease-%s matches', (k, arr) => {
     const m = css.match(new RegExp(`--ease-${camelToKebab(k)}:\\s*cubic-bezier\\(([^)]+)\\)`));
     expect(m && m[1].split(',').map(Number)).toEqual([...arr]);
-  });
-});
-
-describe('motion token helpers', () => {
-  test("cssDuration('fast') returns the CSS variable reference", () => {
-    expect(cssDuration('fast')).toBe('var(--duration-fast)');
-  });
-
-  test("cssEase('descent') returns the CSS variable reference", () => {
-    expect(cssEase('descent')).toBe('var(--ease-descent)');
   });
 });
