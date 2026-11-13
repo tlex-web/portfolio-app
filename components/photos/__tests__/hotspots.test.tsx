@@ -102,6 +102,26 @@ describe('HotspotKey (D-11)', () => {
     expect(second).toHaveAttribute('aria-expanded', 'false');
   });
 
+  it('two facts with the same text both render, with no duplicate-key warning (10-REVIEW IN-07)', () => {
+    const [first, ...rest] = view.hotspots;
+    const fact = { text: 'Same claim.', source: { kind: 'text' as const, label: 'Source: Tim' } };
+    const twin: PhotoView = { ...view, hotspots: [{ ...first, facts: [fact, fact] }, ...rest] };
+    const error = jest.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      render(<Viewer view={twin} />);
+      const [row] = within(screen.getByRole('list', { name: 'Labels' })).getAllByRole('button');
+      fireEvent.click(row);
+      const panel = document.getElementById(row.getAttribute('aria-controls')!)!;
+      expect(within(panel).getAllByRole('listitem')).toHaveLength(2);
+      const keyWarnings = error.mock.calls.filter((call) =>
+        call.some((part) => String(part).includes('same key'))
+      );
+      expect(keyWarnings).toEqual([]);
+    } finally {
+      error.mockRestore();
+    }
+  });
+
   it('an annotation without facts expands to its description only (E7 partial)', () => {
     render(<Viewer view={viewOf('r004-011')} />);
     const [summit] = within(screen.getByRole('list', { name: 'Labels' })).getAllByRole('button');
