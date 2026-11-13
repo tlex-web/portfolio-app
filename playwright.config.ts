@@ -81,6 +81,18 @@ const WEBKIT_INVERT = new RegExp(
   ['@chromium-only', ...WEBKIT_PLATFORM_TAGS, ...(prod ? [] : ['@prod-only'])].join('|')
 );
 
+/**
+ * Firefox-only exclusions on top of OTHER_ENGINE_INVERT; Chromium and WebKit
+ * keep every one.
+ * - @firefox-43967: Firefox 159 under Playwright 1.65 crashes the page on a
+ *   named role lookup followed by a main-world aria-labelledby read
+ *   (https://github.com/microsoft/playwright/issues/43967). Seven tests carry
+ *   it (13-20-SUMMARY.md). Remove the tags and this entry after the Playwright
+ *   release with the Firefox roll that fixes it.
+ */
+const FIREFOX_ONLY_TAGS = ['@firefox-43967'];
+const FIREFOX_INVERT = new RegExp([OTHER_ENGINE_INVERT.source, ...FIREFOX_ONLY_TAGS].join('|'));
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -114,7 +126,7 @@ export default defineConfig({
     {
       name: 'firefox',
       testIgnore: [VISUAL, PERF],
-      grepInvert: OTHER_ENGINE_INVERT,
+      grepInvert: FIREFOX_INVERT,
       use: { ...devices['Desktop Firefox'], serviceWorkers: 'block' },
     },
 

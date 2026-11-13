@@ -44,13 +44,13 @@ const OFFLINE_EMPTY = 'No pages are saved on this device yet.';
 const views = buildPhotoViews();
 
 /**
- * Firefox 159 crashes the page on these states under Playwright 1.65:
- * https://github.com/microsoft/playwright/issues/43967 (fixme on Firefox only).
+ * @firefox-43967: Firefox 159 crashes the page on these states under
+ * Playwright 1.65 (a named role lookup followed by a main-world
+ * aria-labelledby read): https://github.com/microsoft/playwright/issues/43967
+ * The tag keeps them out of the Firefox project only (playwright.config.ts
+ * FIREFOX_INVERT); Chromium and WebKit run them. These are the /photos views
+ * that carry it; Grid runs on Firefox too.
  */
-const FIREFOX_43967 =
-  'Playwright #43967 / Firefox 159: page crash on a named role lookup followed by a main-world aria-labelledby read; remove after the next Playwright Firefox roll';
-
-/** The /photos views that crash Firefox 159 (FIREFOX_43967); Grid still runs. */
 const FIREFOX_43967_VIEWS: ReadonlySet<string> = new Set(['Map', 'Carousel']);
 
 /**
@@ -296,12 +296,13 @@ test.describe('Audit: interactive states (D-21)', () => {
   ];
 
   for (const [name, path, shown] of PHOTO_VIEWS) {
-    test(`state "photos ${name} view" ${path} @375/768/1440`, async ({
+    // Map and Carousel carry @firefox-43967 (Playwright #43967, see FIREFOX_43967_VIEWS).
+    const firefox43967 = FIREFOX_43967_VIEWS.has(name) ? ' @firefox-43967' : '';
+    test(`state "photos ${name} view" ${path} @375/768/1440${firefox43967}`, async ({
       page,
       request,
       browserName,
     }) => {
-      test.fixme(browserName === 'firefox' && FIREFOX_43967_VIEWS.has(name), FIREFOX_43967);
       test.setTimeout(120000);
       await installAuditProbes(page);
       const failures = collectFailures(page);
@@ -331,8 +332,12 @@ test.describe('Audit: interactive states (D-21)', () => {
     await waitForHydration(page.getByRole('button', { name: /Send Message/i }));
   }
 
-  test('state "contact error summary" /contact @1440', async ({ page, request, browserName }) => {
-    test.fixme(browserName === 'firefox', FIREFOX_43967);
+  // @firefox-43967: crashes Firefox 159 (https://github.com/microsoft/playwright/issues/43967).
+  test('state "contact error summary" /contact @1440 @firefox-43967', async ({
+    page,
+    request,
+    browserName,
+  }) => {
     await installAuditProbes(page);
     const failures = collectFailures(page);
     await openContact(page);
@@ -354,12 +359,12 @@ test.describe('Audit: interactive states (D-21)', () => {
     );
   });
 
-  test('state "contact register signed" /contact @1440 (API mocked)', async ({
+  // @firefox-43967: crashes Firefox 159 (https://github.com/microsoft/playwright/issues/43967).
+  test('state "contact register signed" /contact @1440 (API mocked) @firefox-43967', async ({
     page,
     request,
     browserName,
   }) => {
-    test.fixme(browserName === 'firefox', FIREFOX_43967);
     await installAuditProbes(page);
     const failures = collectFailures(page);
     // Never a real send: the API is answered here (12-RESEARCH Pitfall 5).
