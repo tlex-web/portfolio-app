@@ -52,8 +52,8 @@ test.describe('Homepage', () => {
     const html = await response.text();
     expect(html).toContain('<h1');
     expect(html).toContain(site.name);
-    // React escapes '&' in text children; compare against the escaped form.
-    expect(html).toContain(site.role.replace('&', '&amp;'));
+    // React escapes every '&' in text children; compare against the escaped form.
+    expect(html).toContain(site.role.replaceAll('&', '&amp;'));
     expect(html).toContain(terrain.assets.hillshade.webp['1100']);
 
     await page.goto('/');
