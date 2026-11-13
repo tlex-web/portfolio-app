@@ -12,14 +12,15 @@ provides:
   - "Docs-only proof: PR #145 (one .planning/ file) got docs_only=true in its pull_request run, six heavy jobs skipped, CI OK success, mergeStateStatus CLEAN"
   - "Skip proof (relay acceptance test, A1): PR #146 with a [ci skip] head got no push or pull_request CI run; the relay's CI OK check run (pull_request_target, app 15368) sat on the head SHA and concluded success, it was the only CI OK in the PR's check rollup (isRequired true), and mergeStateStatus read CLEAN after gh pr ready"
   - "All three proof PRs closed unmerged, the three ci/13-proof-* branches deleted from origin, the temp worktrees removed"
-affects: [13-21 (applies fallback B or C only if Task 3 picks it), 13-22 (Key Decisions rows for the relay and the accepted check-name exception)]
+  - "relay.decision: a-confirmed (Tim's selection \"a-confirmed (Recommended)\"): D-06 option A, the relay mirror, stands"
+affects: [13-21 (records 'not needed': Task 1 only, Tasks 2-3 skipped, because relay.decision is a-confirmed), 13-22 (Key Decisions row for option A and the accepted check-name exception; hand-over of the unexercised long-mirror path)]
 
 actuals:
-  tokens: 5600     # chars/4 over this SUMMARY (~21,500 chars) plus the three throwaway proof files (~1,100 chars, on deleted branches)
-  tasks: 2         # of 3; Task 3 is Tim's decision
-  commits: 0       # MEASURED: git rev-list --count 0c272c1..HEAD at this SUMMARY write. The docs commit carrying this SUMMARY follows. The three proof commits (536aea6, 2b19a2b, c374806) lived only on the deleted ci/13-proof-* branches
+  tokens: 7000     # chars/4 over this SUMMARY (~26,900 chars) plus the three throwaway proof files (~1,100 chars, on deleted branches)
+  tasks: 3         # Tasks 1-2 by the first executor, Task 3 (Tim's decision) recorded by the continuation
+  commits: 1       # MEASURED: git rev-list --count 0c272c1..HEAD at this SUMMARY write (b46ae54, the partial SUMMARY). The docs commit finalizing this SUMMARY and the STATE/ROADMAP commit follow. The three proof commits (536aea6, 2b19a2b, c374806) lived only on the deleted ci/13-proof-* branches
 plan_head_before: 0c272c1fc6c2b8db3cf7ca959a57293156856b48
-plan_head_after: 0c272c1fc6c2b8db3cf7ca959a57293156856b48
+plan_head_after: b46ae544cbe7568b1a796cc12a6dff0b2b240ecb
 
 tech-stack:
   added: []
@@ -36,15 +37,19 @@ key-files:
 key-decisions:
   - "13-19: Only the red proof got a merge attempt; the docs-only and [ci skip] proofs got none because they are green by design (D-10 'Nothing is merged' governs)"
   - "13-19: The red proof's test is expect(1).toBe(2), not a literal 1 === 2, so that Unit Tests is the only red job (TypeScript rejects comparing non-overlapping literal types)"
+  - "13-19: relay.decision a-confirmed (Tim's selection \"a-confirmed (Recommended)\"); option A, the relay mirror, stands, so 13-21 records 'not needed' and builds no fallback"
+  - "13-19: Untested path handed to 13-22: a [ci skip] head whose dispatched CI takes the full ~40-minute path has not been mirrored live (the proof's run was docs-only, ~1.5 minutes); the relay's timeout-minutes: 100 and gh run watch --interval 60 budget for it, the workflow is unchanged"
 
-requirements-completed: []  # GUARD-07 and GUARD-08 are completed by the continuation once Task 3 is resolved (13-21 and 13-22 also declare them)
+requirements-completed: []  # GUARD-07 and GUARD-08 stay Pending by the shared-ID gate: requirements.ready-ids blocked both because 13-21 and 13-22 also declare them and have no SUMMARY yet
 
-status: partial
+status: complete
 ---
 
 # Phase 13 Plan 19: Live Ruleset, Docs-Only and Skip-Relay Proofs Summary
 
-**Status: partial. Tasks 1 and 2 are done; Task 3 (the relay decision) waits on Tim's reply.**
+**A red PR is refused by the live `main` ruleset, a docs-only PR gets a green `CI OK` in 29 seconds, and a `[ci skip]` head gets a counted `CI OK` from the relay; Tim chose `a-confirmed`, so D-06 option A stands.**
+
+**Status: complete.** Tasks 1 and 2 were run by the first executor (partial SUMMARY in b46ae54); Task 3 is recorded below from Tim's selection.
 
 ## Proof red
 
@@ -224,7 +229,11 @@ D-10 asks for `mergeStateStatus` and the `gh pr merge` refusal for each proof, a
 
 ## Relay decision (Task 3)
 
-relay.decision: pending (Tim's reply to the Task 3 checkpoint is recorded here by the continuation)
+relay.decision: a-confirmed
+
+Tim's reply, verbatim (an AskUserQuestion selection): "a-confirmed (Recommended)"
+
+What Tim was shown before choosing: the relay's `CI OK` check run 132061472478 is on head c374806 (success, app 15368); the PR's check rollup holds only that one `CI OK` (pull_request_target, `isRequired: true`); `mergeStateStatus` read CLEAN after `gh pr ready`. Before the selection the orchestrator re-verified by GET: #144, #145 and #146 all `CLOSED` with `mergedAt: null`; no `ci/13-*` refs on origin; `main` still at d48af99; check run 132061472478 = `CI OK`, success, app 15368, head c374806.
 
 The evidence the decision rests on (all from `## Proof skip`):
 
@@ -237,7 +246,19 @@ The evidence the decision rests on (all from `## Proof skip`):
 | `mergeStateStatus` after `gh pr ready` | CLEAN |
 | Which `CI OK` the PR counted | Only the relay's (pull_request_target, `isRequired: true`); the workflow_dispatch `CI OK` is not in the PR's check rollup |
 
-Read against D-06's amended order (A; B if the relay's check is not counted; C if B is not counted either): the relay's check is attached and counted, which is option A's success condition.
+Read against D-06's amended order (A; B if the relay's check is not counted; C if B is not counted either): the relay's check is attached and counted, which is option A's success condition. Tim's selection confirms it: option A stands and no fallback is built.
+
+### Caveat: the long-mirror path is untested (not a defect)
+
+The skip proof's dispatched CI run (43476491448) took the docs-only path, because the proof head changed one `.planning/` file, so the relay mirrored a run of about 1.5 minutes. A marked head that changes code would make the relay wait for a full CI run of about 40 minutes. `.github/workflows/ci-skip-relay.yml` (identical on `main` and on this branch) gives the mirror job `timeout-minutes: 100` (line 103) and watches the dispatched run with `gh run watch "$id" … --exit-status --interval 60` (line 157), so the budget covers a full run. A long mirror wait has not been exercised live. The workflow is unchanged.
+
+Hand-over: 13-22 records this with the option A Key Decisions row (an untested path, to be watched on the first code-changing ship note with a `[ci skip]` head).
+
+## Next steps
+
+- **13-21:** with `relay.decision: a-confirmed`, 13-21's Task 1 records "not needed" and its Tasks 2 and 3 (the B or C fallback PR from `ci/13-relay-fallback` and the `ci/13-proof-skip-2` re-proof) are skipped. 13-21 changes no file other than its own SUMMARY. This plan did not execute 13-21.
+- **13-22:** the Key Decisions skip-marker row takes the option A wording (the relay's `CI OK` on marked PR heads is the accepted exception to unique check names; it never runs on pushes, so Deployment Checks only see ci.yml's `CI OK`), plus the long-mirror caveat above as a hand-over item.
+- **GUARD-07, GUARD-08:** stay Pending in REQUIREMENTS.md until the last declaring plan (13-22) has its SUMMARY; `requirements.ready-ids` blocked both at this plan's close.
 
 ## Issues Encountered
 
@@ -274,16 +295,24 @@ Read against D-06's amended order (A; B if the relay's check is not counted; C i
 
 1. **Task 1: Red-test proof and docs-only proof:** no commit in the main tree. Proof commits `536aea6` (`test(13): deliberately red proof for the main ruleset (D-10) - do not merge`) and `2b19a2b` (`docs(13): docs-only fast-path proof (D-10) - do not merge`) existed only on the deleted proof branches.
 2. **Task 2: [ci skip] proof:** no commit in the main tree. Proof commit `c374806` (`docs(13): relay proof for skipped CI [ci skip]`) existed only on the deleted proof branch.
-3. **Task 3:** pending Tim's decision.
+3. **Task 3: Relay outcome:** checkpoint decision, no code. Tim's selection "a-confirmed (Recommended)" is recorded under `## Relay decision (Task 3)` by the continuation's docs commit.
 
-**Plan metadata:** the docs commit adding this partial SUMMARY (local only; nothing pushed besides the three proof branches).
+**Plan metadata:** b46ae54 (`docs(13-19): record the red, docs-only and [ci skip] live proofs (partial)`), then the continuation's docs commit finalizing this SUMMARY and the docs commit recording STATE and ROADMAP progress (all local; nothing pushed besides the three proof branches).
+
+## Requirements
+
+| ID | Declared by | Status after 13-19 | Why |
+|----|-------------|--------------------|-----|
+| GUARD-07 | 13-19, 13-21, 13-22 | Pending (not marked) | `requirements.ready-ids` returned `blocked: [GUARD-07, GUARD-08]`, `ready: []`: 13-21 and 13-22 also declare them and have no SUMMARY yet. This plan's share (the ruleset refuses a red PR; docs-only and `[ci skip]` heads get a final `CI OK`) is proven above |
+| GUARD-08 | 13-19, 13-21, 13-22 | Pending (not marked) | Same gate. This plan's share (the relay's `CI OK` on a marked head is attached and counted) is proven above; 13-21 (not needed) and 13-22 (Key Decisions row) finish it |
 
 ## Self-Check: PASSED
 
-- `.planning/phases/13-repo-safety-test-debt/13-19-SUMMARY.md` exists with `## Proof red`, `## Proof docs-only`, `## Proof skip` and `## D-10 deviation`.
-- Plan verifies: open proof PRs `0`; `git ls-remote` for `ci/13-proof-*` and `ci/13-proof-skip` print nothing; the Task 1 node check prints `red and docs-only proofs recorded`; the Task 2 node check prints `recorded`.
-- `commits: 0` measured from the ledger at `.git/gsd-plan-head-before-13-19` (`0c272c1..HEAD`) at write time.
+- `.planning/phases/13-repo-safety-test-debt/13-19-SUMMARY.md` exists with `## Proof red`, `## Proof docs-only`, `## Proof skip`, `## D-10 deviation` and `## Relay decision (Task 3)` reading `relay.decision: a-confirmed`.
+- Plan verifies, re-run by the continuation at finalize time: open proof PRs `0`; `git ls-remote` for `ci/13-proof-*` and `ci/13-proof-skip` print nothing; the Task 1 node check prints `red and docs-only proofs recorded`; the Task 2 node check prints `recorded`.
+- b46ae54 is an ancestor of HEAD; `commits: 1` measured from the ledger at `.git/gsd-plan-head-before-13-19` (`0c272c1..HEAD`) at this write.
+- `ci-skip-relay.yml` line 103 (`timeout-minutes: 100`) and line 157 (`gh run watch … --interval 60`) read the same on `origin/main` and on the working branch.
 
 ---
 *Phase: 13-repo-safety-test-debt*
-*Partial: 2026-11-13 (Tasks 1-2)*
+*Partial: 2026-11-13 (Tasks 1-2); completed: 2026-11-13 (Task 3, relay.decision a-confirmed)*
