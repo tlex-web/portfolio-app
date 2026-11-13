@@ -1,0 +1,69 @@
+name: Upstash keep-alive
+
+# Daily Upstash keep-alive and contact-limiter monitor (D-13, D-14).
+#
+# Upstash archives a free database after about 14 days without activity, and
+# the contact form's limiter fails closed in production (13-02): an archived or
+# unreachable database means every contact submission answers 503. This job
+# sends PING to the Upstash REST API once a day and fails loudly when Redis
+# does not answer PONG or the secrets are missing, so GitHub emails Tim within
+# a day. A visitor finding a broken form must not be the first signal.
+#
+# Command: PING with the repository secrets UPSTASH_REDIS_REST_URL and
+# UPSTASH_REDIS_REST_TOKEN (Tim's choice `ping-readonly`, 13-05). Whether a
+# PING counts as activity for the archival clock is not documented (research
+# assumption A8). If the database archives anyway, this job turns red and the
+# command switches to SET of a dedicated key with a full token.
+#
+# Scope and safety:
+#   - it runs only on its daily schedule and on manual dispatch, never on pull
+#     requests, so fork PRs never see the secrets;
+#   - it is not part of the aggregate required check in ci.yml and must never
+#     be added to it (a red keep-alive must not block merges);
+#   - top-level permissions are empty: the job needs no GITHUB_TOKEN scope;
+#   - the URL and token reach the shell only through env: and are never echoed;
+#     curl's own error text (which can name the host) is discarded and only its
+#     exit code is reported, and the response body is never printed.
+#
+# GitHub pauses scheduled workflows after 60 days without repository activity
+# and emails a warning first; re-enable the schedule from the Actions tab.
+# Vercel Hobby keeps runtime logs only about an hour, so the logs alone are no
+# monitor; this job is.
+#
+# A schedule runs from the default branch, so this takes effect only once the
+# file is on main (13-15). Tim's first manual run is 13-17.
+
+on:
+  schedule:
+    - cron: '23 5 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    name: Upstash keep-alive
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: PING Upstash Redis
+        env:
+          URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+          TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${URL:-}" ] || [ -z "${TOKEN:-}" ]; then
+            echo "::error::Upstash secrets UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must both be set"
+            exit 1
+          fi
+          rc=0
+          body=$(curl -fsS --max-time 20 -H "Authorization: Bearer $TOKEN" "$URL/ping" 2>/dev/null) || rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::Upstash REST call failed with curl exit $rc (6 or 7: unreachable, 22: HTTP error such as a rejected token or archived database, 28: timeout)"
+            exit 1
+          fi
+          if ! printf '%s' "$body" | jq -e '.result == "PONG"' > /dev/null; then
+            echo "::error::Upstash did not answer PONG"
+            exit 1
+          fi
+          echo "Upstash answered PONG"
