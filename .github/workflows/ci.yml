@@ -155,7 +155,7 @@ jobs:
     # 60 minutes on them (run 42223932292). The tag must equal the lockfile
     # @playwright/test version (enforced by scripts/guards/check-install-parity.mjs).
     container:
-      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      image: mcr.microsoft.com/playwright:v1.65.0-noble
       options: --ipc=host
 
     steps:
@@ -206,7 +206,7 @@ jobs:
     # The tag must equal the lockfile @playwright/test version
     # (enforced by scripts/guards/check-install-parity.mjs).
     container:
-      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      image: mcr.microsoft.com/playwright:v1.65.0-noble
       options: --ipc=host
 
     steps:
