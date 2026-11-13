@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 13
 current_phase_name: Repo Safety & Test Debt
 status: executing
-stopped_at: Completed 13-01-PLAN.md
-last_updated: "2026-11-13T10:20:35.148Z"
+stopped_at: Completed 13-02-PLAN.md
+last_updated: "2026-11-13T10:31:57.686Z"
 last_activity: 2026-11-13
 last_activity_desc: Phase 13 execution started
-state_head: 9e8cf0382927a50103a238d232a5a823d053937e
+state_head: 54f44b201da45f9841e21ae09f5e33c3cf11359c
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 22
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 13 (Repo Safety & Test Debt) — EXECUTING
-Plan: 2 of 22
+Plan: 3 of 22
 Status: Ready to execute
 Last activity: 2026-11-13 — Phase 13 execution started
 
@@ -55,6 +55,7 @@ Progress: [░░░░░░░░░░] 0%
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 13 P01 | 11min | 3 tasks | 15 files |
+| Phase 13 P02 | 7min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,8 @@ Recent decisions affecting current work:
 - [Phase 18]: The Map/Grid/Carousel switch is retired; map collar, altimeter rail, sheet-index rectangles and 3-5 reference summits are in scope; credits go in each sheet margin plus a `/sources` page
 - [Phase 13]: 13-01: CI OK verdict is scripts/ci/ci-ok.jq (jq -e over toJSON(needs)); only dependency-review may skip, and only outside pull_request; empty needs fails
 - [Phase 13]: 13-01: check-ci-gate.mjs also fails on permissions: write-all and on any job without an explicit token scope, since either hands a job checks: write; CI_OK_ELSEWHERE_ALLOWED is empty until the 13-10 relay
+- [Phase 13]: 13-02: the production limiter fails closed only when VERCEL_ENV === 'production' (D-12); unconfigured, Redis error and the library's success-on-timeout all refuse, and the route answers 503 server-error with no Retry-After
+- [Phase 13]: 13-02: credentials are one complete pair, UPSTASH_REDIS_REST_* first then KV_REST_API_*, never mixed, empty counts as missing; LIMIT_TIMEOUT_MS = 3000; which pair production sets is still 13-05's input
 
 ### Pending Todos
 
@@ -122,6 +125,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-13T10:20:35.122Z
-Stopped at: Completed 13-01-PLAN.md
+Last session: 2026-11-13T10:31:57.660Z
+Stopped at: Completed 13-02-PLAN.md
 Resume file: None
