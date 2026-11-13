@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 13
 current_phase_name: Repo Safety & Test Debt
 status: executing
-stopped_at: Completed 13-20-PLAN.md
-last_updated: "2026-11-13T20:28:16.205Z"
+stopped_at: Completed 13-21-PLAN.md
+last_updated: "2026-11-13T20:32:13.454Z"
 last_activity: 2026-11-13
 last_activity_desc: Phase 13 execution started
-state_head: 0db65441a55e809128bb300f749b78dc554be311
+state_head: 8147e76350e8cdb9f054d5b82b4361e70532d919
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 22
-  completed_plans: 20
+  completed_plans: 21
   percent: 0
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 13 (Repo Safety & Test Debt) — EXECUTING
-Plan: 21 of 22
+Plan: 22 of 22
 Status: Ready to execute
 Last activity: 2026-11-13 — Phase 13 execution started
 
@@ -74,6 +74,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 13 P18 | 6min | 2 tasks | 5 files |
 | Phase 13 P19 | 55min | 3 tasks | 1 files |
 | Phase 13 P20 | 2h40m | 3 tasks | 6 files |
+| Phase 13 P21 | 4min | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -134,6 +135,8 @@ Recent decisions affecting current work:
 - [Phase 13]: 13-20: Playwright 1.65 green on all three engines in CI (CI OK check run 132142890020 on cffcf99, E2E 37m24s); 7 Firefox cases crash on upstream Firefox 159 (Playwright #43967, Mozilla 2090055) and are excluded on Firefox only via the @firefox-43967 title tag and FIREFOX_INVERT (Tim's selections "A: Firefox-only fixme (Recommended)" then "A-tag (Recommended)", because GUARD-03 rejects .fixme(); guard untouched)
 - [Phase 13]: 13-20: baseline run 43500162579 (update_mode changed) returned 48 PNGs all blob-identical; Tim replied "none" to Task 3, so no PNG commit; check-visual-run PASS on cffcf99, check-snapshot-commit --none OK on 5ab6d15, 3757994, cffcf99; #140 left open for Dependabot (approve-leave-140), closes with the phase PR; ci/13-pw165 left on origin for Tim to delete after the phase PR merges
 - [Phase 13]: 13-20: hand-overs to 13-22: remove the @firefox-43967 tags and FIREFOX_INVERT after the Playwright release with the fixing Firefox roll (firefox --list 434 back to 441); optional local guard:tests step (npm run lint does not run GUARD-03)
+- [Phase 13]: 13-21: D-06 fallback not needed: relay.decision a-confirmed copied from 13-19 (Tim's 13-19 selection "a-confirmed (Recommended)"); ci-skip-relay.yml, check-ci-gate.mjs and selftest.mjs unchanged, relay identical to origin/main d48af99
+- [Phase 13]: 13-21: fallback.approval skip: Tim was not asked for 13-21; Tasks 2 and 3 (fallback PR, ci/13-proof-skip-2 re-proof) skipped by the plan's a-confirmed branch; nothing pushed; GUARD-08 stays Pending by the shared-ID gate (13-22 also declares it)
 
 ### Pending Todos
 
@@ -186,6 +189,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-13T20:28:16.167Z
-Stopped at: Completed 13-20-PLAN.md
+Last session: 2026-11-13T20:32:13.416Z
+Stopped at: Completed 13-21-PLAN.md
 Resume file: None

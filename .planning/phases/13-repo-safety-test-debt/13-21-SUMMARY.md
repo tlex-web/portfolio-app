@@ -37,7 +37,7 @@ key-decisions:
 
 requirements-completed: []  # GUARD-08 stays Pending by the shared-ID gate: requirements.ready-ids returned blocked [GUARD-08] because 13-22 also declares it and has no SUMMARY yet
 
-duration: 3min
+duration: 4min
 completed: 2026-11-13
 ---
 
