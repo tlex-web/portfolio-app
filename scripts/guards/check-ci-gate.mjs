@@ -42,6 +42,21 @@
  *      jq list would fail CI OK; one in the list without the condition
  *      would let the jq accept a skip nobody intended)
  *
+ * The skip-marker relay, .github/workflows/ci-skip-relay.yml (D-06 option A),
+ * runs under pull_request_target with the base repository's token on
+ * possibly untrusted PRs. When that file exists:
+ *  11. no step `uses:` a checkout action, and no run block runs git clone,
+ *      checkout, switch, fetch, pull or worktree, gh pr checkout or gh repo
+ *      clone ("relay checks out code")
+ *  12. no `${{` on any line of a run block, shell comments included, because
+ *      GitHub substitutes expressions before the shell runs; event fields go
+ *      through env: ("expression inside a run block")
+ *  13. the job whose name can be CI OK has no job-level `if:` (a job skipped
+ *      by its if: reports Success; the relay changes its name instead)
+ *  14. `pull_request_target` is its only trigger
+ *  15. top-level `permissions: {}`, and the only write scope anywhere in the
+ *      file is `actions: write` on the CI OK relay job
+ *
  * Usage:
  *   node scripts/guards/check-ci-gate.mjs [--root <dir>]
  *   (Runs from `npm run lint` via `npm run guard:ci`)
@@ -102,15 +117,18 @@ const { root } = parseArgs(process.argv.slice(2));
 const failures = [];
 const fail = (file, message) => failures.push(`${file}: ${message}`);
 
-/** Reads a workflow as comment-stripped lines (line count preserved), or null. */
-function readLines(rel) {
-  let text;
+/** Reads a file as raw lines (comments kept), or null. */
+function readRawLines(rel) {
   try {
-    text = fs.readFileSync(path.join(root, rel), 'utf-8');
+    return fs.readFileSync(path.join(root, rel), 'utf-8').split(/\r?\n/);
   } catch {
     return null;
   }
-  return text.split(/\r?\n/).map(stripComment);
+}
+
+/** Reads a workflow as comment-stripped lines (line count preserved), or null. */
+function readLines(rel) {
+  return readRawLines(rel)?.map(stripComment) ?? null;
 }
 
 /**
@@ -145,9 +163,10 @@ function normalizeIf(value) {
 }
 
 /**
- * Returns [{ id, keyIndent, lines }] for every job under the top-level
- * `jobs:` key, or null when there is no `jobs:` key. `lines` are the job's
- * body lines; `keyIndent` is the indentation of its own keys.
+ * Returns [{ id, keyIndent, lines, start, end }] for every job under the
+ * top-level `jobs:` key, or null when there is no `jobs:` key. `lines` are the
+ * job's body lines; `keyIndent` is the indentation of its own keys; `start`
+ * and `end` are the file line indexes of its id line and last body line.
  */
 function readJobs(lines) {
   const start = lines.findIndex((l) => /^jobs:\s*$/.test(l));
@@ -164,12 +183,13 @@ function readJobs(lines) {
     if (indent < jobIndent) break;
     if (indent === jobIndent) {
       const m = /^\s*([A-Za-z0-9_-]+)\s*:/.exec(line);
-      current = { id: m ? m[1] : line.trim(), keyIndent: null, lines: [] };
+      current = { id: m ? m[1] : line.trim(), keyIndent: null, lines: [], start: i };
       jobs.push(current);
       continue;
     }
     if (current.keyIndent === null) current.keyIndent = indent;
     current.lines.push(line);
+    current.end = i;
   }
   return jobs;
 }
@@ -491,6 +511,106 @@ for (const { rel, lines, jobs } of workflows) {
     }
   }
 }
+
+/**
+ * Every `run:` step as { start, end }: the file line indexes of its `run:` key
+ * line and its last content line (the same block rule as extractRunCommands).
+ */
+function runBlocks(lines) {
+  const blocks = [];
+  for (let i = 0; i < lines.length; i++) {
+    const m = /^(\s*)(?:-\s+)?run:\s*(.*)$/.exec(lines[i]);
+    if (!m) continue;
+    const keyIndent = m[1].length;
+    let end = i;
+    if (/^[|>][+-]?\d*$/.test(m[2].trim())) {
+      for (let j = i + 1; j < lines.length; j++) {
+        const line = lines[j];
+        if (line.trim() === '') continue;
+        if (indentOf(line) <= keyIndent) break;
+        end = j;
+      }
+    }
+    blocks.push({ start: i, end });
+  }
+  return blocks;
+}
+
+/** Rule 11: a `uses:` of a checkout action. */
+const USES_CHECKOUT = /^\s*(?:-\s+)?uses\s*:\s*['"]?([^'"\s]*checkout[^'"\s]*)/i;
+/** Rule 11: shell commands that fetch or check out code. */
+const CHECKOUT_COMMAND = /(^|[\s;&|(])(git\s+(clone|checkout|switch|fetch|pull|worktree)|gh\s+(pr\s+checkout|repo\s+clone))(\s|$)/;
+/** Rule 15: any `<scope>: write` grant. */
+const WRITE_SCOPE = /(^|[\s{,])['"]?([A-Za-z-]+)['"]?\s*:\s*['"]?write\b/g;
+
+/**
+ * 11-15. The skip-marker relay (D-06 option A) runs under pull_request_target,
+ * with the base repository's token, on possibly untrusted PRs. When the file
+ * exists it must never check out or run PR code, never interpolate an
+ * expression into a shell, never skip its CI OK job by `if:`, run on no other
+ * event, and hold no token scope beyond `actions: write` on its CI OK job.
+ */
+function checkRelay({ rel, lines, jobs }) {
+  const raw = readRawLines(rel) ?? [];
+  const blocks = runBlocks(lines);
+  const ciOkJobs = jobs.filter((j) => (jobName(j) ?? '').includes(CI_OK_NAME));
+
+  // 11. no checkout, by action or by command
+  lines.forEach((line, i) => {
+    const m = USES_CHECKOUT.exec(line);
+    if (m) fail(rel, `relay checks out code (line ${i + 1}: uses: ${m[1]}); a pull_request_target workflow must never check out PR code`);
+  });
+  for (const { start, end } of blocks) {
+    for (let i = start; i <= end; i++) {
+      const m = CHECKOUT_COMMAND.exec(lines[i].replace(/^(\s*)(?:-\s+)?run:\s*/, '$1'));
+      if (m) fail(rel, `relay checks out code (line ${i + 1}: ${m[2]}); a pull_request_target workflow must never check out PR code`);
+    }
+  }
+
+  // 12. no expression inside a run block (raw lines: GitHub substitutes
+  // `${{ }}` before the shell runs, shell comments included)
+  for (const { start, end } of blocks) {
+    for (let i = start; i <= end; i++) {
+      if ((raw[i] ?? '').includes('${{')) {
+        fail(rel, `expression inside a run block (line ${i + 1}); pass event fields through env: and quote them`);
+      }
+    }
+  }
+
+  // 13. the job whose name can be CI OK has no job-level if:
+  for (const job of ciOkJobs) {
+    const cond = jobKey(job, 'if');
+    if (cond) fail(rel, `job-level if on the CI OK relay job ${job.id} (if: ${cond.value}); a job skipped by its if: reports Success`);
+  }
+
+  // 14. pull_request_target is the only trigger
+  const on = readOnBlock(lines);
+  const triggers = on ? readTriggers(on) : [];
+  if (triggers.length !== 1 || triggers[0] !== 'pull_request_target') {
+    fail(rel, `relay may trigger only on pull_request_target (on: declares ${triggers.join(', ') || 'nothing'})`);
+  }
+
+  // 15. top-level permissions: {}, and actions: write on the CI OK job is the only write scope
+  const top = lines.findIndex((l) => /^permissions\s*:/.test(l));
+  const topValue = top === -1 ? null : lines[top].replace(/^permissions\s*:\s*/, '').replace(/\s+/g, '');
+  if (topValue !== '{}') {
+    fail(rel, `relay must set top-level permissions: {} (${top === -1 ? 'it sets none' : `line ${top + 1} sets ${lines[top].trim()}`})`);
+  }
+  lines.forEach((line, i) => {
+    for (const m of line.matchAll(WRITE_SCOPE)) {
+      const scope = m[2];
+      const owner = jobs.find((j) => i > j.start && i <= j.end);
+      if (scope === 'actions' && owner && ciOkJobs.includes(owner)) continue;
+      fail(
+        rel,
+        `line ${i + 1}: relay grants ${scope}: write${owner ? ` in job ${owner.id}` : ''}; only the CI OK relay job may hold a write scope, and only actions: write`,
+      );
+    }
+  });
+}
+
+const relayWorkflow = workflows.find((w) => w.file === RELAY_FILE);
+if (relayWorkflow) checkRelay(relayWorkflow);
 
 if (failures.length > 0) {
   for (const f of failures) console.error(`ci-gate: FAIL ${f}`);

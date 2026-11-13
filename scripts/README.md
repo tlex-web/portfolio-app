@@ -124,6 +124,11 @@ The docs-only fast path (D-08, D-09): `scripts/ci/classify-changes.mjs` gets eve
 | triggers | `ci.yml` without `push`, `pull_request` or `workflow_dispatch` in `on:` (the skip-marker relay dispatches `ci.yml`) |
 | no path filter | a `paths:` or `paths-ignore:` key anywhere in `ci.yml`'s `on:` block (a workflow skipped by its trigger filter leaves `CI OK` pending) |
 | heavy-job set | the jobs whose `if:` reads `needs.changes.outputs.docs_only` differ from the ids in the one `IN(...)` call of `scripts/ci/ci-ok.jq`, or one of those jobs does not need `changes` |
+| relay: no checkout | `ci-skip-relay.yml` with a checkout action, or a run block running `git clone`/`checkout`/`switch`/`fetch`/`pull`/`worktree`, `gh pr checkout` or `gh repo clone` |
+| relay: no expression in `run` | a `${{` on any line of a relay run block, shell comments included (event fields go through `env:`) |
+| relay: no job-level `if:` | a job-level `if:` on the relay job whose name can be `CI OK` |
+| relay: one trigger | any relay trigger other than `pull_request_target` |
+| relay: token scope | relay top-level `permissions:` other than `{}`, or any write scope other than `actions: write` on the `CI OK` relay job |
 
 ```bash
 npm run guard:ci
