@@ -142,6 +142,10 @@ Plans:
 **Research**: Not needed (small, well-understood fixes). Diagnose the Escape-focus root cause before fixing it; it was not diagnosed at 12-UAT.
 **Baselines**: One declared PNG set per cause (mobile menu, Home at 375 px, rail scrim, case-study terminal); Tim commits the PNGs.
 **Inputs from Tim**: UI-SPEC approval, the keyboard-focus check he made at 12-UAT test 3, and the PNG commits.
+**Scope notes** (hand-overs from the Phase 13 ledger triage, 13-LEDGER-TRIAGE.md):
+  - 07 WR-06 (choosing the current page in the mobile menu leaves the panel open) is SHELL-07 itself: `components/site/SiteNav.tsx` closes the panel only on a pathname change, and the panel links have no `onClick` (13-LEDGER-TRIAGE.md #6).
+  - 10 IN-01 (a hidden callout silently takes the first Escape when labels are hidden on the gutter tier): decide the Escape order with the LBOX-08 Escape-focus work; `PhotoViewer.tsx` keeps `expandedId` set when labels hide (13-LEDGER-TRIAGE.md #30).
+  - Fallback for the Deployment Checks live proof (13-16): if the Phase 13 close merge did not show its production deployment held until `CI OK` concluded, the first Phase 14 merge to `main` records that proof (see `deferred-items.md` in the Phase 13 folder).
 
 ### Phase 15: Region & Plate Data Model
 
@@ -162,6 +166,9 @@ Plans:
   - Groundwork for later phases: `photoHref` and `regionHref` in place of the hand-built photo URLs; a slim route list the proxy can import instead of the view-model; a view-model split into Home waypoints, region series and photo views; region and plate registries as JSON so the `.mjs` generators can read them; `SheetMargin` extracted from `SiteFooter`; `ContourField(plate)`; named test fixtures instead of index lookups; a closed sidecar schema and an explicit photo id map.
   - One builder run owns every plate (a per-plate run would delete the others' files), and asset names stay flat and prefixed, so the existing regexes, cache rules and service-worker precache keep working.
   - From here on the v2.0 light table shows the Zermatt series only, so Phase 16's new regions never land on the Matterhorn map.
+  - 07 IN-08 (tests and e2e specs excluded from `type-check`) is GUARD-10 (13-LEDGER-TRIAGE.md #14). The `@types/jest` package is not approved: Tim vets it first, or the plan uses `@jest/globals` imports (13-06).
+  - Suggestion from 13-20, Tim's call: `npm run lint` does not run GUARD-03 (`guard:tests`), so a `.fixme(`/`.skip(`/`.only(` under `e2e/` passes every local gate and fails only in CI. While GUARD-10 reworks `type-check`, consider a `guard:tests:local` script, a pre-push step, or running the guard's focus/skip scan inside `lint`, without weakening GUARD-03.
+  - When the served-asset guard rules are documented in `scripts/README.md`, correct its contrast paragraph (line 78 at 13-22): it says 36 pairs, but `check-contrast.mjs` measures 47 (Phase 11 added the `ink-inverse`/`ink` pair and 10 trail pairs; found by 13-13).
 
 ### Phase 16: New Regions & Alps Overview Data
 
@@ -199,6 +206,9 @@ Plans:
 **Research**: Needed: spike the region path next to the `/photos/<slug>` intercepting route (the static-sibling case, for example `/photos/regions/<region>`) under webpack (dev) and Turbopack (build) in Next 16.4.5; how the proxy's two-segment 404 regex and `dynamicParams` treat the new path; region cards on the shared OG template; JSON-LD typing (schema-dts as a type-only devDependency) with a parse, `<`-escaping and precision test.
 **UI-SPEC**: Not needed. The region page here is a plain server-rendered page in the existing shell (heading, facts, links to its photos) whose job is to fix the route, the metadata and the structured data; Phase 18 designs it. If phases merge to `main` one at a time, region pages stay unlinked from navigation until Phase 18.
 **Inputs from Tim**: The region path, chosen after the spike.
+**Scope notes** (hand-overs from Phase 13):
+  - 10 IN-03 (duplicated photo-path parsing and `isEditable`, with different behaviour): `LightboxDialog.tsx` keeps its own `PHOTO_PATH`/`slugOf` beside `lib/photos/stepping.ts` `slugFromPath`, and `isEditable` lives in both `PhotoViewer.tsx` and `ZoomStage.tsx`; unify them when the region routes change the parsing (13-LEDGER-TRIAGE.md #32).
+  - E2E duration: the E2E Tests job ran 28m31s, 37m40s, 38m43s and 37m24s across Phase 13 (13-15, 13-20), against the roughly 45-minute line (13-CONTEXT discretion; sharding or a matrix is allowed). Region pages join the audit gate here, so measure the job on this phase's PR and plan a shard before it would cross 45 minutes; Phase 18 adds more routes.
 
 ### Phase 18: Immersive Survey Layout
 
@@ -217,6 +227,11 @@ Plans:
 **Research**: Needed: overview label collision at 375 px; per-breakpoint `sizes` and the photo-page LCP (no photo-page LCP gate exists yet); the JS-budget margin (HOME-08 has about 6.2%); Web Share support and the copy fallback; region order (west to east or by date) and whether the nav hides on scroll.
 **Baselines**: One deliberate re-baseline per cause with declared PNG sets (overview, region pages, photo page and lightbox, the footer's sources link on every route, the sources page), content last; new routes captured with `update_mode=missing`; Tim commits the PNGs. Re-run the HOME-08 budget, since shared chunks may grow.
 **Inputs from Tim**: UI-SPEC approval, region order, the sources-page wording (verbatim licence texts) and the PNG commits.
+**Scope notes** (hand-overs from the Phase 13 ledger triage, 13-LEDGER-TRIAGE.md):
+  - 10 IN-04 (the neighbour preload asks for the AVIF set only, `PhotoViewer.tsx` `img.srcset = view.stage.srcSetAvif`): fix during the LBOX-09 stepping rework (13-LEDGER-TRIAGE.md #33).
+  - 10 IN-05 (`STAGE_SIZES` ignores the gutter tier's height condition and the key tier's height-limited box): the immersive layout resizes the stage, so derive `sizes` from the new layout (13-LEDGER-TRIAGE.md #34).
+  - 10 IN-08 (the row-height drift guard does not tie each value to its breakpoint, `GalleryGrid.test.tsx`): PHOTO-06 rewrites the view tests; tie each value to its breakpoint there, or retire the guard with the grid (13-LEDGER-TRIAGE.md #37).
+  - 10 IN-09, remainder: 13-09 (`86b34dc`) gave the three surviving lightbox tests a positive settle signal; the 600 ms `waitForTimeout` after `switchTo` in `e2e/photos-sweep.spec.ts` stays, because PHOTO-06 retires the view switch. Its rewritten test must wait on a positive signal, not a fixed sleep (13-LEDGER-TRIAGE.md #38, 13-09-SUMMARY).
 
 ### Phase 19: Drone Loops
 
