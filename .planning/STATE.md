@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 13
 current_phase_name: Repo Safety & Test Debt
 status: executing
-stopped_at: Completed 13-15-PLAN.md
-last_updated: "2026-11-13T13:35:55.080Z"
+stopped_at: Completed 13-16-PLAN.md
+last_updated: "2026-11-13T16:49:44.606Z"
 last_activity: 2026-11-13
 last_activity_desc: Phase 13 execution started
-state_head: b39c355c4848a64807cb7a6cf1e421a67cf4d281
+state_head: bdc86d290a5cdd9267ed1f83130ba601144ae77e
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 22
-  completed_plans: 15
+  completed_plans: 16
   percent: 0
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 13 (Repo Safety & Test Debt) — EXECUTING
-Plan: 16 of 22
+Plan: 17 of 22
 Status: Ready to execute
 Last activity: 2026-11-13 — Phase 13 execution started
 
@@ -69,6 +69,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 13 P14 | 14min | 3 tasks | 19 files |
 | Phase 13 P05 | 3min | 2 tasks | 1 files |
 | Phase 13 P15 | 45min | 3 tasks | 2 files |
+| Phase 13 P16 | 1h50m | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -113,6 +114,9 @@ Recent decisions affecting current work:
 - [Phase 13]: 13-05: production has the complete UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN pair (REDIS_URL unused), System Environment Variables on, Deployment Checks offered on Hobby; keep-alive is ping-readonly via secrets UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN (read-only token unverified); Pitfall 2 resolved for production, 13-15 unblocked on the pair
 - [Phase 13]: 13-15: PR #143 opened on Tim's "Push and pr" (mapped to push-and-pr); CI OK success (app 15368) and all 13 check runs green on head 90758db; Visual Regression PASS with update mode none and check-snapshot-commit --none OK on 6ff759d and d69b42c; E2E baseline 28m31s for 13-20; no fix push
 - [Phase 13]: 13-15: Security Audit warns on 25 dev-only npm audit advisories (3 low, 22 moderate; --omit=dev finds 0); the step is warn-only on main too; logged in deferred-items.md, not changed
+- [Phase 13]: 13-16: PR #143 merged by Tim ("merged") as merge commit d48af99 (parents b81d6f2, 962e732); push run 43459507776 CI OK success (app 15368) at 16:39:08Z, before the ruleset (D-05)
+- [Phase 13]: 13-16: Tim applied the main ruleset and deleted 10401314 ("applied, deployment checks on"); live ruleset 27216079 matches main-ruleset.json on every set field (no bypass, never, active, ~DEFAULT_BRANCH, merge only, 0 approvals, strict off, CI OK@15368); 10401314 returns 404
+- [Phase 13]: 13-16: Deployment Checks on CI OK recorded from Tim's reply only (agent cannot read Vercel); d48af99 production deploy (16:09:27Z) predates the setting; live evidence = first production deploy after the next merge to main, owned by 13-22
 
 ### Pending Todos
 
@@ -165,6 +169,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-13T13:35:55.040Z
-Stopped at: Completed 13-15-PLAN.md
+Last session: 2026-11-13T16:49:44.574Z
+Stopped at: Completed 13-16-PLAN.md
 Resume file: None
