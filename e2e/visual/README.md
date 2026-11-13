@@ -47,7 +47,8 @@ update run on visual-light would overwrite the dark files with light output.
 - Only `-linux.png` files are ever committed. Never run `--update-snapshots`
   locally on Windows. `.gitignore` ignores `-win32.png` and `-darwin.png`
   files under `e2e/`, and `check-snapshot-commit.mjs` rejects any non-Linux
-  PNG in a commit.
+  PNG in a commit. It checks a merge commit against its first parent, so
+  every PNG the merge brings in counts.
 - The CI compare job never uses `--update-snapshots=missing` or `all`. Under CI
   the config sets `updateSnapshots: 'none'`, so a missing PNG fails the run.
 - Snapshot names are explicit arrays (`['photos', '375-reduced.png']`), stored
