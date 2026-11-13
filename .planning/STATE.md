@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 13
 current_phase_name: Repo Safety & Test Debt
 status: executing
-stopped_at: Completed 13-02-PLAN.md
-last_updated: "2026-11-13T10:31:57.686Z"
+stopped_at: Completed 13-06-PLAN.md
+last_updated: "2026-11-13T10:37:05.914Z"
 last_activity: 2026-11-13
 last_activity_desc: Phase 13 execution started
-state_head: 54f44b201da45f9841e21ae09f5e33c3cf11359c
+state_head: 97e68d4bdce359e7822a7495c83c9af12dd3036e
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 22
-  completed_plans: 2
+  completed_plans: 3
   percent: 0
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 13 (Repo Safety & Test Debt) — EXECUTING
-Plan: 3 of 22
+Plan: 4 of 22
 Status: Ready to execute
 Last activity: 2026-11-13 — Phase 13 execution started
 
@@ -56,6 +56,7 @@ Progress: [░░░░░░░░░░] 0%
 |------|----------|-------|-------|
 | Phase 13 P01 | 11min | 3 tasks | 15 files |
 | Phase 13 P02 | 7min | 3 tasks | 7 files |
+| Phase 13 P06 | 36min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,10 @@ Recent decisions affecting current work:
 - [Phase 13]: 13-01: check-ci-gate.mjs also fails on permissions: write-all and on any job without an explicit token scope, since either hands a job checks: write; CI_OK_ELSEWHERE_ALLOWED is empty until the 13-10 relay
 - [Phase 13]: 13-02: the production limiter fails closed only when VERCEL_ENV === 'production' (D-12); unconfigured, Redis error and the library's success-on-timeout all refuse, and the route answers 503 server-error with no Retry-After
 - [Phase 13]: 13-02: credentials are one complete pair, UPSTASH_REDIS_REST_* first then KV_REST_API_*, never mixed, empty counts as missing; LIMIT_TIMEOUT_MS = 3000; which pair production sets is still 13-05's input
+- [Phase 13]: 13-06: Tim approved the 44-row ledger triage with no overrides (2026-11-13); fixed 32 (10 already, 22 fix now), deferred 9, skipped 3; Unowned fix rows none
+- [Phase 13]: 13-06: 07 WR-07 is fixed in 13-11 (SafeCanvas logs non-WebGL errors in componentDidCatch); 13-11 checks the new console.error does not trip the audit gate on Home
+- [Phase 13]: 13-06: 07 IN-08 becomes GUARD-10 in Phase 15 (tests, e2e specs and Playwright configs type-checked with zero errors; measured 5482 errors in 103 files, 69 in 21 with Jest globals); @types/jest still needs Tim's vetting, or use @jest/globals imports
+- [Phase 13]: 13-06: 12 IN-08 accepted (a real visitor cannot produce the fieldless validation answer)
 
 ### Pending Todos
 
@@ -125,6 +130,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-13T10:31:57.660Z
-Stopped at: Completed 13-02-PLAN.md
+Last session: 2026-11-13T10:36:56.307Z
+Stopped at: Completed 13-06-PLAN.md
 Resume file: None
