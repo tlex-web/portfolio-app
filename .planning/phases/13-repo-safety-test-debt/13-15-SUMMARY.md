@@ -122,7 +122,7 @@ status: complete
 | Body | the scratch file Task 1 wrote, which the orchestrator reviewed: `C:/Users/tim/AppData/Local/Temp/claude/b700806455329315/423f2dbb-2df9-42ef-a459-a3a8b26d8d03/scratchpad/13-15-pr-body.md` |
 | Push | `git push -u origin HEAD`, plain, creating the new remote branch and setting the upstream. No force push and no other branch |
 
-**pr.approval:** Tim's literal reply, given in the conversation on 2026-11-13, was "Push and pr". The orchestrator mapped it to option `push-and-pr`: a plain push of the branch, open the PR, fast-forward fix pushes allowed. No fix push was needed.
+**pr.approval:** Tim's literal reply, given in the conversation on 2026-11-13, was "Push and pr". The orchestrator mapped it to option `push-and-pr`: a plain push of the branch, open the PR, fast-forward fix pushes allowed. One fast-forward fix push followed, `5436cb2` (see Task 3 below).
 
 ## Task 1 results (pre-push gate, recorded by the first executor at 90758db)
 

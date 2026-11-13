@@ -13,45 +13,45 @@ findings:
     title: "A browser-Back close (the Android back gesture) uses a slug that may be lagging for focus return and the carousel's front photo"
   - id: IN-01
     severity: info
-    disposition: open
+    disposition: deferred
     title: "A hidden callout silently takes the first Escape when labels are hidden on the gutter tier"
   - id: IN-02
     severity: info
-    disposition: open
+    disposition: fixed
     title: "`collapseCallout` uses `CSS.escape` without the fallback LightboxDialog provides"
   - id: IN-03
     severity: info
-    disposition: open
+    disposition: deferred
     title: "Duplicated photo-path parsing and `isEditable`, with different behaviour"
   - id: IN-04
     severity: info
-    disposition: open
+    disposition: deferred
     title: "The neighbour preload asks for the AVIF set only"
   - id: IN-05
     severity: info
-    disposition: open
+    disposition: deferred
     title: "`STAGE_SIZES` ignores the gutter tier's height condition and the key tier's height-limited box"
   - id: IN-06
     severity: info
-    disposition: open
+    disposition: fixed
     title: "Unused parameters on component APIs"
   - id: IN-07
     severity: info
-    disposition: open
+    disposition: fixed
     title: "Fact list items are keyed by their text"
   - id: IN-08
     severity: info
-    disposition: open
+    disposition: deferred
     title: "The row-height drift guard does not tie each value to its breakpoint"
   - id: IN-09
     severity: info
-    disposition: open
+    disposition: fixed
     title: "Absence-only assertions after fixed sleeps can pass falsely"
   - id: IN-10
     severity: info
-    disposition: open
+    disposition: fixed
     title: "`closing` is never reset in LightboxDialog"
-open: 10
+open: 0
 total: 12
 recorded: 2026-10-26T18:58:22.182Z
 ---
@@ -62,16 +62,16 @@ recorded: 2026-10-26T18:58:22.182Z
 |---------|----------|-------------|--------|
 | CR-01 | critical | fixed | 10-REVIEW-FIX.md |
 | WR-01 | warning | fixed | 10-REVIEW-FIX.md |
-| IN-01 | info | open | - |
-| IN-02 | info | open | - |
-| IN-03 | info | open | - |
-| IN-04 | info | open | - |
-| IN-05 | info | open | - |
-| IN-06 | info | open | - |
-| IN-07 | info | open | - |
-| IN-08 | info | open | - |
-| IN-09 | info | open | - |
-| IN-10 | info | open | - |
+| IN-01 | info | deferred | handed to Phase 14 (ROADMAP.md scope note) (13-LEDGER-TRIAGE.md #30) |
+| IN-02 | info | fixed | 13-09: f03c424 (RED), 0aac3d3 (fix) (13-LEDGER-TRIAGE.md #31) |
+| IN-03 | info | deferred | handed to Phase 17 (ROADMAP.md scope note) (13-LEDGER-TRIAGE.md #32) |
+| IN-04 | info | deferred | handed to Phase 18, LBOX-09 stepping rework (ROADMAP.md scope note) (13-LEDGER-TRIAGE.md #33) |
+| IN-05 | info | deferred | handed to Phase 18, immersive layout (ROADMAP.md scope note) (13-LEDGER-TRIAGE.md #34) |
+| IN-06 | info | fixed | 13-09: 69160aa (refactor; type-check is the proof) (13-LEDGER-TRIAGE.md #35) |
+| IN-07 | info | fixed | 13-09: 7670c17 (RED), ecd59d2 (fix) (13-LEDGER-TRIAGE.md #36) |
+| IN-08 | info | deferred | handed to Phase 18, PHOTO-06 view-test rewrite (ROADMAP.md scope note) (13-LEDGER-TRIAGE.md #37) |
+| IN-09 | info | fixed | 13-09: 86b34dc (the three surviving lightbox tests); the photos-sweep switchTo 600 ms wait goes with the view switch, Phase 18 scope note (13-LEDGER-TRIAGE.md #38) |
+| IN-10 | info | fixed | 13-09: 86b2456 (RED), 722517b (fix) (13-LEDGER-TRIAGE.md #39) |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.

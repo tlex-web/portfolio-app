@@ -49,6 +49,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
           BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
           HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
@@ -60,6 +61,12 @@ jobs:
             echo "docs_only=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          # The previous tip covers only this push: a docs-only commit on top of
+          # a failed or cancelled code push would skip the heavy jobs over
+          # untested code. So a push to any branch but main compares with its
+          # merge-base with main, as the dispatch does. main keeps the previous
+          # tip, because main moves only by merged PRs that CI OK gated.
+          if [ "$EVENT" = push ] && [ "$REF" != refs/heads/main ]; then BASE=main; fi
           compare="$RUNNER_TEMP/compare.json"
           if ! gh api "repos/$REPO/compare/$BASE...$HEAD" > "$compare"; then
             echo "::warning::The compare call for $BASE...$HEAD failed; running the full CI."
@@ -77,11 +84,17 @@ jobs:
           cat "$RUNNER_TEMP/classify.txt"
           grep '^docs_only=' "$RUNNER_TEMP/classify.txt" >> "$GITHUB_OUTPUT"
 
+  # Job budgets (13 WR-05) sit well above the observed runs (lint about 1.5 min,
+  # unit tests 2, build 1.2, security audit 1, dependency review a few seconds)
+  # and well under the skip relay's 100-minute wait, so a hung step fails CI OK
+  # instead of holding it pending for GitHub's 360-minute default.
+  # check-ci-gate.mjs rule 16 requires a timeout-minutes on every job.
   lint-and-typecheck:
     name: Lint and Type Check
     runs-on: ubuntu-latest
     needs: [changes]
     if: needs.changes.outputs.docs_only != 'true'
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v7
@@ -109,6 +122,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [changes]
     if: needs.changes.outputs.docs_only != 'true'
+    timeout-minutes: 15
     permissions:
       contents: read
 
@@ -155,7 +169,7 @@ jobs:
     # 60 minutes on them (run 42223932292). The tag must equal the lockfile
     # @playwright/test version (enforced by scripts/guards/check-install-parity.mjs).
     container:
-      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      image: mcr.microsoft.com/playwright:v1.65.0-noble
       options: --ipc=host
 
     steps:
@@ -206,7 +220,7 @@ jobs:
     # The tag must equal the lockfile @playwright/test version
     # (enforced by scripts/guards/check-install-parity.mjs).
     container:
-      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      image: mcr.microsoft.com/playwright:v1.65.0-noble
       options: --ipc=host
 
     steps:
@@ -245,6 +259,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [changes, lint-and-typecheck, unit-tests]
     if: needs.changes.outputs.docs_only != 'true'
+    timeout-minutes: 20
     permissions:
       contents: read
 
@@ -281,6 +296,7 @@ jobs:
     name: Dependency Review
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: read
@@ -298,6 +314,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [changes]
     if: needs.changes.outputs.docs_only != 'true'
+    timeout-minutes: 10
     permissions:
       contents: read
 

@@ -57,6 +57,12 @@
  *  15. top-level `permissions: {}`, and the only write scope anywhere in the
  *      file is `actions: write` on the CI OK relay job
  *
+ * For ci.yml and, when it exists, the relay:
+ *  16. every job declares a job-level `timeout-minutes` that is a positive
+ *      whole number (13 WR-05: a job without one runs to GitHub's 360-minute
+ *      default, so a hung step holds ci.yml's CI OK pending for six hours,
+ *      while the relay's CI OK gives up at its own 100 minutes)
+ *
  * Usage:
  *   node scripts/guards/check-ci-gate.mjs [--root <dir>]
  *   (Runs from `npm run lint` via `npm run guard:ci`)
@@ -343,6 +349,20 @@ function readJqHeavyList() {
   return [...calls[0][1].matchAll(/"([^"]*)"/g)].map((m) => m[1]);
 }
 
+/** Rule 16: a positive whole number of minutes (quotes allowed, as YAML allows them). */
+const TIMEOUT_MINUTES = /^[1-9]\d*$/;
+/** 16. every job declares timeout-minutes, a positive whole number. */
+function checkTimeouts(rel, jobs) {
+  for (const job of jobs) {
+    const entry = jobKey(job, 'timeout-minutes');
+    if (!entry) {
+      fail(rel, `job ${job.id} has no timeout-minutes (it would run to GitHub's 360-minute default and hold CI OK pending)`);
+    } else if (!TIMEOUT_MINUTES.test(unquote(entry.value))) {
+      fail(rel, `job ${job.id} has timeout-minutes: ${entry.value}; expected a positive whole number of minutes`);
+    }
+  }
+}
+
 // 1. ci.yml exists
 const ciLines = readLines(CI_FILE);
 if (ciLines === null) {
@@ -412,6 +432,9 @@ if (ciLines === null) {
         );
       }
     }
+
+    // 16. every job has an explicit timeout
+    checkTimeouts(CI_FILE, jobs);
   }
 
   // 8. push, pull_request and workflow_dispatch triggers
@@ -607,6 +630,9 @@ function checkRelay({ rel, lines, jobs }) {
       );
     }
   });
+
+  // 16. every relay job has an explicit timeout
+  checkTimeouts(rel, jobs);
 }
 
 const relayWorkflow = workflows.find((w) => w.file === RELAY_FILE);

@@ -9,7 +9,7 @@
  * that cannot fail on a bad fixture is not a guard.
  *
  * Case shape: { name, guard, args, expectExit, expectOutput?, input?, cwd?, nodeArgs?, setup?, check? }
- *   or { name, fn } for pure helpers (fn returns an error string or null; no spawn)
+ *   or { name, fn } for pure helpers (fn returns, or resolves to, an error string or null; no spawn)
  *   - input: optional, piped to the guard's stdin
  *   - nodeArgs: optional, node flags placed before the guard path
  *   - cwd: optional, working directory of the spawn (defaults to this process's cwd)
@@ -29,11 +29,13 @@ import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
+import { createRequire } from 'module';
 import sharp from 'sharp';
 import { evaluate, pickRun } from '../ci/check-visual-run.mjs';
 import { evaluateSnapshotChanges, snapshotDiffArgs } from '../ci/check-snapshot-commit.mjs';
 import { DOCS_ONLY_FILES, classify } from '../ci/classify-changes.mjs';
 import { checkMp4 } from './lib/mp4-boxes.mjs';
+import { extractRunBlock, runStep } from './lib/workflow-shell.mjs';
 import { LEGACY_DEAD_FILES, assertNoImporters, isLegacyDeadFile } from './lib/legacy-dead-files.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -151,6 +153,391 @@ function classifyCase(paths, opts, expected) {
   return expectEqual(`${label}.docsOnly`, result.docsOnly, expected);
 }
 
+// app/globals.css vs DOCS_ONLY_FILES (13 WR-02): a diff of only those files skips build and visual
+// regression, so none may be a Tailwind source. The scan is Tailwind's own, set up the way
+// @tailwindcss/postcss sets it up (its automatic root, **/* at the directory next build runs in,
+// plus the stylesheet's compiled @source entries), with the plugin's own node and oxide packages.
+const GLOBALS_CSS = path.join(repoRoot, 'app', 'globals.css');
+const tailwindRequire = createRequire(createRequire(import.meta.url).resolve('@tailwindcss/postcss'));
+/** The repo-relative files Tailwind's scanner reads for `css`, compiled as app/globals.css. */
+async function tailwindSourceFiles(css) {
+  const { compile } = tailwindRequire('@tailwindcss/node');
+  const { Scanner } = tailwindRequire('@tailwindcss/oxide');
+  const compiler = await compile(css, { base: path.dirname(GLOBALS_CSS), onDependency: () => {} });
+  const root =
+    compiler.root === 'none' ? [] : compiler.root === null ? [{ base: repoRoot, pattern: '**/*', negated: false }] : [{ ...compiler.root, negated: false }];
+  const scanner = new Scanner({ sources: [...root, ...compiler.sources] });
+  scanner.scan();
+  return scanner.files.map((f) => path.relative(repoRoot, f).split(path.sep).join('/'));
+}
+/** The DOCS_ONLY_FILES entries Tailwind reads for `css`, or an error string when the scan reads no app/ source at all. */
+async function docsOnlyTailwindSources(css) {
+  const files = await tailwindSourceFiles(css);
+  if (!files.includes('app/layout.tsx')) return { error: `the scan read ${files.length} files but not app/layout.tsx, so it proves nothing` };
+  return { scanned: DOCS_ONLY_FILES.filter((f) => files.includes(f)) };
+}
+
+// Workflow shell: the run blocks of the real workflows, run under stub gh/sleep (GUARD-08, 13-VALIDATION G1/G2).
+// GUARD_SELFTEST_WORKFLOW_DIR points the cases at a mutated copy of the two workflows, to prove they can fail.
+const WORKFLOW_DIR = process.env.GUARD_SELFTEST_WORKFLOW_DIR ?? path.join(repoRoot, '.github', 'workflows');
+const RELAY_YML = path.join(WORKFLOW_DIR, 'ci-skip-relay.yml');
+const CI_YML = path.join(WORKFLOW_DIR, 'ci.yml');
+const detectBlock = () => extractRunBlock(RELAY_YML, { id: 'detect' });
+const relayBlock = () => extractRunBlock(RELAY_YML, { name: 'Dispatch ci.yml and mirror its conclusion' });
+const classifyBlock = () => extractRunBlock(CI_YML, { name: 'Classify the diff' });
+const REPO_SLUG = 'octo/site';
+const HEAD_SHA = '1234567890abcdef1234567890abcdef12345678';
+const BASE_SHA = 'abcdef1234567890abcdef1234567890abcdef12';
+const tail = (r) => `(exit ${r.status}; stdout ${JSON.stringify(r.stdout.trim())}; stderr ${JSON.stringify(r.stderr.trim())}; calls ${JSON.stringify(r.calls)})`;
+/** `${problemsOf(problems)} ${tail(r)}` when there are problems, else null. */
+const withTail = (problems, r) => (problems.length === 0 ? null : `${problems.join('; ')} ${tail(r)}`);
+
+/** The detect step on a head commit `msg`; null when GITHUB_OUTPUT gets exactly skipped=<expected>. */
+function detectCase(msg, expected, { runs = '[]' } = {}) {
+  const r = runStep(detectBlock(), { env: { GH_TOKEN: 'dummy', REPO: REPO_SLUG, SHA: HEAD_SHA, STUB_MSG: msg, STUB_RUNS: runs } });
+  const problems = [];
+  if (r.status !== 0) problems.push(`expected exit 0, got ${r.status}`);
+  if (r.output !== `skipped=${expected}\n`) problems.push(`GITHUB_OUTPUT is ${JSON.stringify(r.output)}, expected skipped=${expected}`);
+  if (!r.calls.some((c) => c.startsWith(`gh api -X GET repos/${REPO_SLUG}/actions/runs `) && c.includes(`head_sha=${HEAD_SHA}`) && c.includes('event=pull_request'))) {
+    problems.push('the runs API was not queried for this SHA and event pull_request');
+  }
+  return withTail(problems, r);
+}
+/** The detect step on a head without a usable marker: skipped=false and no wait, no runs query. */
+function detectNoMarkerCase(msg) {
+  const r = runStep(detectBlock(), { env: { GH_TOKEN: 'dummy', REPO: REPO_SLUG, SHA: HEAD_SHA, STUB_MSG: msg, STUB_RUNS: '[]' } });
+  const problems = [];
+  if (r.status !== 0) problems.push(`expected exit 0, got ${r.status}`);
+  if (r.output !== 'skipped=false\n') problems.push(`GITHUB_OUTPUT is ${JSON.stringify(r.output)}, expected skipped=false`);
+  if (r.calls.some((c) => c.startsWith('sleep') || c.includes('/actions/runs'))) problems.push('the step waited or queried runs for a message with no marker');
+  const error = withTail(problems, r);
+  return error && `message ${JSON.stringify(msg)}: ${error}`;
+}
+/** First non-null result of fn over each item (stops at the first problem). */
+const firstProblem = (items, fn) => {
+  for (const item of items) {
+    const error = fn(item);
+    if (error) return error;
+  }
+  return null;
+};
+
+const RELAY_RUN = { id: 4242, head_sha: HEAD_SHA, created_at: '2999-01-01T00:00:00Z' };
+const relayEnv = (over = {}) => ({
+  GH_TOKEN: 'dummy',
+  REPO: REPO_SLUG,
+  HEAD_REPO: REPO_SLUG,
+  REF: 'feature/ship-note',
+  SHA: HEAD_SHA,
+  STUB_DISPATCH_RUNS: JSON.stringify([RELAY_RUN]),
+  ...over,
+});
+const runRelay = (over) => runStep(relayBlock(), { env: relayEnv(over) });
+const dispatchCalls = (r) => r.calls.filter((c) => c.startsWith('gh workflow run'));
+const pollCalls = (r) => r.calls.filter((c) => c.includes('/actions/workflows/ci.yml/runs'));
+/** A fixed runner clock for the lookup cases (13 WR-04): 2030-01-01T00:00:10Z as epoch seconds. */
+const RELAY_NOW = Date.UTC(2030, 0, 1, 0, 0, 10) / 1000;
+/** GitHub's created_at for an instant `offset` seconds from RELAY_NOW (second resolution, as the API gives it). */
+const stampAt = (offset) => new Date((RELAY_NOW + offset) * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z');
+/** The relay under RELAY_NOW with these dispatched runs; null when it mirrors run `id` and its poll filter holds no SHA. */
+function relayMirrors(runs, id) {
+  const r = runRelay({ STUB_NOW: String(RELAY_NOW), STUB_DISPATCH_RUNS: JSON.stringify(runs), STUB_CONCLUSION: 'success' });
+  const problems = [];
+  if (r.status !== 0) problems.push(`expected exit 0, got ${r.status}`);
+  if (!r.calls.includes(`gh run watch ${id} --repo ${REPO_SLUG} --exit-status --interval 60`)) problems.push(`run ${id} was not watched`);
+  if (!r.stdout.includes(`Mirroring CI run ${id} on ${HEAD_SHA}`)) problems.push(`no mirroring line for run ${id}`);
+  if (pollCalls(r).some((c) => c.includes(HEAD_SHA))) problems.push('the head SHA was interpolated into the poll (jq must read it from env)');
+  return withTail(problems, r);
+}
+
+/**
+ * The classify step with a canned compare body (and, when given, a separate one for a
+ * compare against main); null when it exits 0 with GITHUB_OUTPUT exactly docs_only=<expected>.
+ */
+function changesCase(compare, expected, { env = {}, calls, compareMain } = {}) {
+  const r = runStep(classifyBlock(), {
+    cwd: repoRoot,
+    compare,
+    compareMain,
+    env: { GH_TOKEN: 'dummy', REPO: REPO_SLUG, EVENT: 'pull_request', BASE: BASE_SHA, HEAD: HEAD_SHA, ...env },
+  });
+  const problems = [];
+  if (r.status !== 0) problems.push(`expected exit 0, got ${r.status}`);
+  if (r.output !== `docs_only=${expected}\n`) problems.push(`GITHUB_OUTPUT is ${JSON.stringify(r.output)}, expected docs_only=${expected}`);
+  if (calls && JSON.stringify(r.calls) !== JSON.stringify(calls)) problems.push(`gh calls ${JSON.stringify(r.calls)}, expected ${JSON.stringify(calls)}`);
+  return withTail(problems, r);
+}
+const filesOf = (...names) => ({ files: names.map((filename) => (typeof filename === 'string' ? { filename } : filename)) });
+const manyDocs = (n) => filesOf(...Array.from({ length: n }, (_, i) => `.planning/phases/note-${i}.md`));
+
+const WORKFLOW_SHELL_CASES = [
+  // detect (G1)
+  ...[
+    ['[skip ci]', 'Ship note [skip ci]'],
+    ['[ci skip]', 'Ship note [ci skip]'],
+    ['[no ci]', 'Ship note [no ci]'],
+    ['[skip actions]', 'Ship note [skip actions]'],
+    ['[actions skip]', 'Ship note [actions skip]'],
+  ].map(([marker, msg]) => ({
+    name: `workflow-shell detect: ${marker} with no pull_request CI run gives skipped=true`,
+    fn: () => detectCase(msg, 'true'),
+  })),
+  {
+    name: 'workflow-shell detect: a marker in another letter case, or in the body, still gives skipped=true',
+    fn: () => firstProblem(['Ship note [SKIP CI]', 'subject\n\nbody text [Actions Skip] more'], (msg) => detectCase(msg, 'true')),
+  },
+  {
+    name: 'workflow-shell detect: the skip-checks: true and skip-checks:true trailers give skipped=true, CRLF and letter case included',
+    fn: () =>
+      firstProblem(['Ship note\n\nskip-checks: true', 'Ship note\n\nskip-checks:true', 'Ship note\r\n\r\nSkip-Checks: TRUE\r\n'], (msg) => detectCase(msg, 'true')),
+  },
+  {
+    name: 'workflow-shell detect: no marker gives skipped=false without waiting or querying runs',
+    fn: () => firstProblem(['Ship note', 'fix: skip the CI step\n\nbody mentions skipping CI'], detectNoMarkerCase),
+  },
+  {
+    name: 'workflow-shell detect: near misses (skip ci unbracketed, [skip-ci], [skipci], inline or false skip-checks) give skipped=false',
+    fn: () =>
+      firstProblem(
+        ['Ship note skip ci', 'Ship note [skip-ci]', 'Ship note [ skip ci ]', 'note: skip-checks: true', 'skip-checks: true please', 'skip-checks: false'],
+        detectNoMarkerCase,
+      ),
+  },
+  {
+    name: 'workflow-shell detect: a marker with a pull_request CI run already on the SHA gives skipped=false',
+    fn: () => detectCase('Ship note [skip ci]', 'false', { runs: '[{"name":"CI","id":7}]' }),
+  },
+  {
+    name: 'workflow-shell detect: a run of another workflow does not count, so the marker still gives skipped=true',
+    fn: () => detectCase('Ship note [skip ci]', 'true', { runs: '[{"name":"CodeQL","id":8}]' }),
+  },
+  {
+    name: 'workflow-shell detect: a failing runs API fails the step and writes no skipped= line',
+    fn: () => {
+      const r = runStep(detectBlock(), { env: { GH_TOKEN: 'dummy', REPO: REPO_SLUG, SHA: HEAD_SHA, STUB_MSG: 'Ship note [skip ci]', STUB_RUNS_FAIL: '1' } });
+      const problems = [];
+      if (r.status === 0) problems.push('expected a non-zero exit');
+      if (r.output.includes('skipped=')) problems.push(`GITHUB_OUTPUT holds ${JSON.stringify(r.output)}`);
+      if (!r.calls.some((c) => c.includes('/actions/runs '))) problems.push('the runs API was never called');
+      return withTail(problems, r);
+    },
+  },
+  // relay (G1)
+  {
+    name: 'workflow-shell relay: a fork head exits 1 with the fork error and never calls gh',
+    fn: () => {
+      const r = runRelay({ HEAD_REPO: 'mallory/site' });
+      const problems = [];
+      if (r.status !== 1) problems.push(`expected exit 1, got ${r.status}`);
+      if (!r.stdout.includes('::error::This fork PR head carries a CI skip marker')) problems.push('no fork ::error:: message');
+      if (r.calls.length !== 0) problems.push(`gh or sleep was called: ${JSON.stringify(r.calls)}`);
+      return withTail(problems, r);
+    },
+  },
+  {
+    name: 'workflow-shell relay: a same-repo head dispatches ci.yml on its ref with these exact arguments and mirrors a success',
+    fn: () => {
+      const r = runRelay({ STUB_CONCLUSION: 'success' });
+      const problems = [];
+      if (r.status !== 0) problems.push(`expected exit 0, got ${r.status}`);
+      if (JSON.stringify(dispatchCalls(r)) !== JSON.stringify([`gh workflow run ci.yml --repo ${REPO_SLUG} --ref feature/ship-note`])) problems.push(`dispatch calls: ${JSON.stringify(dispatchCalls(r))}`);
+      if (!r.calls.includes(`gh run watch 4242 --repo ${REPO_SLUG} --exit-status --interval 60`)) problems.push('the dispatched run was not watched');
+      if (!r.calls.includes(`gh api repos/${REPO_SLUG}/actions/runs/4242 --jq .conclusion`)) problems.push('the conclusion was not read');
+      if (!r.stdout.includes(`Mirroring CI run 4242 on ${HEAD_SHA}`)) problems.push('no mirroring line');
+      return withTail(problems, r);
+    },
+  },
+  {
+    name: 'workflow-shell relay: a failed CI run exits 1, whether gh run watch or the conclusion check catches it',
+    fn: () =>
+      firstProblem(['0', '1'], (watch) => {
+        const r = runRelay({ STUB_CONCLUSION: 'failure', STUB_WATCH_EXIT: watch });
+        return r.status === 1 ? null : `watch exit ${watch}: expected exit 1, got ${r.status} ${tail(r)}`;
+      }),
+  },
+  {
+    name: 'workflow-shell relay: a cancelled CI run exits 1 with the concluded message, even when gh run watch exits 0',
+    fn: () =>
+      firstProblem(['0', '1'], (watch) => {
+        const r = runRelay({ STUB_CONCLUSION: 'cancelled', STUB_WATCH_EXIT: watch });
+        const problems = [];
+        if (r.status !== 1) problems.push(`expected exit 1, got ${r.status}`);
+        if (watch === '0' && !r.stdout.includes('concluded cancelled')) problems.push('no "concluded cancelled" message');
+        const error = withTail(problems, r);
+        return error && `watch exit ${watch}: ${error}`;
+      }),
+  },
+  {
+    name: 'workflow-shell relay: only a dispatched run on another SHA (the branch moved) exits 1 after 30 polls and is not watched',
+    fn: () => {
+      const r = runRelay({ STUB_DISPATCH_RUNS: JSON.stringify([{ ...RELAY_RUN, head_sha: 'f'.repeat(40) }]) });
+      const problems = [];
+      if (r.status !== 1) problems.push(`expected exit 1, got ${r.status}`);
+      if (!r.stdout.includes(`::error::The dispatched CI run 4242 tested ${'f'.repeat(40)}, not this PR head ${HEAD_SHA} (the branch moved).`)) problems.push('no branch-moved message');
+      if (pollCalls(r).length !== 30) problems.push(`${pollCalls(r).length} polls, expected 30 (this SHA's run may still appear)`);
+      if (r.calls.some((c) => c.startsWith('gh run watch'))) problems.push('the wrong run was watched');
+      return withTail(problems, r);
+    },
+  },
+  {
+    name: 'workflow-shell relay: a run GitHub stamps 1 s, or up to 10 s, before the runner clock (clock skew) is still mirrored (13 WR-04)',
+    fn: () => firstProblem([-1, -10], (offset) => relayMirrors([{ ...RELAY_RUN, created_at: stampAt(offset) }], 4242)),
+  },
+  {
+    name: 'workflow-shell relay: a run stamped at or after the runner clock (runner behind GitHub) is mirrored',
+    fn: () => firstProblem([0, 5], (offset) => relayMirrors([{ ...RELAY_RUN, created_at: stampAt(offset) }], 4242)),
+  },
+  {
+    name: 'workflow-shell relay: a run stamped 11 s before the runner clock is outside the window, so it exits 1 after 30 polls',
+    fn: () => {
+      const r = runRelay({ STUB_NOW: String(RELAY_NOW), STUB_DISPATCH_RUNS: JSON.stringify([{ ...RELAY_RUN, created_at: stampAt(-11) }]) });
+      const problems = [];
+      if (r.status !== 1) problems.push(`expected exit 1, got ${r.status}`);
+      if (!r.stdout.includes('::error::The dispatched CI run did not appear within 5 minutes.')) problems.push('no 5-minute message');
+      if (pollCalls(r).length !== 30) problems.push(`${pollCalls(r).length} polls, expected 30`);
+      if (r.calls.some((c) => c.startsWith('gh run watch'))) problems.push('a run was watched');
+      return withTail(problems, r);
+    },
+  },
+  {
+    name: "workflow-shell relay: a run on another SHA in the window never hides this SHA's run, in either order (13 WR-04)",
+    fn: () =>
+      firstProblem(
+        [
+          [{ id: 4241, head_sha: 'f'.repeat(40), created_at: stampAt(1) }, { ...RELAY_RUN, created_at: stampAt(3) }],
+          [{ ...RELAY_RUN, created_at: stampAt(1) }, { id: 4241, head_sha: 'f'.repeat(40), created_at: stampAt(3) }],
+        ],
+        (runs) => relayMirrors(runs, 4242),
+      ),
+  },
+  {
+    name: 'workflow-shell relay: of two runs on this SHA in the window, the newest is mirrored',
+    fn: () => relayMirrors([{ ...RELAY_RUN, id: 4241, created_at: stampAt(1) }, { ...RELAY_RUN, created_at: stampAt(3) }], 4242),
+  },
+  {
+    name: 'workflow-shell relay: no dispatched run within 30 polls exits 1 with the 5-minute message',
+    fn: () => {
+      const r = runRelay({ STUB_DISPATCH_RUNS: '[]' });
+      const polls = r.calls.filter((c) => c.includes('/actions/workflows/ci.yml/runs')).length;
+      const sleeps = r.calls.filter((c) => c === 'sleep 10').length;
+      const problems = [];
+      if (r.status !== 1) problems.push(`expected exit 1, got ${r.status}`);
+      if (!r.stdout.includes('::error::The dispatched CI run did not appear within 5 minutes.')) problems.push('no 5-minute message');
+      if (polls !== 30 || sleeps !== 30) problems.push(`${polls} polls and ${sleeps} sleeps, expected 30 and 30`);
+      if (r.calls.some((c) => c.startsWith('gh run watch'))) problems.push('a run was watched');
+      return withTail(problems, r);
+    },
+  },
+  {
+    name: 'workflow-shell relay: a run created before the dispatch is ignored, so it exits 1 after 30 polls',
+    fn: () => {
+      const r = runRelay({ STUB_DISPATCH_RUNS: JSON.stringify([{ ...RELAY_RUN, created_at: '2000-01-01T00:00:00Z' }]) });
+      return r.status === 1 && r.stdout.includes('did not appear within 5 minutes') ? null : `expected the stale run to be ignored ${tail(r)}`;
+    },
+  },
+  {
+    name: 'workflow-shell relay: a hostile head ref reaches gh only as one literal argument and creates no file',
+    fn: () =>
+      firstProblem(['x"; touch PWNED; echo "', '$(touch PWNED)', '`touch PWNED`'], (ref) => {
+        const r = runRelay({ REF: ref, STUB_CONCLUSION: 'success' });
+        const problems = [];
+        if (r.status !== 0) problems.push(`expected exit 0, got ${r.status}`);
+        if (r.cwdFiles.includes('PWNED')) problems.push('PWNED was created: the ref was executed');
+        if (JSON.stringify(dispatchCalls(r)) !== JSON.stringify([`gh workflow run ci.yml --repo ${REPO_SLUG} --ref ${ref}`])) problems.push(`dispatch calls: ${JSON.stringify(dispatchCalls(r))}`);
+        if (!r.calls.some((c) => c.includes(`branch=${ref} `))) problems.push('the poll did not carry the ref as one literal field');
+        const error = withTail(problems, r);
+        return error && `ref ${JSON.stringify(ref)}: ${error}`;
+      }),
+  },
+  // changes / Classify the diff (G2)
+  {
+    name: 'workflow-shell changes: workflow_dispatch compares main...HEAD whatever BASE the event carried',
+    fn: () =>
+      changesCase(filesOf('README.md'), 'true', { env: { EVENT: 'workflow_dispatch', BASE: '' }, calls: [`gh api repos/${REPO_SLUG}/compare/main...${HEAD_SHA}`] }) ??
+      changesCase(filesOf('README.md'), 'true', { env: { EVENT: 'workflow_dispatch', BASE: BASE_SHA }, calls: [`gh api repos/${REPO_SLUG}/compare/main...${HEAD_SHA}`] }) ??
+      changesCase(filesOf('README.md'), 'true', { calls: [`gh api repos/${REPO_SLUG}/compare/${BASE_SHA}...${HEAD_SHA}`] }),
+  },
+  {
+    name: 'workflow-shell changes: a push to a branch other than main compares main...HEAD, not the previous tip (13 WR-01)',
+    fn: () =>
+      firstProblem(['refs/heads/ci/13-proof-docs', 'refs/heads/develop', 'refs/heads/feature/main'], (ref) => {
+        const error = changesCase(filesOf('README.md'), 'true', {
+          env: { EVENT: 'push', REF: ref, BASE: BASE_SHA },
+          calls: [`gh api repos/${REPO_SLUG}/compare/main...${HEAD_SHA}`],
+        });
+        return error && `ref ${ref}: ${error}`;
+      }),
+  },
+  {
+    name: 'workflow-shell changes: a docs-only push on top of an untested code push to a ci/ branch runs the full CI (13 WR-01)',
+    fn: () =>
+      changesCase(filesOf('README.md'), 'false', {
+        env: { EVENT: 'push', REF: 'refs/heads/ci/13-proof-docs', BASE: BASE_SHA },
+        compareMain: filesOf('lib/site.ts', 'README.md'),
+      }),
+  },
+  {
+    name: 'workflow-shell changes: a push to main still compares the previous tip with HEAD',
+    fn: () =>
+      changesCase(filesOf('README.md'), 'true', {
+        env: { EVENT: 'push', REF: 'refs/heads/main', BASE: BASE_SHA },
+        compareMain: filesOf('lib/site.ts'),
+        calls: [`gh api repos/${REPO_SLUG}/compare/${BASE_SHA}...${HEAD_SHA}`],
+      }),
+  },
+  {
+    name: 'workflow-shell changes: a new-branch push (all-zero or empty before) still runs the full CI with no gh call',
+    fn: () =>
+      changesCase(filesOf('README.md'), 'false', { env: { EVENT: 'push', REF: 'refs/heads/ci/13-new', BASE: '0'.repeat(40) }, calls: [] }) ??
+      changesCase(filesOf('README.md'), 'false', { env: { EVENT: 'push', REF: 'refs/heads/ci/13-new', BASE: '' }, calls: [] }),
+  },
+  {
+    name: 'workflow-shell changes: an empty BASE gives docs_only=false, exit 0 and no gh call',
+    fn: () => changesCase(filesOf('README.md'), 'false', { env: { BASE: '' }, calls: [] }),
+  },
+  {
+    name: 'workflow-shell changes: an all-zero BASE (a new branch) gives docs_only=false, exit 0 and no gh call',
+    fn: () => changesCase(filesOf('README.md'), 'false', { env: { BASE: '0'.repeat(40) }, calls: [] }),
+  },
+  {
+    name: 'workflow-shell changes: a failing compare call gives docs_only=false, exit 0 and the ::warning:: line',
+    fn: () => {
+      const r = runStep(classifyBlock(), { cwd: repoRoot, env: { GH_TOKEN: 'dummy', REPO: REPO_SLUG, EVENT: 'pull_request', BASE: BASE_SHA, HEAD: HEAD_SHA, STUB_COMPARE_FAIL: '1' } });
+      const problems = [];
+      if (r.status !== 0) problems.push(`expected exit 0, got ${r.status}`);
+      if (r.output !== 'docs_only=false\n') problems.push(`GITHUB_OUTPUT is ${JSON.stringify(r.output)}`);
+      if (!r.stdout.includes(`::warning::The compare call for ${BASE_SHA}...${HEAD_SHA} failed; running the full CI.`)) problems.push('no ::warning:: line');
+      return withTail(problems, r);
+    },
+  },
+  {
+    name: 'workflow-shell changes: only docs files give docs_only=true',
+    fn: () => changesCase(filesOf('.planning/phases/13-x/13-01-PLAN.md', 'README.md', 'scripts/README.md', 'AGENTS.md'), 'true'),
+  },
+  {
+    name: 'workflow-shell changes: a code file among docs files gives docs_only=false',
+    fn: () => changesCase(filesOf('README.md', 'lib/site.ts'), 'false') ?? changesCase(filesOf('docs/README.md'), 'false'),
+  },
+  {
+    name: 'workflow-shell changes: 300 files pass --truncated and give docs_only=false, while 299 docs files stay docs-only',
+    fn: () => changesCase(manyDocs(300), 'false') ?? changesCase(manyDocs(299), 'true'),
+  },
+  {
+    name: 'workflow-shell changes: a rename from lib/ into .planning/ gives docs_only=false (the old name counts)',
+    fn: () =>
+      changesCase(filesOf({ filename: '.planning/notes/x.ts', previous_filename: 'lib/x.ts', status: 'renamed' }), 'false') ??
+      changesCase(filesOf({ filename: '.planning/notes/y.md', previous_filename: '.planning/old/y.md', status: 'renamed' }), 'true'),
+  },
+  {
+    name: 'workflow-shell changes: a file name containing a line break gives docs_only=false',
+    fn: () => changesCase(filesOf('.planning/a\nb.md'), 'false') ?? changesCase(filesOf('.planning/a\rb.md'), 'false') ?? changesCase(filesOf('.planning/ab.md'), 'true'),
+  },
+  {
+    name: 'workflow-shell changes: a compare body with no files key gives docs_only=false',
+    fn: () => changesCase({ status: 'identical' }, 'false'),
+  },
+];
+
 // check-snapshot-commit.mjs: in-memory `git show --name-status` entries
 const SNAP = 'e2e/visual/routes.spec.ts-snapshots';
 const snap = (status, rel) => ({ status, path: `${SNAP}/${rel}` });
@@ -253,6 +640,140 @@ let ciGateRelayWriteScopeRoot = null;
 let ciGateNoChangesNeedRoot = null;
 let ciGateUnconditionedRoot = null;
 let ciGatePathsIgnoreRoot = null;
+
+// check-ci-gate.mjs parser edge cases (GUARD-07, GUARD-08, 13-VALIDATION G3): flow, scalar and quoted
+// `on:` forms, CRLF workflows, the relay rules 11, 12, 14 and 15 on shapes the fixtures do not hold, and
+// rule 16 (a timeout-minutes on every job; 13 WR-05).
+const ciGateTempRoots = [];
+/** The top-level `on:` block of a workflow, up to the `permissions:` key that follows it. */
+const ON_BLOCK = /^on:\r?\n(?:[ \t].*\r?\n|\r?\n)*?(?=permissions:)/m;
+/** A temp copy of the good fixture whose ci.yml `on:` block is replaced by `replacement`. */
+const tempOnForm = (replacement, file = 'ci.yml') => {
+  const root = tempCiGateRoot((text) => text.replace(ON_BLOCK, () => replacement), file);
+  ciGateTempRoots.push(root);
+  return root;
+};
+/** A temp copy of the good fixture with `edit` applied to ci-skip-relay.yml. */
+const tempRelayEdit = (edit) => {
+  const root = tempCiGateRoot(edit, 'ci-skip-relay.yml');
+  ciGateTempRoots.push(root);
+  return root;
+};
+/** A temp copy of the good fixture with `edit` applied to ci.yml. */
+const tempCiEdit = (edit) => {
+  const root = tempCiGateRoot(edit);
+  ciGateTempRoots.push(root);
+  return root;
+};
+/** The good fixture's build-job `timeout-minutes: 5` line (group 1: the job's lines before it; group 2: the line ending). */
+const BUILD_TIMEOUT = /^( {2}build:\r?\n(?: {4}.*\r?\n)*?) {4}timeout-minutes: 5(\r?\n)/m;
+/**
+ * A temp copy of the good fixture with every workflow and scripts/ci/ci-ok.jq
+ * rewritten to CRLF line endings (a checkout with core.autocrlf=true), after
+ * `edit(text)` is applied to ci.yml when given.
+ */
+function tempCrlfRoot(edit) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
+  const root = path.join(dir, 'root');
+  fs.cpSync(cig('good'), root, { recursive: true });
+  const files = [
+    ...fs.readdirSync(path.join(root, '.github', 'workflows')).map((f) => path.join(root, '.github', 'workflows', f)),
+    path.join(root, 'scripts', 'ci', 'ci-ok.jq'),
+  ];
+  for (const file of files) {
+    let text = fs.readFileSync(file, 'utf-8').replace(/\r\n/g, '\n');
+    if (edit && path.basename(file) === 'ci.yml') {
+      const after = edit(text);
+      if (after === text) throw new Error('tempCrlfRoot: the edit changed nothing');
+      text = after;
+    }
+    fs.writeFileSync(file, text.replace(/\n/g, '\r\n'));
+  }
+  ciGateTempRoots.push(root);
+  return root;
+}
+const ALL_THREE_FLOW = 'on: [push, pull_request, workflow_dispatch]\n\n';
+const RELAY_ON_TARGET = 'on:\n  pull_request_target:\n    branches: [main]\n\n';
+const ciGateCase = (name, makeRoot, expectExit, expectOutput) => ({
+  name: `ci-gate: ${name}`,
+  guard: CI_GATE,
+  args: [],
+  setup: () => ['--root', makeRoot()],
+  expectExit,
+  expectOutput,
+});
+
+const CI_GATE_PARSER_CASES = [
+  ciGateCase('a ci.yml job without timeout-minutes fails rule 16 (13 WR-05)', () => tempCiEdit((text) => text.replace(BUILD_TIMEOUT, '$1')), 1, [
+    "ci.yml: job build has no timeout-minutes (it would run to GitHub's 360-minute default",
+    'ci-gate: 1 failure(s)',
+  ]),
+  ciGateCase('a relay job without timeout-minutes fails rule 16 (13 WR-05)', () => tempRelayEdit((text) => text.replace(/^ {4}timeout-minutes: 100\r?\n/m, '')), 1, [
+    'ci-skip-relay.yml: job relay has no timeout-minutes',
+    'ci-gate: 1 failure(s)',
+  ]),
+  ciGateCase('a ci.yml timeout-minutes of 0 fails rule 16', () => tempCiEdit((text) => text.replace(BUILD_TIMEOUT, '$1    timeout-minutes: 0$2')), 1, [
+    'ci.yml: job build has timeout-minutes: 0; expected a positive whole number of minutes',
+    'ci-gate: 1 failure(s)',
+  ]),
+  ciGateCase("a quoted timeout-minutes: '15' passes rule 16", () => tempCiEdit((text) => text.replace(BUILD_TIMEOUT, "$1    timeout-minutes: '15'$2")), 0, ['ci-gate: OK']),
+  ciGateCase('ci.yml on: in flow-list form with all three triggers passes', () => tempOnForm(ALL_THREE_FLOW), 0, ['ci-gate: OK']),
+  ciGateCase('ci.yml on: in flow-list form without workflow_dispatch fails rule 8', () => tempOnForm('on: [push, pull_request]\n\n'), 1, [
+    'ci.yml has no workflow_dispatch trigger',
+    'ci-gate: 1 failure(s)',
+  ]),
+  ciGateCase(
+    'ci.yml on: in flow-map form carrying a paths: filter fails rule 9',
+    () => tempOnForm('on: { push: {}, pull_request: { paths: [app] }, workflow_dispatch: {} }\n\n'),
+    1,
+    ['workflow-level paths filter in .github/workflows/ci.yml', 'declares paths:'],
+  ),
+  ciGateCase('ci.yml on: in flow-map form with all three triggers and no filter passes', () => tempOnForm('on: { push: {}, pull_request: {}, workflow_dispatch: {} }\n\n'), 0, ['ci-gate: OK']),
+  ciGateCase('ci.yml scalar on: push fails rule 8 for the two missing triggers', () => tempOnForm('on: push\n\n'), 1, [
+    'ci.yml has no pull_request trigger',
+    'ci.yml has no workflow_dispatch trigger',
+    'ci-gate: 2 failure(s)',
+  ]),
+  ciGateCase('ci.yml with a quoted "on": key is read like on: and passes with all three triggers', () => tempOnForm('"on":\n  push:\n  pull_request:\n  workflow_dispatch:\n\n'), 0, ['ci-gate: OK']),
+  ciGateCase('ci.yml with a quoted "on": key and no workflow_dispatch still fails rule 8', () => tempOnForm('"on":\n  push:\n  pull_request:\n\n'), 1, ['ci.yml has no workflow_dispatch trigger']),
+  ciGateCase('a CRLF copy of the good fixture still passes', () => tempCrlfRoot(), 0, ['ci-gate: OK']),
+  ciGateCase(
+    'a CRLF copy without workflow_dispatch still fails',
+    () => tempCrlfRoot((text) => text.replace(/^ {2}workflow_dispatch:\n/m, '')),
+    1,
+    ['ci.yml has no workflow_dispatch trigger'],
+  ),
+  ciGateCase(
+    'relay with ${{ }} inside a shell comment of a run block fails rule 12',
+    () => tempRelayEdit((text) => text.replace(/^( {10})now=\$\(date/m, '$1# the actor is ${{ github.actor }}\n$1now=$(date')),
+    1,
+    ['ci-skip-relay.yml: expression inside a run block', 'ci-gate: 1 failure(s)'],
+  ),
+  ciGateCase(
+    'relay running git clone in a run block fails rule 11',
+    () => tempRelayEdit((text) => text.replace(/^( {10})now=\$\(date/m, '$1git clone "https://github.com/$HEAD_REPO.git" pr\n$1now=$(date')),
+    1,
+    ['ci-skip-relay.yml: relay checks out code', 'git clone', 'ci-gate: 1 failure(s)'],
+  ),
+  ciGateCase(
+    'relay with actions: write on the detect job fails rule 15',
+    () => tempRelayEdit((text) => text.replace(/^( {6})actions: read$/m, '$1actions: write')),
+    1,
+    ['relay grants actions: write in job detect', 'ci-gate: 1 failure(s)'],
+  ),
+  ciGateCase(
+    'relay with an extra workflow_dispatch: trigger fails rule 14',
+    () => tempRelayEdit((text) => text.replace(ON_BLOCK, () => `${RELAY_ON_TARGET.trimEnd()}\n  workflow_dispatch:\n\n`)),
+    1,
+    ['relay may trigger only on pull_request_target (on: declares pull_request_target, workflow_dispatch)'],
+  ),
+  ciGateCase(
+    'relay with a flow-form on: [pull_request_target, push] fails rule 14',
+    () => tempRelayEdit((text) => text.replace(ON_BLOCK, () => 'on: [pull_request_target, push]\n\n')),
+    1,
+    ['relay may trigger only on pull_request_target (on: declares pull_request_target, push)'],
+  ),
+];
 
 // scripts/photos/: characterization of the photo scripts through --root (VERIFY-06, 10-VALIDATION G5/G6)
 const PHOTO_DATA = path.join(repoRoot, 'scripts', 'photos', 'build-photo-data.mjs');
@@ -1373,6 +1894,25 @@ const cases = [
       classifyCase([...DOCS_ONLY_FILES, '.planning/phases/13-x/13-07-PLAN.md'], undefined, true),
   },
   {
+    name: 'tailwind-sources: no DOCS_ONLY_FILES entry is a Tailwind source of app/globals.css (13 WR-02)',
+    fn: async () => {
+      const { error, scanned } = await docsOnlyTailwindSources(fs.readFileSync(GLOBALS_CSS, 'utf-8'));
+      if (error) return error;
+      return scanned.length === 0 ? null : `Tailwind scans ${scanned.join(', ')}; add @source not "../<file>" to app/globals.css`;
+    },
+  },
+  {
+    name: 'tailwind-sources: the same scan reports README.md and AGENTS.md once their @source not lines are removed',
+    fn: async () => {
+      const css = fs.readFileSync(GLOBALS_CSS, 'utf-8');
+      const stripped = DOCS_ONLY_FILES.reduce((text, f) => text.split(`@source not "../${f}";`).join(''), css);
+      if (stripped === css) return 'app/globals.css has no @source not line for any DOCS_ONLY_FILES entry';
+      const { error, scanned } = await docsOnlyTailwindSources(stripped);
+      if (error) return error;
+      return ['README.md', 'AGENTS.md'].every((f) => scanned.includes(f)) ? null : `expected README.md and AGENTS.md among the scanned docs files, got ${JSON.stringify(scanned)}`;
+    },
+  },
+  {
     name: 'classify: a guard selftest fixture README is code (no *.md rule)',
     fn: () => classifyCase(['scripts/guards/__selftest__/served-images/a/README.md'], undefined, false),
   },
@@ -1525,7 +2065,7 @@ const cases = [
     args: [],
     setup: () => {
       ciGateRelayPrCheckoutRoot = tempCiGateRoot(
-        (text) => text.replace(/^( {10})since=\$\(date/m, '$1gh pr checkout "$REF"\n$1since=$(date'),
+        (text) => text.replace(/^( {10})now=\$\(date/m, '$1gh pr checkout "$REF"\n$1now=$(date'),
         'ci-skip-relay.yml',
       );
       return ['--root', ciGateRelayPrCheckoutRoot];
@@ -1724,6 +2264,8 @@ const cases = [
     expectOutput: ['photos:derive: encoded img-0001 (9 files)', 'unsupported image format'],
     check: () => treeUnchanged(photoDeriveRoot, photoDeriveBefore),
   },
+  ...WORKFLOW_SHELL_CASES,
+  ...CI_GATE_PARSER_CASES,
 ];
 
 let failed = 0;
@@ -1732,7 +2274,8 @@ for (const [index, c] of cases.entries()) {
   if (c.fn) {
     let error;
     try {
-      error = c.fn();
+      // A case may be async (the Tailwind scan cases); a sync one is unchanged by await.
+      error = await c.fn();
     } catch (err) {
       error = `threw: ${err.message}`;
     }
@@ -1778,7 +2321,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDeriveRoot]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDeriveRoot, ...ciGateTempRoots]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 

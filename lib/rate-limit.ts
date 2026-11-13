@@ -4,19 +4,23 @@
  *
  * Credentials come from one complete pair: `UPSTASH_REDIS_REST_URL` and
  * `UPSTASH_REDIS_REST_TOKEN`, or else `KV_REST_API_URL` and `KV_REST_API_TOKEN`
- * (the names Vercel's Upstash integration uses). Empty values count as missing
- * and a mixed pair is never combined.
+ * (the names Vercel's Upstash integration uses). Values are trimmed (a pasted
+ * value often ends in a newline), empty or blank values count as missing, and
+ * a mixed pair is never combined.
  *
  * Production fails closed (GUARD-09, D-11). With `VERCEL_ENV === 'production'`
- * the limiter refuses, rather than allows, when it has no credentials, when
- * Redis errors, and when `@upstash/ratelimit` times out (the library answers a
- * timeout with `success: true`). A refusal carries `unavailable` and writes one
- * `[rate-limit]` error line with no visitor data; the route answers it with
- * 503 `server-error`.
+ * the limiter refuses, rather than allows, when it has no usable credentials
+ * (none, or a pair the Redis client rejects, such as a URL without https://),
+ * when Redis errors, and when `@upstash/ratelimit` times out (the library
+ * answers a timeout with `success: true`). A refusal carries `unavailable` and
+ * writes one `[rate-limit]` error line with no visitor data; the route answers
+ * it with 503 `server-error`. Building the limiter never throws in production:
+ * `next build` and the route import this module.
  *
  * Previews and local dev keep today's behaviour (D-12): no credentials means an
- * allow-all fallback that warns once, a Redis error propagates to the route's
- * outer catch (500), and a timeout allows.
+ * allow-all fallback that warns once, a pair the Redis client rejects throws
+ * at import, a Redis error propagates to the route's outer catch (500), and a
+ * timeout allows.
  */
 
 import { Ratelimit } from '@upstash/ratelimit';
@@ -48,18 +52,20 @@ type Env = Record<string, string | undefined>;
 export const LIMIT_TIMEOUT_MS = 3000;
 
 /**
- * One complete credential pair, or null. The UPSTASH pair wins when both are
- * set. Unlike the Redis client's env-based factory, which falls back one
- * variable at a time, this never pairs one name's URL with the other's token.
+ * One complete credential pair with both values trimmed, or null. The UPSTASH
+ * pair wins when both are set. Unlike the Redis client's env-based factory,
+ * which falls back one variable at a time, this never pairs one name's URL
+ * with the other's token.
  */
 export function upstashCredentials(env: Env): { url: string; token: string } | null {
-  if (env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN) {
-    return { url: env.UPSTASH_REDIS_REST_URL, token: env.UPSTASH_REDIS_REST_TOKEN };
-  }
-  if (env.KV_REST_API_URL && env.KV_REST_API_TOKEN) {
-    return { url: env.KV_REST_API_URL, token: env.KV_REST_API_TOKEN };
-  }
-  return null;
+  const pair = (url: string | undefined, token: string | undefined) => {
+    const u = url?.trim();
+    const t = token?.trim();
+    return u && t ? { url: u, token: t } : null;
+  };
+  return (
+    pair(env.UPSTASH_REDIS_REST_URL, env.UPSTASH_REDIS_REST_TOKEN) ?? pair(env.KV_REST_API_URL, env.KV_REST_API_TOKEN)
+  );
 }
 
 /** One metadata-only refusal line; never the identifier or any visitor data. */
@@ -78,13 +84,23 @@ export function createRateLimiter(env: Env = process.env): RateLimiter {
   const credentials = upstashCredentials(env);
 
   if (credentials) {
-    const ratelimit = new Ratelimit({
-      redis: new Redis({ url: credentials.url, token: credentials.token }),
-      limiter: Ratelimit.slidingWindow(5, '1 h'),
-      analytics: true,
-      prefix: 'ratelimit:feedback',
-      timeout: LIMIT_TIMEOUT_MS,
-    });
+    let ratelimit: Ratelimit;
+    try {
+      ratelimit = new Ratelimit({
+        redis: new Redis({ url: credentials.url, token: credentials.token }),
+        limiter: Ratelimit.slidingWindow(5, '1 h'),
+        analytics: true,
+        prefix: 'ratelimit:feedback',
+        timeout: LIMIT_TIMEOUT_MS,
+      });
+    } catch (error) {
+      // The Redis client rejects some values at construction (a URL without
+      // https://, or a quoted one). Outside production that stays loud.
+      if (!production) throw error;
+      // In production that pair is as unusable as a missing one: refuse every
+      // call rather than fail the module's import (a bare 500 for every POST).
+      return { limit: async () => refuse('unconfigured') };
+    }
     return {
       async limit(identifier: string): Promise<RateLimitResult> {
         let result: Awaited<ReturnType<Ratelimit['limit']>>;

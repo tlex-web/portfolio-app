@@ -187,6 +187,15 @@ describe('createRateLimiter', () => {
       expect(result.unavailable).toBe('unconfigured');
     });
 
+    it('builds Redis from trimmed values when a pasted value ends in a newline (13 WR-03)', () => {
+      createRateLimiter({
+        UPSTASH_REDIS_REST_URL: `${UPSTASH_PAIR.UPSTASH_REDIS_REST_URL}\n`,
+        UPSTASH_REDIS_REST_TOKEN: ' upstash-token\r\n',
+      });
+
+      expect(MockRedis).toHaveBeenCalledWith({ url: UPSTASH_PAIR.UPSTASH_REDIS_REST_URL, token: 'upstash-token' });
+    });
+
     it('treats empty-string variables as missing and refuses in production', async () => {
       const limiter = createRateLimiter({
         VERCEL_ENV: 'production',
@@ -239,6 +248,36 @@ describe('createRateLimiter', () => {
     });
   });
 
+  describe('a credential pair the Redis client rejects (13 WR-03)', () => {
+    const rejected = { UPSTASH_REDIS_REST_URL: 'upstash.example.test', UPSTASH_REDIS_REST_TOKEN: 'upstash-token' };
+    const rejectOnce = () =>
+      MockRedis.mockImplementationOnce(() => {
+        throw new Error('Upstash Redis client was passed an invalid URL.');
+      });
+
+    it('in production, builds without throwing and refuses every call as unconfigured', async () => {
+      rejectOnce();
+
+      const limiter = createRateLimiter({ VERCEL_ENV: 'production', ...rejected });
+      const first = await limiter.limit('1.2.3.4');
+      const second = await limiter.limit('1.2.3.4');
+
+      expect(first).toEqual({ success: false, limit: 0, remaining: 0, reset: 0, unavailable: 'unconfigured' });
+      expect(second.unavailable).toBe('unconfigured');
+      expect(mockLimit).not.toHaveBeenCalled();
+      expect(refusalLogs()).toEqual([
+        { event: 'rate-limit', outcome: 'refused', reason: 'unconfigured', timestamp: expect.any(String) },
+        { event: 'rate-limit', outcome: 'refused', reason: 'unconfigured', timestamp: expect.any(String) },
+      ]);
+    });
+
+    it('outside production, still throws when the limiter is built (D-12)', () => {
+      rejectOnce();
+
+      expect(() => createRateLimiter({ VERCEL_ENV: 'preview', ...rejected })).toThrow('invalid URL');
+    });
+  });
+
   describe('preview with credentials (D-12)', () => {
     const preview = { VERCEL_ENV: 'preview', ...UPSTASH_PAIR };
 
@@ -273,6 +312,17 @@ describe('upstashCredentials', () => {
     expect(upstashCredentials({ UPSTASH_REDIS_REST_URL: '', UPSTASH_REDIS_REST_TOKEN: '' })).toBeNull();
     expect(upstashCredentials({})).toBeNull();
   });
+
+  it('trims both values and treats a blank one as missing (13 WR-03)', () => {
+    expect(
+      upstashCredentials({ UPSTASH_REDIS_REST_URL: `${UPSTASH_PAIR.UPSTASH_REDIS_REST_URL}\n`, UPSTASH_REDIS_REST_TOKEN: ' upstash-token\r\n' })
+    ).toEqual({ url: UPSTASH_PAIR.UPSTASH_REDIS_REST_URL, token: 'upstash-token' });
+    expect(upstashCredentials({ UPSTASH_REDIS_REST_URL: ' \n', UPSTASH_REDIS_REST_TOKEN: 'upstash-token', ...KV_PAIR })).toEqual({
+      url: KV_PAIR.KV_REST_API_URL,
+      token: 'kv-token',
+    });
+    expect(upstashCredentials({ KV_REST_API_URL: KV_PAIR.KV_REST_API_URL, KV_REST_API_TOKEN: '   ' })).toBeNull();
+  });
 });
 
 describe('module import (T-13-07)', () => {
@@ -288,5 +338,83 @@ describe('module import (T-13-07)', () => {
     } finally {
       env.restore();
     }
+  });
+});
+
+describe('module import with the real Redis client (13 WR-03)', () => {
+  type RateLimitModule = typeof import('@/lib/rate-limit');
+
+  /**
+   * Imports lib/rate-limit in a fresh registry under `env`, with the Redis mock
+   * delegating once to the real @upstash/redis constructor, which validates the
+   * URL synchronously. Construction makes no request. Returns the module and
+   * the Redis mock it received; rethrows whatever the import threw.
+   */
+  function importWithRealRedis(env: Record<string, string>): { mod: RateLimitModule; redis: jest.Mock } {
+    const swapped = jest.replaceProperty(process, 'env', { NODE_ENV: 'test', ...env });
+    try {
+      let result: { mod: RateLimitModule; redis: jest.Mock } | undefined;
+      jest.isolateModules(() => {
+        const { Redis: RealRedis } = jest.requireActual<typeof import('@upstash/redis')>('@upstash/redis');
+        // eslint-disable-next-line @typescript-eslint/no-require-imports -- the mock the module under test receives
+        const redis = (require('@upstash/redis') as { Redis: jest.Mock }).Redis;
+        redis.mockImplementationOnce((config: ConstructorParameters<typeof RealRedis>[0]) => new RealRedis(config));
+        // eslint-disable-next-line @typescript-eslint/no-require-imports -- fresh registry under the swapped env
+        result = { mod: require('@/lib/rate-limit') as RateLimitModule, redis };
+      });
+      return result!;
+    } finally {
+      swapped.restore();
+    }
+  }
+
+  // The file-level console spies are restored after the createRateLimiter block.
+  let errorSpy: jest.SpyInstance;
+  const refusals = () =>
+    errorSpy.mock.calls.filter((args) => args[0] === '[rate-limit]').map((args) => args[1] as Record<string, unknown>);
+
+  beforeEach(() => {
+    errorSpy = jest.spyOn(console, 'error').mockImplementation();
+    MockRedis.mockReset();
+  });
+
+  afterEach(() => {
+    errorSpy.mockRestore();
+    MockRedis.mockReset();
+  });
+
+  it.each([
+    ['a URL without https://', 'upstash.example.test'],
+    ['a quoted URL', '"https://upstash.example.test"'],
+  ])('in production, %s imports without throwing and every POST is refused (503)', async (_label, url) => {
+    const { mod } = importWithRealRedis({ VERCEL_ENV: 'production', UPSTASH_REDIS_REST_URL: url, UPSTASH_REDIS_REST_TOKEN: 'upstash-token' });
+
+    const result = await mod.feedbackRateLimit.limit('1.2.3.4');
+
+    expect(result).toEqual({ success: false, limit: 0, remaining: 0, reset: 0, unavailable: 'unconfigured' });
+    expect(refusals()).toEqual([{ event: 'rate-limit', outcome: 'refused', reason: 'unconfigured', timestamp: expect.any(String) }]);
+  });
+
+  it.each(['production', 'preview'])('a URL and token pasted with a trailing newline import under %s and reach Redis trimmed', (vercelEnv) => {
+    const { redis } = importWithRealRedis({
+      VERCEL_ENV: vercelEnv,
+      UPSTASH_REDIS_REST_URL: `${UPSTASH_PAIR.UPSTASH_REDIS_REST_URL}\n`,
+      UPSTASH_REDIS_REST_TOKEN: 'upstash-token\n',
+    });
+
+    expect(redis).toHaveBeenCalledTimes(1);
+    expect(redis).toHaveBeenCalledWith({ url: UPSTASH_PAIR.UPSTASH_REDIS_REST_URL, token: 'upstash-token' });
+  });
+
+  it('outside production, a URL without https:// still throws at import (D-12)', () => {
+    let thrown: unknown;
+    try {
+      importWithRealRedis({ VERCEL_ENV: 'preview', UPSTASH_REDIS_REST_URL: 'upstash.example.test', UPSTASH_REDIS_REST_TOKEN: 'upstash-token' });
+    } catch (error) {
+      thrown = error;
+    }
+
+    // The isolated registry loads its own copy of the error class, so compare by name.
+    expect((thrown as Error | undefined)?.name).toBe('UrlError');
   });
 });

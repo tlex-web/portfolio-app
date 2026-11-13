@@ -254,7 +254,10 @@ test.describe('Case-study sections', () => {
   };
 
   for (const project of [box, coinFlip]) {
-    test(`sections keep the fixed order on /projects/${project.slug} (ENG-02)`, async ({
+    // @firefox-43967: both routes crash Firefox 159 under Playwright 1.65, so the tag
+    // keeps them out of the Firefox project only (playwright.config.ts FIREFOX_INVERT):
+    // https://github.com/microsoft/playwright/issues/43967
+    test(`sections keep the fixed order on /projects/${project.slug} (ENG-02) @firefox-43967`, async ({
       page,
     }) => {
       await page.goto(`/projects/${project.slug}`);

@@ -18,6 +18,7 @@ jobs:
     permissions:
       contents: read
       checks: write
+    timeout-minutes: 5
     steps:
       - run: echo build
 
@@ -25,6 +26,7 @@ jobs:
     name: Dependency Review
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    timeout-minutes: 5
     steps:
       - run: echo review
 
@@ -35,6 +37,7 @@ jobs:
     needs:
       - dependency-review
       - build
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
         with:

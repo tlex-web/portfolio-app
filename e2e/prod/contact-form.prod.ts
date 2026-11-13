@@ -55,7 +55,7 @@ const honeypotBody = () => ({
 
 /** The message for a 503: the production limiter could not answer, so it refused. */
 const LIMITER_UNAVAILABLE =
-  '503 means the limiter is unavailable in production (Upstash variables missing or Upstash unreachable), so it refuses every request';
+  '503 means the limiter is unavailable in production (Upstash variables missing or malformed, or Upstash unreachable), so it refuses every request';
 
 const originOf = (baseURL: string | undefined) => new URL(baseURL ?? '').origin;
 

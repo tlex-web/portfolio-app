@@ -4,17 +4,17 @@ milestone: v2.1
 milestone_name: Survey Expansion
 current_phase: 13
 current_phase_name: Repo Safety & Test Debt
-status: executing
-stopped_at: Completed 13-15-PLAN.md
-last_updated: "2026-11-13T13:35:55.080Z"
+status: verifying
+stopped_at: Completed 13-22-PLAN.md
+last_updated: "2026-11-13T20:42:46.945Z"
 last_activity: 2026-11-13
 last_activity_desc: Phase 13 execution started
-state_head: b39c355c4848a64807cb7a6cf1e421a67cf4d281
+state_head: 06c9280fab2ef65d54c125c68c1a0210dddc34b0
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 22
-  completed_plans: 15
+  completed_plans: 22
   percent: 0
 ---
 
@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 13 (Repo Safety & Test Debt) — EXECUTING
-Plan: 16 of 22
-Status: Ready to execute
+Plan: 22 of 22
+Status: Phase complete — ready for verification
 Last activity: 2026-11-13 — Phase 13 execution started
 
 Progress: [░░░░░░░░░░] 0%
@@ -69,6 +69,13 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 13 P14 | 14min | 3 tasks | 19 files |
 | Phase 13 P05 | 3min | 2 tasks | 1 files |
 | Phase 13 P15 | 45min | 3 tasks | 2 files |
+| Phase 13 P16 | 1h50m | 3 tasks | 3 files |
+| Phase 13 P17 | 15min | 3 tasks | 2 files |
+| Phase 13 P18 | 6min | 2 tasks | 5 files |
+| Phase 13 P19 | 55min | 3 tasks | 1 files |
+| Phase 13 P20 | 2h40m | 3 tasks | 6 files |
+| Phase 13 P21 | 4min | 3 tasks | 1 files |
+| Phase 13 P22 | 10min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -113,6 +120,27 @@ Recent decisions affecting current work:
 - [Phase 13]: 13-05: production has the complete UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN pair (REDIS_URL unused), System Environment Variables on, Deployment Checks offered on Hobby; keep-alive is ping-readonly via secrets UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN (read-only token unverified); Pitfall 2 resolved for production, 13-15 unblocked on the pair
 - [Phase 13]: 13-15: PR #143 opened on Tim's "Push and pr" (mapped to push-and-pr); CI OK success (app 15368) and all 13 check runs green on head 90758db; Visual Regression PASS with update mode none and check-snapshot-commit --none OK on 6ff759d and d69b42c; E2E baseline 28m31s for 13-20; no fix push
 - [Phase 13]: 13-15: Security Audit warns on 25 dev-only npm audit advisories (3 low, 22 moderate; --omit=dev finds 0); the step is warn-only on main too; logged in deferred-items.md, not changed
+- [Phase 13]: 13-16: PR #143 merged by Tim ("merged") as merge commit d48af99 (parents b81d6f2, 962e732); push run 43459507776 CI OK success (app 15368) at 16:39:08Z, before the ruleset (D-05)
+- [Phase 13]: 13-16: Tim applied the main ruleset and deleted 10401314 ("applied, deployment checks on"); live ruleset 27216079 matches main-ruleset.json on every set field (no bypass, never, active, ~DEFAULT_BRANCH, merge only, 0 approvals, strict off, CI OK@15368); 10401314 returns 404
+- [Phase 13]: 13-16: Deployment Checks on CI OK recorded from Tim's reply only (agent cannot read Vercel); d48af99 production deploy (16:09:27Z) predates the setting; live evidence = first production deploy after the next merge to main, owned by 13-22
+- [Phase 13]: 13-17: production serves merge d48af99 (deployment 7770069186, success, predates Deployment Checks); first Upstash keep-alive run 43466849915 on main succeeded with PONG, so the repository secrets and the REST call work
+- [Phase 13]: 13-17: Tim ran the live 429 probe himself (selection "I run it (tim-runs)"); run B with PROD_FORM_LIMIT=1 passed 5/5, proving a 429 with Retry-After > 0 and no 503; the request number and Retry-After value were not printed, the sixth-in-window position (loop post 2) is inferred
+- [Phase 13]: 13-17: GUARD-09 stays Pending in REQUIREMENTS.md by the shared-ID gate (13-22 also declares it); the concurrency truth is a backstop (Upstash sliding-window atomicity), not tested live
+- [Phase 13]: 13-18: Tim replied "verified" to the @playwright/test 1.65.0 legitimacy checkpoint; Playwright 1.65.0 and container tag v1.65.0-noble landed together in the single five-file commit 5ab6d15 (parity guard OK, type-check, lint and jest green; chromium homepage smoke 7/7)
+- [Phase 13]: 13-18: the lockfile was written with Node 26's bundled npm 11.20.0, not the shadowing global npm 11.6.1, whose install rewrote unrelated metadata (peer/dev flags, dropped libc arrays); the committed lockfile diff touches only the root spec and the three Playwright entries
+- [Phase 13]: 13-18: DEPS-06 stays Pending in REQUIREMENTS.md by the shared-ID gate (13-20 and 13-22 also declare it and have no SUMMARY yet)
+- [Phase 13]: 13-19: relay.decision a-confirmed (Tim's selection "a-confirmed (Recommended)"): the relay's CI OK check run 132061472478 sat on [ci skip] head c374806 (success, app 15368), was the only CI OK in the PR rollup (isRequired true) and PR #146 read CLEAN after ready; D-06 option A stands, so 13-21 records "not needed" (Tasks 2-3 skipped)
+- [Phase 13]: 13-19: live main ruleset proven: red PR #144 (CI OK failure) read BLOCKED and its single gh pr merge --merge was refused by the base branch policy; docs-only PR #145 got docs_only=true, six heavy jobs skipped, CI OK success; all three proof PRs closed unmerged, branches deleted
+- [Phase 13]: 13-19: untested path handed to 13-22: a [ci skip] head whose dispatched CI takes the full ~40-minute path has not been mirrored live (the proof run was docs-only, ~1.5 min); ci-skip-relay.yml timeout-minutes 100 and gh run watch --interval 60 budget for it; workflow unchanged
+- [Phase 13]: 13-19: GUARD-07 and GUARD-08 stay Pending in REQUIREMENTS.md by the shared-ID gate (13-21 and 13-22 also declare them and have no SUMMARY yet)
+- [Phase 13]: 13-20: Playwright 1.65 green on all three engines in CI (CI OK check run 132142890020 on cffcf99, E2E 37m24s); 7 Firefox cases crash on upstream Firefox 159 (Playwright #43967, Mozilla 2090055) and are excluded on Firefox only via the @firefox-43967 title tag and FIREFOX_INVERT (Tim's selections "A: Firefox-only fixme (Recommended)" then "A-tag (Recommended)", because GUARD-03 rejects .fixme(); guard untouched)
+- [Phase 13]: 13-20: baseline run 43500162579 (update_mode changed) returned 48 PNGs all blob-identical; Tim replied "none" to Task 3, so no PNG commit; check-visual-run PASS on cffcf99, check-snapshot-commit --none OK on 5ab6d15, 3757994, cffcf99; #140 left open for Dependabot (approve-leave-140), closes with the phase PR; ci/13-pw165 left on origin for Tim to delete after the phase PR merges
+- [Phase 13]: 13-20: hand-overs to 13-22: remove the @firefox-43967 tags and FIREFOX_INVERT after the Playwright release with the fixing Firefox roll (firefox --list 434 back to 441); optional local guard:tests step (npm run lint does not run GUARD-03)
+- [Phase 13]: 13-21: D-06 fallback not needed: relay.decision a-confirmed copied from 13-19 (Tim's 13-19 selection "a-confirmed (Recommended)"); ci-skip-relay.yml, check-ci-gate.mjs and selftest.mjs unchanged, relay identical to origin/main d48af99
+- [Phase 13]: 13-21: fallback.approval skip: Tim was not asked for 13-21; Tasks 2 and 3 (fallback PR, ci/13-proof-skip-2 re-proof) skipped by the plan's a-confirmed branch; nothing pushed; GUARD-08 stays Pending by the shared-ID gate (13-22 also declares it)
+- [Phase 13]: 13-22: VERIFY-07 closed: all 44 ledger rows final in 13-LEDGER-TRIAGE.md (Final column) and in the four archived disposition files (fixed 32 with resolvable SHAs, deferred 9 with owners, skipped 3 with approved reasons); every final enum equals the approved Enum cell
+- [Phase 13]: 13-22: hand-overs: ROADMAP scope notes under Phases 14 (07 WR-06/SHELL-07, 10 IN-01, Deployment Checks proof fallback), 15 (GUARD-10, guard:tests suggestion, scripts/README 47 pairs), 17 (10 IN-03, E2E duration trend), 18 (10 IN-04, IN-05, IN-08, IN-09 switchTo wait); deferred-items.md names owner and trigger for the Firefox tag removal, limit-probe output, relay long-mirror path, Deployment Checks proof, npm audit decision and ci/13-pw165; no new requirement
+- [Phase 13]: 13-22: PROJECT.md Key Decisions: main ruleset 27216079, [ci skip] relay option A (a-confirmed), keep-alive monitor (60-day schedule pause, ~1 h Hobby logs), docs-only fast path; production gate recorded as Deployment Checks on CI OK (Tim, 2026-11-13) with the live proof pending the phase-close merge
 
 ### Pending Todos
 
@@ -165,6 +193,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-13T13:35:55.040Z
-Stopped at: Completed 13-15-PLAN.md
+Last session: 2026-11-13T20:42:46.905Z
+Stopped at: Completed 13-22-PLAN.md
 Resume file: None
