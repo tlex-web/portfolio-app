@@ -105,9 +105,11 @@ node scripts/guards/check-served-images.mjs --root <dir>
 
 It runs in `npm run lint` and CI, so it catches a committed original only after the push; there is no pre-commit hook. Never stage `assets/photos-original/` or `public/images/landscapes/` (both gitignored).
 
-### `check-ci-gate.mjs` (GUARD-07)
+### `check-ci-gate.mjs` (GUARD-07, GUARD-08)
 
-`CI OK` (job `ci-ok`, the last job in `.github/workflows/ci.yml`) is the only check the `main` ruleset requires. It runs with `if: always()`, needs every other `ci.yml` job and passes only when `scripts/ci/ci-ok.jq` accepts `toJSON(needs)`: every result `success`, except `dependency-review`, which may be `skipped` outside `pull_request`. An empty `needs`, a `failure`, a `cancelled` or any other `skipped` fails it. This guard keeps a job from escaping that aggregate. It reads the workflow YAML line by line, with comments stripped.
+`CI OK` (job `ci-ok`, the last job in `.github/workflows/ci.yml`) is the only check the `main` ruleset requires. It runs with `if: always()`, needs every other `ci.yml` job and passes only when `scripts/ci/ci-ok.jq` accepts `toJSON(needs)`: the `changes` job (`Classify changes`) must succeed, and every other result must be `success`, except `dependency-review`, which may be `skipped` outside `pull_request`, and the six heavy jobs, which may be `skipped` when `changes` reported `docs_only` `true`. An empty `needs`, a missing or failed `changes`, a `failure`, a `cancelled` or any other `skipped` fails it.
+
+The docs-only fast path (D-08, D-09): `scripts/ci/classify-changes.mjs` gets every changed file name, old names of renames included, from one compare API call. The diff is docs-only only when every path is under `.planning/` or is exactly `README.md`, `AGENTS.md`, `scripts/README.md`, `e2e/visual/README.md` or `.github/copilot-instructions.md`. There is no `*.md` rule, because the READMEs under `scripts/guards/__selftest__/` are fixtures. No base commit, a failed compare call, an empty list or a list of 300 or more files runs the full CI. This guard keeps a job from escaping that aggregate. It reads the workflow YAML line by line, with comments stripped.
 
 | Rule | Fails on |
 |------|----------|
@@ -119,13 +121,16 @@ It runs in `npm run lint` and CI, so it catches a committed original only after 
 | unique name | a job named `CI OK` in any other workflow (`CI_OK_ELSEWHERE_ALLOWED` is empty; the skip-marker relay becomes its one entry) |
 | `checks: write` | any workflow line granting it, directly or through `permissions: write-all` (such a job could post a forged `CI OK` check run) |
 | token scope | a job with no `permissions:` block in a workflow that sets none at the top (the repository default token may include `checks: write`) |
+| triggers | `ci.yml` without `push`, `pull_request` or `workflow_dispatch` in `on:` (the skip-marker relay dispatches `ci.yml`) |
+| no path filter | a `paths:` or `paths-ignore:` key anywhere in `ci.yml`'s `on:` block (a workflow skipped by its trigger filter leaves `CI OK` pending) |
+| heavy-job set | the jobs whose `if:` reads `needs.changes.outputs.docs_only` differ from the ids in the one `IN(...)` call of `scripts/ci/ci-ok.jq`, or one of those jobs does not need `changes` |
 
 ```bash
 npm run guard:ci
 node scripts/guards/check-ci-gate.mjs --root <dir>
 ```
 
-A new `ci.yml` job must join `ci-ok.needs` in the same commit. The selftest runs the eight `ci-ok.jq` cases (it needs `jq` on the PATH, as `ubuntu-latest` has) and at least one failing case per rule, from the fixtures under `scripts/guards/__selftest__/ci-gate/` (plus a temp copy of `good/` for the rename and jq-verdict rules).
+A new `ci.yml` job must join `ci-ok.needs` in the same commit. A new heavy job also gets the docs-only `if:` and joins the `IN(...)` list. The selftest runs the `ci-ok.jq` and `classify` cases (the jq cases need `jq` on the PATH, as `ubuntu-latest` has) and at least one failing case per rule, from the fixtures under `scripts/guards/__selftest__/ci-gate/` (plus temp copies of `good/` for the rename, jq-verdict, `paths-ignore` and heavy-set variants).
 
 ### Other guards
 

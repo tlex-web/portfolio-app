@@ -5,6 +5,10 @@ on:
     branches: [main, develop, 'ci/**']
   pull_request:
     branches: [main, develop]
+  # The skip-marker relay (D-06) dispatches this workflow for a PR head that
+  # GitHub skipped. No inputs: the relay passes the ref. No paths or
+  # paths-ignore filter on any trigger (check-ci-gate.mjs rules 8 and 9).
+  workflow_dispatch:
 
 permissions:
   contents: read

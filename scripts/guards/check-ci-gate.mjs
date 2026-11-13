@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 
 /**
- * Guard (GUARD-07): no CI job can escape the CI OK aggregate
+ * Guard (GUARD-07, GUARD-08): no CI job can escape the CI OK aggregate, and
+ * no CI run can be skipped in a way that leaves CI OK pending or forged
  *
  * The main ruleset requires one check, `CI OK` (job `ci-ok` at the end of
  * .github/workflows/ci.yml). It is only as strong as its `needs` list: a job
  * that is not in it can fail without turning CI OK red, and a CI OK that an
- * `if:` can skip reports Success. This guard makes both structural.
+ * `if:` can skip reports Success. This guard makes both structural. It also
+ * keeps the docs-only fast path (D-08) inside the workflow: a workflow-level
+ * path filter would skip the whole run and leave CI OK pending forever.
  *
  * Checks (all paths relative to --root):
  *   1. .github/workflows/ci.yml exists
@@ -25,6 +28,16 @@
  *   7. every job's token scope is explicit: the workflow has a top-level
  *      `permissions:` block or the job has its own (the repository default
  *      token may include checks: write)
+ *   8. ci.yml's `on:` block declares `push`, `pull_request` and
+ *      `workflow_dispatch` (the skip-marker relay, D-06, dispatches ci.yml)
+ *   9. no `paths:` or `paths-ignore:` key appears anywhere in ci.yml's `on:`
+ *      block (D-08: a workflow skipped by its trigger filter never reports)
+ *  10. the job ids whose `if:` reads `needs.changes.outputs.docs_only` equal,
+ *      as a set, the quoted ids in the single `IN(...)` call of
+ *      scripts/ci/ci-ok.jq, and each of those jobs lists `changes` in
+ *      `needs` (a heavy job that skips on docs-only but is missing from the
+ *      jq list would fail CI OK; one in the list without the condition
+ *      would let the jq accept a skip nobody intended)
  *
  * Usage:
  *   node scripts/guards/check-ci-gate.mjs [--root <dir>]
@@ -49,6 +62,13 @@ const CI_OK_JQ = 'scripts/ci/ci-ok.jq';
 const CI_OK_ELSEWHERE_ALLOWED = [];
 const CHECKS_WRITE = /(^|[\s{,])['"]?checks['"]?\s*:\s*['"]?write\b/;
 const WRITE_ALL = /(^|[\s{,])['"]?permissions['"]?\s*:\s*['"]?write-all\b/;
+/** Rule 8: the relay (D-06) dispatches ci.yml, so workflow_dispatch must stay. */
+const REQUIRED_TRIGGERS = ['push', 'pull_request', 'workflow_dispatch'];
+/** Rule 9: a `paths:` or `paths-ignore:` key anywhere in the `on:` block. */
+const PATHS_FILTER = /(^|[\s{,])['"]?(paths|paths-ignore)['"]?\s*:/;
+/** Rule 10: the classifier job and the output the heavy jobs' `if:` reads. */
+const CHANGES_ID = 'changes';
+const DOCS_ONLY_OUTPUT = 'needs.changes.outputs.docs_only';
 
 function parseArgs(argv) {
   const args = { root: process.cwd() };
@@ -210,6 +230,90 @@ const jobName = (job) => {
   return entry ? unquote(entry.value) : null;
 };
 
+/** The top-level `on:` key and its body as [{ line, index }] (key line first), or null. */
+function readOnBlock(lines) {
+  const start = lines.findIndex((l) => /^['"]?on['"]?\s*:/.test(l));
+  if (start === -1) return null;
+  const block = [{ line: lines[start], index: start }];
+  for (let i = start + 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.trim() !== '' && indentOf(line) === 0) break;
+    block.push({ line, index: i });
+  }
+  return block;
+}
+
+/**
+ * The event names an `on:` block declares: block-map keys one level down, or
+ * the inline value as a scalar (`on: push`), a flow list (`[push, ...]`) or
+ * the top-level keys of a flow map (`{ push: {...}, ... }`).
+ */
+function readTriggers(block) {
+  const inline = block[0].line.replace(/^['"]?on['"]?\s*:\s*/, '').trim();
+  if (inline === '') {
+    const body = block.slice(1).filter(({ line }) => line.trim() !== '');
+    if (body.length === 0) return [];
+    const childIndent = indentOf(body[0].line);
+    return body
+      .filter(({ line }) => indentOf(line) === childIndent)
+      .map(({ line }) => /^\s*['"]?([A-Za-z_]+)['"]?\s*:?/.exec(line)?.[1])
+      .filter(Boolean);
+  }
+  const text = [inline, ...block.slice(1).map(({ line }) => line.trim())].join(' ');
+  if (!text.startsWith('[') && !text.startsWith('{')) return [unquote(text)];
+  // Flow forms: names at nesting depth 1, before a `:` (map) or a `,`/`]` (list).
+  const names = [];
+  let depth = 0;
+  let token = '';
+  let atKey = true;
+  for (const c of text) {
+    if (c === '[' || c === '{') {
+      if (depth === 1 && atKey && token.trim()) names.push(unquote(token));
+      depth++;
+      token = '';
+    } else if (c === ']' || c === '}') {
+      if (depth === 1 && atKey && token.trim()) names.push(unquote(token));
+      depth--;
+      token = '';
+    } else if (depth === 1 && c === ',') {
+      if (atKey && token.trim()) names.push(unquote(token));
+      token = '';
+      atKey = true;
+    } else if (depth === 1 && c === ':') {
+      if (atKey && token.trim()) names.push(unquote(token));
+      token = '';
+      atKey = false;
+    } else if (depth === 1) {
+      token += c;
+    }
+  }
+  return names;
+}
+
+/**
+ * The quoted job ids inside the single IN(...) call of scripts/ci/ci-ok.jq
+ * (comments stripped), [] when the file has no IN(...) call, or null when the
+ * file cannot be read (rule 4 already reports that).
+ */
+function readJqHeavyList() {
+  let text;
+  try {
+    text = fs.readFileSync(path.join(root, CI_OK_JQ), 'utf-8');
+  } catch {
+    return null;
+  }
+  const code = text
+    .split(/\r?\n/)
+    .map((l) => l.replace(/#.*$/, ''))
+    .join('\n');
+  const calls = [...code.matchAll(/\bIN\(([^)]*)\)/g)];
+  if (calls.length > 1) {
+    fail(CI_OK_JQ, `has ${calls.length} IN(...) calls; the heavy-job list must be exactly one`);
+  }
+  if (calls.length === 0) return [];
+  return [...calls[0][1].matchAll(/"([^"]*)"/g)].map((m) => m[1]);
+}
+
 // 1. ci.yml exists
 const ciLines = readLines(CI_FILE);
 if (ciLines === null) {
@@ -259,6 +363,41 @@ if (ciLines === null) {
       );
       if (!runsJq) fail(CI_FILE, `${CI_OK_ID} does not run jq with -f ${CI_OK_JQ}`);
       if (!fs.existsSync(path.join(root, CI_OK_JQ))) fail(CI_OK_JQ, 'does not exist');
+    }
+
+    // 10. the docs-only skip set equals the heavy-job list in ci-ok.jq
+    const docsOnlyJobs = jobs.filter((j) => (jobKey(j, 'if')?.value ?? '').includes(DOCS_ONLY_OUTPUT));
+    for (const j of docsOnlyJobs) {
+      if (!readNeeds(j).includes(CHANGES_ID)) {
+        fail(CI_FILE, `job ${j.id} has the docs-only condition but does not need ${CHANGES_ID}`);
+      }
+    }
+    const heavy = readJqHeavyList();
+    if (heavy !== null) {
+      const skipSet = docsOnlyJobs.map((j) => j.id).sort();
+      const jqSet = [...new Set(heavy)].sort();
+      if (skipSet.join(',') !== jqSet.join(',')) {
+        fail(
+          CI_FILE,
+          `docs-only skip set differs from ${CI_OK_JQ} (jobs with the ${DOCS_ONLY_OUTPUT} condition: ${skipSet.join(', ') || 'none'}; IN(...) list: ${jqSet.join(', ') || 'none'})`,
+        );
+      }
+    }
+  }
+
+  // 8. push, pull_request and workflow_dispatch triggers
+  // 9. no workflow-level paths or paths-ignore filter
+  const on = readOnBlock(ciLines);
+  if (!on) {
+    fail(CI_FILE, 'has no top-level on: block');
+  } else {
+    const triggers = readTriggers(on);
+    for (const t of REQUIRED_TRIGGERS) {
+      if (!triggers.includes(t)) fail(CI_FILE, `ci.yml has no ${t} trigger`);
+    }
+    for (const { line, index } of on) {
+      const m = PATHS_FILTER.exec(line);
+      if (m) fail(CI_FILE, `workflow-level paths filter in ${CI_FILE} (line ${index + 1} declares ${m[2]}:)`);
     }
   }
 }
