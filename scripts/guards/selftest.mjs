@@ -29,6 +29,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { evaluate, pickRun } from '../ci/check-visual-run.mjs';
 import { evaluateSnapshotChanges } from '../ci/check-snapshot-commit.mjs';
+import { DOCS_ONLY_FILES, classify } from '../ci/classify-changes.mjs';
 import { checkMp4 } from './lib/mp4-boxes.mjs';
 import { LEGACY_DEAD_FILES, assertNoImporters, isLegacyDeadFile } from './lib/legacy-dead-files.mjs';
 
@@ -56,12 +57,27 @@ const pal = (...parts) => path.join(fixtures, 'palette', ...parts);
 const sc = (...parts) => path.join(fixtures, 'same-classnames', ...parts);
 const tap = process.argv.includes('--tap');
 
-// scripts/ci/ci-ok.jq: the CI OK verdict over toJSON(needs) (GUARD-07)
+// scripts/ci/ci-ok.jq: the CI OK verdict over toJSON(needs) (GUARD-07, GUARD-08)
 const CI_OK_JQ = path.join(repoRoot, 'scripts', 'ci', 'ci-ok.jq');
 const CI_JOBS = ['lint-and-typecheck', 'unit-tests', 'e2e-tests', 'visual-regression', 'build', 'dependency-review', 'security-audit'];
-/** A `needs` object for the seven ci.yml jobs: every result "success" unless overridden. */
-const needsOf = (overrides = {}) =>
-  Object.fromEntries(CI_JOBS.map((id) => [id, { result: overrides[id] ?? 'success', outputs: {} }]));
+/** The jobs a docs-only diff skips (D-08); dependency-review is not one of them. */
+const HEAVY_JOBS = CI_JOBS.filter((id) => id !== 'dependency-review');
+/**
+ * A `needs` object for ci.yml: the `changes` job (result "success", output
+ * docs_only `docsOnly`; null gives it no outputs, as a failed job has) plus
+ * the seven jobs, every result "success" unless overridden. An override
+ * `changes: null` leaves the `changes` entry out.
+ */
+const needsOf = (overrides = {}, docsOnly = 'false') => {
+  const needs = {};
+  if (overrides.changes !== null) {
+    needs.changes = { result: overrides.changes ?? 'success', outputs: docsOnly === null ? {} : { docs_only: docsOnly } };
+  }
+  for (const id of CI_JOBS) needs[id] = { result: overrides[id] ?? 'success', outputs: {} };
+  return needs;
+};
+/** Every heavy job with the same result, for spreading into needsOf overrides. */
+const allHeavy = (result) => Object.fromEntries(HEAVY_JOBS.map((id) => [id, result]));
 /** Runs `jq -e --arg event <event> -f ci-ok.jq` on `needs`; null when the exit status is `expectExit`. */
 function ciOkCase(event, needs, expectExit) {
   const r = spawnSync('jq', ['-e', '--arg', 'event', event, '-f', CI_OK_JQ], {
@@ -81,6 +97,16 @@ const runsCompleted = runs.map((r) => (r.id === 102 ? { ...r, status: 'completed
 /** Returns null when `actual` equals `expected`, else an error string. */
 const expectEqual = (label, actual, expected) =>
   actual === expected ? null : `${label}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`;
+
+// scripts/ci/classify-changes.mjs: the docs-only verdict of the `changes` job (D-08, D-09)
+const CLASSIFY = path.join(repoRoot, 'scripts', 'ci', 'classify-changes.mjs');
+/** classify(paths, opts).docsOnly must equal `expected` and come with a non-empty reason. */
+function classifyCase(paths, opts, expected) {
+  const result = classify(paths, opts);
+  const label = `classify(${JSON.stringify(paths)}${opts ? `, ${JSON.stringify(opts)}` : ''})`;
+  if (typeof result?.reason !== 'string' || result.reason === '') return `${label} gave no reason: ${JSON.stringify(result)}`;
+  return expectEqual(`${label}.docsOnly`, result.docsOnly, expected);
+}
 
 // check-snapshot-commit.mjs: in-memory `git show --name-status` entries
 const SNAP = 'e2e/visual/routes.spec.ts-snapshots';
@@ -861,6 +887,108 @@ const cases = [
   {
     name: 'ci-ok.jq: an empty needs object fails',
     fn: () => ciOkCase('push', {}, 1),
+  },
+  {
+    name: 'ci-ok.jq: needs without changes fails even when every other job succeeded',
+    fn: () => ciOkCase('pull_request', needsOf({ changes: null }), 1),
+  },
+  {
+    name: 'ci-ok.jq: docs-only pull_request with the six heavy jobs skipped passes',
+    fn: () => ciOkCase('pull_request', needsOf(allHeavy('skipped'), 'true'), 0),
+  },
+  {
+    name: 'ci-ok.jq: docs-only push with the heavy jobs and dependency-review skipped passes',
+    fn: () => ciOkCase('push', needsOf({ ...allHeavy('skipped'), 'dependency-review': 'skipped' }, 'true'), 0),
+  },
+  {
+    name: 'ci-ok.jq: docs-only with e2e-tests failure fails',
+    fn: () => ciOkCase('pull_request', needsOf({ ...allHeavy('skipped'), 'e2e-tests': 'failure' }, 'true'), 1),
+  },
+  {
+    name: 'ci-ok.jq: changes failure with the heavy jobs skipped fails',
+    fn: () => ciOkCase('pull_request', needsOf({ ...allHeavy('skipped'), changes: 'failure' }, null), 1),
+  },
+  {
+    name: 'ci-ok.jq: docs_only "false" with e2e-tests skipped fails',
+    fn: () => ciOkCase('pull_request', needsOf({ 'e2e-tests': 'skipped' }, 'false'), 1),
+  },
+  {
+    name: 'ci-ok.jq: docs-only does not excuse dependency-review skipped on a pull_request',
+    fn: () => ciOkCase('pull_request', needsOf({ ...allHeavy('skipped'), 'dependency-review': 'skipped' }, 'true'), 1),
+  },
+  {
+    name: 'classify: .planning notes plus README.md are docs-only',
+    fn: () => classifyCase(['.planning/x.md', 'README.md'], undefined, true),
+  },
+  {
+    name: 'classify: every D-09 file and a nested .planning path are docs-only',
+    fn: () =>
+      expectEqual('DOCS_ONLY_FILES', JSON.stringify(DOCS_ONLY_FILES), JSON.stringify(['README.md', 'AGENTS.md', 'scripts/README.md', 'e2e/visual/README.md', '.github/copilot-instructions.md'])) ??
+      classifyCase([...DOCS_ONLY_FILES, '.planning/phases/13-x/13-07-PLAN.md'], undefined, true),
+  },
+  {
+    name: 'classify: a guard selftest fixture README is code (no *.md rule)',
+    fn: () => classifyCase(['scripts/guards/__selftest__/served-images/a/README.md'], undefined, false),
+  },
+  {
+    name: 'classify: docs/README.md is code (exact list, not a file name)',
+    fn: () => classifyCase(['docs/README.md'], undefined, false),
+  },
+  {
+    name: 'classify: .planningX/ and a bare .planning file are not .planning/',
+    fn: () => classifyCase(['.planningX/a.md'], undefined, false) ?? classifyCase(['.planning'], undefined, false),
+  },
+  {
+    name: 'classify: an empty diff cannot be classified (full CI)',
+    fn: () => classifyCase([], undefined, false),
+  },
+  {
+    name: 'classify: a truncated file list cannot be classified (full CI)',
+    fn: () => classifyCase(['README.md'], { truncated: true }, false),
+  },
+  {
+    name: 'classify: a rename from lib/ into .planning/ is code (the old name counts)',
+    fn: () => classifyCase(['lib/x.ts', '.planning/x.ts'], undefined, false),
+  },
+  {
+    name: 'classify CLI: docs-only paths on stdin print docs_only=true',
+    guard: CLASSIFY,
+    args: [],
+    input: '.planning/a.md\nREADME.md\n',
+    expectExit: 0,
+    expectOutput: ['docs_only=true', 'reason='],
+  },
+  {
+    name: 'classify CLI: CRLF line endings are read as plain lines',
+    guard: CLASSIFY,
+    args: [],
+    input: '.planning/a.md\r\nAGENTS.md\r\n',
+    expectExit: 0,
+    expectOutput: ['docs_only=true'],
+  },
+  {
+    name: 'classify CLI: --truncated prints docs_only=false',
+    guard: CLASSIFY,
+    args: ['--truncated'],
+    input: 'README.md\n',
+    expectExit: 0,
+    expectOutput: ['docs_only=false', 'reason='],
+  },
+  {
+    name: 'classify CLI: empty stdin prints docs_only=false',
+    guard: CLASSIFY,
+    args: [],
+    input: '',
+    expectExit: 0,
+    expectOutput: ['docs_only=false'],
+  },
+  {
+    name: 'classify CLI: an unknown argument exits 1',
+    guard: CLASSIFY,
+    args: ['--docs'],
+    input: 'README.md\n',
+    expectExit: 1,
+    expectOutput: ['unknown argument --docs'],
   },
   {
     name: 'ci-gate: good fixture passes (needs in block form, out of job order)',
