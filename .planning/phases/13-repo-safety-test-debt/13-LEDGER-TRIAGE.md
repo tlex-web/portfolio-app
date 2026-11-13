@@ -54,7 +54,7 @@ Numbered 1-44 in ledger order (07, 09, 10, 12), each phase in its disposition fi
 | 11 | 07 IN-05 | The Home stats show hard-coded, false figures | No `850+` or "Tests Passing" left in `app/` or `components/`; 98de4c5 replaced the page with the server-rendered AscentHero ("the legacy stats … are gone") | Already fixed | fixed | 98de4c5 | pending |
 | 12 | 07 IN-06 | The contrast self-test pins exact production ratios, so any token tweak breaks `npm run lint` | `scripts/guards/selftest.mjs:738` still pins 12 exact ratios from the real `app/globals.css` (now 47 pairs) | Fix now (assert only the OK line and the table order for the real file; keep exact ratios for fixtures) | fixed | 13-13 | pending |
 | 13 | 07 IN-07 | `check-snapshot-commit` passes a merge commit without checking it under `--none` | `scripts/ci/check-snapshot-commit.mjs:119` runs `git show --name-status` with no merge detection (no `--parents` or `^1` anywhere in the file) | Fix now; more relevant now that D-03 allows merge commits only | fixed | 13-14 | pending |
-| 14 | 07 IN-08 | Tests and e2e specs are excluded from `type-check` | `tsconfig.json` `exclude` unchanged; `type-check` is `tsc --noEmit` over the root config only | Tim's call after the measurement below | depends on the call | 13-11 if fixed here | pending |
+| 14 | 07 IN-08 | Tests and e2e specs are excluded from `type-check` | `tsconfig.json` `exclude` unchanged; `type-check` is `tsc --noEmit` over the root config only | Tim's call; measured 5482 errors in 103 files as-is, 69 in 21 with Jest globals declared, so the proposal is a new requirement (GUARD-10, Phase 15) | deferred if new requirement, fixed if fixed here, skipped if accepted | GUARD-10 (Phase 15) proposed | pending |
 | 15 | 07 IN-09 | FeedbackForm parses JSON before checking the status, so a non-JSON error shows "Network error" | `components/FeedbackForm.tsx` deleted in b48c4d9; its successor `components/contact/SummitRegister.tsx` maps any unreadable body to the network failure by design (`outcomeOf`, `:223`, "anything unreadable is a network failure") | Already fixed (component retired) | fixed | b48c4d9 | pending |
 | 16 | 07 IN-10 | The `high` and `critical` risk levels now render identically | `components/HologramTerminalDemo.tsx` deleted in cf369b5 (DemoTerminal replaced it) | Already fixed (component retired) | fixed | cf369b5 | pending |
 | 17 | 07 IN-11 | The section error component is named `Error`, which shadows the global | `app/(site)/error.tsx:12` still `export default function Error(` | Fix now (rename to `SectionError`) | fixed | 13-08 | pending |
@@ -105,10 +105,10 @@ These three rows need Tim's decision, not just his approval.
 - Accept: record the reason (errors already reach `onError`, which drives the static downgrade) and leave it. Enum `skipped`.
 
 **07 IN-08: Tests and e2e specs are excluded from `type-check`** (row 14)
-- Fix here: 13-11 adds a committed `tsconfig.test.json` and runs it from `type-check`. Proposed only if the measurement shows at most 15 errors in at most 5 files.
-- New requirement: give it a requirement ID and a phase (D-17); the ledger row points there. Enum `deferred`.
+- Fix here: 13-11 adds a committed `tsconfig.test.json` and runs it from `type-check`. Proposed only if the measurement shows at most 15 errors in at most 5 files. The measurement is over that line, so a "fix here" answer would need a gap plan.
+- New requirement (**proposed**, from the measurement): GUARD-10, in Phase 15. The ledger row points there. Enum `deferred`.
 - Accept: record the reason and leave tests unchecked. Enum `skipped`.
-- The measured basis is under `## Measurement: 07 IN-08`.
+- The measured basis is in the Measurement section below.
 
 **12 IN-08: A fieldless `validation` answer offers a pointless Retry** (row 40)
 - Phase 14: hide Retry for the fieldless case (a `retryable: false` flag on the failure). It changes what the visitor sees (copy/UX), so it cannot land in this pixel-neutral phase. Enum `deferred`.
@@ -116,7 +116,28 @@ These three rows need Tim's decision, not just his approval.
 
 ## Measurement: 07 IN-08
 
-(Filled by 13-06 Task 2.)
+Measured 2026-11-13 at HEAD `7b861b4` (TypeScript 6.0.3). Two throwaway configs in the session scratchpad (OS temp, outside the repository, deleted after the run). Each `extends` the repo's absolute `tsconfig.json` path, sets `compilerOptions.noEmit: true` (and `incremental: false`, so no build-info file is written), overrides `exclude` to `node_modules` and `scripts/guards/__selftest__/**` only, and includes `next-env.d.ts`, `**/__tests__/**/*.ts`, `**/__tests__/**/*.tsx`, `e2e/**/*.ts` and `playwright*.config.ts` (140 test, spec and config files).
+
+**Run A: the tests exactly as they are.**
+
+- Command, from the repo root: `npx tsc -p <temp>/tsconfig.in08.json`
+- Result: **5482 errors in 103 files** (exit 2).
+- Cause: the repo has no Jest type declarations. `@types/jest` is not installed, and no test imports from `@jest/globals`, so every `describe`, `it`, `expect` and `jest` is an unknown name. By code: TS2304 3528 (`expect` 3291, `jest` 214, `afterEach`/`beforeAll`/`afterAll` 23), TS2593 1694 (`describe`/`it`), TS7006 203, TS2503 45 (`jest.Mock` namespace), and 14 others.
+- Top five files: `components/contact/__tests__/SummitRegister.test.tsx` 280, `app/api/__tests__/feedback.test.ts` 224, `components/projects/__tests__/DemoTerminal.test.tsx` 179, `lib/__tests__/proxy.test.ts` 165, `components/projects/__tests__/sections.test.tsx` 148.
+- e2e and the Playwright configs: 1 error (`e2e/home-canvas.spec.ts:1012`, TS2339 `getContext` on `Element`).
+
+**Run B: the same files with the Jest globals declared.** This shows the real type errors behind the missing declarations. A scratch `globals.d.ts` (also in temp) declared `describe`, `it`, `test`, `expect`, the hooks and the `jest` namespace from the installed `@jest/globals` 30.5.2, plus `@testing-library/jest-dom/jest-globals` 7.0.1. Nothing was installed.
+
+- Command: `npx tsc -p <temp>/tsconfig.in08-jest.json` (Run A's config plus the scratch `globals.d.ts`)
+- Result: **69 errors in 21 files** (exit 2).
+- By code: TS2345 28, TS2554 13, TS2339 13, TS2322 6, TS7006 4, and 5 single errors. Many are `jest.fn()` mocks typed `Mock<UnknownFunction>` where a typed function is expected (the `@jest/globals` typing is stricter than `@types/jest`). Others are real fixture drift, for example project fixtures missing the now-required `links` field (`components/projects/__tests__/Metrics.test.tsx:207`, `sections.test.tsx:448`).
+- Top five files: `lib/og/__tests__/routes.test.ts` 18, `components/contact/__tests__/SummitRegister.test.tsx` 15, `components/roadmap/__tests__/RouteLogFilters.test.tsx` 7, `components/contact/__tests__/CopyEmailButton.test.tsx` 4, `app/api/__tests__/feedback.test.ts` 4.
+
+**Proposal rule (from the plan):** at most 15 errors in at most 5 files → propose "fix here" (13-11 adds a committed `tsconfig.test.json` and runs it from `type-check`); otherwise propose a new requirement with an ID and a phase (D-17).
+
+**Outcome: both runs are over the threshold** (A: 5482 errors in 103 files; B: 69 errors in 21 files). **Proposed: new requirement GUARD-10**, "Jest tests, e2e specs and the Playwright configs are type-checked by `npm run type-check`, with zero errors". Proposed phase: Phase 15 (Region & Plate Data Model), the first phase after Phase 14 with no visible change, before Phases 15-18 rewrite the photo and Home tests. GUARD-10 is the next free GUARD id. Two things for Tim to know before he decides:
+- It needs Jest type declarations. Either add `@types/jest` (a package install, which needs Tim to vet the package) or import from `@jest/globals` in the 102 Jest test files. That choice belongs to the requirement's plan, not this triage.
+- If he answers "fix here" anyway, it is too large for 13-11's owner-call task, so it goes to a gap plan (`/gsd-plan-phase 13 --gaps`).
 
 ## Unowned fix rows
 
