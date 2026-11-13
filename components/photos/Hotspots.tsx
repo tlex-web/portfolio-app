@@ -30,7 +30,7 @@ import type { HotspotView, PhotoView } from '@/lib/photos/view-model';
  *   'Labels' of key rows '{n} {title} · {height}', each expanding in place.
  *
  * Marks and overlay draw nothing while labels are hidden (D-10) or the photo
- * is zoomed (D-06); the key ignores labelsOn, so the text stays (CONTEXT
+ * is zoomed (D-06); the key takes no labelsOn, so the text stays (CONTEXT
  * default). A photo without annotations draws nothing at all (E7 empty).
  * Every label and row is a button with aria-expanded and aria-controls; one
  * hotspot is open at a time (PhotoViewer owns expandedId). Fact sources are
@@ -85,8 +85,10 @@ function Panel({ hotspot, id, open }: { hotspot: HotspotView; id: string; open: 
       <p>{hotspot.description}</p>
       {hotspot.facts.length > 0 && (
         <ul>
-          {hotspot.facts.map((fact) => (
-            <li key={fact.text} className="mt-2">
+          {/* Facts have no id in the data and their text need not be unique (10-REVIEW
+              IN-07); the list is static per hotspot, so its id and the index are stable. */}
+          {hotspot.facts.map((fact, i) => (
+            <li key={`${hotspot.id}-${i}`} className="mt-2">
               {fact.text} <FactSource source={fact.source} />
             </li>
           ))}
@@ -323,9 +325,7 @@ export function HotspotKey({
   view,
   expandedId,
   onToggle,
-}: Omit<HotspotProps, 'zoomed' | 'labelsOn'> & {
-  labelsOn?: boolean;
-}) {
+}: Omit<HotspotProps, 'zoomed' | 'labelsOn'>) {
   if (view.hotspots.length === 0) return null;
   return (
     <ul aria-label="Labels" data-hotspot-key="" className="mt-4 lb-gutter:hidden">

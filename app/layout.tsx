@@ -55,9 +55,6 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`dark ${schibsted.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
       <head>
-        {/* Resource Hints for Performance */}
-        <link rel="dns-prefetch" href="https://vercel.com" />
-
         {/* Prefetch Common Routes */}
         <link rel="prefetch" href="/projects" />
         <link rel="prefetch" href="/photos" />

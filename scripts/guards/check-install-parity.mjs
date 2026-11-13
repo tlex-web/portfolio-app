@@ -17,9 +17,14 @@
  *      is allowed)
  *   4. every mcr.microsoft.com/playwright:vX.Y.Z-noble tag equals the lockfile
  *      version of @playwright/test
- *   5. scripts/guards/version-floors.json: each floored package's lockfile
- *      version is >= its floor, and no `forbiddenDirect` package is a direct
- *      dependency
+ *   5. scripts/guards/version-floors.json: every lockfile copy of a floored
+ *      package (the hoisted `node_modules/<name>` and each nested
+ *      `.../node_modules/<name>`) is >= its floor, and no `forbiddenDirect`
+ *      package is a direct dependency. A floor is a string ("x.y.z": one floor
+ *      for every copy) or a list (["0.6.11", "0.8.3"]: one floor per version
+ *      line, where a line is the major, or major.minor for 0.x). With a list,
+ *      each copy is checked against its own line's floor, and a copy on a line
+ *      with no floor fails (12 IN-12).
  *
  * Usage:
  *   node scripts/guards/check-install-parity.mjs [--root <dir>]
@@ -92,6 +97,22 @@ function compareVersions(a, b) {
   return 0;
 }
 
+/** Version line of a parsed x.y.z: the major, or major.minor for 0.x. */
+function versionLine(v) {
+  return v[0] === 0 ? `0.${v[1]}` : String(v[0]);
+}
+
+/**
+ * Every lockfile copy of a package: the hoisted `node_modules/<name>` key and
+ * each nested `.../node_modules/<name>` key, in lockfile order.
+ */
+function lockCopies(lockfile, name) {
+  const suffix = `/node_modules/${name}`;
+  return Object.entries(lockfile?.packages ?? {})
+    .filter(([key]) => key === `node_modules/${name}` || key.endsWith(suffix))
+    .map(([key, entry]) => ({ key, version: entry?.version ?? null }));
+}
+
 /**
  * Returns the shell text of every `run:` step in a workflow, including
  * block scalars (`run: |` / `run: >`). Comment lines are dropped.
@@ -140,7 +161,6 @@ if (pkg && pkg.engines?.node !== REQUIRED_ENGINES) {
 
 // Lockfile (used by checks 4 and 5)
 const lock = readJson('package-lock.json');
-const lockVersion = (name) => lock?.packages?.[`node_modules/${name}`]?.version ?? null;
 
 // 3 + 4. Workflows
 const workflowDir = path.join('.github', 'workflows');
@@ -204,20 +224,46 @@ const floorsFile = readJson(floorsRel);
 if (floorsFile) {
   const { floors, forbiddenDirect } = floorsFile;
   if (!floors || typeof floors !== 'object' || Array.isArray(floors) || !Array.isArray(forbiddenDirect)) {
-    fail(floorsRel, 'expected shape { "floors": { "<pkg>": "x.y.z" }, "forbiddenDirect": ["<pkg>"] }');
+    fail(floorsRel, 'expected shape { "floors": { "<pkg>": "x.y.z" | ["x.y.z", ...] }, "forbiddenDirect": ["<pkg>"] }');
   } else {
     for (const [name, floor] of Object.entries(floors)) {
-      const floorV = parseVersion(floor);
-      if (!floorV) {
-        fail(floorsRel, `floor for ${name} is not x.y.z: ${JSON.stringify(floor)}`);
+      const perLine = Array.isArray(floor);
+      const list = perLine ? floor : [floor];
+      // A string floor must be x.y.z; a list needs at least one x.y.z, at most one per line.
+      const parsed = list.map((f) => (typeof f === 'string' ? parseVersion(f) : null));
+      if (list.length === 0 || parsed.some((v) => !v)) {
+        fail(floorsRel, `floor for ${name} is not x.y.z or a list of x.y.z: ${JSON.stringify(floor)}`);
         continue;
       }
-      const actual = lockVersion(name);
-      const actualV = actual && parseVersion(actual);
-      if (!actualV) {
-        fail('package-lock.json', `${name} is missing or has no x.y.z version (floor ${floor})`);
-      } else if (compareVersions(actualV, floorV) < 0) {
-        fail('package-lock.json', `${name} ${actual} is below the floor ${floor}`);
+      const byLine = new Map();
+      for (const [i, v] of parsed.entries()) {
+        const line = versionLine(v);
+        if (byLine.has(line)) fail(floorsRel, `floors for ${name} name version line ${line} twice`);
+        byLine.set(line, { text: list[i], v });
+      }
+      const allFloors = list.join(', ');
+      const hoistedKey = `node_modules/${name}`;
+      const copies = lockCopies(lock, name);
+      if (!copies.some((c) => c.key === hoistedKey)) {
+        fail('package-lock.json', `${name} is missing or has no x.y.z version (floor ${allFloors})`);
+      }
+      for (const { key, version } of copies) {
+        // The hoisted copy keeps the original message; a nested copy names its lockfile key.
+        const hoisted = key === hoistedKey;
+        const actualV = version && parseVersion(version);
+        if (!actualV) {
+          fail('package-lock.json', hoisted
+            ? `${name} is missing or has no x.y.z version (floor ${allFloors})`
+            : `${name} at ${key} has no x.y.z version (floor ${allFloors})`);
+          continue;
+        }
+        const label = hoisted ? `${name} ${version}` : `${name} ${version} at ${key}`;
+        const own = perLine ? byLine.get(versionLine(actualV)) : { text: list[0], v: parsed[0] };
+        if (!own) {
+          fail('package-lock.json', `${label} has no floor for version line ${versionLine(actualV)} (floors ${allFloors})`);
+        } else if (compareVersions(actualV, own.v) < 0) {
+          fail('package-lock.json', `${label} is below the floor ${own.text}`);
+        }
       }
     }
     const direct = { ...(pkg?.dependencies ?? {}), ...(pkg?.devDependencies ?? {}) };

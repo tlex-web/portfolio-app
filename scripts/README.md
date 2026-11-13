@@ -49,7 +49,7 @@ The manifest (`imageManifest`) is the only image source (DATA-08): every photo p
 
 ## Guards (`scripts/guards/`)
 
-CI guards that run in `npm run lint` (`eslint . && guard:parity && guard:palette && guard:contrast && guard:identity && guard:selftest && data:check && guard:images`). Each guard prints one line per violation and exits 1 on any failure. `selftest.mjs` runs every guard against the fixtures in `scripts/guards/__selftest__/` and proves that each one can fail.
+CI guards that run in `npm run lint` (`eslint . && guard:parity && guard:ci && guard:palette && guard:contrast && guard:identity && guard:selftest && data:check && guard:images`). Each guard prints one line per violation and exits 1 on any failure. `selftest.mjs` runs every guard against the fixtures in `scripts/guards/__selftest__/` and proves that each one can fail.
 
 ### `check-palette.mjs` (GUARD-04)
 
@@ -58,12 +58,12 @@ Raw-text scan of `app/`, `components/`, `lib/`, `data/` and `e2e/` (every `__tes
 | Rule | Fails on |
 |------|----------|
 | `dark` | any `dark:` variant |
-| `stock` | any stock Tailwind palette class (`bg-red-500`, `hover:text-cyan-400/50`, ...) |
+| `stock` | any stock Tailwind palette class (`bg-red-500`, `hover:text-cyan-400/50`, `border-t-red-500`, `ring-offset-red-500`, `drop-shadow-red-500`, ...), directional borders, ring offsets and the `inset-ring`/`inset-shadow`/`drop-shadow`/`text-shadow` colours included (the `wb` rule reads the same prefixes) |
 | `variant` | a `@custom-variant dark` line in CSS |
 | `wb` | a file's `white`/`black` utility count differing from `palette-ratchet.json` (absent entry = 0) |
-| `png` | a `.png` under `e2e/` that does not end in `-linux.png` |
+| `png` | a `.png` under `e2e/` that does not end in `-linux.png`, among the files git lists (`git ls-files -co --exclude-standard`: tracked plus untracked, ignored skipped), so the git-ignored `-win32.png` files a local visual run writes do not fail lint; outside a git work tree it walks the disk |
 | `v1names` | a v1 alias name (`frost-500`, ...) in any scanned file (the v1 dead files are exempt only while nothing imports them) |
-| `emoji` | emoji in `.ts/.tsx/.js/.mjs` (©, ®, ™ and ❯ allowed; ✓ ✔ ✗ ✘ banned); skipped in lint until plan 07-25 |
+| `emoji` | emoji in `.ts/.tsx/.js/.mjs` (©, ®, ™ and ❯ allowed; ✓ ✔ ✗ ✘ banned) |
 
 ```bash
 npm run guard:palette                     # read-only check (never writes the ratchet)
@@ -75,7 +75,7 @@ The ratchet only goes down: a higher count fails, a lower count fails until `--u
 
 ### `check-contrast.mjs` (GUARD-05)
 
-Reads every token from `app/globals.css` (`:root` and all `@theme` blocks), resolves `var()` chains and measures 36 pairs (the 28 UI-SPEC pairs, 4 `accent-strong` pairs and the 4 photo-viewer `gallery` pairs: `accent`/`gallery`, `gallery`/`ink`, `focus`/`gallery`, `line-strong`/`gallery`) with `colorjs.io` (`contrast(…, 'WCAG21')`): text pairs need 4.5:1, non-text pairs (focus, line-strong) 3:1, compared as raw floats. An unknown `--color-*` token, a missing pair token, an alpha token in a measured pair or a file without token blocks fails. v1 alias tokens are skipped; `line` and `contour` are decorative and exempt. Adding a semantic token means adding it and its pairs to the script in the same commit.
+Reads every token from `app/globals.css` (the top-level `:root` and `@theme` blocks; a token block nested in an at-rule such as `@media` or `@supports` is not merged, and fails if it declares a custom property, because media-scoped palettes are not measured), resolves `var()` chains and measures 36 pairs (the 28 UI-SPEC pairs, 4 `accent-strong` pairs and the 4 photo-viewer `gallery` pairs: `accent`/`gallery`, `gallery`/`ink`, `focus`/`gallery`, `line-strong`/`gallery`) with `colorjs.io` (`contrast(…, 'WCAG21')`): text pairs need 4.5:1, non-text pairs (focus, line-strong) 3:1, compared as raw floats. An unknown `--color-*` token, a missing pair token, an alpha token in a measured pair or a file without token blocks fails. v1 alias tokens are skipped; `line` and `contour` are decorative and exempt. Adding a semantic token means adding it and its pairs to the script in the same commit.
 
 ```bash
 npm run guard:contrast
@@ -105,11 +105,43 @@ node scripts/guards/check-served-images.mjs --root <dir>
 
 It runs in `npm run lint` and CI, so it catches a committed original only after the push; there is no pre-commit hook. Never stage `assets/photos-original/` or `public/images/landscapes/` (both gitignored).
 
+### `check-ci-gate.mjs` (GUARD-07, GUARD-08)
+
+`CI OK` (job `ci-ok`, the last job in `.github/workflows/ci.yml`) is the only check the `main` ruleset requires. It runs with `if: always()`, needs every other `ci.yml` job and passes only when `scripts/ci/ci-ok.jq` accepts `toJSON(needs)`: the `changes` job (`Classify changes`) must succeed, and every other result must be `success`, except `dependency-review`, which may be `skipped` outside `pull_request`, and the six heavy jobs, which may be `skipped` when `changes` reported `docs_only` `true`. An empty `needs`, a missing or failed `changes`, a `failure`, a `cancelled` or any other `skipped` fails it.
+
+The docs-only fast path (D-08, D-09): `scripts/ci/classify-changes.mjs` gets every changed file name, old names of renames included, from one compare API call. The diff is docs-only only when every path is under `.planning/` or is exactly `README.md`, `AGENTS.md`, `scripts/README.md`, `e2e/visual/README.md` or `.github/copilot-instructions.md`. There is no `*.md` rule, because the READMEs under `scripts/guards/__selftest__/` are fixtures. No base commit, a failed compare call, an empty list or a list of 300 or more files runs the full CI. This guard keeps a job from escaping that aggregate. It reads the workflow YAML line by line, with comments stripped.
+
+| Rule | Fails on |
+|------|----------|
+| `ci.yml` | `.github/workflows/ci.yml` missing |
+| one `CI OK` | no job named `CI OK`, more than one, or one whose id is not `ci-ok` |
+| `if: always()` | `ci-ok` with any other job-level `if:`, or none (a job skipped by `if:` reports Success) |
+| needs set | `ci-ok.needs` missing a job id (`ci-ok needs is missing <id>`) or listing one that does not exist; the lists are compared as sets, so order never matters |
+| jq verdict | `ci-ok` not running `jq` with `-f scripts/ci/ci-ok.jq`, or that file missing |
+| unique name | a job named `CI OK` in any other workflow. The one exception (`CI_OK_ELSEWHERE_ALLOWED`) is job `relay` in `ci-skip-relay.yml`, and only while `CI OK` sits inside one `${{ }}` name expression that reads `needs.` on a job with `needs:`; a literal `name: CI OK` there still fails |
+| `checks: write` | any workflow line granting it, directly or through `permissions: write-all` (such a job could post a forged `CI OK` check run) |
+| token scope | a job with no `permissions:` block in a workflow that sets none at the top (the repository default token may include `checks: write`) |
+| triggers | `ci.yml` without `push`, `pull_request` or `workflow_dispatch` in `on:` (the skip-marker relay dispatches `ci.yml`) |
+| no path filter | a `paths:` or `paths-ignore:` key anywhere in `ci.yml`'s `on:` block (a workflow skipped by its trigger filter leaves `CI OK` pending) |
+| heavy-job set | the jobs whose `if:` reads `needs.changes.outputs.docs_only` differ from the ids in the one `IN(...)` call of `scripts/ci/ci-ok.jq`, or one of those jobs does not need `changes` |
+| relay: no checkout | `ci-skip-relay.yml` with a checkout action, or a run block running `git clone`/`checkout`/`switch`/`fetch`/`pull`/`worktree`, `gh pr checkout` or `gh repo clone` |
+| relay: no expression in `run` | a `${{` on any line of a relay run block, shell comments included (event fields go through `env:`) |
+| relay: no job-level `if:` | a job-level `if:` on the relay job whose name can be `CI OK` |
+| relay: one trigger | any relay trigger other than `pull_request_target` |
+| relay: token scope | relay top-level `permissions:` other than `{}`, or any write scope other than `actions: write` on the `CI OK` relay job |
+
+```bash
+npm run guard:ci
+node scripts/guards/check-ci-gate.mjs --root <dir>
+```
+
+A new `ci.yml` job must join `ci-ok.needs` in the same commit. A new heavy job also gets the docs-only `if:` and joins the `IN(...)` list. The selftest runs the `ci-ok.jq` and `classify` cases (the jq cases need `jq` on the PATH, as `ubuntu-latest` has) and at least one failing case per rule, from the fixtures under `scripts/guards/__selftest__/ci-gate/` (plus temp copies of `good/` for the rename, jq-verdict, `paths-ignore` and heavy-set variants).
+
 ### Other guards
 
-- `check-install-parity.mjs` (`guard:parity`): npm ci everywhere, Node 24 pins, Playwright image matches the lockfile, version floors.
+- `check-install-parity.mjs` (`guard:parity`): npm ci everywhere, Node 24 pins, Playwright image matches the lockfile, version floors. A floor in `version-floors.json` applies to every lockfile copy of the package, nested `.../node_modules/<name>` copies included. It is either a string (one minimum for all copies) or a list with one floor per version line (the major, or major.minor for 0.x), for example `"fflate": ["0.6.11", "0.8.3"]`; with a list, a copy on a line that has no floor fails.
 - `test-count.mjs` (`guard:tests`, CI unit job): the test count may only go up; no skipped or focused tests.
-- `same-classnames.mjs`: proves a refactor left every `className` literal unchanged.
+- `same-classnames.mjs`: proves a refactor left every `className` literal unchanged. A moved or renamed file is paired with its old path, and a run against a ref that compared no file fails.
 
 ## Adding New Scripts
 

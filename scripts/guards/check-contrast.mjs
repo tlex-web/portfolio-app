@@ -4,9 +4,12 @@
  * Guard (GUARD-05): WCAG contrast of the semantic colour tokens, read from globals.css
  *
  * Reads every token from the stylesheet itself (never a hand-copied table):
- *   1. extracts the declarations of every `:root { }`, `@theme { }`,
+ *   1. extracts the declarations of every top-level `:root { }`, `@theme { }`,
  *      `@theme inline { }` and `@theme static { }` block (these blocks hold no
- *      nested braces), after stripping comments
+ *      nested braces), after stripping comments. A token block nested in an
+ *      at-rule (`@media`, `@supports`, `@layer`, ...) is not merged into the
+ *      palette: if it declares a custom property it fails, because the guard
+ *      does not measure conditional palettes (07 WR-01)
  *   2. resolves `var(--x)` chains recursively, failing on a cycle
  *   3. parses the colour with colorjs.io (OKLCH and every CSS colour syntax) and
  *      measures `fg.contrast(bg, 'WCAG21')`
@@ -97,7 +100,8 @@ const PAIRS = [
   ...pairs(['trail-blaze', 'trail-yellow'], ['surface-raised'], NON_TEXT),
 ];
 
-const BLOCK = /(:root|@theme(?:\s+(?:inline|static))*)\s*\{([^{}]*)\}/g;
+// The prelude of a token block: `:root` or `@theme` with its optional keywords
+const TOKEN_BLOCK = /(:root|@theme(?:\s+(?:inline|static))*)$/;
 const VAR = /var\(\s*(--[\w-]+)\s*(?:,\s*([^()]*))?\)/;
 
 function parseArgs(argv) {
@@ -114,23 +118,62 @@ function parseArgs(argv) {
   return css;
 }
 
-/** Collects the custom properties of every :root and @theme block (later declarations win). */
+/** Returns the custom-property declarations of a block body as [name, value] pairs. */
+function declarations(body) {
+  const out = [];
+  for (const decl of body.split(';')) {
+    const colon = decl.indexOf(':');
+    if (colon === -1) continue;
+    const name = decl.slice(0, colon).trim();
+    // A Tailwind namespace reset (`--color-*: initial`) clears defaults; it declares no token
+    if (name.endsWith('-*')) continue;
+    if (name.startsWith('--')) out.push([name, decl.slice(colon + 1).trim()]);
+  }
+  return out;
+}
+
+/**
+ * Collects the custom properties of every top-level :root and @theme block (later
+ * declarations win). Blocks are found by brace depth, so only a block that opens at
+ * the top level of the stylesheet is measured. A token block nested in an at-rule
+ * (`@media`, `@supports`, `@container`, `@layer`, ...) applies only some of the time
+ * or in another cascade layer, so merging it would let a media-scoped override mask
+ * a failing base token (07 WR-01). Each such block that declares a custom property
+ * is returned in `nested` and fails the guard instead.
+ */
 function readTokens(source) {
   const text = source.replace(/\/\*[\s\S]*?\*\//g, '');
   const tokens = new Map();
+  const nested = [];
   let blocks = 0;
-  for (const [, , body] of text.matchAll(BLOCK)) {
-    blocks++;
-    for (const decl of body.split(';')) {
-      const colon = decl.indexOf(':');
-      if (colon === -1) continue;
-      const name = decl.slice(0, colon).trim();
-      // A Tailwind namespace reset (`--color-*: initial`) clears defaults; it declares no token
-      if (name.endsWith('-*')) continue;
-      if (name.startsWith('--')) tokens.set(name, decl.slice(colon + 1).trim());
+  // One entry per open brace: its prelude, where its body starts, whether it holds a child block
+  const stack = [];
+  let start = 0;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === ';') {
+      start = i + 1;
+    } else if (ch === '{') {
+      if (stack.length > 0) stack[stack.length - 1].hasChild = true;
+      stack.push({ prelude: text.slice(start, i).trim().replace(/\s+/g, ' '), body: i + 1, hasChild: false });
+      start = i + 1;
+    } else if (ch === '}') {
+      const block = stack.pop();
+      start = i + 1;
+      // An unbalanced `}` or a block with child rules is never a token block (no nested braces)
+      if (!block || block.hasChild || !TOKEN_BLOCK.test(block.prelude)) continue;
+      const decls = declarations(text.slice(block.body, i));
+      if (stack.length === 0) {
+        blocks++;
+        for (const [name, value] of decls) tokens.set(name, value);
+      } else if (decls.length > 0) {
+        const where = stack.find((b) => b.prelude.startsWith('@'))?.prelude ?? stack[0].prelude;
+        const head = block.prelude.match(TOKEN_BLOCK)[1];
+        nested.push(`${head} inside ${where} declares ${decls.map(([name]) => name).join(', ')}`);
+      }
     }
   }
-  return { tokens, blocks };
+  return { tokens, blocks, nested };
 }
 
 /** Resolves var() references recursively; throws on a cycle or an undeclared variable. */
@@ -149,8 +192,10 @@ function resolve(tokens, name, seen = []) {
 function main() {
   const cssFile = parseArgs(process.argv.slice(2));
   const rel = path.relative(process.cwd(), cssFile) || cssFile;
-  const { tokens, blocks } = readTokens(fs.readFileSync(cssFile, 'utf-8'));
-  const failures = [];
+  const { tokens, blocks, nested } = readTokens(fs.readFileSync(cssFile, 'utf-8'));
+  const failures = nested.map(
+    (n) => `nested token block: ${n}; tokens in an at-rule are not measured, move them to a top-level :root or @theme block`,
+  );
 
   if (blocks === 0) {
     console.log(`${rel}: no :root or @theme block found`);

@@ -1,506 +1,402 @@
 # Feature Research
 
-**Domain:** Photographer-engineer portfolio. A data-driven "Topographic Survey" rework (v2.0) that tells its story by scrolling, with a photo light table and engineering case studies.
-**Researched:** 2026-10-10
-**Confidence:** MEDIUM overall. Interaction conventions are cross-checked across several sources. Codebase facts come from reading the repo directly and count as HIGH. Exemplar comparisons are partly from memory and count as LOW–MEDIUM.
-**Scope:** Only the NEW v2.0 capabilities. The direction is locked, so this file does not evaluate alternatives to it. It defines the expected behavior for each locked feature and lists what the plan leaves out.
-**Complexity key:** S = less than a day, contained in one component. M = 1–3 days, or touches data plus UI. L = more than 3 days, new pipeline or WebGL, or crosses several routes.
+**Domain:** Photographer-engineer portfolio in a Swiss "topographic survey" identity. v2.1 extends it from one mountain to region series across the Alps.
+**Researched:** 2026-11-12
+**Confidence:** MEDIUM overall. Codebase facts are HIGH (read directly). Web-platform rules (WCAG 2.2.2/1.2.x, Web Share, autoplay, Save-Data, Google image metadata, LV95) are MEDIUM: official docs plus cross-checked secondary sources. Portfolio and photo-essay conventions are LOW–MEDIUM: vendor blogs and examples, with no authoritative study.
+**Scope:** Only the NEW v2.1 capabilities. The v2.0 light table, lightbox, ascent, OG cards and terminal are already built and are treated as dependencies here, not re-researched (see `milestones/v2.0-research/FEATURES.md`).
+**Complexity key:** LOW = under a day, one component. MEDIUM = 1–3 days, or touches data plus UI. HIGH = more than 3 days, a new pipeline, or work across several routes.
 
 ---
 
-## 0. What the plan is missing (read first)
+## 0. Decisions Tim needs to make (read first)
 
-Users of high-quality photo and developer portfolios will expect the items below, but the approved plan does not mention them. Each one is backed by something found in the codebase or in the research. They are ordered by impact.
+Each of these changes what gets built, so the roadmap needs them settled before the phases that depend on them.
 
-| # | Gap | Evidence | Recommendation | Cx |
-|---|-----|----------|----------------|----|
-| G1 | **Photo deep links do not exist.** The lightbox is `useState` in `components/PhotosPageClient.tsx`, so a URL cannot open a photo and Back leaves the page instead of closing the lightbox. | Read `PhotosPageClient.tsx`. ui-ux-pro-max `deep-linking`, `back-behavior`, `state-preservation`. | Add a `/photos/[slug]` route. It renders a full page on hard load and an intercepted modal on soft navigation (Next.js parallel `@modal` slot plus `(.)` interception, as in the nextgram reference). | M |
-| G2 | **No per-page metadata anywhere.** The only `metadata` export is in `app/layout.tsx` ("Portfolio \| Landscape Photography & Projects"). There is no `generateMetadata`, no Open Graph, no `metadataBase`, no `sitemap.ts`, no `robots.ts`. | Grep of `app/`. ui-ux-pro-max nextjs stack: "Use generateMetadata for dynamic", "Include OpenGraph images". | Unique `title` and `description` per route, OG/Twitter images per photo and per project, `sitemap.ts`, `robots.ts`, JSON-LD. Unique titles also give the Next.js route announcer something useful to say. | M |
-| G3 | **The lightbox fails basic gallery conventions.** It supports Escape only. There are no arrow keys, no prev/next, no counter, no focus trap, focus is not returned to the thumbnail, and it has a `bg-white dark:bg-gray-900` panel. | `components/ImageDetailModal.tsx:19-52`. PhotoSwipe conventions. eBay/Mesa/Mada lightbox a11y guides. | Rebuild on native `<dialog>.showModal()`, which gives top layer, inert background and Esc for free. Add arrows, swipe, a counter and focus return (see §5). | M |
-| G4 | **The visible scrollbar combined with scroll lock causes layout shift.** The modal sets `body.style.overflow = 'hidden'`. Once scrollbars are visible (a locked decision), opening the lightbox makes the page jump sideways by the scrollbar width. | `ImageDetailModal.tsx:32`. Locked "visible thin scrollbar". | Put `scrollbar-gutter: stable` on `html`. Add a Playwright screenshot check with the lightbox open. | S |
-| G5 | **One photo has no GPS** (PROJECT.md: "GPS on 3 of 4 originals"). The Map view and the ascent both place waypoints by GPS. | PROJECT.md UI audit. | Define the "unlocated" behavior explicitly: a manually surveyed position flagged "approx.", or an "Unplaced" tray beside the map. Never silently drop the photo. | S |
-| G6 | **`<ViewTransition>` needs React 19.3.** The installed version is React 19.2.4 (`next` 16.1.6). The Next 16.4 guide (2026-09-10) states that React 19.3 ships `<ViewTransition>`/`addTransitionType`. | `node_modules` versions. nextjs.org/docs/app/guides/view-transitions. | Either bump React/Next (and isolate it like the framer-motion upgrade), or call `document.startViewTransition()` directly for the same-document lightbox open. Same-document View Transitions are Baseline since Firefox 144 (Oct 2025). Hand off to STACK. | S–M |
-| G7 | **The EXIF pipeline input is not in git.** `public/images/landscapes/` is in `.gitignore:55` (the 14–81 MB originals), so a Vercel build cannot read EXIF from them. The optimized WebPs have EXIF stripped (verified: `exif: false`). | `git check-ignore`. `sharp.metadata()`. | Run EXIF extraction locally and commit the generated typed data (e.g. `data/photos.generated.ts`). CI then only validates it. | S |
-| G8 | **Deleted playground routes will 404 for any inbound link.** | Locked: delete `/gradient-mesh`, `/particle-buttons`, `/transitions`. | Add permanent redirects in `next.config` (→ `/` or `/projects`), or let them hit the designed 404 on purpose. Decide and test. | S |
-| G9 | **The risk data cannot drive the trail-grade visual.** `demoCommands` only contain `low` and `high`, with no `medium` or `critical` example. There is no numeric score, so commands cannot be placed on the 0.0–1.0 scale. | `data/projects.ts:76-102`. | Add a `riskScore: number` to `DemoCommand`, and at least one Medium (T2–T3) and one Critical (unmarked) example, so all four bands are demonstrated rather than only listed in a legend. | S |
-| G10 | **The route panels have no project imagery.** `thumbnailImage` is unset for both projects and `public/` has no project screenshots. | `data/projects.ts`, `ls public/images`. | Each route panel needs a visual. Use a generated elevation-profile or pipeline glyph (on-brand, no screenshots required) or real screenshots. A content task, so it needs to be on the roadmap. | S–M |
-| G11 | **The roadmap data does not suit an elevation axis.** It has no dates (`completedAt`/`updatedAt`). `targetRelease` versions are not comparable across areas (`v1.1.0` website vs `v2.4.0` CLI). The `other` area has 0 items, yet its filter button exists. Portfolio items are stale ("3D Image Gallery Enhancement", v1.1.0) while the site itself is going to v2.0. | `data/roadmap.ts`, `RoadmapFilters.tsx`. | Add `completedAt?` and a sortable `order`. Drop the empty `other` filter, or show it disabled with a "(0)" count. Add v2.0 "Topographic Identity" as the in-progress portfolio item. Show a "Last surveyed: <date>" stamp. | S |
-| G12 | **There is no image download or licensing policy.** | — | Do not block right-click, since it breaks a11y and does not stop anyone. Serve at most 2400 px (already the case). Show "© 2021 Tim Lui. All rights reserved" in the EXIF strip, and add a "Ask about this photo" link to `/contact?ref=<slug>`. | S |
-| G13 | **There is no share affordance** for photos or case studies. | — | A "Share" button: `navigator.share()` where available, otherwise copy-link with a polite live "Link copied" message. | S |
-| G14 | **`app/global-error.tsx` is missing.** Errors thrown in the root layout bypass `app/error.tsx`. | `ls app`. | Add a minimal self-contained `global-error.tsx` in the "off the marked trail" style. | S |
-| G15 | **Some photo data contradicts itself**, which undercuts a "real data" story. The Glacier Trail annotation says "2,900–3,100 m" but that photo's GPS altitude is 2,597 m. `img-0605` is tagged `2024`/`summer` but EXIF says Sep 2021. Two `story` texts are near-duplicates. | `data/landscapes.ts`. PROJECT.md audit. | Reconcile copy against EXIF in the data-pipeline phase. Treat every displayed number as sourced from data. | S |
-| G16 | **The terminal demo autoplays** (`HologramTerminalDemo` uses `autoPlay = true` with interval timers). Under the "auto-rotating content" rule it needs pause/prev/next and must stop on focus and under reduced motion. | `HologramTerminalDemo.tsx:10-21`. ui-ux-pro-max `auto-rotation-controls`. | Add play/pause and step controls. Under reduced motion, render the full transcript statically. | S |
-| G17 | **View and filter state is not in the URL.** Photos view mode and roadmap filters are local state, so Back and refresh lose them. | `PhotosPageClient.tsx`, `app/roadmap/page.tsx`. | Use `?view=map\|grid\|carousel` and `?area=cli`, written with `router.replace` (not push) so filter clicks do not flood history. | S |
-| G18 | **No canonical photo order is defined.** Map, Grid, Carousel, lightbox prev/next and the ascent can each end up in a different order. | — | One order everywhere: **ascending altitude**, matching the ascent metaphor. Unlocated photos go last. | S |
+### D-A: URL scheme for region series
 
----
+PROJECT.md says existing `/photos/[slug]` links and OG cards "keep working through the series URL change". Next.js cannot have `/photos/[region]` and `/photos/[slug]` as sibling dynamic segments.
 
-## 1. Feature Landscape by Category
+| Option | Shape | Pros | Cons |
+|---|---|---|---|
+| **A (recommended)** | `/photos/[region]` and `/photos/[region]/[slug]`, with 308 redirects from the 4 old `/photos/<slug>` URLs | Readable hierarchy. The region in the URL fixes the prev/next scope, the breadcrumb and the canonical. Matches "series by region" | The `@modal/(.)[slug]` interception moves under `[region]`. `proxy.ts` `DETAIL_PATH`/`KNOWN` 404 logic, sitemap, OG routes and Home waypoint links all change. Shared links take one redirect hop |
+| B | Flat `/photos/[slug]` stays canonical, with region pages at `/photos/series/[region]` | Zero redirects. Old links and OG cards are untouched | The URL doesn't say which series a photo is in, so prev/next scope from a deep link has to come from data. A photo can only ever belong to one series |
+| C | One `/photos/[key]` segment that resolves to a region or a photo | Short URLs | Region and photo slugs share one namespace, which is fragile. Unusual routing |
 
-Category IDs are proposed prefixes for REQUIREMENTS.md.
+### D-B: Drone video shape (see §4)
 
-### SHELL: Site shell, nav, footer, identity
+| Option | What visitors get | Cost |
+|---|---|---|
+| **Loops only (recommended for v2.1)** | 6–15 s muted clips inline in region sequences, poster-first | LOW–MEDIUM. Reuses the Phase 11 `clips.json` → ffmpeg → hashed MP4 + poster pipeline. Same-origin, so no CSP change |
+| Films only | 1–4 min edited films with sound, click-to-play, captions | MEDIUM–HIGH. Captions and a text alternative are required (WCAG 1.2.2/1.2.3), the hosting decision is open, and bandwidth matters on Vercel Hobby (100 GB/month) |
+| Both | Loops in sequences plus one film per region (or one reel) behind a play button | Sum of the two. Ship loops first, then films after hosting is decided |
 
-**Expected behavior (testable)**
-- One `SiteNav` on every route, in the same position. `aria-current="page"` on the active link, plus a visual indicator that does not rely on color alone (marker or underline).
-- Skip link ("Skip to main content") as the first focusable element. The `<main id="main">` target has `tabindex="-1"`.
-- After client navigation, the new page's `<h1>` or `<main>` receives focus, or the page title is announced. Requires unique per-route titles (G2).
-- Sticky nav must not obscure focus (WCAG 2.2 2.4.11). Use `scroll-padding-top: var(--nav-h)` on `html`.
-- Five destinations (Home, Photographs, Engineering, Route log, Contact). Below roughly 768 px, five trail signs do not fit at 375 px, so use a disclosure menu button (`aria-expanded`, Esc closes, focus returns to the button). No horizontally clipped strip.
-- Footer works as a map legend. It contains "© swisstopo" (linked, required by the data license), "© Tim Lui <year>", real GitHub/LinkedIn/email links, and a legend that explains the symbols used on the site (waypoint glyph, contour interval, the four trail markers). The legend makes color-coded symbols understandable without relying on color.
-- Visible thin scrollbar via `scrollbar-width: thin` and `scrollbar-color`, with `scrollbar-gutter: stable` (G4). Safari support for `scrollbar-color` is unverified, so keep a `::-webkit-scrollbar` fallback (LOW confidence).
+### D-C: What happens to the Carousel view at 20+ photos
 
-| Type | Feature | Why | Cx | Depends on |
-|------|---------|-----|----|-----------|
-| Table stakes | Single `SiteNav` in `(site)` layout, active state, skip link, mobile menu | ui-ux-pro-max `navigation-consistency`, `nav-state-active`, `skip-links`, `persistent-nav` | M | Replaces `GlassmorphismNav.tsx` and `Header.tsx` (two link arrays are merged into one config) |
-| Table stakes | Real identity: "Tim Lui", real links, `mailto:` | Placeholder identity is the audit's top credibility issue | S | `Footer.tsx`, `lib/email.ts` copy ("your portfolio website") |
-| Table stakes | Focus visible and not obscured, 24×24 minimum targets (44 recommended) | WCAG 2.2 AA | S | Tokens v2 focus ring |
-| Table stakes | Footer legend with © swisstopo attribution | License requirement (PROJECT.md constraint) | S | Token system, trail-marker SVGs from RISK |
-| Differentiator | Trail-sign links that show a destination "distance", e.g. "Photographs · 4 waypoints", "Engineering · 2 routes" (Swiss signposts show walking time) | Makes the nav informative and fits the metaphor. Counts derive from data | S | `data/*` counts |
-| Differentiator | Scale bar in the footer that matches the real contour map scale | Signals that the map is real | S | DEM pipeline (scale known at build time) |
-| Anti-feature | Glassmorphism or blur on the nav | Retired v1.0 language. Blur is meant for dismissal context (`blur-purpose`) | — | — |
-| Anti-feature | Yellow trail-sign styling on every nav item | Yellow also means T1 "Low risk" on the case study, so a fully yellow nav dilutes that meaning | — | Use a yellow accent tip or arrow only |
+| Option | Notes |
+|---|---|
+| Keep Carousel as an "all photos" view | The 3D ring loads 20+ textures, and its usability falls off past about 8 items. Needs per-region or paged loading |
+| **Retire Carousel; the immersive region sequence takes over "one at a time, large" (recommended)** | Fewer views to maintain. **Regression flag:** it removes a shipped view (PHOTO-02), so `?view=carousel` must redirect to the Grid view, and its tests are rewritten, not deleted (GUARD-03) |
+| Carousel only inside a region | Keeps the feature, but duplicates what the sequence already does |
 
-### HOME: Home "ascent"
+### D-D: JSON-LD `license` property
 
-**Expected behavior (testable)**
-- **Readable without scrolling effects** (ui-ux-pro-max "Scroll-Triggered Storytelling"). The first viewport contains the `<h1>` "Tim Lui", a role line, and at least one visible route CTA. Users do not have to scroll several screens to learn who this is.
-- **Native scroll only**: no scroll hijacking, wheel interception or snap-locking. Reverse and fast scrolling produce correct states.
-- **Complete DOM reading order.** Chapters are real `<section>`s with headings, in altitude order (1,626 m → … → 4,478 m). The WebGL canvas is `role="img"` with a descriptive `aria-label` (ui-ux-pro-max threejs "Canvas aria-label") or `aria-hidden` if it is purely decorative.
-- **Altimeter rail** is a progress indicator *and* navigation. Each waypoint tick is a link to its chapter anchor (keyboard reachable). The live altitude readout uses `font-variant-numeric: tabular-nums` and is `aria-hidden`; no continuous live-region announcements.
-- **Photo waypoints** on the terrain are operable. Each has a DOM-equivalent link (HTML overlay or synced list) that opens `/photos/[slug]`. Hover alone never reveals essential info.
-- **Signpost routes** (Photographs · 4 waypoints / Engineering · 2 routes) appear at the end of each chapter and at the summit, per the "CTA at end of each chapter + final" rule.
-- **Summit plaque** shows stats derived from data (photo count, highest waypoint, projects, test count). No count-up animation.
-- **Reduced motion:** no camera flight, no scrubbing. Each chapter renders in its final readable state with the terrain as a single static frame. The preference is read reactively with `matchMedia(...).addEventListener('change')` (ui-ux-pro-max threejs).
-- **No WebGL, context lost, or low power / Save-Data:** a static contour SVG/AVIF poster with the same chapters and links.
-- **Loading:** the poster plus `<h1>` render first and form the LCP. The canvas fades in once ready. Never show a blank or black canvas.
-- **Performance:** pause the render loop when offscreen or when the tab is hidden (`setAnimationLoop(null)` on `visibilitychange`). Use a lower DEM resolution on mobile. Use `dvh` units so the iOS URL bar does not cause jumps.
-- **Progressive enhancement of scroll effects:** use CSS `animation-timeline: scroll()/view()` where supported (Chromium 115+, Safari 26+). Firefox support is unconfirmed, so the rail and chapter states must also work through IntersectionObserver or degrade to static (MEDIUM confidence).
-
-| Type | Feature | Why | Cx | Depends on |
-|------|---------|-----|----|-----------|
-| Table stakes | Identity + CTA in first viewport; readable without scroll effects | Storytelling pattern; recruiters skim | S | SHELL |
-| Table stakes | Static fallback (reduced motion / no WebGL / context loss) | Locked requirement plus a11y | M | DEM pipeline poster render |
-| Table stakes | Pause offscreen / hidden tab; reactive reduced-motion | Battery, jank, a11y | S | Replaces `Hero3DMountain.tsx` / `MountainTerrain3D.tsx` loop logic |
-| Table stakes | "Skip the ascent" link to the routes/summit | Long scroll narratives need an exit (`escape-routes`) | S | — |
-| Differentiator | Real swissALTI3D Matterhorn with contour shader | Core identity of v2.0 | L | DEM pipeline (build-time heightmap + contours), R3F |
-| Differentiator | Altimeter rail 1,626 → 4,478 m as clickable progress nav | Doubles as a progress indicator, which the storytelling pattern requires | M | Waypoint data from EXIF pipeline |
-| Differentiator | Photo waypoints placed by EXIF GPS/altitude | Joins photography and terrain | M | EXIF pipeline (G7), unlocated rule (G5) |
-| Anti-feature | Scroll-jacking / snap-locked chapters | Breaks keyboard, trackpad momentum and screen readers | — | Native scroll + scroll-driven CSS |
-| Anti-feature | `DualParticleSystem` hexagons or any particles competing with the headline | Audit finding; `excessive-motion` | — | Delete |
-| Anti-feature | Autoplay camera tour on load | Vestibular trigger; delays content | — | Scroll-linked only, off under reduced motion |
-
-### PHOTO: Photographs light table (Map / Grid / Carousel)
-
-**Expected behavior (testable)**
-- **View switcher** is a segmented control (`role="radiogroup"` or a set of `aria-pressed` buttons) with text labels and icons. The selected view is written to `?view=` with `router.replace`. Reloading or deep-linking restores it, and Back from a photo restores the view *and* scroll position.
-- **Default view must be specified in requirements.** Recommendation: **Grid** ("visuals first, fast loading", ui-ux-pro-max Portfolio Grid). Map is the differentiator, one click away. A map-first default delays the photographs behind an abstraction.
-- **Every view uses the same photo order** (ascending altitude, G18) and opens the same lightbox/route.
-- **Surface:** dark light table around the views. Photos themselves are never tinted, glowed or overlaid by map color (locked "gallery-black" decision).
-
-#### Map view
-- Fixed-extent contour SVG generated at build time. No tiles, no runtime fetch (CSP constraint), no pan/zoom: four points in a few km do not need a slippy map.
-- Each waypoint is a `<a>`/`<button>` in DOM order (by altitude) with a visible label (title + altitude). Focus or hover shows a thumbnail preview, and the preview does not depend on hover. Enter opens the photo.
-- **Label collision:** the Zermatt village (1,626 m) and gorge (1,715 m) waypoints are about 1–2 km apart and may overlap at full extent. Offset labels with leader lines, computed at build time.
-- **Unlocated photo** (G5) appears in an "Unplaced" tray or as an "approx." marker.
-- Accessible alternative: a visible list or table of waypoints (title, altitude, coordinates). Grid view also covers this, but the map itself needs `aria-label` / `<title>`.
-- Touch: markers have at least a 44 px hit area even when the glyph is smaller (`no-precision-required`).
-
-#### Grid (justified rows)
-- **Reality check:** all four photos are landscape at about 3:2 (2400×1600 ×3 and 2400×1636; verified with `sharp`). Justified rows will look like an equal-height grid today. Build a small in-house row-packing function (the Flickr algorithm: target row height, keep or drop the last item by closest aspect ratio, scale the row to container width, **do not stretch the last row**). Make it generic so future portrait shots work. **Do not add a library** for four images.
-- Responsive: one column under about 640 px, then rows computed from container width. Each tile reserves its `aspect-ratio` (CLS < 0.1) and uses `next/image` with `sizes` and a blur placeholder (`thumbnailSrc` already exists).
-- The caption (title · altitude · date) is always visible as a "slide mount" label below the image, not hover-only.
-- Tiles are links to `/photos/[slug]`. The shared-element View Transition morphs the thumbnail into the lightbox image.
-
-#### Carousel (existing 3D)
-- `PhotoCarousel3D` is lazy-loaded only when its view is selected (already `dynamic(..., {ssr:false})`). Its loading state is restyled to tokens: a skeleton, not "Loading 3D viewer…" on a black box.
-- It must **not auto-rotate**, or it must have pause control and stop on focus/hover/reduced motion. Arrow keys already work (`PhotoCarousel3D.tsx:163`). Visible prev/next buttons with labels and a "2 / 4" counter.
-- Reduced motion or no WebGL: replace it with a flat single-image stepper (same controls).
-
-| Type | Feature | Why | Cx | Depends on |
-|------|---------|-----|----|-----------|
-| Table stakes | View switcher with URL state, restored on Back | `deep-linking`, `state-preservation` | S | `PhotosPageClient.tsx` rewrite |
-| Table stakes | Grid with true aspect, reserved space, visible captions | Portfolio Grid pattern; CLS | S | EXIF pipeline (width/height in data) |
-| Table stakes | Consistent order across views | Prevents "where did it go" | S | Typed photo data |
-| Table stakes | Carousel controls + reduced-motion stepper | `auto-rotation-controls` | S | `PhotoCarousel3D.tsx` restyle |
-| Differentiator | Map view: waypoints on real contours | Ties photos to terrain | M | DEM contour SVG, EXIF GPS, label offsets |
-| Differentiator | "Slide mount" captions with altitude in mono | Light-table metaphor with zero extra cost | S | Tokens v2 type |
-| Anti-feature | Masonry / Pinterest columns | Breaks reading order and the "true aspect" intent; pointless with uniform 3:2 | — | Justified rows |
-| Anti-feature | Infinite scroll / pagination | There are 4 photos | — | — |
-| Anti-feature | Tag/filter chips on photos | 4 photos; current tags are inaccurate (G15) | — | Revisit at 20+ photos |
-| Anti-feature | Interactive pan/zoom slippy map | CSP forbids tiles; no value at this extent | — | Fixed SVG |
-
-### LIGHTBOX: Photo viewer, EXIF strip, hotspot callouts, deep links
-
-**Expected behavior (testable)**
-- **URL:** opening a photo sets the URL to `/photos/<slug>`. Use human-readable slugs, e.g. `matterhorn-mirror-reflection`, not `img-0605`; add a `slug` field.
-  - Soft navigation from Photos or Home renders an **intercepted modal over the light table**.
-  - Hard load, refresh or a shared link renders a **full standalone photo page** with the same viewer UI, plus a "Back to Photographs" link and the nav.
-  - **Back closes the modal** and Forward reopens it (Next.js intercepting-routes behavior).
-  - **Prev/next inside the viewer uses `router.replace`**, so ten arrow presses do not create ten history entries (PhotoSwipe: one entry on open, URL updated per slide, original URL restored on close).
-  - **Close (×, Esc, backdrop):** if the viewer was opened by soft navigation, call `router.back()`. If it was landed on directly, `router.push('/photos')`. Never use `history.back()` blindly, because it can leave the site.
-- **Surface:** a gallery-black stage. The photo is fitted with `object-fit: contain` and never cropped. No white panel (current `bg-white dark:bg-gray-900` is removed).
-- **Keyboard:** ←/→ prev/next (wrapping at the ends is acceptable, but the counter must make it obvious). Esc closes in layers: first an open callout, then zoom, then the viewer; the existing modal already layers zoom, so extend that. `I` (or a visible button) toggles the info/EXIF strip, `H` toggles annotation markers. Shortcuts are listed in a visible "?" hint. Arrows are ignored while focus is in a text field.
-- **Focus:** use native `<dialog>` with `showModal()`. On open, focus moves to the dialog heading or close button. Tab stays inside. On close, focus returns to the originating thumbnail or waypoint.
-- **Screen reader:** the dialog is labelled by the photo title. A polite live region announces "Photo 2 of 4: <title>" on prev/next. The image `alt` stays meaningful; current alts are fine but should mention the subject, not "Stunning…".
-- **Touch:** horizontal swipe for prev/next, swipe down to close (with a movement threshold, `drag-threshold`), pinch-zoom allowed. Visible buttons exist for every gesture (`gesture-alternative`, WCAG 2.5.7).
-- **Zoom:** click or `Z` toggles fit ↔ 1:1, which is meaningful for 2400 px sources on large screens. Panning while zoomed works by drag *and* arrow keys, or zoom is fit/fill only. Disabled under reduced motion is not required; just make it instant.
-- **Performance:** preload the next and previous images. Use a blur placeholder while loading. The image shows `alt` text and a "Couldn't load this photo · Retry" state on error, and the EXIF strip still renders.
-- **EXIF strip** (from the build-time pipeline): camera, lens, focal length, aperture, shutter, ISO, capture date and local time (Europe/Zurich, from EXIF `DateTimeOriginal`), altitude, coordinates (WGS84 plus optional Swiss LV95), and "© <year> Tim Lui". Values use `tabular-nums`. Coordinates are selectable or copyable. Missing fields are omitted, never shown as "undefined" or "—". The R004 photo will have gaps. "Show on map" links to `/photos?view=map#<slug>`.
-- **Hotspot callouts** (9 annotations, `ImageAnnotation.position` 0–100 %):
-  - Markers are `<button>`s in reading order (top-left → bottom-right) with an accessible name ("Matterhorn Peak, 4,478 m"). Enter/Space opens a callout, Esc closes it, and focus returns to the marker.
-  - On large screens the callout sits outside the photo bounds or on the margin, joined by a **leader line**, so the photo is never covered by panels.
-  - **Below about 768 px**, callouts with leader lines do not fit. Show numbered markers on the image and a numbered list under it (like a map legend). Tapping a marker scrolls to and highlights the list item.
-  - **"Clean view" toggle** hides all markers. Photographers and viewers want the unannotated photo; remember the choice in `localStorage`.
-  - Hotspot data with icons (`peak`, `glacier`…) uses the same glyph set as the footer legend.
-- **Share** (G13) and **"Ask about this photo"** (G12) sit in the strip.
-- **View Transition:** the thumbnail morphs into the lightbox image (shared name `photo-<slug>`). Under reduced motion `::view-transition-*` animation-duration is 0. Unsupported browsers simply swap. The morph only plays if the destination renders in the same commit (prefetched). Browser Back carries no transition type, so only the morph (not a directional slide) replays (Next 16.4 guide). React version gate: G6.
-
-| Type | Feature | Why | Cx | Depends on |
-|------|---------|-----|----|-----------|
-| Table stakes | `/photos/[slug]` full page + intercepted modal; Back closes | Universal in photo sites (Unsplash, Flickr, PhotoSwipe history) | M | Route restructure, `generateMetadata`, `slug` field |
-| Table stakes | ←/→, Esc layering, swipe, counter, focus trap + return | PhotoSwipe conventions; lightbox a11y guides | M | Replaces `ImageDetailModal.tsx` |
-| Table stakes | EXIF strip from real data with graceful gaps | Plan intent; photographers expect it | M | EXIF pipeline (G7) |
-| Table stakes | Gallery-black stage, never cropped | Locked decision | S | Tokens v2 |
-| Table stakes | Preload neighbors, blur-up, error + retry | `progressive-loading`, `error-recovery` | S | Existing `ProgressiveImage.tsx` / `ZoomableImage.tsx` |
-| Table stakes | Per-photo OG image + title/description | Shared photo links must preview the photo | S | SEO category |
-| Differentiator | Hotspots as map callouts with leader lines; legend fallback on mobile | Signature "survey" detail | M | `InteractiveHotspot.tsx` rewrite |
-| Differentiator | Coordinates in WGS84 + LV95, "Show on map" | Swiss-survey authenticity | S | EXIF pipeline (convert at build) |
-| Differentiator | Thumbnail → lightbox View Transition | Spatial continuity (`shared-element-transition`) | S–M | G6 version decision |
-| Differentiator | Share button (Web Share / copy link) | Low cost, expected on mobile | S | — |
-| Anti-feature | Right-click / drag-save blocking, watermarks over the image | Breaks a11y (context menu, "Copy image" for assistive use), does not stop anyone, degrades the photo | — | Size cap + © line |
-| Anti-feature | Full-resolution download button | Originals are 12480 px / 50–80 MB and unlicensed | — | "Ask about this photo" → contact |
-| Anti-feature | A new history entry per photo step | Back becomes a slideshow rewind | — | `router.replace` |
-| Anti-feature | Annotations permanently overlaid | Covers the work | — | Clean-view toggle |
-| Anti-feature | Lightbox library (PhotoSwipe, yet-another-react-lightbox) | Locked bespoke design + hotspots + EXIF strip; native `<dialog>` covers focus/inert | — | Native `<dialog>` + small gesture hook |
-
-### PROJ: Project route panels (projects index)
-
-**Expected behavior (testable)**
-- Two full-width panels in `featured`/data order. Each panel is **one link target**, its project name as the link text, using the block-link pattern with secondary links (GitHub/Docs) as separate focusable elements, not nested inside the main link.
-- Each panel shows name, tagline, status and version (status as text, not a color-only pill), 2–3 headline metrics (from typed highlights), the stack summary (top 4 + "+n" disclosure, `chip-collection-reflow`), and a visual (G10).
-- "Route" metaphor: a small elevation-profile or pipeline glyph with the route "grade", e.g. the CLI's safety-first framing. It is decorative and `aria-hidden`.
-- Hover and focus states are equal. No 3D tilt. Press feedback within 100 ms.
-- Empty state: if `projects` is empty, render "No routes surveyed yet" (should not happen, but the template should handle it).
-
-| Type | Feature | Why | Cx | Depends on |
-|------|---------|-----|----|-----------|
-| Table stakes | Full-width panel, single primary link, visible metadata | Hex cards retired; clip-path broke focus | S | Delete `ProjectCard.tsx` hex variant, `useHexGrid.ts`, `hex-clip` |
-| Table stakes | Status/version as text | `color-not-only` | S | `Project.status` |
-| Differentiator | Route glyph / elevation profile per project | Visual without screenshots; on-metaphor | S–M | G10 decision |
-| Anti-feature | Card grid, filter bar, "featured" sorting UI | Two projects | — | — |
-| Anti-feature | Animated GIF/video previews | Weight + motion for two items | — | Static visual |
-
-### CASE: Case-study detail page (`/projects/[slug]`)
-
-**Expected behavior (testable)**
-- Fixed section order (locked): problem → 4-stage pipeline → safety (risk bands) → instrument-panel metrics → terminal demo → grouped stack → next steps. Each section is an `<h2>` with an `id` anchor (`#safety`), so sections are deep-linkable and shareable.
-- **Trailhead block** at the top: name, one-line outcome, role/time frame, status + version, and primary links (GitHub, Docs, live site) as real buttons.
-- **On-page route index** (table of contents). On desktop, a sticky side list with scroll-spy (`aria-current="location"`). On mobile, a collapsed "Route stages" disclosure. It must not obscure focus.
-- **4-stage pipeline diagram** (intent analysis → context enrichment → prompt optimization → response parsing) as semantic HTML/SVG: an `<ol>` with the diagram visuals, readable without the graphic. No image-of-text.
-- **Instrument-panel metrics:** each metric has a value, a unit, a label and a **context line** (e.g. "~90 ms startup · measured v2.4.0"). The data has claims like "95% accuracy" and "40% faster" that need a baseline or source, or should be softened. Values render final immediately, with no count-up.
-- **Grouped stack:** groups such as Core / LLM providers / Storage / Tooling. CLI_X `techStack` is a flat list today, so this needs the planned typed highlight schema.
-- **Next steps:** the related roadmap items (already linked via `Project.roadmapItems`) are shown as compact route-log rows with a "Full route log →" link to `/roadmap?area=cli`.
-- **End of page:** a "Next route" link to the other project and a contact CTA.
-- The `clix-website` case study must also work with the template even though it has no risk bands or terminal demo. **Sections are optional by data**: no empty headings, no "N/A".
-- Unknown slug renders the designed 404 with "No route named '<slug>'".
-
-| Type | Feature | Why | Cx | Depends on |
-|------|---------|-----|----|-----------|
-| Table stakes | `generateMetadata` + OG image per project; section anchors | Case studies are the most-shared URL for an engineer; currently untitled | S | SEO category |
-| Table stakes | Trailhead links + status; next-route + contact CTAs | Recruiters scan for repo/live links first | S | `Project.links` |
-| Table stakes | Data-optional sections | Two different project shapes | M | Typed highlight schemas (data phase) |
-| Table stakes | Accessible pipeline diagram (`<ol>` semantics) | `data-table`/`screen-reader-summary` analogue | M | — |
-| Differentiator | Instrument-panel metrics with context lines | Credibility; "real data" ethos | M | Typed highlights |
-| Differentiator | Route index with scroll-spy | Long-form navigation | S | — |
-| Differentiator | Roadmap rows embedded as "Next steps" | Connects case study → route log | S | ROUTE row component |
-| Anti-feature | Count-up / odometer metric animations | Screen readers read intermediate values; `excessive-motion` | — | Static values |
-| Anti-feature | Dumping all 14 `features` as a bullet wall | Low signal | — | Top 5 + "All features" disclosure |
-| Anti-feature | Pricing tiers table on the portfolio | Sales content for another site | — | Link to cli-x.com |
-
-### RISK: Trail-grade risk visualization (CLI_X safety)
-
-Mapping (locked, and consistent with SAC hiking-scale signage): **Low 0.0–0.3 → T1 yellow** · **Medium 0.3–0.6 → T2–T3 white-red-white** · **High 0.6–0.8 → T4–T5 white-blue-white** · **Critical 0.8–1.0 → unmarked**. SAC T6 is "mostly unmarked", so "unmarked = you're off any marked trail" is an honest metaphor for Critical.
-
-**Expected behavior (testable)**
-- **Scale view:** a horizontal 0.0–1.0 bar split into four bands at 0.3 / 0.6 / 0.8 (a bullet-chart style, per ui-ux-pro-max chart "Performance vs Target"). Each band carries its **marker glyph + text label + range** ("T2–T3 · Medium · 0.3–0.6"). It reads without color, because the stripes are a pattern and every band has a label (`pattern-texture`, `color-not-only`).
-- **Unmarked band:** a dashed outline or empty band with an explicit label. It must not look "missing" or broken.
-- **Demo commands** are plotted as ticks at their `riskScore` (G9). Focus or hover on a tick shows the command, score and explanation. Ticks are keyboard-focusable and give the same detail on focus as on hover (`tooltip-keyboard`). A visible data table equivalent is available (command · score · grade · what CLI_X does).
-- **What happens at each grade** (needs content): e.g. T1 runs, T2–T3 runs with a warning, T4–T5 requires explicit confirmation, unmarked is blocked or needs override. This turns the visual into an explanation of the 11 safety rules.
-- The **same marker glyphs** are reused in the terminal demo badges (replacing `riskColors` in `HologramTerminalDemo.tsx`) and in the footer legend.
-- Contrast: marker strokes are ≥ 3:1 against the dark surface, and labels are ≥ 4.5:1. The yellow T1 marker must stay distinguishable from any yellow nav accent (see SHELL anti-feature).
-- Reduced motion: no animated fill or sweep; static from first paint.
-
-| Type | Feature | Why | Cx | Depends on |
-|------|---------|-----|----|-----------|
-| Table stakes | Labeled bands with glyph + range; not color-only | WCAG 1.4.1; chart a11y guidance | S | Marker SVG set (tokens) |
-| Table stakes | Table equivalent of plotted commands | ui-ux-pro-max `data-table` | S | G9 data |
-| Differentiator | Commands plotted by score; per-grade behavior explained | Turns the metaphor into a real explanation | M | `riskScore`, medium/critical examples |
-| Differentiator | Marker glyphs reused across terminal, footer legend, case study | One visual language | S | SHELL footer, terminal restyle |
-| Anti-feature | Red/yellow/green traffic-light gauge | Generic; conflicts with locked metaphor; color-only | — | Trail markers |
-| Anti-feature | Animated needle gauge | Motion without meaning | — | Static scale |
-
-### TERM: Terminal demo (restyled, inside CASE)
-
-**Expected behavior (testable)**
-- Restyled to tokens (mono font, gallery-dark surface). Retires the "hologram" particle field (`HologramTerminal.tsx` `ParticleField`).
-- **Controls:** Play/Pause (`aria-pressed`), previous/next command, and an "n / 4" counter. Autoplay pauses on focus-within and hover, when offscreen, and when the tab is hidden.
-- **Reduced motion:** no typing animation; the full transcript of all commands is shown statically with grade badges.
-- **Screen readers:** the typing region is `aria-hidden` while animating, and a polite live region announces only the completed command ("Input: … Output: … Grade T1, Low").
-- Commands are selectable text. A copy button is optional; if present, it announces "Copied".
-
-| Type | Feature | Why | Cx | Depends on |
-|------|---------|-----|----|-----------|
-| Table stakes | Pause/step controls; static transcript under reduced motion | `auto-rotation-controls` | S | `HologramTerminalDemo.tsx` |
-| Table stakes | Risk badges use trail markers | Consistency | S | RISK |
-| Anti-feature | Real in-browser command execution / LLM call | Security, cost, CSP; out of scope | — | Scripted demo |
-
-### ROUTE: Route-log roadmap
-
-**Expected behavior (testable)**
-- **Vertical elevation axis with three bands:** Summit / planned (top), Current camp / in-progress (middle, emphasized), Base / completed (bottom). Counts today: 10 planned / 2 in-progress / 3 completed.
-- **DOM order equals visual order** (planned → in-progress → completed, top to bottom) for WCAG 1.3.2 and 2.4.3. Right below the `<h1>` sits a **camp summary** ("Current camp: 2 in progress · 3 completed · 10 planned") with jump links to each band. The page does *not* auto-scroll to the camp on load (`back-stack-integrity`, surprise motion).
-- **Compact rows:** title, area tag (text), target release, and priority (text or glyph, not color-only). The description sits in a disclosure (`<details>` or `aria-expanded`), following progressive disclosure.
-- **Segmented area filter:** All / Portfolio / CLI_X / Website. "Other" is removed or shows "(0)" disabled (G11). The status filter is redundant with bands, so drop it or make it band jump links. The filter state is in `?area=` (via `router.replace`). The result count is announced politely ("Showing 7 of 15 entries").
-- **Empty state** for a filter with 0 results: "No entries on this route yet" plus a "Show all" button. The existing page has a basic version (`app/roadmap/page.tsx:120-150`); restyle and keep it.
-- **Freshness:** a "Last surveyed: <date>" stamp from data (G11).
-- Rows linked from a case study (`Project.roadmapItems`) are reachable via `#<item-id>` anchors.
-- **Reduced motion:** no stagger-in. With motion allowed, any stagger is 30–50 ms per row, once.
-
-| Type | Feature | Why | Cx | Depends on |
-|------|---------|-----|----|-----------|
-| Table stakes | Bands by status with visible labels + counts | Locked layout; scannability | M | `RoadmapTimeline.tsx`, `RoadmapProgress.tsx` rewrite |
-| Table stakes | Segmented filter in URL, live count, empty state | `deep-linking`, `contextual-live-badge-updates` | S | `RoadmapFilters.tsx` (remove emoji icons, per `no-emoji-icons`) |
-| Table stakes | Row anchors for cross-links | CASE "next steps" | S | — |
-| Differentiator | Elevation axis with "current camp" marker | Metaphor carries status meaning | M | Ordering fields (G11) |
-| Differentiator | "Last surveyed" stamp; v2.0 itself listed in progress | Honesty / dogfooding | S | Data edit |
-| Anti-feature | Gantt chart / quarter calendar | No dates; false precision | — | Status bands |
-| Anti-feature | Percent-complete bars per item | No real data behind them | — | Status only |
-| Anti-feature | Voting/upvotes on roadmap items | Needs DB + moderation (out of scope) | — | Contact link |
-
-### CONTACT: Summit register (Gipfelbuch) contact
-
-**Expected behavior (testable)**
-- Dark form with **visible labels** (no placeholder-only), required markers, `autocomplete="name"`/`"email"`, `type="email"`, and inputs at least 44 px high. These are the existing fields (name, email, message, collaboration checkbox). `zod` limits are reflected in the UI (message 10–2000 chars, with a counter announced politely near the limit).
-- **Validation on blur**, not per keystroke. The error sits below the field via `aria-describedby` (already done in `FeedbackForm.tsx`) and states the cause and fix ("Message needs at least 10 characters (currently 6)").
-- **Submit:** the button is disabled and shows a loading state. On failure with several errors, focus goes to an **error summary** at the top with links to fields, and inline errors stay (ui-ux-pro-max `error-summary`, `focus-management`).
-- **Success:** the form is replaced by a "Register signed" confirmation that includes date, time and summit coordinates (45.9763 N, 7.6586 E), in a `role="status"` region with focus moved to it, plus a "Sign again" action.
-- **Server errors:** 429 says "Too many entries from this connection. Try again in N minutes" (use `Retry-After`). 403 (CSRF/origin) says "Couldn't verify the request. Reload and try again". 5xx or network says "Couldn't send. Your message is still here" with Retry. **Input is never lost.**
-- **Real email as selectable text** (not an image, not obfuscated beyond what is necessary), plus a copy button with "Copied" announced and a `mailto:` link. Social links (GitHub, LinkedIn) are repeated here.
-- **Context:** a reply-time expectation ("Usually replies within a few days") and the `?ref=<photo-slug>` prefill from "Ask about this photo" (G12), shown as an editable "Re: <photo title>" line.
-- **Spam:** add a honeypot field (visually hidden, `tabindex="-1"`, `autocomplete="off"`) in addition to the existing CSRF + Upstash rate limit. It is cheap and invisible to users.
-- Contrast fix (Contact h1 `text-gray-900` on dark) is covered by tokens v2.
-
-| Type | Feature | Why | Cx | Depends on |
-|------|---------|-----|----|-----------|
-| Table stakes | Visible labels, blur validation, error summary, loading/success/error states, input preserved | ui-ux-pro-max forms rules | M | `FeedbackForm.tsx` restyle; `/api/feedback` responses must carry machine-readable error codes |
-| Table stakes | Real selectable email + copy + mailto | Many visitors prefer their own mail client | S | SHELL identity |
-| Table stakes | Specific 429/403/5xx messages with retry | `error-recovery`, `timeout-feedback` | S | `app/api/feedback/route.ts` |
-| Differentiator | "Register signed" confirmation with timestamp + coordinates | Metaphor rewards completion | S | — |
-| Differentiator | Photo-reference prefill (`?ref=`) | Connects photography to inquiries | S | LIGHTBOX |
-| Differentiator | Honeypot | Less spam, no friction | S | API schema |
-| Anti-feature | Public guestbook showing other visitors' entries | Tempting for the "Gipfelbuch" metaphor, but needs DB, moderation and privacy handling (out of scope) | — | Private form only |
-| Anti-feature | CAPTCHA | Friction + third-party script vs strict CSP | — | Honeypot + rate limit |
-| Anti-feature | Multi-step form / subject dropdown taxonomy | 3 fields don't need it | — | Single step |
-
-### EDGE: 404 / offline / error
-
-**Expected behavior (testable)**
-- **404 "You've left the marked trail":** a static contour SVG (no WebGL, no heavy assets) and a plain-language `<h1>` (e.g. "Page not found. You've left the marked trail"). The `<h1>` names what happened; the metaphor is secondary. It offers a route home plus links to Photographs, Engineering and Contact. It returns HTTP 404 (Next `not-found` does). Slug-specific variants: "No photo called '<slug>'", "No route named '<slug>'".
-- **Error (`error.tsx`):** same visual. "Something went wrong on this section" with a **Retry** button (`reset()`), a home link, and a "Report it" link to `/contact?ref=error`. No stack traces. Focus moves to the `<h1>`.
-- **`global-error.tsx`** (missing, G14): self-contained, with its own `<html>/<body>` and inline styles, since the root layout failed.
-- **Offline (`/offline`, served by the SW):** fully self-contained. Inline SVG and precached same-origin fonts, so it never shows a broken font fallback. "You're offline" with a list of **pages available offline** (from the SW cache), a "Try again" button, and an automatic reload on the `online` event.
-- **Redirects** for deleted playground routes (G8).
-- Reduced motion: the contour map stays static. With motion allowed, at most a slow contour drift that pauses offscreen.
-
-| Type | Feature | Why | Cx | Depends on |
-|------|---------|-----|----|-----------|
-| Table stakes | Designed 404 with plain-language h1 + route links | Edge pages currently off-brand | S | Contour SVG asset (DEM pipeline) |
-| Table stakes | `error.tsx` with retry + `global-error.tsx` | `error-recovery` | S | — |
-| Table stakes | Self-contained offline page with retry/auto-reload | `offline-support` | S | `public/service-worker.js` precache list |
-| Table stakes | Redirects for removed routes | Inbound links | S | `next.config` |
-| Differentiator | Offline page lists cached pages | Helpful, cheap | S | SW cache API |
-| Anti-feature | Mini-game / easter egg on 404 | Distracts; weight | — | Route home |
-
-### SEO: Metadata, social previews, structured data (cross-cutting, new category)
-
-**Expected behavior (testable)**
-- `metadataBase` set to the production origin. Title template `"%s · Tim Lui"`. Unique titles and descriptions per route ("Matterhorn Mirror Reflection · Photographs · Tim Lui").
-- **OG/Twitter images:**
-  - Default: a contour Matterhorn with "Tim Lui".
-  - **Per photo:** the photo itself at 1200×630 with a small caption band (title · altitude). The photo stays uncropped in meaning; letterbox if needed.
-  - **Per project:** a route-panel style card. Use `opengraph-image.tsx` (ImageResponse) or images generated at build time. Fonts must be same-origin (CSP/asset constraint). `twitter:card = summary_large_image`.
-- `sitemap.ts` (home, photos, each `/photos/[slug]`, projects, each `/projects/[slug]`, roadmap, contact) and `robots.ts`.
-- **JSON-LD:**
-  - `Person` (name, url, sameAs GitHub/LinkedIn, jobTitle).
-  - Per photo: `Photograph`/`ImageObject` (creator, dateCreated, contentLocation `Place` with `GeoCoordinates` + elevation, copyrightHolder, license page).
-  - Per project: `SoftwareSourceCode`/`SoftwareApplication` (codeRepository, programmingLanguage).
-  - `BreadcrumbList` on detail pages.
-- **Canonical URLs:** a photo has one canonical URL, `/photos/<slug>`, whether rendered as modal or page.
-- One `<h1>` per page, sequential headings (the audit found every h1 is mono with a glow; tokens v2 fixes the styling).
-
-| Type | Feature | Why | Cx | Depends on |
-|------|---------|-----|----|-----------|
-| Table stakes | Per-route titles/descriptions, metadataBase, canonical | Currently all pages share one title (G2) | S | Routes exist |
-| Table stakes | OG images default + per photo + per project | Shared links are the main traffic source for portfolios | M | `/photos/[slug]`, tokens/fonts |
-| Table stakes | sitemap + robots | Basic discoverability | S | Route list |
-| Differentiator | JSON-LD with geo + EXIF-derived dates | Rich results; fits "real data" | S | EXIF pipeline |
-
-### MOTION/A11Y: Cross-cutting behaviors (applies to every category)
-
-- **Reduced motion** is a reactive preference. Each animated element has a defined *final static state* (storytelling rule). View Transitions get zero duration. WebGL renders a single frame or the poster.
-- **Hover is never required.** Every hover reveal has a focus equivalent and a tap equivalent.
-- **Targets** are at least 24×24 CSS px (WCAG 2.2 AA), aiming for 44. Small glyphs (waypoints, hotspot markers, ticks) get expanded hit areas.
-- **Every drag or swipe** (carousel, lightbox swipe, zoom pan) has a button or keyboard alternative (WCAG 2.5.7).
-- **Back/forward** restores scroll position, view (`?view`), filter (`?area`) and open lightbox state. Verify with Playwright tests that navigate away and back.
-- **Long-running animations** (terrain, terminal, carousel) pause offscreen and when the tab is hidden.
+Google shows the "Licensable" badge only with `license` (a URL). Without a license page and with print sales out of scope, the recommendation is `creator` + `copyrightNotice` + `creditText` and **no** `license` or `acquireLicensePage`. Tim decides whether a simple "Image rights" page is worth adding.
 
 ---
 
-## 2. Feature Dependencies
+## 1. Series & Regions
+
+**Expected behaviour (testable)**
+- **Index:** `/photos` leads with the Alps overview map **and** a region index (cards or rows) below or beside it. They are the same data in the same order, synced on hover and focus. Photographer sites that group by location use either a gallery index or a nested region/location structure (Format, Zenfolio and Squarespace examples). The map is the differentiator, and the list is the accessible and mobile path.
+- **Region order:** west → east by region centroid longitude, like reading a map. **Within a region:** ascending altitude, the existing canonical order (PHOTO-03). Unlocated photos come last, or take an "approx." pin as in DATA-04.
+- **Region card/row contents:** name, country code (CH/IT/AT), photo count, altitude range ("1,617–2,770 m"), lead thumbnail, and coordinates of the sheet centre in mono. Every figure comes from data, never typed by hand.
+- **Region page contents, top to bottom:**
+  1. Region header ("sheet title"): h1 region name, country, a 2–4 sentence intro, a facts block (count, altitude range, seasons/years, contour equidistance, DEM source and edition).
+  2. Local terrain plate with the region's pins (generalised from today's `MapSheet`).
+  3. The immersive photo sequence (§3).
+  4. An end block with a "Next region →" route card, "All regions" and the overview link.
+- **Captions:** a data line (title · altitude · coordinates · date) is always visible. The story text is short, and longer notes go between images, not in hover overlays.
+- **Lightbox with 10–20 photos:** stays scoped to **one region**. The counter reads "7 / 18" and the polite announcement "Photo 7 of 18 in Zermatt: {title}". The no-wrap rule at the ends already exists (aria-disabled ‹ ›, `PhotoViewer.tsx`). At the last photo, add an **end-of-series card** ("End of the Zermatt series · Continue to {next region}") instead of silently crossing into another region. Preload only the neighbours, which already happens. Stepping still uses `replaceState`, so Back still closes.
+- **Index inside the lightbox (differentiator):** with 18 photos, "where am I" needs more than a counter. Add a toggleable thumbnail index overlay (a grid of the region's photos, the current one marked) rather than a permanent filmstrip, which keeps the "less chrome" goal. Large lightboxes commonly offer a filmstrip or thumbnail toggle (Mantine uses `T`).
+- **Breadcrumb:** "Photographs / Zermatt / {photo}" on the standalone photo page and region page. It feeds BreadcrumbList JSON-LD (§5).
+- **Per-region metadata:** a title ("Zermatt · Photographs · Tim Lui"), description, canonical, OG card (lead photo plus region name and altitude range, from the shared OG template) and sitemap entries.
+- **Home stays unchanged,** but its 4 waypoint links must point at the new photo URLs (D-A), and it gains a link to the wider album.
+
+| Type | Feature | Why | Cx | Depends on |
+|---|---|---|---|---|
+| Table stakes | Region data model (id/slug, name, country, centroid, extent, DEM source, intro, order) plus `photo.region` | Everything else keys off it | MEDIUM | Photo schema `data/schemas/photo.ts`, EXIF sidecar, `editorial.ts`, terrain pipeline (DATA-01) |
+| Table stakes | Region index (cards/rows) on `/photos`, synced with the overview map | Location-grouped portfolios lead with an index. Keyboard/SR path for the map | LOW | Overview map (§2) |
+| Table stakes | Region page: header, facts, local plate, sequence, next-region card | The core of "series by region" | HIGH | Local plate per region, immersive layout (§3) |
+| Table stakes | Lightbox scoped to the region; counter and announcement name the region | 18 photos with no scope means lost context | LOW | `PhotoViewer.tsx` order source changes from global to per-region |
+| Table stakes | Old `/photos/<slug>` URLs keep working (308) and Home links updated | Stated in PROJECT.md; shared links and OG cards | LOW–MEDIUM | D-A, `proxy.ts` 404 regex and KNOWN sets, `next.config` redirects, sitemap |
+| Table stakes | Region titles, descriptions, canonicals, OG cards, sitemap | SEO-01..03 parity for new routes | LOW | Shared OG template (12-10) |
+| Table stakes | "All photos" Grid across regions, grouped under region headings | 20+ photos: visitors still want one place to see everything | LOW–MEDIUM | `JustifiedGrid.tsx` (generic aspect already) |
+| Differentiator | End-of-series card in the lightbox leading into the next region | Turns the end of a sequence into a route onward | LOW | Lightbox no-wrap ends (exists) |
+| Differentiator | Thumbnail index overlay in the lightbox | Wayfinding at 10–20 photos without permanent chrome | MEDIUM | Focus trap inside `LightboxDialog` (exists) |
+| Differentiator | Region facts as a map-sheet legend (equidistance, DEM source/edition, extent, highest point) | Same "real data" voice as the footer legend | LOW | Terrain pipeline metadata per region |
+| Anti-feature | Tag/season filter chips | Explicitly out (PHOTO-F3); regions are the only grouping | — | — |
+| Anti-feature | Lightbox prev/next that crosses region boundaries silently | The visitor loses which series they are in | — | End-of-series card |
+| Anti-feature | Trip/date-based sub-albums inside a region | Tim chose region, not trip or theme | — | Seasons appear as facts, not navigation |
+| Anti-feature | Infinite scroll / "load more" on the region page | 10–20 photos per region; a finite page is clearer and printable | — | Lazy images in one page |
+
+---
+
+## 2. Overview & Local Maps
+
+**Expected behaviour (testable)**
+- **Overview = a sheet index.** The Alps-wide contour map shows each region as its **local-plate extent rectangle** plus a labelled pin, like swisstopo's map-sheet index (Blattübersicht). This is the strongest on-identity reading of "overview + local": the rectangle is literally the sheet the region opens on.
+- **Orientation context:** national borders as thin dashed lines with country codes, plus 3–5 reference landmarks (e.g. Mont Blanc, Matterhorn, Grossglockner) as small triangles. Without them an Alps-wide contour field is unreadable. Landmarks are `aria-hidden` decoration, and borders need a source and licence check (STACK).
+- **Pin density:** 2–3 pins at launch and maybe 6–10 later. **No clustering** is needed below about 12 pins. The real problem is **label collision.** The Alps arc is about 1,000 km wide, so at 375 px width 1 px ≈ 2.7 km. Zermatt and an Aosta Valley region about 30–40 km apart would sit **11–15 px** apart. Place labels at build time with leader lines (as v2.0 did for the Zermatt/gorge pins), and on narrow screens fall back to **numbered pins plus the numbered region list.** That is the same legend pattern LBOX-05 uses for hotspots on mobile.
+- **Pins are links** (`<a href="/photos/{region}">`) in DOM order west → east. Each has an accessible name ("Zermatt, Switzerland: 9 photographs, 1,617–3,100 m"). Glyphs can be small, but the hit area is ≥ 44 px. Focus or hover shows a preview plate (lead thumbnail, count, altitude range); the preview never depends on hover alone. The SVG has `role="img"` plus `aria-label`, or a `<title>`, with interactive pins inside, or a decorative SVG with HTML pins overlaid. Avoid `role="application"`.
+- **List–map sync:** focusing or hovering a region row highlights its pin and extent rectangle, and the reverse. The list is the primary text alternative, and accessible-map guidance treats the text list as the main accessible path.
+- **Local plate:** the region page's plate works exactly like today's Matterhorn `MapSheet`: build-time contours, pins at EXIF GPS (rounded 4 dp), keyboard-operable plates, approx. pins dashed.
+- **Overview → local transition (differentiator):** a View Transition morph from the overview's extent rectangle into the region page's local plate. It is instant under reduced motion or without support, and it must work fully without the morph (same rule as LBOX-06).
+- **Static by construction:** both maps are build-time SVG, with no tiles, pan or zoom, no WebGL and no runtime fetch (CSP constraint). That makes the "static fallback" the product itself, and it renders without JS.
+- **Footer legend becomes region-aware:** today it shows the Matterhorn's LV95 extent and the swisstopo attribution on every route. On an Italian or Austrian region page it must show **that sheet's** extent (WGS84 or UTM, since LV95 is Swiss-only) and **that DEM's** attribution. This is a licence obligation, not polish (PROJECT.md "Attribution" constraint).
+
+| Type | Feature | Why | Cx | Depends on |
+|---|---|---|---|---|
+| Table stakes | Overview contour map with one keyboard-operable, labelled pin per region | Locked direction | HIGH | Alps-wide coarse DEM and generalised contours (STACK), build-time SVG pipeline (DATA-01) |
+| Table stakes | Synced region list as the text alternative and mobile primary | Map a11y guidance: the list is the accessible path | LOW | Region index (§1) |
+| Table stakes | Build-time label placement plus numbered-pin fallback on narrow screens | Pins 11–15 px apart at 375 px | MEDIUM | Leader-line code from v2.0 Map view, hotspot numbered-legend pattern (LBOX-05) |
+| Table stakes | Local terrain plate per region | Locked direction ("as the Matterhorn map works today") | HIGH | Multi-region terrain pipeline + second DEM source for IT/AT, `MapSheet.tsx` generalised |
+| Table stakes | Per-region attribution and extent in the footer legend | DEM licence terms | MEDIUM | `SiteFooter.tsx`, `site.attribution.terrain` becomes per-source |
+| Differentiator | Overview as a sheet index (extent rectangles plus sheet numbers) | Purely topographic wayfinding; nobody else's portfolio does this | LOW (once extents exist) | Region extents in data |
+| Differentiator | Borders plus reference summits for orientation | Makes a 1,000 km contour field legible | MEDIUM | Boundary data source and licence |
+| Differentiator | Overview → local plate morph | Spatial continuity, the same language as the thumbnail morph | MEDIUM | React `<ViewTransition>` (exists since Phase 7) |
+| Anti-feature | Slippy/pan-zoom map (Leaflet, MapLibre, Mapbox) | Out of scope in v2.0; CSP, bundle, and pointless at 3–10 pins | — | Fixed SVG |
+| Anti-feature | Pin clustering library | Fewer than 12 pins | — | Label placement |
+| Anti-feature | 3D/WebGL Alps overview | Home already owns the 3D moment; more GPU cost, weak a11y | — | SVG with hillshade poster at most |
+| Anti-feature | LV95 extent on non-Swiss sheets | LV95 is defined for Switzerland only | — | WGS84/UTM per source CRS |
+
+---
+
+## 3. Immersive Layout (still topographic)
+
+**Expected behaviour (testable)**
+- **Uncropped and big:** each photo fills the viewport **width** up to the available height (`100dvh` minus the 64 px sticky nav and the collar), with `object-fit: contain` on gallery-black. Portrait photos centre with black sides. This holds the v2.0 rule "photo never cropped". The only exception is an explicitly art-directed region lead image with a stored focal point.
+- **The topographic frame is a map collar.** A printed map sheet has a neatline with coordinate ticks and labels in its margin. Each photo gets a thin neatline in the gallery-black margin with **tick marks and labels at the edges** (lat/lon or LV95 for Swiss photos), the altitude in a corner and the sheet name. The frame sits **outside** the image bounds and never overlays or tints the photo (the gallery-black decision). Contours live in the page background between photos, never on them.
+- **Pacing:** full-bleed images alternate with short text interludes (field notes). Long-form photo-essay guidance uses full-bleed as a pacing device, not as wall-to-wall repetition.
+- **Captions:** one mono data line in the collar under the image's bottom-left edge (title · altitude · coords · date), always visible. On mobile it sits directly under the image. Never hover-only, never over the photo.
+- **Less chrome, kept wayfinding:**
+  - The SiteNav stays (SHELL-01). Optionally it hides on scroll down and returns on scroll up, but it **must** reappear when focus enters it and must not obscure focus (WCAG 2.4.11).
+  - A slim sticky "sheet bar" shows the region name, the position "07 / 18" and the current altitude, plus an "Index" button.
+  - Because the in-region order is ascending altitude, **the sequence is an ascent.** A side altimeter rail (reuse of Home's rail, decorative and `aria-hidden`, hidden below 768 px) shows where you are. This is the strongest identity tie-in.
+  - Breadcrumb at the top. A "Skip series" link jumps to the end block.
+- **Semantics:** the sequence is an `<ol aria-label="Zermatt series, 18 photographs">` of `<figure>`s with meaningful `alt` and `<figcaption>`. Each photo is also a link that opens the lightbox for zoom, EXIF and hotspots. Tab moves photo to photo. **Arrow keys are not hijacked** on the page; they stay native scroll. Arrows stay in the lightbox.
+- **Scroll-driven reveals:** decorative only (fade/rise of the collar labels, not the photo), behind `@supports (animation-timeline: view())`. Firefox stable still gates the feature behind a flag (a June 2026 secondary source), and v2.0 already ruled CSS scroll-driven animation decoration-only. Under reduced motion there is no reveal at all, and everything renders in its final state.
+- **No snapping.** `scroll-snap-type: y mandatory` traps users at browser zoom, breaks partial keyboard scrolling and pulls readers back past tall sections (Roselli, W3C low-vision TF). Use native scroll only.
+- **Loading:** the first image is the LCP (`priority`/high fetch priority). The rest are lazy with reserved aspect ratio (CLS ≤ 0.1, VERIFY-04). `sizes="100vw"` over the existing ≤ 2560 px derivatives, with blur placeholders (existing). Twenty full-width images = a heavy page: the HOME-08-style budget needs a region-page counterpart.
+
+| Type | Feature | Why | Cx | Depends on |
+|---|---|---|---|---|
+| Table stakes | Large, uncropped full-width sequence on gallery-black, aspect reserved, lazy below the fold | The stated v2.1 goal, without breaking "never cropped" or CLS | MEDIUM | Image manifest (DATA-08), derivative sizes, `StagePhoto.tsx` |
+| Table stakes | Always-visible data captions; semantic `<ol>` of figures | Hover-only captions fail touch/keyboard; SR users need the count | LOW | Photo view-model (`lib/photos/view-model.ts`) |
+| Table stakes | Wayfinding: breadcrumb, position "n / N", skip-series, next-region end block | "Less chrome" must not mean "lost" | LOW–MEDIUM | Region model |
+| Table stakes | Reduced motion: no reveals, no morphs, final state from first paint | DSGN-08, site-wide rule | LOW | Motion tokens |
+| Table stakes | Photo opens the existing lightbox for zoom, EXIF, hotspots | Detail features already exist; don't rebuild them in the sequence | LOW | LBOX-01..07 |
+| Differentiator | Map-collar frame with coordinate ticks around each photo | Topographic identity without touching the image | MEDIUM | Coordinates per photo, tokens; contrast pairs in `guard:contrast` |
+| Differentiator | Sequence-as-ascent: altimeter rail on the region page | Reuses the Home signature; the order is already by altitude | MEDIUM | Home altimeter rail component, region altitude range |
+| Differentiator | Sticky mini local plate with the current photo's pin highlighted as you scroll | Scrollytelling link between the photo and the map | MEDIUM–HIGH | Local plate per region, IntersectionObserver |
+| Differentiator | Text interludes (field notes) between photos | Photo-essay pacing | LOW | Editorial data field |
+| Anti-feature | `object-fit: cover` full-bleed crops | Destroys composition; contradicts the locked "never cropped" | — | Contain within viewport |
+| Anti-feature | Mandatory scroll-snap / scroll-jacking | Zoom and keyboard traps; v2.0 out-of-scope | — | Native scroll |
+| Anti-feature | Parallax or Ken Burns motion on photos | Moves and crops the work; vestibular trigger | — | Static photos; motion only in the collar |
+| Anti-feature | Contours, grids or text overlaid on the photo | Colour-casts and covers the work (gallery-black decision) | — | Collar outside image bounds |
+| Anti-feature | Auto-advancing slideshow mode | Needs pause controls; competes with native scroll | — | Visitor-driven scroll and lightbox |
+| Anti-feature | Hiding the nav permanently on region pages | Breaks SHELL-01 consistency and escape routes | — | Hide on scroll down only, reveal on focus and scroll up |
+
+---
+
+## 4. Drone Video
+
+**How portfolios present it (LOW–MEDIUM; vendor and studio sources, no study):** the common shape is a **short 10–15 s loop** used as atmosphere (often on a homepage), with **longer films** behind a play button for people who want them, and **stills first** for a photography audience. Photography is judged differently from film and multimedia work, so for a photographer's portfolio video supports the stills rather than replacing them.
+
+**Platform rules (MEDIUM, cross-checked):**
+- **Autoplay** works only with `muted` + `playsinline` (iOS otherwise forces fullscreen). Gate it on `prefers-reduced-motion: no-preference`. Call `play()` and handle the rejected promise by showing the poster plus a Play button. iOS Low Power Mode is reported to block even muted autoplay (LOW, from memory: verify in the phase).
+- **WCAG 2.2.2:** an auto-starting loop that runs more than 5 s alongside other content needs a visible **pause** control, even when muted. Pause offscreen (IntersectionObserver) and on a hidden tab. This is the same pause model the DemoTerminal already implements.
+- **Save-Data:** `navigator.connection.saveData` exists in Chromium only (not Firefox, not Safari). Treat it as an enhancement: poster only and `preload="none"`. Never rely on it as the only data guard.
+- **Video-only (no audio):** WCAG 1.2.1 asks for a text alternative. A figcaption that says what the clip shows is enough. This is how `DemoClip.tsx` already handles coin-flip.
+- **Films with sound** (music or ambience counts as audio): WCAG 1.2.2 requires **captions** (WebVTT `<track kind="captions">` noting music and meaningful sound), and 1.2.3 requires an **audio description or a full text alternative.** A speechless drone film is all visual, so a text description or transcript is the practical answer. Click-to-play only, native `controls`, `preload="none"`, poster, fullscreen allowed.
+- **Hosting decides the shape.** CSP is `default-src 'self'` with `frame-src 'none'` and `connect-src 'self'` (`proxy.ts`). Same-origin MP4 works today. YouTube/Vimeo embeds need `frame-src` (plus their tracking and branded chrome), and HLS through a streaming host needs `media-src`/`connect-src` changes. A 3-min 1080p film at about 6 Mbps is about 135 MB per full view. Vercel Hobby includes 100 GB/month of Fast Data Transfer, so roughly 700 full views. That is fine for loops and risky for films (STACK/PITFALLS to confirm).
+
+**Expected behaviour (testable), loops**
+- Loop clips sit **inline in the region sequence at their altitude position,** with the same collar and caption as stills and a small "Aerial · {altitude}" label. They are never the region's lead (the photos lead).
+- Poster first. Autoplay only when motion is allowed and the clip is visible. Pause on leaving the viewport and on hidden tab. A visible Pause/Play toggle (`aria-pressed`) on each clip. Reduced motion shows the poster plus a Play button, and user-started play is fine.
+- Weight per clip: ≤ 1080p, 6–15 s, a few MB, H.264 MP4 (optionally AV1/WebM first in `<source>` order). Encoding goes through the existing `clips.json` → ffmpeg → hashed MP4 + poster pipeline from Phase 11.
+- Visual tests: poster-first plus reduced-motion emulation keeps Linux baselines deterministic. Playwright's Chromium cannot play H.264 (Phase 11 Pitfall 8), so e2e asserts state, never playback.
+
+**Expected behaviour (testable), films (if chosen)**
+- One film per region at most, in the region end block or a "Film" section. Poster with a big Play button, captions track, a text description below, native controls.
+- `VideoObject` JSON-LD (name, description, thumbnailUrl, uploadDate, duration, contentUrl), and the same thumbnail as the poster and the OG image.
+
+| Type | Feature | Why | Cx | Depends on |
+|---|---|---|---|---|
+| Table stakes (any video) | Poster-first, reserved dimensions, `playsinline`, `preload` tuned, handled `play()` rejection | Autoplay policies; CLS; deterministic tests | LOW | `DemoClip.tsx` pattern, media manifest (`data/generated/media-manifest.ts`) |
+| Table stakes (loops) | Visible pause/play per clip; pause offscreen and on hidden tab; off under reduced motion | WCAG 2.2.2; DSGN-08 | LOW–MEDIUM | DemoTerminal pause-source model as a reference |
+| Table stakes (loops) | Figcaption text alternative | WCAG 1.2.1 | LOW | Editorial data |
+| Table stakes (films) | Click-to-play, controls, WebVTT captions, text description | WCAG 1.2.2, 1.2.3, 1.4.2 | MEDIUM | Caption authoring (Tim), hosting decision (D-B) |
+| Table stakes (films) | Hosting that fits CSP and bandwidth | 100 GB/month Hobby; `frame-src 'none'` | MEDIUM–HIGH | STACK research; `buildCsp` tests in `lib/__tests__/proxy.test.ts` |
+| Differentiator | Clips placed in the sequence by altitude and pinned on the local plate | Video becomes survey data, not decoration | LOW (pin) | Clip GPS from the drone's telemetry or a hand-placed position |
+| Differentiator | Flight path drawn on the local plate from the drone telemetry track (DJI `.SRT` carries per-frame GPS/altitude, LOW confidence) | Deeply on-identity: a surveyed flight line | HIGH | Telemetry parsing at build time; 4-dp rounding rule applies to the path too |
+| Differentiator | Video items inside the lightbox sequence (play instead of zoom) | One viewer for all media in a region | MEDIUM–HIGH | `PhotoViewer` gains a media-type branch; zoom/hotspots off for video |
+| Anti-feature | Autoplay with sound | WCAG 1.4.2; browsers block it anyway | — | Click-to-play films |
+| Anti-feature | Background video hero on Home | Home is locked unchanged; it competes with the 3D ascent and LCP | — | Video lives in region pages |
+| Anti-feature | YouTube/Vimeo embeds by default | `frame-src 'none'`, third-party cookies and tracking, off-brand player chrome | — | Same-origin loops; a streaming host only if films need it |
+| Anti-feature | Long loops (> 15 s) or 4K loops | Weight and battery for atmosphere | — | ≤ 15 s, ≤ 1080p |
+| Anti-feature | Download button on video | All rights reserved (LBOX-07 parity) | — | `controlsList="nodownload"` is a hint only; state rights in text |
+
+---
+
+## 5. Small Features (PHOTO-F2, PHOTO-F4, ENG-F1, PLAT-F1, PLAT-F2)
+
+### PHOTO-F2: Share (Web Share API)
+
+- **Support (MEDIUM):** Safari macOS/iOS, Chrome Android, Samsung, Edge, Firefox Android. Chrome desktop on **Windows and ChromeOS only**; MDN/caniuse data omits Linux and macOS, so treat Chrome on macOS as unsupported unless the phase re-checks. **No support in Firefox desktop.** The API is not Baseline.
+- **Behaviour:**
+  - Feature-detect `navigator.share` (and `canShare({ url })`) **after hydration.** Where share exists, the button reads **"Share"** and opens the OS sheet with `{ title, url }`. Elsewhere the same slot reads **"Copy link"** and calls `navigator.clipboard.writeText`, with a polite live "Link copied" for about 2 s. Never label a copy action "Share".
+  - Call it only from the click handler (transient activation). Swallow `AbortError` (the visitor cancelled). Treat `NotAllowedError`/`DataError` as failures and fall back to copy.
+  - Share the **canonical absolute URL** from `site.url`, never `location.href` (which may carry `?view=` or a preview host).
+  - Reserve the button width so the server/client label swap causes no layout shift. Linux CI baselines will show "Copy link".
+- **Where:** the lightbox and photo-page chrome (next to the rights line), and the region header. Not on every figure in the sequence (chrome budget).
+- **Don't** add `web-share=()` to `Permissions-Policy` when tightening headers (`next.config.ts` currently restricts only camera, microphone and geolocation).
+
+### PHOTO-F4: LV95 next to WGS84 (Swiss photos only)
+
+- **Format (MEDIUM, swisstopo):** easting first, labelled E, 7 digits starting with 2. Northing labelled N, starting with 1. Use the Swiss apostrophe grouping the footer already uses (`formatLv95` → `2’624’350`). Example strip line: `46.0150 N 7.7414 E` / `LV95 E 2’624’350 N 1’096’780`.
+- **Precision:** the shipped WGS84 is rounded to 4 dp (about 11 m north–south and 8 m east–west at 46° N). **Round LV95 to 10 m** so it doesn't claim more precision than the data has (DATA-06 spirit). For approx. pins, carry the "approx." flag onto the LV95 line.
+- **"Swiss only"** is decided **per photo location**, not per region: the Zermatt sheet itself crosses into Italy. Store a `country` per photo at data-build time (point-in-boundary or a manual field) and show LV95 only for `CH`.
+- **Already built:** `wgs84ToLv95` (swisstopo approximate formulas, ≤ 0.14 m checked at Zermatt) in `lib/geo.ts`, and `formatLv95` in `lib/footer-format.ts`. This is mostly a display task.
+
+### ENG-F1: Terminal step controls and static transcript
+
+- **Already shipped (HIGH, `DemoTerminal.tsx`):** a sticky Pause toggle; pause on hover, focus, offscreen and hidden tab; "n / N"; a dot bar of "Go to command n" buttons; an sr-only current command whose live region is `off` while playing and `polite` while paused. Starts paused under reduced motion.
+- **Missing:**
+  - Explicit **‹ Previous / Next ›** step buttons (labelled, ≥ 44 px), which pause on use, like the dots.
+  - A **static transcript:** a `<details>` "Show transcript" under the terminal listing every command, its output and its note as selectable plain text in order. It is always available, and **open by default under reduced motion** (v2.0 research TERM table stakes).
+  - Optionally a per-command copy button with a "Copied" announcement.
+- **Keep:** no arrow-key hijacking on the page; one timer at a time (11-RESEARCH Pitfall 1); the shared-grid height trick so nothing below moves.
+
+### PLAT-F1: JSON-LD
+
+- **Site-wide:** `Person` (name, url, jobTitle, `sameAs` GitHub/LinkedIn) and `WebSite`.
+- **Per photo page:** `ImageObject` (or `Photograph` + `ImageObject`). Google requires `contentUrl` plus at least one of `creator`, `creditText`, `copyrightNotice`, `license`. Recommended additions: `creator` → `Person`, `copyrightNotice` "© {year} Tim Lui", `creditText`, `dateCreated`, `contentLocation` → `Place` with `GeoCoordinates` (4 dp, plus `elevation`). Google wants the markup **on every page where the image appears.** `license` only per D-D.
+- **Per region page:** `CollectionPage`/`ImageGallery` with `hasPart` image refs, plus `BreadcrumbList`.
+- **Per project:** box → `SoftwareSourceCode` with `codeRepository`. **coin-flip → `SoftwareApplication` with no repository** (private, D-23/D-30).
+- **Films:** `VideoObject` (see §4).
+- **Implementation rule:** render `<script type="application/ld+json">` from typed data with `<` escaped (`<`) to prevent injection. Validate in tests (schema shape) and once with Google's Rich Results Test. JSON data blocks don't execute, so the nonce CSP is not involved (MEDIUM: confirm in the phase against the Next 16.4 JSON-LD guide in `node_modules/next/dist/docs/`).
+
+### PLAT-F2: Offline page that lists cached pages
+
+- **The data exists:** the service worker stores ok, basic, non-redirected navigations in `dynamic-${BUILD_HASH}`, plus `/` and `/offline` in `static-*` (`public/service-worker.js`). RSC payloads are deliberately never cached.
+- **Behaviour:**
+  - `/offline` runs a small client script: `caches.keys()`, then the `dynamic-*` cache's `keys()`, which returns Request objects, so read `.url`. Filter to same-origin page paths (drop `/offline`, `/api/*` and anything with a query). Map path → human title from a **build-time route-title manifest** (injected like `PRECACHE`), with the cached HTML's `<title>` as a fallback. Group by section (Photographs, Regions, Projects…).
+  - Heading "Saved on this device". Empty state: "No pages saved yet. Pages you visit online are kept here for offline reading."
+  - **Links must be plain `<a href>` full navigations,** not `next/link`. Client navigation fetches RSC payloads, which are never cached, so it fails offline. The SW then serves the cached HTML.
+  - Keep "Try again" and the `online` reload. Note in copy that photos load offline only if they were viewed.
+- **Expectation to set:** the list resets after each deploy, because activation deletes old-build caches by design (EDGE-02 stale-page protection). That is correct, not a bug.
+
+| Type | Feature | Why | Cx | Depends on |
+|---|---|---|---|---|
+| Table stakes | Share: native sheet where supported, honest "Copy link" fallback, live confirmation, canonical URL | Expected on mobile; Firefox desktop and Chrome Linux lack the API | LOW | `site.url`, new canonical photo/region URLs (D-A) |
+| Table stakes | LV95 line for CH photos, 10 m rounding, Swiss grouping | Swiss-survey authenticity without false precision | LOW | `lib/geo.ts`, `formatLv95`, per-photo `country` |
+| Table stakes | Terminal prev/next buttons plus `<details>` transcript (open under reduced motion) | auto-rotation-controls; text alternative to an animation | LOW–MEDIUM | `DemoTerminal.tsx`, `lib/demo-terminal.ts` |
+| Table stakes | JSON-LD for Person, photos (ImageObject + geo), regions, breadcrumbs, projects | Rich results; fits the "real data" ethos | LOW–MEDIUM | Typed data, region model, D-D |
+| Table stakes | Offline list of cached pages with titles, full-navigation links, empty state | Makes the offline page useful | LOW–MEDIUM | SW cache naming, a postbuild route-title injection like `PRECACHE` |
+| Differentiator | Offline list styled as a "survey log" (section, altitude for photo pages) | Identity on an edge page | LOW | Route-title manifest carries altitude |
+| Anti-feature | Social network share-button row (X, Facebook…) | Third-party scripts, CSP, tracking, visual noise | — | One Share / Copy link button |
+| Anti-feature | "Share" button that silently copies | Mislabels the action | — | Capability-specific label |
+| Anti-feature | LV95 for Italian/Austrian photos, or LV95 at 1 m precision | Wrong CRS; implies false precision | — | Country gate; 10 m rounding |
+| Anti-feature | Executing real commands in the terminal | Security and CSP; out of scope since v2.0 | — | Scripted demo |
+| Anti-feature | Pre-caching all photos for offline | Storage quota; not "offline mode" (out of scope) | — | List what the visitor already saw |
+
+---
+
+## Feature Dependencies
 
 ```
-[EXIF pipeline: typed photo data (slug, w/h, GPS, alt, EXIF), committed — G7]
-    ├──requires──> [Reconciled photo copy/dates — G15]
-    ├──enables──> [Grid true-aspect tiles] ──enables──> [Thumbnail→lightbox View Transition] ──requires──> [React 19.3 or native startViewTransition — G6]
-    ├──enables──> [EXIF strip] 
-    ├──enables──> [Map view waypoints] ──requires──> [DEM contour SVG] + [label offsets] + [unlocated rule — G5]
-    └──enables──> [Home waypoints + altimeter rail] ──requires──> [DEM heightmap + contour shader]
+[Region data model + photo.region + photo.country]
+    ├──requires──> [Multi-region terrain pipeline + 2nd DEM source (IT/AT)]   (STACK)
+    ├──enables──> [Region index] ──synced with──> [Overview map]
+    │                                   └──requires──> [Alps-wide coarse DEM + borders + build-time label placement]
+    ├──enables──> [Region page] ──contains──> [Local plate per region] (generalised MapSheet)
+    │                └──contains──> [Immersive sequence] ──opens──> [Lightbox, scoped to region] (LBOX-01..07)
+    │                                    └──enhanced by──> [Collar frame] [Altimeter rail reuse] [Sticky mini plate]
+    ├──enables──> [LV95 line] ──requires──> [photo.country = CH]
+    └──enables──> [Per-region footer legend + attribution] ──requires──> [DEM source + licence per region]
 
-[/photos/[slug] route + @modal interception — G1]
-    ├──requires──> [slug field in photo data]
-    ├──enables──> [Back closes lightbox] [Share] [Per-photo OG image] [Photograph JSON-LD] [sitemap entries]
-    └──enables──> [Contact ?ref= prefill — G12]
+[URL scheme decision D-A]
+    ├──blocks──> [Region routes + @modal interception move] [308 redirects] [proxy.ts 404 regex/KNOWN]
+    ├──blocks──> [Sitemap + OG + canonicals for regions] [Home waypoint links]
+    └──blocks──> [Share URLs] [JSON-LD url/@id + BreadcrumbList]
 
-[Native <dialog> lightbox] ──requires──> [scrollbar-gutter: stable — G4] (visible scrollbar locked)
+[Drone video D-B]
+    ├──loops──> [Phase 11 media pipeline (clips.json → ffmpeg → hashed MP4 + poster)] (exists, same-origin)
+    │              └──requires──> [Pause model + reduced-motion gate] (DemoTerminal as reference)
+    └──films──> [Hosting decision] ──may require──> [CSP change: media-src/connect-src/frame-src] + [WebVTT captions]
 
-[Trail-marker SVG glyph set (tokens)]
-    ├──used by──> [RISK scale] ──requires──> [riskScore + medium/critical demo commands — G9]
-    ├──used by──> [Terminal demo badges]
-    └──used by──> [Footer legend]
+[Carousel decision D-C] ──affects──> [PHOTO-02 tests, ?view=carousel handling]
 
-[Typed project highlight schemas] ──enables──> [Instrument-panel metrics] [Grouped stack] [Data-optional case-study sections]
+[SW dynamic-* cache (EDGE-02)] ──enables──> [Offline cached-pages list] ──requires──> [route-title manifest at postbuild]
+[DemoTerminal (ENG-05)] ──extended by──> [prev/next + transcript (ENG-F1)]
+[Shared OG template (SEO-02)] ──reused by──> [Region OG cards]
 
-[Roadmap data fields (completedAt/order/lastSurveyed) — G11] ──enables──> [Route-log elevation axis] ──enables──> [Case-study "Next steps" rows + anchors]
-
-[Single SiteNav + (site) layout] ──enables──> [focus-on-route-change] ──requires──> [Unique per-route titles — G2]
-
-[DEM pipeline contour SVG] ──reused by──> [404 / error / offline art] [Footer scale bar] [Default OG image]
-
-[Delete playground routes] ──requires──> [Redirects — G8]
-[framer-motion 14 upgrade] ──precedes──> [any new Motion-based interaction (lightbox gestures, rail)]
+[Immersive full-width images] ──conflicts──> [object-fit: cover]  (locked "never cropped")
+[Hide-on-scroll nav] ──conflicts──> [SHELL-01 consistency, WCAG 2.4.11] unless it reveals on focus
+[Autoplay loops] ──conflicts──> [deterministic visual baselines] unless poster-first under test
 ```
 
 ### Dependency Notes
-- **The EXIF + DEM pipelines come first.** Map view, ascent waypoints, EXIF strip, grid aspect, the 404 art and OG images all consume their output. Building UI on today's `data/landscapes.ts` means building it twice.
-- **The photo route restructure (G1) must come before the lightbox redesign.** Deep linking changes where the viewer lives (a modal slot vs a page), and retrofitting it afterwards rewrites the component.
-- **The trail-marker glyph set is a shared token asset.** Build it once with the design system and reuse it in RISK, TERM and the footer legend.
-- **The React 19.3 decision (G6) blocks only the View Transition polish**, not the lightbox. The lightbox must work fully without the transition.
-- **Conflict:** "visible scrollbar" vs `overflow: hidden` scroll lock. It is resolved by `scrollbar-gutter: stable` (G4). Ship both in the same phase.
-- **Conflict:** a yellow nav accent vs T1 yellow risk meaning. Keep the yellow accent minimal and let the footer legend disambiguate.
 
-## 3. MVP Definition (for v2.0 launch)
+- **The region model and the terrain pipeline come first.** The overview, the region pages, the local plates, the LV95 gate, the footer attribution and the JSON-LD geo all read them. Building UI on the single-region data means building it twice, which is the same lesson as v2.0 G7.
+- **D-A (URL scheme) blocks every route-touching feature,** including Share and JSON-LD, which both embed canonical URLs. Decide it before planning the series phase.
+- **The second DEM source drives the footer.** Its licence decides the attribution text, and its CRS decides how the extent is shown. STACK has to name it before the legend is designed.
+- **Lightbox scope change is small but cross-cutting.** `PhotoViewer`'s order source becomes per-region. Keyboard, focus-return and View Transition tests from Phase 10 must keep passing unchanged (regression risk: the Escape focus-loss case accepted at 12-UAT may resurface).
+- **Video loops reuse, films don't.** Loops ride the existing media pipeline and CSP. Films may force a CSP change, a separately reviewed security surface (`buildCsp` is unit-tested).
+- **ENG-F1, PHOTO-F4 and PLAT-F2 are independent** of the region work and can run in a parallel or early phase. PHOTO-F2 and PLAT-F1 depend on D-A for their URLs.
 
-### Launch with (v2.0)
-- [ ] SHELL: single nav, identity, skip link, legend footer with © swisstopo, `scrollbar-gutter`
-- [ ] Data: EXIF/DEM generated data committed; photo `slug`, `riskScore`, roadmap fields, copy reconciled
-- [ ] HOME: ascent with poster fallback, rail-as-nav, routes CTA, reduced-motion final states
-- [ ] PHOTO: Grid (default) + Map + Carousel with URL view state and one canonical order
-- [ ] LIGHTBOX: `/photos/[slug]` page + intercepted modal, keyboard/swipe/focus/counter, EXIF strip, hotspot callouts with mobile legend fallback, clean-view toggle
-- [ ] PROJ + CASE: route panels, case-study template with data-optional sections, anchors, metadata
-- [ ] RISK + TERM: labeled trail-marker scale with a table equivalent; terminal with pause/step controls
-- [ ] ROUTE: banded route log, URL filter, empty state, last-surveyed stamp
-- [ ] CONTACT: summit register with full state model, honeypot, selectable email
-- [ ] EDGE: 404 / error / global-error / offline + redirects
-- [ ] SEO: titles, OG images (default + photo + project), sitemap, robots
+---
 
-### Add after validation (v2.x)
-- [ ] Thumbnail → lightbox View Transition, if the React 19.3 bump is deferred (trigger: React/Next upgrade lands)
-- [ ] JSON-LD (Photograph with geo, SoftwareSourceCode)
-- [ ] Share button and "Ask about this photo" prefill
-- [ ] LV95 coordinates and "Show on map" cross-link
-- [ ] Offline page listing cached pages
+## MVP Definition
+
+### Launch with (v2.1)
+
+- [ ] Region data model; Zermatt (existing 4 + new) plus at least one IT or AT region: everything keys off it
+- [ ] D-A URL scheme with 308s from the old slugs; Home links updated: PROJECT.md promise
+- [ ] Overview map with labelled pins, numbered fallback on narrow screens, synced region list: the locked map model
+- [ ] Region page: header, facts, local plate, uncropped immersive sequence, captions, next-region end block: the core feature
+- [ ] Lightbox scoped to region with the end-of-series card: 18 photos need scope
+- [ ] Per-region footer extent and DEM attribution: licence obligation
+- [ ] Region metadata, OG cards, sitemap: SEO parity
+- [ ] Drone loops (if D-B = loops or both): poster-first, pause control, reduced-motion off
+- [ ] PHOTO-F2 Share/Copy link, PHOTO-F4 LV95, ENG-F1 controls + transcript, PLAT-F1 JSON-LD, PLAT-F2 offline list
+
+### Add after validation (v2.1.x)
+
+- [ ] Map-collar coordinate frame: once the base sequence is stable and Tim has signed off its visual design
+- [ ] Sequence altimeter rail and sticky mini plate: when the sequence layout is settled
+- [ ] Overview → local plate morph: after both maps exist
+- [ ] Lightbox thumbnail index: when a region passes about 12 photos
+- [ ] Films with sound: after the hosting/CSP decision and caption authoring
+- [ ] Clips in the lightbox sequence; flight paths from telemetry
 
 ### Future consideration (v3+)
-- [ ] Photo tags/filters (trigger: 20+ photos)
-- [ ] Photography blog (roadmap item `portfolio-blog`, MDX)
-- [ ] Print/licensing flow (trigger: real demand via `?ref=` inquiries)
 
-## 4. Feature Prioritization Matrix
+- [ ] Tag/season filters (PHOTO-F3): revisit at 40+ photos across 5+ regions
+- [ ] "Ask about this photo" (PHOTO-F1), print licensing (PLAT-F4), blog (PLAT-F3): explicitly out of v2.1
 
-| Feature | User Value | Cost | Priority |
-|---------|-----------|------|----------|
-| `/photos/[slug]` deep links + Back closes | HIGH | MEDIUM | P1 |
-| Lightbox keyboard/swipe/focus/counter | HIGH | MEDIUM | P1 |
-| Per-route metadata + OG images | HIGH | MEDIUM | P1 |
-| Single nav + identity + legend footer | HIGH | MEDIUM | P1 |
-| Home ascent w/ static fallback | HIGH | HIGH | P1 |
-| EXIF strip | MEDIUM | MEDIUM | P1 |
-| Grid (justified, in-house) | HIGH | LOW | P1 |
-| Map view | MEDIUM | MEDIUM | P1 (locked) |
-| Case-study template + anchors | HIGH | MEDIUM | P1 |
-| Trail-grade risk scale + table | MEDIUM | LOW | P1 |
-| Route log bands + URL filter | MEDIUM | MEDIUM | P1 |
-| Summit register states + honeypot | HIGH | LOW | P1 |
-| Edge pages + redirects + global-error | MEDIUM | LOW | P1 |
-| scrollbar-gutter fix | MEDIUM | LOW | P1 |
-| Hotspot callouts w/ leader lines + mobile legend | MEDIUM | MEDIUM | P1 (locked) |
-| View Transition morph | MEDIUM | LOW–MEDIUM | P2 (version-gated) |
-| Share / Ask-about-photo | MEDIUM | LOW | P2 |
-| JSON-LD | LOW | LOW | P2 |
-| LV95 coords / Show on map | LOW | LOW | P3 |
+---
 
-## 5. Exemplar / Competitor Feature Analysis
+## Feature Prioritization Matrix
 
-| Feature | Unsplash / Flickr photo pages | PhotoSwipe (lightbox standard) | Next.js nextgram / Frames demo | Scrollytelling (NYT/Pudding-style) | Our approach |
-|---------|------------------------------|--------------------------------|-------------------------------|-----------------------------------|--------------|
-| Photo URL | Every photo has a URL; modal on soft nav, page on hard load (LOW: from memory) | History entry on open; URL per slide; restored on close | Intercepted `@modal` + full page | n/a | `/photos/[slug]`, modal + page, `replace` on step |
-| Keyboard | ←/→, Esc | ←/→, Esc, Space toggles UI | — | Native scroll | ←/→, Esc layering, I/H/Z, "?" hint |
-| Touch | Swipe | Horizontal swipe = next, vertical swipe = close | — | Native scroll | Same, plus visible buttons |
-| Metadata panel | Camera/EXIF info, location, share | Caption only | — | — | EXIF strip + coords + © + share |
-| Grid | Flickr justified rows | — | Uniform grid | — | In-house justified rows, last row not stretched |
-| Shared-element transition | No | Zoom-from-thumbnail animation | `<ViewTransition name>` morph | — | View Transition morph, version-gated |
-| Story structure | — | — | — | Sticky graphic + steps; each step works as a still; static fallback | Ascent chapters, rail-as-nav, final states under reduced motion |
-| Download | Free download (license-specific) | Optional | — | — | None; © line + inquiry link |
+| Feature | User Value | Implementation Cost | Priority |
+|---|---|---|---|
+| Region data model + multi-region pipeline | HIGH | HIGH | P1 |
+| Region page with immersive uncropped sequence | HIGH | HIGH | P1 |
+| Overview map + synced region list | HIGH | HIGH | P1 |
+| URL scheme + redirects + Home links | HIGH | MEDIUM | P1 |
+| Lightbox scoped per region + end card | MEDIUM | LOW | P1 |
+| Per-region footer attribution and extent | MEDIUM (licence) | MEDIUM | P1 |
+| Region metadata, OG, sitemap | MEDIUM | LOW | P1 |
+| Share / Copy link | MEDIUM | LOW | P1 |
+| ENG-F1 prev/next + transcript | MEDIUM | LOW | P1 |
+| PLAT-F1 JSON-LD | LOW–MEDIUM | LOW | P1 (committed) |
+| PLAT-F2 offline cached list | LOW | LOW | P1 (committed) |
+| PHOTO-F4 LV95 | LOW | LOW | P1 (committed) |
+| Drone loops in sequences | MEDIUM | LOW–MEDIUM | P1 if D-B includes loops |
+| Map-collar frame | HIGH (identity) | MEDIUM | P2 |
+| Sequence altimeter rail / sticky mini plate | MEDIUM | MEDIUM | P2 |
+| Overview sheet-index rectangles + landmarks | MEDIUM | LOW–MEDIUM | P2 |
+| Overview → local morph | LOW–MEDIUM | MEDIUM | P3 |
+| Films with sound + captions | MEDIUM | MEDIUM–HIGH | P2 (after hosting) |
+| Flight path on plate | LOW–MEDIUM | HIGH | P3 |
+
+**Priority key:** P1 must have for v2.1. P2 should have, add when possible. P3 nice to have.
+
+---
+
+## Competitor Feature Analysis
+
+| Feature | Location-grouped photographer sites (Format/Zenfolio/Squarespace examples) | Long-form photo essays (Shorthand, newsroom scrollytelling) | Map products (swisstopo sheet index, store locators) | Our approach |
+|---|---|---|---|---|
+| Index | Gallery grid by country/region, sometimes nested (North/South Island) | n/a | Sheet index or pin map plus list | Contour overview with sheet rectangles plus a synced region list |
+| Series page | Grid of thumbnails → lightbox | Full-bleed images as pacing, captions as side notes | n/a | Uncropped full-width sequence with collar captions and a lightbox for detail |
+| Wayfinding | Gallery menu, back to galleries | Progress, chapter heads | Coordinates, neatline, legend | Breadcrumb, "n / N", altimeter rail, next-region card, collar coords |
+| Large set in lightbox | Counter, sometimes filmstrip | n/a | n/a | Counter scoped to region, end-of-series card, optional index overlay |
+| Video | Homepage loop plus films page (studios) | Inline muted loops | n/a | Inline loops at altitude; films optional behind click-to-play |
+| Accessible map path | Rare | n/a | List/table is the accessible path; list–map sync | Region list is the primary path; numbered pins on mobile |
+
+Exemplar observations are LOW–MEDIUM (secondary roundups, not first-hand audits).
+
+---
 
 ## Sources
 
-**ui-ux-pro-max (local skill, `.claude/skills/ui-ux-pro-max`). Queries run for this file:**
-- `"image gallery lightbox" --domain ux`: image optimization, scaling, asset weight
-- `"modal keyboard focus escape" --domain ux`: focus states; Focus Not Obscured (WCAG 2.2 AA/AAA)
-- `"carousel swipe controls" --domain ux`: Auto-Rotating Content Controls (pause/prev/next, stop on focus and reduced motion)
-- `"deep linking back state" --domain ux`: Deep Linking, Back Button (pushState), Active State
-- `"contact form validation"`, `"error summary validation"`, `"submit loading success" --domain ux`: Submit Feedback, Form Labels, Focusable Error Summary, Error Messages (aria-live), Success Feedback
-- `"skip link sticky header" --domain ux`: Skip Links, Sticky Navigation offset
-- `"scroll storytelling progress" --domain ux`: Progress Indicators
-- `"dragging movements" --domain ux`: WCAG 2.2 single-pointer alternative
-- `"filter chips segmented" --domain ux`: Chip Collection Reflow, Compact Label Semantics
-- `"timeline milestones"`, `"risk level gauge categorical" --domain chart`: Gauge/Bullet chart (label threshold zones, color insufficient, table fallback, focus = hover)
-- `"case study portfolio" --domain landing`: Portfolio Grid (visuals first, neutral background, fast loading)
-- `"metadata" --stack nextjs`: metadata API, generateMetadata, OpenGraph images. `"image gallery" --stack nextjs`: next/image, priority for LCP only
-- `"webgl fallback reduced motion"`, `"pause render offscreen" --stack threejs`: reactive prefers-reduced-motion, canvas aria-label, pause loop on hidden tab
-- Quick Reference rules cited inline (`deep-linking`, `state-preservation`, `focus-on-route-change`, `auto-rotation-controls`, `web-target-size`, `gesture-alternative`, `no-emoji-icons`, `blur-purpose`, etc.)
-- Palette/font recommendations from the skill were **not** adopted (locked direction wins)
-- `"timeline roadmap" --domain ux` and `"404 error page" --domain ux` returned no on-topic match, so general guidance is used for ROUTE and EDGE
+**Codebase (HIGH, read directly this session):** `components/projects/DemoClip.tsx`, `components/projects/DemoTerminal.tsx`, `data/media/clips.json`, `public/service-worker.js`, `proxy.ts` (`buildCsp`), `next.config.ts` (Permissions-Policy), `lib/geo.ts` (`wgs84ToLv95`), `lib/footer-format.ts` (`formatLv95`), `lib/home-format.ts` (`formatCoordinates`), `components/photos/PhotoViewer.tsx` (no-wrap ends, announcement), `components/site/SiteNav.tsx` (sticky 64 px), `data/photos/editorial.ts` (4 slugs), `data/schemas/photo.ts`, `app/(site)/photos/` route tree (`@modal/(.)[slug]`, `[slug]`).
 
-**Official / cross-checked (MEDIUM per classify-confidence seam):**
-- Next.js Intercepting Routes (v16.4): https://nextjs.org/docs/app/api-reference/file-conventions/intercepting-routes
-- Next.js "Designing view transitions" guide (v16.4, 2026-09-10; React 19.3 requirement, reduced-motion CSS, Back-button caveat): https://nextjs.org/docs/app/guides/view-transitions
-- React Labs, View Transitions: https://react.dev/blog/2025/04/23/react-labs-view-transitions-activity-and-more
-- Same-document View Transitions Baseline (Firefox 144): https://web.dev/blog/same-document-view-transitions-are-now-baseline-newly-available
-- Chrome, scroll-driven animations: https://developer.chrome.com/docs/css-ui/scroll-driven-animations
-- ICS Media, scroll-driven animation support (Safari 26): https://ics.media/en/entry/230718/
-- PhotoSwipe docs/repo (keyboard, history, swipe): https://github.com/kertal/PhotoSwipe, https://unpkg.com/photoswipe@4.1.3/website/index.html
-- eBay evo lightbox-dialog a11y: https://opensource.ebay.com/evo-web/components/lightbox-dialog/accessibility
-- Mesa gallery a11y: https://mesadesignsystem.lanl.gov/components/gallery/accessibility
-- Mada accessible carousel guide: https://ictaccess.mada.org.qa/ui-accessible-component/en/carousel.html
-- Flickr justified layout: https://code.flickr.net/2015/03/, https://github.com/nk-o/better-justified-layout
-- SAC hiking scale / markings: https://wiki.openstreetmap.org/wiki/Key:sac_scale, https://www.bergfreunde.eu/alpine-grades-calculator/, https://www.avegnogordevio.ch/files/Berg-Alpinwanderskala-EN.pdf
+**ui-ux-pro-max (local skill):** `"video autoplay background"` → Auto-Play Video (prefer click-to-play, pause and captions, stop off-screen, honour reduced motion). `"carousel auto rotation controls"` → Auto-Rotating Content Controls. `"image gallery fullscreen immersive"` → image optimisation and srcset. `"map markers accessibility"`, `"share button"` and `"offline"` returned no on-topic match, so general guidance is used there.
 
-**Codebase (HIGH, read directly):** `components/ImageDetailModal.tsx`, `PhotosPageClient.tsx`, `PhotoCarousel3D.tsx`, `InteractiveHotspot.tsx`, `HologramTerminalDemo.tsx`, `RoadmapFilters.tsx`, `FeedbackForm.tsx`, `app/layout.tsx`, `app/projects/[slug]/page.tsx`, `app/api/feedback/route.ts`, `data/*.ts`, `.gitignore`, image dimensions/EXIF via `sharp`, installed `next` 16.1.6 / `react` 19.2.4.
+**Web (classify-confidence: websearch unverified = LOW, cross-checked = MEDIUM):**
+- MEDIUM. W3C Understanding SC 2.2.2 Pause, Stop, Hide: https://www.w3.org/WAI/WCAG21/Understanding/pause-stop-hide ; GOV.UK WCAG wiki: https://github.com/alphagov/guide-to-wcag/wiki/2.2.2 ; accessibleweb.com Q&A on silent autoplay: https://accessibleweb.com/?p=60433
+- MEDIUM. W3C Understanding SC 1.2.2 Captions (Prerecorded): https://www.w3.org/WAI/WCAG21/Understanding/captions-prerecorded.html ; MDN `<track>`: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/track
+- MEDIUM. MDN `Navigator.share()` (transient activation, AbortError/NotAllowedError, not Baseline): https://developer.mozilla.org/en-US/docs/Web/API/Navigator/share ; web.dev Web Share: https://web.dev/articles/web-share ; caniuse: https://caniuse.com/web-share ; MDN BCD issue on Chrome desktop platforms: https://github.com/mdn/browser-compat-data/issues/16823
+- MEDIUM. Save-Data support (Chromium only): https://caniuse.com/wf-savedata ; https://web-platform-dx.github.io/web-features-explorer/features/savedata ; https://web.dev/articles/optimizing-content-efficiency-save-data
+- LOW–MEDIUM. Background video practice (muted + playsinline, reduced-motion poster, Save-Data, 6–15 s): https://www.viget.com/articles/best-practices-for-background-videos ; https://developer.chrome.com/docs/modern-web-guidance/guides/performance/lazy-load-video-and-audio ; https://specification.website/spec/accessibility/reduced-motion/
+- MEDIUM. swisstopo LV95 (E before N, 2/1 prefixes, Bern 2 600 000 / 1 200 000): https://www.swisstopo.admin.ch/en/the-swiss-coordinates-system ; https://en.wikipedia.org/wiki/Swiss_coordinate_system
+- MEDIUM. Google image metadata (contentUrl plus one of creator/creditText/copyrightNotice/license; `license` for the Licensable badge; markup per page): https://developers.google.com/search/docs/appearance/structured-data/image-license-metadata
+- LOW–MEDIUM. Google VideoObject: https://developers.google.com/search/docs/data-types/video
+- MEDIUM. Accessible maps (list as primary path, list–map sync, avoid `role="application"`): https://equalentry.com/?p=4111 ; https://leafletjs.com/examples/accessibility/ ; https://developers.google.com/maps/documentation/javascript/3d/marker-accessible ; https://sitepen.com/blog/navigating-accessibility-in-two-dimensions
+- MEDIUM. Scroll-snap accessibility problems: https://adrianroselli.com/2021/07/scroll-snap-challenges.html ; https://github.com/w3c/csswg-drafts/issues/3602
+- LOW. Firefox scroll-driven animations still behind a flag (June 2026, secondary): https://www.buildmvpfast.com/blog/css-scroll-driven-animations-replace-js-2026
+- LOW. Offline page listing cached pages: https://gomakethings.com/saving-recently-viewed-pages-offline-with-service-workers-and-vanilla-js/ ; https://developer.mozilla.org/en-US/docs/Web/API/CacheStorage
+- LOW. Large-lightbox conventions (counter, adjacent preload, filmstrip toggle): https://mantine.dev/x/lightbox/ ; https://www.techinterview.org/post/3233475171/build-image-gallery-lightbox-frontend/
+- LOW. Location-grouped photographer portfolios: https://www.format.com/magazine/galleries/photography/landscape-photography-portfolios ; https://kimmalco.zenfolio.com/about.html
+- LOW. Drone footage on portfolios (homepage loops, longer films, stills-first for photography): https://infomedia.com/?p=4987 ; https://landing.vsble.me/blog/images-vs-video-portfolios-choosing-the-best-for-creatives-2025-en ; https://reallygooddesigns.com/videographer-portfolio-websites
+- LOW. Photo-essay pacing (full-bleed as a pacing device, styled captions): https://designsystem.wvu.edu/components/photos-and-videos/full-bleed-photo ; https://shorthand.com/the-craft/immersive-photo-essays/amp-index.html
+- MEDIUM. Vercel Hobby 100 GB/month Fast Data Transfer: https://vercel.com/docs/limits ; https://vercel.com/pricing
 
-**LOW (from memory, not verified this session):** Unsplash photo-page behavior; NYT/Pudding scrollytelling conventions; Safari `scrollbar-color` support; whether the Next.js App Router moves focus on navigation, as opposed to only announcing the route.
+**LOW, from memory and not verified this session:** iOS Low Power Mode blocking muted autoplay; DJI `.SRT` telemetry contents; swisstopo sheet-index (Blattübersicht) as a visual model; whether Chrome on macOS now ships `navigator.share`.
 
 ---
-*Feature research for: photographer-engineer topographic portfolio (v2.0 Topographic Identity)*
-*Researched: 2026-10-10*
+*Feature research for: topographic photographer-engineer portfolio, v2.1 Survey Expansion*
+*Researched: 2026-11-12*

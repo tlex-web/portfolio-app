@@ -1,31 +1,32 @@
 # Architecture Research
 
-**Domain:** Next.js 16 App Router portfolio, v2.0 "Topographic Identity" (UI/UX rework, with build-time terrain and EXIF pipelines added to an existing shipped app)
-**Researched:** 2026-10-10
-**Confidence:** MEDIUM-HIGH overall. Next.js behaviour was checked against the official docs, version-stamped 16.4.0 (route groups, not-found, parallel/intercepting routes, default.js, CSP, view transitions). React 19.3 exports were checked by unpacking the npm tarball. Repo facts come from reading the code. The research seam rates the `webfetch` provider tier LOW, but every Next/Tailwind claim below cites an official doc page, so those claims are treated as verified. Items marked **[SPIKE]** are inferences that are not yet verified and need a prototype in their phase.
+**Domain:** v2.1 "Survey Expansion": region photo series, an Alps overview map, a multi-plate terrain pipeline, drone video and five deferred features, added to the shipped Next 16.4.5 / React 19.3 portfolio
+**Researched:** 2026-11-12
+**Confidence:** HIGH for the repo integration points (read from the code) and for the Next 16.4 behaviour (checked against `node_modules/next/dist/docs` and the Next source in `node_modules/next/dist`). MEDIUM for the terrain-source and CRS recommendations: the swissALTIRegio coverage comes from swisstopo's STAC item and matches the attribution already in `data/site.ts`, but the research seam rates web providers LOW. LOW for anything marked **[SPIKE]**.
 
-> Scope: only what the NEW v2.0 capabilities need. Locked decisions (tokens v2 + v1 aliases, no `dark:`/stock palette, `(site)` route group, DEM/EXIF build pipeline, R3F terrain, photo views + lightbox + View Transitions, typed highlights, framer-motion 14 first, no GSAP) are taken as given. This document is about how to integrate them.
+> Scope: only what the new v2.1 features need. Everything in `.planning/milestones/v2.0-research/ARCHITECTURE.md` (route group, lightbox interception, generated data, tokens, VT patterns) is taken as built. The `.planning/codebase/*.md` maps are from February 2026 and out of date; this document cites the current code.
 
 ---
 
-## 0. Repo facts that shape the integration (verified by reading code)
+## 0. Repo facts that shape v2.1 (read from the code)
 
-| Fact | Where | Consequence for v2 |
-|------|-------|--------------------|
-| `node_modules` is stale against the lockfile (installed next 16.1.6 / react 19.2.4; lockfile next 16.2.6 / react 19.2.6) | `package-lock.json` vs `node_modules/*/package.json` | Run `npm ci` before taking baselines, or the baselines are taken against the wrong versions |
-| **`<ViewTransition>` needs React 19.3.** The Next 16.4 guide says: "React 19.3 includes the `<ViewTransition>` component and `addTransitionType`". Confirmed: `react@19.3.0` exports `ViewTransition` and `addTransitionType`. The installed React does not | `package.json` `react ^19.2.6` | **A React 19.3 + Next 16.4 bump is a prerequisite for Phase 10.** It needs its own isolated upgrade step, the same treatment as framer-motion. R3F 9.8.1 peer range is `react >=19 <19.4`, so this is compatible |
-| `app/page.tsx`, `projects`, `roadmap`, `contact`, `offline` pages are all `'use client'` | `app/*/page.tsx` | They cannot export `metadata`. Only the root layout has metadata today. v2 must turn pages into Server Components with client islands |
-| Every page renders its own `<Header/>` (9 files) or `GlassmorphismNav` (inside `Hero3DMountain`) plus `<Footer/>` (10 files) | `app/**/page.tsx` | The `(site)` layout move must remove these per-page imports in the same commit, or the nav renders twice |
-| Root `await headers()` forces dynamic rendering for the whole tree | `app/layout.tsx:34` | Keep it at the root. Everything stays dynamic, including `not-found`, `global-error` and the `(site)` group |
-| CSP: `style-src 'self' 'unsafe-inline'`, `img-src 'self' blob: data:`, `connect-src 'self' https://raw.githubusercontent.com`. Proxy matcher runs on everything except `api`, `_next/static`, `_next/image`, `favicon.ico`, `service-worker.js` | `proxy.ts` | Same-origin terrain assets are allowed. Inline `style={{maskImage}}` and `viewTransitionName` are allowed. The proxy currently runs on `/images/*` and would run on `/terrain/*` too, so exclude both |
-| ESLint flat config extends only `prettier`. `eslint-config-next` is installed but **not used**, so jsx-a11y is not active | `eslint.config.mjs` | Phase 7: add `eslint-config-next` (core-web-vitals) before the a11y-heavy rework |
-| CI runs Node **20**, which reached EOL on 2026-04-30. Local is Node 24 | `.github/workflows/ci.yml` | Move CI to Node 24 (matches local and Vercel). This also enables native TS type-stripping for the new generator scripts |
-| CI `lint-and-typecheck` runs `tsc` **without** `prebuild` | `ci.yml` | Generated `.ts` data must be **committed**, or `type-check` fails |
-| `postbuild` runs `verify-contrast.mjs`, which uses a **hand-maintained hex table** | `scripts/verify-contrast.mjs` | The table drifts from the tokens. Rewrite it to parse `globals.css` (section 4) |
-| `inject-build-hash.mjs` rewrites `public/service-worker.js` in place. SW precaches only `['/', '/offline']` | `public/service-worker.js:82` | Designed offline/404 pages need their contour asset precached. Extend the injection to a generated asset list |
-| v1 has a custom `--color-amber-*` that **shares the name of Tailwind's stock `amber`** | `app/globals.css:52-54` | The guard regex has to tell v1 `amber-400/500/600` apart from stock amber. Renaming it in v2 (e.g. `caution`) removes the ambiguity |
-| Already-dead components (zero importers): `Hero3DSection`, `ProgressiveImage`, `TerminalDemo`, `ZoomableImage` | usage scan | Delete in Phase 7. No risk |
-| Playground-only components: `ParticleButton`, `TransitionShowcase`, `ShaderTransition`. `AnimatedGradientMesh` is also used by `contact` | usage scan | Delete the playground routes **early** (Phase 7), so the token sweep doesn't migrate files that are about to be deleted |
+| # | Fact | Where | Consequence |
+|---|------|-------|-------------|
+| F1 | **swissALTIRegio already covers most of the Italian and Austrian Alps.** STAC bbox 4.516°E–11.990°E, 44.837°N–48.749°N. swisstopo builds it from swissALTI3D, TINITALY (IT), DGM10 (AT), RGE ALTI (FR) and DGM1/EU-DEM (DE). `site.attribution.terrain` already credits TINITALY and DGM Österreich for that reason | STAC item `ch.swisstopo.swissaltiregio`; `data/site.ts` | A region west of about 11.7°E (Aosta/Cervinia, Gran Paradiso, Ortler/Stelvio, Ötztal, Stubai, Innsbruck) needs **no second DEM source and no new projection code**. The second source is only needed for the Alps-wide overview and for regions east of about 11.7°E (Dolomites core, Hohe Tauern, Salzburg). **This is a scoping decision for Tim before the roadmap is fixed** |
+| F2 | One terrain extent everywhere. `terrain.ts` has one `extent.lv95`. `build-photo-data.mjs` **fails** when a photo lies outside it (WR-01) | `data/generated/terrain.ts`, `scripts/photos/build-photo-data.mjs` | Every photo needs a plate. Membership must be explicit, and each plate needs its own UV space |
+| F3 | Home, the footer, the photo views and the OG card all read **all** photos | `lib/ascent/waypoints.ts` (`buildWaypoints` over every photo), `SiteFooter.tsx` (one tick per photo), `TrailSigns.tsx` (`photos.length` "waypoints"), `lowestDemM` over all photos, `lib/photos/view-model.ts` built on `buildWaypoints` | Adding one photo today adds a Home waypoint, a footer tick and moves the altimeter rail start. "Home keeps its four waypoints" needs an **explicit home list** and a split between Home waypoints and album views |
+| F4 | 13 places build `/photos/${slug}` by hand, including `history.replaceState` in `PhotoViewer` and its title-keeper effect | `JustifiedGrid`, `MapSheet`, `CarouselView/Controls/Stepper`, `WaypointCard`, `PhotoViewer` (×2), `sitemap.ts`, `saved-pages.ts`, plus about 15 e2e specs | Centralise URL building (`photoHref`) **before** the URL changes. Then the URL change is a one-line flip |
+| F5 | `proxy.ts` decides misses with `/^\/(photos\|projects)\/([^/]+)$/` against `photoSlugs`, and imports the whole view-model (editorial copy, manifests) into the proxy bundle | `proxy.ts` | Under nested URLs `/photos/zermatt` would count as an **unknown photo**. Both the regex and the known-set change. Use a slim route list, not the view-model |
+| F6 | The per-photo OG card URL carries a hash of the **parent route path**: `djb2(parentPathname)`, which includes `(site)`, so `/photos/<slug>/opengraph-image-<h>/card` | `node_modules/next/dist/lib/metadata/get-metadata-route.js` `getMetadataRouteSuffix` | Moving the route to `[region]/[slug]` changes `<h>`. A pattern redirect of old card URLs would land on a 404. See §3.4 |
+| F7 | Interception rewrites match the intercepting route **and every descendant**: the `Next-Url` regex ends in `(?:/.*)?` | `node_modules/next/dist/esm/lib/generate-interception-routes-rewrites.js` | One `photos/@modal` slot intercepts photo links from `/photos` **and** from `/photos/<region>` (HIGH; read from source) |
+| F8 | Sibling dynamic segments with different names are a hard error: "You cannot use different slug names for the same dynamic path" | `next/dist/shared/lib/router/utils/sorted-routes.js` | `/photos/[region]` and `/photos/[slug]` cannot coexist. Nested URLs need a redirect for the old flat slugs |
+| F9 | **PLAT-F2 is already shipped.** `/offline` lists cached pages through `SavedPages` + `lib/saved-pages.ts` (12-15, EDGE-02, UI-SPEC E11) | `components/site/SavedPages.tsx`, `lib/saved-pages.ts` | v2.1 PLAT-F2 is **only** a catalog extension (region pages, nested photo URLs, a "Series" label). Re-scope the requirement |
+| F10 | A same-origin video pipeline exists: `build-clip.mjs` (ffmpeg locally, committed hashed MP4 + WebP poster), `media-manifest.ts`, an MP4 box-walker guard (rejects `©xyz`, `loci`, `XMP_`, `uuid`, more than one track, any MP4 over 1.5 MiB under `public/`), and a service worker that leaves `video`/Range requests to the network | `scripts/media/build-clip.mjs`, `scripts/guards/check-served-images.mjs`, `public/service-worker.js` | Drone video should extend this, with a separate size budget class. The walker already blocks DJI GPS boxes and extra data tracks |
+| F11 | The `contours-map` LOD (50 m, 93 KB) has **no consumer**. MapSheet, PosterSheet, EdgeArt and OG use `hero`; the footer uses `strip` | `git grep` over `components lib app` | New plates can skip the `map` LOD (about 90 KB each). Leave Zermatt's set alone so its outputs stay byte-identical |
+| F12 | Heightmaps (94 + 352 KB) are used only by the Home R3F canvas | `TerrainMesh.tsx` | Region plates are 2D (MapSheet: hillshade + hero contours), so they need **no heightmaps**. Make `heightmap` optional per plate |
+| F13 | `TerrainSource` is `product: z.literal('swissALTIRegio')`, `crs: 'EPSG:2056'`, `heightSystem: 'LN02'`; `Capture.timeZone` is `z.literal('Europe/Zurich')`; `PhotoId` is `/^(img-\d{4}\|r\d{3}-\d{3})$/` | `data/schemas/terrain.ts`, `data/schemas/photo.ts` | A second product, a new camera or drone file naming, and IT/AT photos all hit schema literals. CET/CEST offsets are the same in Rome and Vienna, so only the label changes |
+| F14 | Every hashed asset name is flat (`/terrain/<name>.<10hex>.<ext>`): schema regex, guard `HASH_NAME` (no `/`), `next.config` cache headers, SW prefix rules, proxy matcher exclusion | `data/schemas/terrain.ts`, `check-served-images.mjs`, `next.config.ts`, `public/service-worker.js`, `proxy.ts` | **Name plates by prefix, not by subdirectory**: `/terrain/aosta-contours-hero.<hash>.svg`. Then five consumers need no change |
+| F15 | `build-terrain.mjs` deletes "stale managed files" with one global `MANAGED` regex | `scripts/terrain/build-terrain.mjs` | A per-plate run would delete the other plates' files. One builder must own all plates per run |
 
 ---
 
@@ -34,544 +35,490 @@
 ### System Overview
 
 ```
-┌──────────────────────────────────────────────────────────────────────────────────┐
-│ BUILD-TIME (offline, manual, outputs committed)                                    │
-│  swissALTI3D tiles (.cache/dem, gitignored) ─► scripts/terrain/build-terrain.ts    │
-│      ├─► public/terrain/heightmap.<hash>.png   (terrain-RGB encoded)               │
-│      ├─► public/terrain/hillshade.<hash>.webp  (static fallback / poster)          │
-│      ├─► public/terrain/contours-{hero,map,strip}.<hash>.svg  (d3-contour)         │
-│      └─► data/generated/terrain.ts  (bbox, size, min/max m, interval, paths, route)│
-├──────────────────────────────────────────────────────────────────────────────────┤
-│ BUILD-TIME (prebuild / CI, cheap + deterministic, outputs committed, --check)     │
-│  assets/photos-original/*.jpg ─► scripts/photos/extract-exif.ts (+ terrain.ts)     │
-│      └─► data/generated/photo-meta.ts (EXIF, capturedAt, gps, terrainUV, w/h, blur)│
-│  app/globals.css ─► scripts/tokens/tokens.ts ─► contrast gate + data/generated/tokens.ts │
-│  app/ components/ data/ ─► scripts/tokens/check-design-tokens.mjs (dark:/stock gate)│
-├──────────────────────────────────────────────────────────────────────────────────┤
-│ DATA LAYER (typed, server-imported)                                                │
-│  data/schemas.ts (zod; types via z.infer) ◄── data/site.ts  data/photos.ts         │
-│                                               data/projects.ts  data/roadmap.ts    │
-├──────────────────────────────────────────────────────────────────────────────────┤
-│ ROUTES  app/layout.tsx (html/body, fonts, headers(), SW, analytics)                │
-│   ├─ app/not-found.tsx · app/global-error.tsx   (render <SiteChrome> themselves)   │
-│   └─ app/(site)/layout.tsx  ── SiteNav · <main id="main-content"> · SiteFooter     │
-│        ├─ page.tsx (Home: AscentHero)      ├─ projects/ · projects/[slug]/         │
-│        ├─ photos/layout.tsx {children, @modal}  ├─ roadmap/ · contact/ · offline/  │
-│        │    ├─ page.tsx (?view=map|grid|carousel)   ├─ error.tsx · not-found.tsx    │
-│        │    ├─ [id]/page.tsx (full gallery-black page, deep link / refresh)        │
-│        │    └─ @modal/{default,page}.tsx → null · @modal/(.)[id]/page.tsx (Lightbox)│
-├──────────────────────────────────────────────────────────────────────────────────┤
-│ CLIENT ISLANDS (only where interaction/WebGL is needed)                            │
-│  SiteNav · TerrainStage→(dynamic, ssr:false) TerrainCanvas · AltimeterRail ·       │
-│  PhotoViews · Lightbox · DemoTerminal · RoadmapFilters · SummitRegister form       │
-├──────────────────────────────────────────────────────────────────────────────────┤
-│ SHARED VISUAL PRIMITIVES (server, zero JS)                                         │
-│  ContourField (CSS mask of contours SVG) · TerrainFallback (hillshade+contours) ·  │
-│  TrailGradeMark · OffTrail (404/offline/error body)                                │
-└──────────────────────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────────────────┐
+│ MANUAL, NETWORKED (Tim's machine; outputs committed, never run in CI/Vercel)         │
+│  terrain:fetch --plate <id>   adapters: swissaltiregio | <second product> | overview │
+│     └─► data/terrain/source/<plate>/{source.json, dem.png}   (square metric grid,    │
+│         grey16, sha256 recorded; reprojection happens HERE, once)                    │
+│  photos:exif / photos:derive  (originals stay in gitignored assets/)                 │
+│  clip:derive                  (drone + demo clips, ffmpeg, metadata stripped)        │
+├────────────────────────────────────────────────────────────────────────────────────┤
+│ OFFLINE, DETERMINISTIC (write mode locally; --check in lint via data:check)          │
+│  data/terrain/plates.json ─┐                                                         │
+│  data/regions/regions.json ┼► terrain:build ─► public/terrain/<plate>-*.<hash>.*     │
+│  source/<plate>/*          ┘                 └► data/generated/terrain.ts            │
+│                                                 { plates: {…}, overview: {…},        │
+│                                                   terrain: plates.matterhorn }       │
+│  sidecar + corrections + regions + plate DEMs ─► photos:build ─► generated/photos.ts │
+│                                                 (region, plate, uv-in-plate, DEM m)  │
+├────────────────────────────────────────────────────────────────────────────────────┤
+│ DATA LAYER (typed, server-imported)                                                  │
+│  data/schemas/{region,terrain,photo}.ts   data/regions/regions.json                  │
+│  data/home.ts (+ waypointIds)   data/photos/editorial.ts   lib/photos/routes.ts      │
+│  lib/photos/view-model.ts → seriesViews(region), photoViews, photoHref, regionHref   │
+├────────────────────────────────────────────────────────────────────────────────────┤
+│ ROUTES  app/(site)/photos/                                                           │
+│   layout.tsx {children}{modal}                                                       │
+│   page.tsx            /photos            ?view=map → AlpsOverview | grid | carousel  │
+│   [region]/page.tsx   /photos/<region>   ?view=map → RegionPlate  | grid | carousel  │
+│   [region]/[slug]/page.tsx  + opengraph-image.tsx   full photo page + JSON-LD        │
+│   [region]/opengraph-image.tsx                                                       │
+│   @modal/{default,page}.tsx → null · @modal/[region]/page.tsx → null                 │
+│   @modal/(.)[region]/[slug]/page.tsx → LightboxDialog + PhotoViewer                  │
+│  next.config.ts redirects(): 4 frozen legacy slugs → /photos/zermatt/<slug> (308)    │
+│  proxy.ts: 404 decision for /photos/<region> and /photos/<region>/<slug>             │
+├────────────────────────────────────────────────────────────────────────────────────┤
+│ SHARED PRIMITIVES (server, zero JS)                                                  │
+│  ContourField(plate, lod) · SheetMargin(plate) · PlateSheet(plate, photos)           │
+│  SiteFooter = SheetMargin(home plate) + home-waypoint ticks (unchanged pixels)       │
+└────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Component Responsibilities
+### Component Responsibilities (NEW / MODIFIED)
 
-| Component | Responsibility | Implementation | New/Mod/Del |
-|-----------|----------------|----------------|-------------|
-| `app/(site)/layout.tsx` | One nav and footer for every content route; `<main id="main-content" tabIndex={-1}>`; MotionProvider | Server Component | **NEW** |
-| `components/site/SiteNav.tsx` | Single nav (replaces `Header` and `GlassmorphismNav`). Fixed position; transparent over the Home hero; skip link; `viewTransitionName: 'site-nav'` keeps it anchored | Client (pathname for active link, scroll state) | **NEW** |
-| `components/site/SiteFooter.tsx` | Identity, real links, "© swisstopo" attribution, ContourField strip | Server | **MOD** (rename of `Footer.tsx`, drops framer-motion) |
-| `components/site/SiteChrome.tsx` | `SiteNav + main + SiteFooter` wrapper, reused by `(site)/layout` **and** root `not-found`/`global-error` | Server | **NEW** |
-| `data/site.ts` | Single source for identity ("Tim Lui"), nav links, social links, metadata base | Static TS | **NEW** |
-| `components/terrain/AscentHero.tsx` | Scroll track + sticky stage; server-rendered fallback (LCP) + accessible waypoint list | Server | **NEW** (replaces `Hero3DMountain`) |
-| `components/terrain/TerrainStage.tsx` | Capability decision, `useScroll` source, offscreen pause, dynamic import of canvas | Client | **NEW** |
-| `components/terrain/TerrainCanvas.tsx` (+ `TerrainMesh`, `contourMaterial.ts`, `CameraRig`, `Waypoints3D`) | R3F scene, `frameloop="demand"`, contour shader | Client, `dynamic(..., {ssr:false})` only | **NEW** (replaces `MountainTerrain3D`) |
-| `components/terrain/AltimeterRail.tsx` | 1,626 m → 4,478 m readout bound to the same scroll MotionValue | Client | **NEW** |
-| `components/terrain/ContourField.tsx` / `TerrainFallback.tsx` | Shared contour surface (hero fallback, photo Map, footer, 404/offline) | Server | **NEW** (replaces `ContourBackground`) |
-| `app/(site)/photos/layout.tsx` | Renders `{children}{modal}`; marks gallery `inert` while modal active | Server + tiny client wrapper | **NEW** |
-| `components/photos/PhotoViews.tsx` | Map / Grid / Carousel switch driven by `?view=`; same-route crossfade | Client | **NEW** (replaces `PhotosPageClient`) |
-| `components/photos/Lightbox.tsx` | Overlay shell: role=dialog, focus, Escape/close → `router.back()`, prev/next → `router.replace` | Client | **NEW** (replaces `ImageDetailModal`) |
-| `components/photos/PhotoViewer.tsx` (+ `ExifStrip`, `Hotspot`) | Gallery-black photo + EXIF strip + hotspot callouts; shared by modal and full page | Server-renderable | **NEW** (`Hotspot` from `InteractiveHotspot`) |
-| `components/projects/RoutePanel.tsx` | Project index panel | Server | **NEW** (replaces `ProjectCard`) |
-| `components/projects/CaseStudy.tsx` + `blocks/*` | Case-study template; block renderer driven by the typed highlight union | Server (terminal is a client island) | **NEW** (replaces `ProjectHighlights`, `FeatureShowcase`) |
-| `components/projects/TrailGradeMark.tsx` + `lib/trail-grade.ts` | Risk → trail grade mapping, used everywhere (terminal, case study, legend) | Server + pure fn | **NEW** |
-| `components/roadmap/RouteLog.tsx` | Route-log roadmap | Server + filter island | **MOD** (`RoadmapTimeline`/`RoadmapProgress` restyle) |
-| `components/contact/SummitRegister.tsx` | Contact page form | Client | **MOD** (`FeedbackForm` restyle; keep API/CSRF wiring) |
-| `components/edge/OffTrail.tsx` | Body shared by 404 / offline / error | Server | **NEW** |
+| Component / file | Responsibility | Status |
+|---|---|---|
+| `data/schemas/region.ts` | `Region` (id, name, sheetTitle, country, intro, plate, landmark, photo membership, optional flyover clip) and `RegionId` | **NEW** |
+| `data/regions/regions.json` | The series registry: hand-written, read by the generators (JSON so `.mjs` scripts and Node type-stripping need no TS import of copy) | **NEW** |
+| `data/terrain/plates.json` | Plate registry: id, product, CRS, extent, cell size, LOD set, poster sizes, `threeD` flag. Separate from regions on purpose (§1.2) | **NEW** |
+| `data/schemas/terrain.ts` | `TerrainSource` becomes a discriminated union on `product`. `TerrainMeta` becomes per-plate with an optional heightmap and optional summit; an `OverviewMeta` is added; flat prefixed asset URL regex | **MODIFIED** |
+| `data/schemas/photo.ts` | `PhotoFacts` gains `region`, `plate`, `elevation.product`. `PhotoId` regex widened (drone / second camera). `timeZone` enum widened, or keep Zurich and document that CET/CEST is shared | **MODIFIED** |
+| `scripts/terrain/fetch-dem.mjs` → `fetch-dem.mjs --plate <id>` + `scripts/terrain/sources/*.mjs` | One adapter per product; the reprojection to a square metric grid lives here only | **MODIFIED** + **NEW** adapters |
+| `scripts/terrain/build-terrain.mjs` | Loops over all plates plus the overview in one run; per-plate prefixes; one global stale-file sweep; Zermatt (`matterhorn`) outputs byte-identical | **MODIFIED** |
+| `scripts/photos/build-photo-data.mjs` | Reads regions + plates; samples each photo's height on **its plate's** DEM; checks membership (every sidecar id in exactly one region) and that the position is inside the plate | **MODIFIED** |
+| `lib/geo.ts` (+ `lib/geo/laea.ts`, and `lib/geo/utm.ts` only if a non-LV95 plate ships) | Generic `toPlateXY(wgs84, crs)`; LAEA forward for the overview; UTM only when needed | **MODIFIED** / **NEW** |
+| `data/home.ts` | Adds `waypointIds` (the four v2.0 ids, frozen) | **MODIFIED** |
+| `lib/ascent/waypoints.ts`, `lib/ascent/summit.ts` | Filter to `home.waypointIds`; `lowestDemM` computed over the home waypoints (no longer generated over all photos) | **MODIFIED** |
+| `lib/photos/view-model.ts` | Split per-photo derivation from Home ordering; `seriesViews(region)` (DEM-height order inside a region), `photoHref`, `regionHref`; `factSource('dem')` names the plate's product; strip gains an LV95 row for CH regions (PHOTO-F4) | **MODIFIED** |
+| `lib/photos/routes.ts` | Slim, data-only route list (region ids, `{region, slug}` pairs, the frozen legacy map) for proxy, sitemap, saved-pages, e2e | **NEW** |
+| `app/(site)/photos/page.tsx` | Becomes the album index: Map view = Alps overview with one pin per region; Grid/Carousel = all photos grouped by series | **MODIFIED** |
+| `app/(site)/photos/[region]/page.tsx` | Series page: intro, local plate (Map), Grid, Carousel, optional flyover video, SheetMargin | **NEW** |
+| `app/(site)/photos/[region]/[slug]/page.tsx` | Full photo page (moved from `[slug]`), JSON-LD | **MOVED + MODIFIED** |
+| `app/(site)/photos/@modal/(.)[region]/[slug]/page.tsx` | Intercepted lightbox (moved from `(.)[slug]`) | **MOVED** |
+| `app/(site)/photos/@modal/[region]/page.tsx` | Returns `null`, so a soft navigation back to a series page closes the modal | **NEW** |
+| `app/(site)/photos/[region]/opengraph-image.tsx` | Series card (region contour + sheet title) | **NEW** |
+| `app/(site)/photos/[region]/[slug]/opengraph-image.tsx` | Photo card, moved; region-aware contour and sheet title | **MOVED + MODIFIED** |
+| `lib/og/template.tsx` | `contourDataUrl(plate)`, card sheet title from the region, not `data/sheet.ts` | **MODIFIED** |
+| `next.config.ts` | `redirects()` with the 4 frozen legacy slugs (pages **and** their old card URLs) | **MODIFIED** |
+| `proxy.ts` | Region- and pair-aware miss detection; import `lib/photos/routes.ts`, not the view-model | **MODIFIED** |
+| `app/sitemap.ts` | Region pages + nested photo URLs; legacy URLs dropped | **MODIFIED** |
+| `components/terrain/ContourField.tsx` | Takes a plate (default: home plate) | **MODIFIED** |
+| `components/site/SheetMargin.tsx` | The scale / equidistance / extent / last surveyed / source block, extracted from SiteFooter and parameterised by plate | **NEW** (extraction, zero visual diff in the footer) |
+| `components/site/SiteFooter.tsx` | Renders `SheetMargin(home plate)`; ticks from the home waypoints only | **MODIFIED** (pixels unchanged) |
+| `components/photos/MapSheet.tsx` → `PlateSheet` | Plate-parameterised local map (hillshade, hero contours, pins, landmark) | **MODIFIED** (generalised) |
+| `components/photos/AlpsOverview.tsx` | Overview contour map, one pin and plate outline per region, links to `/photos/<region>` | **NEW** |
+| `components/photos/PhotoViewer.tsx` | Gets the **series** list; uses `photoHref` in `replaceState` and the title-keeper; Share button (PHOTO-F2) | **MODIFIED** |
+| `components/photos/ShareButton.tsx` | Web Share with a copy-link fallback (client island) | **NEW** |
+| `components/photos/FlyoverClip.tsx` | Drone clip figure (server `<video>`, like `DemoClip`) | **NEW** |
+| `data/schemas/media-manifest.ts`, `scripts/media/build-clip.mjs`, `check-served-images.mjs` | Clip kinds with per-kind byte budgets; drone clips keyed by region | **MODIFIED** |
+| `lib/jsonld.ts` + `components/seo/JsonLd.tsx` | Typed builders + escaped serialiser; server component emitting `<script type="application/ld+json">` | **NEW** |
+| `lib/demo-terminal.ts`, `components/projects/DemoTerminal.tsx`, `components/projects/sections/Demo.tsx` | `stepTo`/`step(dir)` pure transitions + Prev/Next controls; a server-rendered transcript | **MODIFIED** |
+| `components/projects/TerminalTranscript.tsx` | Static `<details>` transcript (no JS) | **NEW** |
+| `lib/saved-pages.ts` | Catalog gains series rows (`label: 'Series'`) and nested photo hrefs | **MODIFIED** |
+| `e2e/routes.ts` | Adds `/photos/<region>` and a nested photo path, so the audit gate and visual baselines cover them | **MODIFIED** |
 
 ---
 
-## Recommended Project Structure
+## Recommended Project Structure (delta only)
 
 ```
-app/
-├── layout.tsx                 # MOD: metadata {title template, metadataBase}, keep await headers()
-├── globals.css                # MOD: tokens v2 + v1 aliases, motion tokens, VT CSS, visible scrollbar
-├── not-found.tsx              # MOD: <SiteChrome><OffTrail kind="404"/></SiteChrome>
-├── global-error.tsx           # NEW: own <html><body>, static OffTrail, no motion
-├── api/feedback/route.ts      # unchanged
-└── (site)/
-    ├── layout.tsx             # NEW: <SiteChrome>{children}</SiteChrome> + MotionProvider
-    ├── page.tsx               # MOVED from app/page.tsx; becomes Server Component
-    ├── error.tsx              # MOVED from app/error.tsx (renders inside chrome)
-    ├── not-found.tsx          # NEW: for notFound() in [slug]/[id] (inside chrome)
-    ├── photos/
-    │   ├── layout.tsx         # NEW: {children}{modal}
-    │   ├── page.tsx           # MOVED+MOD: server, reads searchParams.view
-    │   ├── [id]/page.tsx      # NEW: full gallery-black page + generateMetadata
-    │   └── @modal/
-    │       ├── default.tsx    # NEW: return null  (REQUIRED, see section 2)
-    │       ├── page.tsx       # NEW: return null  (closes modal on Link to /photos)
-    │       └── (.)[id]/page.tsx  # NEW: <Lightbox><PhotoViewer/></Lightbox>
-    ├── projects/page.tsx      # MOVED+MOD: server, RoutePanels (hex grid retired)
-    ├── projects/[slug]/page.tsx  # MOVED+MOD: <CaseStudy/> + generateMetadata
-    ├── roadmap/page.tsx       # MOVED+MOD
-    ├── contact/page.tsx       # MOVED+MOD
-    └── offline/page.tsx       # MOVED+MOD: Server Component, zero client JS
-components/
-├── site/       SiteNav, SiteFooter, SiteChrome, SkipLink
-├── terrain/    AscentHero, TerrainStage, TerrainCanvas, TerrainMesh, contourMaterial.ts,
-│               CameraRig, Waypoints3D, AltimeterRail, AscentScrollProvider,
-│               ContourField, TerrainFallback, useTerrainCapability.ts, useHeightmap.ts
-├── photos/     PhotoViews, PhotoMap, PhotoGrid, PhotoCarousel, Lightbox, PhotoViewer, ExifStrip, Hotspot
-├── projects/   RoutePanel, CaseStudy, blocks/{Metrics,RiskScale,Pricing,Stack,List}Block, TrailGradeMark, DemoTerminal
-├── roadmap/    RouteLog, RoadmapFilters
-├── contact/    SummitRegister
-├── edge/       OffTrail
-└── providers/  MotionProvider
+app/(site)/photos/
+├── layout.tsx                       # unchanged: {children}{modal}
+├── page.tsx                         # MOD: album index; ?view=map is the Alps overview
+├── [region]/
+│   ├── page.tsx                     # NEW: series page (plate / grid / carousel)
+│   ├── opengraph-image.tsx          # NEW: series card
+│   └── [slug]/
+│       ├── page.tsx                 # MOVED from [slug]/page.tsx (+ JSON-LD)
+│       └── opengraph-image.tsx      # MOVED from [slug]/opengraph-image.tsx
+└── @modal/
+    ├── default.tsx                  # unchanged (null)
+    ├── page.tsx                     # unchanged (null at /photos)
+    ├── [region]/page.tsx            # NEW (null at /photos/<region>)
+    └── (.)[region]/[slug]/page.tsx  # MOVED from (.)[slug]
 data/
-├── schemas.ts                 # NEW: zod schemas = source of truth; types via z.infer
-├── types.ts                   # MOD: re-export inferred types; HighlightValue removed
-├── site.ts                    # NEW: identity + links
-├── landscapes.ts              # MOD: editorial only (title, story, alt, annotations, overrides)
-├── photos.ts                  # NEW: merge landscapes + generated photo-meta → Photo[]
-├── projects.ts                # MOD: typed highlight blocks
-└── generated/                 # NEW, committed, "AUTO-GENERATED — do not edit" header
-    ├── terrain.ts  photo-meta.ts  tokens.ts
+├── regions/regions.json             # NEW: series registry (hand-written)
+├── terrain/plates.json              # NEW: plate registry (hand-written)
+├── terrain/source/<plate>/          # MOVED: matterhorn/{source.json, dem-10m.png} + new plates
+├── terrain/source/overview/         # NEW: coarse Alps raster
+├── schemas/region.ts                # NEW
+└── generated/terrain.ts             # MOD: { plates, overview } + `terrain` = plates.matterhorn
 lib/
-├── animations.ts              # MOD: keep path (24 importers); add CSS-var helpers
-├── trail-grade.ts             # NEW
-└── (useHexGrid.ts, useGlowIntensity.ts DELETED)
-scripts/
-├── optimize-images.mjs        # MOD: drop legacy -thumb/-medium/-large handling
-├── terrain/build-terrain.ts   # NEW (manual: npm run terrain)
-├── photos/extract-exif.ts     # NEW (prebuild with --check)
-├── tokens/tokens.ts           # NEW (replaces verify-contrast.mjs logic; emits tokens.ts)
-├── tokens/check-design-tokens.mjs  # NEW (guard)
-└── inject-build-hash.mjs      # MOD: also inject precache list of hashed terrain assets
-assets/photos-original/        # NEW home for EXIF-bearing originals (moved out of /public)
-public/terrain/                # NEW, content-hashed filenames
-.cache/dem/                    # gitignored raw swissALTI3D tiles
+├── photos/routes.ts                 # NEW: slim route list (proxy, sitemap, saved-pages)
+├── geo/laea.ts                      # NEW: EPSG:3035 forward for the overview
+└── jsonld.ts                        # NEW
+public/terrain/
+├── matterhorn-contours-hero.<h>.svg … # prefixed, flat
+├── aosta-contours-hero.<h>.svg …
+└── overview-contours.<h>.svg, overview-hillshade-<w>.<h>.{avif,webp}
 ```
 
 ### Structure Rationale
 
-- **`components/<domain>/` folders:** the flat 38-file `components/` mixes dead playground code with live code. Domain folders make the Phase 12 cleanup checkable ("nothing outside these folders").
-- **`data/generated/` separate from hand-authored data:** generated files are never edited by hand, carry a header comment, and are checked for drift with `--check`. Editorial facts (story, alt, location overrides) stay in `landscapes.ts`.
-- **Keep `lib/animations.ts` at its current path:** 24 files import framer-motion and many import `EASING/DURATION`. Changing the path creates churn for no benefit.
-- **Originals out of `/public`:** today the EXIF-bearing originals (`public/images/landscapes/*.jpg`) are publicly served, including GPS. They are build inputs, not web assets.
+- **Flat prefixed asset names** keep the guard's `HASH_NAME`, the `TerrainAssetUrl` regex, the `/terrain/:path*` cache header, the SW `startsWith('/terrain/')` rule and the proxy matcher exclusion unchanged (F14).
+- **Registries as JSON, copy in TS:** the generators (`.mjs`, Node type-stripping) must read region membership and plate extents. Editorial copy stays in `editorial.ts`, which the generators never import.
+- **Keep the `terrain` export** (alias of the home plate) so the 11 Home and footer consumers compile unchanged. New code reads `plates[id]`.
 
 ---
 
-## 1. Route-group layout `app/(site)/`
+## 1. Data model
 
-**Decision:** put **every** content route, Home included, under `app/(site)/`. `app/layout.tsx` stays the single root layout. Do **not** keep Home outside the group: the nav would remount on every Home↔page navigation, and a second nav component would come back.
+### 1.1 Entities
 
-**How Home keeps a full-bleed hero:** SiteNav is `position: fixed` on every page. The layout adds no top padding. Each non-home page starts with a `PageHeader` that reserves `var(--nav-h)`. The Home hero is `h-svh` under the transparent nav. SiteNav switches from transparent to solid with an IntersectionObserver sentinel at the end of the hero (`data-over-hero`), which avoids pathname branching in the server layout. *(ui-ux-pro-max: "skip to main content link" and "visible focus on every control" are High severity. SiteNav owns the skip link to `#main-content`. Keep `#main-content`, which `e2e/homepage.spec.ts:9` asserts.)*
-
-**Verified Next 16.4 behaviour that matters here:**
-
-| Concern | Behaviour (docs) | Action |
-|---------|------------------|--------|
-| Full reloads | Happen only when navigating between **different root layouts**. A single root plus a group layout means soft navigations, and the nav persists | None |
-| Unmatched URLs | Root `app/not-found.tsx` handles **all** unmatched URLs and renders inside the **root** layout only, **not** inside `(site)/layout` | Root `not-found.tsx` must render `<SiteChrome>` itself. `(site)/not-found.tsx` covers `notFound()` from `[slug]`/`[id]` inside the chrome |
-| `global-not-found.js` | Experimental; only needed for **multiple root layouts** | **Do not use** |
-| `error.tsx` | Wraps the children of its segment's layout | `(site)/error.tsx` renders inside the nav/footer. Add `app/global-error.tsx` (own `<html>/<body>`) for root-layout failures |
-| Conflicting paths | `app/page.tsx` and `app/(site)/page.tsx` both resolve to `/` and error | **Move** (git mv), never copy |
-
-**CSP / `await headers()`:** no change. The root layout keeps `await headers()`, so every route, including root `not-found`/`global-error`, is dynamically rendered and gets nonces. The CSP guide confirms nonces need dynamic rendering for all pages and that PPR/`cacheComponents` is **incompatible** with nonce CSP. Do not enable `cacheComponents` in v2. Two proxy changes:
-1. Add `images|terrain` to the matcher exclusion, so static assets don't invoke the proxy.
-2. Keep `style-src 'unsafe-inline'`: Motion, `maskImage` inline styles and React's `viewTransitionName` styles depend on it. Note in PITFALLS that moving to `style-src 'nonce-…'` would break them.
-
-**Metadata:** root `metadata = { metadataBase, title: { default: 'Tim Lui: Photography & Engineering', template: '%s · Tim Lui' }, description, openGraph }`. Every page exports `metadata` or `generateMetadata` (`projects/[slug]`, `photos/[id]` with OG image = photo). For that, `page.tsx` files must stop being `'use client'`. Next's route announcer reads `document.title` first, so unique titles also fix screen-reader route announcements.
-
-**What breaks, and how to handle it:**
-
-| Area | Breakage | Fix |
-|------|----------|-----|
-| Imports | None from the move itself (`@/` alias, route-group folders are transparent to TS/Jest) | Remove `Header`/`Footer` imports from the 10 pages in the same commit |
-| `app/page.tsx` `'use client'` + `Hero3DMountain` contains `GlassmorphismNav` | Double nav once the layout adds SiteNav | Phase 7: temporarily strip `GlassmorphismNav` from `Hero3DMountain`. Phase 9 replaces the hero |
-| Jest | `collectCoverageFrom: 'app/**'` still matches. `ProjectCard.test`, `GalleryGrid.test` are bound to retired components | Rewrite them alongside their replacements in Phases 10/11 (rewrite, don't delete, per the PROJECT mandate) |
-| E2E `homepage.spec` | Nav link names (`/Home/`, `/Photos/`, `/Projects/`) match `.first()`. Fine if SiteNav keeps those labels | Keep the labels or update the spec |
-| E2E `photos.spec` | Heading "Landscape Gallery", buttons "View details for", "3D Carousel", `getByRole('dialog')` | Phase 10 rewrite: thumbnails become **links** (`/photos/[id]`), so assert `toHaveURL`, back closes, Escape closes, deep link renders the full page |
-| E2E `projects.spec` | Heading "Programming Projects", links "View details for" | Keep the accessible name pattern on RoutePanel, or update |
-| E2E `contact-form.spec` | Heading "Get in Touch", textbox "Email", button "Send Message", a checkbox | Keep the labels in SummitRegister (copy can change, but the accessible names are a contract) |
-| Service worker | Precaches `'/'`, `'/offline'`; offline HTML references contour asset | Extend the precache list with hashed `/terrain/contours-strip.*.svg` via `inject-build-hash.mjs` |
-
----
-
-## 2. Lightbox routing: intercepting + parallel routes (recommended) vs client state
-
-**Recommendation: intercepting + parallel routes, scoped to `photos/layout.tsx`.**
-
-| Criterion | `@modal` + `(.)[id]` intercept | Client state (`?photo=id` or `useState`) |
-|-----------|-------------------------------|-------------------------------------------|
-| Shareable URL `/photos/[id]` | Yes; refresh/deep link renders the **full page** (docs) | `?photo=` yes; `useState` no |
-| Back closes, forward reopens | Built in (docs list exactly this) | `?photo=` yes, with manual history; `useState` no |
-| Per-photo `generateMetadata`/OG | Yes (full page) | No |
-| View Transitions | Route navigation **is** a transition, so `<ViewTransition>` fires automatically | Must wrap `setState` in `startTransition` |
-| Complexity | 4 extra files, `default.tsx` mandatory, interception rules | Lowest |
-| Fit with Map/Grid/Carousel `?view=` | `/photos?view=map` → modal → back restores `?view=map` | Same |
-
-**File layout and rules (Next 16.4 docs):**
-- `photos/@modal/default.tsx → null`. **Mandatory.** In 16.x a missing `default.js` for a named slot **errors** on hard navigation instead of returning 404.
-- `photos/@modal/page.tsx → null`. Soft navigation to a URL that no longer matches the slot leaves the modal **visible**, so `/photos` must match a null page. Navigations to other sections unmount `photos/layout`, so no `[...catchAll]` is needed. This is an advantage of scoping the slot to photos rather than to `(site)`.
-- `(.)[id]`: `(.)` counts **route segments**. `@modal` slots and `(site)` groups are not segments, so `(.)` from inside `photos` targets `/photos/[id]`.
-- Interception only applies to soft navigation **from** the photos subtree. From Home (waypoint click) the user lands on the full `/photos/[id]` page. That is the desired behaviour: a waypoint is a destination, not an overlay. **[SPIKE]** confirm in Phase 10 (this depends on Next's `Next-Url`-based interception rewrite).
-
-**Lightbox shell: overlay + `inert`, not `<dialog>.showModal()`.** `<dialog>` puts content in the browser top layer, and `showModal()` has to run in an effect after React's commit. A View Transition captures the new state at commit time, so the modal target would still be closed and the shared-element pair would not form. **[SPIKE]** If a `useLayoutEffect` + `showModal()` prototype morphs correctly, `<dialog>` is fine. Otherwise use:
-- `<div role="dialog" aria-modal="true" aria-labelledby>`, fixed, gallery-black.
-- `inert` on the gallery wrapper (photos layout reads `usePathname()`) and on `#site-nav`/`#site-footer` while open.
-- Focus the close button on mount. On unmount, restore focus to `[data-photo-id="…"]` in the still-mounted grid.
-- Escape / close button → `router.back()` (a modal implies in-app history, because deep links render the full page).
-- Prev/next → `router.replace('/photos/<id>', { scroll: false })`, so Back exits the lightbox instead of stepping back through every photo.
-- Thumbnail `<Link scroll={false}>` to stop the grid jumping when the slot renders. **[SPIKE]**
-- Lock scroll with `overflow: hidden` on `<html>`, plus `scrollbar-gutter: stable` (v2 makes scrollbars visible, so hiding them would shift layout).
-*(ui-ux-pro-max react/a11y: "Focus trap in modals, return focus on close" is High severity. The nextjs-stack DB had no modal/lightbox entries; this falls back to the Next docs.)*
-
-**View Transitions interplay (verified constraints + design):**
-- `name` must be **unique among mounted elements app-wide**. With an intercepted modal the grid **stays mounted**, so the thumbnail and modal image would both carry `photo-<id>`, which is an error. A pair only forms when one boundary is **deleted** and the other **inserted**. Pattern:
-  ```tsx
-  // PhotoGrid (client): activeId from usePathname() → '/photos/<id>'
-  {p.id === activeId
-    ? <Thumb photo={p} />                                   // boundary removed → "deleted" side
-    : <ViewTransition name={`photo-${p.id}`} share="morph" default="none"><Thumb photo={p} /></ViewTransition>}
-  // PhotoViewer (modal + full page)
-  <ViewTransition name={`photo-${id}`} share="morph" default="none"><Image … /></ViewTransition>
-  ```
-- **Requires React 19.3** (`import { ViewTransition } from 'react'`) and Next ≥16.4 for `Link transitionTypes`.
-- Pairs don't form if either side is **offscreen**. Map-view markers have no image, so Map → lightbox does a plain enter animation. That is acceptable.
-- **Back button:** the Next guide says the shared morph still applies on browser back. React's docs say animations are **skipped for legacy `popstate`** navigations. `router.back()` is a popstate. **[SPIKE]** Plan for "open morphs, close may be instant". Don't build the close interaction around an animation.
-- SiteNav carries `viewTransitionName: 'site-nav'` with `animation: none` so it never slides. Add `::view-transition { pointer-events: none }` and the reduced-motion block (section 7).
-- Grid/Map/Carousel switching: `router.replace('?view=map', { scroll: false })` is a transition. Wrap the view in `<ViewTransition key={view} name="photo-view" share="auto" enter="auto" default="none">` for the "same place, different content" crossfade. Don't use page-level Motion `AnimatePresence` alongside route VTs.
-
----
-
-## 3. Generated data: location, typing, ordering, commit policy
-
-| Output | Location | Why | Consumer |
-|--------|----------|-----|----------|
-| Photo facts (EXIF, `capturedAt`, GPS, altitude, `terrainUV {u,v}`, ground elevation, width/height, `blurDataURL`) | `data/generated/photo-meta.ts` | Small, structured, type-checked by `tsc`, tree-shaken, zero requests | `data/photos.ts` → pages |
-| Terrain metadata (LV95 bbox, grid size, min/max m, contour interval, hashed asset paths, camera route points, waypoint UVs) | `data/generated/terrain.ts` | One coordinate contract shared by shader, SVG map and EXIF projection | TerrainCanvas, PhotoMap, ContourField, extract-exif |
-| Heightmap | `public/terrain/heightmap.<hash>.png`, **terrain-RGB encoded** (`h = -10000 + (R·65536 + G·256 + B)·0.1`) | Browsers decode PNG to 8-bit/channel. A 16-bit grayscale PNG loses precision (≈11 m steps over 2,852 m), and terrain-RGB keeps 0.1 m | TerrainCanvas only (client) |
-| Hillshade poster | `public/terrain/hillshade.<hash>.webp` (computed from the same DEM with sharp) | Static fallback looks like the 3D terrain without needing headless WebGL | TerrainFallback (LCP) |
-| Contours | `public/terrain/contours-{hero,map,strip}.<hash>.svg` (d3-contour, coordinates rounded, LODs by interval) | Cacheable, zero JS, colourable via CSS `mask-image` | ContourField, PhotoMap, footer, 404/offline |
-| Token mirror (sRGB hex for WebGL/canvas) | `data/generated/tokens.ts` | Shaders can't read OKLCH CSS vars cheaply, and Tailwind prunes unused theme vars | contourMaterial uniforms |
-
-**Typing:** `data/schemas.ts` (zod 4, already a dependency) is the source of truth. Types come from `z.infer`, and data modules use `satisfies`:
 ```ts
-// data/generated/photo-meta.ts   (AUTO-GENERATED by scripts/photos/extract-exif.ts. Do not edit.)
-import type { PhotoMeta } from '@/data/schemas';
-export const photoMeta = {
-  'img-0605': { capturedAt: '2021-09-06T07:12:31+02:00', camera: 'Canon EOS 6D Mark II', /* … */ terrainUV: { u: 0.41, v: 0.62 } },
-} as const satisfies Record<string, PhotoMeta>;
+// data/schemas/region.ts  (imports only 'zod'; erasable TS)
+export const RegionId = z.string().regex(/^[a-z]+(-[a-z]+)*$/);       // URL segment, one-way once shipped
+export const Region = z.strictObject({
+  id: RegionId,                          // 'zermatt'
+  name: z.string().min(1),               // 'Zermatt'
+  sheetTitle: z.string().min(1),         // 'Zermatt – Matterhorn' (replaces data/sheet.ts per region)
+  country: z.enum(['CH', 'IT', 'AT', 'FR', 'DE']), // drives PHOTO-F4 (LV95 only for 'CH')
+  intro: z.string().min(1),              // ≤ 3 sentences, Tim's copy (D-05 style)
+  plate: z.string(),                     // PlateId in data/terrain/plates.json
+  landmark: z.strictObject({ name: z.string(), officialM: z.number().int(), officialRef: z.url(), lat: Coord4, lon: Coord4 }),
+  photos: z.array(PhotoId).min(1),       // membership; display order is derived (DEM height, ties by id)
+  flyover: ClipId.optional(),            // drone clip, §6
+});
+export const Regions = z.strictObject({ schemaVersion: z.literal(1), regions: z.array(Region).min(1) })
+  .refine(/* ids unique; every photo id in exactly one region; ids ∩ LEGACY_PHOTO_SLUGS = ∅ */);
 ```
-Client components use `import type` only, so zod never enters the client bundle. A Jest test (`data/__tests__/schemas.test.ts`) runs `.parse()` over everything for invariants TS can't express: unique ids, `terrainUV` in [0,1], roadmap ids exist. The generators validate their own output with the same schemas before writing.
 
-**Editorial overrides:** `landscapes.ts` keeps `title/story/alt/annotations` and gains `locationOverride?: { name; reason }`. That covers the waterfall: EXIF GPS 46.0081 N 7.7385 E is the gorge, not the Teufelsschlucht. `capturedAt` comes **only** from EXIF, which removes the filename-derived `captureDate` bug.
+`data/home.ts` gains `waypointIds: ['img-0605', 'img-0629', 'img-0662', 'r004-011']`, frozen.
 
-**Script order and commands:**
-```jsonc
-"terrain":        "node scripts/terrain/build-terrain.ts",          // MANUAL. Network + heavy. Never in prebuild
-"photos:meta":    "node scripts/photos/extract-exif.ts",            // writes data/generated/photo-meta.ts
-"prebuild":       "node scripts/optimize-images.mjs && node scripts/photos/extract-exif.ts --check",
-"lint":           "eslint . && node scripts/tokens/check-design-tokens.mjs && node scripts/tokens/tokens.ts --check",
-"postbuild":      "node scripts/inject-build-hash.mjs"
-```
-- Dependency order: **terrain → exif** (exif projects GPS into `terrain.ts` UV space and samples ground elevation). `optimize-images` is independent.
-- `next dev` stays fast: `dev` runs no generators, and committed outputs mean dev, Jest and `tsc` work on a fresh clone.
-- `--check` regenerates in memory and fails on a diff. That catches "changed a photo, forgot to regenerate" without writing during Vercel builds.
-- **Commit generated assets.** Reasons: CI `tsc` needs them; Vercel builds must not depend on swisstopo availability; outputs are reviewable; determinism is required anyway (sorted keys, fixed decimals, no timestamps, content-hash filenames).
-- Scripts in `.ts` run on Node 24 native type-stripping. That means erasable syntax only, relative imports with explicit `.ts` extension, and `allowImportingTsExtensions` (valid with `noEmit`). Fallback: `tsx`. **Bump CI to Node 24.**
-- Cache headers: add `/terrain/:path*` → `public, max-age=31536000, immutable` in `next.config.ts`. This is safe only because filenames are content-hashed.
+### 1.2 Plate ≠ region (recommended separation)
+
+A **plate** is a terrain sheet: source raster, extent, assets. A **region** is an editorial series that points at one plate. Home points at the `matterhorn` plate directly.
+
+Why separate: new Zermatt photos may fall outside today's 11 × 11 km extent (Monte Rosa, Dufourspitze at about E 2'633'000, is east of E 2'627'000). Growing that extent changes Home: heightmap, camera route, posters, every Home baseline and the HOME-08 budget (D-14: "costly to change"). With plates separate, the `zermatt` region can move to a larger `zermatt-wide` plate while Home keeps `matterhorn` byte for byte. While all Zermatt photos fit, both point at `matterhorn`.
+
+### 1.3 Photo → region and where heights come from
+
+- Membership is **explicit** (`regions[].photos`), not inferred from GPS. Explicit is reviewable, and plates can overlap.
+- `photos:build` checks: every sidecar id is in exactly one region; its position projects inside **its** plate (WR-01 stays, per plate); its height is the bilinear sample of **its plate's** native source raster (D-17 unchanged, sampler unchanged). `Elevation` becomes `{ source: 'dem', product, m }`, so the strip and hotspots can say "Source: swissALTIRegio terrain model" or the second product's name. Today that label is hard-coded in `factSource('dem')`.
+- **Photos outside swisstopo coverage:** the height comes from the plate's own source (the second product), with the same sampler, because the committed plate raster is already a square metric grid (§2.1). Height systems differ (LN02, EGM2008, national datums) by well under 1 m. That does not matter at whole-metre display; record `heightSystem` per source anyway.
+- `uv` stays `[0,1]` in the photo's plate. Every consumer that places a pin must use the photo's plate, never the global `terrain`.
+- `lowestDemM` stops being generated over all photos. Compute it in `lib/ascent` over the home waypoints (still 1,617 m). If it stays generated over all photos, the first lower photo anywhere in the Alps silently moves Home's altimeter rail.
+
+### 1.4 CI staleness checks at N plates and 2 sources
+
+`data:check` keeps its shape. Each step simply covers more inputs:
+
+| Check | Change |
+|---|---|
+| `terrain:build --check` | Iterates plates + overview; per-plate sha256 of the committed source; the existing artifact rules per type (SVG/PNG/terrain.ts byte-exact or pixel-exact; lossy posters by hash/size/metadata/sourceSha256) |
+| `photos:build --check` | Also reads `regions.json` and `plates.json`; byte-exact `photos.ts` |
+| `photos:exif`, `photos:derive --check` | Unchanged mechanics; more ids (widened `PhotoId`) |
+| `clip:derive --check` | Clip kinds with per-kind budgets |
+| New Jest data tests | Regions parse; membership complete; legacy slugs ∩ region ids = ∅; photo slugs globally unique (VT names and the legacy map rely on it); per-plate asset budget (§2.4) |
 
 ---
 
-## 4. Tokens v2 migration, guard, contrast
+## 2. Terrain pipeline
 
-**Layering in `app/globals.css`:**
-```css
-@import "tailwindcss";
+### 2.1 Per-plate build
 
-:root {                         /* L1 primitives: always emitted, readable by JS, NO utilities generated */
-  --terrain-950: oklch(…); --snow-50: oklch(…); --survey-red: oklch(…); --gallery-black: oklch(0.12 0 0);
-  --duration-hover: 350ms; --duration-enter: 450ms; --duration-settle: 500ms;   /* motion (section 7) */
-}
+**Rule: reproject once, at fetch time, into a square metric grid.** Then `build-terrain` stays source-agnostic and deterministic.
 
-@theme {
-  --color-*: initial;           /* remove ALL stock palette utilities (bg-gray-*, text-blue-* emit nothing) */
-  --color-white: #fff; --color-black: #000;   /* re-add only if still wanted (removed by the wildcard) */
-  --ease-geological: cubic-bezier(0.22, 0.61, 0.36, 1);   /* --ease-* namespace → ease-geological utility */
-}
-
-@theme inline {                 /* L2 semantic: the ONLY colour utilities components may use */
-  --color-surface:       var(--terrain-950);
-  --color-surface-raised:var(--terrain-900);
-  --color-ink:           var(--snow-50);
-  --color-ink-muted:     var(--granite-300);
-  --color-contour:       var(--snow-50-a20);
-  --color-gallery:       var(--gallery-black);
-  --color-trail-t1:      var(--trail-yellow); /* … t23-red, t45-blue */
-  /* L3 v1 aliases: exactly one phase, deleted by a codemod at the end of Phase 8 */
-  --color-alpine-900: var(--terrain-950);  --color-snow-50: var(--snow-50);  --color-frost-500: …;
-}
-```
-- `@theme inline` is required when a theme var references another var (Tailwind docs). The utility then embeds `var(--terrain-950)` directly.
-- Tailwind emits theme vars **only when used** (unless `@theme static`). Anything consumed from JS/shaders must live in `:root` (L1) or come from `data/generated/tokens.ts`. Never read an `@theme`-only var from JS.
-- `--color-*: initial` makes stock classes silently produce **no CSS**. That is a safety net, not a gate (it fails silently), so the gate is the script below.
-
-**Mechanical sweep rule (Phase 7)** for the 23 `dark:` files / 29 stock-palette files: in `A dark:B`, **keep B** (that is what dark-OS visitors saw, which matches the dark-only decision) and drop A. Then map the stock colour to the nearest v2 semantic token. This fixes the `text-gray-900` Contact h1 bug as a side effect. Delete the playground routes **before** the sweep.
-
-**Guard: grep script in CI, not an ESLint plugin (primary).**
-
-| | `scripts/tokens/check-design-tokens.mjs` | `eslint-plugin-better-tailwindcss` (`no-unknown-classes`, `no-restricted-classes`) |
+| Plate source | Committed grid CRS | New code |
 |---|---|---|
-| Catches strings in object maps (`statusColors = {active: 'bg-green-100 …'}`), `data/*.ts`, CSS `@apply`, template literals | Yes (scans raw text) | Only known call sites (`cn`, `clsx`, `cva`…) by default; plain objects/variables need config |
-| Dependencies | 0 | 1 plugin (~850★), Tailwind-v4 entry-point setup |
-| Error message | Custom ("use `text-ink` not `text-gray-900`"), file:line | Generic |
-| Ratchet support | Easy (allowlist that may only shrink) | No |
+| swissALTIRegio (any region inside 4.5–12.0°E, 44.8–48.7°N) | EPSG:2056 (LV95), 10 m, native COG window, no resampling (as today) | None. `fetch-dem.mjs` gains `--plate` and reads the extent from `plates.json` |
+| Second product (only for plates east of about 11.7°E) | ETRS89 / UTM of the plate (EPSG:25832 or 25833), square cells, bilinear resampling **in the fetch adapter**, nodata = fail | Adapter in `scripts/terrain/sources/`, a projection library as a **devDependency used only in fetch scripts**, and a pure `lib/geo/utm.ts` so `photos:build` can project positions without that library |
+| Overview | EPSG:3035 (ETRS89-LAEA: central meridian 10°E, so the Alps sit near its centre), about 500–1000 m cells, about 5°E–17°E × 43.5°N–48.5°N | Adapter + pure `lib/geo/laea.ts` (forward formula, about 30 lines, unit-tested against known points) for pins and plate outlines |
 
-Regex sketch: `/\bdark:/` and `/\b(?:bg|text|border|from|via|to|ring|fill|stroke|outline|divide|placeholder|decoration|shadow|accent|caret)-(?:slate|gray|zinc|neutral|stone|red|orange|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|amber)-\d{2,3}\b/`. During the alias phase, allow `amber-(400|500|600)` (the v1 custom family), or better, rename v1 amber → `caution` first. After Phase 8 add v1 names (`alpine|granite|snow|frost|ember|pine|rust`-NNN) to the banned list. Wire the script into `npm run lint`, which CI already runs. ESLint plugin: optional later for class sorting/IDE feedback.
+`build-terrain.mjs` per plate: load source (sha256 check) → `resampleBilinear` grids only if `threeD` → `hero` (+ `strip` for the SheetMargin band) contours via d3-contour/simplify-js (our code, deterministic) → hillshade posters (lossy, check-by-inspection as today) → landmark sample → `TerrainMeta`. **Skip `map` LOD and heightmaps for 2D plates** (F11, F12).
 
-**`verify-contrast.mjs` → `scripts/tokens/tokens.ts`:**
-1. Parse `globals.css` (L1 primitives + L2 semantic map), resolve `var()` chains, convert OKLCH → sRGB with `colorjs.io` (new devDep; gamut-map with `toGamut`). This deletes the hand-maintained hex table.
-2. Contrast pairs are declared on **semantic** names: `ink/surface`, `ink-muted/surface-raised`, EXIF strip text on `gallery`, focus ring vs surface (3:1, WCAG 1.4.11), trail-grade marks (yellow T1 / red-white / blue-white) vs surface (3:1 non-text). Contours are decorative and exempt.
-3. Emit `data/generated/tokens.ts` (hex/linear-RGB for the WebGL contour colour) with `--check` drift mode.
-4. Move it from `postbuild` to `lint`. It needs no build, and failing after a 3-minute build is wasted CI time.
+Overview: contours at a coarse interval (500 m, index every 1000 m), one small hillshade poster, plate outlines (each plate's four corners → LAEA) and region pins in overview UV. All of it goes into `overview` in `terrain.ts`.
 
----
+`lib/geo.ts` caution: `wgs84ToLv95` uses swisstopo's approximate formulas, rated about 1 m inside Switzerland. For a Regio plate 200+ km from Bern, add a unit test against a rigorous reference point before trusting pins. 4-dp positions are only about 10 m anyway. **[SPIKE: measure the error at the chosen IT/AT plate]**
 
-## 5. Terrain component architecture
+### 2.2 `--check` determinism across sources
 
-```
-app/(site)/page.tsx (Server)
-└─ AscentHero (Server)  section.relative h-[400svh] ── sticky top-0 h-svh stage
-   ├─ TerrainFallback (Server)   hillshade.webp (next/image, priority = LCP) + ContourField(hero)
-   ├─ AscentScrollProvider (Client)  useScroll({target: track, offset:['start start','end end']}) → context
-   │   ├─ TerrainStage (Client)   capability + inView → dynamic(() => import('./TerrainCanvas'), {ssr:false})
-   │   │   └─ TerrainCanvas  <Canvas frameloop={inView ? 'demand' : 'never'} dpr={[1,2]} gl={{alpha:true}}>
-   │   │        TerrainMesh(heightmap) · contourMaterial · CameraRig(progress) · Waypoints3D(decorative)
-   │   └─ AltimeterRail (Client)  same MotionValue → 1,626 m … 4,478 m
-   └─ WaypointList (Server)  real <Link>s to /photos/[id] (keyboard / SR / no-JS path)
-```
+Determinism never depended on the source. It depends on (a) a committed, sha256-pinned source raster and (b) derivation in our own code. Both hold per plate if reprojection stays in the networked fetch step. What changes:
 
-- **Server/client boundary:** `ssr:false` dynamic imports are only allowed in Client Components, so `TerrainStage` owns the import. No `three`/R3F module may be reachable from a Server Component import graph.
-- **SSR default = static.** The server renders the fallback. `useTerrainCapability` uses `useSyncExternalStore` with server snapshot `'pending'` (no hydration mismatch; same pattern as the existing `useReducedMotion`). The canvas fades in **over** the fallback once its first frame renders: no CLS, and LCP is the poster image.
-- **Capability → `'static' | '3d'`:** `prefers-reduced-motion: reduce` → static. `navigator.connection?.saveData` → static. No `webgl2` context → static. `navigator.deviceMemory < 4` → static. At runtime, drei `<PerformanceMonitor onFallback>` and `webglcontextlost` → static. Playwright emulates `reducedMotion: 'reduce'` so screenshot baselines are deterministic (canvas excluded).
-- **Scroll → camera: Motion `useScroll`**, not a CSS scroll timeline. The camera needs a number in JS every frame. Reading a CSS-animated `@property` through `getComputedStyle` per frame is slower, and CSS scroll-driven animations are not cross-browser (Firefox). Bind it without React re-renders: `useMotionValueEvent(progress, 'change', () => invalidate())`, and `CameraRig`'s `useFrame` reads `progress.get()`, samples a `CatmullRomCurve3` built from `terrain.ts` route points, and damps. **Gotcha:** with `frameloop="demand"`, damping stops when scroll stops, so call `invalidate()` from inside `useFrame` while `|current - target| > ε`.
-- **CSS scroll-driven animations** are only for decorative, non-3D effects (e.g. contour parallax in the footer), behind `@supports (animation-timeline: scroll())` and disabled under reduced motion with `animation: none`. The global `animation-duration: 0.01ms` hack does not neutralise scroll timelines.
-- **Offscreen pause:** IntersectionObserver on the stage → `frameloop='never'`, plus `visibilitychange`. Idle cost is zero.
-- **Contour shader:** contours are computed in the fragment shader from world height (`fract(h / interval)` + `fwidth` antialiasing). The uniform `uInterval` and the SVG generation both read `CONTOUR_INTERVAL_M` from `terrain.ts`, so the 3D lines and the SVG lines match.
-- **Heightmap decode:** `createImageBitmap(blob, { colorSpaceConversion: 'none', premultiplyAlpha: 'none' })` → OffscreenCanvas `getImageData` → Float32Array → displace `PlaneGeometry` once on the CPU. A CPU mesh keeps raycasting/waypoint placement simple. If a `DataTexture` is used instead, set `NoColorSpace`. Avoid Web Workers here: with `'strict-dynamic'`, worker loading needs an explicit `worker-src`.
-- **One contour asset, four consumers** (all via `ContourField`, Server, zero JS):
-  ```tsx
-  export function ContourField({ lod = 'hero', className }: { lod?: 'hero'|'map'|'strip'; className?: string }) {
-    const url = terrain.assets.contours[lod];
-    return <div aria-hidden className={`bg-contour ${className ?? ''}`}
-      style={{ maskImage: `url(${url})`, WebkitMaskImage: `url(${url})`, maskSize: 'cover' }} />;
-  }
-  ```
-  The token colour comes through `bg-contour`, which an `<img>` of an external SVG cannot do. PhotoMap instead renders `<svg viewBox={terrain.viewBox}><image href={contours.map}/>{markers}</svg>`, and markers are positioned from `photoMeta[id].terrainUV × viewBox`. That is the same UV space Waypoints3D uses for mesh placement.
+- `TerrainSource` becomes `z.discriminatedUnion('product', [SwissAltiRegioSource, SecondProductSource, OverviewSource])`. Each variant has its own provenance (STAC fields versus tile list with per-tile checksums, release, resampling method). Each shares the grid contract `width × cellM = extent width`.
+- **One builder run owns every plate** (F15). The stale-file sweep compares against the union of all plates' expected names. `--plate <id>` is allowed in write mode only, and then it may delete only files with that plate's prefix.
+- Zermatt regression gate: after the refactor, the `matterhorn` hashes in the asset names must equal today's (`2f3a04accc`, `f78bc9a25c`, `e1af353f82`, `548be40405`, `f792a8921f`, poster hashes). Only the prefix changes. Put this in the plan as an explicit acceptance check.
+- Lint time: each plate adds two contour passes. Check timings stay within a few seconds per plate; the overview grid is coarse.
+
+### 2.3 Precache
+
+`precache.json` stays home-only (footer strip + hero, for `/offline`). Do not precache region plates. They are cached cache-first under `/terrain/` on first visit, as today.
+
+### 2.4 Asset size budget per plate (measured from Zermatt today)
+
+| Asset | Zermatt today | New 2D plate (target) | Notes |
+|---|---|---|---|
+| Committed source PNG (grey16, 11 × 11 km @ 10 m) | 1,423,018 B | ≤ 2 MB | Scales with extent². Above about 15 km, use 20 m cells |
+| `hero` contours SVG | 45,632 B | ≤ 60 KB | Brotli shrinks SVG about 3–4× |
+| `strip` contours SVG | 22,783 B | ≤ 30 KB | Only for the SheetMargin band |
+| `map` contours SVG | 93,156 B (unused) | — | Skip |
+| Hillshade AVIF 1100 + 640 | 150,562 B | ≤ 160 KB | The 1100 px poster serves MapSheet on large screens |
+| Hillshade WebP 1100 + 640 | 261,316 B | ≤ 270 KB | Fallback only |
+| Heightmaps 512 + 256 | 445,682 B | — | Only for `threeD` plates |
+| **Served files per plate** | ~1.02 MB | **≤ 0.55 MB** | |
+| **Bytes a visitor fetches for one plate** | — | **≤ ~250 KB** | AVIF + hero + strip |
+| Overview (contours + 1 poster) | — | ≤ 250 KB served | Coarse grid |
+
+Enforce with a Jest budget test, like `MAX_CLIP_BYTES`. Photo derivatives are the bigger growth: 9 files and about 1.75 MB per photo, so 20+ photos is about 35–40 MB in `public/images/photos/` and in git history.
 
 ---
 
-## 6. Typed project highlights
+## 3. Routing
 
-**Decision:** zod schemas as source of truth. Projects form a **discriminated union on `slug`**, and each project's `highlights` is an ordered tuple of **shared typed block** kinds. You get per-project shape enforcement and a generic renderer.
+### 3.1 Options
+
+| Criterion | **A. Nested** `/photos/[region]/[slug]` (recommended) | B. Flat photos `/photos/[slug]` + `/photos/regions/[region]` |
+|---|---|---|
+| URL tells the series | Yes; breadcrumb is the path | No |
+| Old links | 308 per legacy slug (4, frozen) | Unchanged |
+| Old OG card URLs | Need an explicit redirect to the new hashed path (F6) | Unchanged |
+| Interception | `@modal/(.)[region]/[slug]`, plus a `@modal/[region]/page.tsx` null | Unchanged `(.)[slug]`; series page is a descendant of `/photos`, so it is still intercepted (F7) |
+| Proxy | Regex + known-set rework | Still needs a region miss path (`notFound()` inside a page gives the empty `__next_error__` shell, 12-RESEARCH Pitfall 1) |
+| Files touched | About 20 source + about 15 e2e specs + baselines | About 8 source |
+| Matches PROJECT wording ("through the series URL change") | Yes | No |
+
+**Recommendation: A.** It matches the stated intent and gives a clean series hierarchy. The risk is containable because the legacy set is **closed**: only the four v2.0 slugs ever lived at `/photos/<slug>`. If Tim prefers zero URL churn, B is the safe fallback. Present both to Tim.
+
+### 3.2 Interception and View Transitions after the move
+
+- Slot stays in `photos/layout.tsx`. `@modal/(.)[region]/[slug]`: `(.)` counts route segments from `photos` (slots are not segments, per the intercepting-routes doc). The interception header regex matches `/photos` and every descendant (F7), so grid/plate links on both `/photos` and `/photos/<region>` open the lightbox. Home links (`/`) are not intercepted, so they land on the full page. That is unchanged behaviour (D-08).
+- Add `@modal/[region]/page.tsx → null`. Soft navigation to a URL the slot no longer matches keeps the modal visible (parallel-routes doc, "Modals"). Without this, Back from the lightbox to `/photos/zermatt` would leave it open. Keep `default.tsx` (hard loads) and `@modal/page.tsx` (`/photos`). **[SPIKE]** Confirm that `@modal/[region]/page.tsx` and `@modal/(.)[region]/[slug]` coexist without a route conflict in 16.4.5, in dev (webpack) and build (Turbopack). The 12-14 OG export collision shows the two bundlers can differ.
+- `generateStaticParams` in `[region]/[slug]/page.tsx` returns `{ region, slug }` pairs (bottom-up, per docs); `dynamicParams = false` on both new pages, as today.
+- **Stepping is per series.** The intercepted route cannot know whether it was opened from `/photos` or `/photos/zermatt`, so the viewer always gets `seriesViews(photo.region)`. Prev/next stays `history.replaceState(photoHref(view))` (no history entries; Back closes; OQ1 decision kept).
+- **VT names stay `photo-${slug}`.** That requires slugs to be globally unique (Jest invariant). `photos-view` (the view crossfade) lives on both `/photos` and `/photos/[region]`. They are never mounted together, so there is no duplicate name. Overview pin → series page is a page navigation: use the default crossfade, no shared-element morph (pins carry no image, as Map → lightbox today).
+
+### 3.3 `/photos` keeps its three views
+
+`/photos?view=map` (default) = Alps overview with region pins; `?view=grid|carousel` = all photos grouped by series. Old shared links like `/photos?view=grid` keep working without a redirect. The series page repeats the same switcher with Map = its local plate. One interaction model at both levels.
+
+### 3.4 Redirects: `next.config.ts`, not `proxy.ts`
+
+| | `next.config` `redirects()` | `proxy.ts` |
+|---|---|---|
+| Order | Runs **before** proxy (proxy doc "Execution order": headers → redirects → Proxy) and before the filesystem | After config redirects |
+| Cost | Static route rule (on Vercel, no function) | Code on every matched request |
+| Fit | 4 frozen entries; well under the 1,024 Vercel limit (redirecting guide) | For thousands of dynamic entries |
+
 ```ts
-// data/schemas.ts
-const Metric = z.object({ label: z.string(), value: z.string(), note: z.string().optional() });
-const RiskBand = z.object({ level: z.enum(['low','medium','high','critical']), range: z.tuple([z.number(), z.number()]) });
-export const Block = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('metrics'),    title: z.string(), metrics: z.array(Metric).min(1) }),
-  z.object({ kind: z.literal('risk-scale'), title: z.string(), rules: z.number().int(), bands: z.array(RiskBand).length(4) }),
-  z.object({ kind: z.literal('pricing'),    title: z.string(), tiers: z.array(Tier).min(1) }),
-  z.object({ kind: z.literal('stack'),      title: z.string(), groups: z.record(z.string(), z.array(z.string())) }),
-  z.object({ kind: z.literal('list'),       title: z.string(), items: z.array(z.string()).min(1) }),
-]);
-const MetricsBlock = Block.options[0]; const RiskScaleBlock = Block.options[1]; // …
-const CliX    = ProjectBase.extend({ slug: z.literal('cli-x'),   highlights: z.tuple([MetricsBlock, MetricsBlock, RiskScaleBlock, MetricsBlock]) });
-const Webshop = ProjectBase.extend({ slug: z.literal('webshop'), highlights: z.tuple([PricingBlock, ListBlock, StackBlock]) });
-export const Project = z.discriminatedUnion('slug', [CliX, Webshop]);
-export type Project = z.infer<typeof Project>;
+// next.config.ts — the legacy set is closed: only these four ever lived at /photos/<slug>.
+const LEGACY_PHOTO_SLUGS = ['matterhorn-from-zermatt', /* …the other three v2.0 slugs… */] as const;
+async redirects() {
+  return LEGACY_PHOTO_SLUGS.flatMap((slug) => [
+    { source: `/photos/${slug}`, destination: `/photos/zermatt/${slug}`, permanent: true },          // 308
+    // F6: the old card path carries the old route hash; send it to the new card, not a 404.
+    { source: `/photos/${slug}/:card(opengraph-image-[^/]+)/:id`, destination: `/photos/zermatt/${slug}/${NEW_CARD_SEGMENT}/:id`, permanent: true },
+  ]);
+}
 ```
-- `projects.ts`: `export const projects = [...] satisfies Project[]`. The test parses it and asserts contiguous risk ranges 0→1 and that `roadmapItems` ids exist.
-- **Composition:** `CaseStudy` = `CaseStudyHeader` (name, status, links, overall `TrailGradeMark`) → `Narrative` (react-markdown, server-rendered) → `HighlightBlocks` (exhaustive `switch (block.kind)` with a `never` check → `MetricsBlock | RiskScaleBlock | PricingBlock | StackBlock | ListBlock`) → `DemoTerminal` (the **only** client island; restyled HologramTerminal) → `TechStack` → `RelatedRouteLog`.
-- **Trail grades:** `lib/trail-grade.ts` is the one mapping `riskLevel → { grade: 'T1'|'T2-T3'|'T4-T5'|'unmarked', token }`. `RiskScaleBlock`, `DemoTerminal` and the legend all use it. Unit-test it.
-- `HighlightValue` and `Record<string, HighlightValue>` are deleted from `data/types.ts`.
 
----
+- Exact slugs, never `/photos/:slug`. A pattern would swallow `/photos/<region>`.
+- Inline the four slugs (or a relative import of a tiny frozen module). A Jest test asserts each destination is in `lib/photos/routes.ts`. An e2e test asserts the old page answers 308 and the old card URL ends at a `200 image/png`.
+- `NEW_CARD_SEGMENT` is `opengraph-image-<djb2('/(site)/photos/[region]/[slug]').toString(36).slice(0,6)>`. Do not hard-code it. Read it from the built page's `og:image` in the e2e test and keep the redirect target in one constant the test checks. **[SPIKE]** Alternatively accept that cached card URLs fail and rely on crawlers re-fetching the page (they follow the 308 and read the new `og:image`). Decide with Tim, because "OG cards keep working" is in PROJECT.md.
+- Service worker: a redirected navigation is never stored (`!response.redirected`), and old caches die with the build hash. No SW change needed.
 
-## 7. Motion tokens: one vocabulary for CSS and Motion
+### 3.5 Canonical, OG, sitemap
 
-**Decision:** maintain the values by hand in two places, with a parity test. No generator, because it's 4 easings and about 4 durations.
+- `photoMetadata` canonical becomes `photoHref(view)`; series pages use `pageMetadata({ path: '/photos/<region>' })`. The root `metadataBase` is unchanged (D-13).
+- Photo OG card: moved route, region contour (`contourDataUrl(plate)`) and region `sheetTitle`. It still renders at runtime with per-slug alt (12-19). New series card at `[region]/opengraph-image.tsx`.
+- Sitemap: nav → series pages → nested photo URLs (series order) → projects. No legacy URLs.
 
-```css
-@theme { --ease-geological: cubic-bezier(0.22,0.61,0.36,1); --ease-crystallize: cubic-bezier(0.16,0.85,0.45,1);
-         --ease-tectonic: cubic-bezier(0.33,0,0.2,1); --ease-erosion: cubic-bezier(0.4,0,0.2,1); }
-:root  { --duration-hover: 350ms; --duration-enter: 450ms; --duration-settle: 500ms; --duration-exit: 150ms; }
-```
+### 3.6 Unknown-slug 404 in `proxy.ts`
+
 ```ts
-// lib/animations.ts (existing exports kept; additions)
-export const EASING = { geological: [0.22,0.61,0.36,1], /* … */ } as const;      // Motion
-export const DURATION = { hover: 0.35, enter: 0.45, settle: 0.5, exit: 0.15 } as const; // seconds
-export const cssEase = (k: keyof typeof EASING) => `var(--ease-${k})`;           // inline styles / VT
-export const cssDuration = (k: keyof typeof DURATION) => `var(--duration-${k})`;
+const PHOTOS = /^\/photos\/([^/]+)(?:\/([^/]+))?$/;   // /photos/<region> | /photos/<region>/<slug>
+const PROJECTS = /^\/projects\/([^/]+)$/;
+// miss = (seg2 === undefined ? !routes.regions.has(seg1) : !routes.pairs.has(`${seg1}/${seg2}`))
 ```
-- Tailwind usage: `ease-geological` (theme namespace) and `duration-(--duration-enter)` (v4 var shorthand). Tailwind lists no `--duration-*` theme namespace, so durations live in `:root`, and that also guarantees they're emitted for JS.
-- `lib/__tests__/motion-tokens.test.ts` reads `globals.css` and asserts every `EASING`/`DURATION` key matches its CSS var.
-- View-transition CSS uses the same vars (`::view-transition-group(.morph) { animation-duration: var(--duration-settle); animation-timing-function: var(--ease-geological) }`).
-- **Reduced motion, centralised:** `components/providers/MotionProvider.tsx` → `<MotionConfig reducedMotion="user" transition={{ duration: DURATION.enter, ease: EASING.geological }}>` in `(site)/layout`. This replaces the scattered `prefersReducedMotion ? … : …` ternaries in new code. Add the VT reduced-motion block (`::view-transition-*(*) { animation-duration: 0s !important }`). The universal `*` selector does not reach VT pseudo-elements. *(ui-ux-pro-max: "use shared motion tokens", "1-2 key animated elements per view", "respect prefers-reduced-motion": High.)*
+
+- Legacy slugs never reach this check (config redirects run first).
+- The neutral render stays section-level, `/photos/_` (`NEUTRAL_SLUG`). Three-segment misses fetch the same neutral page, so neither the region nor the slug is echoed in flight data (T-12-03 kept).
+- Deeper paths (`/photos/a/b/opengraph-image-…`) pass through, as today.
+- Import `lib/photos/routes.ts` (ids and slugs only), so the proxy bundle stops carrying editorial copy and manifests (F5).
+- Extend `e2e/not-found.spec.ts`: unknown region, known region + unknown slug, cross-region slug (`/photos/aosta/<zermatt-slug>` → 404, not a redirect).
 
 ---
 
-## 8. Build order, file inventory, data flow
+## 4. Footer legend, "Last surveyed" and attribution with several plates and sources
 
-### Build order (dependency-respecting)
+The footer is a **layout** component (`(site)/layout` → `SiteChrome`). Layouts do not re-render on soft navigation, so a footer that reads the route (headers or params) goes stale after client navigation.
 
-```
-Phase 7  Foundation & guardrails ─────────────────────────────┐ (blocks everything)
-  7.1 npm ci sync; CI → Node 24; add eslint-config-next (jsx-a11y)
-  7.2 Playwright visual baselines on CURRENT UI (Linux/CI-generated, reducedMotion emulated, canvas masked)
-  7.3 framer-motion 12 → 14 (isolated commit; 13→14 has no breaking changes; 12→13 only drops
-      @emotion/is-prop-valid, unused here) → baselines must be unchanged
-  7.4 React 19.3 + Next 16.4 (isolated commit; prerequisite for <ViewTransition>/transitionTypes in Phase 10)
-  7.5 Delete playground routes + already-dead components (shrinks the sweep)
-  7.6 globals.css tokens v2 (L1/L2/L3 aliases), motion tokens, visible scrollbar + scrollbar-gutter
-  7.7 Mechanical sweep: dark:/stock → v2 semantic; guard script + tokens.ts contrast in `lint` (hard fail)
-  7.8 data/site.ts identity; SiteNav/SiteFooter/SiteChrome; git mv pages into app/(site)/;
-      root not-found/global-error/(site) error; metadata template; pages → Server Components where trivial
-Phase 8  Data & terrain pipeline ────────────────────────────┐ (blocks 9, 10, 11-typing)
-  8.1 data/schemas.ts; typed highlights migration (temporary plain renderer) + schema test
-  8.2 build-terrain.ts → public/terrain/* + data/generated/terrain.ts (manual, committed)
-  8.3 extract-exif.ts → photo-meta.ts (uses terrain.ts); data/photos.ts merge + overrides; --check in prebuild
-  8.4 ContourField + TerrainFallback (server) → wire into SiteFooter immediately
-  8.5 lib/trail-grade.ts; v1-alias removal codemod; ban v1 names in guard
-Phase 9  Home ascent (needs 8.2, 8.3, 8.4)
-Phase 10 Photography (needs 7.4, 8.3, 8.4)        ┐ independent of each other →
-Phase 11 Engineering & roadmap (needs 8.1, 8.5)   ┘ can run in parallel
-Phase 12 Contact, edge pages, cleanup & verification (needs all; OffTrail uses ContourField; SW precache)
-```
+| Option | How | Verdict |
+|---|---|---|
+| **A. Footer = the home sheet (colophon) + in-page SheetMargin per plate** | Extract `SheetMargin` from SiteFooter (zero visual diff). The footer renders the `matterhorn` margin; ticks come from the 4 home waypoints (pixels unchanged even as Zermatt grows). Series pages and the overview render their own `SheetMargin` (scale, equidistance, extent in the plate's CRS, last surveyed = that source's edition, source line = that product's attribution) | **Recommended.** Zero footer re-baseline; correct under soft navigation; attribution sits next to the data it credits |
+| B. Footer = series index | Overview strip, one tick per region, every source listed, "Last surveyed" per sheet | Every route's baselines change; the scale bar loses meaning on a 900 km strip |
+| C. Route-aware footer | `@sheet` parallel slot at `(site)` with a `[...catchAll]` reset, or a client `usePathname` switch | Slot state persists across soft navigation (parallel-routes doc), so it needs a catch-all; also adds client JS. Too fragile for a footer |
 
-**Two recommendations that differ from the proposed plan (for the roadmapper to decide):**
-1. Add the **React 19.3 / Next 16.4 bump** to Phase 7. It is not in the locked list, but View Transitions depend on it.
-2. Move **playground-route deletion** from Phase 12 to Phase 7, before the token sweep. The rest of the dead-code cleanup stays in 12.
+- **"Last surveyed"** becomes per plate: `formatMonthYear(plate.dem.edition)`. Keep `edition: YYYY-MM` for every product, with `editionSource` saying where the month came from (STAC datetime, release notes).
+- **Attribution:** for Regio-only plates, `site.attribution.terrain` already covers the IT/AT/FR/DE inputs (F1), so it is reused as is. A second product gets `site.attribution.<product>`, a required string, verbatim from its licence. Copernicus DEM requires a source notice and a liability sentence for public distribution. Copy the exact wording from the licence PDF, not from third-party sites. It is shown in that plate's and the overview's SheetMargin.
+- Extent label: the SheetMargin shows the plate's own grid ("Extent (LV95)" or "Extent (ETRS89 / UTM 32N)"). PHOTO-F4's LV95-in-the-strip rule is separate and keys on `region.country === 'CH'`, not on the plate CRS.
 
-### New / Modified / Deleted / Moved
+---
 
-**NEW**
-- `app/(site)/layout.tsx`, `app/(site)/not-found.tsx`, `app/global-error.tsx`
-- `app/(site)/photos/layout.tsx`, `photos/[id]/page.tsx`, `photos/@modal/default.tsx`, `photos/@modal/page.tsx`, `photos/@modal/(.)[id]/page.tsx`
-- `components/site/*`, `components/terrain/*`, `components/photos/*`, `components/projects/{RoutePanel,CaseStudy,blocks/*,TrailGradeMark,DemoTerminal}`, `components/edge/OffTrail.tsx`, `components/providers/MotionProvider.tsx`
-- `data/schemas.ts`, `data/site.ts`, `data/photos.ts`, `data/generated/{terrain,photo-meta,tokens}.ts`
-- `lib/trail-grade.ts`
-- `scripts/terrain/build-terrain.ts`, `scripts/photos/extract-exif.ts`, `scripts/tokens/tokens.ts`, `scripts/tokens/check-design-tokens.mjs`
-- `public/terrain/*` (hashed), `assets/photos-original/` (moved originals), `.cache/` in `.gitignore`
-- Tests: `lib/__tests__/{motion-tokens,trail-grade}.test.ts`, `data/__tests__/schemas.test.ts`, `components/__tests__/{RoutePanel,PhotoGrid,Lightbox,CaseStudy}.test.tsx`, `e2e/{visual,lightbox,edge}.spec.ts`
+## 5. Immersive layout: where it plugs in
 
-**MODIFIED**
-- `app/layout.tsx`, `app/globals.css`, `proxy.ts` (matcher), `next.config.ts` (`/terrain` cache headers)
-- `package.json` (scripts, deps: framer-motion 14, react 19.3, next 16.4, d3-contour, exif-reader, colorjs.io; `engines`), `.github/workflows/ci.yml` (Node 24), `eslint.config.mjs`, `tsconfig.json` (`allowImportingTsExtensions` for scripts)
-- `data/types.ts`, `data/landscapes.ts`, `data/projects.ts`, `data/roadmap.ts` (if route-log needs fields)
-- `lib/animations.ts`, `public/service-worker.js` (precache list), `scripts/inject-build-hash.mjs`, `scripts/optimize-images.mjs`
-- Restyled/renamed: `Footer`→`SiteFooter`, `FeedbackForm`→`SummitRegister`, `RoadmapTimeline`/`RoadmapProgress`→`RouteLog`, `RoadmapFilters`, `HologramTerminal`→`DemoTerminal`, `TechStackDisplay`, `InteractiveHotspot`→`Hotspot`, `PhotoCarousel3D`→`PhotoCarousel` (or retained if Phase 10 keeps 3D), `ServiceWorkerRegistration` (unchanged logic)
-- E2E specs: `homepage`, `photos` (rewrite), `projects`, `contact-form`. Unit: `GalleryGrid.test`→`PhotoGrid.test`, `ProjectCard.test`→`RoutePanel.test`, `RoadmapTimeline/Filters.test`, `FeedbackForm.test`
+- Stay inside `(site)`. A separate route group or root layout would remount SiteNav on every photo navigation and break the `@modal` scoping. "Less chrome" means a full-bleed gallery-black stage of `100svh − var(--nav-h)` under the fixed nav, with the footer below the fold.
+- `PhotoViewer` stays the single viewer for the page and modal variants. Fold the open v2.0 lightbox debt (focus after Escape, clipped focus ring) into this rewrite, because it touches the same files.
+- The series page composes: intro → `PlateSheet` (Map) / Grid / Carousel → optional `FlyoverClip` → `SheetMargin`. All server components except the existing islands.
 
-**MOVED (git mv into `app/(site)/`)**
-- `page.tsx`, `error.tsx`, `photos/page.tsx`, `projects/page.tsx`, `projects/[slug]/page.tsx`, `roadmap/page.tsx`, `contact/page.tsx`, `offline/page.tsx`
+---
 
-**DELETED**
-- Routes: `app/gradient-mesh`, `app/particle-buttons`, `app/transitions`
-- Already dead: `Hero3DSection`, `ProgressiveImage`, `TerminalDemo`, `ZoomableImage`
-- Playground-only: `ParticleButton`, `TransitionShowcase`, `ShaderTransition`, `AnimatedGradientMesh` (after contact is restyled)
-- Replaced: `Header`, `GlassmorphismNav`, `ContourBackground`, `Hero3DMountain`, `MountainTerrain3D`, `DualParticleSystem`, `GeologicalButton` (unless reused as a token button), `PhotosPageClient`, `GalleryGrid`, `ImageDetailModal`, `ProjectCard`, `ProjectHighlights`, `FeatureShowcase` (folded into CaseStudy), `ProjectDetailClient`, `HologramTerminalDemo`
-- Lib: `lib/useHexGrid.ts`, `lib/useGlowIntensity.ts`, `lib/useProgressiveTextures.ts` (if the carousel no longer needs it)
-- CSS: `.hex-clip`, `.hex-grid`, `.glow-*`, `.ambient-glow`, `.contour-animate`, `.glass*`, `.hologram-content` rgba borders, scrollbar-hiding block, h1 glow text-shadow
-- Assets: legacy `public/images/optimized/*-{thumb,medium,large}.*`; `scripts/verify-contrast.mjs` (superseded)
+## 6. Drone video: integration per candidate format
+
+| Format | Data | Routes / UI | CSP (`proxy.ts buildCsp`) | Service worker | Guard / repo | Verdict |
+|---|---|---|---|---|---|---|
+| **1. Progressive MP4 (H.264; optional AV1 `<source>` first), silent, ≤ about 20 s, committed in `public/media/`** | `media-manifest` entry with `kind: 'drone'`, `region`, optional takeoff position (4 dp); `regions[].flyover` | `FlyoverClip` on the series page: native `<video controls muted playsInline preload="none" poster>`, click to play, like `DemoClip` | **No change**: `default-src 'self'` covers media | **No change**: `destination === 'video'` and Range requests already bypass the SW; the poster is cached as an image | Per-kind budget (e.g. drone ≤ 6 MiB) replaces the single 1.5 MiB rule; the box walker already rejects GPS boxes (`©xyz`, `loci`), `uuid`, XMP and extra data tracks, which is exactly what DJI files carry. Git history grows by the clip size: cap the count, or decide on Git LFS (Vercel can fetch LFS when enabled) | **Recommended** |
+| 2. Self-hosted HLS (fMP4 segments + m3u8) | Same, plus a segment list | Needs hls.js (client JS) for non-Safari | Add `media-src 'self' blob:`, and `worker-src 'self' blob:` unless the hls.js worker is off | Segments are `fetch()` with an empty destination, so today they fall into "network-first everything else" and **get stored**. Needs a `/media/` bypass | The walker whitelist rejects `moof`; many hashed files | Overkill for short clips |
+| 3. Hosted stream (Mux, Cloudflare Stream, Bunny) | Playback id instead of a file | Player package (bundled, fine under `strict-dynamic`) | `media-src`/`connect-src`/`img-src` for the vendor hosts + `blob:` | Must skip cross-origin requests | No repo growth | Breaks "same-origin, `connect-src 'self'`" and sends visitor IPs to a third party |
+| 4. YouTube / Vimeo embed | Video id | `<iframe>` | `frame-src` is `'none'` today; cookies and tracking | n/a | n/a | Do not use |
+| 5. Animated AVIF/WebP loop | Image manifest | `<img>` | No change | Cached cache-first as an image (heavy) | Image guard | Needs its own pause control for loops over 5 s (WCAG 2.2.2); poor compression for aerial motion |
+
+Recommended shape for v2.1: **at most one flyover per region on the series page**, reusing the clip pipeline. Video items inside the series and lightbox (a `SeriesItem` union, `og:video`, stepping over mixed media) are a later step. FEATURES/STACK research decides codec, resolution and bitrate. This table fixes only where each option integrates.
+
+---
+
+## 7. Deferred features
+
+### PLAT-F1 JSON-LD under the nonce CSP
+
+- Placement per the Next 16.4 JSON-LD guide: a native `<script type="application/ld+json">` rendered in `page.tsx`/`layout.tsx`, serialised with `<` escaped as `<`.
+- **No nonce needed.** In the HTML "prepare the script element" algorithm, a non-JavaScript type is a data block and returns at step 15, before the CSP inline check at step 23. The existing audit gate fails on any CSP violation event, so it verifies this on every route automatically.
+- Where: root layout → `Person` + `WebSite` (from `data/site.ts`). Full photo page `[region]/[slug]/page.tsx` → `ImageObject`/`Photograph` (creator, copyright notice from `rights`, `contentLocation` Place; `geo` only for exact positions at 4 dp, omitted for the hand-placed film scan). Series page → `CollectionPage`/`ImageGallery` with `about` Place. Project page → `SoftwareSourceCode` (box) or `SoftwareApplication` without `codeRepository` (coin-flip is private, D-23).
+- **Not** in the intercepted `@modal` page. Crawlers do hard loads, so they see the full page, and a second copy in the modal DOM is noise.
+- Build after the routing phase, so `url`/`@id` use the final paths.
+
+### PLAT-F2 offline list (already shipped, F9)
+
+Only `savedPageCatalog` changes: rows for series pages (`label: 'Series'`) and nested photo hrefs, fed from `lib/photos/routes.ts` + titles. Matching stays exact-path on cached URLs (T-12-30). Old flat photo URLs vanish with the build-hash cache purge, so no legacy rows are needed.
+
+### PHOTO-F2 Web Share
+
+`ShareButton` client island in the viewer strip: `navigator.share({ title, url })` with `url = site.url + photoHref(current)`, the **currently shown** photo after stepping, not the initial one. Feature-detect after mount (`useSyncExternalStore` with a `'pending'` server snapshot, the capability-hook pattern) to avoid a hydration mismatch. Fallback: copy link, reusing `CopyEmailButton`'s clipboard pattern. `Permissions-Policy` does not list `web-share`, so the top-level default (`self`) applies. No header change.
+
+### PHOTO-F4 LV95
+
+`wgs84ToLv95` already exists. Add an `LV95` row in `stripFields` only when `region.country === 'CH'`, computed from the 4-dp position and shown rounded to 10 m with `formatLv95` (it reveals nothing beyond the WGS84 row). Use `≈` for approximate positions. The `StripFields.positionRows.term` union widens.
+
+### ENG-F1 terminal step controls + transcript
+
+- `lib/demo-terminal.ts` (pure, import-free): add `stepTo(index)` and `step(state, dir, count)`, returning `{ index, phase: 'shown', chars: 0 }`, unit-tested like `tick`.
+- `DemoTerminal.tsx`: Prev/Next buttons beside Pause. A press sets the sticky pause (existing D-02 rule), and the existing polite live region announces the step.
+- Transcript: `TerminalTranscript` server component in `sections/Demo.tsx`, a `<details>` listing every command's input and output as text. Zero JS, and a full text alternative.
+
+---
 
 ## Data Flow
 
-### Request flow (photo lightbox, soft navigation)
+### Request flow: series lightbox (soft navigation)
 
 ```
-click thumbnail <Link href="/photos/img-0605" scroll={false}>  (inside /photos?view=grid)
-  → router transition (React transition ⇒ <ViewTransition> active)
-  → Next-Url=/photos matches interception ⇒ @modal/(.)[id] renders; children slot (grid) kept
-  → PhotoGrid sees usePathname()='/photos/img-0605' ⇒ drops its named VT (deleted side)
-  → Lightbox/PhotoViewer mounts named VT (inserted side) ⇒ morph; gallery + nav/footer inert
-Escape / close / browser Back → router.back() ⇒ /photos?view=grid; @modal/page.tsx → null; focus → thumbnail
-refresh on /photos/img-0605 → no interception ⇒ photos/[id]/page.tsx full gallery-black page; @modal/default → null
+/photos/zermatt?view=grid ─ click tile <Link href={photoHref(v)} scroll={false}>
+  → Next-Url=/photos/zermatt matches "/photos(?:/.*)?"  (F7)
+  → @modal/(.)[region]/[slug] renders LightboxDialog+PhotoViewer(seriesViews('zermatt'))
+  → tile's VT boundary removed, viewer's photo-<slug> inserted ⇒ morph
+  → prev/next: history.replaceState(photoHref(next)) — no history entry
+Back/Escape → router.back() → /photos/zermatt; @modal/[region]/page.tsx → null
+hard load /photos/zermatt/<slug> → [region]/[slug]/page.tsx (+ JSON-LD); @modal/default → null
+legacy /photos/<v2.0-slug> → next.config 308 → /photos/zermatt/<slug> (before proxy)
+unknown /photos/<x>[/<y>] → proxy miss → neutral /photos/_ render → 404, nothing echoed
 ```
 
 ### Key data flows
 
-1. **Terrain:** DEM tiles → `build-terrain.ts` → hashed PNG/WebP/SVG + `terrain.ts` → (server) `TerrainFallback`/`ContourField` HTML, (client) `TerrainCanvas` fetches heightmap → CPU mesh → shader with `uInterval` from `terrain.ts`.
-2. **Photos:** originals → `extract-exif.ts` (+ `terrain.ts` projection) → `photo-meta.ts` + editorial `landscapes.ts` → `data/photos.ts` (validated in test) → Home waypoints (3D + DOM list), PhotoMap markers, Grid, Lightbox ExifStrip, `generateMetadata`.
-3. **Scroll ascent:** `window` scroll → Motion `useScroll` (one MotionValue in `AscentScrollProvider`) → `invalidate()` → `CameraRig` `useFrame` (no React renders); the same MotionValue → `AltimeterRail` text.
-4. **Tokens:** `globals.css` → Tailwind utilities (L2 only) and → `tokens.ts` script → contrast gate + `data/generated/tokens.ts` → shader uniforms.
-5. **Identity:** `data/site.ts` → SiteNav, SiteFooter, root `metadata`, contact page. One source, so placeholder links can't return.
+1. **Terrain:** `plates.json` + `source/<plate>/` → `terrain:build` → `public/terrain/<plate>-*` + `terrain.ts { plates, overview, terrain }` → `ContourField(plate)`, `PlateSheet`, `AlpsOverview`, `SheetMargin`, OG template; Home still reads `terrain` (= `plates.matterhorn`).
+2. **Photos:** sidecar + corrections + `regions.json` + plate DEMs → `photos.ts` (region, plate, uv-in-plate, DEM m + product) + `editorial.ts` + image manifest → view-model → `seriesViews(region)` (series pages, viewer stepping), `photoViews` (album grid), `homeWaypoints` (Home, footer ticks, rail start).
+3. **URLs:** `regions.json` + editorial slugs → `lib/photos/routes.ts` → proxy known-sets, sitemap, saved-pages catalog, `generateStaticParams`, e2e `ROUTES`; the 4-slug legacy map → `next.config` redirects.
+4. **Video:** gitignored drone original → `clip:derive` (ffmpeg, strip, budget per kind) → `public/media/<id>.<hash>.mp4` + poster + `media-manifest.ts` → `FlyoverClip` on the series page.
 
-## Scaling Considerations (performance budget at portfolio scale)
+---
 
-| Concern | Now (4 photos, 2 projects) | At 50 photos | Mitigation |
-|---------|----------------------------|--------------|------------|
-| Home JS | R3F chunk loaded only when capable + visible | same | Keep `three` out of the shared chunk (dynamic import only) |
-| Contour SVG weight | 3 LODs, target < 150 KB each | same | Round coordinates to 1 decimal; coarser intervals for `hero`/`strip` |
-| `photo-meta.ts` in server bundle | trivial | ~50 KB | Server-only import; client gets props |
-| Dynamic rendering everywhere (nonce CSP) | fine | fine | Not CDN-cached; acceptable at this traffic. Experimental SRI is the escape hatch, out of scope |
-| Photo map markers | 3 GPS points | clustering needed | Defer |
+## Suggested Build Order (dependency-respecting)
 
-**First bottleneck:** mobile GPU on the hero, handled by the capability gate plus `PerformanceMonitor`. **Second:** LCP on Home, handled by the server-rendered hillshade poster with `priority`.
+```
+P1  Repo safety debt first ─────────────────────────────── (cheap; protects every later PR)
+    branch protection + required checks on main, [ci skip] gap, Playwright 1.65 re-baseline
+P2  Data model + plate refactor, ZERO visible change ───────────── (blocks P3–P6)
+    a. photoHref/regionHref + lib/photos/routes.ts; replace the 13 hand-built URLs (still /photos/<slug>)
+    b. home.waypointIds; buildWaypoints/lowestDemM/TrailSigns/footer ticks read the home list
+    c. Region + plate schemas, regions.json (Zermatt only), plates.json (matterhorn only)
+    d. build-terrain over N plates, prefixed names; matterhorn content hashes unchanged
+    e. SheetMargin extracted from SiteFooter; ContourField(plate); MapSheet → PlateSheet(plate)
+    Gate: visual baselines unchanged, data:check green, hashes equal
+P3  New plates + overview + new photos ────────────────────────── (needs P2; human inputs)
+    plate extents (Tim), fetch (Regio for ≤ ~11.7°E; second-source adapter only if needed),
+    overview raster + LAEA, new originals → exif/derive/build, editorial copy review (Tim)
+P4  Routing migration ─────────────────────────────────────────── (needs P2a; P3 for content)
+    nested routes + @modal moves, @modal/[region] null, generateStaticParams pairs,
+    next.config redirects (pages + old cards), proxy rework, sitemap, OG cards per region,
+    saved-pages catalog (PLAT-F2), e2e ROUTES/audit gate, not-found matrix
+P5  Immersive layout (UI-SPEC via ui-ux-pro-max) ──────────────── (needs P4)
+    /photos overview map view, series page, immersive viewer, + PHOTO-F2 Share, PHOTO-F4 LV95,
+    lightbox focus/ring debt folded in; one deliberate re-baseline round
+P6  Drone video ───────────────────────────────────────────────── (format decision any time; slot needs P5)
+    clip kinds + budgets, guard, FlyoverClip in the series page slot
+P7  JSON-LD (PLAT-F1) ─────────────────────────────────────────── (needs P4 final URLs)
+P*  ENG-F1 terminal controls + transcript, other UI/test debt ─── (independent; parallel filler)
+```
+
+Ordering rationale:
+- **Data before maps:** every map surface (overview, series plate, footer, OG) reads `plates`/`regions`, and the photo build needs plate DEMs for heights.
+- **URL helper before URL change:** P2a makes P4's flip mechanical and keeps P2 at zero diff.
+- **Routing before layout:** the immersive layout's pages are the new routes; designing them on old routes means doing it twice.
+- **Repo safety first:** P2–P4 are large refactors. Required checks must block a red main before they land.
+- **Research flags:** P3 (second-source licence and adapter, and whether it is needed at all, F1), P4 (interception + `@modal/[region]` spike, old OG card hash), P6 (format decision). P2, P7 and ENG-F1 use known patterns.
+
+---
+
+## Scaling Considerations (portfolio scale)
+
+| Concern | Now (4 photos, 1 plate) | v2.1 (20+ photos, 3 plates + overview) | Mitigation |
+|---|---|---|---|
+| Repo/deploy size | 7 MB photo derivatives, 1 MB terrain, 1.4 MB source | about 40 MB derivatives, +0.5 MB/plate served, +1.4–2 MB/plate source, drone clips | Per-plate and per-clip budget tests; decide on LFS before the first drone clip |
+| Proxy bundle | Whole view-model | Would grow with every photo | `lib/photos/routes.ts` |
+| `data:check` time in lint | 1 plate | About 4 contour sets | Coarse overview; skip unused LODs |
+| Map pins | 4 | 20+ per series possible | Label layout per plate (existing `label-layout.ts`); clustering only if one series exceeds about 12 |
+| Footer ticks | 4 | Would be 20+ | Home waypoints only |
 
 ## Anti-Patterns
 
-1. **Keeping Home outside `(site)` with its own nav.** Two navs come back and the nav remounts on every Home transition. Use one fixed SiteNav plus a transparent-over-hero state.
-2. **Same VT `name` on the grid thumbnail and the open lightbox.** That is a duplicate-name error and no morph. Conditionally unmount the thumbnail's boundary.
-3. **Missing `@modal/default.tsx` or `@modal/page.tsx`.** Without `default` you get a hard-nav error (16.x). Without `page` the modal stays open after navigating to `/photos`.
-4. **Reading `@theme` vars from JS/shaders.** They are pruned when unused. Use `:root` primitives or `data/generated/tokens.ts`.
-5. **Generating terrain on Vercel.** Network-dependent, slow, nondeterministic. Generate offline and commit hashed outputs.
-6. **16-bit grayscale heightmap PNG.** Browsers decode to 8-bit, which produces terraced terrain. Use terrain-RGB.
-7. **`frameloop="demand"` with damping but no self-invalidation.** The camera freezes mid-ease.
-8. **Page-level `AnimatePresence` alongside route View Transitions.** Two systems fight over exit. Use VT for route-level motion and Motion for in-page motion.
-9. **A `'use client'` page.tsx.** Loses metadata and ships the whole page as JS. Keep pages server-side and make islands client components.
+1. **Inferring a photo's region from GPS.** Plates can overlap and a pin can be hand-placed. Keep membership explicit and check containment.
+2. **Per-plate builder runs with a global stale sweep.** They delete each other's assets. One run owns all plates.
+3. **Subdirectories under `public/terrain/`.** Five regexes and prefix rules assume flat names.
+4. **A pattern redirect `/photos/:slug` → `/photos/zermatt/:slug`.** It swallows `/photos/<region>`. Use the closed list of four.
+5. **A route-aware footer.** Layouts don't re-render on soft navigation. Put the sheet margin in the page.
+6. **Generating `lowestDemM` or Home waypoints over all photos.** A new photo silently changes Home. Use the explicit home list.
+7. **Reprojecting in `terrain:build`.** It adds a projection dependency to the deterministic path. Reproject once in the fetch adapter and commit the grid.
+8. **HLS or a third-party player for 10–20 s clips.** It adds JS, CSP holes and SW cache bloat for nothing.
+9. **JSON-LD in the intercepted modal, or with a nonce "to be safe".** It duplicates the data and hides the real CSP behaviour. The audit gate checks it.
 
 ## Integration Points
 
-### External services
+### External services and data
 
 | Service | Integration | Notes |
-|---------|-------------|-------|
-| swisstopo swissALTI3D | Build-time only, manual `npm run terrain`, raw tiles cached in `.cache/dem` | Attribution "© swisstopo" in SiteFooter. No runtime requests (CSP `connect-src 'self'`) |
-| Vercel | Build runs `prebuild` (`optimize-images`, `extract-exif --check`) → `next build` → `postbuild` | Generated files must be committed; Node 24 |
-| Resend / Upstash | Unchanged (`app/api/feedback`) | SummitRegister must keep CSRF token + field names |
+|---|---|---|
+| swisstopo STAC + COG (swissALTIRegio) | Manual `terrain:fetch --plate`; window read, no resampling | Covers 4.5–12.0°E / 44.8–48.7°N incl. IT/AT/FR/DE from national models (F1) |
+| Second DEM product (STACK research picks it) | Manual adapter; reprojected to a square metric grid; sha256-pinned | Only for the overview and for plates east of about 11.7°E; exact licence notice in `site.attribution` |
+| Vercel | Static `/terrain`, `/media`, `/images` (immutable cache); config redirects as route rules | Hobby bandwidth quota matters for video: `preload="none"`, click to play |
 
 ### Internal boundaries
 
 | Boundary | Communication | Notes |
-|----------|---------------|-------|
-| `scripts/*` ↔ `data/schemas.ts` | Relative `.ts` import (Node type-stripping) | `schemas.ts` must import only `zod` (no `@/` aliases) |
-| Server pages ↔ client islands | Serializable props (`Photo`, `Waypoint[]`) | No functions or MotionValues across the boundary |
-| `AscentScrollProvider` ↔ `TerrainCanvas`/`AltimeterRail` | React context holding one MotionValue | MotionValue reads in `useFrame`, never state |
-| `photos/layout` ↔ `@modal` ↔ `PhotoGrid` | URL (`usePathname`, `?view=`) | URL is the single source of lightbox/view state |
-| `globals.css` ↔ `lib/animations.ts` | Parity unit test | Edit both together |
+|---|---|---|
+| `scripts/*` ↔ `regions.json`/`plates.json`/schemas | JSON + zod-only schema imports (Node type-stripping) | No `@/` aliases in schemas |
+| proxy ↔ data | `lib/photos/routes.ts` only | Keeps the proxy small and copy-free |
+| `next.config` ↔ routes | Frozen 4-slug list + Jest cross-check | Closed set |
+| Series page ↔ `@modal` ↔ viewer | URL only (`usePathname`, `?view=`) | Stepping list = `seriesViews(photo.region)` |
+| Footer ↔ plates | `SheetMargin(plates.matterhorn)` | Region pages own their legend |
 
 ## Sources
 
-- Next.js docs v16.4.0: Route Groups, not-found.js (incl. `global-not-found`), Parallel Routes, Intercepting Routes, default.js, Content Security Policy guide, Designing view transitions guide, Accessibility (route announcer): nextjs.org/docs/... (fetched 2026-10-10)
-- React `ViewTransition` reference: react.dev/reference/react/ViewTransition. `react@19.3.0` production build inspected: `exports.ViewTransition`, `exports.addTransitionType` present
-- Motion upgrade guide: motion.dev/docs/react-upgrade-guide (12→13 removes `@emotion/is-prop-valid` optional dep; 13→14 no breaking changes); npm: framer-motion 14.1.0, motion 14.1.0, next 16.4.0, react 19.3.0, @react-three/fiber 9.8.1 (peer `react >=19 <19.4`)
-- Tailwind CSS v4 theme docs: tailwindcss.com/docs/theme (`--color-*: initial`, `@theme inline`, `@theme static`, `--ease-*` namespace)
-- eslint-plugin-better-tailwindcss README (rules `no-unknown-classes`, `no-restricted-classes`; ~850★)
-- ui-ux-pro-max searches (nextjs/react/threejs stacks, ux domain): skip links, focus trap/return, shared motion tokens, reduced motion, canvas alpha/sizing. No DB match for modal/lightbox or view-transition queries; fell back to official docs
-- Repo inspection: `app/**`, `components/**`, `lib/**`, `data/**`, `scripts/**`, `proxy.ts`, `next.config.ts`, `package.json`, `package-lock.json`, `jest.*`, `playwright.config.ts`, `.github/workflows/ci.yml`, `public/service-worker.js`
+- Next 16.4.5 bundled docs (`node_modules/next/dist/docs/01-app`): `intercepting-routes.md` ((.) counts segments, slots excluded), `parallel-routes.md` (soft-nav slot persistence, `default.js`, catch-all close), `redirects.md` + `02-guides/redirecting.md` (checked before the filesystem, run before Proxy, 1,024 Vercel limit, 308), `proxy.md` ("Execution order"), `generate-static-params.md` (multiple dynamic segments, `dynamicParams`), `02-guides/json-ld.md`, `02-guides/view-transitions.md`. HIGH
+- Next source: `dist/esm/lib/generate-interception-routes-rewrites.js` (descendant match), `dist/lib/metadata/get-metadata-route.js` (`getMetadataRouteSuffix` djb2 of the parent path for group/slot routes), `dist/shared/lib/router/utils/sorted-routes.js` (different slug names error). HIGH
+- swisstopo STAC item `https://data.geo.admin.ch/api/stac/v1/collections/ch.swisstopo.swissaltiregio/items/swissaltiregio` (bbox, single EPSG:2056 COG, `fullcoverage`); [swisstopo swissALTIRegio](https://www.swisstopo.admin.ch/en/height-model-swissaltiregio-20240405); [opendata.swiss swissALTIRegio](https://opendata.swiss/en/dataset/swissaltiregio). Seam tier LOW; cross-checked against the TINITALY/DGM credits already in `data/site.ts`, so treated as MEDIUM
+- [HTML Standard, "prepare the script element"](https://html.spec.whatwg.org/multipage/scripting.html) (data block returns at step 15, CSP check at step 23). Primary spec, fetched; seam tier LOW, MEDIUM in practice; the audit gate verifies it
+- Copernicus DEM licence pointers: [Copernicus Data Space DEM](https://dataspace.copernicus.eu/node/1306), [AWS registry](https://registry.opendata.aws/copernicus-dem/), [License COPDEM-30 PDF](https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Data/DEM/resources/license/License-COPDEM-30.pdf). LOW; exact wording still to be copied from the PDF
+- Repo inspection (2026-11-12): `proxy.ts`, `next.config.ts`, `app/(site)/photos/**`, `app/sitemap.ts`, `lib/photos/view-model.ts`, `lib/ascent/waypoints.ts`, `lib/geo.ts`, `lib/saved-pages.ts`, `lib/demo-terminal.ts`, `lib/og/template.tsx`, `components/site/SiteFooter.tsx`, `components/photos/{MapSheet,PhotoViewer}.tsx`, `components/projects/DemoClip.tsx`, `data/schemas/{terrain,photo,editorial,media-manifest}.ts`, `data/site.ts`, `data/generated/terrain.ts`, `scripts/terrain/{build-terrain,fetch-dem}.mjs`, `scripts/photos/build-photo-data.mjs`, `scripts/media/build-clip.mjs`, `scripts/guards/check-served-images.mjs`, `public/service-worker.js`, file sizes under `public/terrain` and `data/terrain/source`
 
 ---
-*Architecture research for: v2.0 Topographic Identity integration into the existing Next.js 16 portfolio*
-*Researched: 2026-10-10*
+*Architecture research for: v2.1 Survey Expansion integration into the shipped Next 16.4 portfolio*
+*Researched: 2026-11-12*

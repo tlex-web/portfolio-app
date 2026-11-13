@@ -28,6 +28,24 @@ const anySkipLinks = (page: Page) => page.getByRole('link', { name: /skip to/i }
 const summitSkipLinks = (page: Page) => page.getByRole('link', { name: 'Skip to the summit', exact: true });
 
 /**
+ * Waits until React has hydrated the shell (it attaches its props key to every
+ * host node it hydrates). The first skip-link count usually runs on the server
+ * DOM, so the skip links are counted again after this (07 IN-17): a link that
+ * mounts only on the client, after the first count passed, still fails.
+ */
+async function hydrated(page: Page) {
+  await expect
+    .poll(
+      () =>
+        page
+          .locator('#main-content')
+          .evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))),
+      { timeout: 15000 },
+    )
+    .toBe(true);
+}
+
+/**
  * Fires every once:true whileInView animation by scrolling the full height,
  * returns to the top and waits for finite time-based animations to end
  * (mirrors `settle` in e2e/visual/routes.spec.ts). Scroll-driven animations
@@ -110,6 +128,11 @@ test.describe('Shell landmarks', () => {
       await expect(skip).toHaveAttribute('href', '#main-content');
       await page.keyboard.press('Enter');
       await expect(page.locator('#main-content')).toBeFocused();
+
+      // 07 IN-17: count again once hydrated and after the Tab/Enter sequence.
+      await hydrated(page);
+      await expect(skipLinks(page)).toHaveCount(1);
+      await expect(anySkipLinks(page)).toHaveCount(path === '/' ? 2 : 1);
     });
   }
 
@@ -201,6 +224,11 @@ test.describe('Shell 404', () => {
           'page',
         );
       }
+
+      // 07 IN-17: count again once hydrated.
+      await hydrated(page);
+      await expect(skipLinks(page)).toHaveCount(1);
+      await expect(anySkipLinks(page)).toHaveCount(1);
     });
   }
 

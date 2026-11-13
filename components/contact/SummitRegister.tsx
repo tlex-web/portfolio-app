@@ -33,7 +33,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function issueMessage(field: FeedbackField, issue: FieldIssue, value: string): string {
   if (field === 'name') {
     return issue === 'too_long'
-      ? `Shorten your name to 100 characters (now ${formatCount(value.length)}).`
+      ? `Shorten your name to ${formatCount(FEEDBACK_LIMITS.nameMax)} characters (now ${formatCount(value.length)}).`
       : 'Enter your name.';
   }
   if (field === 'email') {

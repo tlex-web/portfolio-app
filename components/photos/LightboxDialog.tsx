@@ -4,6 +4,7 @@ import { createContext, useContext, useLayoutEffect, useMemo, useRef } from 'rea
 import type { ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
+import { cssEscape } from '@/lib/photos/css-escape';
 
 /**
  * The lightbox shell (LBOX-01, LBOX-03; 10-UI-SPEC "Photo Viewer", Surfaces
@@ -108,12 +109,6 @@ function tabbables(root: HTMLElement): HTMLElement[] {
   );
 }
 
-/** CSS.escape, with a quote-and-backslash fallback where it is missing (jsdom). */
-function cssEscape(value: string): string {
-  if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(value);
-  return value.replace(/["\\]/g, '\\$&');
-}
-
 /**
  * Return focus after the lightbox closes (UI-SPEC "Return on close"): the
  * shown photo's mark in the mounted view, else the opener, else the main h1.
@@ -186,6 +181,9 @@ export default function LightboxDialog({
   useLayoutEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
+    // Shown (again): a close from an earlier showing must not swallow this one's, in case
+    // the instance outlives a back step (10-REVIEW IN-10).
+    closing.current = false;
     // StrictMode re-runs this effect; keep the first opener (the clicked tile).
     if (opener.current === null) opener.current = document.activeElement;
     if (!dialog.open) dialog.showModal();

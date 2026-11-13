@@ -51,6 +51,9 @@
  *              differs from the sidecar's sha256 (derivatives built from an older
  *              original); or when the manifest text differs from a rebuild from
  *              disk and the sidecar.
+ *   --root <dir>  read and write under <dir> instead of the repository root
+ *              (default unchanged). The guard selftest runs write mode against a
+ *              temp fixture tree for the G6 case (VERIFY-06).
  *
  * Usage:
  *   npm run photos:derive               (write; local only)
@@ -71,7 +74,45 @@ import {
   VARIANT_LONG_EDGES,
 } from '../../data/schemas/image-manifest.ts';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const NAME = 'photos:derive';
+
+/**
+ * `--check` and `--root <dir>`. The root defaults to the repository above this
+ * script; the guard selftest points it at a temp fixture tree (VERIFY-06, G6).
+ * Parsed before any ROOT-derived path, so every read, write and unlink follows --root.
+ */
+function parseArgs(argv) {
+  const args = {
+    check: false,
+    root: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..'),
+  };
+  const unknown = [];
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '--check') {
+      args.check = true;
+    } else if (argv[i] === '--root') {
+      const value = argv[i + 1];
+      if (!value || value.startsWith('--')) {
+        console.log(`${NAME}: --root needs a directory`);
+        process.exit(1);
+      }
+      args.root = path.resolve(value);
+      i++;
+    } else {
+      unknown.push(argv[i]);
+    }
+  }
+  if (unknown.length > 0) {
+    console.log(
+      `${NAME}: unknown argument(s) ${unknown.join(' ')}; the flags are --check and --root <dir>`
+    );
+    process.exit(1);
+  }
+  return args;
+}
+
+const ARGS = parseArgs(process.argv.slice(2));
+const ROOT = ARGS.root;
 const ORIGINALS_REL = 'assets/photos-original/';
 const SIDECAR_REL = 'data/photos/exif-sidecar.json';
 const OUT_REL = 'public/images/photos/';
@@ -81,7 +122,6 @@ const SIDECAR_PATH = path.join(ROOT, SIDECAR_REL);
 const OUT_DIR = path.join(ROOT, OUT_REL);
 const MANIFEST_PATH = path.join(ROOT, MANIFEST_REL);
 const URL_PREFIX = '/images/photos/';
-const NAME = 'photos:derive';
 
 /** Encoder settings, carried over from optimize-images.mjs. */
 const QUALITY = { avif: 50, webp: 82, jpeg: 82 };
@@ -419,14 +459,7 @@ async function check() {
   done();
 }
 
-const args = process.argv.slice(2);
-const unknown = args.filter((a) => a !== '--check');
-if (unknown.length > 0) {
-  console.log(`${NAME}: unknown argument(s) ${unknown.join(' ')}; the only flag is --check`);
-  process.exit(1);
-}
-
-(args.includes('--check') ? check() : write()).catch((e) => {
+(ARGS.check ? check() : write()).catch((e) => {
   if (e && Array.isArray(e.issues)) {
     for (const i of e.issues)
       console.log(`${NAME}: schema ${i.path.length ? i.path.join('.') : '(root)'}: ${i.message}`);

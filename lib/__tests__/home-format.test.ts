@@ -55,6 +55,13 @@ describe('formatLatLon (hero and plaque kicker, D-11)', () => {
     );
   });
 
+  it('rounds half away from zero at two decimals as well (09 IN-04)', () => {
+    // 0.145 * 100 and 1.005 * 100 land just below the half as doubles.
+    expect(formatLatLon({ lat: 0.145, lon: -1.005 }, { decimals: 2 })).toBe(
+      `0.15${NBSP}N ${MIDDOT} 1.01${NBSP}W`
+    );
+  });
+
   it('defaults to four decimals: no options and { decimals: 4 } print the same string', () => {
     const pos = { lat: 47.37444, lon: -8.54111 };
     expect(formatLatLon(pos)).toBe(`47.3744${NBSP}N ${MIDDOT} 8.5411${NBSP}W`);
@@ -101,6 +108,30 @@ describe('formatCoordinates (viewer strip position, D-07)', () => {
 
   it('rounds half up at the fourth decimal, like formatLatLon', () => {
     expect(formatCoordinates({ lat: 0.00005, lon: 1.23455 })).toBe(`0.0001${NBSP}N 1.2346${NBSP}E`);
+  });
+
+  it('rounds a half at the fifth decimal away from zero for positive and negative values (09 IN-04)', () => {
+    // Each value's double sits just below its half (1.00185 * 1e4 is
+    // 10018.499999999998), so multiplying first and then rounding printed the lower value.
+    expect(formatCoordinates({ lat: 1.00185, lon: -1.00995 })).toBe(`1.0019${NBSP}N 1.0100${NBSP}W`);
+    expect(formatCoordinates({ lat: -45.90145, lon: 45.00075 })).toBe(
+      `45.9015${NBSP}S 45.0008${NBSP}E`
+    );
+  });
+
+  it('prints values too small for plain decimal notation as zero', () => {
+    expect(formatCoordinates({ lat: 5e-7, lon: -1e-9 })).toBe(`0.0000${NBSP}N 0.0000${NBSP}W`);
+  });
+
+  // The four waypoint positions in data/generated/photos.ts (2026-11-13) and the
+  // exact strip strings they print today (09 IN-04: the rounding fix moves no pixel).
+  it.each([
+    [{ lat: 46.015, lon: 7.7414 }, `46.0150${NBSP}N 7.7414${NBSP}E`],
+    [{ lat: 46.0081, lon: 7.7385 }, `46.0081${NBSP}N 7.7385${NBSP}E`],
+    [{ lat: 45.9908, lon: 7.7103 }, `45.9908${NBSP}N 7.7103${NBSP}E`],
+    [{ lat: 45.9837, lon: 7.7623 }, `45.9837${NBSP}N 7.7623${NBSP}E`],
+  ])('prints the waypoint position %o unchanged', (position, expected) => {
+    expect(codePoints(formatCoordinates(position))).toEqual(codePoints(expected));
   });
 });
 

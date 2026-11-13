@@ -6,6 +6,7 @@ import {
   readViewTransitions,
   recordViewTransitions,
   removeViewTransitions,
+  waitForViewTransitionsSettled,
 } from './helpers/view-transitions';
 import { pressButton, tabReachesLinks } from './helpers/engine';
 
@@ -571,8 +572,12 @@ test.describe('Focus and Escape (LBOX-03)', () => {
 
     // From the content, Escape still goes to the gallery (D-08), and the
     // recorder sees that navigation (so its silence above is meaningful).
+    // Polled: router.push may issue its RSC fetch after the key handler
+    // returns, and a loaded WebKit runner read [] here once (13-15, PR #143).
     await page.keyboard.press('Escape');
-    expect(await navigations(page)).toEqual([...before, '/photos']);
+    await expect
+      .poll(() => navigations(page), { message: 'Escape from the content did not navigate' })
+      .toEqual([...before, '/photos']);
     await expect(page).toHaveURL(/\/photos$/);
   });
 });
@@ -779,26 +784,31 @@ test.describe('Morph and motion (LBOX-06)', () => {
     await recordViewTransitions(page);
     await openFirstTile(page);
     await expect.poll(async () => (await readViewTransitions(page)).count).toBeGreaterThan(0);
-    // Let the open transition finish before measuring.
-    await page.waitForTimeout(800);
-    const before = (await readViewTransitions(page)).count;
+    // The open transition has finished before measuring.
+    const before = (await waitForViewTransitionsSettled(page)).count;
 
     await page.goBack();
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await page.waitForTimeout(500);
-    expect((await readViewTransitions(page)).count).toBe(before);
+    // Settled first (10-REVIEW IN-09): focus is back on the tile, the close's last step, so a
+    // transition the popstate commit started is already counted, and every one has finished.
+    await expect
+      .poll(() => page.evaluate(() => document.activeElement?.getAttribute('data-photo-id')))
+      .toBe(first.slug);
+    expect((await waitForViewTransitionsSettled(page)).count).toBe(before);
   });
 
   test('a step morphs nothing: no photo-* pseudo-element @chromium-only', async ({ page }) => {
     await recordViewTransitions(page);
     const dialog = await openFirstTile(page);
-    await page.waitForTimeout(800);
-    const before = (await readViewTransitions(page)).transitions.length;
+    // The open transition has finished before measuring.
+    const before = (await waitForViewTransitionsSettled(page)).transitions.length;
 
     await dialog.getByRole('button', { name: 'Next photo', exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`/photos/${views[1].slug}$`));
-    await page.waitForTimeout(800);
-    const after = (await readViewTransitions(page)).transitions.slice(before).flat();
+    // Settled first (10-REVIEW IN-09): the step has rendered the next photo's title, and every
+    // transition started so far has finished, so its pseudo-elements are recorded.
+    await expect(dialog.getByRole('heading', { level: 2, name: views[1].title })).toBeVisible();
+    const after = (await waitForViewTransitionsSettled(page)).transitions.slice(before).flat();
     expect(after.filter((pseudo) => pseudo.includes('photo-'))).toEqual([]);
   });
 
@@ -834,9 +844,9 @@ test.describe('Morph and motion (LBOX-06)', () => {
     const before = await readViewTransitions(page);
     const dialog = await clickTile(page, 0);
     await expect(dialog.getByRole('button', { name: 'Close photo', exact: true })).toBeFocused();
-    await page.waitForTimeout(500);
 
-    const after = await readViewTransitions(page);
+    // Settled first (10-REVIEW IN-09): every transition the open started has finished.
+    const after = await waitForViewTransitionsSettled(page);
     const opened = after.transitions.slice(before.transitions.length).flat();
     expect(opened.filter((pseudo) => pseudo.startsWith('::view-transition'))).toEqual([]);
   });

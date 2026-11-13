@@ -15,6 +15,15 @@ interface CanvasErrorBoundaryState {
   failed: boolean;
 }
 
+/**
+ * The expected failure: three.js could not create a WebGL context (no WebGL, or none with the
+ * requested attributes). Both of its messages contain this text; e2e/helpers/webgl.ts
+ * `webglFailure` waits for the same text.
+ */
+function isWebGLUnavailable(error: unknown): boolean {
+  return error instanceof Error && error.message.includes('Error creating WebGL context');
+}
+
 /** Renders `fallback` once anything below it throws. Exported for tests; use SafeCanvas. */
 export class CanvasErrorBoundary extends Component<
   CanvasErrorBoundaryProps,
@@ -27,6 +36,8 @@ export class CanvasErrorBoundary extends Component<
   }
 
   componentDidCatch(error: unknown, _info: ErrorInfo) {
+    // 07 WR-07: a scene bug is logged; the expected no-WebGL fallback stays silent
+    if (!isWebGLUnavailable(error)) console.error('[SafeCanvas]', error);
     this.props.onError?.(error);
   }
 

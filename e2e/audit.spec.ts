@@ -1,6 +1,6 @@
 import { test, expect, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 import { buildPhotoViews } from '@/lib/photos/view-model';
-import { ROUTES } from './routes';
+import { AUDIT_SWEEP, ROUTES } from './routes';
 import {
   checkLinks,
   clearFailures,
@@ -156,6 +156,35 @@ test.describe('Audit: every route at 375, 768 and 1440 (D-20)', () => {
       expectClean(findings);
     });
   }
+});
+
+/**
+ * Every sitemap page that is not a ROUTES template entry (VERIFY-05): today
+ * /projects/coin-flip and photo slugs 2-4, later every region page. Each is the
+ * same template as a ROUTES entry, which runs in three engines at three widths,
+ * so these run once, in Chromium at 1440. One test for the whole list, so the
+ * test-count ratchet does not grow with every photo; a finding names its path.
+ */
+test.describe('Audit: every sitemap page (VERIFY-05)', () => {
+  test('every sitemap page once in Chromium @chromium-only', async ({
+    page,
+    request,
+    browserName,
+  }) => {
+    test.setTimeout(180000);
+    await installAuditProbes(page);
+    const failures = collectFailures(page);
+    const findings: string[] = [];
+
+    for (const path of AUDIT_SWEEP) {
+      const label = `${path} @1440`;
+      const { response } = await openSettled(page, path, 1440);
+      expect(response?.status(), label).toBeLessThan(400);
+      findings.push(...(await audit(page, request, failures, browserName, label)));
+    }
+
+    expectClean(findings);
+  });
 });
 
 test.describe('Audit: interactive states (D-21)', () => {

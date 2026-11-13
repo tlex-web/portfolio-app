@@ -190,3 +190,51 @@ describe('service worker cache writes (WR-04)', () => {
     },
   );
 });
+
+// 12 IN-09: storeCopy's synchronous steps (response.clone and event.waitUntil)
+// can throw too: clone() throws a TypeError on a used or locked body, and
+// waitUntil throws InvalidStateError on an inactive event. Neither may turn a
+// good network answer into a network error (cacheFirst, networkFirst) or a
+// rejected respondWith (networkFirstNavigation).
+describe('service worker cache writes: a synchronous throw in storeCopy (12 IN-09)', () => {
+  const paths = [
+    ['a cache-first /_next/static/ asset', '/_next/static/chunks/app.0123456789.js', 'script', 'no-cors'],
+    ['a cache-first /media/ poster image', '/media/coin-flip-toss-poster.0123456789.webp', 'image', 'no-cors'],
+    ['a network-first GET', '/feed.json', '', 'no-cors'],
+    ['a page navigation', '/projects', 'document', 'navigate'],
+  ] as const;
+
+  const throws = [
+    [
+      'response.clone() throws a TypeError (used body)',
+      (response: ReturnType<typeof okResponse>, _event: FakeEvent) => {
+        response.clone = () => {
+          throw new TypeError('Response body is already used');
+        };
+      },
+    ],
+    [
+      'event.waitUntil throws InvalidStateError (inactive event)',
+      (_response: ReturnType<typeof okResponse>, event: FakeEvent) => {
+        event.waitUntil.mockImplementation(() => {
+          throw new DOMException('The event handler is already finished.', 'InvalidStateError');
+        });
+      },
+    ],
+  ] as const;
+
+  describe.each(paths)('%s', (_label, pathname, destination, mode) => {
+    test.each(throws)('answers with the network response when %s', async (_throwLabel, breakIt) => {
+      const response = okResponse();
+      const { onFetch } = loadWorker({ respond: () => Promise.resolve(response) });
+      const event = fetchEvent(pathname, destination);
+      event.request = { ...event.request, mode };
+      breakIt(response, event);
+      onFetch(event);
+      expect(event.respondWith).toHaveBeenCalledTimes(1);
+      const answer = await event.respondWith.mock.calls[0][0];
+      expect(answer).toBe(response);
+      expect(answer).toMatchObject({ ok: true, status: 200 });
+    });
+  });
+});

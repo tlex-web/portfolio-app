@@ -11,13 +11,18 @@
  * before visual baselines exist, upgrade commits with zero visual diff) run
  * this before committing.
  *
- * Added or deleted files are reported and skipped (there is nothing to pair).
+ * A moved or renamed file is paired by git rename detection (-M): the old
+ * path's className literals at the ref are compared with the new path's in
+ * the working tree (07 WR-04). Added, copied or deleted files are reported
+ * and skipped (there is nothing to pair). A ref run that compared no file at
+ * all fails, so a wrong ref or an empty diff never reads as a pass.
  *
  * Usage:
  *   node scripts/guards/same-classnames.mjs <git-ref>
  *   node scripts/guards/same-classnames.mjs --files <before> <after>   (two files on disk; used by the selftest)
  *
- * Exit code 1 if any file's className literals differ (one FAIL line per file).
+ * Exit code 1 if any file's className literals differ (one FAIL line per file),
+ * or if a ref run compared zero files.
  */
 
 import { execFileSync } from 'child_process';
@@ -151,19 +156,35 @@ if (args[0] === '--files') {
   const run = (cwd, a) => execFileSync('git', a, { cwd, encoding: 'utf-8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
   const root = run(process.cwd(), ['rev-parse', '--show-toplevel']).trim();
   const git = (...a) => run(root, a);
-  const status = git('diff', '--name-status', '--no-renames', ref, '--', 'app', 'components')
+  const status = git('diff', '--name-status', '-M', ref, '--', 'app', 'components')
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean);
+  const SOURCE = /\.tsx?$/;
   for (const line of status) {
-    const [code, file] = line.split(/\t/);
-    if (!/\.tsx?$/.test(file)) continue;
-    if (code === 'A' || code === 'D') {
-      console.log(`skip (${code === 'A' ? 'added' : 'deleted'}): ${file}`);
+    const [code, ...paths] = line.split(/\t/);
+    if (code.startsWith('R')) {
+      // Rename: R<score>\t<old>\t<new>. Compare the old path at the ref with the new path on disk.
+      const [from, to] = paths;
+      if (!SOURCE.test(from) && !SOURCE.test(to)) continue;
+      compared++;
+      if (!compare(`${from} -> ${to}`, git('show', `${ref}:${from}`), fs.readFileSync(path.join(root, to), 'utf-8'))) failures++;
+      continue;
+    }
+    const file = paths[paths.length - 1];
+    if (!SOURCE.test(file)) continue;
+    if (code === 'A' || code === 'D' || code.startsWith('C')) {
+      const kind = code === 'A' ? 'added' : code === 'D' ? 'deleted' : 'copied';
+      console.log(`skip (${kind}): ${file}`);
       continue;
     }
     compared++;
     if (!compare(file, git('show', `${ref}:${file}`), fs.readFileSync(path.join(root, file), 'utf-8'))) failures++;
+  }
+  if (compared === 0) {
+    // A wrong ref or path, or an empty diff, must not read as a pass (07 WR-04).
+    console.log(`same-classnames: compared 0 files under app/ and components/ against ${ref} (wrong ref, or nothing changed)`);
+    process.exit(1);
   }
 }
 

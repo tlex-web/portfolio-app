@@ -1,213 +1,213 @@
 # Project Research Summary
 
-**Project:** Portfolio App — milestone v2.0 Topographic Identity
-**Domain:** Photographer-engineer portfolio rebuilt as a data-driven, scroll-told topographic survey (Next.js 16 App Router + R3F + Tailwind v4)
-**Researched:** 2026-10-10
-**Confidence:** MEDIUM-HIGH
+**Project:** Tim Lui portfolio, milestone v2.1 "Survey Expansion" (subsequent milestone; v2.0 shipped and tagged)
+**Domain:** Photographer-engineer portfolio in a Swiss "topographic survey" identity (Next.js 16.4.5 / React 19.3 / Vercel Hobby, build-time geodata, nonce CSP, heavy guard and baseline suite)
+**Researched:** 2026-11-12
+**Confidence:** MEDIUM-HIGH (repo facts and executed data probes are HIGH; platform rules MEDIUM; video bitrates, DJI metadata and a few licence wordings LOW)
 
-> Synthesized from STACK.md, FEATURES.md, ARCHITECTURE.md and PITFALLS.md. The synthesizer subagent's file write was blocked by the harness (subagents must return reports as text), so the orchestrator persisted this summary from the synthesizer's returned content (GSD self-heal #222).
+Detail lives in `STACK.md`, `FEATURES.md`, `ARCHITECTURE.md` and `PITFALLS.md` in this folder. This file does not repeat them. It resolves what they agree on, flags where they disagree, and turns that into phases.
+
+> **Orchestrator note (2026-11-12):** two Phase 1 items below already landed after the v2.0 close and are not v2.1 work: the axe 4.14 upgrade with the `label-content-name-mismatch` fixes (`0b1a467`, `42f4bb4`, 14 links), and the hanging browser install (E2E runs in the Playwright image since quick task 261106-mzc). Treat them as done when scoping requirements.
 
 ## Executive Summary
 
-v2.0 rebuilds the whole UI so that Tim Lui's photography and engineering read as two views of one surveyed terrain: the Matterhorn around Zermatt. Research supports a **data-first** approach: two offline, committed pipelines (swisstopo DEM → heightmap + contour SVG; photo EXIF → typed data) feed every surface — the WebGL ascent hero, the photo Map view, the lightbox EXIF strip, the footer legend, the 404/offline art and per-page OG images. Motion relies on platform APIs (View Transitions, native scroll driven by Motion `useScroll`); no scroll-jacking, no GSAP. The site becomes dark-only on a single token system enforced in CI.
+v2.1 grows a one-mountain site into a multi-region survey: region photo series, an Alps-wide contour overview with one pin per region, a local terrain plate per region, an immersive photo layout, drone video, five deferred features and the v2.0 debt. The four files agree on the central point: **this is a data-model and pipeline refactor first, and a UI project second.** Today "all photos" and "the Matterhorn waypoints" are the same list (Home, footer ticks, `lowestDemM`, test indexing, the single DEM extent). The first new photo would change Home and break the build. The safe path is a zero-visible-change refactor (explicit `homeWaypointIds`, a Region + Plate model, an N-plate terrain builder that keeps Zermatt's hashed files byte-identical, a `photoHref` helper) before any content or new UI lands.
 
-Phase 7 builds the regression nets (production-build Linux screenshot baselines in dark *and* light color schemes, test-count ratchet, palette guard) and takes the risky dependency bumps in isolated commits: motion 14 → Next 16.4 + React 19.3 + R3F 9.8.1 → Playwright 1.64. Phase 8 (data & terrain) blocks everything after it; Photography (10) and Engineering (11) are then independent; Contact, edge pages, cleanup and verification come last (12).
+The most useful finding is in the stack research. **swissALTIRegio already covers most plausible Italian and Austrian launch regions** (executed probes: Aosta, Cervinia, Gran Paradiso, Como, Ortler, Garda, Val Gardena/Seceda, Innsbruck, Ötztal, Zugspitze are inside; Cortina, Tre Cime, Braies, Grossglockner, Hallstatt are outside). Its foreign parts are TINITALY and DGM Österreich, and the site already credits them. If launch regions sit inside that rectangle, v2.1 needs **no second elevation source, no new library and no new attribution** for local plates. This contradicts the PROJECT.md assumption of a second source, and the owner should decide it before the terrain phase is planned. The only source that is always new is Copernicus GLO-90 for the overview map.
 
-The main risk is **regression**, specifically: a stale local `node_modules` (installed next 16.1.6 / framer-motion 12.35.1 vs lockfile 16.2.6 / 12.39.0), baselines captured in the wrong state (Playwright defaults to light scheme, which renders the broken `dark:` fallbacks), stripping `dark:` the wrong way (the un-prefixed class is the *light* value), tests deleted instead of rewritten, and the Motion bump touching three `useScroll` consumers that have no tests. Every one of these has a concrete guard in the roadmap implications below.
-
-### Correction to PROJECT.md
-
-PROJECT.md lists the old image variants (`-thumb/-medium/-large`) as "unused". **That is wrong.** `data/landscapes.ts` has 12 live references; they feed the Home LCP image (`app/page.tsx:84`), `PhotoCarousel3D` progressive textures and `GalleryGrid`. The optimize pipeline actually emits `-sm/-md/-lg`. Delete the legacy variants only in Phase 12, after the Phase 8 manifest exists and Phase 10 consumers are migrated, behind an asset-exists Jest test.
-
-Other verified repo facts: `public/images/landscapes/` serves ~194 MB of full-resolution originals publicly, all four with GPS EXIF blocks (optimized variants are clean); CI runs Node 20 (EOL April 2026); `eslint-config-next` is installed but not wired, so jsx-a11y rules don't run.
+The main risks are all regressions in guarded territory: Home drifting, Zermatt terrain hashes changing, URL/redirect/intercept/proxy-404 breakage if photo URLs move, visual baselines hiding real diffs inside intended ones, drone footage leaking location or blowing the Hobby transfer cap, and required-check deadlocks from `[ci skip]` heads. Mitigation is ordering plus explicit gates: repo safety first, a pixel-neutral data split with unchanged hashes and baselines, one re-baseline per cause, same-origin loops only for video, and data-generated exact redirects.
 
 ## Key Findings
 
-### Recommended Stack
+### Recommended Stack (STACK.md)
 
-The upgrade is a chain, not a single bump. Stable `<ViewTransition>` needs **React 19.3.0**, which ships with **Next 16.4** (no `experimental.viewTransition` flag since 16.3). `@react-three/fiber` 9.6/9.7 peer `react <19.3`, so **R3F 9.8.1 + drei 10.7.9** must move in the same commit. framer-motion 12.35 → **`motion` 14.1.0** breaks nothing this repo uses (13.0's only break is the `@emotion/is-prop-valid` removal; 14.0 has none); the `motion/react` import swap is mechanical across 24 files, and the only behavior change is internal `useScroll` offset tracking (13.4.4–13.5) — so baselines must exist first and include mid-scroll shots. A Next.js security release is announced for 2026-10-14; take that patch.
+The v2.0 stack stays. Additions are small and mostly build-time.
 
-**Core technologies:**
-- `next` 16.4.x, `react`/`react-dom`/`@types/react*` 19.3.0 — `<ViewTransition>` + `addTransitionType`, no flag
-- `@react-three/fiber` 9.8.1, `@react-three/drei` 10.7.9 — required by React 19.3; `three` stays ^0.184
-- `motion` 14.1.0 (replaces `framer-motion`) — same API, `motion/react` imports
-- `@playwright/test` 1.64.0 — bump *after* baselining on the lockfile version (1.60)
-- Build-time devDeps: `geotiff` 3.0.5, `d3-contour` 4.0.2 (ESM-only, scripts only), `simplify-js` 1.2.4, `exif-reader` 2.0.3 with existing `sharp` 0.34.5, `colorjs.io`, `@axe-core/playwright` 4.13.0
-- Runtime additions: `fast-png` 8.0.0 (hero chunk only, ~11 KB gz), `@phosphor-icons/react` 2.1.10 (generic glyphs only, via `/dist/ssr`)
-- Fonts: Schibsted Grotesk (display, ~47 KB), Inter (body), JetBrains Mono (data) — no fourth family
+**Core additions:**
+- **swissALTIRegio (existing)**: local plates for every region inside 4.5-12.0 E / 44.8-48.8 N. One CRS (LV95), 10 m, hole-free, attribution already shipped. Adding a region is a new extent, not a new pipeline.
+- **Copernicus GLO-90**: Alps overview only. 72 one-degree COGs, no auth. Unsmoothed 1,000 m contours measured 43 KB brotli, so plan smoothing and ring filtering. It is a DSM, so never use it for local plates.
+- **BEV ALS DTM 1 m (Austria) / TINITALY 1.1 (Italy)**: only for regions outside the swissALTIRegio rectangle. BEV range-reads fine with the installed geotiff 3.0.5. TINITALY needs a manual tile download (access unverified).
+- **proj4 2.22.0 (devDependency, only if a non-LV95 plate exists)** and **schema-dts 2.1.0 (types only)** for JSON-LD.
+- **Existing ffmpeg/`clip:derive` pipeline for drone loops**: same-origin MP4 (optionally AV1 first) needs no CSP change. The installed ffmpeg lacks SVT-AV1 (the Gyan full build adds it).
+- **No new library** for Web Share (feature-detect plus copy-link), LV95 display (`wgs84ToLv95` exists), JSON-LD (native script tag, no nonce needed, escape `<`), or the terminal controls.
 
-**Measured asset budgets:** 512² 16-bit heightmap ≈ 336 KB (desktop), 256² ≈ 92 KB (mobile); contour SVG at 100 m interval ≈ 50 KB raw / 13.5 KB brotli.
+**Critical constraints:** never warp rasters (window on the native grid, transform points only); one DEM source per plate, never a blend; geotiff.js returns zeros silently for out-of-bounds windows (bounds-check and fail on min = max = 0); Hobby has 100 GB/month shared transfer and a 30-day pause on overrun, so films cannot be self-hosted.
 
-**Do not add:** GSAP, Lenis, exifr, proj4, `@react-three/postprocessing`, three-custom-shader-material, drei `useDetectGPU` (fetches from unpkg → blocked by CSP), drei `ScrollControls`, any slippy-map library, lightbox or photo-layout libraries, a 1024² heightmap, cmdk, `eslint-plugin-better-tailwindcss` (see resolution e).
-
-**Browser support facts:** same-document View Transitions + types work in Chrome 125+, Safari 18.2+, Firefox 147+. CSS scroll-driven animations are **still absent from Firefox stable (157)** — the altimeter and ascent must run on Motion `useScroll`; CSS `animation-timeline` only for decoration behind `@supports` (Tailwind 4.3 has no utilities; use `@utility`).
-
-### Expected Features
-
-FEATURES.md found 18 gaps (G1–G18) the approved plan didn't cover; the ones that shape the roadmap are folded in below.
+### Expected Features (FEATURES.md)
 
 **Must have (table stakes):**
-- One `SiteNav` with skip link, active state and mobile menu; footer legend with "© swisstopo"
-- Home: identity + primary CTA in the first viewport, fully readable without scroll effects; native scroll only; static poster fallback; "skip the ascent" link
-- Deep-linkable photos at `/photos/[slug]` — full page on direct load, modal over the gallery on in-site navigation, Back closes it, prev/next don't push history (G1)
-- Real lightbox: arrow keys, prev/next buttons, counter, swipe, focus trap and focus return to the thumbnail (G3)
-- `scrollbar-gutter: stable` with the visible scrollbar so modal scroll-lock doesn't shift layout (G4)
-- Per-route metadata, `metadataBase`, OG images, sitemap, robots (G2)
-- Case studies with data-optional sections; risk scale labelled by glyph + text + range with a table equivalent (color-not-only)
-- Contact: visible labels, error summary with focus, preserved input on error, honeypot
-- Designed 404, `error.tsx`, `global-error.tsx` (G14) and offline pages
-- One canonical photo order everywhere (ascending altitude) (G18); `?view=` / `?area=` URL state via `router.replace` (G17)
+- Region data model; Zermatt (existing 4 plus new photos) plus 1-2 new regions, at least one IT or AT
+- Region index synced with the overview map (the text list is the accessible and mobile path); numbered pins on narrow screens
+- Region page: header and facts, local plate, uncropped immersive sequence with always-visible data captions, next-region block
+- Lightbox scoped to one region, with an end-of-series card instead of silent cross-region stepping
+- Old `/photos/<slug>` links and OG cards keep working; Home waypoint links updated
+- Per-region extent and DEM attribution (a licence obligation, not polish); region metadata, OG cards, sitemap
+- PHOTO-F2 Share with honest "Copy link" fallback, PHOTO-F4 LV95 (CH photos only, rounded to 10 m), ENG-F1 prev/next plus `<details>` transcript, PLAT-F1 JSON-LD
+- PLAT-F2 is **already shipped** (`components/site/SavedPages.tsx` plus `lib/saved-pages.ts`, 12-15 EDGE-02). Treat it as "extend the catalog to region pages and the new photo URLs", and narrow or mark the requirement in REQUIREMENTS.md.
+- Drone loops (if the video shape includes loops): poster-first, visible pause (WCAG 2.2.2), off under reduced motion and Save-Data
 
-**Should have (differentiators):**
-- Real-terrain hero with contour shader and EXIF-GPS waypoints
-- Photo Map view with keyboard-operable pins
-- Hotspot callouts with leader lines, a mobile legend and a clean-view toggle
-- Thumbnail → lightbox View Transition morph (progressive; lightbox must work without it)
-- Instrument-panel metrics with context lines; trail-grade `RiskScale`
-- Route-log roadmap on an elevation axis; "register signed" contact confirmation; `?ref=` photo prefill on Contact
-- Terminal demo with pause/step controls and a static transcript (G16)
+**Should have (differentiators, v2.1.x):**
+- Map-collar frame with coordinate ticks (outside the photo, never over it); sequence-as-ascent altimeter rail; sticky mini plate
+- Overview as a sheet index (extent rectangles, borders, 3-5 reference summits); overview-to-plate morph
+- Lightbox thumbnail index (once a region passes about 12 photos)
 
-**Defer (post-v2.0):** JSON-LD beyond basics, Share button, LV95 coordinate display, offline page listing cached pages, photo tag filters (worth it at 20+ photos), blog, print licensing.
+**Defer:** films with sound and captions (after a hosting/CSP decision), clips inside the lightbox, flight paths from telemetry, PHOTO-F1/F3, PLAT-F3/F4 (explicitly out of v2.1).
 
-**Anti-features (hold the line):** scroll-jacking, masonry, infinite scroll, slippy map, right-click blocking / watermarks, full-resolution download, count-up number animations, public guestbook, CAPTCHA, Gantt charts.
+**Anti-features to hold the line on:** slippy maps, pin-clustering libraries, scroll-snap, parallax/Ken Burns, overlays on photos, auto-advancing slideshows, social share rows, LV95 on non-Swiss photos, YouTube/Vimeo embeds by default.
 
-**Data gaps blocking locked features:** one photo (R004-011, a film scan) has no GPS (G5); demo commands cover only Low and High and lack a numeric `riskScore` (G9); roadmap items lack dates/order and the "Other" filter has zero items (G11); photo copy contradicts EXIF (Glacier Trail annotation says 2,900–3,100 m vs GPS 2,597 m; `img-0605` tagged 2024 vs EXIF Sep 2021; two near-duplicate stories) (G15); no route-panel imagery (G10).
+### Architecture Approach (ARCHITECTURE.md)
 
-### Architecture Approach
-
-All routes, Home included, move by `git mv` into `app/(site)/` in one commit, under a shared `SiteChrome` (one fixed `SiteNav` that turns transparent over the hero, plus `SiteFooter`). The root `not-found` and `global-error` render `SiteChrome` themselves (do not use `global-not-found`). `await headers()` stays at the root, the nonce CSP is unchanged, and `cacheComponents`/PPR stays off (incompatible with nonce CSP). Client pages become Server Components with client islands so they can export metadata. Generated data lives in committed, deterministic `data/generated/*.ts` typed with `satisfies` against zod schemas, verified in CI with `--check`; editorial data stays in `data/landscapes.ts` with `locationOverride` corrections. Hashed binaries live under `public/terrain/`.
+Separate the **plate** (terrain sheet: source raster, extent, assets) from the **region** (editorial series pointing at one plate). Home keeps pointing at the `matterhorn` plate directly, so Zermatt can later get a larger plate without moving Home. Photo-to-region membership is explicit, not inferred from GPS. All reprojection happens once in the networked fetch step (committed, sha256-pinned square metric grid), so `terrain:build --check` stays deterministic. Asset names stay flat and prefixed (`/terrain/aosta-contours-hero.<hash>.svg`), which keeps five regexes and cache rules unchanged. One builder run owns all plates (a per-plate run would delete the others' files). The footer stays the home sheet; each region page renders its own `SheetMargin`.
 
 **Major components:**
-1. `SiteChrome` / `SiteNav` / `SiteFooter` (+ `data/site.ts` identity) — single shell for every route
-2. `scripts/build-terrain` + `scripts/extract-exif` (+ `--check`) → `data/generated/*`, `public/terrain/*` — offline data pipelines
-3. `lib/geo.ts` (WGS84 ↔ LV95 ↔ terrain grid), `lib/trail-grade.ts`, zod schemas with typed project-highlight blocks (discriminated union)
-4. `ContourField` — one contour asset serving hero fallback, Map view, footer and 404
-5. `AscentHero` — server-rendered hillshade poster (the LCP) + DOM waypoint list beneath a lazy R3F canvas (`frameloop="demand"`, CPU-built mesh, `fwidth` fragment-shader contours, one `useScroll` MotionValue shared by camera and `AltimeterRail`, capability gates: reduced motion, Save-Data, WebGL2, device memory, PerformanceMonitor, context loss)
-6. Photo routing: `photos/layout.tsx` with `@modal/(.)[slug]`, mandatory `@modal/default.tsx`, null `@modal/page.tsx`, full `photos/[slug]` page; the URL is the single source of lightbox and view state; view-transition names stay unique (the grid thumbnail drops its boundary while its photo is open)
-7. Motion tokens: CSS custom properties and `lib/animations.ts` kept in parity by a test; `MotionConfig reducedMotion="user"` in the layout
+1. `data/regions/regions.json` + `data/terrain/plates.json` + `lib/photos/routes.ts`: the registries (JSON so `.mjs` generators read them; a slim route list so the proxy stops importing the view-model)
+2. N-plate `terrain:build` plus fetch adapters per product, and a pure `lib/geo/laea.ts` (and `utm.ts` only if needed)
+3. `photoHref`/`regionHref` plus a split view-model (`homeWaypoints` vs `seriesViews(region)` vs `photoViews`)
+4. `SheetMargin` (extracted from `SiteFooter`, zero visual diff), `ContourField(plate)`, `PlateSheet` (generalised `MapSheet`), new `AlpsOverview`
+5. Routes under `app/(site)/photos/` with the `@modal` slot moved or extended; `next.config` redirects for the four frozen legacy slugs; `ShareButton`, `JsonLd`, `FlyoverClip`, `TerminalTranscript`
 
-### Critical Pitfalls
+### Critical Pitfalls (PITFALLS.md, top picks)
 
-1. **Stale install and untrustworthy baselines** — `npm ci` first; `vercel.json` to `npm ci`; baselines generated on Linux against a production build, with dark and light color-scheme projects, `serviceWorkers: 'block'`, `retries: 0`, reduced-motion and mid-scroll shots, canvas masked. Dark and light snapshots must be identical after the `dark:` work.
-2. **`dark:` stripped the wrong way** — neutralise first (`@custom-variant dark (&:where(.dark, .dark *))`, `<html class="dark">`, `color-scheme: dark`) for zero markup change; then collapse each file to its `dark:` value with zero screenshot diff; then remove the variant and enable the guard.
-3. **Palette guard traps** — rename v1 `amber` to `caution` (it collides with Tailwind's stock amber); scan `data/` and `__tests__/` too (`RoadmapFilters.test` asserts `bg-cyan-600` — rewrite to `aria-pressed`); handle 282 `white`/`black` usages with a decreasing per-file ratchet; add `@theme { --color-*: initial; }` only after the guard reports zero; keep trail yellow outside `--color-*` so it can't become text.
-4. **Tests deleted, not rewritten** — per-phase test-contract table and a test-count ratchet; assert exactly one `nav[aria-label="Primary"]` and one `#main-content` per route (`.first()` selectors hide a duplicate nav).
-5. **Geodata and privacy** — commit generated data (CI runs `tsc`/Jest without a build); one `lib/geo.ts`; place waypoints at the DEM-sampled height (EXIF altitude is 9–25 m off); EXIF dates are naive local time (no `OffsetTimeOriginal`) → store local ISO + `Europe/Zurich`, format with explicit timezone; move GPS-bearing originals out of `/public`; use `.rotate()` and never `withMetadata()`; swissALTI3D is LV95 while photo GPS is WGS84; d3-contour output is y-down grid coordinates and ESM-only (keep it out of Jest-imported components).
-6. **Motion, WebGL and caching** — Motion bump in an isolated commit with zero visual diff and a single `motion-dom` in the tree; explicit `::view-transition-*` reduced-motion CSS; WebGL context-loss fallback; `svh` units and `dpr={[1, 1.5]}`; no drei `<Text>` (blob workers blocked by CSP) — use HTML overlays; content-hash generated asset names (`/images` is cached immutable for a year); make SW navigations network-first so v1 HTML can't be served stale.
+1. **One photo list drives Home, footer ticks, `lowestDemM`, tests and the DEM extent.** The first new photo changes Home or throws. Fix: explicit `homeWaypointIds`, per-region plates, named test fixtures, all in a pixel-neutral commit (48 baselines unchanged).
+2. **Generalising the pipeline changes Zermatt's bytes**, renaming every hashed terrain file, changing the SW precache and diffing all 48 baselines. Fix: refactor to N plates with `terrain:build --check` green against the existing artifacts and identical hashes before adding a second plate.
+3. **Building a second DEM pipeline you may not need, or blending sources in a plate.** Fix: check the region footprint first; one source per plate; Copernicus (a DSM) for the overview only; record source, CRS, height system and edition per plate.
+4. **Drone material leaks through paths the guard never scans** (`.SRT`/`.LRF` sidecars, `djmd` tracks, XMP, aircraft altitude, filename-id collisions). Fix: sources stay in gitignored `assets/`; ban the extensions in the guard; route every clip through `build-clip.mjs`; keep the sidecar schema closed; use an explicit id map.
+5. **URL restructuring collides with the intercepting route, the proxy's two-segment 404 regex and `dynamicParams`**, and the redirects must be exact, one-hop, and also cover OG card URLs (the card path embeds a hash of the parent route). Fix: centralise `photoHref` first, generate exact redirects, extend the proxy and tests, add `@modal` defaults and a null `@modal/[region]`.
+6. **Baseline churn hides real regressions** (Playwright 1.65, footer, layout, new routes, content). Fix: stage one re-baseline per cause, with Playwright 1.65 alone first and new routes with `update_mode=missing`.
+7. **Required checks deadlock or pass vacuously** (`[ci skip]` heads stay Pending; direct pushes still deploy). Fix: one aggregate `CI OK` check, a ruleset on `main`, verify through `gh api`; Tim applies the settings change. The existing `automated-actions` ruleset targets no branch and enforces nothing.
+8. **The Upstash limiter fails open silently** (it reads only `UPSTASH_*`; Marketplace may inject `KV_*`). Fix: check names with `vercel env ls production`, probe for a 429 on the sixth honeypot POST, fail closed in production.
 
-### Researcher disagreements and resolutions
+## Where the research files disagree (needs an owner decision, do not pick silently)
 
-| # | Tension | Resolution |
-|---|---------|------------|
-| a | React 19.3 timing and R3F coupling (STACK: one chain; ARCHITECTURE: Phase 7; PITFALLS: Phase 7 or early 10) | **Phase 7** per the user's 2026-10-10 decision. Next 16.4 + React 19.3 + types + R3F 9.8.1 + drei 10.7.9 in one atomic commit; Motion 14 a separate commit before it; Playwright 1.64 a separate commit after. Each with zero visual diff. |
-| b | Lightbox element: `<dialog>` (FEATURES, PITFALLS, STACK) vs overlay + `inert` (ARCHITECTURE) | **Phase 10 spike.** Default to `<dialog>` + `showModal()` in `useLayoutEffect`; fall back to overlay + `inert` if the morph doesn't form in Chromium, Safari 26 and Firefox 157. Spike popstate too — Back may skip the close animation; don't depend on it. Intercepting route either way; the lightbox must work without the morph. |
-| c | Heightmap format: 16-bit grey PNG (STACK) vs terrain-RGB (ARCHITECTURE) vs raw Uint16 (PITFALLS) | **16-bit grey PNG decoded with `fast-png` into a `Uint16Array`, CPU-built mesh.** Smallest (336 KB at 512²), verified end to end (~22 ms decode), never browser-decoded. Terrain-RGB measured 690 KB; raw + brotli 388 KB with no gain. Write it with sharp from a `Uint16Array` + `.toColourspace('grey16')` (the `Buffer` + `depth:'ushort'` path silently corrupts). Content-hash the filename. |
-| d | DEM source: swissALTI3D (Italian side missing — 10 tiles south of the summit) vs swissALTIRegio (10 m, single cross-border COG, hole-free) | **User decision** (Open Question 1). Research recommends swissALTIRegio. |
-| e | Palette lint guard: grep script (ARCHITECTURE) vs `eslint-plugin-better-tailwindcss` (STACK) | **Grep script as the hard CI gate** (catches object maps, data files, tests, `@apply`; supports a ratchet), with `--color-*: initial` as compile-time backstop. Skip the ESLint plugin. |
-| f | `dark:` neutralisation | **Adopt PITFALLS' staged path** (superset of the mechanical sweep). |
-| g | Playground deletion timing | **Delete the 3 routes and the `/transitions` link in Phase 7.** Keep `AnimatedGradientMesh` until Contact is rebuilt in Phase 12; fix the Contact h1 contrast now with a solid surface. |
-| h | Playwright version: 1.64 (STACK) vs 1.60 Docker image (PITFALLS) | Baseline on the lockfile version, then bump to 1.64 as its own commit; re-baseline only if Chromium rendering differences require it. |
+| # | Topic | Position A | Position B | Synthesizer lean |
+|---|---|---|---|---|
+| 1 | **Photo URL scheme** | ARCHITECTURE (and FEATURES option A): nested `/photos/[region]` + `/photos/[region]/[slug]`, 308 for the 4 frozen legacy slugs, plus a redirect for the old OG card URLs, `@modal/(.)[region]/[slug]` plus null `@modal/[region]`, proxy regex rework. About 20 source files, about 15 e2e specs and baselines touched. Readable hierarchy, matches the PROJECT.md wording. | PITFALLS: keep `/photos/[slug]` canonical (slugs are globally unique) and give series their own namespace (`/series/[region]` or `?series=`). Zero redirects, old OG cards untouched, no proxy 404 regression. FEATURES option B (`/photos/series/[region]`) is the same idea, but PITFALLS notes the static-sibling intercept case is unverified. Photo URL no longer says which series, and a photo belongs to exactly one series. | The decision is the owner's. Technical lean: B is cheaper and safer for the "links and OG cards keep working" promise. A is the better long-term hierarchy and its risk is bounded because the legacy set is closed (4 slugs). Whichever is chosen, do the `photoHref` centralisation first so the flip is one line. |
+| 2 | **Footer attribution** | ARCHITECTURE: footer stays the home sheet; each region/overview renders its own `SheetMargin` (layouts do not re-render on soft navigation, so a route-aware footer goes stale). | FEATURES/STACK/PITFALLS: the footer legend or a sources list must show the sources used on the current page, or a linked `/attributions` page (Copernicus needs the liability sentence). | Lean ARCHITECTURE for extent and "last surveyed", plus a footer link to one sources/attributions page listing every credit. Confirm the licence is satisfied by credit next to the data it feeds. |
+| 3 | **Immersive image fit** | FEATURES: `object-fit: contain` on gallery-black, never cropped (a locked v2.0 rule). | PITFALLS: "use `object-fit: cover`" to handle full-bleed sizing. | Follow FEATURES (contain). Cover would crop compositions and contradicts the locked decision. Keep the 2,560 px cap and write per-breakpoint `sizes`. |
+| 4 | **Carousel at 20+ photos** | FEATURES: retire it (regression flag: remove PHOTO-02, redirect `?view=carousel` to Grid, rewrite its tests, do not delete them). | ARCHITECTURE/PITFALLS: keep it, scoped to one series with windowed textures (current +/- 2). | Owner's call (see decisions). Retiring is less work, but removes a shipped view, so it needs an explicit decision and a test contract table. |
+| 5 | **Drone video placement and shape** | STACK/FEATURES: silent autoplaying loops, with a pause control, inline in the sequence at their altitude position. | ARCHITECTURE: at most one flyover per region in a series-page slot, click-to-play, `preload="none"`; inline and lightbox video later. PITFALLS: a short loop plus a click-to-load "watch" rendition. | All agree: same-origin progressive MP4, no CSP change, no films on Hobby. Lean to ARCHITECTURE's slot first (smallest surface), then inline loops if budget allows. The byte budgets differ (STACK loop <= 4 MiB, ARCHITECTURE drone <= 6 MiB, PITFALLS <= 3 MB loop and <= 15 MB watch). Settle one budget after encoding a real clip. |
+| 6 | **Overview map construction** | STACK: Copernicus GLO-90, plate carree scaled by cos(46.5 deg), 1,000 m interval, <= 30 KB brotli target (needs a spike). | ARCHITECTURE: EPSG:3035 LAEA with a pure `lib/geo/laea.ts`, 500 m interval, <= 250 KB served. PITFALLS: 250-500 m interval, <= 150 KB. | Take STACK's measured numbers as the starting point (they are executed). Use LAEA only if the overview must be measurable. Fix interval, size budget and projection in one spike. |
+| 7 | **Where reprojection happens** | STACK: window each plate on the source's native grid, transform only points, proj4 devDependency. | ARCHITECTURE: resample into a square metric grid in the fetch adapter (bilinear), plus hand-written pure projection code. | Compatible if resampling is limited to the fetch step and `build-terrain` stays source-agnostic. Irrelevant if all regions are inside swissALTIRegio. |
+| 8 | **PLAT-F2 persistence** | PITFALLS: keep the page cache across deploys so the saved list does not empty. | FEATURES/ARCHITECTURE: the reset on deploy is correct (EDGE-02 stale-page protection). | Keep v2.0 behaviour and only extend the catalog. Changing cache retention risks the stale-page protection, and a deploy-surviving list is optional polish. |
+| 9 | **Where the lightbox Escape-focus fix lands** | PITFALLS: in the debt phase. | ARCHITECTURE: fold it into the `PhotoViewer` rewrite. | Diagnose and add the regression test early; fix wherever `PhotoViewer` is actually rewritten, with one declared PNG set. |
 
-### Open questions needing a USER decision
+## Decisions the owner must make
 
-| # | Question | Needed by | Options / recommendation |
-|---|----------|-----------|--------------------------|
-| 1 | DEM source | Phase 8 | Recommend **swissALTIRegio 10 m**. swissALTI3D would need a crop to N ≥ 1'090'000 or a Regio fill. Changes the locked "swissALTI3D" wording. Confirm cross-border attribution string (fallback: "© swisstopo" + "Height model: swissALTIRegio"). |
-| 2 | Placement of the photo without GPS (R004-011) | Phase 8 | Manual "approx." position, an "Unplaced" tray, or a user-supplied location. Never drop it, never place at 0,0. |
-| 3 | Default photo view | Phase 10 | Recommend **Grid**; Map one click away. |
-| 4 | Deleted routes: redirects vs designed 404 | Phase 7 | Recommend designed 404 unless known inbound links exist. |
-| 5 | Move GPS-bearing originals out of `/public` | Phase 8 | Recommend yes (e.g., `assets/photos-original/`, gitignored); confirm where the 194 MB lives. |
-| 6 | Waterfall location label | Phase 8 | GPS points to the gorge just south of Zermatt (possibly Gornerschlucht, LOW confidence); Tim confirms; record as `locationOverride` with a reason. |
-| 7 | GPS precision for shipped data | Phase 8 | Recommend rounding to 4 decimals (~10 m); decide whether the lightbox shows coordinates. |
-| 8 | CLI_X per-grade behavior, Medium/Critical demo commands with `riskScore`, sources for "95% accuracy" / "40% faster" | Phase 11 | Content from Tim; otherwise soften the claims. |
-| 9 | Route-panel imagery | Phase 11 | Recommend a generated elevation-profile glyph over screenshots. |
-| 10 | Display font | Phase 7 UI-SPEC | Schibsted Grotesk vs Host Grotesk (~26 KB lighter, max 800) vs Archivo; decide in UI-SPEC with ui-ux-pro-max. |
-| 11 | Roadmap data | Phase 11 | Add `completedAt` and `order`; drop or disable the empty "Other" filter; add v2.0 as in-progress; set a "Last surveyed" date. |
-| 12 | Photo copy corrections | Phase 8 | Fix Glacier Trail elevation copy, `img-0605` year tag, near-duplicate stories. |
-| 13 | Licensing and sharing posture | Phase 10 | Recommend "© 2021 Tim Lui, all rights reserved", no download, "Ask about this photo" → Contact `?ref=`. |
-| 14 | Real identity values | Phase 7 | GitHub, LinkedIn, email, role line, `package.json` author. |
+Before or during roadmapping. Each changes what gets built.
+
+| # | Decision | Options | Why it matters / recommendation |
+|---|---|---|---|
+| D1 | **Launch regions vs the swissALTIRegio footprint** (blocks the terrain phase) | Inside the rectangle (Aosta/Cervinia/Gran Paradiso, Como, Ortler, Garda, Val Gardena, Innsbruck, Ötztal) vs outside (Cortina, Tre Cime, Braies, Hohe Tauern, Salzkammergut) | Inside means no new source, library or credit. Outside means a new fetcher, proj4, a CRS field, a new credit line and per-source attribution. Recommend an inside-the-footprint region for launch. Also decide which real photos exist, since regions follow Tim's originals. Note the Zermatt-region Monte Rosa area may need a larger plate. |
+| D2 | **Photo URL scheme** | Nested (A) vs flat plus series namespace (B), see the disagreement table | Blocks routing, Share, JSON-LD, sitemap and Home links. Also decide: do cached old OG card URLs need an explicit redirect (the card hash changes under nesting), or is "crawlers re-fetch the page" acceptable? |
+| D3 | **Drone video shape, hosting and format** | Loops only (recommended), films only, both. Films need an external host (Bunny or YouTube-nocookie facade, one `frame-src` origin) | Loops fit the repo, CSP and Hobby. Films cannot be self-hosted (about 740 full 135 MB plays exhaust the site's monthly transfer). Also: AV1 rendition (needs the Gyan full ffmpeg) or H.264 only; a graded SDR Rec.709 master from Tim; where the per-clip byte budget lands. |
+| D4 | **Carousel at 20+ photos** | Retire (immersive sequence takes over) / keep scoped to a series / keep only inside a region | Retiring removes a shipped view (PHOTO-02): needs a `?view=carousel` redirect and a test contract table (GUARD-03). |
+| D5 | **JSON-LD `license`** | Omit (recommended: creator + copyrightNotice + creditText only) vs add an "Image rights" page and `license` | `license` gives a "Licensable" badge but implies a licensing page, and print licensing is out of scope. |
+| D6 | **Overview-map source and construction** | GLO-90 plate carree (STACK) vs LAEA; contour interval; whether to include borders and reference summits; whether a hillshade poster backs the contours | Borders need their own source and licence. Size budget (30 vs 150 KB) is unresolved. Needs a short spike. |
+| D7 | **Footer and attribution model** | Footer stays home sheet plus in-page `SheetMargin` plus a sources page, vs a route-aware footer | See disagreement 2. Per-source credit text must be verbatim from the licence (BEV and Copernicus GLO-90 wording unconfirmed). |
+| D8 | **Series layout choices** | Region order (west to east vs by date), whether the map collar, altimeter rail and sticky mini plate are in v2.1 or v2.1.x, nav hide-on-scroll or not | Scope control for the largest UI phase. FEATURES puts the collar, rail and mini plate at P2, and recommends the base sequence first. |
+| D9 | **Privacy rules for new material** | Per-photo precision override (4 dp default, coarser or approx. for dwellings and take-off points); aerial photos without altitude or labelled as ground height; explicit id map for DJI and second-camera filenames | Location data in git history is not recoverable (D-12). Decide before the first new original is ingested. |
+| D10 | **Repo settings (Tim applies them)** | The `main` ruleset JSON, Vercel Deployment Checks (Hobby availability unconfirmed), disable or replace the inert `automated-actions` ruleset, and the Upstash fail-closed behaviour | Settings changes are Tim's, never applied by an agent. |
 
 ## Implications for Roadmap
 
-Phases continue numbering at 7.
+Suggested phase structure (7 phases). The order follows PITFALLS' phase types (debt, data, terrain, routing, layout, video) and ARCHITECTURE's dependency order, with ENG-F1 as an independent filler.
 
-### Phase 7: Foundation & guardrails
-**Rationale:** Blocks everything; the regression nets must exist before any visual change, and the risky dependency bumps must land in isolation.
-**Delivers (in order):** (1) `npm ci`, `vercel.json` → `npm ci`, CI on Node 24, wire `eslint-config-next`, test-count ratchet; (2) dark + light Playwright projects with Linux production-build baselines; (3) delete playground routes and zero-consumer components (TerminalDemo, Hero3DSection, ZoomableImage); (4) `motion` 14.1.0; (5) Next 16.4 + React 19.3 + R3F 9.8.1 + drei, then Playwright 1.64; (6) tokens v2, motion tokens, visible scrollbar with `scrollbar-gutter`; (7) staged `dark:` removal, grep guard, contrast script reading `globals.css`; (8) `data/site.ts`, `SiteNav`, `SiteFooter`, `SiteChrome`, `(site)` move, root `not-found` + `global-error`; Contact h1 contrast fix.
-**Avoids:** stale install, wrong baselines, wrong-half `dark:` removal, palette-guard traps, duplicate navs, Motion `useScroll` drift.
-**Research flag:** no research-phase; run `/gsd-ui-phase` (with ui-ux-pro-max) for tokens, type and nav.
+### Phase 1: Repo safety and test-debt foundation
+**Rationale:** The refactors in phases 3-5 are large. Required checks must block a red `main` before they land, and the Playwright 1.65 bump must land alone before any intended pixel change.
+**Delivers:** Aggregate `CI OK` job plus a `main` ruleset (JSON reviewed, applied by Tim, verified via `gh api`; a red test PR cannot merge); `[ci skip]` handling; Playwright 1.65 and container tag in one commit; Upstash name check plus a production 429 probe plus fail-closed in production; axe 4.14 upgrade with the 4 real `label-content-name-mismatch` fixes (already done, see the orchestrator note); Nyquist G5/G6 characterization tests (before the photo-script refactor); audit gate over templates x engines plus all slugs once in Chromium; Playwright install timeout (already resolved by the Playwright image, see the orchestrator note); open review-ledger triage.
+**Addresses:** the v2.0 debt (repo safety, test gaps).
+**Avoids:** Pitfalls 10, 11, 15, 16, 23, 24.
 
-### Phase 8: Data & terrain pipeline
-**Rationale:** Map view, waypoints, EXIF strip, grid aspect ratios, 404 art and OG images all consume it; Phase 11 needs the typed highlights.
-**Delivers:** zod schemas and typed highlights; `lib/geo.ts` with tests; `build-terrain` and `extract-exif` with `--check`; corrections file; image manifest; originals moved out of `/public` plus a CI GPS scan; `ContourField` in the footer; `lib/trail-grade.ts`; v1-alias removal codemod; hashed-name plumbing for the SW precache; proxy matcher and cache headers.
-**Uses:** geotiff, d3-contour, simplify-js, exif-reader + sharp.
-**Research flag:** needs research-phase (DEM decision, attribution, poster rendering, EXIF policy).
+### Phase 2: UI debt fixes and ENG-F1
+**Rationale:** Each fix is small and independent, and each needs its own declared PNG set before any layout re-baseline. ENG-F1 is independent of the region work.
+**Delivers:** 375 px Home overflow (find the element, never `overflow-x: hidden` on `body`/`main`), mobile menu on the current page (close in the click handler), clipped focus ring, the 4.81:1 rail label (composed contrast), lightbox Escape focus diagnosed with a regression test; ENG-F1 prev/next buttons plus a server-rendered `<details>` transcript (open under reduced motion).
+**Addresses:** UI debt list, ENG-F1.
+**Avoids:** Pitfalls 10, 21, 22.
 
-### Phase 9: Home ascent
-**Rationale:** Signature experience; depends on Phase 8 assets and Phase 7 shell.
-**Delivers:** `AscentHero` with poster + DOM waypoint list; capability gate; R3F terrain with contour shader; `AltimeterRail` (`aria-hidden`, tabular-nums, 1,626 → 4,478 m); summit plaque; trail-sign routes; skip link; reduced-motion final states; GPU disposal.
-**Research flag:** needs research-phase (shader tuning, real mobile devices, canvas test strategy).
+### Phase 3: Data model split and N-plate refactor (zero visible change)
+**Rationale:** Everything downstream (overview, region pages, footer, OG, JSON-LD, LV95 gate) reads regions and plates. Building UI on single-region data means building it twice.
+**Delivers:** `photoHref`/`regionHref` replacing the 13 hand-built URLs (still `/photos/<slug>`); `lib/photos/routes.ts`; `homeWaypointIds` (the four ids, frozen) with `buildWaypoints`/`lowestDemM`/footer ticks reading it; Region and Plate schemas with `regions.json` (Zermatt only) and `plates.json` (matterhorn only); `terrain:build` over N plates with prefixed names and one global stale sweep; `SheetMargin` extracted from `SiteFooter`; `ContourField(plate)` and `PlateSheet`; guard extension (ban `.srt/.lrf/.gpx/.kml/...`), closed sidecar schema, explicit photo id map, `country` field per photo; the four asset-root lists reconciled by a test; named test fixtures instead of index lookups.
+**Gate:** all 48 visual baselines unchanged, `data:check` green, Zermatt terrain hashes equal to today's.
+**Avoids:** Pitfalls 1, 2, 5, 19, 23.
 
-### Phase 10: Photography (parallel with 11)
-**Delivers:** `@modal` interception + full `[slug]` page; Map / Grid (in-house justified rows) / Carousel (flat stepper under reduced motion); `?view=` with `router.replace`; canonical altitude order; lightbox with focus handling, EXIF strip, hotspot callouts, clean view; morph; keyboard-operable map pins; per-photo metadata and OG; manifest migration; `photos.spec` and `GalleryGrid.test` rewritten.
-**Research flag:** spike `<dialog>` vs overlay with View Transitions, popstate close, interception from Home.
+### Phase 4: Terrain content, new regions and the overview
+**Rationale:** Needs the phase-3 model and human inputs (D1, new originals, editorial copy).
+**Delivers:** Region extents; plate fetch from swissALTIRegio (second-source adapter only if D1 requires it); the overview raster, contours and region pins; new photos through exif, derive and build (plus any new Zermatt photos); per-plate source, CRS, height system and edition recorded; per-plate size-budget Jest test; the footprint check recorded; proj4-vs-`lib/geo.ts` error measurement at the far pins (add proj4 only if it exceeds about 1 m or a non-LV95 plate exists).
+**Uses:** swissALTIRegio, GLO-90, geotiff 3.0.5, optional proj4 2.22.0.
+**Avoids:** Pitfalls 3, 4, 6 (overview weight).
 
-### Phase 11: Engineering & roadmap (parallel with 10)
-**Delivers:** `RoutePanel` (hex code retired); `CaseStudy` template; trail-grade `RiskScale` with table equivalent; `riskScore` examples; `DemoTerminal` with controls and static transcript; `RouteLog` roadmap; project metadata and OG; tests rewritten to assert state, not color classes.
-**Research flag:** content-gated (decisions 8, 9, 11 first); no research-phase.
+### Phase 5: Routing, SEO and structured data
+**Rationale:** Layout work should happen on the final routes, and JSON-LD `url`/`@id` need the final paths.
+**Delivers:** the D2 route shape; data-generated exact one-hop redirects (and old OG card handling if nested); proxy and `KNOWN` rework with an unknown-region, cross-region and unknown-slug 404 matrix; `@modal` defaults and a catch-all or null slot; sitemap equal to canonicals; region OG cards; saved-pages catalog extended (PLAT-F2 narrowed); PLAT-F1 JSON-LD (Person/WebSite, ImageObject, region ImageGallery, project types) with a parse, escape and 4-dp test; no duplicate view-transition names; no internal 3xx links.
+**Avoids:** Pitfalls 7, 8, 9, 17, 18.
 
-### Phase 12: Contact, edge pages, cleanup & verification
-**Delivers:** `SummitRegister` (restyle only; keep `/api/feedback`, CSRF, rate limit, accessible names; add honeypot + error summary); 404 / error / global-error / offline; SW strategy with an update e2e; deletions (`AnimatedGradientMesh`, legacy image variants, dead code, `raw.githubusercontent.com` from `connect-src`); v1 aliases removed and white/black ratchet at 0; sitemap, robots, JSON-LD; axe on every route; cross-browser run; CLS, link-crawl, image-4xx and CSP-console checks; PROJECT.md updated.
-**Research flag:** none; run the PITFALLS "Looks Done But Isn't" checklist in the milestone audit.
+### Phase 6: Immersive layout, overview map UI and photo features
+**Rationale:** The largest UI surface. It needs the UI-SPEC step (the project requires the ui-ux-pro-max skill for UI work), the final routes, and data for 20+ photos.
+**Delivers:** `/photos` overview map with a synced region list and numbered pins on narrow screens (label placement at build time, HTML pin overlays, no `href` inside served SVGs); region page with uncropped sequence on gallery-black, data captions, breadcrumb, "n / N", skip-series, next-region block; lightbox scoped per region with the end-of-series card; per-region `SheetMargin`; PHOTO-F2 Share with a Copy-link fallback; PHOTO-F4 LV95 gated on `country === 'CH'`, rounded to 10 m; the D4 Carousel outcome; photo-page LCP budget; HOME-08 re-run; one deliberate re-baseline per route group with declared PNG sets, content drops last.
+**Addresses:** the region series, map model and immersive layout goals. Collar, altimeter rail and mini plate follow D8.
+**Avoids:** Pitfalls 6, 9, 10, 12, 20.
+
+### Phase 7: Drone video
+**Rationale:** The format decision can be taken early, but the slot needs the phase-6 series page.
+**Delivers:** the D3 shape; per-kind clip budgets (never a raised global `MAX_CLIP_BYTES`); optional AV1 rendition; a guard rule for `av01`; a DJI-shaped selftest fixture (with `djmd` track and `uuid` box); poster with a fixed aspect ratio; pause control and text alternative; reduced-motion and Save-Data gating; a `public/media` total-bytes guard and a Hobby transfer projection written down.
+**Avoids:** Pitfalls 2, 13, 14.
 
 ### Phase Ordering Rationale
-
-- Regression nets and dependency bumps first, because every later visual change is judged against them.
-- Data pipelines before any consumer: four surfaces share one contour asset and one typed photo dataset.
-- Photography and Engineering share only the shell and data, so they can run in parallel after Phase 8/9.
-- Destructive cleanup (legacy image variants, aliases, gradient mesh) last, after consumers are migrated and guarded by tests.
+- Repo safety first, because phases 3-5 are big refactors and required checks must exist before they land. Playwright 1.65 lands alone, ahead of any intended pixel change.
+- Data before maps, URL helper before URL change, routing before layout: each avoids doing work twice.
+- Phases 3 and 4 are separate on purpose. Phase 3 proves the refactor is pixel- and hash-neutral before content arrives.
+- Content drops are batched last and re-baselined once. The footer is made independent of the photo count in phase 3, so adding a photo never touches 48 PNGs.
+- ENG-F1, PHOTO-F4 and the PLAT-F2 catalog extension are independent of the region work and can fill gaps.
 
 ### Research Flags
 
-Phases likely needing deeper research during planning:
-- **Phase 8:** DEM source/attribution, poster rendering, EXIF and GPS policy
-- **Phase 9:** shader tuning, mobile GPU thresholds, deterministic canvas screenshots (SwiftShader flags)
-- **Phase 10:** `<dialog>` + `<ViewTransition>` + canvas snapshot, popstate close, interception from Home
+Needs deeper research during planning (`/gsd-plan-phase --research-phase <N>`):
+- **Phase 4 (terrain):** spike the footprint check of the chosen regions, proj4 vs `lib/geo.ts` error at the far pins, the overview size target (smoothing, ring filtering), and the overview licence wording. If any region is outside the rectangle, also BEV credit wording and TINITALY tile access.
+- **Phase 5 (routing):** spike that `@modal/[region]` and `@modal/(.)[region]/[slug]` coexist in 16.4.5 under both webpack (dev) and Turbopack (build); check how the old OG card URL redirects under nesting; if option B is chosen, verify the static-sibling intercept case.
+- **Phase 6 (layout):** needs a UI-SPEC (`/gsd-ui-phase`) first. Open items: overview label collision at 375 px, immersive `sizes` and LCP, JS-budget margin (HOME-08 has 6.2%).
+- **Phase 7 (video):** encode one real 8 s clip and record bytes before fixing any budget; confirm hosting only if films are in scope.
 
-Phases with standard patterns (skip research-phase):
-- **Phase 7:** well-documented upgrades and token work (use `/gsd-ui-phase` for design decisions)
-- **Phase 11, 12:** established patterns; gated on content decisions
+Standard patterns (skip research-phase):
+- **Phase 1:** known GitHub ruleset and `CI OK` pattern. Verify through `gh api`; confirm Vercel Deployment Checks availability on Hobby in the UI.
+- **Phase 2:** small, well-understood fixes.
+- **Phase 3:** large, but it follows documented in-repo patterns. Plan with explicit acceptance gates (hashes, baselines).
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Versions, EXIF fields, DEM tooling and asset sizes verified by executed scripts against real data; shader, font and icon calls MEDIUM |
-| Features | MEDIUM | Codebase facts HIGH (files read, dimensions and EXIF checked); exemplar comparisons partly from memory |
-| Architecture | MEDIUM-HIGH | Next 16.4 / React 19.3 behavior checked against official docs and the npm tarball; View Transitions with `<dialog>` and popstate are spikes |
-| Pitfalls | HIGH | Repo-inspected; only the waterfall name, R004 EXIF, EXIF altitude reference and scroll-timeline reduced-motion behavior are LOW |
+| Stack | HIGH (executed) / MEDIUM | swissALTIRegio coverage, GLO-90 sizes, BEV range reads, proj4 deltas and the repo ruleset were run against live data. Vercel limits, rulesets and host pricing are from fetched docs. Video bitrates are arithmetic. TINITALY access, BEV credit wording and the GLO-90 licence text are unconfirmed. |
+| Features | MEDIUM | Codebase facts HIGH. WCAG and platform rules MEDIUM. Portfolio and photo-essay conventions are LOW-MEDIUM vendor sources. |
+| Architecture | HIGH for repo and Next integration / MEDIUM for terrain | Read from the code and the Next 16.4 source and docs. Items marked SPIKE are LOW (`@modal/[region]` coexistence, the OG card hash redirect, UTM and overview details). |
+| Pitfalls | HIGH for repo findings / MEDIUM-LOW elsewhere | Repo-specific pitfalls checked in code. DJI telemetry, iOS Low Power Mode, grid-convergence figures and several magnitudes are LOW or the researcher's own estimates. |
 
 **Overall confidence:** MEDIUM-HIGH
 
 ### Gaps to Address
-
-- swissALTIRegio cross-border attribution string: confirm from swisstopo product docs in Phase 8
-- `<dialog>` + `<ViewTransition>` + canvas snapshot and popstate close: Phase 10 spike
-- SwiftShader flags and poster rendering approach for deterministic screenshots: Phase 9
-- Waterfall name and R004-011 EXIF contents: Tim confirms in Phase 8
-- R3F 9.8.1 + drei 10.7.9 + three 0.184 on the real hero: verify during the Phase 7 bump
-- Next 16.4 security release due 2026-10-14: take the patch in Phase 7
-- Firefox stable 157 lacks scroll-driven CSS animations: nothing may depend on them
-- Content gaps (Open Questions 8–12): collect before Phases 8 and 11
+- **Region list and footprint (D1):** blocks the terrain phase. Decide with Tim, then record the footprint check.
+- **Licence wording:** BEV credit, GLO-90 notice (WorldDEM-90) and any borders dataset are unverified. Copy verbatim from the licence at the time of shipping.
+- **TINITALY tile access and format:** check by downloading one tile, only if a region needs it.
+- **Overview size target (<= 30 KB brotli):** unsmoothed measure is 43 KB. Resolve in a spike and reconcile with the 150 KB budget in PITFALLS.
+- **Real drone bitrates and DJI metadata specifics:** encode Tim's own clip first, and use ExifTool at version 13.05 or later to verify the output.
+- **Repo-setting identifiers:** Vercel Deployment Checks on Hobby, the GitHub Actions `integration_id` (15368), the admin role id (5), and the Marketplace Upstash variable names. Confirm each in its UI or CLI before applying.
+- **OG card continuity under nested URLs:** "OG cards keep working" is a PROJECT.md promise, so decide how strict it is.
+- **Approximate-formula error far from Bern:** `wgs84ToLv95` measured 2-3 m at Seceda and Innsbruck, against 0.15 m at Zermatt. Acceptable for 4-dp pins, but confirm at the chosen plates.
+- **PLAT-F2 requirement wording:** reconcile REQUIREMENTS.md with the code, since the page already ships.
+- **JS and LCP budgets for 20+ photos:** no photo-page LCP gate exists. Create one in phase 6.
 
 ## Sources
 
-Full source lists with URLs and per-claim confidence are in each dimension file:
-- STACK.md §Sources — npm registry (versions, peer ranges), motion changelog, React 19.3 and Next.js 16.3/16.4 release notes, MDN browser-compat data, swisstopo swissALTI3D / swissALTIRegio product pages; scripts executed against the real photos and swisstopo data
-- FEATURES.md §Sources — Next.js intercepting/parallel routes docs, lightbox accessibility guides, SAC hiking-scale references, 15+ ui-ux-pro-max searches (ux, chart, landing, nextjs, threejs)
-- ARCHITECTURE.md §Sources — Next.js 16.4 docs (route groups, not-found, CSP, parallel routes), Tailwind v4 theme docs, React 19.3 npm tarball exports
-- PITFALLS.md §Sources — repo inspection (selectors, `dark:`/palette counts, CSP, service worker), motion changelog, swisstopo docs, ui-ux-pro-max guideline names cited inline
+### Primary (HIGH confidence)
+- Executed probes (STACK.md): swissALTIRegio STAC item and COG coverage samples; Copernicus GLO-30/90 COGs and the 72-tile overview contour sizes; BEV ALS DTM range reads; proj4 vs `lib/geo.ts`; npm registry; `ffmpeg -encoders`; `gh api` for the repo's rulesets.
+- Repo code and generated data (all four files): `proxy.ts`, `next.config.ts`, `app/(site)/photos/**`, `lib/photos/view-model.ts`, `lib/ascent/waypoints.ts`, `lib/geo.ts`, `scripts/terrain/*`, `scripts/photos/*`, `scripts/media/build-clip.mjs`, `scripts/guards/*`, `components/site/SavedPages.tsx`, `lib/rate-limit.ts`, `.github/workflows/ci.yml`, `public/service-worker.js`, `data/site.ts`.
+- Next 16.4.5 bundled docs and source (`node_modules/next/dist/docs`, `dist/lib/metadata/get-metadata-route.js`, `generate-interception-routes-rewrites.js`, `sorted-routes.js`): intercepting and parallel routes, redirects, proxy order, JSON-LD guide.
+
+### Secondary (MEDIUM confidence)
+- Vercel docs (Hobby limits, Blob pricing, Deployment Checks); GitHub docs (rulesets, skipped required checks); Copernicus WorldDEM-30 licence PDF; BEV and TINITALY metadata; EEA notice that EU-DEM is withdrawn; MDN browser-compat data for Web Share; W3C WCAG 2.2.2, 1.2.x; Google image-license metadata; Upstash FAQ (14-day archival); web.dev LCP and View Transitions Baseline; Cloudflare, Mux and Bunny pricing pages.
+
+### Tertiary (LOW confidence, validate in phase)
+- DJI `djmd`/`dbgi` and `.SRT` descriptions (SANS ISC, dji-embed docs); Chrome and Edge 142 native HLS (one source); iOS Low Power Mode autoplay; portfolio and photo-essay convention sources; South Tyrol DTM licence; Vimeo pricing; back-of-envelope figures (pixels per km, grid convergence, video bytes, texture VRAM).
 
 ---
-*Research completed: 2026-10-10*
-*Ready for roadmap: yes*
+*Research completed: 2026-11-12*
+*Ready for roadmap: yes (after the owner settles D1 and D2; D3-D10 can be settled in their phases)*

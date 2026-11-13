@@ -6,7 +6,7 @@ import { projects } from '@/data/projects';
 import { home } from '@/data/home';
 import { site } from '@/data/site';
 import { summitPlaque } from '@/lib/ascent/summit';
-import { summitLayoutAt } from '@/lib/ascent/summit-layout';
+import { summitColumnBox, summitLayoutAt } from '@/lib/ascent/summit-layout';
 import { buildWaypoints, waypointKicker } from '@/lib/ascent/waypoints';
 import { countLabel } from '@/lib/home-format';
 import { formatMetres } from '@/lib/photo-format';
@@ -559,6 +559,13 @@ test.describe('Summit plaque clears the poster pins (G-09-2, static)', () => {
       await page.goto('/');
 
       const { plaque: column, pins } = await summitBoxes(page);
+      // 09 IN-03: the layout model's hand-measured column height (COMPACT_H 170,
+      // FULL_H 478) must match the rendered plaque column, within 2 px.
+      const modelled = summitColumnBox(width, height, 0).height;
+      expect(
+        Math.abs(column.height - modelled),
+        `${layout} plaque column ${column.height.toFixed(1)} px vs modelled ${modelled} px`
+      ).toBeLessThanOrEqual(2);
       expect(pins).toHaveLength(waypoints.length);
       for (const pin of pins) {
         const gap = boxGap(column, pin);

@@ -1,0 +1,41 @@
+/* Fixture (07 WR-01): the top-level --color-ink resolves to 3:1 on surface and must
+   fail. A :root nested in @media (prefers-color-scheme: light) raises --dim to white.
+   A guard that merges nested :root blocks into the base palette measures that white
+   instead and reports OK, so screen visitors outside the media query would get the
+   failing pair. The base verdict must stay FAIL, and the nested token block must be
+   reported, because the guard does not measure media-scoped palettes. */
+:root {
+  --base-bg: color(xyz-d65 0.15 0.15 0.15);
+  --dim: color(xyz-d65 0.55 0.55 0.55);
+  /* Trail paint (11-UI-SPEC): every trail pair passes here, as in low-ink.css */
+  --trail-blaze: color(xyz-d65 0.2 0.2 0.2);
+  --trail-mountain: #fff;
+  --trail-alpine: #fff;
+  --trail-yellow: #fff;
+}
+
+@theme inline {
+  --color-surface: var(--base-bg);
+  --color-surface-raised: #000;
+  --color-surface-overlay: #000;
+  --color-gallery: #000;
+  --color-ink: var(--dim);
+  --color-ink-muted: #fff;
+  --color-ink-inverse: #000;
+  --color-line: #222;
+  --color-line-strong: #fff;
+  --color-accent: #fff;
+  --color-accent-hover: #fff;
+  --color-accent-strong: #fff;
+  --color-focus: #fff;
+  --color-danger: #fff;
+  --color-caution: #fff;
+  --color-success: #fff;
+  --color-contour: oklch(0.94 0.008 85 / 0.14);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --dim: #fff;
+  }
+}

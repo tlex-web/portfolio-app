@@ -1,0 +1,58 @@
+# Selftest fixture for scripts/guards/check-ci-gate.mjs: a passing ci.yml.
+# ci-ok lists its needs in block form and out of job order (the guard compares sets).
+# build is the one heavy job: it needs changes, skips on a docs-only diff, and
+# is the only id in this fixture's scripts/ci/ci-ok.jq IN(...) list.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: Classify changes
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.classify.outputs.docs_only }}
+    steps:
+      - id: classify
+        run: echo "docs_only=false" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: [changes]
+    if: needs.changes.outputs.docs_only != 'true'
+    steps:
+      - run: echo build
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - run: echo review
+
+  ci-ok:
+    name: CI OK
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - dependency-review
+      - build
+      - changes
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: scripts/ci
+      - name: Every needed job passed or skipped on purpose
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          EVENT: ${{ github.event_name }}
+        run: printf '%s\n' "$NEEDS" | jq -e --arg event "$EVENT" -f scripts/ci/ci-ok.jq

@@ -449,6 +449,31 @@ describe('Feedback API Route', () => {
       expect(outcomes()).toEqual(['rate-limited']);
     });
 
+    it('answers 503 server-error with no Retry-After when the limiter is unavailable (GUARD-09, D-11)', async () => {
+      (feedbackRateLimit.limit as jest.Mock).mockResolvedValue({
+        success: false,
+        limit: 0,
+        remaining: 0,
+        reset: 0,
+        unavailable: 'error',
+      });
+      const request = createMockRequest(validBody);
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(503);
+      expect(data).toEqual({ code: 'server-error' });
+      expect(response.headers.get('Retry-After')).toBeNull();
+      expect(request.json).not.toHaveBeenCalled();
+      expect(sendFeedbackEmail).not.toHaveBeenCalled();
+      expect(outcomes()).toEqual(['limiter-unavailable']);
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        '[feedback]',
+        { event: 'feedback', outcome: 'limiter-unavailable', ip: '192.168.1.1', timestamp: expect.any(String) }
+      );
+    });
+
     it('answers 429, not 200, when rate limited with a filled honeypot, without reading the body', async () => {
       (feedbackRateLimit.limit as jest.Mock).mockResolvedValue({ success: false, limit: 5, remaining: 0, reset: 0 });
       const request = createMockRequest({ ...validBody, trail_note: 'bot text' });

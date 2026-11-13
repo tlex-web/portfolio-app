@@ -28,6 +28,7 @@ import StagePhoto from '@/components/photos/StagePhoto';
 import ZoomStage from '@/components/photos/ZoomStage';
 import { keyBelongsToChrome } from '@/components/site/SiteNav';
 import { site } from '@/data/site';
+import { cssEscape } from '@/lib/photos/css-escape';
 import { useLabelsOn } from '@/lib/photos/hotspot-pref';
 import { slugFromPath, stepIndex, swipeStep } from '@/lib/photos/stepping';
 import type { PhotoView } from '@/lib/photos/view-model';
@@ -337,7 +338,7 @@ export default function PhotoViewer({
   // zoomed neither label is drawn, so focus stays where it is).
   const collapseCallout = useEffectEvent((): boolean => {
     if (expandedId === null) return false;
-    const id = CSS.escape(expandedId);
+    const id = cssEscape(expandedId);
     setExpandedId(null);
     const candidates = viewerRef.current?.querySelectorAll<HTMLElement>(
       `[data-hotspot-label="${id}"], [data-hotspot-row="${id}"]`
@@ -582,7 +583,6 @@ export default function PhotoViewer({
         hotspotKey={
           <HotspotKey
             view={current}
-            labelsOn={labelsOn}
             expandedId={expandedId}
             onToggle={toggleHotspot}
           />

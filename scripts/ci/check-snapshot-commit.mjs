@@ -26,6 +26,8 @@
  *     unless --allow-all
  *   - a deleted PNG fails unless --allow-deletions
  * Renames are reported as a deletion plus an addition (git --no-renames).
+ * A merge commit is checked against its first parent (the branch merged
+ * into), so every PNG the merge brought in counts (07 IN-07).
  *
  * Exit: 0 with "snapshot-commit: OK (<n> changed)", 1 on any violation,
  * 2 when git fails or the arguments are invalid (never a silent pass).
@@ -86,6 +88,20 @@ export function evaluateSnapshotChanges(entries, opts = {}) {
   return { ok: violations.length === 0, changed: pngs.length, violations };
 }
 
+/**
+ * Git arguments that list a commit's changes under e2e/ as --name-status.
+ * A merge commit (more than one parent) is diffed against its first parent,
+ * the branch it was merged into, so everything the merge brought in is
+ * checked (07 IN-07). `git show` on a merge prints the combined diff, which is
+ * usually empty. A single-parent or root commit keeps `git show`.
+ * @param sha the commit, as resolved by `git rev-list --parents -n 1`
+ * @param parents the commit's parent hashes, in order
+ */
+export function snapshotDiffArgs(sha, parents) {
+  if (parents.length > 1) return ['diff', '--no-renames', '--name-status', parents[0], sha, '--', 'e2e'];
+  return ['show', '--no-renames', '--name-status', '--format=', sha, '--', 'e2e'];
+}
+
 function parseArgs(argv) {
   const opts = { sha: 'HEAD', allow: [], allowAll: false, allowDeletions: false, none: false, some: false };
   const flags = { '--allow-all': 'allowAll', '--allow-deletions': 'allowDeletions', '--none': 'none', '--some': 'some' };
@@ -114,14 +130,28 @@ function fatal(message) {
 
 function main() {
   const opts = parseArgs(process.argv.slice(2));
+  const git = (args) => execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  const gitError = (err) => (err.stderr || err.message).toString().trim();
   let output;
   try {
-    output = execFileSync('git', ['show', '--no-renames', '--name-status', '--format=', opts.sha, '--', 'e2e'], {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    output = git(snapshotDiffArgs(opts.sha, []));
   } catch (err) {
-    fatal(`git show ${opts.sha} failed: ${(err.stderr || err.message).toString().trim()}`);
+    fatal(`git show ${opts.sha} failed: ${gitError(err)}`);
+  }
+  let commit;
+  try {
+    commit = git(['rev-list', '--parents', '-n', '1', opts.sha, '--']).trim().split(/\s+/);
+  } catch (err) {
+    fatal(`git rev-list ${opts.sha} failed: ${gitError(err)}`);
+  }
+  const [sha, ...parents] = commit;
+  if (parents.length > 1) {
+    try {
+      output = git(snapshotDiffArgs(sha, parents));
+    } catch (err) {
+      fatal(`git diff ${parents[0]} ${sha} failed: ${gitError(err)}`);
+    }
+    console.log(`snapshot-commit: ${opts.sha} is a merge commit; checking its changes against the first parent ${parents[0].slice(0, 12)}`);
   }
   const result = evaluateSnapshotChanges(parseNameStatus(output), opts);
   if (result.ok) {

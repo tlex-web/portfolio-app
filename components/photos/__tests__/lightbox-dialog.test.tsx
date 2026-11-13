@@ -1,5 +1,8 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { Activity } from 'react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import LightboxDialog, { LIGHTBOX_CLOSE_EVENT, useLightbox } from '../LightboxDialog';
+import PhotoViewer from '../PhotoViewer';
+import { photoViews } from '@/lib/photos/view-model';
 
 /**
  * The lightbox shell in jsdom (LBOX-01; 10-RESEARCH Pitfall 11). jsdom has no
@@ -12,10 +15,17 @@ import LightboxDialog, { LIGHTBOX_CLOSE_EVENT, useLightbox } from '../LightboxDi
  * the dialog must not depend on, deterministically.
  */
 
+// One router for the whole suite, as Next's useRouter is stable across renders, so a
+// test can count back() calls.
+const mockRouter = { back: jest.fn(), push: jest.fn(), replace: jest.fn() };
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ back: jest.fn(), push: jest.fn(), replace: jest.fn() }),
+  useRouter: () => mockRouter,
   usePathname: () => '/photos/test',
 }));
+
+beforeEach(() => {
+  mockRouter.back.mockClear();
+});
 
 /** Renders the title and what useLightbox() returned, as text the test can read. */
 function Probe() {
@@ -106,6 +116,66 @@ describe('LightboxDialog', () => {
     } finally {
       document.removeEventListener(LIGHTBOX_CLOSE_EVENT, onClose);
       Element.prototype.scrollIntoView = scrollIntoView;
+    }
+  });
+
+  it('closes again after it is shown again in the same instance (10-REVIEW IN-10)', () => {
+    /** The viewer's Close photo control. */
+    function CloseControl() {
+      const api = useLightbox();
+      return (
+        <button type="button" onClick={() => api?.close()}>
+          Close photo
+        </button>
+      );
+    }
+    /** An Activity keeps the dialog instance mounted while it is hidden and shown again. */
+    function Kept({ mode }: { mode: 'visible' | 'hidden' }) {
+      return (
+        <Activity mode={mode}>
+          <LightboxDialog labelledBy="photo-title">
+            <h2 id="photo-title">Test photo</h2>
+            <CloseControl />
+          </LightboxDialog>
+        </Activity>
+      );
+    }
+    const { rerender } = render(<Kept mode="visible" />);
+    const closeControl = () => screen.getByRole('button', { name: 'Close photo', hidden: true });
+    fireEvent.click(closeControl());
+    // A second press while the first history step is in flight goes back only once.
+    fireEvent.click(closeControl());
+    expect(mockRouter.back).toHaveBeenCalledTimes(1);
+    // The back step failed to unmount it; the dialog is hidden and shown again.
+    rerender(<Kept mode="hidden" />);
+    rerender(<Kept mode="visible" />);
+    fireEvent.click(closeControl());
+    expect(mockRouter.back).toHaveBeenCalledTimes(2);
+  });
+
+  it('Escape collapses an open callout before it closes, without CSS.escape (10-REVIEW IN-02)', () => {
+    // jsdom has no CSS.escape of its own; jest-dom's css.escape polyfill adds one, so it is
+    // removed here to run the callout's Escape layer where it is missing.
+    const escape = CSS.escape;
+    // @ts-expect-error -- simulating an environment without CSS.escape
+    delete CSS.escape;
+    try {
+      const view = photoViews.find((v) => v.id === 'img-0662')!;
+      render(
+        <LightboxDialog labelledBy="photo-title">
+          <PhotoViewer variant="modal" photos={photoViews} initialSlug={view.slug} />
+        </LightboxDialog>
+      );
+      const key = screen.getByRole('list', { name: 'Labels', hidden: true });
+      const [first] = within(key).getAllByRole('button', { hidden: true });
+      fireEvent.click(first);
+      expect(first).toHaveAttribute('aria-expanded', 'true');
+      fireEvent.keyDown(document, { key: 'Escape' });
+      expect(first).toHaveAttribute('aria-expanded', 'false');
+      // The callout took the press, so the lightbox did not close.
+      expect(mockRouter.back).not.toHaveBeenCalled();
+    } finally {
+      CSS.escape = escape;
     }
   });
 

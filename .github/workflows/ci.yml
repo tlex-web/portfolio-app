@@ -5,14 +5,83 @@ on:
     branches: [main, develop, 'ci/**']
   pull_request:
     branches: [main, develop]
+  # The skip-marker relay (D-06) dispatches this workflow for a PR head that
+  # GitHub skipped. No inputs: the relay passes the ref. No paths or
+  # paths-ignore filter on any trigger (check-ci-gate.mjs rules 8 and 9).
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  # GUARD-08 (D-08, D-09): the docs-only fast path. This job classifies the
+  # diff; the six heavy jobs below carry `if: needs.changes.outputs.docs_only
+  # != 'true'`, and scripts/ci/ci-ok.jq accepts their skips only when this job
+  # succeeded with docs_only "true". Anything it cannot classify (no base, a
+  # failed compare call, an empty or 300-file list, any path outside the D-09
+  # list in scripts/ci/classify-changes.mjs) runs the full CI. The fast path
+  # must live here, never in a workflow-level paths filter: a workflow skipped
+  # that way leaves the required check pending (check-ci-gate.mjs enforces it).
+  changes:
+    name: Classify changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      docs_only: ${{ steps.classify.outputs.docs_only }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: scripts/ci
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+
+      # Event fields reach the shell only through env; file names come from the
+      # compare API and go to the classifier on stdin, never into a command.
+      - name: Classify the diff
+        id: classify
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = workflow_dispatch ]; then BASE=main; fi
+          # An empty or all-zero base (a new branch) leaves nothing to compare.
+          if [ -z "$BASE" ] || [ -z "${BASE//0/}" ]; then
+            echo "No base commit to compare against; running the full CI."
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          compare="$RUNNER_TEMP/compare.json"
+          if ! gh api "repos/$REPO/compare/$BASE...$HEAD" > "$compare"; then
+            echo "::warning::The compare call for $BASE...$HEAD failed; running the full CI."
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          count=$(jq '(.files // []) | length' "$compare")
+          flags=()
+          if [ "$count" -ge 300 ]; then flags=(--truncated); fi
+          # New and old names of every file; a name with a line break becomes a
+          # marker that is never docs-only.
+          jq -r '(.files // [])[] | .filename, (.previous_filename // empty) | if test("[\\r\\n]") then ":line-break-in-file-name:" else . end' "$compare" \
+            | node scripts/ci/classify-changes.mjs "${flags[@]}" > "$RUNNER_TEMP/classify.txt"
+          echo "Compared $BASE...$HEAD: $count file(s)."
+          cat "$RUNNER_TEMP/classify.txt"
+          grep '^docs_only=' "$RUNNER_TEMP/classify.txt" >> "$GITHUB_OUTPUT"
+
   lint-and-typecheck:
     name: Lint and Type Check
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: needs.changes.outputs.docs_only != 'true'
 
     steps:
       - uses: actions/checkout@v7
@@ -38,6 +107,8 @@ jobs:
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: needs.changes.outputs.docs_only != 'true'
     permissions:
       contents: read
 
@@ -74,6 +145,8 @@ jobs:
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: needs.changes.outputs.docs_only != 'true'
     timeout-minutes: 60
     permissions:
       contents: read
@@ -100,10 +173,6 @@ jobs:
       - name: Verify lockfile install
         run: npm ls --depth=0
 
-      # Skip image optimization - using pre-optimized images from repo
-      # - name: Optimize images for tests
-      #   run: npm run optimize-images
-
       - name: Run Playwright tests
         run: npx playwright test --project=chromium --project=firefox --project=webkit --fail-on-flaky-tests
         env:
@@ -129,6 +198,8 @@ jobs:
   visual-regression:
     name: Visual Regression
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: needs.changes.outputs.docs_only != 'true'
     timeout-minutes: 45
     permissions:
       contents: read
@@ -172,7 +243,8 @@ jobs:
   build:
     name: Build Application
     runs-on: ubuntu-latest
-    needs: [lint-and-typecheck, unit-tests]
+    needs: [changes, lint-and-typecheck, unit-tests]
+    if: needs.changes.outputs.docs_only != 'true'
     permissions:
       contents: read
 
@@ -190,10 +262,6 @@ jobs:
 
       - name: Verify lockfile install
         run: npm ls --depth=0
-
-      # Skip image optimization - using pre-optimized images from repo
-      # - name: Optimize images for build
-      #   run: npm run optimize-images
 
       - name: Build Next.js application
         run: npm run build
@@ -228,6 +296,8 @@ jobs:
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: needs.changes.outputs.docs_only != 'true'
     permissions:
       contents: read
 
@@ -249,3 +319,33 @@ jobs:
           if [ $(npm audit --json | jq '.metadata.vulnerabilities.moderate + .metadata.vulnerabilities.high + .metadata.vulnerabilities.critical') -gt 0 ]; then
             echo "::warning::Security vulnerabilities found. Please review npm audit output."
           fi
+
+  # GUARD-07 (D-01): the only required check. The main ruleset requires CI OK
+  # and nothing else, so it must turn red whenever any job above fails.
+  # `if: always()` makes it run and report even when an upstream job fails or
+  # is cancelled; any other condition could skip it, and a skipped job reports
+  # Success. Every new job in this file must join `needs` below:
+  # scripts/guards/check-ci-gate.mjs fails `npm run lint` when one is missing.
+  # The verdict lives in scripts/ci/ci-ok.jq (no setup-node here: the parity
+  # guard pairs every setup-node with node-version-file).
+  ci-ok:
+    name: CI OK
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [changes, lint-and-typecheck, unit-tests, e2e-tests, visual-regression, build, dependency-review, security-audit]
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: scripts/ci
+
+      - name: Every needed job passed or skipped on purpose
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          printf '%s\n' "$NEEDS" | jq -c 'map_values(.result)'
+          printf '%s\n' "$NEEDS" | jq -e --arg event "$EVENT" -f scripts/ci/ci-ok.jq

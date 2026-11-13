@@ -1,478 +1,574 @@
-# Stack Research — v2.0 "Topographic Identity"
+# Stack Research: v2.1 "Survey Expansion"
 
-**Domain:** Next.js portfolio UI/UX rework: real-terrain WebGL hero, build-time DEM/EXIF pipeline, photo light table, platform-native motion
-**Researched:** 2026-10-10
-**Confidence:** HIGH for versions, the motion upgrade, View Transitions, the EXIF API and the DEM tooling (verified against the npm registry, official docs and **scripts run against the real photos and real swisstopo data**). MEDIUM for shader, font and icon judgment calls.
+**Domain:** Adding multi-region Alpine terrain, an Alps overview map, drone video, and small platform features to a shipped Next.js 16.4 portfolio with build-time geodata and a nonce CSP
+**Researched:** 2026-11-12
+**Confidence:** HIGH where executed (coverage probes, COG range reads, overview contour sizes, npm registry, the repo's own code and GitHub settings). MEDIUM where official docs were fetched and cross-checked (Vercel limits, GitHub required checks, video host pricing). LOW where only one secondary source exists (flagged inline).
 
-> Scope: only additions or changes needed for v2.0. The validated v1.0 stack (Next/React/Tailwind v4/R3F/zod/Resend/Upstash/CSP/SW/Jest/Playwright) is not re-evaluated.
+> Scope: only additions or changes for the v2.1 features. The v2.0 stack (Next 16.4.5, React 19.3, R3F 9.8, motion 14.10, geotiff 3.0.5, d3-contour 4.0.3, simplify-js, sharp 0.35, exif-reader, fast-png, the nonce CSP, the service worker, Satori OG) is in `.planning/milestones/v2.0-research/STACK.md` and is not repeated.
+>
+> Confidence tiers follow the GSD `classify-confidence` seam: a single web search is LOW, a cross-checked web source is MEDIUM. Facts I verified by running code against the live data are marked **(executed)** and treated as HIGH.
 
 ---
 
 ## 0. Headline findings (read first)
 
-1. **The upgrade path is a chain, not just "framer-motion 14".** Stable `<ViewTransition>` ships in **React 19.3.0** (2026-09-09) and **Next.js 16.4.0** (2026-10-06, which ships React 19.3). The installed **@react-three/fiber 9.6.1 declares `react: ">=19 <19.3"`**, so moving to React 19.3 **requires R3F ≥ 9.8.0** (9.8.1 is current). Plan it as one isolated "platform bump" phase: Next 16.4 + React 19.3 + R3F 9.8.1 + motion 14.1.
-2. **Moving framer-motion from 12 to 14 has no breaking changes for this repo.** The only breaking change in 13.0 is the removal of `@emotion/is-prop-valid` (styled-components/emotion users only, and this repo uses neither). 14.0 only removed internal APIs. The official path is to **swap the package to `motion` and import from `motion/react`**: a mechanical find-and-replace across 24 files. There is no codemod.
-3. **Do not ship the heightmap as a 16-bit PNG decoded by the browser.** Browsers don't reliably keep 16 bits through `<img>`/`TextureLoader` into WebGL. Keep the 16-bit PNG as the build artifact (verified lossless with sharp), but **decode it on the client with `fast-png` (11 KB gz)** into a `Uint16Array`, then build the terrain geometry on the CPU.
-4. **swissALTI3D does not fully cover the Matterhorn's Italian side.** In a 12×12 km box around Zermatt and the summit, **10 tiles are missing** (south of N 1'090'000). The same-agency **swissALTIRegio** (10 m, one Cloud-Optimized GeoTIFF, cross-border coverage) gives a hole-free 1024² window in **under 1 s** via HTTP range requests. This is a decision for the user (§4).
-5. **Firefox stable (157) still lacks CSS scroll-driven animations** (Nightly/"preview" only). Chrome 115+ and Safari 26+ have them. The altimeter/ascent must run on Motion's `useScroll` (works everywhere, and the R3F camera needs JS progress anyway). Use CSS `animation-timeline` only for decorative effects behind `@supports`.
-6. **Your local `node_modules` is out of sync with the lockfile.** Installed: next 16.1.6, react 19.2.4, framer-motion 12.35.1, three 0.183.2, R3F 9.5.0, Playwright 1.58.2, tailwindcss 4.2.1. The lockfile says next 16.2.6, framer-motion 12.39.0, Playwright 1.60.0 and so on. **Run `npm ci` before taking the Phase-1 screenshot baselines**, or the baselines won't match what CI and Vercel build.
+1. **swissALTIRegio already covers most likely Italian and Austrian regions, so a second elevation source may not be needed at launch.** The COG is a hole-free rectangle, LV95 E 2'385'000–2'935'000 / N 974'000–1'404'000 (about 4.5–12.0° E, 44.8–48.8° N). Its foreign parts **are** TINITALY (Italy) and DGM Österreich (Austria), and the site already ships their credits in `site.attribution.terrain`. **(executed)** Inside the rectangle: Aosta, Gran Paradiso, Mont Blanc (Italian side), Cervinia, Lake Como, Ortler, Lake Garda, Val Gardena / Seceda, Alpe di Siusi, Innsbruck, Ötztal, Zugspitze. **Outside:** Cortina, Tre Cime, Lago di Braies, Grossglockner and the Hohe Tauern, Salzkammergut / Hallstatt. **The region pick decides whether v2.1 needs a new data source at all.** Make that choice before the terrain phase is planned.
+2. **If a region falls outside: for Austria use BEV ALS DTM 1 m.** It is CC BY 4.0, published as 50 km COG tiles in EPSG:3035, and range-readable with the geotiff.js already installed. An 11 km window around the Grossglockner read in **1.5 s** at the 8 m overview, 1,493–3,794 m, no nodata. **(executed)** **For Italy use TINITALY 1.1** (10 m DTM, CC BY 4.0, already credited). Copernicus GLO-30 is the automation-friendly fallback, but it is a DSM (forest canopy included) and its licence notice is long.
+3. **For the Alps overview use Copernicus GLO-90.** The 72 one-degree tiles for 5–17° E × 43–49° N read at overview level 2 in about 9 s. **(executed)** Contour cost is real. At 1,200 × 864 px with no smoothing, 1,000 m contours are 187 KB raw / **43 KB brotli** and 500 m contours are 440 KB / 102 KB br. The Home hero contours are 13.5 KB br. Plan smoothing and ring filtering.
+4. **Never warp rasters. Window each plate on its source's native grid** (LV95, EPSG:3035 or UTM 32N) and transform only points (photo pins, corner labels). The existing swisstopo formulas in `lib/geo.ts` are within 0.15 m of proj4 at Zermatt and 2–3 m at Seceda and Innsbruck **(executed)**, so regions inside swissALTIRegio need **no new library**. Only a non-LV95 plate needs `proj4` (devDependency, build-only, pin 2.22.0).
+5. **Drone video already has a pipeline.** `clip:derive` runs ffmpeg 9.0.1 locally, writes a metadata-free hashed H.264 MP4 with a WebP poster, and an ISO-BMFF box walker in `guard:images` forbids `uuid`/`XMP_`/`©xyz`/`loci` and extra tracks. The CSP has no `media-src`, so `default-src 'self'` already allows same-origin video. **Silent loops fit this pipeline with no CSP change. Full films do not fit Vercel Hobby** (100 GB/month of transfer shared with the whole site, and an overrun pauses things for 30 days), so they need an external host plus a CSP decision.
+6. **PLAT-F2 is already shipped.** `components/site/SavedPages.tsx` (12-15, EDGE-02 / D-12) lists every Cache Storage entry against a catalog on `/offline`. v2.1 only has to add the new region URLs to that catalog. Reconcile the requirement.
+7. **PHOTO-F4 needs no library.** `lib/geo.ts` already exports `wgs84ToLv95`.
+8. **Repo safety.** Rulesets work on this public personal repo. One ruleset, `automated-actions`, already exists and is active, but its `ref_name.include` is `[]`, so as far as I can tell it targets **no branch** and enforces nothing. A `[ci skip]` head commit leaves required checks **Pending**, which fails closed for PRs. The real gap is direct pushes and Vercel deploying any `main` commit. Close it with a "require PR" rule plus **Vercel Deployment Checks**.
+9. **The Upstash fallback is silent.** `lib/rate-limit.ts` reads only `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`. Without them it **allows everything** and only warns once. If the store was added through the Vercel Marketplace, the injected names may be `KV_REST_API_*` (MEDIUM). Check the names with `vercel env ls production`, then probe for a 429.
 
 ---
 
 ## Recommended Stack
 
-### Core technologies (upgrades)
+### Core technologies (data sources, new for v2.1)
 
-| Technology | Version | Purpose | Why recommended | Confidence |
+| Source | Edition / version | Purpose | Why recommended | Confidence |
 |---|---|---|---|---|
-| `next` | **16.4.x** (pick up the out-of-band security release announced for **2026-10-14**) | Framework | Ships React 19.3, so `<ViewTransition>` is stable with **no config flag** (the inert `experimental.viewTransition` flag was removed in 16.3.0-canary.95). `<Link transitionTypes={[...]}>` and `router.push(..., { transitionTypes })` are documented in 16.4. No breaking changes are listed for 16.3/16.4. | HIGH |
-| `react` / `react-dom` | **19.3.0** | UI runtime | Stable `ViewTransition`, `addTransitionType`, Fragment refs, `browser()`. No breaking changes. Needed in `package.json` as well as Next's vendored copy, because Jest/Testing Library use the installed copy. | HIGH |
-| `@types/react` / `@types/react-dom` | **19.3.0** | Types | Exposes `ViewTransition` typings. | HIGH |
-| `motion` (replaces `framer-motion`) | **14.1.0** | Component motion, scroll progress | The official package. `framer-motion@14.1.0` is now an internal pinned dependency of `motion`. Same API through `motion/react`. Peer range `react ^18 \|\| ^19`. | HIGH |
-| `@react-three/fiber` | **9.8.1** | R3F renderer | **Required** for React 19.3: 9.6.1/9.7.0 peer is `<19.3`, 9.8.x is `<19.4`. | HIGH |
-| `@react-three/drei` | **10.7.9** | R3F helpers | Patch bump. Peer `react ^19`, `fiber ^9`. | HIGH |
-| `three` | keep **^0.184** (0.186.1 available) | WebGL | No v2.0 feature needs 0.186. Bump only together with R3F if you want; there is no blocker either way. | MEDIUM |
-| `@playwright/test` | **1.64.0** | E2E + visual regression | 1.64 ships Chromium 156 / Firefox 157 / WebKit 27.2. Check one 1.64 behaviour change: device `screen` values now feed media queries. | HIGH |
+| **swissALTIRegio** (existing) | STAC item `swissaltiregio`, edition 2026-05 | Local plates for **every** region inside 4.5–12.0° E / 44.8–48.8° N, Swiss or not | Already fetched by `terrain:fetch` and checked offline by `terrain:build --check`. One CRS (LV95), 10 m, hole-free, the foreign data harmonised by swisstopo, attribution already shipped. Adding a region is a new `EXTENT`, not a new pipeline. | HIGH (executed) |
+| **BEV ALS DTM 1 m** (Austria) | Tiles dated 20240915 / 20230915 / ... per 50 km cell | Local plate for Austrian regions east of 12° E | CC BY 4.0, real terrain model (bare earth, from airborne laser scanning), COG with 8 overviews and `Accept-Ranges: bytes`, so `geotiff.fromUrl` reads an 11 km window without downloading the 0.5–6.8 GB tile. | HIGH (executed) for access and format; MEDIUM for the credit wording |
+| **TINITALY 1.1** (Italy) | v1.1 (Jan 2023), DOI 10.13127/tinitaly/1.1 | Local plate for Italian regions east of 12° E (Cortina, Tre Cime, Braies) | 10 m terrain model, CC BY 4.0, the same source swissALTIRegio uses for Italy (consistent look), and the citation is already on the site. Downloaded as tiles (not a COG), so the fetch reads a local file. | MEDIUM |
+| **Copernicus DEM GLO-90** | 2021 public release on AWS Open Data | Alps-wide overview map | Global and seamless, 1° COGs in EPSG:4326, no auth. At overview scale (≥ 250 m/px) the DSM-vs-DTM difference averages out. | HIGH (executed) for access and sizes; MEDIUM for licence wording |
 
-### Supporting libraries (new)
+### Supporting libraries
 
 | Library | Version | Where | Purpose | When to use | Confidence |
 |---|---|---|---|---|---|
-| `geotiff` | **3.0.5** (devDep) | build script | Read the swisstopo COG via HTTP range requests, window by LV95 bbox, resample (`readRasters({ bbox, width, height, resampleMethod: 'bilinear' })`). **Verified**: Matterhorn window read from swissALTIRegio in 821 ms. | Always (DEM step) | HIGH |
-| `d3-contour` | **4.0.2** (devDep) | build script | Marching-squares isolines → GeoJSON MultiPolygons in pixel space. ESM-only (`"type":"module"`), works in a `.mjs` script (verified). Its last release was 2023-01, but it is finished software. | Always (contour SVG) | HIGH |
-| `simplify-js` | **1.2.4** (devDep) | build script | Douglas–Peucker / radial simplification of contour rings. **Verified on real data:** 29 levels at 100 m go from ~870 KB to **50 KB raw / 13.5 KB brotli** at 1 px tolerance; 15 levels at 200 m give **25.6 KB / 7 KB br**. | Always (keeps SVG small) | HIGH |
-| `exif-reader` | **2.0.3** (devDep) | build script | Parse `sharp().metadata().exif` buffer. **Verified** on all 4 originals (API in §6). | Always (EXIF step) | HIGH |
-| `sharp` | keep **0.34.5** (0.35.5 available) | build script | Already present. Also encodes the 16-bit grey PNG (**verified lossless on 0.34.5**: pass a `Uint16Array` + `.toColourspace('grey16')`). No reason to bump in this milestone. | Always | HIGH |
-| `fast-png` | **8.0.0** (runtime dep, client) | terrain loader | Decodes the 16-bit grey PNG into a `Uint16Array` in the browser (verified: 512² in ~22 ms in Node; deps `fflate` + `iobuffer`, ~11 KB gz). Load it in the lazily imported hero chunk only. | Terrain hero | HIGH (lib) / MEDIUM (that browsers can't keep 16 bits reliably — sources conflict, so don't depend on it) |
-| `@phosphor-icons/react` | **2.1.10** | UI | UI glyphs (close, arrows, grid/rows/map toggles, camera, pin, GitHub/LinkedIn logos). Import from `@phosphor-icons/react/dist/ssr` in Server Components. See §9. | UI icons only. Keep bespoke cartographic marks as inline SVG. | MEDIUM |
-| `eslint-plugin-better-tailwindcss` | **4.9.0** (devDep) | lint guard | Rule `no-restricted-classes` takes **regex** patterns, which is exactly the "no `dark:`, no stock palette" guard. Peer `tailwindcss ^4.1.17`, `eslint ^9`. | Foundation phase | HIGH |
-| `@axe-core/playwright` | **4.13.0** (devDep) | a11y checks | "axe clean" requirement in the edge-pages/cleanup phase. | Verification phase | HIGH |
+| `geotiff` (keep) | 3.0.5 (MIT, published 2026-03-30) | `scripts/terrain/*` | COG range reads for BEV and Copernicus, local GeoTIFF reads for TINITALY (`fromFile`) | Always. Already a devDependency. | HIGH (executed) |
+| `proj4` (**add, devDependency only**) | **2.22.0** pinned (MIT, 46 KB gz, 2.23.0 published hours before this research, so wait for it to settle) | `scripts/` only (fetch and photo build) | WGS84 → EPSG:3035 (LAEA) and WGS84 → UTM 32N for pins and plate-corner labels on **non-LV95** plates | Only if a region needs BEV or TINITALY. Not needed for regions inside swissALTIRegio. | HIGH (executed: 0.15 m agreement with `lib/geo.ts` at Zermatt) |
+| `schema-dts` (**add, devDependency**) | 2.1.0 (Apache-2.0, types only, 0 runtime bytes) | JSON-LD builders | Type-check `Person`, `ImageObject`, `Place`, `CollectionPage` / `ImageGallery` objects | PLAT-F1 | HIGH (registry) |
+| ffmpeg (keep, local tool) | 9.0.1. The installed Gyan **essentials** build has `libx264`, `libx265`, `libaom-av1` and `libvpx-vp9` but **no `libsvtav1`** (executed `ffmpeg -encoders`) | `scripts/media/build-clip.mjs` | Encode loops: H.264 (all browsers), optional AV1 (smaller) | AV1 renditions need the Gyan **full** build (`winget install Gyan.FFmpeg`) for SVT-AV1, or accept libaom's much slower encode | HIGH (executed) |
 
-### Development tools / techniques (no new packages)
+### Development tools (no npm package)
 
 | Tool | Purpose | Notes |
 |---|---|---|
-| Tailwind v4 `@theme { --color-*: initial; }` | **Compile-time** palette guard | Removes the stock palette so `bg-blue-500` emits no CSS. Pair it with the lint rule for a hard error. Define only night-map OKLCH tokens after the reset. |
-| swisstopo approximate WGS84 → LV95 formulas (~15 lines) | Place EXIF GPS on the DEM grid | **Verified** on the real photos (§6). About 1 m accuracy, which is enough. Do not add `proj4`. |
-| Native `<dialog>` + `showModal()` | Lightbox shell | Built-in focus trap, Esc and inert background, so no lightbox library. |
-| CSS justified rows (`flex-grow: aspect-ratio`) | Grid view | Zero dependencies for 4 to ~30 photos. |
-| CSS scroll-snap | Carousel view (2D) | Platform-native. Keep `@react-spring/three` only if the 3D carousel survives the redesign. |
+| Vercel CLI (`npx vercel@latest`, 65.x on npm) | `vercel env ls production` to see which Upstash variable **names** exist | Names only, values stay encrypted. Don't `vercel env pull` production secrets onto disk. |
+| `gh api` | Create the `main` ruleset from JSON and inspect the inert `automated-actions` ruleset | The ruleset JSON goes in a reviewed file. Only Tim applies it, because it is a settings change. |
+| ExifTool ≥ 13.05 (optional, local) | Prove a drone master or output carries no DJI `djmd`/`dbgi` telemetry: `exiftool -ee -G3 file.mp4` | Belt and braces next to the MP4 walker. Not a CI dependency. |
+| Schema Markup Validator / Rich Results Test | Validate JSON-LD by hand once per page type | Plus a Jest test that parses every emitted block |
+
+---
+
+## 1. Elevation data
+
+### 1.1 What swissALTIRegio already covers (executed 2026-11-12)
+
+COG `swissaltiregio_2056_5728.tif`: 55,000 × 43,000 px at 10 m, origin E 2'385'000 / N 1'404'000, 6 overviews, nodata 3.4e38. At overview level 5 the coverage mask is 100 % filled. Full-resolution samples:
+
+| Place | LV95 E / N (from `wgs84ToLv95`) | Height read | Inside? |
+|---|---|---|---|
+| Aosta (IT) | 2'590'763 / 1'065'041 | 580.8 m | ✅ |
+| Mont Blanc, Italian side | 2'562'004 / 1'072'157 | 2,323.9 m | ✅ |
+| Gran Paradiso (IT) | 2'586'819 / 1'040'924 | 3,743.1 m | ✅ |
+| Cervinia (IT) | 2'614'843 / 1'086'952 | 1,993.2 m | ✅ |
+| Lake Como (IT) | 2'741'095 / 1'095'909 | 198.0 m | ✅ |
+| Ortler (IT) | 2'837'971 / 1'155'670 | 3,770.1 m | ✅ |
+| Lake Garda (IT) | 2'864'935 / 1'083'358 | 65.0 m | ✅ |
+| Seceda / Val Gardena (IT) | 2'927'891 / 1'169'923 | 2,140.1 m | ✅ (7.1 km from the east edge) |
+| Alpe di Siusi (IT) | 2'920'595 / 1'162'849 | 1,841.6 m | ✅ |
+| Innsbruck (AT) | 2'898'888 / 1'242'985 | 585.5 m | ✅ |
+| Sölden / Ötztal (AT) | 2'870'923 / 1'208'254 | 1,546.5 m | ✅ |
+| Zugspitze (DE/AT) | 2'867'144 / 1'258'164 | 2,675.5 m | ✅ |
+| Cortina d'Ampezzo (IT) | 2'960'420 / … | n/a | ❌ outside |
+| Tre Cime / Lago di Braies (IT) | 2'972'119 / 2'954'839 | n/a | ❌ outside |
+| Grossglockner (AT) | 2'998'580 / … | n/a | ❌ outside |
+| Hallstatt (AT) | 3'066'988 / … | n/a | ❌ outside |
+
+An 11 × 11 km plate must fit wholly inside. Around Seceda, an 11 km plate can be centred at most about 1.6 km east of the summit. Check with the existing `pixelWindow()`, which already fails "extent leaves the raster".
+
+**Implication:** the fastest v2.1 is Zermatt plus one region inside this rectangle (Aosta / Cervinia / Gran Paradiso / Como / Val Gardena for Italy, Ötztal / Innsbruck / Stubai for Austria). That needs **zero new sources, zero new attribution, zero new libraries**. Only `fetch-dem.mjs` changes, from one `EXTENT` to a list of region extents.
+
+### 1.2 Candidate comparison (for regions outside, and for the overview)
+
+| Source | Res. | Model | Licence | Credit required (verbatim where verified) | Coverage / holes | Format & access | CRS / heights | Joins swissALTIRegio? | Verdict |
+|---|---|---|---|---|---|---|---|---|---|
+| **swissALTIRegio** | 10 m | DTM | swisstopo OGD (free incl. commercial, source reference required) | Already shipped string (swisstopo + TINITALY + DGM Österreich + Bavaria + BW + RGEAlti) | Rectangle 4.5–12.0° E / 44.8–48.8° N, hole-free **(executed)** | One COG, HTTP range reads | EPSG:2056 / LN02 | n/a, it *is* the reference | **Use for every region inside** |
+| **BEV ALS DTM 1 m** (AT) | 1 m (overviews 2, 4, 8 … m) | DTM (ALS) | CC BY 4.0 ("Für dieses Produkt gilt die Standardlizenz CC-BY-4.0", BEV metadata) | CC BY needs name + licence + changes. Proposed: "Terrain: BEV – Bundesamt für Eich- und Vermessungswesen, ALS DTM, CC BY 4.0, modified". **Wording not confirmed by BEV, see Gaps** | All of Austria in ~55 tiles; per-tile dates (2019–2024) | COG per 50 km cell, `…/ALS/DTM/<YYYYMMDD>/ALS_DTM_CRS3035RES50000mN<S>E<W>.tif`; the **name is the SW corner**; 0.55–6.8 GB, ranges OK **(executed)** | EPSG:3035 / Adriatic (GHA) | Same national data swissALTIRegio resampled; no shared plate, so no seam | **Use for AT outside the rectangle** |
+| BEV DGM Höhenraster (AT) | 5–500 m | DTM (photogrammetry, 2021, no longer updated) | CC BY 4.0 (MEDIUM) | as above | All of Austria | Zip downloads | **EPSG:31287 (MGI Lambert)** + EPSG:5778 | — | Avoid: the MGI datum needs a 7-parameter shift (~100 m+ if ignored), and it's zipped and older |
+| **TINITALY 1.1** (IT) | 10 m | DTM | CC BY 4.0 | "Tarquini S., Isola I., Favalli M., Battistini A., Dotta G. (2023). TINITALY, a digital elevation model of Italy with a 10 meters cell size (Version 1.1). INGV. https://doi.org/10.13127/tinitaly/1.1" (**already in `site.ts`**) | All of Italy, 50 × 50 km tiles | Clickable tiles on `tinitaly.pi.ingv.it/Download_Area1_1.html` (manual; no COG; access form status unverified) | **UTM 32N everywhere** (WGS84), even where zone 33 applies | Same source as swissALTIRegio's Italian part | **Use for IT outside the rectangle** |
+| South Tyrol DTM (IT) | 2.5 m | DTM | not confirmed (LOW) | not confirmed | South Tyrol only | Geokatalog record; download path not confirmed | ETRS89 / TM32 | — | Skip unless 2.5 m detail is wanted for a Dolomites close-up; licence unverified |
+| **Copernicus GLO-30** | 1″ (~30 m) | **DSM** (canopy and buildings) | Copernicus DEM licence, free | Adapted data: "produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved" **plus** the liability sentence "The organisations in charge of the Copernicus programme by law or by delegation do not incur any liability for any use of the Copernicus WorldDEM-30" in a legal notice **(verified in licence PDF)** | Global (only a few countries held back, none in the Alps); sea-only tiles absent (404) | 1° COGs on AWS `copernicus-dem-30m`, 3600² px, 3 overviews **(executed)** | EPSG:4326, **PixelIsPoint** / EGM2008 | Different model (DSM), ±several m; forest belts add 20–30 m bumps → contour wiggles | Fallback for a local plate only if TINITALY access fails |
+| **Copernicus GLO-90** | 3″ (~90 m) | DSM | as GLO-30 (WorldDEM-90 wording assumed, MEDIUM) | as above with "WorldDEM-90" | Global | `copernicus-dem-90m`, 1200² px, 2 overviews **(executed)** | EPSG:4326 / EGM2008 | Not joined: a separate map | **Use for the overview** |
+| EU-DEM v1.1 | 25 m | DSM hybrid | — | — | Europe | **No longer distributed** (EEA: "not maintained anymore and is no longer available") | EPSG:3035 | — | Do not use |
+| SRTM GL1 | 1″ | DSM (radar, 2000) | Public domain (NASA) | none required | Voids in steep alpine terrain (void-filled versions patch them with other data) | Earthdata login; 1° HGT/GeoTIFF | EPSG:4326 / EGM96 | — | Do not use: older, has voids, and Copernicus beats it everywhere |
+
+### 1.3 How sources "join" at the border
+
+- **Don't mosaic two sources into one plate.** Each region plate comes from exactly one source, and the overview from one source. With no shared edge, there is no seam to blend. swissALTIRegio already did the cross-border harmonisation for everything in its rectangle.
+- **Vertical datums differ** (LN02, Genova 1942 / Italian levelling, Austrian GHA, EGM2008 for Copernicus) by about 2 m at most in the Alps. That is invisible at the 50 and 100 m contour intervals. Keep the D-17 rule: label summits and the altimeter with **official** heights, not DEM extremes.
+- **Grid north.** A plate on a projected grid is rotated against true north by the meridian convergence: about 3° for LV95 at Seceda (300 km east of Bern), about 2.4° for UTM 32N in the eastern Dolomites, and close to zero for EPSG:3035 near 10° E. That's acceptable for a survey plate. Draw any north arrow from the CRS, not as "up".
+
+### 1.4 Alps overview map (executed prototype)
+
+Prototype: Copernicus GLO-90, 72 tiles over 5–17° E × 43–49° N, **overview level 2** (300 px/°), mosaic 3600 × 1800, nearest-neighbour downsample, equirectangular with cos 46°, d3-contour + simplify-js, rings under 6 px dropped, ½-px rounding.
+
+| Grid | Interval | SVG raw | brotli | Note |
+|---|---|---|---|---|
+| 1600 × 1152 | 500 m | 610 KB | 141 KB | too heavy |
+| 1600 × 1152 | 1000 m | 255 KB | 59 KB | |
+| 1200 × 864 | 500 m | 440 KB | 102 KB | |
+| 1200 × 864 | **1000 m** | 187 KB | **43 KB** | best tested; still 3× the hero |
+
+**Recommendation:** 1,000 m interval (index lines every 2,000 m), a 3 × 3 box blur on the heights before contouring (the DSM is noisy), simplify at 1.5–2 px, drop rings smaller than about 8 px, and contour only from 1,000 m up so the Apennines, Jura and Po plain fall away. Target **≤ 30 KB br**. Back it with an AVIF hillshade poster (the existing D-16 code) if the bare contours read too thin. This needs one spike to confirm the size target.
+
+**Projection:** plate carrée scaled by cos(46.5°) on the GLO-90 grid as delivered (EPSG:4326). Pins are then linear in lat/lon, with no library. Across 43–49° N the east–west scale error is ±4 %, invisible on a decorative 1:4 M overview. Use LAEA (EPSG:3035 via proj4) only if the overview must be measurable.
+
+**Robustness (found in the prototype):** two runs reported 4 and then 1 "missing" tiles. Ocean tiles are legitimately absent (404/403), but network failures look the same if both are caught as "sea". The fetch must treat only a 404/403 on a tile known to be ocean as sea level, using the bucket's `tileList.txt`, and fail on anything else.
+
+### 1.5 Attribution impact
+
+`site.attribution.terrain` is one string today. With more than one source it becomes **per source**, and the footer should show the sources used on the current page. Copernicus additionally needs the liability sentence "in a licence or any legal warning or notice". A short `/attributions` (or legal) page linked from the footer is the clean place for it. BEV under CC BY 4.0 needs name, licence link and a "modified" note.
+
+---
+
+## 2. Reading and reprojecting rasters at build time
+
+### 2.1 Options
+
+| Option | Size / install | Licence | Maintenance | Does what we need? | Verdict |
+|---|---|---|---|---|---|
+| **geotiff.js** (have) | 3.8 MB unpacked, devDependency | MIT | 3.0.5, 2026-03-30 | COG range reads of BEV/Copernicus/swisstopo, local TIFF reads, windowing and overviews **(executed)** | **Keep** |
+| **proj4** (add) | 0.8 MB unpacked; 46 KB gz (irrelevant at build) | MIT | Active (2.22.0 2026-08-31; 2.23.0 2026-11-12) | Point transforms WGS84 ↔ 3035 / UTM 32N / LV95; agrees with `lib/geo.ts` to 0.15 m in CH **(executed)** | **Add as devDependency only when a non-LV95 plate exists**; pin 2.22.0 |
+| Hand-written LAEA + UTM formulas in `lib/geo.ts` | 0 deps, ~60 lines | — | Ours | Exact enough (EPSG GN 7-2 formulas); keeps `lib/geo.ts` usable in the client | Alternative if Tim wants zero deps; verify against proj4 in a Jest test |
+| `geotiff-geokeys-to-proj4` | 1.5 MB | BSD-3 | Active (2026.10.9) | Turns GeoKeys into proj4 strings automatically | Not needed: we know each source's CRS; pin the defs by hand |
+| `epsg-index` | 16 MB | ISC | Stale (2023) | EPSG lookup table | No |
+| `gdal-async` | **215 MB** unpacked, native binaries | Apache-2.0 | Active (3.12.3) | Everything, including warping | **No**: CI runs `npm ci` with devDependencies on every job, so it adds minutes and native-build risk for one manual fetch step |
+| GDAL CLI (conda / miniforge, already on Tim's machine) | external | MIT/X | — | `gdalinfo` and `gdalwarp` for **manual inspection** | Fine for debugging, but don't make it a pipeline dependency: the pipeline is Node-only by design (T-08-09) |
+
+### 2.2 Pattern: window on the native grid, transform only points
+
+```js
+// scripts/terrain/fetch-region.mjs (sketch): a BEV plate, no raster reprojection
+import { fromUrl } from 'geotiff';
+import proj4 from 'proj4';
+proj4.defs('EPSG:3035', '+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs');
+
+const [cx, cy] = proj4('EPSG:4326', 'EPSG:3035', [12.6941, 47.0745]);        // plate centre, lon/lat order
+const cell = (v) => Math.floor(v / 50000) * 50000;                           // tile name = SW corner
+const url = `https://data.bev.gv.at/download/ALS/DTM/20240915/ALS_DTM_CRS3035RES50000mN${cell(cy)}E${cell(cx)}.tif`;
+const tiff = await fromUrl(url);
+const full = await tiff.getImage(0);
+const [ox, oy] = full.getOrigin();                                           // e.g. 4499999.5, 2700000.5 (pixel centres on whole metres)
+const ov = await tiff.getImage(3);                                           // overviews carry no geo transform: scale from widths
+const s = full.getWidth() / ov.getWidth();                                   // ≈ 8 m/px
+const win = [(cx - 5500 - ox) / s, (oy - (cy + 5500)) / s, (cx + 5500 - ox) / s, (oy - (cy - 5500)) / s].map(Math.round);
+if (win[0] < 0 || win[1] < 0 || win[2] > ov.getWidth() || win[3] > ov.getHeight()) throw new Error('plate leaves the tile: mosaic the neighbour');
+const [band] = await ov.readRasters({ window: win, samples: [0] });          // Float32, nodata -9999, check every value
+// then: resampleBilinear() to the 1100² source grid -> grey16 PNG, same as fetch-dem.mjs today
+```
+
+**geotiff.js gotchas found while executing:**
+- **A window outside the image returns zeros silently.** A wrong tile came back as 1,896,129 values, all 0.0, with no error. Always bounds-check the window and fail on a min = max = 0 read. `fetch-dem.mjs` already does the first check.
+- **BEV tile names are the south-west corner** of the 50 km cell, not the north-west.
+- **BEV overviews have no affine transform** (`getResolution()` throws on them). Derive the scale from the width ratio.
+- **The BEV origin is at x.5 m** (PixelIsArea with centres on whole metres). A 10 m output grid needs an explicit half-pixel decision.
+- **Copernicus COGs are PixelIsPoint** (`GTRasterTypeGeoKey` 2), a half-cell shift of about 15 m at GLO-30. `fetch-dem.mjs` rejects anything that is not PixelIsArea, so a Copernicus fetcher needs its own rule.
+- **A plate can straddle two BEV tiles** (same CRS and grid). Read both windows and concatenate. That is not a cross-source mosaic.
+
+### 2.3 LV95 ↔ WGS84
+
+Keep `lib/geo.ts` (swisstopo approximate formulas). The executed comparison against proj4 with the standard 3-parameter Bessel shift:
+
+| Point | Δ formula vs proj4 |
+|---|---|
+| Zermatt | 0.15 m |
+| Matterhorn | 0.16 m |
+| Seceda (IT, 300 km out) | 2.81 m |
+| Innsbruck (AT) | 2.24 m |
+
+Both are approximations at the metre level, and the shipped coordinates are rounded to about 10 m (4 dp). So **regions inside swissALTIRegio keep using `wgs84ToLv95` for pins**, and proj4 is not needed for them.
+
+---
+
+## 3. Drone video
+
+### 3.1 What exists (don't rebuild it)
+
+- `scripts/media/build-clip.mjs` (D-27): ffmpeg through `execFileSync` with an argument array, H.264 High yuv420p, `+faststart`, metadata, chapters and SEI stripped, bitexact, WebP poster from the encoded frame, hashed names, zod sidecar `data/media/clips.json`, `--check` in `data:check` without ffmpeg.
+- `scripts/guards/lib/mp4-boxes.mjs`: ISO-BMFF walker. It whitelists top-level boxes and `moov` children, forbids `uuid`, `XMP_`, `©xyz`, `loci`, and enforces one video track and no audio.
+- Today's limits: `MAX_CLIP_BYTES` 1.5 MiB, 4–10 s, 512 px wide (the coin-flip clip is 512 × 1010, 60 fps, 377 kbps, 212 KB).
+- CSP: no `media-src`, so `default-src 'self'` covers `<video>`. `frame-src 'none'`. `connect-src 'self'`.
+- Service worker: media requests and anything with a `Range` header go straight to the network (needs real 206 responses).
+
+### 3.2 Shapes Tim can choose between
+
+| Shape | What it is | Fits Hobby + same-origin? | Work |
+|---|---|---|---|
+| **A. Silent ambient loops** | 6–12 s, no audio, autoplay muted inline loop (off for reduced motion and Save-Data), as a full-bleed region header or inside a series | **Yes**: extend `clip:derive` | Raise the budget per kind (e.g. a "loop" kind ≤ 4 MiB, ≤ 12 s, 1280 or 1920 wide), optional AV1 rendition, `<source>` order, a guard rule for `av01` |
+| **B. Edited films** | 1–5 min, with audio, user-started, controls | **No**: 135+ MB each; Hobby transfer, git and history limits | External host plus a CSP change plus a privacy decision (§3.5) |
+| **C. Both** | A in the immersive layout, B linked or embedded per region | Partly | A now, B behind a click-to-load facade |
+
+**Recommendation: A for v2.1.** It is the only shape that keeps the constraints as they are: same origin, no third party, zero client JS, existing guards. Treat B as a separate decision row (hosting table below) that Tim can take later in the milestone without blocking A.
+
+### 3.3 Codecs and containers
+
+| Codec / container | Browser support | Size vs H.264 | Encode | Verdict |
+|---|---|---|---|---|
+| **H.264 High, MP4** | Universal | 1× | Fast (`libx264`, installed) | **Mandatory baseline** |
+| **AV1, MP4** | Chrome, Edge, Firefox; Safari only on hardware with an AV1 decoder (iPhone 15 Pro and later, M3 Macs and later) (MEDIUM) | ~0.45–0.6× | SVT-AV1 needs the Gyan full build; libaom is installed but slow | **Optional first `<source>`**: halves the bytes where supported. Keep MP4, not WebM, so the ISO-BMFF walker still guards it and Safari can play it |
+| HEVC, MP4 | Safari; Chrome/Edge with hardware decode; Firefox only partly (MEDIUM) | ~0.6× | `libx265` installed | Skip: patchy, and AV1 + H.264 covers everyone |
+| VP9, WebM | Chrome, Firefox, Safari (partly) | ~0.65× | `libvpx-vp9` | Skip: WebM is not ISO-BMFF, so the guard would need a second parser |
+| HLS / DASH (segmented) | HLS native in Safari and, reportedly, Chrome/Edge 142+ desktop (one secondary source, LOW); Firefox needs `hls.js` | adaptive | Many files | Only for B; never needed for 6–12 s loops |
+
+DJI masters are often 10-bit HEVC in D-Log M or HLG. **Have Tim export a graded SDR Rec.709 master** (ProRes or high-bitrate H.264) into the gitignored `assets/clips-original/` and encode from that. Don't tone-map in the pipeline.
+
+**Encoding recipe (arguments for `execFileSync`, extending `clip:derive`):**
+
+```js
+// H.264 loop, 1280 wide (use 1920 for a full-bleed desktop header)
+['-i', master, '-map', '0:v:0', '-an', '-sn', '-dn', '-map_metadata', '-1', '-map_chapters', '-1',
+ '-vf', 'scale=1280:-2:flags=lanczos,format=yuv420p', '-c:v', 'libx264', '-preset', 'slow', '-crf', '23',
+ '-profile:v', 'high', '-g', '60', '-movflags', '+faststart', '-fflags', '+bitexact', '-flags:v', '+bitexact', out]
+// AV1 loop (needs libsvtav1 = Gyan full build)
+['-i', master, '-map', '0:v:0', '-an', '-sn', '-dn', '-map_metadata', '-1', '-map_chapters', '-1',
+ '-vf', 'scale=1280:-2:flags=lanczos,format=yuv420p', '-c:v', 'libsvtav1', '-preset', '5', '-crf', '34',
+ '-g', '60', '-movflags', '+faststart', '-fflags', '+bitexact', out]
+```
+
+```html
+<video muted playsinline loop preload="none" poster="/media/zermatt-loop-poster.<hash>.avif">
+  <source src="/media/zermatt-loop.<hash>.av1.mp4" type='video/mp4; codecs="av01.0.08M.08"'>
+  <source src="/media/zermatt-loop.<hash>.mp4"     type='video/mp4; codecs="avc1.640028"'>
+</video>
+```
+
+### 3.4 Expected sizes (MEDIUM: bitrate arithmetic for detailed aerial landscape, not yet measured on Tim's footage)
+
+MB = Mbps × seconds ÷ 8.
+
+| Rendition | Typical bitrate | 8 s loop | 3 min film |
+|---|---|---|---|
+| 1920 × 1080 H.264 CRF 21–23 | 6–9 Mbps | 6–9 MB | 135–200 MB |
+| 1920 × 1080 AV1 CRF 32–36 | 2.5–4 Mbps | 2.5–4 MB | 56–90 MB |
+| 1280 × 720 H.264 | 3–4.5 Mbps | 3–4.5 MB | 68–100 MB |
+| 1280 × 720 AV1 | 1.2–2 Mbps | 1.2–2 MB | 27–45 MB |
+| 960 × 540 H.264 (mobile) | 1.5–2.5 Mbps | 1.5–2.5 MB | 34–56 MB |
+
+Drone footage is near the worst case for encoders (foliage, water, rock texture, constant motion). **First task of the video phase: encode one real 8 s clip at these settings and record the bytes.** That turns this table into the budget constant.
+
+### 3.5 Hosting comparison (for shape B; shape A is row 1)
+
+Scenario: 5 films × 3 min (15 min) plus a few loops, about 500 film plays per month.
+
+| Host | Monthly cost | Hard limits | CSP change | Client JS | Same-origin / privacy | Ops |
+|---|---|---|---|---|---|---|
+| **`public/media` via git (existing)** | $0 | GitHub hard limit 100 MB per file; every re-encode stays in public history forever; Hobby **100 GB Fast Data Transfer per month shared with the whole site**, over it = paused for 30 days | **None** | 0 | ✅ / ✅ | Existing `clip:derive` + guard. **Loops only.** |
+| Git LFS + Vercel LFS toggle | $0 | LFS bandwidth is spent on **every Vercel build clone** | None | 0 | ✅ / ✅ | Not recommended |
+| **Vercel Blob (public store)** | $0 on Hobby | **1 GB storage, 10 GB Blob transfer, 10k simple ops per month**; over any = **Blob blocked for 30 days**. 135 MB film ≈ 74 full plays | `media-src 'self' https://<store>.public.blob.vercel-storage.com` | 0 | ❌ cross-origin / ✅ first-party vendor | `@vercel/blob` 2.9.0 CLI upload; no hashed-name guard |
+| Self-hosted HLS (public/ or Blob) | as above | as above, plus many segment files | `media-src 'self' blob:`, `worker-src 'self' blob:` (`hls.js` MSE + worker) | `hls.js` light **120 KB gz** (full 189 KB), lazy, Firefox only | ✅ / ✅ | High: ladder, playlists, SW bypass |
+| **Cloudflare Stream** | **$5 per started 1,000 min stored (prepaid) + $1 per 1,000 min delivered** ≈ $6–7 | none practical | iframe: `frame-src https://customer-<code>.cloudflarestream.com`; or own `<video>` + HLS: `media-src`/`connect-src` that host | iframe 0 on our page | ❌ / ⚠️ third-party CDN | Upload in dashboard or API; encoding included |
+| **Mux** | **Free plan: 10 assets, 100,000 delivery min/month up to 1080p**, "Mux" badge until a card is added | 10 assets | `media-src blob: https://stream.mux.com`, `img-src https://image.mux.com`, `connect-src https://*.mux.com https://*.litix.io` (MEDIUM), `worker-src blob:` | `@mux/mux-player` **328 KB gz** (bundles `hls.js`) | ❌ / ⚠️ Mux Data beacons unless disabled | Easiest DX, heaviest player |
+| **Bunny Stream** (EU, Slovenia) | Encoding free; storage from $0.01/GB, delivery $0.005–0.01/GB; **$1 monthly minimum** ≈ $1 | none practical | iframe: `frame-src https://iframe.mediadelivery.net` (MEDIUM); or HLS host | iframe 0 | ❌ / ✅ EU vendor | Dashboard upload |
+| **YouTube (`youtube-nocookie.com`) behind a click-to-load facade** | $0 | YouTube may place ads; cookies and tracking after play | `frame-src https://www.youtube-nocookie.com` (+ a self-hosted facade poster, so no `img-src` change) | Facade ~0–3 KB, ours | ❌ / ❌ Google | Upload to a channel; reach and discovery bonus |
+| Vimeo | Paid plan needed to remove branding (price not verified, LOW) | plan quotas | `frame-src https://player.vimeo.com` | iframe 0 | ❌ / ⚠️ | — |
+
+**If Tim wants films:** Bunny Stream (cheapest, EU, iframe so no player JS on our page) or YouTube-nocookie behind a facade (free, reach). Both cost one `frame-src` origin and an update to the audit gate's CSP expectations. **Avoid self-hosting films on Hobby:** about 740 full 135 MB plays use up the whole site's monthly transfer, and an overrun pauses the deployment.
+
+### 3.6 CSP diff per option (`buildCsp` in `proxy.ts`)
+
+```ts
+// Shape A (loops on our origin): nothing. default-src 'self' already covers media.
+// Bunny iframe:           "frame-src https://iframe.mediadelivery.net"        (replaces 'none')
+// YouTube facade:         "frame-src https://www.youtube-nocookie.com"
+// Vercel Blob progressive: "media-src 'self' https://<store>.public.blob.vercel-storage.com"
+// Any hls.js/MSE player:   add "blob:" to media-src and "worker-src 'self' blob:" (or hls.js enableWorker: false)
+```
+
+`frame-ancestors 'none'` is unaffected. Each added origin must also be added to the production audit gate (12-20), which fails on any CSP violation.
+
+### 3.7 Stripping DJI metadata
+
+Where a DJI recording hides location and telemetry:
+
+| Carrier | Example | Removed by |
+|---|---|---|
+| Sidecar files | `.SRT` (per-frame GPS and altitude on older models), `.LRF` (low-res proxy MP4 with the same metadata) | Never copy them in. Add `*.srt`/`*.lrf` to the served-asset guard's banned extensions |
+| Timed-metadata tracks in the MP4 | `djmd` (telemetry) and `dbgi` (debug) protobuf tracks on newer models (Air 3S, Mini 5 Pro) | `-map 0:v:0` plus `-dn`. The walker's "one video track" rule fails the output if one survives |
+| XMP / udta | `uuid` XMP box (drone-dji GPS, gimbal), `©xyz` | `-map_metadata -1`. The walker forbids `uuid`, `XMP_`, `©xyz`, `loci` |
+| Encoder SEI / creation time | x264 SEI, `creation_time` | `-fflags +bitexact -flags:v +bitexact` (already in `clip:derive`) |
+
+The existing pipeline already handles all of these for the coin-flip clip. Extend the walker's selftest with a real DJI-shaped fixture (one with a `djmd` track and a `uuid` box) so the rule is proven for drone input. The selftest builds fixtures from ffmpeg 9.0.1 output today.
+
+---
+
+## 4. Small features
+
+### 4.1 PHOTO-F2: Web Share
+
+MDN BCD (fetched 2026-11-12) for `navigator.share`:
+
+| Browser | Support |
+|---|---|
+| Chrome | 128+ on all desktop OSes (89–127 Windows/ChromeOS only); Android 61+ |
+| Edge | 93+ |
+| Safari / iOS | 12.1+ |
+| **Firefox desktop** | **Only behind `dom.webshare.enabled`**, so **a fallback is required** |
+| Firefox Android | 79+ |
+
+No library. `Permissions-Policy` today is `camera=(), microphone=(), geolocation=()`, and `web-share` keeps its default `self`. **Don't add `web-share=()`.**
+
+```tsx
+'use client';
+export function ShareButton({ url, title }: { url: string; title: string }) {
+  const [copied, setCopied] = useState(false);
+  async function onShare() {
+    const data = { url, title };
+    if (typeof navigator.share === 'function' && navigator.canShare?.(data) !== false) {
+      try { await navigator.share(data); return; }
+      catch (e) { if ((e as DOMException).name === 'AbortError') return; }   // user closed the sheet
+    }
+    await navigator.clipboard.writeText(url);                               // Firefox desktop path
+    setCopied(true);                                                        // announce via aria-live
+  }
+  return <button type="button" onClick={onShare}>Share</button>;           // same markup on server and client
+}
+```
+
+Share the canonical `site.url` + path, not `location.href` (which carries `?view=`). Render the same button on the server and the client, and choose the behaviour on click, to avoid a hydration mismatch.
+
+### 4.2 PHOTO-F4: LV95 next to WGS84
+
+- Use `wgs84ToLv95` from `lib/geo.ts` (no new dependency).
+- Convert **from the shipped, rounded 4-dp WGS84** and round the result to 10 m (`E 2'623'450 N 1'095'990`). Metre-level LV95 would publish more precision than the 4-dp privacy rule allows.
+- Swiss format: apostrophe thousands separators, E before N.
+- "Swiss photos only": the Matterhorn plate itself spans the Italian border, so the plate can't decide this. Add a `country` field per region with a per-photo override in `corrections.json`.
+
+### 4.3 PLAT-F1: JSON-LD under the nonce CSP
+
+- The Next 16.4 guide (`node_modules/next/dist/docs/01-app/02-guides/json-ld.md`) says: render a native `<script type="application/ld+json">` in `page.tsx`/`layout.tsx` and escape `<` as `<`. Don't use `next/script`. It also suggests `schema-dts` for typing.
+- **CSP:** a `<script>` whose type is not a JavaScript MIME type is an HTML *data block*. The browser never executes it, so `script-src` does not apply and **no nonce is needed** (HIGH, from the HTML "prepare the script element" algorithm). The root layout already awaits `headers()`, so nothing changes in rendering mode either way.
+- Types to emit:
+
+| Page | `@type` | Key properties |
+|---|---|---|
+| Root layout | `WebSite` + `Person` | `name: "Tim Lui"`, `url: site.url`, `sameAs` (GitHub, LinkedIn) |
+| Region series page | `ImageGallery` (a `CollectionPage`) | `about: Place { name, geo: GeoCoordinates }`, `hasPart: ImageObject[]` (refs) |
+| Photo page | `ImageObject` | `contentUrl` (largest derivative), `width`/`height`, `creator: Person`, `copyrightNotice: "© 2021 Tim Lui"`, `creditText`, `dateCreated` (the naive EXIF string, not a UTC-shifted Date), `contentLocation: Place { geo }` with the **4-dp** coordinates |
+| Video (only if a loop is content, not decoration) | `VideoObject` | `name`, `description`, `thumbnailUrl`, `uploadDate`, `contentUrl`, `duration` |
+
+Google's image-metadata feature needs at least one of `creator`, `creditText`, `copyrightNotice` or `license`. Skip `license` / `acquireLicensePage` while print licensing (PLAT-F4) is out of scope. Add a Jest test that parses every emitted block and checks `@type` and that no raw `<` appears.
+
+### 4.4 PLAT-F2: offline page that lists cached pages
+
+**Already shipped in v2.0** (12-15, EDGE-02, D-12): `components/site/SavedPages.tsx` walks `caches.keys()` → `cache.keys()` and maps URLs through `savedPageRows(urls, catalog)`, so a raw cached URL is never printed (T-12-30). There is an "unsupported" state for browsers without the caches API. For v2.1 only:
+- Add the region series URLs (and any redirect targets) to the catalog.
+- Keep the service worker's media/Range bypass, so loop videos never enter Cache Storage.
+
+The requirement should be marked done or narrowed in REQUIREMENTS.md. Note: Safari can evict a site's storage, Cache Storage included, after 7 days without interaction (MEDIUM), so "saved" is best-effort, as the copy already implies.
+
+### 4.5 ENG-F1: terminal step controls and transcript
+
+No dependency. Drive the steps from the existing demo data. Previous / next / pause are buttons with `aria-controls`, and the static transcript is a server-rendered `<ol>`/`<pre>` built from the same array, so it can't drift.
+
+---
+
+## 5. Repo safety
+
+### 5.1 Classic branch protection vs rulesets (personal public repo)
+
+| | Classic branch protection | **Repository ruleset (recommended)** |
+|---|---|---|
+| Available here | Yes (public repos on GitHub Free) | **Yes**: this repo already has an active ruleset (`automated-actions`, id 10401314) |
+| Rules per branch | One rule | Several rulesets layer; the most restrictive wins; they also layer **with** classic rules |
+| Bypass | "Do not allow bypassing" checkbox; admins bypass by default | Explicit bypass list with mode `always` or `pull_request` |
+| Visibility | Admins only | Anyone with read access sees active rulesets |
+| As code | No export | JSON export/import; `gh api` |
+| Pin a check to its source app | Partly | `integration_id` per required check (GitHub Actions app, MEDIUM: id 15368) prevents spoofed statuses |
+| Dry run | No | `evaluate` mode is Enterprise-only, so on this plan only Active/Disabled |
+
+**The existing ruleset `automated-actions` has `conditions.ref_name.include: []`**, so by my reading it matches no branch and enforces nothing. It carries `deletion`, `non_fast_forward` and a `pull_request` rule with code-owner review, plus an Integration bypass (actor 29110). Disable or replace it rather than layering a second ruleset next to something nobody remembers.
+
+### 5.2 How skipped CI interacts with required checks (GitHub docs)
+
+| Situation | Check state | Effect on a PR |
+|---|---|---|
+| Head commit message has `[skip ci]`, `[ci skip]`, `[no ci]`, `[skip actions]`, `[actions skip]` or a `skip-checks: true` trailer (only `push` and `pull_request` events) | **Pending** forever | **Blocked** until a new commit without the marker is pushed. This fails closed, which is good. |
+| Workflow skipped by `paths` / `branches` filters | **Pending** | Blocked ("Waiting for status to be reported") |
+| **Job** skipped by `if:` | **Success** | Passes (e.g. `dependency-review` on push) |
+| Same job name in two workflows | Collision / race | GitHub and Vercel both warn: keep check names unique |
+
+`ci.yml` has **no path filters** (only branch filters), so requiring its checks is safe today. Keep it that way, or the next path filter silently becomes a merge blocker.
+
+**The gap that `[ci skip]` really opens:** a direct push to `main` with `[ci skip]` runs no checks, and **Vercel deploys it to production anyway**. A "require pull request" rule blocks direct pushes (admins can still bypass in `pull_request` mode, which only lets them merge PRs). **Vercel Deployment Checks** hold every production deployment until the named GitHub checks pass on that commit, so a `[ci skip]` commit stays un-promoted until a Force Promote. Plan availability on Hobby isn't stated on the docs page (MEDIUM). Check the project settings.
+
+### 5.3 Recommended configuration
+
+One aggregate check, so renames, the PR-only `dependency-review` and new jobs don't break the rule:
+
+```yaml
+# .github/workflows/ci.yml (new last job)
+  ci-ok:
+    name: CI OK                  # the only required check; keep the name unique across workflows
+    if: always()
+    needs: [lint-and-typecheck, unit-tests, e2e-tests, visual-regression, build, security-audit, dependency-review]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every needed job passed (dependency-review may skip on push)
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS" | jq -e 'to_entries | all(.value.result == "success" or (.key == "dependency-review" and .value.result == "skipped"))'
+```
+
+```jsonc
+// gh api -X POST repos/{owner}/{repo}/rulesets --input main-ruleset.json   (Tim applies it; it's a settings change)
+{
+  "name": "main",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": { "ref_name": { "include": ["~DEFAULT_BRANCH"], "exclude": [] } },
+  "bypass_actors": [{ "actor_type": "RepositoryRole", "actor_id": 5, "bypass_mode": "pull_request" }],  // admin role id: confirm in the UI
+  "rules": [
+    { "type": "deletion" },
+    { "type": "non_fast_forward" },
+    { "type": "pull_request", "parameters": { "required_approving_review_count": 0, "dismiss_stale_reviews_on_push": false,
+      "require_code_owner_review": false, "require_last_push_approval": false, "required_review_thread_resolution": false,
+      "allowed_merge_methods": ["merge"] } },
+    { "type": "required_status_checks", "parameters": { "strict_required_status_checks_policy": false,
+      "do_not_enforce_on_create": false, "required_status_checks": [{ "context": "CI OK", "integration_id": 15368 }] } }
+  ]
+}
+```
+
+`strict: false`, because a solo repo doesn't need "branch up to date" re-runs. `allowed_merge_methods: ["merge"]` matches the milestone-PR convention. The Vercel Deployment Check should require the same `CI OK`. Dependabot PRs then need a green `CI OK` too, which is intended: #110 and #111 are red.
+
+### 5.4 Confirm Upstash in production
+
+1. `npx vercel@latest env ls production`: expect `UPSTASH_REDIS_REST_URL` **and** `UPSTASH_REDIS_REST_TOKEN`. If only `KV_REST_API_URL` / `KV_REST_API_TOKEN` exist (Marketplace naming, MEDIUM), the limiter is silently off. Either rename them or read both name pairs in `lib/rate-limit.ts`.
+2. Black-box probe: the honeypot path is limited before it is dropped (Phase 12 CONTACT-03). Six honeypot POSTs from one IP within an hour should give **429 on the sixth**. A 200 means the always-allow fallback is live.
+3. Consider making the fallback **fail loudly** when `VERCEL_ENV === 'production'` (log an error, or refuse), so this can't regress silently.
 
 ---
 
 ## Installation
 
 ```bash
-# 0. Re-sync local install with the lockfile FIRST (node_modules is stale)
-npm ci
+# Only if a region falls outside swissALTIRegio and needs BEV or TINITALY (build-time only):
+npm install -D proj4@2.22.0
 
-# 1. Platform bump (one isolated phase, after screenshot baselines exist)
-npm install next@16.4 react@19.3.0 react-dom@19.3.0 @react-three/fiber@9.8.1 @react-three/drei@10.7.9
-npm install -D @types/react@19.3.0 @types/react-dom@19.3.0 eslint-config-next@16.4 @playwright/test@1.64.0
-npx playwright install --with-deps chromium firefox webkit
+# PLAT-F1 typing (types only, zero runtime bytes):
+npm install -D schema-dts@2.1.0
 
-# 2. Motion package swap (same phase or the next, still isolated)
-npm uninstall framer-motion && npm install motion@14.1.0
+# Nothing else. geotiff 3.0.5, d3-contour 4.0.3, simplify-js 1.2.4, sharp 0.35 and fast-png stay as they are.
 
-# 3. Build-time data pipeline (devDeps: they never reach the client)
-npm install -D geotiff@3.0.5 d3-contour@4.0.2 simplify-js@1.2.4 exif-reader@2.0.3
-
-# 4. Runtime additions
-npm install fast-png@8.0.0 @phosphor-icons/react@2.1.10
-
-# 5. Guards / verification
-npm install -D eslint-plugin-better-tailwindcss@4.9.0 @axe-core/playwright@4.13.0
+# Local tools (not npm):
+winget install Gyan.FFmpeg      # full build, only if AV1 loops are wanted (adds libsvtav1)
 ```
-
----
-
-## 1. framer-motion 12.35 → motion 14.1 (verified)
-
-**What the repo actually uses** (grep across `app/ components/ lib/`, 24 files): `motion.*` (147 uses, mostly `motion.div`), `AnimatePresence` (6 files; `mode=` ×2; `exit=` ×10), `useScroll` (3), `useTransform` (3), `useMotionValue` (2), `useMotionValueEvent` (`GlassmorphismNav`, 3 calls; `useGlowIntensity`), `animate()` (`ProjectCard`), `type MotionValue`, `layoutId` (3: `FeatureShowcase`, `GlassmorphismNav`, `Header`), `whileInView` (12), `whileHover` (12), `whileTap` (5), `transition=` (70). Not used: `variants`, `drag`, `LayoutGroup`, `MotionConfig`, `useAnimate`, `useInView`, `motion()` factory, `.onChange`. `useReducedMotion` is the repo's own `lib/useReducedMotion.ts`, not Motion's.
-
-**Breaking changes between 12.35 and 14.1** (from the official CHANGELOG and upgrade guide):
-
-| Version | Change | Impact on this repo |
-|---|---|---|
-| 13.0.0 (2026-08-05) | Optional `@emotion/is-prop-valid` dependency removed. Pass `<MotionConfig isValidProp={isPropValid}>` explicitly if needed. | **None.** No styled-components/emotion. |
-| 13.2.0 | `MotionValue.set()` drops its `useDefaultValueType` argument. `MotionValueState` no longer caches `latest`. | None (internal or unused). |
-| 13.4.4 / 13.4.7 / 13.5.0 | `useScroll`: ScrollTimeline removed for JS callbacks; more `offset`s hardware-accelerated via `ViewTimeline`; then "main thread for all `offset` animations". | **Behavioural.** `Hero3DMountain`, `MountainTerrain3D` and `useGlowIntensity` use `useScroll` + `useTransform`/`useMotionValueEvent`, so cover them with screenshot and e2e checks. API unchanged. |
-| 14.0.0 (2026-10-02) | "No breaking changes": internal APIs removed, internal packages pinned. | None. |
-
-**New in this window, relevant to v2.0:** `AnimateView` (13.4, React-19.3 `ViewTransition` wrapper), `animateView` (12.41, vanilla), `motion/three` `threeEffect` (13.2, drive three.js uniforms/materials), `animateLayout` (14.1). None are needed. Plain React `<ViewTransition>` covers the lightbox (§2).
-
-**Migration (no codemod exists, so do it mechanically):**
-
-```bash
-# Replace imports in all 24 files, then type-check
-grep -rl "from 'framer-motion'" app components lib | xargs sed -i "s/from 'framer-motion'/from 'motion\/react'/"
-npm run type-check && npm test && npx playwright test
-```
-
-Use `motion/react-client` only if you want `motion.*` inside a Server Component (the package exports `./react-client`). Jest works unchanged: `motion` ships a CJS `require` export.
-
-**Confidence:** HIGH. **Regression risk:** low, concentrated in the three `useScroll` consumers. Take Playwright baselines before the swap.
-
----
-
-## 2. View Transitions (thumbnail → lightbox)
-
-**Status, verified:**
-- `<ViewTransition>` and `addTransitionType` are **stable in React 19.3.0** (react.dev blog, 2026-09-09).
-- **Next.js 16.4 ships React 19.3. View transitions "work in the App Router with no configuration."** Next 16.2 needed `experimental.viewTransition` plus the experimental React channel. That flag was removed as inert in 16.3.0-canary.95. The current `next.config.ts` doesn't set it, so nothing to remove.
-- In Next, **route navigations are transitions**, so named `<ViewTransition>`s animate automatically. In-page state changes must be wrapped in `startTransition` (plain `setState` does not animate).
-
-**Browser support (MDN BCD, 2026-10):**
-
-| Feature | Chrome | Safari | Firefox (stable = 157) |
-|---|---|---|---|
-| Same-document `startViewTransition`, `view-transition-name` | 111 | 18.0 | 144 |
-| `view-transition-class` (used by React's `share`/`enter` classes) | 125 | 18.2 | 144 |
-| Transition types / `:active-view-transition-type()` | 125 | 18.2 | 147 |
-
-All three current engines support everything React needs. Unsupported browsers just don't animate, so nothing breaks.
-
-**Recommended pattern.** Shared-element morph with React `<ViewTransition name>`, lightbox as a native `<dialog>`, opened inside `startTransition`:
-
-```tsx
-// Thumbnail (grid / map / carousel)
-import { ViewTransition, startTransition } from 'react';
-<button onClick={() => startTransition(() => setOpenId(photo.id))}>
-  <ViewTransition name={`photo-${photo.id}`} share="morph" default="none">
-    <Image src={photo.src} alt={photo.alt} />
-  </ViewTransition>
-</button>
-
-// Lightbox: render the same name only while open (names must be unique on the page at any time)
-{openId && (
-  <dialog ref={dialogRef} /* dialogRef.current.showModal() in an effect */>
-    <ViewTransition name={`photo-${openId}`} share="morph" default="none">
-      <Image src={...} alt={...} />
-    </ViewTransition>
-  </dialog>
-)}
-```
-
-```css
-::view-transition-group(.morph) { animation-duration: 400ms; }
-::view-transition { pointer-events: none; }
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation-duration: 0s !important; }
-}
-```
-
-Gotchas from the Next guide: with `default="none"` you **must** keep an explicit `share`, or the pair silently stops morphing. A shared pair only forms if the destination renders in the **same commit**, so a Suspense fallback breaks the morph. Don't animate the same element with both Motion (`AnimatePresence`/`layoutId`) and a ViewTransition. If the lightbox becomes a route (intercepting `@modal/(.)photos/[slug]` for deep links), the same `name` pattern works with `<Link transitionTypes={['nav-forward']}>`.
-
-**Confidence:** HIGH (official docs plus BCD). Interaction of the top-layer `<dialog>` with VT snapshots: MEDIUM. Verify in a spike.
-
----
-
-## 3. CSS scroll-driven animations
-
-| Engine | `animation-timeline: scroll()/view()` |
-|---|---|
-| Chrome/Edge | 115+ |
-| Safari | 26+ |
-| Firefox | **Not in stable 157.** BCD says `"preview"` (Nightly 160 only). |
-
-caniuse puts global support at ≈ 88%. **Implication:** never put essential UI (altimeter value, waypoint reveal, nav state) on CSS scroll timelines alone.
-- **Ascent / altimeter rail / R3F camera:** `useScroll({ target, offset })` from `motion/react`. Read `scrollYProgress.get()` inside `useFrame` (no React re-render per frame). Since 13.4.7 Motion hardware-accelerates eligible offsets via `ViewTimeline` where available and falls back elsewhere, so you get the platform benefit with cross-browser coverage.
-- **Decorative only** (contour parallax, section fades): pure CSS behind `@supports`.
-
-**Tailwind v4 interaction:** v4.3 has **no** `animation-timeline`/`animation-range` utilities (grep of the installed dist confirms). Use `@utility` in `app/globals.css`, or arbitrary properties, plus the `supports-[…]:` variant:
-
-```css
-@utility reveal-on-view {
-  @supports (animation-timeline: view()) {
-    animation: reveal linear both;
-    animation-timeline: view();
-    animation-range: entry 0% cover 30%;
-  }
-}
-@media (prefers-reduced-motion: reduce) { .reveal-on-view { animation: none; } }
-```
-
-**Confidence:** HIGH (BCD plus the Mozilla product-details feed for Firefox stable = 157.0.1).
-
----
-
-## 4. DEM pipeline (verified end-to-end)
-
-**Source facts (from the swisstopo STAC API, `data.geo.admin.ch/api/stac/v1`):**
-- Collection `ch.swisstopo.swissalti3d`: 1 km × 1 km tiles in LV95 (EPSG:2056), named `swissalti3d_{year}_{E_km}-{N_km}`. Editions 2019 and **2024** exist for the area. Each tile has a Cloud-Optimized GeoTIFF (Float32, nodata −9999, 128² internal tiles, 1 overview) and XYZ zip, at **0.5 m** (~18 MB/tile) and **2 m** (~1.2 MB/tile, 500×500 px).
-  - Matterhorn summit: tile **`2617-1091`** (2024 edition; max 4477.2 m). LV95 summit ≈ E 2'617'027 / N 1'091'670.
-  - Zermatt: tile **`2624-1096`** (min ~1591 m).
-  - URL pattern: `https://data.geo.admin.ch/ch.swisstopo.swissalti3d/swissalti3d_2024_2617-1091/swissalti3d_2024_2617-1091_2_2056_5728.tif`
-  - **Coverage gap:** in the box E 2614–2626 / N 1088–1100, these tiles are **missing**: 2614–2617 × 1088–1089, 2618-1088/1089, 2619-1088 (Italian side, south of the summit).
-- Collection `ch.swisstopo.swissaltiregio`: **10 m** DTM, **one COG** for CH plus ≥100 km of neighbouring countries (Italian national DTM outside CH, smoothed at seams), 6 overviews. **Verified:** window `[2613000,1088000,2627000,1099000]` → 1024×805 Float32, 0 nodata, 1518–4472 m, **821 ms** including network.
-
-**Recommendation (decision for the user, since it deviates from the locked "swissALTI3D" wording):**
-
-| Option | Pros | Cons |
-|---|---|---|
-| **A. swissALTIRegio 10 m (recommended)** | One range-read COG. No holes on the Italian side. 10 m is finer than the output grid anyway (12 km / 512 px ≈ 23 m/px). Build step under 1 s. Same agency. | 10 m smooths the summit (window max 4472–4476 m vs official 4,478 m). Attribution wording for the cross-border portion is not stated explicitly (gap below). |
-| B. swissALTI3D 2 m tile mosaic | Literally "swissALTI3D", the most precise, and the standard "© swisstopo" attribution applies. | ~130 tiles, so 130 range reads or ~160 MB download. **The south face/Cervinia side has holes**: crop to N ≥ 1'090'000 or fill nodata. |
-
-Either way, **label the altimeter with the official 4,478 m and 1,620 m-class values**, not the DEM min/max (bilinear resampling clips peaks).
-
-**Build-script shape (verified in a scratch prototype, Node 24):**
-
-```js
-// scripts/build-terrain.mjs  (run in prebuild, or once with outputs committed; keep a cache dir gitignored)
-import { fromUrl } from 'geotiff';
-import sharp from 'sharp';
-const tiff = await fromUrl('https://data.geo.admin.ch/ch.swisstopo.swissaltiregio/swissaltiregio/swissaltiregio_2056_5728.tif');
-const bbox = [2614000, 1088000, 2626000, 1100000];           // LV95 metres, 12×12 km
-const [h] = await tiff.readRasters({ bbox, width: 512, height: 512, resampleMethod: 'bilinear' }); // Float32Array, row 0 = north
-const u16 = Uint16Array.from(h, (v) => Math.round(v));        // metres; use v*10 for decimetres
-await sharp(u16, { raw: { width: 512, height: 512, channels: 1 } }) // pass the Uint16Array itself
-  .toColourspace('grey16').png({ compressionLevel: 9 }).toFile('public/terrain/matterhorn-512.png');
-```
-
-**Gotchas found while verifying:**
-- `sharp(Buffer, { raw: { depth: 'ushort' } })` silently produced **garbage** (824k diffs). Passing the `Uint16Array` directly works losslessly on sharp 0.34.5 and 0.35.5.
-- **Don't resample float rasters with sharp**: a float `resize` came back normalized to 5–17. Resample in geotiff.js (`width/height` + `resampleMethod`) and use sharp only to encode.
-- Reading a 16-bit PNG back with sharp needs `.toColourspace('grey16').raw({ depth: 'ushort' })`, otherwise you get 3-channel sRGB.
-
-**Measured asset sizes (12×12 km window, metre precision):** 256² → **92 KB**, 384² → **198 KB**, 512² → **336 KB**, 1024² → ~1.4–1.8 MB. **Recommend 512² for desktop and 256² for mobile/low-tier** (picked at runtime). **Do not ship 1024².** A Terrarium-style 8-bit RGB PNG came out larger (690 KB at 512²) and raw u16 + brotli was no better (388 KB).
-
-**Alternative rejected:** AWS Terrain Tiles (Terrarium). Coarser in the Alps (SRTM/ASTER-derived mix), a long multi-source attribution list, and it would mean either runtime tile fetches (blocked by the CSP and the same-origin constraint) or the same build step with worse data.
-
-**License (verified, swisstopo OGD terms):** free use including commercial, modification and redistribution. A **source reference is mandatory**: "© swisstopo" or "Federal Office of Topography swisstopo". swisstopo says swissALTIRegio's reference is given in its own documentation; I couldn't find a distinct string, so check the product docs before shipping (gap).
-
-**Confidence:** HIGH (tile IDs, formats, tooling, sizes all executed). MEDIUM (swissALTIRegio attribution string).
-
----
-
-## 5. d3-contour → SVG paths (verified)
-
-```js
-import { contours } from 'd3-contour';
-import simplify from 'simplify-js';
-const thresholds = []; for (let z = 1600; z <= 4400; z += 100) thresholds.push(z);
-const levels = contours().size([W, H]).thresholds(thresholds)(Float64Array.from(heights));
-const paths = levels.map((mp) => ({
-  z: mp.value,
-  d: mp.coordinates.flatMap((poly) => poly.map((ring) => {
-      const s = simplify(ring.map(([x, y]) => ({ x, y })), 1 /* px tolerance */, true);
-      return s.length < 3 ? '' : 'M' + s.map((p) => `${Math.round(p.x * 2) / 2} ${Math.round(p.y * 2) / 2}`).join('L') + 'Z';
-    })).join(''),
-}));
-// emit typed data/contours.ts (or an inline <svg> component) with viewBox="0 0 W H"; mark every 5th level as an index contour
-```
-
-Coordinates come out in grid pixels, row 0 = north (GeoTIFF order), so no y-flip is needed for SVG. **Measured** (512² grid): unsimplified `geoPath` output is ~870 KB. Simplify at 1 px with ½-px rounding gives **50 KB raw / 17 KB gzip / 13.5 KB br (100 m interval)** and **25.6 KB / 7 KB br (200 m)**. Use 100 m with every 5th line as an index contour for the static fallback/print look; 200 m for small or thumbnail uses. Don't add `d3-geo` just for `geoPath`: the manual path builder above is smaller and allows rounding. `@types/d3-contour` (3.0.6) is only needed if the script is written in TypeScript.
-
-**Confidence:** HIGH.
-
----
-
-## 6. EXIF via sharp + exif-reader (verified on the 4 originals)
-
-```js
-import sharp from 'sharp';
-import exifReader from 'exif-reader';           // CJS default export; fine from .mjs
-const { exif, width, height } = await sharp(file).metadata(); // exif: Buffer starting "Exif\0\0" (exif-reader accepts that)
-const e = exif ? exifReader(exif) : null;
-const dms = ([d, m, s]) => d + m / 60 + s / 3600;
-const photo = {
-  camera: e?.Image?.Model,                      // 'Canon EOS 6D Mark II'
-  lens: e?.Photo?.LensModel,                    // 'EF24-105mm f/4L IS II USM'
-  takenLocal: e?.Photo?.DateTimeOriginal,       // Date — see timezone note
-  exposure: e?.Photo?.ExposureTime,             // 0.002  -> format as 1/500 s
-  aperture: e?.Photo?.FNumber,                  // 5.6
-  iso: e?.Photo?.ISOSpeedRatings,               // 100
-  focalLength: e?.Photo?.FocalLength,           // 105
-  lat: e?.GPSInfo?.GPSLatitude && dms(e.GPSInfo.GPSLatitude) * (e.GPSInfo.GPSLatitudeRef === 'S' ? -1 : 1),
-  lon: e?.GPSInfo?.GPSLongitude && dms(e.GPSInfo.GPSLongitude) * (e.GPSInfo.GPSLongitudeRef === 'W' ? -1 : 1),
-  altGps: e?.GPSInfo?.GPSAltitude,              // GPSAltitudeRef absent => above sea level
-};
-```
-
-**Real values extracted:**
-
-| File | DateTimeOriginal | Exposure | Lens / FL | GPS (dec.) | GPS alt | DEM alt at point |
-|---|---|---|---|---|---|---|
-| IMG_0605 | 2021-09-06 10:48:46 | 1/500 f/5.6 ISO100 | 105 mm | 46.01502 N 7.74144 E (LV95 2'623'452/1'095'986) | 1626.1 | 1616.9 |
-| IMG_0629 (waterfall) | 2021-09-06 11:22:57 | 1/160 f/4 ISO1600 | 70 mm | 46.00811 N 7.73854 E | 1714.9 | 1689.4 |
-| IMG_0662 | 2021-09-07 10:58:25 | 1/400 f/5.6 ISO100 | 70 mm | 45.99075 N 7.71035 E | 2597.3 | 2584.6 |
-| R004-011 (film scan) | 2020-02-12 15:38:16 | — | — | none | — | — |
-
-**Gotchas:**
-- **Timezone.** The camera writes **no `OffsetTimeOriginal`**. exif-reader parses the naive local time **as UTC** (`Date.UTC`). Format dates with `timeZone: 'UTC'`, or store the string, or the date shifts by viewer timezone. `GPSTimeStamp` is true UTC: 08:48:44Z against 10:48:46 local confirms CEST (+02:00).
-- GPS arrives as **degrees + decimal minutes** (`[46, 0.90102, 0]`). The `dms()` formula handles it.
-- **GPS altitude is 9–25 m off the DEM.** Place 3D waypoints at the **DEM-sampled height** (pins sit on the surface). If shown, display the EXIF altitude as "GPS". The "1,626 m Zermatt" rail start comes from IMG_0605's GPS; the DEM says ~1,617 m there.
-- Originals are **12480×8320** (Lightroom "Enhanced"). Sharp handles them, but cache the extraction result (keyed by mtime) so prebuild stays fast.
-- **Don't use `exifr`**: last release 2022 and redundant.
-
-**Confidence:** HIGH (executed).
-
----
-
-## 7. R3F 9 terrain + contour shader
-
-**Recommendation: CPU-built geometry from the decoded heights, not vertex-shader displacement.**
-
-| | CPU geometry (recommended) | Vertex-shader displacement |
-|---|---|---|
-| Precision | Exact (Uint16 → Float32 positions) | Needs a float/u16 texture path. Browser PNG decode risks 8-bit (§ headline 3). |
-| Normals | `computeVertexNormals()` once | Must sample neighbours in the shader |
-| Waypoint placement / raycast / hover | Works (`raycaster` hits real triangles) | Raycast hits a flat plane |
-| Cost | 512² = 262k verts built once (~ms) | Same vertex count, plus texture fetches every frame |
-
-Pipeline: `fetch('/terrain/matterhorn-512.png')` (same-origin, so CSP `connect-src 'self'` is fine) → `fast-png` decode → `PlaneGeometry(size, size, N-1, N-1)` with heights written into `position.y` → `computeVertexNormals()`.
-
-**Contour lines in the fragment shader** (screen-space anti-aliased, constant pixel width at any zoom). WebGL2 is the three.js default, so `fwidth` is built in:
-
-```glsl
-varying float vHeight;               // world-space elevation in metres, passed from the vertex shader
-uniform float uInterval;             // 20.0 or 50.0
-uniform vec3  uLine, uIndexLine, uGround;
-void main() {
-  float f = vHeight / uInterval;
-  float d = abs(fract(f - 0.5) - 0.5) / fwidth(f);         // distance to nearest isoline in px
-  float minor = 1.0 - smoothstep(0.0, 1.0, d);
-  float fi = vHeight / (uInterval * 5.0);
-  float major = 1.0 - smoothstep(0.0, 1.5, abs(fract(fi - 0.5) - 0.5) / fwidth(fi));
-  vec3 col = mix(uGround, uLine, minor * 0.6);
-  gl_FragColor = vec4(mix(col, uIndexLine, major), 1.0);
-}
-```
-
-Drive scroll ascent via a `uProgress` uniform and camera path in `useFrame`, reading `scrollYProgress.get()`. Use `frameloop="demand"` + `invalidate()` on scroll to stop rendering when idle.
-
-**drei helpers worth using:** `shaderMaterial` (typed uniforms + `extend`), `PerformanceMonitor` (drop DPR or switch 512→256 mesh / static fallback on low FPS), `AdaptiveDpr`. **Avoid `useDetectGPU`**: it fetches benchmark data from `https://unpkg.com/detect-gpu@…/dist/benchmarks` (verified in `node_modules/detect-gpu`), which the CSP `connect-src 'self'` blocks and which violates the same-origin constraint. Skip `ScrollControls` (it hijacks scroll and fights native scroll and Motion `useScroll`), `OrbitControls` (scroll-driven camera only) and `Html` for many waypoints (each is a DOM overlay; project positions once into a single DOM layer instead).
-
-**`three-custom-shader-material` (6.4.0, ~4 KB gz): not warranted.** It's only useful to keep PBR lighting from `MeshStandardMaterial` *and* add contours. A night-map look is unlit or flat-shaded by design, so a ~40-line `shaderMaterial` with a simple Lambert term from the computed normals is smaller and fully controlled. Revisit only if a later phase wants physically lit terrain plus shadows.
-
-**Confidence:** MEDIUM-HIGH (standard techniques; the 16-bit browser-decode concern is MEDIUM per the conflicting sources).
-
----
-
-## 8. Fonts (next/font/google, self-hosted, so `font-src 'self'` holds)
-
-Verified in Next's bundled `font-data.json`, plus latin variable WOFF2 sizes fetched from Google Fonts:
-
-| Family | Axes (variable) | Italic | Latin WOFF2 | Character for "Swiss survey" | ui-ux-pro-max hit |
-|---|---|---|---|---|---|
-| **Schibsted Grotesk** (proposed) | wght 400–900 | yes | **46.8 KB** | Robust grotesk, newspaper heritage (Bakken & Bæck); strong heavy weights for big numerals/headlines. Popularity rank 60. | yes (#4) |
-| Host Grotesk | wght 300–800 | yes | **20.3 KB** | Neutral, contemporary, a bit softer; lightest file. Rank 241. | yes (#3) |
-| Familjen Grotesk | wght 400–700 | yes | **18.9 KB** | Scandinavian grotesk with distinctive quirks (ear/terminals), max 700, so less punch at display sizes. Rank 299. | yes (#1) |
-| Archivo | **wdth 62–125** + wght 100–900 | yes | 90.1 KB | Most "technical/condensed signage". The width axis allows condensed trail-sign labels from one file, but it's the heaviest. | (not top-5) |
-
-**Recommendation:** keep **Schibsted Grotesk** (display only, `weight: 'variable'` → `wght 400–900`, `subsets: ['latin']`, `display: 'swap'`, `adjustFontFallback`) + **Inter** (body, already loaded, opsz 14–32) + **JetBrains Mono** (data/altimeter, already loaded). That totals three families; Schibsted adds ~47 KB on first visit. Pick **Host Grotesk** instead if the extra ~26 KB matters more than display weight (it tops out at 800). Choose **Archivo** only if trail-sign labels truly need a condensed cut. Don't add a 4th family. Load the display face only on routes and blocks that use it (next/font preloads per-usage). ui-ux-pro-max's generic "Minimal Swiss" pairing is Inter/Inter; the locked display+body split wins.
-
-**Confidence:** HIGH for availability and axes; MEDIUM for the aesthetic call (needs ui-ux-pro-max/UI-SPEC review against mockups).
-
----
-
-## 9. Icons: Phosphor vs. inline SVG
-
-- Current state: **70 inline `<svg>`** occurrences across `components/` and `app/`, mixing UI glyphs and bespoke graphics.
-- ui-ux-pro-max default: **Phosphor primary, Heroicons fallback**, one family per surface, `aria-hidden` when decorative.
-- `@phosphor-icons/react@2.1.10`: last publish **2025-05-22** (stale ~17 months, but icons are static SVG and the peer is `react >= 16.8`). It is **not** in Next's default `optimizePackageImports` list (`lucide-react` and `@heroicons/react/*` are).
-
-**Recommendation (MEDIUM):** adopt Phosphor for **generic UI glyphs** and import from `@phosphor-icons/react/dist/ssr` (no React context, so it renders in Server Components with zero client JS). If you import from the package root in client components, add `experimental.optimizePackageImports: ['@phosphor-icons/react']`. Expected cost: ≈0.3–0.8 KB per icon actually used, only from Server Components. **Keep inline SVG** for domain marks: trail-sign grade bars (T1–T5), summit cross, waypoint pins, contour glyphs, altimeter ticks. Those are design assets, not icons. Use **one Phosphor weight** (`light` or `regular`) site-wide so it matches the thin contour linework.
-
----
-
-## 10. Playwright visual regression with WebGL
-
-WebGL output varies by GPU, driver and OS, so pixel baselines of a live canvas are flaky by nature. Layered approach:
-
-1. **Baseline the static fallback, not the live canvas.** Most page baselines should use `test.use({ reducedMotion: 'reduce' })`, which renders the deterministic contour image fallback, a design requirement anyway. That gives stable screenshots of the whole page.
-2. **Mask the canvas** wherever it does render: `await expect(page).toHaveScreenshot({ mask: [page.locator('canvas')], maskColor: '#0b0f14', animations: 'disabled', caret: 'hide' })`. Or use `stylePath: 'e2e/screenshot.css'` to hide volatile layers (`canvas { visibility: hidden }`).
-3. **Readiness gates before capture:** `await page.evaluate(() => document.fonts.ready)`, and have the R3F scene set `data-ready="true"` on its wrapper after the heightmap decodes and the first frame renders (`onCreated` + one `useFrame` tick). Then `await expect(page.locator('[data-terrain][data-ready="true"]')).toBeVisible()`.
-4. **One dedicated canvas test** (optional, Chromium only) with software GL for determinism: launch args `--use-angle=swiftshader --use-gl=angle` (fallback `--enable-unsafe-swiftshader`) and a looser `maxDiffPixelRatio: 0.02`. Freeze scroll progress via a query param (`?ascent=0.5`) so the camera pose is fixed.
-5. **Generate baselines on Linux in the official image** (`mcr.microsoft.com/playwright:v1.64.0-noble`). Snapshots are per-platform (`-chromium-linux.png`) and the local machine is Windows, so don't commit Windows baselines for CI. Use `toHaveScreenshot` `type: 'webp'` (1.62+) to cut repo size if baselines grow.
-6. Keep the visual project **Chromium-only** at first. Firefox/WebKit run functional e2e. The existing config already skips WebKit in CI.
-
-**Confidence:** HIGH for the Playwright APIs; MEDIUM for the SwiftShader flags (they change across Chromium versions, so verify in a spike).
-
----
 
 ## Alternatives Considered
 
 | Recommended | Alternative | When to use the alternative |
 |---|---|---|
-| `motion` (`motion/react`) | Keep `framer-motion@14.1.0` | Never: it's the same code, now an internal dependency of `motion`. Staying on the old name only defers a sed. |
-| React `<ViewTransition>` | Motion `AnimateView` (13.4) / `layoutId` | `layoutId` if a morph must also work inside an R3F/DOM hybrid that VT snapshots can't capture. `AnimateView` only if you want Motion-controlled easing for VT. |
-| swissALTIRegio 10 m | swissALTI3D 2 m mosaic | If a close-up summit inset (< 2 km wide) is added, or if literal "swissALTI3D" provenance matters more than Italian-side coverage. |
-| CPU geometry + `fast-png` | Vertex displacement from an RG-packed 8-bit texture | If the terrain must stream several LODs on the GPU (not needed for one static hero). |
-| `simplify-js` | Hand-written Douglas–Peucker (~30 lines) | If you want zero devDeps. It's equivalent. |
-| Schibsted Grotesk | Host Grotesk / Archivo | See §8 (bytes vs. weight range vs. width axis). |
-| Native `<dialog>` lightbox | `yet-another-react-lightbox` | Only if you need pinch-zoom/gestures beyond the existing `ZoomableImage`. |
+| A region **inside** swissALTIRegio | A region needing BEV/TINITALY | When the photos really are from the Hohe Tauern, Salzkammergut or Eastern Dolomites. Costs a new fetcher, proj4, a new credit line and per-source attribution. |
+| TINITALY 1.1 for Italian plates | Copernicus GLO-30 | When TINITALY tile access is gated or slow. Accept DSM canopy bumps, a 30 m source under a 21 m/px output grid, and the long Copernicus notice. |
+| BEV ALS DTM 1 m for Austria | BEV DGM Höhenraster 10 m (EPSG:31287) | Never: MGI datum shift, zip delivery, frozen in 2021. |
+| Copernicus GLO-90 overview | GLO-30 overviews | When the overview needs more detail than about 250 m/px. GLO-30 overview 3 is 450 px/°, similar data, 4× the tiles' bytes. |
+| Plate carrée overview (cos φ) | LAEA EPSG:3035 via proj4 | When the overview must be measurable or shown with a scale bar. |
+| proj4 at build time | Hand-written LAEA/UTM in `lib/geo.ts` | When Tim wants zero new dependencies, or the client must project. Verify against proj4 in Jest. |
+| Loops in `public/media` | Vercel Blob | When loops outgrow the repo (> ~50 MB total). Blob's Hobby 10 GB transfer cap is the binding limit. |
+| Bunny Stream / YouTube facade for films | Mux free plan | When DX matters more than a 328 KB player and a badge; 10-asset cap. |
+| One aggregate `CI OK` check | Requiring each job | When you want per-job required status. Breaks on renames and on `dependency-review` skipping on push. |
+| Ruleset | Classic branch protection | Equivalent for one rule. Rulesets win on visibility, JSON export and app-pinned checks. |
 
-## What NOT to Add
+## What NOT to Use
 
 | Avoid | Why | Use instead |
 |---|---|---|
-| `gsap` (3.15, ~27 KB gz) | Locked decision. Duplicates Motion (scroll, timelines). | Motion `useScroll`/`animate` + CSS |
-| `lenis` (1.3.26) | Smooth-scroll hijacking: fights native scroll, Motion `useScroll`, CSS scroll timelines, `prefers-reduced-motion` and keyboard/AT scrolling. ui-ux-pro-max flags scroll-jacking as a High-severity motion-sensitivity issue. | Native scroll |
-| `exifr` (7.1.3) | Unmaintained since 2022. `exif-reader` + sharp already verified on the real files. | `exif-reader@2.0.3` |
-| `proj4` | A ~30 KB+ dependency for one WGS84→LV95 conversion. | swisstopo approximate formulas (verified, ~1 m) |
-| `@react-three/postprocessing` (3.2.0, published today) + `postprocessing` | Bloom/glow adds GPU cost and bundle weight, and its peer needs `fiber >= 9.7`. The night-map look comes from the contour shader. Also a brand-new release. | Shader-side glow (emissive index lines) |
-| `three-custom-shader-material` | Unlit/stylized terrain doesn't need PBR extension. | drei `shaderMaterial` |
-| drei `useDetectGPU` / `detect-gpu` | Fetches benchmarks from unpkg at runtime, which the CSP and same-origin constraint block. | drei `PerformanceMonitor` |
-| drei `ScrollControls` | Takes over the scroll container. Conflicts with page-level ascent + altimeter rail. | Motion `useScroll` → uniforms/camera |
-| Map libraries (Leaflet, MapLibre, Mapbox) | Runtime tile fetches violate same-origin/CSP and pull a basemap's palette onto the photos. | Contour SVG + EXIF pins in LV95 pixel space |
-| AWS Terrain Tiles / any runtime DEM fetch | Same-origin constraint; worse alpine data. | Build-time swisstopo pipeline |
-| 1024² heightmap | ~1.4–1.8 MB for no visible gain at hero size. | 512² desktop / 256² mobile |
-| `cmdk` (14.6 KB gz) | No command palette in v2.0 scope. | — |
-| `react-photo-album` | 4–30 photos don't need a layout engine. | CSS justified rows |
-| `experimental.viewTransition` in next.config | Removed (inert) since 16.3. | Nothing: works by default in 16.4 |
-| A 4th font family | Bytes plus visual noise. | Schibsted/Inter/JetBrains Mono only |
+| `gdal-async` (215 MB, native) | CI installs devDependencies on every job; native binaries on Windows and Linux; all of it for one manual step | geotiff.js + proj4 |
+| Warping rasters (`gdalwarp`-style reprojection) in the pipeline | Resampling twice blurs ridges and complicates `--check` byte-equality | Window on the native grid; transform only points |
+| Mixing two DEM sources in one plate | Datum/model seams, DSM-vs-DTM steps | One source per plate |
+| EU-DEM | Withdrawn by the EEA | Copernicus GLO-30/90 |
+| SRTM | 2000 data, alpine voids | Copernicus / national DTMs |
+| AWS Terrain Tiles / any runtime DEM or tile fetch | Breaks `connect-src 'self'` and the same-origin rule (v2.0 decision) | Build-time pipeline |
+| Map libraries (MapLibre, Leaflet) for the overview | Runtime tiles plus a basemap palette | Contour SVG + pins in grid UV |
+| Self-hosting films on Vercel Hobby (public/ or Blob) | 100 GB/month shared transfer, or 10 GB Blob; overrun = 30-day pause | External host (Bunny/YouTube) or loops only |
+| `@mux/mux-player` / `hls.js` for loops | 328 KB / 120 KB gz for 6–12 s clips that a `<video>` plays natively | Progressive MP4 (AV1 + H.264) |
+| WebM for AV1 | The MP4 box walker can't check it; Safari prefers MP4 | AV1 in MP4 |
+| Git LFS for media | Every Vercel build clone uses LFS bandwidth | Hashed files in `public/media` (small) or an external host |
+| A nonce on JSON-LD, or `next/script` for it | Data blocks aren't executed; `next/script` is for JS (Next guide) | Native `<script type="application/ld+json">` with `<` escaped |
+| `web-share=()` in Permissions-Policy | Disables PHOTO-F2 | Leave the default (`self`) |
+| Requiring checks from a workflow with `paths:` filters | Skipped workflow = Pending = PR blocked | Unfiltered `ci.yml` + aggregate `CI OK` |
 
 ## Stack Patterns by Variant
 
-**If the visitor has `prefers-reduced-motion: reduce` OR no WebGL2 OR `PerformanceMonitor` declines:**
-- Render the build-time **contour SVG** (same data, ~13 KB br) plus a static altimeter. Don't mount the `<Canvas>` and don't download `fast-png`/heightmap. Gate it in a `next/dynamic` client island.
+**If every launch region is inside swissALTIRegio (recommended path):**
+- `fetch-dem.mjs` takes a region list (`id`, LV95 `extent`, `country`). The output becomes `data/terrain/source/<id>/dem-10m.png` + `source.json`, and `build-terrain.mjs` loops over regions.
+- No new dependency, credit line or CRS. Pins keep using `lib/geo.ts`.
 
-**If on a mobile or low-tier GPU:**
-- Load `matterhorn-256.png` (92 KB). DPR cap 1.5. `frameloop="demand"`.
+**If a launch region is in Austria east of 12° E:**
+- Add `fetch-region-bev.mjs` (COG range read, §2.2), `proj4@2.22.0`, the BEV credit, and a `crs: 'EPSG:3035'` field in `TerrainSource`. Pins transform in `photos:build` with proj4, and plate data stores UV, not CRS coordinates.
 
-**If the lightbox becomes a route (shareable URLs):**
-- Intercepting route `@modal/(.)photos/[slug]` + `<Link transitionTypes={['nav-forward']}>`. The same `ViewTransition name` pairing applies. Prefetch the target so the pair forms in one commit.
+**If a launch region is in Italy east of 12° E:**
+- TINITALY tiles downloaded by hand into a gitignored `assets/dem-original/`; `fromFile` read; `crs: 'EPSG:32632'`; proj4 for pins. Copernicus GLO-30 if TINITALY can't be obtained (then add the Copernicus notice and liability sentence).
+
+**For the overview, always:**
+- `fetch-overview.mjs` → GLO-90 overview level 2 mosaic → committed 16-bit source → `build-terrain` adds an `overview` artifact (contours ≤ 30 KB br, optional hillshade AVIF), with pins in plate-carrée UV.
+
+**If drone video is loops only:**
+- Extend `ClipsSidecar` with a `kind: 'demo' | 'loop'` and a per-kind budget, an optional AV1 rendition and an AVIF poster. Zero CSP change.
+
+**If drone films are added:**
+- One `frame-src` origin, a click-to-load facade with a self-hosted poster, and the audit gate updated to expect that origin. The privacy note on the page names the host.
 
 ## Version Compatibility
 
-| Package | Compatible with | Notes |
+| Package / tool | Compatible with | Notes |
 |---|---|---|
-| `react@19.3.0` | `@react-three/fiber@>=9.8.0` | **9.6.1/9.7.0 peer `<19.3` would fail or warn.** Upgrade together. |
-| `next@16.4.x` | `react@19.3.0` | 16.4 ships React 19.3. `<ViewTransition>` needs no flag. |
-| `motion@14.1.0` | `react ^18 \|\| ^19` | Pins `framer-motion`, `motion-dom` and `motion-utils` at 14.1.0. Don't install `framer-motion` separately. |
-| `@react-three/drei@10.7.9` | `fiber ^9`, `three >=0.159`, `react ^19` | OK with three 0.184/0.186. |
-| `@react-spring/three@10.1.2` | `fiber >=6`, `react ^19` | Fine. Remove only if the 3D carousel is retired. |
-| `eslint-plugin-better-tailwindcss@4.9.0` | `tailwindcss ^4.1.17`, `eslint ^9` | Repo has tailwind 4.3 / eslint 9. |
-| `d3-contour@4.0.2` | ESM only | Use from `.mjs` scripts (the existing scripts already are). |
-| `exif-reader@2.0.3` | CJS (`export =`) | Default-import from ESM works (verified). |
-| `geotiff@3.0.5` | Node 24 (verified) | `fromUrl` uses range requests. Works with swisstopo COGs (no auth, no CORS needed at build). |
+| `geotiff@3.0.5` | Node 24; BEV, Copernicus and swisstopo COGs | Verified range reads against all three on 2026-11-12. Out-of-bounds windows return zeros without an error. |
+| `proj4@2.22.0` | ESM import from `.mjs` scripts | 2.23.0 was published on 2026-11-12; pin 2.22.0 until it settles. The default export works with Node's ESM loader (executed with 2.23.0's `dist/proj4-src.js`). |
+| `schema-dts@2.1.0` | TypeScript 6.0 | Types only (`import type`), so nothing reaches the bundle. |
+| ffmpeg 9.0.1 (Gyan essentials) | H.264 / HEVC / libaom AV1 / VP9 | No SVT-AV1. The full build adds it. The selftest fixtures were made with 9.0.1. |
+| `<video>` AV1 + H.264 `<source>` | Chrome, Edge, Firefox, Safari | Safari falls through to H.264 without an AV1 hardware decoder. |
+| Vercel Hobby | 100 GB Fast Data Transfer, 10 GB Fast Origin Transfer, 1 M CDN requests; Blob 1 GB / 10 GB / 10k ops | Over the limit = feature paused for 30 days; non-commercial use only. |
 
 ## Sources
 
-- npm registry (`npm view`, 2026-10-10): versions, publish dates and peers for next, react, framer-motion, motion, @react-three/fiber/drei/postprocessing, three, sharp, geotiff, d3-contour, exif-reader, exifr, fast-png, simplify-js, @phosphor-icons/react, lucide-react, lenis, eslint-plugin-better-tailwindcss, @axe-core/playwright. HIGH
-- Motion CHANGELOG, https://raw.githubusercontent.com/motiondivision/motion/main/CHANGELOG.md (12.39–14.1 entries). HIGH
-- Motion upgrade guide, https://motion.dev/docs/react-upgrade-guide (13.0 / 14.0 / `motion/react`, no codemod). HIGH
-- React 19.3 announcement, https://react.dev/blog/2026/09/09/react-19-3. HIGH
-- Next.js 16.4 post, https://nextjs.org/blog/next-16-4. Next.js View Transitions guide (v16.4.0), https://nextjs.org/docs/app/guides/view-transitions. HIGH
-- `experimental.viewTransition` removal (16.3.0-canary.95), https://releases.sh/release/rel_eHrDQECWkdHXLAOj-k6Wq-viewtransition-flag-removed-generatestaticparams-validation-hardened. MEDIUM (secondary, consistent with the official guide)
-- Next.js security pre-announcement (2026-10-14), https://nextjs.org/blog/upcoming-nextjs-security-update-october-2026. HIGH
-- MDN browser-compat-data (`animation-timeline`, `view-transition-class`, `:active-view-transition-type`, `startViewTransition`), raw GitHub JSON. HIGH. Firefox stable version from https://product-details.mozilla.org/1.0/firefox_versions.json (157.0.1). HIGH. caniuse scroll-driven / view-transitions pages. MEDIUM
-- swisstopo STAC API, https://data.geo.admin.ch/api/stac/v1/collections/ch.swisstopo.swissalti3d and `ch.swisstopo.swissaltiregio`: tile IDs, assets, coverage queried live. HIGH
-- swisstopo OGD terms, https://www.swisstopo.admin.ch/en/terms-of-use-free-geodata-and-geoservices. HIGH. swissALTIRegio product page, https://www.swisstopo.admin.ch/en/height-model-swissaltiregio-20240405. MEDIUM (no explicit credit string)
-- Playwright release notes, https://playwright.dev/docs/release-notes (1.58–1.64). HIGH
-- 16-bit PNG → WebGL precision: PlayCanvas/Babylon forum reports vs. Chromium smoke-test commit (conflicting). MEDIUM, hence "decode yourself"
-- **Executed verification (scratchpad prototypes):** sharp 0.34.5/0.35.5 grey16 round-trip; exif-reader on all 4 originals; geotiff range-read of swissALTIRegio and swissALTI3D tiles; d3-contour + simplify-js size measurements; fast-png 16-bit decode; WGS84→LV95 vs DEM altitude; Next `font-data.json` axes; Google Fonts WOFF2 sizes; Next default `optimizePackageImports` list; `detect-gpu` unpkg URL. HIGH
-- ui-ux-pro-max searches: `--domain google-fonts "swiss grotesk technical editorial"`, `--domain icons "icon library"` (Phosphor primary), `--domain ux "reduced motion scroll parallax"` (scroll-jacking = High severity), `--domain typography "swiss minimal technical"`. No threejs/nextjs stack matches for terrain or view-transition queries (stated explicitly).
+- **Executed (HIGH):**
+  - swissALTIRegio STAC collection (`data.geo.admin.ch/api/stac/v1/collections/ch.swisstopo.swissaltiregio`, bbox 4.5157–11.9898° E / 44.8368–48.7855° N) and COG structure, coverage mask and 20 point samples via geotiff 3.0.5.
+  - Copernicus GLO-30/GLO-90 COGs on AWS (`copernicus-dem-30m` / `-90m`, tile N46 E012): size, overviews, PixelIsPoint.
+  - The 72-tile overview mosaic and contour sizes (d3-contour 4.0.3, simplify-js 1.2.4).
+  - BEV ALS DTM: HEAD (`Accept-Ranges`, 553 MB / 6.8 GB) and an 11 km window read in 1.5 s.
+  - proj4 vs `lib/geo.ts` (4 points).
+  - npm registry (`npm view`) for geotiff, proj4, gdal-async, epsg-index, geotiff-geokeys-to-proj4, hls.js, schema-dts, `@mux/mux-player`, `@vercel/blob`, media-chrome, shaka-player, dashjs, ffmpeg-static, fluent-ffmpeg, lite-youtube-embed, vercel.
+  - gzip sizes of `hls.min.js`, `hls.light.min.js`, `proj4.js`, `mux-player.js` from the packed tarballs.
+  - `ffmpeg -encoders` on the installed build.
+  - `gh api` for the repo's rulesets and branch protection.
+  - Repo code: `proxy.ts` `buildCsp`, `scripts/terrain/*.mjs`, `scripts/media/build-clip.mjs`, `scripts/guards/lib/mp4-boxes.mjs`, `components/site/SavedPages.tsx`, `lib/rate-limit.ts`, `data/site.ts`, `next.config.ts`, `.github/workflows/ci.yml`.
+- **Official docs, fetched and cross-checked (MEDIUM):**
+  - Next 16.4 JSON-LD guide (`node_modules/next/dist/docs/01-app/02-guides/json-ld.md`).
+  - Copernicus WorldDEM-30 licence PDF (notice and liability sentence), https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Data/DEM/resources/license/License-COPDEM-30.pdf
+  - BEV metadata records (`data.bev.gv.at/geonetwork`, CC-BY-4.0, EPSG:3035, URL pattern).
+  - TINITALY download page and citation, https://tinitaly.pi.ingv.it/Download_Area1_1.html
+  - EEA/CLMS notice that EU-DEM is no longer disseminated, https://land.copernicus.eu/api/en/products/products-that-are-no-longer-disseminated-on-the-clms-website
+  - Vercel: https://vercel.com/docs/plans/hobby, https://vercel.com/docs/vercel-blob/usage-and-pricing, https://vercel.com/docs/limits, https://vercel.com/docs/limits/fair-use-guidelines, https://vercel.com/docs/deployment-checks
+  - GitHub: https://docs.github.com/en/actions/how-tos/manage-workflow-runs/skip-workflow-runs, https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets, and the troubleshooting-required-status-checks pages.
+  - MDN browser-compat-data (`api/Navigator.json` share/canShare; `Permissions-Policy` `web-share`).
+  - Cloudflare Stream pricing, https://developers.cloudflare.com/stream/pricing
+  - Mux free plan, https://www.mux.com/blog/free-plan, and pricing, https://www.mux.com/pricing/video
+  - Bunny Stream pricing, https://bunny.net/pricing/stream/
+- **Single secondary source (LOW):**
+  - Chrome/Edge 142 native HLS on desktop, https://tech-ish.com/2025/12/08/google-chrome-microsoft-edge-chromium-native-hls-playback-desktop
+  - DJI `djmd`/`dbgi` track description, https://raw.githubusercontent.com/CallMarcus/dji-drone-metadata-embedder/master/docs/MP4_TIMED_METADATA.md
+  - South Tyrol DTM 2.5 m records (licence not confirmed)
+  - Vimeo pricing (not checked)
 
 ## Gaps / Open Questions
 
-- **swissALTIRegio attribution string** for cross-border data: confirm in the product documentation before shipping (fallback: "© swisstopo" + "Height model: swissALTIRegio").
-- **swissALTI3D vs swissALTIRegio**: user decision (locked wording vs. Italian-side holes).
-- **Top-layer `<dialog>` + ViewTransition morph** and **canvas snapshotting during VT**: spike in Chromium, Safari 26 and Firefox 157.
-- **SwiftShader launch flags** for the optional deterministic canvas screenshot: verify on Playwright 1.64's Chromium 156.
-- **Waterfall location fix:** EXIF puts IMG_0629 at 46.00811 N 7.73854 E (LV95 2'623'230/1'095'218), which is the gorge south of Zermatt as the audit says. The corrected place name is a content task, not a stack task.
+- **Region choice (blocks the terrain phase):** inside or outside the swissALTIRegio rectangle decides whether proj4, a second fetcher and new credits are needed at all.
+- **BEV credit line:** CC BY 4.0 is confirmed, but BEV's preferred wording is not. Check on data.bev.gv.at before shipping an Austrian plate.
+- **TINITALY access:** whether the 1.1 tiles still sit behind a request form, and the tile file format. Check by downloading one tile.
+- **Copernicus GLO-90 notice:** I verified the WorldDEM-30 wording; the GLO-90 licence presumably reads "WorldDEM-90". Confirm before the overview ships.
+- **Overview size target (≤ 30 KB br):** needs a spike with smoothing and ring filtering. The 43 KB br figure is unsmoothed.
+- **Real drone bitrates:** §3.4 is arithmetic. Encode one of Tim's clips first.
+- **Vercel Deployment Checks on Hobby,** the Marketplace Upstash variable names, and the GitHub Actions `integration_id` (15368) and admin `RepositoryRole` id (5): confirm in each UI before applying.
+- **Chrome desktop native HLS** (only matters for films): one secondary source.
 
 ---
-*Stack research for: v2.0 Topographic Identity (Next.js portfolio, real-terrain WebGL + build-time geodata)*
-*Researched: 2026-10-10*
+*Stack research for: v2.1 Survey Expansion (multi-region Alpine terrain, overview map, drone video, platform polish, repo safety)*
+*Researched: 2026-11-12*

@@ -37,23 +37,3 @@ export const DURATION = {
   /** Crystal fracture on click */
   fracture: 0.3,
 } as const;
-
-const kebab = (k: string) => k.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`);
-
-/** CSS custom property reference for a DURATION token, e.g. `var(--duration-fast)`. */
-export function cssDuration(k: keyof typeof DURATION): string {
-  return `var(--duration-${kebab(k)})`;
-}
-
-/** CSS custom property reference for an EASING token, e.g. `var(--ease-geological)`. */
-export function cssEase(k: keyof typeof EASING): string {
-  return `var(--ease-${kebab(k)})`;
-}
-
-/** Perspective tilt configuration for crystalline card interactions. */
-export const TILT_CONFIG = {
-  /** Maximum degrees of tilt */
-  maxRotation: 12,
-  /** CSS perspective value in px */
-  perspective: 600,
-} as const;
