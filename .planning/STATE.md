@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 13
 current_phase_name: Repo Safety & Test Debt
 status: executing
-stopped_at: Completed 13-18-PLAN.md
-last_updated: "2026-11-13T17:05:24.215Z"
+stopped_at: Completed 13-19-PLAN.md
+last_updated: "2026-11-13T17:58:03.027Z"
 last_activity: 2026-11-13
 last_activity_desc: Phase 13 execution started
-state_head: bec99fd957f1f846a46a7b472c47891a1866774f
+state_head: 2f9970a69aecb39e73d1bba9d6f0e389f978cfcc
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 22
-  completed_plans: 18
+  completed_plans: 19
   percent: 0
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 13 (Repo Safety & Test Debt) — EXECUTING
-Plan: 19 of 22
+Plan: 20 of 22
 Status: Ready to execute
 Last activity: 2026-11-13 — Phase 13 execution started
 
@@ -72,6 +72,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 13 P16 | 1h50m | 3 tasks | 3 files |
 | Phase 13 P17 | 15min | 3 tasks | 2 files |
 | Phase 13 P18 | 6min | 2 tasks | 5 files |
+| Phase 13 P19 | 55min | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -125,6 +126,10 @@ Recent decisions affecting current work:
 - [Phase 13]: 13-18: Tim replied "verified" to the @playwright/test 1.65.0 legitimacy checkpoint; Playwright 1.65.0 and container tag v1.65.0-noble landed together in the single five-file commit 5ab6d15 (parity guard OK, type-check, lint and jest green; chromium homepage smoke 7/7)
 - [Phase 13]: 13-18: the lockfile was written with Node 26's bundled npm 11.20.0, not the shadowing global npm 11.6.1, whose install rewrote unrelated metadata (peer/dev flags, dropped libc arrays); the committed lockfile diff touches only the root spec and the three Playwright entries
 - [Phase 13]: 13-18: DEPS-06 stays Pending in REQUIREMENTS.md by the shared-ID gate (13-20 and 13-22 also declare it and have no SUMMARY yet)
+- [Phase 13]: 13-19: relay.decision a-confirmed (Tim's selection "a-confirmed (Recommended)"): the relay's CI OK check run 132061472478 sat on [ci skip] head c374806 (success, app 15368), was the only CI OK in the PR rollup (isRequired true) and PR #146 read CLEAN after ready; D-06 option A stands, so 13-21 records "not needed" (Tasks 2-3 skipped)
+- [Phase 13]: 13-19: live main ruleset proven: red PR #144 (CI OK failure) read BLOCKED and its single gh pr merge --merge was refused by the base branch policy; docs-only PR #145 got docs_only=true, six heavy jobs skipped, CI OK success; all three proof PRs closed unmerged, branches deleted
+- [Phase 13]: 13-19: untested path handed to 13-22: a [ci skip] head whose dispatched CI takes the full ~40-minute path has not been mirrored live (the proof run was docs-only, ~1.5 min); ci-skip-relay.yml timeout-minutes 100 and gh run watch --interval 60 budget for it; workflow unchanged
+- [Phase 13]: 13-19: GUARD-07 and GUARD-08 stay Pending in REQUIREMENTS.md by the shared-ID gate (13-21 and 13-22 also declare them and have no SUMMARY yet)
 
 ### Pending Todos
 
@@ -177,6 +182,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-13T17:05:24.182Z
-Stopped at: Completed 13-18-PLAN.md
+Last session: 2026-11-13T17:58:02.994Z
+Stopped at: Completed 13-19-PLAN.md
 Resume file: None
