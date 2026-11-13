@@ -1,6 +1,8 @@
 import { Activity } from 'react';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import LightboxDialog, { LIGHTBOX_CLOSE_EVENT, useLightbox } from '../LightboxDialog';
+import PhotoViewer from '../PhotoViewer';
+import { photoViews } from '@/lib/photos/view-model';
 
 /**
  * The lightbox shell in jsdom (LBOX-01; 10-RESEARCH Pitfall 11). jsdom has no
@@ -149,6 +151,32 @@ describe('LightboxDialog', () => {
     rerender(<Kept mode="visible" />);
     fireEvent.click(closeControl());
     expect(mockRouter.back).toHaveBeenCalledTimes(2);
+  });
+
+  it('Escape collapses an open callout before it closes, without CSS.escape (10-REVIEW IN-02)', () => {
+    // jsdom has no CSS.escape of its own; jest-dom's css.escape polyfill adds one, so it is
+    // removed here to run the callout's Escape layer where it is missing.
+    const escape = CSS.escape;
+    // @ts-expect-error -- simulating an environment without CSS.escape
+    delete CSS.escape;
+    try {
+      const view = photoViews.find((v) => v.id === 'img-0662')!;
+      render(
+        <LightboxDialog labelledBy="photo-title">
+          <PhotoViewer variant="modal" photos={photoViews} initialSlug={view.slug} />
+        </LightboxDialog>
+      );
+      const key = screen.getByRole('list', { name: 'Labels', hidden: true });
+      const [first] = within(key).getAllByRole('button', { hidden: true });
+      fireEvent.click(first);
+      expect(first).toHaveAttribute('aria-expanded', 'true');
+      fireEvent.keyDown(document, { key: 'Escape' });
+      expect(first).toHaveAttribute('aria-expanded', 'false');
+      // The callout took the press, so the lightbox did not close.
+      expect(mockRouter.back).not.toHaveBeenCalled();
+    } finally {
+      CSS.escape = escape;
+    }
   });
 
   it('locks the page scroll while open and restores it on unmount', () => {
