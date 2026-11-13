@@ -10,7 +10,8 @@
  *
  * Rule families (each violation prints `<file>:<line> <rule> <match>`):
  *   - dark:     any `dark:` variant
- *   - stock:    any stock Tailwind palette class (bg-red-500, hover:text-cyan-400/50, ...)
+ *   - stock:    any stock Tailwind palette class (bg-red-500, hover:text-cyan-400/50,
+ *               border-t-red-500, ring-offset-red-500, drop-shadow-red-500, ...)
  *   - variant:  a `@custom-variant dark` line in any CSS file
  *   - wb:       per-file white/black utility count above its palette-ratchet.json
  *               entry (no entry means 0); a count below the entry also fails
@@ -41,9 +42,12 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { LEGACY_DEAD_FILES, assertNoImporters } from './lib/legacy-dead-files.mjs';
 
-// Regexes verbatim from 07-RESEARCH.md "Pattern 2" (they produced the audited counts)
+// Regexes from 07-RESEARCH.md "Pattern 2" (they produced the audited counts). 07 WR-02
+// widened PRE to the directional borders (border-t/r/b/l/x/y/s/e), ring offsets and
+// the shadow-colour families (inset-ring, inset-shadow, drop-shadow, text-shadow); the
+// real tree had no such class, so the stock hits and the wb counts did not change.
 const FAM = 'slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose';
-const PRE = 'bg|text|border|ring|outline|from|via|to|fill|stroke|divide|placeholder|decoration|shadow|accent|caret';
+const PRE = 'bg|text|border(?:-[xytblrse])?|ring(?:-offset)?|inset-ring|outline|from|via|to|fill|stroke|divide|placeholder|decoration|shadow|inset-shadow|drop-shadow|text-shadow|accent|caret';
 const STOCK = new RegExp(`(?<![\\w-])(?:[\\w-]+:)*(?:${PRE})-(?:${FAM})-\\d{2,3}(?:\\/\\d+)?\\b`, 'g');
 const DARK = /(?<![\w-])dark:/g;
 const WB = new RegExp(`(?<![\\w-])(?:[\\w-]+:)*(?:${PRE})-(?:white|black)(?:\\/\\d+)?\\b`, 'g');
