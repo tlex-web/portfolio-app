@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 13
 current_phase_name: Repo Safety & Test Debt
 status: executing
-stopped_at: Completed 13-10-PLAN.md
-last_updated: "2026-11-13T11:42:45.713Z"
+stopped_at: Completed 13-11-PLAN.md
+last_updated: "2026-11-13T11:53:44.002Z"
 last_activity: 2026-11-13
 last_activity_desc: Phase 13 execution started
-state_head: c10942632b892e5ec6362e95520c32a1100728a1
+state_head: 1e9e370e1dfcf8b372858c8481c796e374a4823f
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 22
-  completed_plans: 9
+  completed_plans: 10
   percent: 0
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 13 (Repo Safety & Test Debt) — EXECUTING
-Plan: 10 of 22
+Plan: 11 of 22
 Status: Ready to execute
 Last activity: 2026-11-13 — Phase 13 execution started
 
@@ -63,6 +63,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 13 P08 | 11min | 3 tasks | 8 files |
 | Phase 13 P09 | 11 min | 3 tasks | 10 files |
 | Phase 13 P10 | 9 min | 2 tasks | 9 files |
+| Phase 13 P11 | 13min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -95,6 +96,9 @@ Recent decisions affecting current work:
 - [Phase 13]: 13-10: skip-marker relay (D-06 option A) is .github/workflows/ci-skip-relay.yml; it finds its dispatched run as the earliest workflow_dispatch run of ci.yml on the head ref since the dispatch, fails red on another head SHA, and requires conclusion success after gh run watch --exit-status
 - [Phase 13]: 13-10: check-ci-gate relay rules are numbered 11-15 (13-07 took 10); rule 12 reads raw run-block lines, shell comments included; rule 15 allows no write scope but actions: write on the CI OK relay job
 - [Phase 13]: 13-10: the relay job holds no checks: read (gh 2.103.3 skips annotations on a 403); 13-19 confirms gh run watch works live and that the relay check counts on the PR head SHA (A1)
+- [Phase 13]: 13-11: 12 IN-09 storeCopy wraps clone() and waitUntil in try/catch (b0844b9, separate from 13-04's CLEAN-01 commit); 12 IN-10 name-too-long copy reads FEEDBACK_LIMITS.nameMax with identical output (30a837d)
+- [Phase 13]: 13-11: 07 WR-07 SafeCanvas logs console.error('[SafeCanvas]', error) unless the message contains 'Error creating WebGL context' (both three.js messages; same text e2e webglFailure matches); Home audit chromium clean (ddd356c)
+- [Phase 13]: 13-11: 07 IN-08 not changed, deferred to GUARD-10 (Phase 15) per the 13-LEDGER-TRIAGE.md Approval; no tsconfig.test.json, type-check unchanged
 
 ### Pending Todos
 
@@ -147,6 +151,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-13T11:42:45.684Z
-Stopped at: Completed 13-10-PLAN.md
+Last session: 2026-11-13T11:53:43.972Z
+Stopped at: Completed 13-11-PLAN.md
 Resume file: None
