@@ -174,8 +174,9 @@ test.describe('Scrollbar', () => {
       console.log(`G3 scrollbar gutter: ${gutter}px`);
       expect(gutter, 'real scrollbar width (gutter)').toBeGreaterThan(0);
 
-      // The v1 Header slides in from y -100 (Motion entrance, DURATION.enter),
-      // so read the box only once two consecutive reads agree.
+      // Read the banner's box only once two consecutive reads agree, so the
+      // before and after boxes are both taken at rest and any difference
+      // between them comes from the scroll lock, not a layout still settling.
       const settledBox = async () => {
         let prev = await header.boundingBox();
         for (let i = 0; i < 50; i++) {
