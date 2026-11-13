@@ -9,7 +9,7 @@ import ErrorBody from '@/components/site/ErrorBody';
  * deviation from the UI-SPEC's `reset()` wording, 2026-10-10); `reset` stays in
  * the props signature but is not used. The error is logged, never rendered.
  */
-export default function Error({
+export default function SectionError({
   error,
   retry,
 }: {
