@@ -130,21 +130,28 @@ jobs:
             echo "::error::This fork PR head carries a CI skip marker, so GitHub ran no CI for it. Push a commit without the marker."
             exit 1
           fi
-          since=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          # GitHub stamps created_at to the second with its own clock, which can
+          # be a moment off the runner's either way. So the lookup takes runs
+          # created from SKEW seconds before the dispatch on, and tells the
+          # dispatched one apart by its head SHA, which jq reads from env.
+          SKEW=10
+          now=$(date -u +%s)
+          export SINCE=$((now - SKEW))
           gh workflow run ci.yml --repo "$REPO" --ref "$REF"
-          # Find the run that dispatch created: the first workflow_dispatch run
-          # of ci.yml on this ref created at or after the dispatch.
+          # The newest workflow_dispatch run of ci.yml on this ref in that
+          # window whose head is this SHA. Failing that, the newest one in the
+          # window, kept only to name it if no run on this SHA ever appears.
           id=""
           run_sha=""
           for _ in $(seq 1 30); do
             found=$(gh api -X GET "repos/$REPO/actions/workflows/ci.yml/runs" \
               -f event=workflow_dispatch -f branch="$REF" -f per_page=20 \
-              --jq "[.workflow_runs[] | select(.created_at >= \"$since\")] | sort_by(.created_at) | first | select(. != null) | \"\(.id) \(.head_sha)\"" \
+              --jq '[.workflow_runs[] | select((.created_at | fromdateiso8601) >= ($ENV.SINCE | tonumber))] | sort_by(.created_at) | reverse | (map(select(.head_sha == $ENV.SHA)) + .) | first | select(. != null) | "\(.id) \(.head_sha)"' \
               || true)
             if [ -n "$found" ]; then
               id=${found%% *}
               run_sha=${found#* }
-              break
+              if [ "$run_sha" = "$SHA" ]; then break; fi
             fi
             sleep 10
           done
@@ -152,8 +159,9 @@ jobs:
             echo "::error::The dispatched CI run did not appear within 5 minutes."
             exit 1
           fi
-          # The branch moved between the push and the dispatch: that run tested
-          # another commit, and the newer head's own relay run reports for it.
+          # Only runs on another SHA appeared: the branch moved between the push
+          # and the dispatch, so that run tested another commit, and the newer
+          # head's own relay run reports for it.
           if [ "$run_sha" != "$SHA" ]; then
             echo "::error::The dispatched CI run $id tested $run_sha, not this PR head $SHA (the branch moved)."
             exit 1

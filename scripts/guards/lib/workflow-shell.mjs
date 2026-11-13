@@ -1,5 +1,5 @@
 /**
- * Runs the shell of a real workflow step under stub `gh` and `sleep` (selftest only)
+ * Runs the shell of a real workflow step under stub `gh`, `sleep` and `date` (selftest only)
  *
  * The skip-marker relay (.github/workflows/ci-skip-relay.yml) and the `changes`
  * job of ci.yml carry their logic in `run: |` blocks that no guard executes.
@@ -107,6 +107,8 @@ export function extractRunBlock(workflowFile, { id, name }) {
  * wins over any PATH lookup (Git Bash puts /usr/bin, with its real sleep, ahead
  * of the inherited PATH) and costs a fork instead of a process start, which
  * matters on Windows. Each call is logged to $STUB_LOG, one line per call.
+ * `date` is not logged: with STUB_NOW (epoch seconds) set it reads that instant
+ * as the clock (GNU date -d @N), otherwise it is the real date.
  */
 const STUBS = `gh() {
   { printf 'gh'; for a in "$@"; do printf ' %s' "$a"; done; printf '\n'; } >> "$STUB_LOG"
@@ -145,6 +147,9 @@ const STUBS = `gh() {
   return 97
 }
 sleep() { echo "sleep $*" >> "$STUB_LOG"; }
+date() {
+  if [ -n "\${STUB_NOW:-}" ]; then command date -d "@$STUB_NOW" "$@"; else command date "$@"; fi
+}
 `;
 /**
  * On Windows the real jq.exe writes CRLF, which a Linux runner's jq never does

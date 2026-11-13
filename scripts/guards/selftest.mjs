@@ -234,6 +234,21 @@ const relayEnv = (over = {}) => ({
 });
 const runRelay = (over) => runStep(relayBlock(), { env: relayEnv(over) });
 const dispatchCalls = (r) => r.calls.filter((c) => c.startsWith('gh workflow run'));
+const pollCalls = (r) => r.calls.filter((c) => c.includes('/actions/workflows/ci.yml/runs'));
+/** A fixed runner clock for the lookup cases (13 WR-04): 2030-01-01T00:00:10Z as epoch seconds. */
+const RELAY_NOW = Date.UTC(2030, 0, 1, 0, 0, 10) / 1000;
+/** GitHub's created_at for an instant `offset` seconds from RELAY_NOW (second resolution, as the API gives it). */
+const stampAt = (offset) => new Date((RELAY_NOW + offset) * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z');
+/** The relay under RELAY_NOW with these dispatched runs; null when it mirrors run `id` and its poll filter holds no SHA. */
+function relayMirrors(runs, id) {
+  const r = runRelay({ STUB_NOW: String(RELAY_NOW), STUB_DISPATCH_RUNS: JSON.stringify(runs), STUB_CONCLUSION: 'success' });
+  const problems = [];
+  if (r.status !== 0) problems.push(`expected exit 0, got ${r.status}`);
+  if (!r.calls.includes(`gh run watch ${id} --repo ${REPO_SLUG} --exit-status --interval 60`)) problems.push(`run ${id} was not watched`);
+  if (!r.stdout.includes(`Mirroring CI run ${id} on ${HEAD_SHA}`)) problems.push(`no mirroring line for run ${id}`);
+  if (pollCalls(r).some((c) => c.includes(HEAD_SHA))) problems.push('the head SHA was interpolated into the poll (jq must read it from env)');
+  return withTail(problems, r);
+}
 
 /**
  * The classify step with a canned compare body (and, when given, a separate one for a
@@ -353,15 +368,51 @@ const WORKFLOW_SHELL_CASES = [
       }),
   },
   {
-    name: 'workflow-shell relay: a dispatched run on another SHA (the branch moved) exits 1 and is not watched',
+    name: 'workflow-shell relay: only a dispatched run on another SHA (the branch moved) exits 1 after 30 polls and is not watched',
     fn: () => {
       const r = runRelay({ STUB_DISPATCH_RUNS: JSON.stringify([{ ...RELAY_RUN, head_sha: 'f'.repeat(40) }]) });
       const problems = [];
       if (r.status !== 1) problems.push(`expected exit 1, got ${r.status}`);
-      if (!r.stdout.includes('the branch moved')) problems.push('no branch-moved message');
+      if (!r.stdout.includes(`::error::The dispatched CI run 4242 tested ${'f'.repeat(40)}, not this PR head ${HEAD_SHA} (the branch moved).`)) problems.push('no branch-moved message');
+      if (pollCalls(r).length !== 30) problems.push(`${pollCalls(r).length} polls, expected 30 (this SHA's run may still appear)`);
       if (r.calls.some((c) => c.startsWith('gh run watch'))) problems.push('the wrong run was watched');
       return withTail(problems, r);
     },
+  },
+  {
+    name: 'workflow-shell relay: a run GitHub stamps 1 s, or up to 10 s, before the runner clock (clock skew) is still mirrored (13 WR-04)',
+    fn: () => firstProblem([-1, -10], (offset) => relayMirrors([{ ...RELAY_RUN, created_at: stampAt(offset) }], 4242)),
+  },
+  {
+    name: 'workflow-shell relay: a run stamped at or after the runner clock (runner behind GitHub) is mirrored',
+    fn: () => firstProblem([0, 5], (offset) => relayMirrors([{ ...RELAY_RUN, created_at: stampAt(offset) }], 4242)),
+  },
+  {
+    name: 'workflow-shell relay: a run stamped 11 s before the runner clock is outside the window, so it exits 1 after 30 polls',
+    fn: () => {
+      const r = runRelay({ STUB_NOW: String(RELAY_NOW), STUB_DISPATCH_RUNS: JSON.stringify([{ ...RELAY_RUN, created_at: stampAt(-11) }]) });
+      const problems = [];
+      if (r.status !== 1) problems.push(`expected exit 1, got ${r.status}`);
+      if (!r.stdout.includes('::error::The dispatched CI run did not appear within 5 minutes.')) problems.push('no 5-minute message');
+      if (pollCalls(r).length !== 30) problems.push(`${pollCalls(r).length} polls, expected 30`);
+      if (r.calls.some((c) => c.startsWith('gh run watch'))) problems.push('a run was watched');
+      return withTail(problems, r);
+    },
+  },
+  {
+    name: "workflow-shell relay: a run on another SHA in the window never hides this SHA's run, in either order (13 WR-04)",
+    fn: () =>
+      firstProblem(
+        [
+          [{ id: 4241, head_sha: 'f'.repeat(40), created_at: stampAt(1) }, { ...RELAY_RUN, created_at: stampAt(3) }],
+          [{ ...RELAY_RUN, created_at: stampAt(1) }, { id: 4241, head_sha: 'f'.repeat(40), created_at: stampAt(3) }],
+        ],
+        (runs) => relayMirrors(runs, 4242),
+      ),
+  },
+  {
+    name: 'workflow-shell relay: of two runs on this SHA in the window, the newest is mirrored',
+    fn: () => relayMirrors([{ ...RELAY_RUN, id: 4241, created_at: stampAt(1) }, { ...RELAY_RUN, created_at: stampAt(3) }], 4242),
   },
   {
     name: 'workflow-shell relay: no dispatched run within 30 polls exits 1 with the 5-minute message',
@@ -672,13 +723,13 @@ const CI_GATE_PARSER_CASES = [
   ),
   ciGateCase(
     'relay with ${{ }} inside a shell comment of a run block fails rule 12',
-    () => tempRelayEdit((text) => text.replace(/^( {10})since=\$\(date/m, '$1# the actor is ${{ github.actor }}\n$1since=$(date')),
+    () => tempRelayEdit((text) => text.replace(/^( {10})now=\$\(date/m, '$1# the actor is ${{ github.actor }}\n$1now=$(date')),
     1,
     ['ci-skip-relay.yml: expression inside a run block', 'ci-gate: 1 failure(s)'],
   ),
   ciGateCase(
     'relay running git clone in a run block fails rule 11',
-    () => tempRelayEdit((text) => text.replace(/^( {10})since=\$\(date/m, '$1git clone "https://github.com/$HEAD_REPO.git" pr\n$1since=$(date')),
+    () => tempRelayEdit((text) => text.replace(/^( {10})now=\$\(date/m, '$1git clone "https://github.com/$HEAD_REPO.git" pr\n$1now=$(date')),
     1,
     ['ci-skip-relay.yml: relay checks out code', 'git clone', 'ci-gate: 1 failure(s)'],
   ),
@@ -1992,7 +2043,7 @@ const cases = [
     args: [],
     setup: () => {
       ciGateRelayPrCheckoutRoot = tempCiGateRoot(
-        (text) => text.replace(/^( {10})since=\$\(date/m, '$1gh pr checkout "$REF"\n$1since=$(date'),
+        (text) => text.replace(/^( {10})now=\$\(date/m, '$1gh pr checkout "$REF"\n$1now=$(date'),
         'ci-skip-relay.yml',
       );
       return ['--root', ciGateRelayPrCheckoutRoot];
