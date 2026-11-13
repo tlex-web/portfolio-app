@@ -13,7 +13,7 @@ Requirements for milestone v2.1 Survey Expansion. Each maps to exactly one roadm
 - [ ] **GUARD-08**: Skipped CI cannot slip past the gate: a `[ci skip]` commit or a path-filtered workflow neither leaves a PR's required check pending forever nor reaches production unchecked
 - [ ] **GUARD-09**: The contact form's rate limiter is confirmed active in production (the expected Upstash variables are set, and the sixth rapid honeypot submission gets a 429), and production never silently allows every request when the limiter is unconfigured or unreachable
 - [ ] **GUARD-10**: Tests, e2e specs and Playwright configs are type-checked by `npm run type-check` with zero errors (from ledger row 07 IN-08, decided at the 13-06 triage; needs Jest type declarations: `@types/jest`, which Tim vets first, or `@jest/globals` imports)
-- [ ] **DEPS-06**: Playwright is upgraded to 1.65 together with its container image tag in its own commit, re-baselined alone before any intended visual change (closes Dependabot PR #140)
+- [x] **DEPS-06**: Playwright is upgraded to 1.65 together with its container image tag in its own commit, re-baselined alone before any intended visual change (closes Dependabot PR #140)
 
 ### Test Coverage
 
@@ -122,7 +122,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GUARD-08 | Phase 13 | Pending |
 | GUARD-09 | Phase 13 | Pending |
 | GUARD-10 | Phase 15 | Pending |
-| DEPS-06 | Phase 13 | Pending |
+| DEPS-06 | Phase 13 | Complete |
 | VERIFY-05 | Phase 13 | Complete |
 | VERIFY-06 | Phase 13 | Complete |
 | VERIFY-07 | Phase 13 | Pending |
