@@ -5,23 +5,23 @@ titles: json
 findings:
   - id: IN-08
     severity: info
-    disposition: open
+    disposition: skipped
     title: "A fieldless `validation` answer now offers Retry, but the retry is deterministic and costs a rate-limit slot each time"
   - id: IN-09
     severity: info
-    disposition: open
+    disposition: fixed
     title: "`storeCopy` has no guard against a synchronous throw, so a cache-side failure can replace a good network answer"
   - id: IN-10
     severity: info
-    disposition: open
+    disposition: fixed
     title: "The new name too-long copy hard-codes `100` beside a check that reads `FEEDBACK_LIMITS.nameMax`"
   - id: IN-11
     severity: info
-    disposition: open
+    disposition: deferred
     title: "README says Vercel's Upstash integration \"injects them\"; the code reads only the `UPSTASH_REDIS_REST_*` names"
   - id: IN-12
     severity: info
-    disposition: open
+    disposition: fixed
     title: "The new advisory floors (`source-map-js`, `baseline-browser-mapping`) are checked only on the hoisted lockfile copy"
   - id: WR-01
     severity: warning
@@ -67,7 +67,7 @@ findings:
     severity: info
     disposition: fixed
     title: "`z.string().email()` is the deprecated Zod 4 form"
-open: 5
+open: 0
 total: 16
 recorded: 2026-11-03T15:15:44.129Z
 ---
@@ -76,11 +76,11 @@ recorded: 2026-11-03T15:15:44.129Z
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| IN-08 | info | open | - |
-| IN-09 | info | open | - |
-| IN-10 | info | open | - |
-| IN-11 | info | open | - |
-| IN-12 | info | open | - |
+| IN-08 | info | skipped | accepted, Tim's call "accept": a real visitor cannot produce the fieldless validation answer (it needs a malformed body or a hidden field over its limit), so the pointless Retry is never shown to one (13-LEDGER-TRIAGE.md #40) |
+| IN-09 | info | fixed | 13-11: a3ae326 (RED), b0844b9 (fix) (13-LEDGER-TRIAGE.md #41) |
+| IN-10 | info | fixed | 13-11: 9df5eb6 (RED), 30a837d (fix) (13-LEDGER-TRIAGE.md #42) |
+| IN-11 | info | deferred | handed to GUARD-09 (13-02); GUARD-09 work in 13-02: 04d705f (reads one complete UPSTASH_REDIS_REST_* or KV_REST_API_* pair) and 043dfcb (.env.example lists both pairs) (13-LEDGER-TRIAGE.md #43) |
+| IN-12 | info | fixed | 13-14: ee637fe (RED), 10a8151 (fix) (13-LEDGER-TRIAGE.md #44) |
 | WR-01 | warning | fixed | 12-28: e22a714 (RED), e9a3fa1 (fix) (not in the current review) |
 | WR-02 | warning | fixed | 12-31: dafcb6e (RED), 4312701 (fix) (not in the current review) |
 | WR-03 | warning | fixed | 12-33: d847f8c (README names the five variables lib/email.ts and lib/rate-limit.ts read; Node.js 24) (not in the current review) |
