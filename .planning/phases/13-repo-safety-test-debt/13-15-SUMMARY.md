@@ -234,7 +234,9 @@ None from this plan. Tim's next act is the merge in 13-16, using a merge commit 
 - **13-16:** Tim merges PR #143 with a merge commit. Then `CI OK` must be confirmed on the merge commit on `main`, and the ruleset follows. The merge deploys production with the fail-closed limiter, starts the keep-alive schedule and activates the relay for later PRs.
 - **13-19:** the `ci/13-*` live proofs need the relay on `main`, so they wait for the 13-16 merge.
 - **13-20:** the E2E baseline is 28m31s.
-- The docs commits that follow this SUMMARY are docs-only. Pushed fast-forward to the PR branch, they take the docs-only fast path, so CI OK should still conclude success on the new head. Check that before 13-16.
+- **Docs pushes after the PR opened do not take the fast path.** For a `pull_request` event, `Classify the diff` compares the PR base SHA (`main`) with the head, so it classifies the whole PR diff. A docs-only push to this PR therefore re-runs the full CI, about 29 minutes. That is correct by design: the gate judges what would merge. Pushes so far, all plain fast-forwards:
+  - `77905fb` (STATE/ROADMAP/REQUIREMENTS): run 43435106776, full CI.
+  - The commit that adds this correction: its run's CI OK result is verified in the executor's hand-back. Before merging in 13-16, confirm `CI OK` success on the PR's final head SHA (`gh pr checks 143`).
 
 ## Self-Check: PASSED
 
