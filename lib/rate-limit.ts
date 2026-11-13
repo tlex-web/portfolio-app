@@ -20,7 +20,7 @@ export interface RateLimiter {
   limit(identifier: string): Promise<RateLimitResult>;
 }
 
-function createRateLimiter(): RateLimiter {
+export function createRateLimiter(): RateLimiter {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 
