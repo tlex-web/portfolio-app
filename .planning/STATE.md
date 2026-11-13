@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 13
 current_phase_name: Repo Safety & Test Debt
 status: executing
-stopped_at: Completed 13-09-PLAN.md
-last_updated: "2026-11-13T11:28:51.356Z"
+stopped_at: Completed 13-10-PLAN.md
+last_updated: "2026-11-13T11:42:45.713Z"
 last_activity: 2026-11-13
 last_activity_desc: Phase 13 execution started
-state_head: df761689c571305fe0010747d443a53441ee4393
+state_head: c10942632b892e5ec6362e95520c32a1100728a1
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 22
-  completed_plans: 8
+  completed_plans: 9
   percent: 0
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 13 (Repo Safety & Test Debt) — EXECUTING
-Plan: 9 of 22
+Plan: 10 of 22
 Status: Ready to execute
 Last activity: 2026-11-13 — Phase 13 execution started
 
@@ -62,6 +62,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 13 P07 | 11min | 3 tasks | 17 files |
 | Phase 13 P08 | 11min | 3 tasks | 8 files |
 | Phase 13 P09 | 11 min | 3 tasks | 10 files |
+| Phase 13 P10 | 9 min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -91,6 +92,9 @@ Recent decisions affecting current work:
 - [Phase 13]: 13-08: seven ledger rows fixed one commit each (07 IN-01/03/11/17, 09 IN-03/04/07); 09 IN-03 asserts the plaque height through summitColumnBox().height so summit-layout.ts is unchanged; 09 IN-04 fixes the shared fixedDecimals (exponent-shift rounding) and pins the four waypoint strings literally
 - [Phase 13]: 13-09: 10 IN-09 split: the three lightbox-spec absence samples survive Phase 18 and now wait on a transition.finished settle count; the photos-sweep switchTo 600 ms wait covers the Map/Grid/Carousel switch and is handed to Phase 18
 - [Phase 13]: 13-09: jest-dom's css.escape polyfill gives Jest a global CSS.escape, so tests that need the cssEscape fallback remove it for their duration
+- [Phase 13]: 13-10: skip-marker relay (D-06 option A) is .github/workflows/ci-skip-relay.yml; it finds its dispatched run as the earliest workflow_dispatch run of ci.yml on the head ref since the dispatch, fails red on another head SHA, and requires conclusion success after gh run watch --exit-status
+- [Phase 13]: 13-10: check-ci-gate relay rules are numbered 11-15 (13-07 took 10); rule 12 reads raw run-block lines, shell comments included; rule 15 allows no write scope but actions: write on the CI OK relay job
+- [Phase 13]: 13-10: the relay job holds no checks: read (gh 2.103.3 skips annotations on a 403); 13-19 confirms gh run watch works live and that the relay check counts on the PR head SHA (A1)
 
 ### Pending Todos
 
@@ -143,6 +147,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-13T11:28:51.318Z
-Stopped at: Completed 13-09-PLAN.md
+Last session: 2026-11-13T11:42:45.684Z
+Stopped at: Completed 13-10-PLAN.md
 Resume file: None
