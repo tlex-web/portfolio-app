@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 13
 current_phase_name: Repo Safety & Test Debt
 status: executing
-stopped_at: Completed 13-14-PLAN.md
-last_updated: "2026-11-13T12:41:19.608Z"
+stopped_at: Completed 13-05-PLAN.md
+last_updated: "2026-11-13T12:54:27.993Z"
 last_activity: 2026-11-13
 last_activity_desc: Phase 13 execution started
-state_head: e76993cc9ab190c9c5dc6e70d74033594d187645
+state_head: 4c9c7462325e6dacc5e91422b0278ecf90d90000
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 22
-  completed_plans: 13
+  completed_plans: 14
   percent: 0
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 13 (Repo Safety & Test Debt) — EXECUTING
-Plan: 14 of 22
+Plan: 15 of 22
 Status: Ready to execute
 Last activity: 2026-11-13 — Phase 13 execution started
 
@@ -67,6 +67,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 13 P12 | 6min | 2 tasks | 3 files |
 | Phase 13 P13 | 9min | 2 tasks | 7 files |
 | Phase 13 P14 | 14min | 3 tasks | 19 files |
+| Phase 13 P05 | 3min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -108,6 +109,7 @@ Recent decisions affecting current work:
 - [Phase 13]: 13-13 (07 WR-02/WR-03): widened palette prefixes found no new real-tree hit and no wb count change (ratchet unmoved); the png rule lists files with git ls-files -co --exclude-standard
 - [Phase 13]: 13-14 (12 IN-12, Tim option A): version floors are checked on every lockfile copy, per version line for list floors; fflate floor ["0.6.11", "0.8.3"] keeps the 12-06 pinned three-stdlib copy checked, and a copy on an unfloored line fails
 - [Phase 13]: 13-14: same-classnames pairs renames and fails on zero compared (07 WR-04); check-snapshot-commit checks merge commits against their first parent with CLI flags unchanged (07 IN-07); catch-all: none
+- [Phase 13]: 13-05: production has the complete UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN pair (REDIS_URL unused), System Environment Variables on, Deployment Checks offered on Hobby; keep-alive is ping-readonly via secrets UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN (read-only token unverified); Pitfall 2 resolved for production, 13-15 unblocked on the pair
 
 ### Pending Todos
 
@@ -115,7 +117,7 @@ None carried from v2.0.
 
 ### Blockers/Concerns
 
-- [Phase 13] The production Upstash variables are not confirmed, and `lib/rate-limit.ts` allows every request without them (GUARD-09). Seeing them set in Vercel settles the names; `PROD_FORM_LIMIT=1 npm run test:prod-form` proves the 429 but locks the IP out for up to an hour.
+- [Phase 13] The production Upstash names are confirmed (13-05: the complete `UPSTASH_REDIS_REST_*` pair is set in Production). What's left for GUARD-09 is the live 429 proof: `PROD_FORM_LIMIT=1 npm run test:prod-form` shows it but locks the IP out for up to an hour (13-15/13-17).
 - [Phase 13] `main` has no branch protection or required checks, so a red PR can merge and Vercel deploys it; `[ci skip]` commits produce no checks (GUARD-07, GUARD-08). Tim applies the settings.
 - [Phase 16] Needs Tim's inputs before planning can finish: the launch regions (inside the footprint, at least one in Italy or Austria), the new originals and the coarse-location choice per photo.
 - [Phase 19] Needs a graded drone clip from Tim before any byte budget is fixed.
@@ -160,6 +162,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-13T12:41:19.577Z
-Stopped at: Completed 13-14-PLAN.md
+Last session: 2026-11-13T12:54:20.142Z
+Stopped at: Completed 13-05-PLAN.md
 Resume file: None
