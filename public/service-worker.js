@@ -192,10 +192,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Cache-first for images
-  if (
-    url.pathname.startsWith('/_next/image') ||
-    request.destination === 'image'
-  ) {
+  if (request.destination === 'image') {
     event.respondWith(cacheFirst(event, IMAGE_CACHE));
     return;
   }
