@@ -34,6 +34,7 @@ import { evaluate, pickRun } from '../ci/check-visual-run.mjs';
 import { evaluateSnapshotChanges, snapshotDiffArgs } from '../ci/check-snapshot-commit.mjs';
 import { DOCS_ONLY_FILES, classify } from '../ci/classify-changes.mjs';
 import { checkMp4 } from './lib/mp4-boxes.mjs';
+import { extractRunBlock, runStep } from './lib/workflow-shell.mjs';
 import { LEGACY_DEAD_FILES, assertNoImporters, isLegacyDeadFile } from './lib/legacy-dead-files.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -150,6 +151,206 @@ function classifyCase(paths, opts, expected) {
   if (typeof result?.reason !== 'string' || result.reason === '') return `${label} gave no reason: ${JSON.stringify(result)}`;
   return expectEqual(`${label}.docsOnly`, result.docsOnly, expected);
 }
+
+// Workflow shell: the run blocks of the real workflows, run under stub gh/sleep (GUARD-08, 13-VALIDATION G1).
+// GUARD_SELFTEST_WORKFLOW_DIR points the cases at a mutated copy of the workflows, to prove they can fail.
+const WORKFLOW_DIR = process.env.GUARD_SELFTEST_WORKFLOW_DIR ?? path.join(repoRoot, '.github', 'workflows');
+const RELAY_YML = path.join(WORKFLOW_DIR, 'ci-skip-relay.yml');
+const detectBlock = () => extractRunBlock(RELAY_YML, { id: 'detect' });
+const relayBlock = () => extractRunBlock(RELAY_YML, { name: 'Dispatch ci.yml and mirror its conclusion' });
+const REPO_SLUG = 'octo/site';
+const HEAD_SHA = '1234567890abcdef1234567890abcdef12345678';
+const tail = (r) => `(exit ${r.status}; stdout ${JSON.stringify(r.stdout.trim())}; stderr ${JSON.stringify(r.stderr.trim())}; calls ${JSON.stringify(r.calls)})`;
+/** `${problemsOf(problems)} ${tail(r)}` when there are problems, else null. */
+const withTail = (problems, r) => (problems.length === 0 ? null : `${problems.join('; ')} ${tail(r)}`);
+
+/** The detect step on a head commit `msg`; null when GITHUB_OUTPUT gets exactly skipped=<expected>. */
+function detectCase(msg, expected, { runs = '[]' } = {}) {
+  const r = runStep(detectBlock(), { env: { GH_TOKEN: 'dummy', REPO: REPO_SLUG, SHA: HEAD_SHA, STUB_MSG: msg, STUB_RUNS: runs } });
+  const problems = [];
+  if (r.status !== 0) problems.push(`expected exit 0, got ${r.status}`);
+  if (r.output !== `skipped=${expected}\n`) problems.push(`GITHUB_OUTPUT is ${JSON.stringify(r.output)}, expected skipped=${expected}`);
+  if (!r.calls.some((c) => c.startsWith(`gh api -X GET repos/${REPO_SLUG}/actions/runs `) && c.includes(`head_sha=${HEAD_SHA}`) && c.includes('event=pull_request'))) {
+    problems.push('the runs API was not queried for this SHA and event pull_request');
+  }
+  return withTail(problems, r);
+}
+/** The detect step on a head without a usable marker: skipped=false and no wait, no runs query. */
+function detectNoMarkerCase(msg) {
+  const r = runStep(detectBlock(), { env: { GH_TOKEN: 'dummy', REPO: REPO_SLUG, SHA: HEAD_SHA, STUB_MSG: msg, STUB_RUNS: '[]' } });
+  const problems = [];
+  if (r.status !== 0) problems.push(`expected exit 0, got ${r.status}`);
+  if (r.output !== 'skipped=false\n') problems.push(`GITHUB_OUTPUT is ${JSON.stringify(r.output)}, expected skipped=false`);
+  if (r.calls.some((c) => c.startsWith('sleep') || c.includes('/actions/runs'))) problems.push('the step waited or queried runs for a message with no marker');
+  const error = withTail(problems, r);
+  return error && `message ${JSON.stringify(msg)}: ${error}`;
+}
+/** First non-null result of fn over each item (stops at the first problem). */
+const firstProblem = (items, fn) => {
+  for (const item of items) {
+    const error = fn(item);
+    if (error) return error;
+  }
+  return null;
+};
+
+const RELAY_RUN = { id: 4242, head_sha: HEAD_SHA, created_at: '2999-01-01T00:00:00Z' };
+const relayEnv = (over = {}) => ({
+  GH_TOKEN: 'dummy',
+  REPO: REPO_SLUG,
+  HEAD_REPO: REPO_SLUG,
+  REF: 'feature/ship-note',
+  SHA: HEAD_SHA,
+  STUB_DISPATCH_RUNS: JSON.stringify([RELAY_RUN]),
+  ...over,
+});
+const runRelay = (over) => runStep(relayBlock(), { env: relayEnv(over) });
+const dispatchCalls = (r) => r.calls.filter((c) => c.startsWith('gh workflow run'));
+
+const WORKFLOW_SHELL_CASES = [
+  // detect (G1)
+  ...[
+    ['[skip ci]', 'Ship note [skip ci]'],
+    ['[ci skip]', 'Ship note [ci skip]'],
+    ['[no ci]', 'Ship note [no ci]'],
+    ['[skip actions]', 'Ship note [skip actions]'],
+    ['[actions skip]', 'Ship note [actions skip]'],
+  ].map(([marker, msg]) => ({
+    name: `workflow-shell detect: ${marker} with no pull_request CI run gives skipped=true`,
+    fn: () => detectCase(msg, 'true'),
+  })),
+  {
+    name: 'workflow-shell detect: a marker in another letter case, or in the body, still gives skipped=true',
+    fn: () => firstProblem(['Ship note [SKIP CI]', 'subject\n\nbody text [Actions Skip] more'], (msg) => detectCase(msg, 'true')),
+  },
+  {
+    name: 'workflow-shell detect: the skip-checks: true and skip-checks:true trailers give skipped=true, CRLF and letter case included',
+    fn: () =>
+      firstProblem(['Ship note\n\nskip-checks: true', 'Ship note\n\nskip-checks:true', 'Ship note\r\n\r\nSkip-Checks: TRUE\r\n'], (msg) => detectCase(msg, 'true')),
+  },
+  {
+    name: 'workflow-shell detect: no marker gives skipped=false without waiting or querying runs',
+    fn: () => firstProblem(['Ship note', 'fix: skip the CI step\n\nbody mentions skipping CI'], detectNoMarkerCase),
+  },
+  {
+    name: 'workflow-shell detect: near misses (skip ci unbracketed, [skip-ci], [skipci], inline or false skip-checks) give skipped=false',
+    fn: () =>
+      firstProblem(
+        ['Ship note skip ci', 'Ship note [skip-ci]', 'Ship note [ skip ci ]', 'note: skip-checks: true', 'skip-checks: true please', 'skip-checks: false'],
+        detectNoMarkerCase,
+      ),
+  },
+  {
+    name: 'workflow-shell detect: a marker with a pull_request CI run already on the SHA gives skipped=false',
+    fn: () => detectCase('Ship note [skip ci]', 'false', { runs: '[{"name":"CI","id":7}]' }),
+  },
+  {
+    name: 'workflow-shell detect: a run of another workflow does not count, so the marker still gives skipped=true',
+    fn: () => detectCase('Ship note [skip ci]', 'true', { runs: '[{"name":"CodeQL","id":8}]' }),
+  },
+  {
+    name: 'workflow-shell detect: a failing runs API fails the step and writes no skipped= line',
+    fn: () => {
+      const r = runStep(detectBlock(), { env: { GH_TOKEN: 'dummy', REPO: REPO_SLUG, SHA: HEAD_SHA, STUB_MSG: 'Ship note [skip ci]', STUB_RUNS_FAIL: '1' } });
+      const problems = [];
+      if (r.status === 0) problems.push('expected a non-zero exit');
+      if (r.output.includes('skipped=')) problems.push(`GITHUB_OUTPUT holds ${JSON.stringify(r.output)}`);
+      if (!r.calls.some((c) => c.includes('/actions/runs '))) problems.push('the runs API was never called');
+      return withTail(problems, r);
+    },
+  },
+  // relay (G1)
+  {
+    name: 'workflow-shell relay: a fork head exits 1 with the fork error and never calls gh',
+    fn: () => {
+      const r = runRelay({ HEAD_REPO: 'mallory/site' });
+      const problems = [];
+      if (r.status !== 1) problems.push(`expected exit 1, got ${r.status}`);
+      if (!r.stdout.includes('::error::This fork PR head carries a CI skip marker')) problems.push('no fork ::error:: message');
+      if (r.calls.length !== 0) problems.push(`gh or sleep was called: ${JSON.stringify(r.calls)}`);
+      return withTail(problems, r);
+    },
+  },
+  {
+    name: 'workflow-shell relay: a same-repo head dispatches ci.yml on its ref with these exact arguments and mirrors a success',
+    fn: () => {
+      const r = runRelay({ STUB_CONCLUSION: 'success' });
+      const problems = [];
+      if (r.status !== 0) problems.push(`expected exit 0, got ${r.status}`);
+      if (JSON.stringify(dispatchCalls(r)) !== JSON.stringify([`gh workflow run ci.yml --repo ${REPO_SLUG} --ref feature/ship-note`])) problems.push(`dispatch calls: ${JSON.stringify(dispatchCalls(r))}`);
+      if (!r.calls.includes(`gh run watch 4242 --repo ${REPO_SLUG} --exit-status --interval 60`)) problems.push('the dispatched run was not watched');
+      if (!r.calls.includes(`gh api repos/${REPO_SLUG}/actions/runs/4242 --jq .conclusion`)) problems.push('the conclusion was not read');
+      if (!r.stdout.includes(`Mirroring CI run 4242 on ${HEAD_SHA}`)) problems.push('no mirroring line');
+      return withTail(problems, r);
+    },
+  },
+  {
+    name: 'workflow-shell relay: a failed CI run exits 1, whether gh run watch or the conclusion check catches it',
+    fn: () =>
+      firstProblem(['0', '1'], (watch) => {
+        const r = runRelay({ STUB_CONCLUSION: 'failure', STUB_WATCH_EXIT: watch });
+        return r.status === 1 ? null : `watch exit ${watch}: expected exit 1, got ${r.status} ${tail(r)}`;
+      }),
+  },
+  {
+    name: 'workflow-shell relay: a cancelled CI run exits 1 with the concluded message, even when gh run watch exits 0',
+    fn: () =>
+      firstProblem(['0', '1'], (watch) => {
+        const r = runRelay({ STUB_CONCLUSION: 'cancelled', STUB_WATCH_EXIT: watch });
+        const problems = [];
+        if (r.status !== 1) problems.push(`expected exit 1, got ${r.status}`);
+        if (watch === '0' && !r.stdout.includes('concluded cancelled')) problems.push('no "concluded cancelled" message');
+        const error = withTail(problems, r);
+        return error && `watch exit ${watch}: ${error}`;
+      }),
+  },
+  {
+    name: 'workflow-shell relay: a dispatched run on another SHA (the branch moved) exits 1 and is not watched',
+    fn: () => {
+      const r = runRelay({ STUB_DISPATCH_RUNS: JSON.stringify([{ ...RELAY_RUN, head_sha: 'f'.repeat(40) }]) });
+      const problems = [];
+      if (r.status !== 1) problems.push(`expected exit 1, got ${r.status}`);
+      if (!r.stdout.includes('the branch moved')) problems.push('no branch-moved message');
+      if (r.calls.some((c) => c.startsWith('gh run watch'))) problems.push('the wrong run was watched');
+      return withTail(problems, r);
+    },
+  },
+  {
+    name: 'workflow-shell relay: no dispatched run within 30 polls exits 1 with the 5-minute message',
+    fn: () => {
+      const r = runRelay({ STUB_DISPATCH_RUNS: '[]' });
+      const polls = r.calls.filter((c) => c.includes('/actions/workflows/ci.yml/runs')).length;
+      const sleeps = r.calls.filter((c) => c === 'sleep 10').length;
+      const problems = [];
+      if (r.status !== 1) problems.push(`expected exit 1, got ${r.status}`);
+      if (!r.stdout.includes('::error::The dispatched CI run did not appear within 5 minutes.')) problems.push('no 5-minute message');
+      if (polls !== 30 || sleeps !== 30) problems.push(`${polls} polls and ${sleeps} sleeps, expected 30 and 30`);
+      if (r.calls.some((c) => c.startsWith('gh run watch'))) problems.push('a run was watched');
+      return withTail(problems, r);
+    },
+  },
+  {
+    name: 'workflow-shell relay: a run created before the dispatch is ignored, so it exits 1 after 30 polls',
+    fn: () => {
+      const r = runRelay({ STUB_DISPATCH_RUNS: JSON.stringify([{ ...RELAY_RUN, created_at: '2000-01-01T00:00:00Z' }]) });
+      return r.status === 1 && r.stdout.includes('did not appear within 5 minutes') ? null : `expected the stale run to be ignored ${tail(r)}`;
+    },
+  },
+  {
+    name: 'workflow-shell relay: a hostile head ref reaches gh only as one literal argument and creates no file',
+    fn: () =>
+      firstProblem(['x"; touch PWNED; echo "', '$(touch PWNED)', '`touch PWNED`'], (ref) => {
+        const r = runRelay({ REF: ref, STUB_CONCLUSION: 'success' });
+        const problems = [];
+        if (r.status !== 0) problems.push(`expected exit 0, got ${r.status}`);
+        if (r.cwdFiles.includes('PWNED')) problems.push('PWNED was created: the ref was executed');
+        if (JSON.stringify(dispatchCalls(r)) !== JSON.stringify([`gh workflow run ci.yml --repo ${REPO_SLUG} --ref ${ref}`])) problems.push(`dispatch calls: ${JSON.stringify(dispatchCalls(r))}`);
+        if (!r.calls.some((c) => c.includes(`branch=${ref} `))) problems.push('the poll did not carry the ref as one literal field');
+        const error = withTail(problems, r);
+        return error && `ref ${JSON.stringify(ref)}: ${error}`;
+      }),
+  },
+];
 
 // check-snapshot-commit.mjs: in-memory `git show --name-status` entries
 const SNAP = 'e2e/visual/routes.spec.ts-snapshots';
@@ -1724,6 +1925,7 @@ const cases = [
     expectOutput: ['photos:derive: encoded img-0001 (9 files)', 'unsupported image format'],
     check: () => treeUnchanged(photoDeriveRoot, photoDeriveBefore),
   },
+  ...WORKFLOW_SHELL_CASES,
 ];
 
 let failed = 0;
