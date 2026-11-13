@@ -583,7 +583,6 @@ export default function PhotoViewer({
         hotspotKey={
           <HotspotKey
             view={current}
-            labelsOn={labelsOn}
             expandedId={expandedId}
             onToggle={toggleHotspot}
           />

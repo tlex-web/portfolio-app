@@ -123,7 +123,7 @@ export default function ZoomStage({
 }: {
   view: PhotoView;
   zoomed: boolean;
-  onZoomChange(z: boolean, at?: { x: number; y: number }): void;
+  onZoomChange(z: boolean): void;
   children: ReactNode;
 }) {
   const { stage, alt, aspect, openerSrc } = view;
@@ -222,7 +222,7 @@ export default function ZoomStage({
         pointer: { x: event.clientX - frame.left, y: event.clientY - frame.top },
       };
     }
-    onZoomChange(true, { x: event.clientX, y: event.clientY });
+    onZoomChange(true);
   }
 
   // Zoomed: drag pans past the threshold, a press that does not pass it unzooms.

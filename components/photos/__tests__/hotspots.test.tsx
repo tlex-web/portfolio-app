@@ -54,7 +54,7 @@ function Viewer({
         <HotspotOverlay {...props} zoomed={zoomed} />
       </div>
       <div data-testid="strip">
-        <HotspotKey {...props} />
+        <HotspotKey view={view} expandedId={expandedId} onToggle={onToggle} />
       </div>
     </>
   );
