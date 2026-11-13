@@ -146,13 +146,14 @@ Plans:
 
 **Goal**: The data, the terrain build and the photo links are ready for many regions while the site looks and builds exactly as before: Home reads its own waypoint list, every photo has a region and a country, the terrain build handles many plates, and drone telemetry can be neither committed nor served.
 **Depends on**: Phase 13 (the G5/G6 tests guard the photo scripts before they change); runs after Phase 14
-**Requirements**: DATA-09, DATA-10, DATA-11, DATA-15
+**Requirements**: DATA-09, DATA-10, DATA-11, DATA-15, GUARD-10
 **Success Criteria** (what must be TRUE):
   1. Home reads an explicit list of its four Matterhorn waypoints: a test that adds a photo outside that list, or in another region, leaves the ascent, the 1,617 m rail start and the footer ticks unchanged.
   2. Every photo record names its region (Zermatt for every current photo) and its country in typed, committed data, and CI fails when that data is missing or stale.
   3. The terrain build reads a plate registry and builds every listed plate in one run. With only the Matterhorn plate it reproduces today's hashed files byte for byte, `terrain:build --check` stays green, and a fixture second plate gets its own prefixed files without touching the Matterhorn ones.
   4. The served-asset guard fails on `.SRT`, `.LRF`, GPX and KML files and on MP4s carrying GPS or telemetry tracks anywhere in the repo or the site, proven by selftest fixtures.
   5. The phase lands with zero visual-baseline changes, and a test shows that every link to a photo comes from one URL helper (still `/photos/<slug>`).
+  6. `npm run type-check` also type-checks the Jest tests, e2e specs and Playwright configs, with zero errors (GUARD-10; the 13-06 measurement found 5482 errors in 103 files as-is and 69 in 21 files with the Jest globals declared), using `@types/jest` only after Tim vets it, or `@jest/globals` imports.
 **Plans**: TBD
 **Research**: Not needed; the work follows in-repo patterns. Plan with explicit acceptance gates: every visual baseline unchanged, `data:check` green, and the Matterhorn terrain hashes equal to today's.
 **UI-SPEC**: Not needed. Nothing visible changes; extracting the footer's sheet margin into a shared component must be zero-diff.

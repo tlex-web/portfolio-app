@@ -12,6 +12,7 @@ Requirements for milestone v2.1 Survey Expansion. Each maps to exactly one roadm
 - [ ] **GUARD-07**: A pull request with a failing CI job cannot merge into `main`: one aggregate required check depends on every CI job, and a ruleset on `main` requires it (Tim applies the setting; verified with `gh api` and a deliberately red test PR)
 - [ ] **GUARD-08**: Skipped CI cannot slip past the gate: a `[ci skip]` commit or a path-filtered workflow neither leaves a PR's required check pending forever nor reaches production unchecked
 - [ ] **GUARD-09**: The contact form's rate limiter is confirmed active in production (the expected Upstash variables are set, and the sixth rapid honeypot submission gets a 429), and production never silently allows every request when the limiter is unconfigured or unreachable
+- [ ] **GUARD-10**: Tests, e2e specs and Playwright configs are type-checked by `npm run type-check` with zero errors (from ledger row 07 IN-08, decided at the 13-06 triage; needs Jest type declarations: `@types/jest`, which Tim vets first, or `@jest/globals` imports)
 - [ ] **DEPS-06**: Playwright is upgraded to 1.65 together with its container image tag in its own commit, re-baselined alone before any intended visual change (closes Dependabot PR #140)
 
 ### Test Coverage
@@ -120,6 +121,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GUARD-07 | Phase 13 | Pending |
 | GUARD-08 | Phase 13 | Pending |
 | GUARD-09 | Phase 13 | Pending |
+| GUARD-10 | Phase 15 | Pending |
 | DEPS-06 | Phase 13 | Pending |
 | VERIFY-05 | Phase 13 | Pending |
 | VERIFY-06 | Phase 13 | Pending |
@@ -157,12 +159,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EDGE-03 | Phase 17 | Pending |
 
 **Coverage:**
-- v2.1 requirements: 38 total
-- Mapped to phases: 38
+- v2.1 requirements: 39 total
+- Mapped to phases: 39
 - Unmapped: 0 ✓
 
-**Per phase:** Phase 13: 8 · Phase 14: 6 · Phase 15: 4 · Phase 16: 3 · Phase 17: 4 · Phase 18: 10 · Phase 19: 3
+**Per phase:** Phase 13: 8 · Phase 14: 6 · Phase 15: 5 · Phase 16: 3 · Phase 17: 4 · Phase 18: 10 · Phase 19: 3
 
 ---
 *Requirements defined: 2026-11-12*
-*Last updated: 2026-11-12 after roadmap creation (Phases 13-19)*
+*Last updated: 2026-11-13 after the 13-06 ledger triage (GUARD-10 added, Phase 15)*
