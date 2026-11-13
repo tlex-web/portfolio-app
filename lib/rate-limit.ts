@@ -1,10 +1,22 @@
 /**
- * Persistent rate limiter backed by Upstash Redis.
+ * Persistent rate limiter for the feedback endpoint, backed by Upstash Redis:
+ * a sliding window of 5 requests per hour under the `ratelimit:feedback` prefix.
  *
- * Uses a sliding window of 5 requests per hour, scoped to the feedback endpoint.
- * In production (VERCEL_ENV === 'production') a limiter without credentials
- * refuses every request (GUARD-09, D-11). Elsewhere it falls back to a
- * permissive mock that warns once, so previews and local dev need no Redis (D-12).
+ * Credentials come from one complete pair: `UPSTASH_REDIS_REST_URL` and
+ * `UPSTASH_REDIS_REST_TOKEN`, or else `KV_REST_API_URL` and `KV_REST_API_TOKEN`
+ * (the names Vercel's Upstash integration uses). Empty values count as missing
+ * and a mixed pair is never combined.
+ *
+ * Production fails closed (GUARD-09, D-11). With `VERCEL_ENV === 'production'`
+ * the limiter refuses, rather than allows, when it has no credentials, when
+ * Redis errors, and when `@upstash/ratelimit` times out (the library answers a
+ * timeout with `success: true`). A refusal carries `unavailable` and writes one
+ * `[rate-limit]` error line with no visitor data; the route answers it with
+ * 503 `server-error`.
+ *
+ * Previews and local dev keep today's behaviour (D-12): no credentials means an
+ * allow-all fallback that warns once, a Redis error propagates to the route's
+ * outer catch (500), and a timeout allows.
  */
 
 import { Ratelimit } from '@upstash/ratelimit';
@@ -28,6 +40,28 @@ export interface RateLimiter {
 
 type Env = Record<string, string | undefined>;
 
+/**
+ * How long one limit() call may wait for Redis before the library gives up.
+ * Well inside the contact form's 15 s request abort, so a slow Redis becomes a
+ * prompt refusal in production instead of a hung submission.
+ */
+export const LIMIT_TIMEOUT_MS = 3000;
+
+/**
+ * One complete credential pair, or null. The UPSTASH pair wins when both are
+ * set. Unlike the Redis client's env-based factory, which falls back one
+ * variable at a time, this never pairs one name's URL with the other's token.
+ */
+export function upstashCredentials(env: Env): { url: string; token: string } | null {
+  if (env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN) {
+    return { url: env.UPSTASH_REDIS_REST_URL, token: env.UPSTASH_REDIS_REST_TOKEN };
+  }
+  if (env.KV_REST_API_URL && env.KV_REST_API_TOKEN) {
+    return { url: env.KV_REST_API_URL, token: env.KV_REST_API_TOKEN };
+  }
+  return null;
+}
+
 /** One metadata-only refusal line; never the identifier or any visitor data. */
 function refuse(reason: Unavailable): RateLimitResult {
   console.error('[rate-limit]', {
@@ -41,14 +75,30 @@ function refuse(reason: Unavailable): RateLimitResult {
 
 export function createRateLimiter(env: Env = process.env): RateLimiter {
   const production = env.VERCEL_ENV === 'production';
+  const credentials = upstashCredentials(env);
 
-  if (env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN) {
-    return new Ratelimit({
-      redis: Redis.fromEnv(),
+  if (credentials) {
+    const ratelimit = new Ratelimit({
+      redis: new Redis({ url: credentials.url, token: credentials.token }),
       limiter: Ratelimit.slidingWindow(5, '1 h'),
       analytics: true,
       prefix: 'ratelimit:feedback',
+      timeout: LIMIT_TIMEOUT_MS,
     });
+    return {
+      async limit(identifier: string): Promise<RateLimitResult> {
+        let result: Awaited<ReturnType<Ratelimit['limit']>>;
+        try {
+          result = await ratelimit.limit(identifier);
+        } catch (error) {
+          if (production) return refuse('error');
+          throw error;
+        }
+        if (production && result.reason === 'timeout') return refuse('timeout');
+        const { success, limit, remaining, reset } = result;
+        return { success, limit, remaining, reset };
+      },
+    };
   }
 
   // No credentials. Never throw here: `next build` imports this module.
