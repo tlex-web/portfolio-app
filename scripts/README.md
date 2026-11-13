@@ -63,7 +63,7 @@ Raw-text scan of `app/`, `components/`, `lib/`, `data/` and `e2e/` (every `__tes
 | `wb` | a file's `white`/`black` utility count differing from `palette-ratchet.json` (absent entry = 0) |
 | `png` | a `.png` under `e2e/` that does not end in `-linux.png` |
 | `v1names` | a v1 alias name (`frost-500`, ...) in any scanned file (the v1 dead files are exempt only while nothing imports them) |
-| `emoji` | emoji in `.ts/.tsx/.js/.mjs` (©, ®, ™ and ❯ allowed; ✓ ✔ ✗ ✘ banned); skipped in lint until plan 07-25 |
+| `emoji` | emoji in `.ts/.tsx/.js/.mjs` (©, ®, ™ and ❯ allowed; ✓ ✔ ✗ ✘ banned) |
 
 ```bash
 npm run guard:palette                     # read-only check (never writes the ratchet)
