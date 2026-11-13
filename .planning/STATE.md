@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 13
 current_phase_name: Repo Safety & Test Debt
 status: executing
-stopped_at: Completed 13-11-PLAN.md
-last_updated: "2026-11-13T11:53:44.002Z"
+stopped_at: Completed 13-12-PLAN.md
+last_updated: "2026-11-13T12:03:18.031Z"
 last_activity: 2026-11-13
 last_activity_desc: Phase 13 execution started
-state_head: 1e9e370e1dfcf8b372858c8481c796e374a4823f
+state_head: 136a575ce6d4d6026d058186c97015a704095940
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 22
-  completed_plans: 10
+  completed_plans: 11
   percent: 0
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 13 (Repo Safety & Test Debt) — EXECUTING
-Plan: 11 of 22
+Plan: 12 of 22
 Status: Ready to execute
 Last activity: 2026-11-13 — Phase 13 execution started
 
@@ -64,6 +64,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 13 P09 | 11 min | 3 tasks | 10 files |
 | Phase 13 P10 | 9 min | 2 tasks | 9 files |
 | Phase 13 P11 | 13min | 2 tasks | 6 files |
+| Phase 13 P12 | 6min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -99,6 +100,7 @@ Recent decisions affecting current work:
 - [Phase 13]: 13-11: 12 IN-09 storeCopy wraps clone() and waitUntil in try/catch (b0844b9, separate from 13-04's CLEAN-01 commit); 12 IN-10 name-too-long copy reads FEEDBACK_LIMITS.nameMax with identical output (30a837d)
 - [Phase 13]: 13-11: 07 WR-07 SafeCanvas logs console.error('[SafeCanvas]', error) unless the message contains 'Error creating WebGL context' (both three.js messages; same text e2e webglFailure matches); Home audit chromium clean (ddd356c)
 - [Phase 13]: 13-11: 07 IN-08 not changed, deferred to GUARD-10 (Phase 15) per the 13-LEDGER-TRIAGE.md Approval; no tsconfig.test.json, type-check unchanged
+- [Phase 13]: 13-12: photo scripts take --root <dir>; G5 (4 cases) and G6 (whole-tree byte identity) spawn them from the guard selftest; G6 asserts the real undecodable-source message, not 'nothing written'
 
 ### Pending Todos
 
@@ -151,6 +153,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-13T11:53:43.972Z
-Stopped at: Completed 13-11-PLAN.md
+Last session: 2026-11-13T12:03:18.002Z
+Stopped at: Completed 13-12-PLAN.md
 Resume file: None
