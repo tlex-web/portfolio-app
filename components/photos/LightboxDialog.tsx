@@ -186,6 +186,9 @@ export default function LightboxDialog({
   useLayoutEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
+    // Shown (again): a close from an earlier showing must not swallow this one's, in case
+    // the instance outlives a back step (10-REVIEW IN-10).
+    closing.current = false;
     // StrictMode re-runs this effect; keep the first opener (the clicked tile).
     if (opener.current === null) opener.current = document.activeElement;
     if (!dialog.open) dialog.showModal();
