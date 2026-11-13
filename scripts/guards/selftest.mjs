@@ -179,6 +179,9 @@ function tempCiGateRoot(edit, file = 'ci.yml') {
 let ciGateRenamedRoot = null;
 let ciGateRelayLiteralRoot = null;
 let ciGateRelayNoNeedsRoot = null;
+let ciGateRelayPrCheckoutRoot = null;
+let ciGateRelayTopPermsRoot = null;
+let ciGateRelayWriteScopeRoot = null;
 let ciGateNoChangesNeedRoot = null;
 let ciGateUnconditionedRoot = null;
 let ciGatePathsIgnoreRoot = null;
@@ -1072,6 +1075,76 @@ const cases = [
     expectOutput: ['a job named CI OK outside ci.yml: .github/workflows/ci-skip-relay.yml (job relay); the relay may carry CI OK only'],
   },
   {
+    name: 'ci-gate: relay with a checkout step fails',
+    guard: CI_GATE,
+    args: ['--root', cig('bad-relay-checkout')],
+    expectExit: 1,
+    expectOutput: ['ci-skip-relay.yml: relay checks out code', 'ci-gate: 2 failure(s)'],
+  },
+  {
+    name: 'ci-gate: relay running gh pr checkout fails',
+    guard: CI_GATE,
+    args: [],
+    setup: () => {
+      ciGateRelayPrCheckoutRoot = tempCiGateRoot(
+        (text) => text.replace(/^( {10})since=\$\(date/m, '$1gh pr checkout "$REF"\n$1since=$(date'),
+        'ci-skip-relay.yml',
+      );
+      return ['--root', ciGateRelayPrCheckoutRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['ci-skip-relay.yml: relay checks out code', 'ci-gate: 1 failure(s)'],
+  },
+  {
+    name: 'ci-gate: relay with an expression inside a run block fails',
+    guard: CI_GATE,
+    args: ['--root', cig('bad-relay-interpolation')],
+    expectExit: 1,
+    expectOutput: ['ci-skip-relay.yml: expression inside a run block', 'ci-gate: 2 failure(s)'],
+  },
+  {
+    name: 'ci-gate: relay with a job-level if on its CI OK job fails',
+    guard: CI_GATE,
+    args: ['--root', cig('bad-relay-if')],
+    expectExit: 1,
+    expectOutput: ['ci-skip-relay.yml: job-level if on the CI OK relay job', 'ci-gate: 2 failure(s)'],
+  },
+  {
+    name: 'ci-gate: relay also triggering on pull_request fails',
+    guard: CI_GATE,
+    args: ['--root', cig('bad-relay-trigger')],
+    expectExit: 1,
+    expectOutput: ['ci-skip-relay.yml: relay may trigger only on pull_request_target', 'ci-gate: 2 failure(s)'],
+  },
+  {
+    name: 'ci-gate: relay without top-level permissions: {} fails',
+    guard: CI_GATE,
+    args: [],
+    setup: () => {
+      ciGateRelayTopPermsRoot = tempCiGateRoot(
+        (text) => text.replace(/^permissions: \{\}(\r?\n)/m, 'permissions:$1  contents: read$1'),
+        'ci-skip-relay.yml',
+      );
+      return ['--root', ciGateRelayTopPermsRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['ci-skip-relay.yml: relay must set top-level permissions: {}', 'ci-gate: 1 failure(s)'],
+  },
+  {
+    name: 'ci-gate: relay granting a write scope other than actions: write fails',
+    guard: CI_GATE,
+    args: [],
+    setup: () => {
+      ciGateRelayWriteScopeRoot = tempCiGateRoot(
+        (text) => text.replace(/^( {6}actions: write\r?\n {6})contents: read/m, '$1contents: write'),
+        'ci-skip-relay.yml',
+      );
+      return ['--root', ciGateRelayWriteScopeRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['ci-skip-relay.yml: line', 'relay grants contents: write', 'ci-gate: 1 failure(s)'],
+  },
+  {
     name: 'ci-gate: a job granting checks: write fails (the comment saying so does not)',
     guard: CI_GATE,
     args: ['--root', cig('bad-checks-write')],
@@ -1196,7 +1269,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, parityGoodRoot, parityBadRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, parityGoodRoot, parityBadRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 
