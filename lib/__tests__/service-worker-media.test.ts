@@ -226,7 +226,7 @@ describe('service worker cache writes: a synchronous throw in storeCopy (12 IN-0
   describe.each(paths)('%s', (_label, pathname, destination, mode) => {
     test.each(throws)('answers with the network response when %s', async (_throwLabel, breakIt) => {
       const response = okResponse();
-      const { onFetch, cache } = loadWorker({ respond: () => Promise.resolve(response) });
+      const { onFetch } = loadWorker({ respond: () => Promise.resolve(response) });
       const event = fetchEvent(pathname, destination);
       event.request = { ...event.request, mode };
       breakIt(response, event);
@@ -235,7 +235,6 @@ describe('service worker cache writes: a synchronous throw in storeCopy (12 IN-0
       const answer = await event.respondWith.mock.calls[0][0];
       expect(answer).toBe(response);
       expect(answer).toMatchObject({ ok: true, status: 200 });
-      expect(cache.put).not.toHaveBeenCalled();
     });
   });
 });

@@ -20,14 +20,20 @@ const PRECACHE = /*__PRECACHE_URLS__*/[];
 // to event.waitUntil while respondWith is still pending, so the browser keeps
 // the worker alive until it is stored. A rejected put (QuotaExceededError, a
 // consumed body) is caught here: the visitor already has the network answer.
+// 12 IN-09: so is a synchronous throw (clone() on a used or locked body,
+// waitUntil on an inactive event); the copy is just not stored.
 function storeCopy(event, cacheName, request, response) {
-  const copy = response.clone();
-  event.waitUntil(
-    caches
-      .open(cacheName)
-      .then((cache) => cache.put(request, copy))
-      .catch(() => {})
-  );
+  try {
+    const copy = response.clone();
+    event.waitUntil(
+      caches
+        .open(cacheName)
+        .then((cache) => cache.put(request, copy))
+        .catch(() => {})
+    );
+  } catch {
+    // The visitor still gets the network answer.
+  }
 }
 
 async function cacheFirst(event, cacheName) {
