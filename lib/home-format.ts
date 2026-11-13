@@ -33,13 +33,21 @@ const MONTHS_SHORT = [
   'Dec',
 ] as const;
 
-/** Absolute value at `d` decimals, rounded half up: fixedDecimals(1.23455, 4) -> '1.2346'. */
+/**
+ * Absolute value at `d` decimals, rounded half up (half away from zero for the
+ * signed value): fixedDecimals(1.00185, 4) -> '1.0019'. The half is judged on
+ * the value's shortest decimal form, the number as the data writes it, not on
+ * its binary double: multiplying first gives 1.00185 * 1e4 = 10018.499999999998
+ * and rounds a written half down. Shifting the exponent of the decimal string
+ * instead parses '1.00185e+4' to exactly 10018.5 (09 IN-04).
+ */
 function fixedDecimals(v: number, d: number): string {
-  const scale = 10 ** d;
-  return (Math.round(Math.abs(v) * scale) / scale).toFixed(d);
+  const [mantissa, exponent] = Math.abs(v).toExponential().split('e');
+  const scaled = Math.round(Number(`${mantissa}e${Number(exponent) + d}`));
+  return (scaled / 10 ** d).toFixed(d);
 }
 
-/** Absolute value at four decimals, rounded half up: 1.23455 -> '1.2346'. */
+/** Absolute value at four decimals, rounded half up: 1.00185 -> '1.0019'. */
 function fourDecimals(v: number): string {
   return fixedDecimals(v, 4);
 }
