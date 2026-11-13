@@ -31,7 +31,7 @@ import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import sharp from 'sharp';
 import { evaluate, pickRun } from '../ci/check-visual-run.mjs';
-import { evaluateSnapshotChanges } from '../ci/check-snapshot-commit.mjs';
+import { evaluateSnapshotChanges, snapshotDiffArgs } from '../ci/check-snapshot-commit.mjs';
 import { DOCS_ONLY_FILES, classify } from '../ci/classify-changes.mjs';
 import { checkMp4 } from './lib/mp4-boxes.mjs';
 import { LEGACY_DEAD_FILES, assertNoImporters, isLegacyDeadFile } from './lib/legacy-dead-files.mjs';
@@ -362,10 +362,6 @@ const classnamesMovedChangedRoot = tempClassnamesRepo((root) => {
   putFiles(root, { 'app/(site)/card.tsx': CARD_TSX.replace('gap-4 p-6', 'gap-4 p-8') });
 });
 const classnamesUnchangedRoot = tempClassnamesRepo(() => {});
-
-// 07 IN-07: the git-reading layer of check-snapshot-commit, read through the module
-// namespace so a missing export fails its case instead of the whole selftest load.
-const snapshotCommitModule = await import('../ci/check-snapshot-commit.mjs');
 
 /**
  * 07 IN-07 fixture: a temp git repo with two --no-ff merge commits.
@@ -785,8 +781,6 @@ const cases = [
     // 07 IN-07: a merge is read against its first parent, a single-parent or root commit with git show
     name: 'snapshot-commit: a merge commit is diffed against its first parent (07 IN-07)',
     fn: () => {
-      const { snapshotDiffArgs } = snapshotCommitModule;
-      if (typeof snapshotDiffArgs !== 'function') return 'check-snapshot-commit exports no snapshotDiffArgs(sha, parents)';
       const show = (sha) => ['show', '--no-renames', '--name-status', '--format=', sha, '--', 'e2e'];
       const same = (label, actual, expected) => expectEqual(label, JSON.stringify(actual), JSON.stringify(expected));
       return (
