@@ -117,6 +117,7 @@ Plans:
 **Wave 12** *(blocked on Wave 11 completion)*
 - [ ] 13-22-PLAN.md — Ledger write-back (D-19), hand-overs to later phases, PROJECT.md Key Decisions
 **Research**: Not needed (known GitHub ruleset and aggregate-check pattern). Before Tim applies anything, confirm each identifier in its UI or CLI: Vercel Deployment Checks on Hobby, the GitHub Actions integration id, the admin role id, and the production Upstash variable names (`vercel env ls production`; the Marketplace may inject `KV_*` instead of `UPSTASH_*`).
+**UI hint**: no
 **UI-SPEC**: Not needed. No UI change; the only pixel change is the Playwright 1.65 re-baseline.
 **Inputs from Tim**: Review and apply the `main` ruleset and any Vercel setting (the agent prepares the JSON, Tim applies it); decide whether the inert `automated-actions` ruleset is removed or replaced; confirm the production Upstash variables; run or approve the live 429 probe (it locks the probing IP out for up to an hour); commit the Playwright 1.65 PNGs; decide the ledger rows that need an owner call.
 **Scope notes**:
