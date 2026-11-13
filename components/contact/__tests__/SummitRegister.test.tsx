@@ -869,6 +869,28 @@ describe('validateField (CONTACT-02, FEEDBACK_LIMITS)', () => {
   ] as const)('%s %j -> %j', (field, value, expected) => {
     expect(validateField(field, value)).toBe(expected);
   });
+
+  // 12 IN-10: the name-too-long copy reads FEEDBACK_LIMITS.nameMax, like the
+  // check beside it. The rows above pin today's exact string (limit 100); here
+  // a different limit must reach the copy.
+  it('builds the name-too-long copy from FEEDBACK_LIMITS.nameMax', () => {
+    jest.isolateModules(() => {
+      jest.doMock('@/lib/contact/api-contract', () => {
+        const actual = jest.requireActual<typeof import('@/lib/contact/api-contract')>(
+          '@/lib/contact/api-contract'
+        );
+        return { ...actual, FEEDBACK_LIMITS: { ...actual.FEEDBACK_LIMITS, nameMax: 1500 } };
+      });
+      // eslint-disable-next-line @typescript-eslint/no-require-imports -- fresh registry with the mocked limit
+      const isolated = require('../SummitRegister') as typeof import('../SummitRegister');
+
+      expect(isolated.validateField('name', 'x'.repeat(1500))).toBeNull();
+      expect(isolated.validateField('name', 'x'.repeat(1501))).toBe(
+        'Shorten your name to 1,500 characters (now 1,501).'
+      );
+    });
+    jest.dontMock('@/lib/contact/api-contract');
+  });
 });
 
 describe('minutesFromRetryAfter', () => {
