@@ -169,6 +169,7 @@ Plans:
   - 07 IN-08 (tests and e2e specs excluded from `type-check`) is GUARD-10 (13-LEDGER-TRIAGE.md #14). The `@types/jest` package is not approved: Tim vets it first, or the plan uses `@jest/globals` imports (13-06).
   - Suggestion from 13-20, Tim's call: `npm run lint` does not run GUARD-03 (`guard:tests`), so a `.fixme(`/`.skip(`/`.only(` under `e2e/` passes every local gate and fails only in CI. While GUARD-10 reworks `type-check`, consider a `guard:tests:local` script, a pre-push step, or running the guard's focus/skip scan inside `lint`, without weakening GUARD-03.
   - When the served-asset guard rules are documented in `scripts/README.md`, correct its contrast paragraph (line 78 at 13-22): it says 36 pairs, but `check-contrast.mjs` measures 47 (Phase 11 added the `ink-inverse`/`ink` pair and 10 trail pairs; found by 13-13).
+  - Deferred here from the Phase 13 code review (Tim, 2026-11-13; 13-REVIEW.md, recorded `deferred` in 13-REVIEW-DISPOSITION.md): IN-01, `components/SafeCanvas.tsx`'s `[SafeCanvas]` log duplicates Next's own caught-error log, and the no-WebGL fallback is not silent (reword the comment or drop the extra log); IN-02, `check-ci-gate.mjs` rules 11 and 12 inspect only `run:` blocks, so also fail on `${{` in a `with:` value of any non-checkout `uses:` step in the relay; IN-03, rule 5 finds a second `CI OK` only by literal substring, so also flag a job `name:` outside `ci.yml` that holds `${{` and is not the relay shape.
 
 ### Phase 16: New Regions & Alps Overview Data
 
