@@ -25,11 +25,11 @@ pr:
     mapping_by: "the orchestrator: plain push of the branch, open the PR, fast-forward fix pushes allowed"
 
 actuals:
-  tokens: 3900     # chars/4 over the files this plan changed: this SUMMARY (~14,600 chars) plus the deferred-items entry (~900 chars)
+  tokens: 4400     # chars/4 over the files this plan changed: this SUMMARY (~16,500 chars), the deferred-items entry (~900) and the spec fix (~350)
   tasks: 3
-  commits: 0       # MEASURED: git rev-list --count 90758db..HEAD at SUMMARY write. No source change by design; the SUMMARY and STATE/ROADMAP docs commits follow
+  commits: 4       # MEASURED: git rev-list --count 90758db..HEAD at this SUMMARY update = b39c355, 77905fb, f46e3c6 (docs) and 5436cb2 (test fix). The commit carrying this update follows
 plan_head_before: 90758dbbbfd55dbfbc2c622052a3ed683f35e18b
-plan_head_after: 90758dbbbfd55dbfbc2c622052a3ed683f35e18b
+plan_head_after: 5436cb2f3e25153912e12118d09dfeb6c728766c
 
 tech-stack:
   added: []
@@ -41,9 +41,10 @@ key-files:
     - .planning/phases/13-repo-safety-test-debt/13-15-SUMMARY.md
   modified:
     - .planning/phases/13-repo-safety-test-debt/deferred-items.md
+    - e2e/photos-lightbox.spec.ts
 
 key-decisions:
-  - "13-15: Tim's reply \"Push and pr\" (2026-11-13) was mapped by the orchestrator to push-and-pr. The branch was pushed plain with git push -u origin HEAD, and PR #143 was opened non-draft against main. No fix push was needed"
+  - "13-15: Tim's reply \"Push and pr\" (2026-11-13) was mapped by the orchestrator to push-and-pr. The branch was pushed plain with git push -u origin HEAD, and PR #143 was opened non-draft against main. The first head (90758db) was green. One fast-forward fix push followed, 5436cb2, which polls a racy assertion in the WebKit CR-01 menu test"
   - "13-15: CI OK concluded success (app 15368) on head 90758db, and so did all 13 check runs on that SHA. The E2E baseline for 13-20 is 28m31s, under the 45-minute line, so nothing is flagged"
   - "13-15: the Security Audit job passes while npm audit lists 25 dev-only advisories (3 low, 22 moderate). The step is warn-only (continue-on-error) on main as well, and npm audit --omit=dev finds 0. It is logged in deferred-items.md and not changed here"
 
@@ -197,7 +198,7 @@ From `gh run view 43430095783 --json jobs --jq '.jobs[] | {name, startedAt, comp
 
 1. **Task 1: Pre-push gate** made no commit (by design; the outputs are the scratch PR files).
 2. **Task 2: Tim approves the push and the PR** was a checkpoint. Tim answered "Push and pr".
-3. **Task 3: Push, open the PR, verify CI OK and the zero-pixel-diff proof** made no source commit. It pushed `90758db` and opened PR #143.
+3. **Task 3: Push, open the PR, verify CI OK and the zero-pixel-diff proof** pushed `90758db` and opened PR #143. Its one fix commit is `5436cb2` (test), which makes the CR-01 Escape read a poll.
 
 **Plan metadata:** recorded by the docs commit that adds this file, plus a separate STATE/ROADMAP commit. Both reach the PR branch only as plain fast-forward pushes.
 
@@ -208,13 +209,29 @@ From `gh run view 43430095783 --json jobs --jq '.jobs[] | {name, startedAt, comp
 
 ## Decisions Made
 
-- No fix push was needed, because every job was green on the first run.
+- The first head was green on its first run. One fix push came later, for a WebKit test flake that showed up on a docs-only head (see Deviations).
 - The PR was opened as a normal PR, not a draft, because the plan does not ask for a draft.
 - The Security Audit warning was logged, not fixed. It comes from dev dependencies only, the step is warn-only on `main` as well, and it is outside this plan's scope.
 
 ## Deviations from Plan
 
-None. The plan was executed as written.
+### Auto-fixed Issues
+
+**1. [Rule 1 - Bug] A racy final assertion in the CR-01 menu test made a docs-only head red**
+- **Found during:** Task 3, while verifying CI on the post-PR docs head `f46e3c6`.
+- **Issue:** Run 43435720431 failed `E2E Tests`, and therefore `CI OK`. The only change since `77905fb`, which was green, was 3 lines of this SUMMARY. One test was flaky: `[webkit] e2e/photos-lightbox.spec.ts:504` "on the photo page at 375, the open nav menu keeps its keys". On its first attempt line 576, `expect(await navigations(page)).toEqual([...before, '/photos'])`, received `[]`; the retry passed. CI runs with `--fail-on-flaky-tests`, so the job went red, with 1391 passed and 1 flaky in 35.8m. **Root cause:** the assertion read the RSC-navigation recorder right after the Escape press, assuming `router.push` issues its fetch inside the key handler. On a loaded WebKit runner the fetch can start after the handler returns, so the read can come too early.
+- **Fix:** That one read is now `await expect.poll(() => navigations(page), { message }).toEqual([...before, '/photos'])`, the same `expect.poll` pattern the file already uses at lines 782 and 926. The expected list is unchanged, so a stray extra navigation still fails. The earlier "Escape in the menu navigated" check still reads immediately; that read can only err toward passing, never toward flaking.
+- **Files modified:** `e2e/photos-lightbox.spec.ts` (5 insertions, 1 deletion)
+- **Verification:**
+  - `npx eslint` and `npm run type-check` are clean.
+  - Locally, `npx playwright test e2e/photos-lightbox.spec.ts -g "CR-01" --project=chromium --project=webkit --repeat-each=3` gave 6 passed (14.7s). The dev server stopped afterwards and port 3000 is free.
+  - CI on the pushed head is reported in the hand-back.
+- **Committed in:** `5436cb2`, pushed as a plain fast-forward, as Tim's `push-and-pr` allows.
+
+---
+
+**Total deviations:** 1 auto-fixed (1 bug, test-only)
+**Impact on plan:** The fix is needed for a green `CI OK` on the PR's final head. The change is test-only and confined to one assertion, and no product code changed.
 
 ## Issues Encountered
 
@@ -235,8 +252,9 @@ None from this plan. Tim's next act is the merge in 13-16, using a merge commit 
 - **13-19:** the `ci/13-*` live proofs need the relay on `main`, so they wait for the 13-16 merge.
 - **13-20:** the E2E baseline is 28m31s.
 - **Docs pushes after the PR opened do not take the fast path.** For a `pull_request` event, `Classify the diff` compares the PR base SHA (`main`) with the head, so it classifies the whole PR diff. A docs-only push to this PR therefore re-runs the full CI, about 29 minutes. That is correct by design: the gate judges what would merge. Pushes so far, all plain fast-forwards:
-  - `77905fb` (STATE/ROADMAP/REQUIREMENTS): run 43435106776, full CI.
-  - The commit that adds this correction: its run's CI OK result is verified in the executor's hand-back. Before merging in 13-16, confirm `CI OK` success on the PR's final head SHA (`gh pr checks 143`).
+  - `77905fb` (STATE/ROADMAP/REQUIREMENTS): run 43435106776, full CI, success.
+  - `f46e3c6` (this correction): run 43435720431, failure. It was the WebKit flake (Deviation 1); Visual Regression passed again.
+  - `5436cb2` (the test fix) plus the docs commit carrying this update: the final head's `CI OK` result is verified in the executor's hand-back. Before merging in 13-16, confirm `CI OK` success on the PR's final head SHA (`gh pr checks 143`).
 
 ## Self-Check: PASSED
 
