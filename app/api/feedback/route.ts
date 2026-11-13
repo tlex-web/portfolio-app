@@ -88,7 +88,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Rate limit check: persistent via Upstash Redis
-    const { success, reset } = await feedbackRateLimit.limit(ip);
+    const { success, reset, unavailable } = await feedbackRateLimit.limit(ip);
+    // A production limiter that cannot answer refuses (GUARD-09, D-11): 503 with
+    // the existing server-error code, so the form shows its send-failure copy
+    if (unavailable) {
+      logFeedback('limiter-unavailable', ip);
+      return respond({ code: 'server-error' }, 503);
+    }
     if (!success) {
       const retryAfterS = retryAfterSeconds(reset, Date.now());
       logFeedback('rate-limited', ip);

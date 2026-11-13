@@ -6,16 +6,18 @@
  *
  * Every response body is `{ code, retryAfterS?, fields? }`:
  *
- * | Code              | HTTP                    |
- * |-------------------|-------------------------|
- * | `ok`              | 200                     |
- * | `validation`      | 400 (optional `fields`) |
- * | `origin-rejected` | 403                     |
- * | `rate-limited`    | 429 + `Retry-After`     |
- * | `send-failed`     | 502                     |
- * | `server-error`    | 500                     |
+ * | Code              | HTTP                                                |
+ * |-------------------|-----------------------------------------------------|
+ * | `ok`              | 200                                                 |
+ * | `validation`      | 400 (optional `fields`)                             |
+ * | `origin-rejected` | 403                                                 |
+ * | `rate-limited`    | 429 + `Retry-After`                                 |
+ * | `send-failed`     | 502                                                 |
+ * | `server-error`    | 500; 503 when the production limiter is unavailable |
  *
- * A send that fails is `send-failed`, never `ok` (D-02). Bodies carry codes
+ * A send that fails is `send-failed`, never `ok` (D-02). A production limiter
+ * that cannot answer (no credentials, a Redis error or a timeout) refuses with
+ * 503 `server-error` and no `Retry-After` (GUARD-09, D-11). Bodies carry codes
  * only: the `fields` map names an issue per field and never echoes a submitted
  * value, and server logs carry an outcome, the IP and a timestamp, never a
  * visitor's name, address or message (D-04).
@@ -55,7 +57,8 @@ export type FeedbackOutcome =
   | 'rate-limited'
   | 'csrf-rejected'
   | 'honeypot'
-  | 'validation-failed';
+  | 'validation-failed'
+  | 'limiter-unavailable';
 
 /** Field limits the route enforces and the form shows (message 10 to 2,000). */
 export const FEEDBACK_LIMITS = {
