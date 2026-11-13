@@ -134,6 +134,24 @@ function tempParityRoot(fixtureName) {
 let parityGoodRoot = null;
 let parityBadRoot = null;
 
+/**
+ * Copies the ci-gate good fixture into a fresh temp dir and rewrites its
+ * ci.yml with `edit(text)`. Nested one level down so the cleanup loop's
+ * path.dirname removes the mkdtemp directory.
+ */
+function tempCiGateRoot(edit) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
+  const root = path.join(dir, 'root');
+  fs.cpSync(cig('good'), root, { recursive: true });
+  const ci = path.join(root, '.github', 'workflows', 'ci.yml');
+  const before = fs.readFileSync(ci, 'utf-8');
+  const after = edit(before);
+  if (after === before) throw new Error('tempCiGateRoot: the edit changed nothing');
+  fs.writeFileSync(ci, after);
+  return root;
+}
+let ciGateRenamedRoot = null;
+
 const cases = [
   {
     name: 'parity: good fixture passes',
@@ -856,7 +874,27 @@ const cases = [
     guard: CI_GATE,
     args: ['--root', cig('bad-missing-need')],
     expectExit: 1,
-    expectOutput: ['ci-ok needs is missing build'],
+    expectOutput: ['ci-ok needs is missing build', 'scripts/ci/ci-ok.jq: does not exist'],
+  },
+  {
+    name: 'ci-gate: a root without .github/workflows/ci.yml fails',
+    guard: CI_GATE,
+    args: ['--root', path.join(fixtures, 'ci-gate')],
+    expectExit: 1,
+    expectOutput: ['.github/workflows/ci.yml: cannot be read'],
+  },
+  {
+    name: 'ci-gate: ci-ok renamed and not running ci-ok.jq fails',
+    guard: CI_GATE,
+    args: [],
+    setup: () => {
+      ciGateRenamedRoot = tempCiGateRoot((text) =>
+        text.replace(/^ {4}name: CI OK(?=\r?$)/m,'    name: All green').replace('-f scripts/ci/ci-ok.jq', '-f scripts/ci/other.jq'),
+      );
+      return ['--root', ciGateRenamedRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['no job is named CI OK', 'ci-ok is named "All green", expected "CI OK"', 'ci-ok does not run jq with -f scripts/ci/ci-ok.jq'],
   },
   {
     name: 'ci-gate: CI OK with if: success() fails',
@@ -943,7 +981,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, parityGoodRoot, parityBadRoot]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, parityGoodRoot, parityBadRoot, ciGateRenamedRoot]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 

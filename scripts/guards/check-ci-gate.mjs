@@ -16,6 +16,15 @@
  *   3. `ci-ok.needs` equals, as a set, every other job id under `jobs:`
  *      (order never matters; a missing or an extra id always fails)
  *   4. the ci-ok job runs jq with `-f scripts/ci/ci-ok.jq`, and that file exists
+ *   5. no workflow other than ci.yml has a job whose `name:` includes CI OK
+ *      (a second CI OK that an `if:` skips would report Success). The list
+ *      CI_OK_ELSEWHERE_ALLOWED is empty; plan 13-10 adds the skip-marker
+ *      relay as its single entry
+ *   6. no workflow line grants `checks: write`, directly or through
+ *      `permissions: write-all` (such a job could post a forged CI OK check run)
+ *   7. every job's token scope is explicit: the workflow has a top-level
+ *      `permissions:` block or the job has its own (the repository default
+ *      token may include checks: write)
  *
  * Usage:
  *   node scripts/guards/check-ci-gate.mjs [--root <dir>]
@@ -36,6 +45,10 @@ const CI_FILE = `${WORKFLOW_DIR}/ci.yml`;
 const CI_OK_ID = 'ci-ok';
 const CI_OK_NAME = 'CI OK';
 const CI_OK_JQ = 'scripts/ci/ci-ok.jq';
+/** Rule 5 exceptions as { file, job } (file name under .github/workflows). Empty until 13-10. */
+const CI_OK_ELSEWHERE_ALLOWED = [];
+const CHECKS_WRITE = /(^|[\s{,])['"]?checks['"]?\s*:\s*['"]?write\b/;
+const WRITE_ALL = /(^|[\s{,])['"]?permissions['"]?\s*:\s*['"]?write-all\b/;
 
 function parseArgs(argv) {
   const args = { root: process.cwd() };
@@ -246,6 +259,66 @@ if (ciLines === null) {
       );
       if (!runsJq) fail(CI_FILE, `${CI_OK_ID} does not run jq with -f ${CI_OK_JQ}`);
       if (!fs.existsSync(path.join(root, CI_OK_JQ))) fail(CI_OK_JQ, 'does not exist');
+    }
+  }
+}
+
+/** Every workflow under .github/workflows as { file, rel, lines, jobs }. */
+function readWorkflows() {
+  let files = [];
+  try {
+    files = fs
+      .readdirSync(path.join(root, WORKFLOW_DIR))
+      .filter((f) => /\.ya?ml$/.test(f))
+      .sort();
+  } catch {
+    return [];
+  }
+  return files.flatMap((file) => {
+    const rel = `${WORKFLOW_DIR}/${file}`;
+    const lines = readLines(rel);
+    if (lines === null) {
+      fail(rel, 'cannot be read');
+      return [];
+    }
+    return [{ file, rel, lines, jobs: readJobs(lines) ?? [] }];
+  });
+}
+
+/** Jobs outside ci.yml whose name includes CI OK, except the `allowed` { file, job } pairs. */
+function findCiOkOutsideCi(workflows, allowed) {
+  const found = [];
+  for (const { file, rel, jobs } of workflows) {
+    if (file === 'ci.yml') continue;
+    for (const job of jobs) {
+      if (!(jobName(job) ?? '').includes(CI_OK_NAME)) continue;
+      if (allowed.some((a) => a.file === file && a.job === job.id)) continue;
+      found.push({ rel, job: job.id });
+    }
+  }
+  return found;
+}
+
+const workflows = readWorkflows();
+
+// 5. CI OK is emitted by ci.yml only
+for (const { rel, job } of findCiOkOutsideCi(workflows, CI_OK_ELSEWHERE_ALLOWED)) {
+  fail(rel, `a job named CI OK outside ci.yml: ${rel} (job ${job})`);
+}
+
+for (const { rel, lines, jobs } of workflows) {
+  // 6. no checks: write, directly or through write-all
+  lines.forEach((line, i) => {
+    if (CHECKS_WRITE.test(line)) fail(rel, `line ${i + 1} grants checks: write`);
+    if (WRITE_ALL.test(line)) fail(rel, `line ${i + 1} grants checks: write (permissions: write-all)`);
+  });
+
+  // 7. an explicit token scope for every job
+  if (!lines.some((l) => /^permissions\s*:/.test(l))) {
+    for (const job of jobs) {
+      if (!jobKey(job, 'permissions')) {
+        fail(rel, `job ${job.id} has no permissions block and the workflow sets none (the default token may grant checks: write)`);
+      }
     }
   }
 }

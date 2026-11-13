@@ -49,7 +49,7 @@ The manifest (`imageManifest`) is the only image source (DATA-08): every photo p
 
 ## Guards (`scripts/guards/`)
 
-CI guards that run in `npm run lint` (`eslint . && guard:parity && guard:palette && guard:contrast && guard:identity && guard:selftest && data:check && guard:images`). Each guard prints one line per violation and exits 1 on any failure. `selftest.mjs` runs every guard against the fixtures in `scripts/guards/__selftest__/` and proves that each one can fail.
+CI guards that run in `npm run lint` (`eslint . && guard:parity && guard:ci && guard:palette && guard:contrast && guard:identity && guard:selftest && data:check && guard:images`). Each guard prints one line per violation and exits 1 on any failure. `selftest.mjs` runs every guard against the fixtures in `scripts/guards/__selftest__/` and proves that each one can fail.
 
 ### `check-palette.mjs` (GUARD-04)
 
@@ -104,6 +104,28 @@ node scripts/guards/check-served-images.mjs --root <dir>
 ```
 
 It runs in `npm run lint` and CI, so it catches a committed original only after the push; there is no pre-commit hook. Never stage `assets/photos-original/` or `public/images/landscapes/` (both gitignored).
+
+### `check-ci-gate.mjs` (GUARD-07)
+
+`CI OK` (job `ci-ok`, the last job in `.github/workflows/ci.yml`) is the only check the `main` ruleset requires. It runs with `if: always()`, needs every other `ci.yml` job and passes only when `scripts/ci/ci-ok.jq` accepts `toJSON(needs)`: every result `success`, except `dependency-review`, which may be `skipped` outside `pull_request`. An empty `needs`, a `failure`, a `cancelled` or any other `skipped` fails it. This guard keeps a job from escaping that aggregate. It reads the workflow YAML line by line, with comments stripped.
+
+| Rule | Fails on |
+|------|----------|
+| `ci.yml` | `.github/workflows/ci.yml` missing |
+| one `CI OK` | no job named `CI OK`, more than one, or one whose id is not `ci-ok` |
+| `if: always()` | `ci-ok` with any other job-level `if:`, or none (a job skipped by `if:` reports Success) |
+| needs set | `ci-ok.needs` missing a job id (`ci-ok needs is missing <id>`) or listing one that does not exist; the lists are compared as sets, so order never matters |
+| jq verdict | `ci-ok` not running `jq` with `-f scripts/ci/ci-ok.jq`, or that file missing |
+| unique name | a job named `CI OK` in any other workflow (`CI_OK_ELSEWHERE_ALLOWED` is empty; the skip-marker relay becomes its one entry) |
+| `checks: write` | any workflow line granting it, directly or through `permissions: write-all` (such a job could post a forged `CI OK` check run) |
+| token scope | a job with no `permissions:` block in a workflow that sets none at the top (the repository default token may include `checks: write`) |
+
+```bash
+npm run guard:ci
+node scripts/guards/check-ci-gate.mjs --root <dir>
+```
+
+A new `ci.yml` job must join `ci-ok.needs` in the same commit. The selftest runs the eight `ci-ok.jq` cases (it needs `jq` on the PATH, as `ubuntu-latest` has) and at least one failing case per rule, from the fixtures under `scripts/guards/__selftest__/ci-gate/` (plus a temp copy of `good/` for the rename and jq-verdict rules).
 
 ### Other guards
 
