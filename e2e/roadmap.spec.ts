@@ -392,7 +392,16 @@ test.describe('/roadmap filters (ROUTE-02)', () => {
     expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
   });
 
-  test('@1280: each track is one row and the groups sit side by side', async ({ page }) => {
+  test('@1280: each track is one row and the groups sit side by side', async ({
+    page,
+    browserName,
+  }) => {
+    // This width crashes Firefox 159 under Playwright 1.65 (fixme on Firefox only; @375 still runs):
+    // https://github.com/microsoft/playwright/issues/43967
+    test.fixme(
+      browserName === 'firefox',
+      'Playwright #43967 / Firefox 159: page crash on a named role lookup followed by a main-world aria-labelledby read; remove after the next Playwright Firefox roll'
+    );
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/roadmap');
     const tops: number[] = [];
