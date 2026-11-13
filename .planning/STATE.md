@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 13
 current_phase_name: Repo Safety & Test Debt
 status: executing
-stopped_at: Completed 13-03-PLAN.md
-last_updated: "2026-11-13T10:42:50.572Z"
+stopped_at: Completed 13-04-PLAN.md
+last_updated: "2026-11-13T10:47:15.437Z"
 last_activity: 2026-11-13
 last_activity_desc: Phase 13 execution started
-state_head: 459bccb9dd1bb14296d0cf9387550308ee13482e
+state_head: d11b58216e98c01fcacdda6dec8b3b2da579291f
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 22
-  completed_plans: 4
+  completed_plans: 5
   percent: 0
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 13 (Repo Safety & Test Debt) — EXECUTING
-Plan: 5 of 22
+Plan: 6 of 22
 Status: Ready to execute
 Last activity: 2026-11-13 — Phase 13 execution started
 
@@ -58,6 +58,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 13 P02 | 7min | 3 tasks | 7 files |
 | Phase 13 P06 | 36min | 3 tasks | 3 files |
 | Phase 13 P03 | 4min | 2 tasks | 3 files |
+| Phase 13 P04 | 3min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,8 @@ Recent decisions affecting current work:
 - [Phase 13]: 13-06: 07 IN-08 becomes GUARD-10 in Phase 15 (tests, e2e specs and Playwright configs type-checked with zero errors; measured 5482 errors in 103 files, 69 in 21 with Jest globals); @types/jest still needs Tim's vetting, or use @jest/globals imports
 - [Phase 13]: 13-06: 12 IN-08 accepted (a real visitor cannot produce the fieldless validation answer)
 - [Phase 13]: 13-03: the audit gate reads app/sitemap.ts: ROUTES keeps one named representative per page template (photo = matterhorn-from-zermatt, throws if missing), AUDIT_SWEEP (every other sitemap path, sitemap order, no dedupe) runs once in Chromium at 1440 in one @chromium-only test; lib/__tests__/audit-routes.test.ts fails on a page template with no ROUTES entry
+- [Phase 13]: 13-04: CLEAN-01 app-side removals are two commits for 13-15's per-commit check-snapshot-commit --none: 6ff759d (images block, SW /_next/image condition, vercel.com dns-prefetch) and d69b42c (cssDuration, cssEase, kebab, TILT_CONFIG and their 2 tests)
+- [Phase 13]: 13-04: proxy.ts keeps _next/image in its matcher exclusion (scoped out, inert); with no next/image caller the loader runs on Next 16 defaults
 
 ### Pending Todos
 
@@ -132,6 +135,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-13T10:42:50.544Z
-Stopped at: Completed 13-03-PLAN.md
+Last session: 2026-11-13T10:47:15.409Z
+Stopped at: Completed 13-04-PLAN.md
 Resume file: None
