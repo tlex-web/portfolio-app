@@ -4,12 +4,11 @@ import { test, expect, type Page } from '@playwright/test';
 import { decode } from 'fast-png';
 import { Vector3 } from 'three';
 import { routeCurvesFor } from '@/components/home/terrain/route-curve';
-import { lowestDemM } from '@/data/generated/photos';
 import { terrain } from '@/data/generated/terrain';
 import { FRAME_BUDGET_DEFAULTS } from '@/lib/ascent/frame-budget';
 import { arrivalsFromBlocks } from '@/lib/ascent/progress';
 import { RELIEF_EXAGGERATION, curveParamAt } from '@/lib/ascent/route';
-import { buildWaypoints } from '@/lib/ascent/waypoints';
+import { buildWaypoints, homeLowestDemM } from '@/lib/ascent/waypoints';
 import { formatMetres } from '@/lib/photo-format';
 import { meshHeightAtUv, toMetres } from '@/lib/terrain/heightmap';
 import { readout, scrollBlockToCentre, waitForRevealed } from './helpers/ascent';
@@ -486,7 +485,7 @@ test.describe('Home terrain route and 3D pins (HOME-02, HOME-03, HOME-05)', () =
     });
 
     const positions = [
-      { name: 'top', seek: () => page.evaluate(() => window.scrollTo(0, 0)), m: lowestDemM },
+      { name: 'top', seek: () => page.evaluate(() => window.scrollTo(0, 0)), m: homeLowestDemM },
       {
         name: 'waypoint 2',
         seek: () => scrollBlockToCentre(page, waypoint(2)),

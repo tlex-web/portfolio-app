@@ -1,16 +1,15 @@
 /**
  * The summit plaque (HOME-06; D-03; 09-UI-SPEC "Summit Section" and
  * "Summit-plaque stats"): the UI-SPEC chose the four stats, and every value is
- * recomputed here from the committed data (terrain.summit, lowestDemM, the
+ * recomputed here from the committed data (terrain.summit, homeLowestDemM, the
  * waypoints and lib/geo.ts) through the tested formatters. The literals are
  * the strings the UI-SPEC fixes for today's data; the synthetic cases prove
  * the values follow the data instead of being typed (assumption-delta
  * invariant, T-09-06).
  */
 import { summitPlaque } from '@/lib/ascent/summit';
-import { buildWaypoints, type Waypoint } from '@/lib/ascent/waypoints';
+import { buildWaypoints, homeLowestDemM, type Waypoint } from '@/lib/ascent/waypoints';
 import { terrain } from '@/data/generated/terrain';
-import { lowestDemM } from '@/data/generated/photos';
 import { lv95ToWgs84, wgs84ToLv95 } from '@/lib/geo';
 import { formatKilometres, formatLatLon, formatYearRange } from '@/lib/home-format';
 import { formatMetres } from '@/lib/photo-format';
@@ -45,7 +44,7 @@ describe('summitPlaque on the committed data (HOME-06, D-03)', () => {
     const metres = Math.hypot(start.e - terrain.summit.lv95.e, start.n - terrain.summit.lv95.n);
 
     expect(plaque.stats.map((s) => s.value)).toEqual([
-      formatMetres(terrain.summit.officialM - lowestDemM),
+      formatMetres(terrain.summit.officialM - homeLowestDemM),
       formatMetres(highest.altitudeM),
       formatYearRange(waypoints.map((w) => w.years)),
       formatKilometres(metres),

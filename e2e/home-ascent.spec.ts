@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { lowestDemM, photos } from '@/data/generated/photos';
+import { photos } from '@/data/generated/photos';
 import { terrain } from '@/data/generated/terrain';
 import { editorial } from '@/data/photos/editorial';
 import { projects } from '@/data/projects';
@@ -7,7 +7,7 @@ import { home } from '@/data/home';
 import { site } from '@/data/site';
 import { summitPlaque } from '@/lib/ascent/summit';
 import { summitColumnBox, summitLayoutAt } from '@/lib/ascent/summit-layout';
-import { buildWaypoints, waypointKicker } from '@/lib/ascent/waypoints';
+import { buildWaypoints, homeLowestDemM, waypointKicker } from '@/lib/ascent/waypoints';
 import { countLabel } from '@/lib/home-format';
 import { formatMetres } from '@/lib/photo-format';
 import { readout, scrollBlockToCentre } from './helpers/ascent';
@@ -828,7 +828,7 @@ test.describe('Ascent progress (HOME-03, HOME-04, HOME-05)', () => {
   test('the readout climbs from the first waypoint to the summit', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
-    await expect(readout(page)).toHaveText(formatMetres(lowestDemM));
+    await expect(readout(page)).toHaveText(formatMetres(homeLowestDemM));
 
     await scrollBlockToCentre(page, `li[data-k="${second.k}"]`);
     await expect(readout(page)).toHaveText(formatMetres(second.altitudeM));

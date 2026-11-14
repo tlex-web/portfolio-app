@@ -9,9 +9,8 @@ import { render } from '@testing-library/react';
 import AscentHero from '../AscentHero';
 import PinMark, { SummitMark } from '../PinMark';
 import PosterSheet from '../PosterSheet';
-import { lowestDemM } from '@/data/generated/photos';
 import { terrain } from '@/data/generated/terrain';
-import { buildWaypoints } from '@/lib/ascent/waypoints';
+import { buildWaypoints, homeLowestDemM } from '@/lib/ascent/waypoints';
 import { formatMetres } from '@/lib/photo-format';
 
 const waypoints = buildWaypoints();
@@ -167,7 +166,7 @@ describe('AltimeterRail (HOME-04, D-01, D-05)', () => {
       ...waypoints.map((w) => `${formatMetres(w.altitudeM)}${w.approximate ? ' approx.' : ''}`),
       formatMetres(terrain.summit.officialM),
     ]);
-    expect(labels[0]).toBe(formatMetres(lowestDemM));
+    expect(labels[0]).toBe(formatMetres(homeLowestDemM));
     expect(labels.map(plain)).toEqual([
       '1,617 m',
       '1,668 m',

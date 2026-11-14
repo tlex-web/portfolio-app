@@ -17,7 +17,8 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { lowestDemM, photos } from '@/data/generated/photos';
+import { photos } from '@/data/generated/photos';
+import { homeWaypointIds } from '@/data/home';
 import { terrain } from '@/data/generated/terrain';
 import {
   Capture,
@@ -27,6 +28,7 @@ import {
   PhotoFacts,
   Position,
 } from '@/data/schemas/photo';
+import { homeLowestDemM } from '@/lib/ascent/waypoints';
 import { lv95ToUv, round4, wgs84ToLv95 } from '@/lib/geo';
 
 const read = (rel: string) => fs.readFileSync(path.join(process.cwd(), rel), 'utf8');
@@ -161,10 +163,11 @@ describe('DEM heights (D-17)', () => {
     expect(Math.abs((e?.m ?? NaN) - metres)).toBeLessThanOrEqual(tolerance);
   });
 
-  test('lowestDemM is the minimum photo DEM height (the altimeter rail start)', () => {
-    const heights = photos.map((p) => p.elevation?.m ?? Infinity);
-    expect(lowestDemM).toBe(Math.min(...heights));
-    expect(lowestDemM).toBe(1617);
+  test('homeLowestDemM is the minimum DEM height of the Home waypoints (the altimeter rail start, D-08)', () => {
+    const heights = homeWaypointIds.map((id) => photo(id).elevation?.m ?? Infinity);
+    expect(heights).toHaveLength(4);
+    expect(homeLowestDemM).toBe(Math.min(...heights));
+    expect(homeLowestDemM).toBe(1617);
   });
 });
 
