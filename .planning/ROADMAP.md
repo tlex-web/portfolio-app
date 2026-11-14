@@ -184,7 +184,7 @@ Plans:
   4. The served-asset guard fails on `.SRT`, `.LRF`, GPX and KML files and on MP4s carrying GPS or telemetry tracks anywhere in the repo or the site, proven by selftest fixtures.
   5. The phase lands with zero visual-baseline changes, and a test shows that every link to a photo comes from one URL helper (still `/photos/<slug>`).
   6. `npm run type-check` also type-checks the Jest tests, e2e specs and Playwright configs, with zero errors (GUARD-10; the 13-06 measurement found 5482 errors in 103 files as-is and 69 in 21 files with the Jest globals declared), using `@types/jest` only after Tim vets it, or `@jest/globals` imports.
-**Plans**: 7/16 plans executed in 16 waves (serial: one checkout, a shared `selftest.mjs` and `package.json`, and the production e2e server on port 3000)
+**Plans**: 8/16 plans executed in 16 waves (serial: one checkout, a shared `selftest.mjs` and `package.json`, and the production e2e server on port 3000)
 
 Plans:
 **Wave 1**
@@ -209,7 +209,7 @@ Plans:
 - [x] 15-07-PLAN.md — DATA-10 part 2: map-driven `photos:exif` with `--root` and selftest cases
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 15-08-PLAN.md — DATA-09 part 1: explicit Home waypoint list, rail start over it, footer ticks (client-light `homePhotos`) and trail sign on it, success-criterion-1 and strict-list tests
+- [x] 15-08-PLAN.md — DATA-09 part 1: explicit Home waypoint list, rail start over it, footer ticks (client-light `homePhotos`) and trail sign on it, success-criterion-1 and strict-list tests
 
 **Wave 9** *(blocked on Wave 8 completion)*
 - [ ] 15-09-PLAN.md — DATA-09 part 2: generated rail start removed, Home-surface tests on the Home list, Home e2e in two engines
@@ -343,7 +343,7 @@ Plans:
 | 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 34/34 | Complete | 2026-11-05 |
 | 13. Repo Safety & Test Debt | v2.1 | 22/22 | Complete    | 2026-11-14 |
 | 14. UI Fixes & Terminal Controls | v2.1 | 8/8 | Complete    | 2026-11-14 |
-| 15. Region & Plate Data Model | v2.1 | 7/16 | In Progress | - |
+| 15. Region & Plate Data Model | v2.1 | 8/16 | In Progress | - |
 | 16. New Regions & Alps Overview Data | v2.1 | 0/TBD | Not started | - |
 | 17. Region Routes, SEO & Structured Data | v2.1 | 0/TBD | Not started | - |
 | 18. Immersive Survey Layout | v2.1 | 0/TBD | Not started | - |
