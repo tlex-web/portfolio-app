@@ -8,6 +8,13 @@ import { act, render, renderHook, screen } from '@testing-library/react';
 import { renderToString } from 'react-dom/server';
 import { downgradeAscent, resetAscentModeForTests, useAscentMode } from '../useAscentMode';
 
+/**
+ * The DOM lib's string-id getContext overload, the one the probe's ('webgl2', attributes) call
+ * resolves to. The canvas type's last overload is WebGPU's ('webgpu' only), so a spy typed from
+ * the whole overload set would only accept that call shape.
+ */
+type GetContext = (contextId: string, options?: WebGLContextAttributes) => RenderingContext | null;
+
 function ModeProbe() {
   return <span data-testid="mode">{useAscentMode()}</span>;
 }
@@ -15,7 +22,7 @@ function ModeProbe() {
 describe('useAscentMode', () => {
   let reduce: boolean;
   let changeListeners: Array<(event: MediaQueryListEvent) => void>;
-  let getContext: jest.SpyInstance;
+  let getContext: jest.Spied<GetContext>;
   let loseContext: jest.Mock;
   let mark: jest.Mock;
   const originalMark = performance.mark;
@@ -26,19 +33,21 @@ describe('useAscentMode', () => {
     changeListeners = [];
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
-      value: jest.fn().mockImplementation((query: string) => ({
+      value: jest.fn((query: string): MediaQueryList => ({
         get matches() {
           return query === '(prefers-reduced-motion: reduce)' && reduce;
         },
         media: query,
         onchange: null,
-        addEventListener: jest.fn((type: string, listener: (e: MediaQueryListEvent) => void) => {
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        addEventListener: jest.fn((type: string, listener: EventListener) => {
           if (type === 'change') changeListeners.push(listener);
         }),
-        removeEventListener: jest.fn((type: string, listener: (e: MediaQueryListEvent) => void) => {
+        removeEventListener: jest.fn((type: string, listener: EventListener) => {
           if (type === 'change') changeListeners = changeListeners.filter((l) => l !== listener);
         }),
-        dispatchEvent: jest.fn(),
+        dispatchEvent: jest.fn<MediaQueryList['dispatchEvent']>(),
       })),
     });
 
@@ -47,8 +56,9 @@ describe('useAscentMode', () => {
       getParameter: jest.fn(() => 16384),
       getExtension: jest.fn((name: string) => (name === 'WEBGL_lose_context' ? { loseContext } : null)),
     };
+    const canvasPrototype: { getContext: GetContext } = HTMLCanvasElement.prototype;
     getContext = jest
-      .spyOn(HTMLCanvasElement.prototype, 'getContext')
+      .spyOn(canvasPrototype, 'getContext')
       .mockImplementation((() => gl) as unknown as HTMLCanvasElement['getContext']);
 
     mark = jest.fn();

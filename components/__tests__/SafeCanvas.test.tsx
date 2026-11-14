@@ -20,7 +20,7 @@ jest.mock('@react-three/fiber', () => {
 });
 
 describe('SafeCanvas', () => {
-  let consoleError: jest.SpyInstance;
+  let consoleError: jest.Spied<typeof console.error>;
 
   beforeEach(() => {
     mockCanvasError = null;

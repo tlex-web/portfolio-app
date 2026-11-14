@@ -9,14 +9,15 @@ jest.mock('next/navigation', () => ({
 
 const mockUsePathname = usePathname as jest.MockedFunction<typeof usePathname>;
 
-type ChangeListener = (event: { matches: boolean }) => void;
+type ChangeListener = (event: MediaQueryListEvent) => void;
 let mediaListeners: Map<string, Set<ChangeListener>>;
 const originalMatchMedia = window.matchMedia;
 
 /** Fire a `change` on every matchMedia list registered for `query`. */
 function changeMedia(query: string, matches: boolean) {
   act(() => {
-    for (const listener of mediaListeners.get(query) ?? []) listener({ matches });
+    for (const listener of mediaListeners.get(query) ?? [])
+      listener({ matches } as MediaQueryListEvent);
   });
 }
 
@@ -39,21 +40,21 @@ beforeEach(() => {
   mockUsePathname.mockReset();
   mockUsePathname.mockReturnValue('/');
   mediaListeners = new Map();
-  window.matchMedia = jest.fn().mockImplementation((query: string) => ({
+  window.matchMedia = jest.fn((query: string): MediaQueryList => ({
     matches: false,
     media: query,
     onchange: null,
-    addEventListener: (type: string, listener: ChangeListener) => {
+    addEventListener: (type: string, listener: EventListener) => {
       if (type !== 'change') return;
       if (!mediaListeners.has(query)) mediaListeners.set(query, new Set());
       mediaListeners.get(query)!.add(listener);
     },
-    removeEventListener: (type: string, listener: ChangeListener) => {
+    removeEventListener: (type: string, listener: EventListener) => {
       mediaListeners.get(query)?.delete(listener);
     },
     addListener: jest.fn(),
     removeListener: jest.fn(),
-    dispatchEvent: jest.fn(),
+    dispatchEvent: jest.fn<MediaQueryList['dispatchEvent']>(),
   }));
 });
 

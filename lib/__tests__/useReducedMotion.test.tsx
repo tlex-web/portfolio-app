@@ -2,30 +2,32 @@ import { renderHook, act } from '@testing-library/react';
 import { useReducedMotion } from '../useReducedMotion';
 
 describe('useReducedMotion', () => {
-  let matchMediaMock: jest.Mock;
+  let matchMediaMock: jest.Mock<typeof window.matchMedia>;
   let listeners: ((event: MediaQueryListEvent) => void)[] = [];
   let currentMatches = false;
 
   beforeEach(() => {
     listeners = [];
     currentMatches = false;
-    matchMediaMock = jest.fn().mockImplementation((query) => ({
+    matchMediaMock = jest.fn((query: string): MediaQueryList => ({
       get matches() {
         return currentMatches;
       },
       media: query,
       onchange: null,
-      addEventListener: jest.fn((event, listener) => {
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn((event: string, listener: EventListener) => {
         if (event === 'change') {
           listeners.push(listener);
         }
       }),
-      removeEventListener: jest.fn((event, listener) => {
+      removeEventListener: jest.fn((event: string, listener: EventListener) => {
         if (event === 'change') {
           listeners = listeners.filter((l) => l !== listener);
         }
       }),
-      dispatchEvent: jest.fn(),
+      dispatchEvent: jest.fn<MediaQueryList['dispatchEvent']>(),
     }));
 
     Object.defineProperty(window, 'matchMedia', {
@@ -74,13 +76,15 @@ describe('useReducedMotion', () => {
 
   it('cleans up event listener on unmount', () => {
     const removeEventListenerMock = jest.fn();
-    matchMediaMock.mockImplementation((query) => ({
+    matchMediaMock.mockImplementation((query: string): MediaQueryList => ({
       matches: false,
       media: query,
       onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
       addEventListener: jest.fn(),
       removeEventListener: removeEventListenerMock,
-      dispatchEvent: jest.fn(),
+      dispatchEvent: jest.fn<MediaQueryList['dispatchEvent']>(),
     }));
 
     const { unmount } = renderHook(() => useReducedMotion());

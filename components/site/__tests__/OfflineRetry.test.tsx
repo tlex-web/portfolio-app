@@ -8,14 +8,14 @@ import OfflineRetry from '../OfflineRetry';
  * console.error, and those reports are counted instead.
  */
 
-function reloadCount(consoleError: jest.SpyInstance) {
+function reloadCount(consoleError: jest.Spied<typeof console.error>) {
   return consoleError.mock.calls
     .map((args) => args.map(String).join(' '))
     .filter((message) => /Not implemented: navigation/.test(message)).length;
 }
 
 describe('OfflineRetry', () => {
-  let consoleError: jest.SpyInstance;
+  let consoleError: jest.Spied<typeof console.error>;
 
   beforeEach(() => {
     consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
