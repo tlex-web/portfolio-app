@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 15
 current_phase_name: Region & Plate Data Model
 status: executing
-stopped_at: Completed 15-10-PLAN.md
-last_updated: "2026-11-14T21:56:35.058Z"
+stopped_at: Completed 15-11-PLAN.md
+last_updated: "2026-11-14T22:11:23.159Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 15 execution started
-state_head: da70f121354d2a05d7e74ac53d8329a9fed30ebe
+state_head: 544d6acf4f46ee56f2e6ab28b7e740706ad4a7ce
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 46
-  completed_plans: 40
+  completed_plans: 41
   percent: 29
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-14)
 ## Current Position
 
 Phase: 15 (Region & Plate Data Model) — EXECUTING
-Plan: 11 of 16
+Plan: 12 of 16
 Status: Ready to execute
 Last activity: 2026-11-14 — Phase 15 execution started
 
@@ -95,6 +95,7 @@ Progress: [███░░░░░░░] 29%
 | Phase 15 P08 | 7 min | 2 tasks | 8 files |
 | Phase 15 P09 | 8min | 2 tasks | 13 files |
 | Phase 15 P10 | 11min | 3 tasks | 13 files |
+| Phase 15 P11 | 11min | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -208,6 +209,9 @@ Recent decisions affecting current work:
 - [Phase 15]: 15-09: home-ascent.spec's card-order source (ascending) also moved to homePhotos(); it was a global read the seven-site list missed
 - [Phase 15]: 15-10: photoRouteSlugs in lib/photos/routes.ts carries a /* @__PURE__ */ annotation (pinned by a test) so client components importing photoHref get no editorial copy; without it client JS was 1,855,546 B, over the 1,854,478 B cap; with it 1,851,610 B
 - [Phase 15]: 15-10: every photo URL in app/, components/, lib/ and proxy.ts comes from photoHref; the photo-routes Jest scan fails on a hand-built /photos/<slug> outside lib/photos/routes.ts
+- [Phase 15]: 15-11: ContourField indexes plates.ts through a mapped-type view (no cast); direct generic indexing fails TS2536
+- [Phase 15]: 15-11: footer composed from SheetBand + SheetLegend with byte-identical markup; error-boundary chunks now carry plates.ts instead of terrain.ts; client JS 1,851,125 B (+743 B over phase base, cap +4,096 B)
+- [Phase 15]: 15-11: the /photos light table is the Zermatt series via seriesInput(LIGHT_TABLE_REGION); region-series.test.ts keeps other regions off it
 
 ### Pending Todos
 
@@ -263,6 +267,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-14T21:56:34.479Z
-Stopped at: Completed 15-10-PLAN.md
+Last session: 2026-11-14T22:11:22.594Z
+Stopped at: Completed 15-11-PLAN.md
 Resume file: None
