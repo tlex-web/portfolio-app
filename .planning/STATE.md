@@ -4,17 +4,17 @@ milestone: v2.1
 milestone_name: Survey Expansion
 current_phase: 14
 current_phase_name: UI Fixes & Terminal Controls
-status: executing
-stopped_at: Completed 14-07-PLAN.md
-last_updated: "2026-11-14T12:39:57.834Z"
+status: verifying
+stopped_at: Completed 14-08-PLAN.md
+last_updated: "2026-11-14T14:11:15.386Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 14 execution started
-state_head: 2c69d4cd7681c501b2e88d94dcb48a72a77afa9c
+state_head: 475c2ad7db99c4d2c690d00d5d474cf1df4f87b4
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 30
-  completed_plans: 29
+  completed_plans: 30
   percent: 14
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-11-14)
 
 Phase: 14 (UI Fixes & Terminal Controls) — EXECUTING
 Plan: 8 of 8
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-11-14 — Phase 14 execution started
 
 Progress: [█░░░░░░░░░] 14%
@@ -83,6 +83,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 14 P05 | 15 min | 2 tasks | 5 files |
 | Phase 14 P06 | 9 min | 2 tasks | 4 files |
 | Phase 14 P07 | 12 min | 2 tasks | 4 files |
+| Phase 14 P08 | 90min | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -168,6 +169,9 @@ Recent decisions affecting current work:
 - [Phase 14]: 14-07: ledger rows #6 (07 WR-06, SHELL-07 49b8fe1) and #30 (10 IN-01, D-12 d6873c8, D-22 945d235) written back as done in 13-LEDGER-TRIAGE.md and the archived 07 and 10 disposition tables; enums, Owner and Tim cells unchanged (WR-05 precedent); write-back d78c251
 - [Phase 14]: 14-07: the wave-merge gate caught the photos-sweep E5 row still expecting the pre-D-22 Escape order; step 6 rewritten in place (accc7e5), no app change. Tip green: lint, type-check, Jest 1795 + guard:tests (2392 vs 2243), 592 e2e in Chromium (334) and Firefox (258)
 - [Phase 14]: 14-07: declared PNG set for 14-08: menu/375-current-focus (new), home/{768,1440}-ascent-{start,waypoint-2,summit} plus home/{768,1440}-reduced if the band shows, box/{375,768,1440}-reduced; no home/375; check-snapshot-commit --allow menu --allow home --allow box
+- [Phase 14]: 14-08: WebKit LBOX-08 passed on the first ci/14-08 push; the second-frame re-reveal contingency was not applied (LightboxDialog.tsx untouched)
+- [Phase 14]: 14-08: re-baseline changed 11 PNGs and added 1 (menu/375-current-focus), all inside the declared menu/home/box set; Tim committed them (55160a4) and CI OK passed on it (run 43600436335)
+- [Phase 14]: 14-08: no Deployment Checks proof recorded (D-20); ci/14-08 is throwaway and the phase branch is pushed later by /gsd-ship
 
 ### Pending Todos
 
@@ -220,6 +224,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-14T12:39:57.764Z
-Stopped at: Completed 14-07-PLAN.md
+Last session: 2026-11-14T14:11:15.315Z
+Stopped at: Completed 14-08-PLAN.md
 Resume file: None

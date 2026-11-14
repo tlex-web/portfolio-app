@@ -136,7 +136,7 @@ Plans:
   3. Every altimeter rail tick label keeps at least 4.5:1 contrast over the live canvas and over the poster at every breakpoint, and the rail scrim covers the full label run.
   4. After stepping in the lightbox and closing it with Escape, focus returns to the current photo's visible trigger and never lands off-screen, and a regression test holds this before Phase 18 rewrites the lightbox.
   5. The terminal demo has previous and next step buttons and a static transcript in a disclosure that is open by default under reduced motion.
-**Plans**: 7/8 plans executed in 8 waves (serial: every plan runs the production e2e server on port 3000)
+**Plans**: 8/8 plans executed in 8 waves (serial: every plan runs the production e2e server on port 3000)
 
 Plans:
 **Wave 1**
@@ -161,7 +161,7 @@ Plans:
 - [x] 14-07-PLAN.md — Ledger write-back (rows #6 and #30) and the full local gate with the declared PNG list
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 14-08-PLAN.md — With Tim's approval: CI on ci/14-08 (WebKit contingency), one visual re-baseline, Tim commits the PNGs
+- [x] 14-08-PLAN.md — With Tim's approval: CI on ci/14-08 (WebKit contingency), one visual re-baseline, Tim commits the PNGs
 **UI hint**: yes
 **UI-SPEC**: Required, short: the terminal step buttons and transcript disclosure, the rail scrim and the menu focus-ring treatment.
 **Research**: Not needed (small, well-understood fixes). Diagnose the Escape-focus root cause before fixing it; it was not diagnosed at 12-UAT.
@@ -292,7 +292,7 @@ Plans:
 | 11. Engineering & Roadmap | v2.0 | 19/19 | Complete | 2026-11-02 |
 | 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 34/34 | Complete | 2026-11-05 |
 | 13. Repo Safety & Test Debt | v2.1 | 22/22 | Complete    | 2026-11-14 |
-| 14. UI Fixes & Terminal Controls | v2.1 | 7/8 | In Progress | - |
+| 14. UI Fixes & Terminal Controls | v2.1 | 8/8 | In Progress | - |
 | 15. Region & Plate Data Model | v2.1 | 0/TBD | Not started | - |
 | 16. New Regions & Alps Overview Data | v2.1 | 0/TBD | Not started | - |
 | 17. Region Routes, SEO & Structured Data | v2.1 | 0/TBD | Not started | - |

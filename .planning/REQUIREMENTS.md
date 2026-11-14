@@ -24,11 +24,11 @@ Requirements for milestone v2.1 Survey Expansion. Each maps to exactly one roadm
 
 ### Shell & UI Fixes
 
-- [ ] **SHELL-07**: Tapping the current page's link in the mobile menu closes the menu
-- [ ] **SHELL-08**: Focus rings in the mobile menu are fully visible at 375 px, never clipped at the sides
-- [ ] **HOME-09**: Home has no horizontal overflow at 375 px, fixed at the overflowing element (not by hiding overflow on `body` or `main`)
-- [ ] **HOME-10**: Every altimeter rail tick label keeps at least 4.5:1 contrast over the live canvas as well as the poster at every breakpoint; the rail scrim covers the full label run (the 2,760 m label measured 4.81:1 at 768 px)
-- [ ] **LBOX-08**: After stepping in the lightbox and closing it with Escape, focus returns to the current photo's visible trigger and never lands off-screen, with a regression test
+- [x] **SHELL-07**: Tapping the current page's link in the mobile menu closes the menu
+- [x] **SHELL-08**: Focus rings in the mobile menu are fully visible at 375 px, never clipped at the sides
+- [x] **HOME-09**: Home has no horizontal overflow at 375 px, fixed at the overflowing element (not by hiding overflow on `body` or `main`)
+- [x] **HOME-10**: Every altimeter rail tick label keeps at least 4.5:1 contrast over the live canvas as well as the poster at every breakpoint; the rail scrim covers the full label run (the 2,760 m label measured 4.81:1 at 768 px)
+- [x] **LBOX-08**: After stepping in the lightbox and closing it with Escape, focus returns to the current photo's visible trigger and never lands off-screen, with a regression test
 
 ### Data & Terrain
 
@@ -66,7 +66,7 @@ Requirements for milestone v2.1 Survey Expansion. Each maps to exactly one roadm
 
 ### Engineering & Platform
 
-- [ ] **ENG-06**: The terminal demo has previous and next step buttons and a static transcript in a disclosure that is open by default under reduced motion (ENG-F1)
+- [x] **ENG-06**: The terminal demo has previous and next step buttons and a static transcript in a disclosure that is open by default under reduced motion (ENG-F1)
 - [ ] **SEO-04**: Pages carry JSON-LD structured data (Person and WebSite site-wide, ImageObject on photo pages, an image gallery on region pages, the projects on their case studies) with creator, copyright notice and credit text, no `license` property, and no coordinates finer than the precision shown on the page (PLAT-F1)
 - [ ] **EDGE-03**: The offline page's list of saved pages includes region pages and the new photo pages (PLAT-F2 shipped in v2.0 as `SavedPages`; this extends its catalog)
 
@@ -127,11 +127,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VERIFY-06 | Phase 13 | Complete |
 | VERIFY-07 | Phase 13 | Complete |
 | CLEAN-01 | Phase 13 | Complete |
-| SHELL-07 | Phase 14 | Pending |
-| SHELL-08 | Phase 14 | Pending |
-| HOME-09 | Phase 14 | Pending |
-| HOME-10 | Phase 14 | Pending |
-| LBOX-08 | Phase 14 | Pending |
+| SHELL-07 | Phase 14 | Complete |
+| SHELL-08 | Phase 14 | Complete |
+| HOME-09 | Phase 14 | Complete |
+| HOME-10 | Phase 14 | Complete |
+| LBOX-08 | Phase 14 | Complete |
 | DATA-09 | Phase 15 | Pending |
 | DATA-10 | Phase 15 | Pending |
 | DATA-11 | Phase 15 | Pending |
@@ -154,7 +154,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VIDEO-01 | Phase 19 | Pending |
 | VIDEO-02 | Phase 19 | Pending |
 | VIDEO-03 | Phase 19 | Pending |
-| ENG-06 | Phase 14 | Pending |
+| ENG-06 | Phase 14 | Complete |
 | SEO-04 | Phase 17 | Pending |
 | EDGE-03 | Phase 17 | Pending |
 
