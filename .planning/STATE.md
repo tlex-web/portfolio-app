@@ -2,44 +2,44 @@
 gsd_state_version: "1.0"
 milestone: v2.1
 milestone_name: Survey Expansion
-current_phase: 13
-current_phase_name: Repo Safety & Test Debt
-status: verifying
-stopped_at: Completed 13-22-PLAN.md
-last_updated: "2026-11-13T20:42:46.945Z"
-last_activity: 2026-11-13
-last_activity_desc: Phase 13 execution started
-state_head: 06c9280fab2ef65d54c125c68c1a0210dddc34b0
+current_phase: 14
+current_phase_name: UI Fixes & Terminal Controls
+status: planning
+stopped_at: Phase 13 complete, ready to plan Phase 14
+last_updated: "2026-11-14T00:08:05.090Z"
+last_activity: 2026-11-14
+last_activity_desc: Phase 13 complete, transitioned to Phase 14
+state_head: 66958a6699e517fccdcf4c3122e8f796a16b090d
 progress:
   total_phases: 7
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 22
   completed_plans: 22
-  percent: 0
+  percent: 14
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-11-12)
+See: .planning/PROJECT.md (updated 2026-11-14)
 
 **Core value:** A portfolio that is visually memorable and distinctive (not another generic Tailwind site) while being stable and well-maintained under the hood.
-**Current focus:** Phase 13 — Repo Safety & Test Debt
+**Current focus:** Phase 14 — UI Fixes & Terminal Controls
 
 ## Current Position
 
-Phase: 13 (Repo Safety & Test Debt) — EXECUTING
-Plan: 22 of 22
-Status: Phase complete — ready for verification
-Last activity: 2026-11-13 — Phase 13 execution started
+Phase: 14 — UI Fixes & Terminal Controls
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-11-14 — Phase 13 complete, transitioned to Phase 14
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░] 14%
 
 ## Performance Metrics
 
 **Velocity (v2.1):**
-- Total plans completed: 0
+- Total plans completed: 22
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -47,7 +47,7 @@ Progress: [░░░░░░░░░░] 0%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 13 | 22 | - | - |
 
 *Updated after each plan completion. v2.0: 128 plans in 6 phases, about 70 hours of plan execution; the per-plan table is in `.planning/milestones/v2.0-STATE.md`.*
 **Per-Plan Metrics:**
@@ -141,6 +141,7 @@ Recent decisions affecting current work:
 - [Phase 13]: 13-22: VERIFY-07 closed: all 44 ledger rows final in 13-LEDGER-TRIAGE.md (Final column) and in the four archived disposition files (fixed 32 with resolvable SHAs, deferred 9 with owners, skipped 3 with approved reasons); every final enum equals the approved Enum cell
 - [Phase 13]: 13-22: hand-overs: ROADMAP scope notes under Phases 14 (07 WR-06/SHELL-07, 10 IN-01, Deployment Checks proof fallback), 15 (GUARD-10, guard:tests suggestion, scripts/README 47 pairs), 17 (10 IN-03, E2E duration trend), 18 (10 IN-04, IN-05, IN-08, IN-09 switchTo wait); deferred-items.md names owner and trigger for the Firefox tag removal, limit-probe output, relay long-mirror path, Deployment Checks proof, npm audit decision and ci/13-pw165; no new requirement
 - [Phase 13]: 13-22: PROJECT.md Key Decisions: main ruleset 27216079, [ci skip] relay option A (a-confirmed), keep-alive monitor (60-day schedule pause, ~1 h Hobby logs), docs-only fast path; production gate recorded as Deployment Checks on CI OK (Tim, 2026-11-13) with the live proof pending the phase-close merge
+- [Phase 13]: 13-UAT (2026-11-14, 3/3 pass): Deployment Checks proven live on phase-close merge aef25e2 (PR #147): Vercel "Waiting for checks to complete" from 23:28:02Z, CI OK success 23:55:05Z, deployment completed 23:55:07Z. Tim passed test 2 with #140 still open (main carries @playwright/test 1.65.0; Dependabot runs weekly, Monday 09:00) and test 3 before any code-changing [ci skip] head had run the long-mirror path
 
 ### Pending Todos
 
@@ -148,8 +149,8 @@ None carried from v2.0.
 
 ### Blockers/Concerns
 
-- [Phase 13] The production Upstash names are confirmed (13-05: the complete `UPSTASH_REDIS_REST_*` pair is set in Production). What's left for GUARD-09 is the live 429 proof: `PROD_FORM_LIMIT=1 npm run test:prod-form` shows it but locks the IP out for up to an hour (13-15/13-17).
-- [Phase 13] `main` has no branch protection or required checks, so a red PR can merge and Vercel deploys it; `[ci skip]` commits produce no checks (GUARD-07, GUARD-08). Tim applies the settings.
+- [Phase 13] Carried, not blocking: the relay's ~40-minute long-mirror wait has not been seen live (watch the first code-changing `[ci skip]` PR); Dependabot PR #140 should close on its next run; the `@firefox-43967` tags and `FIREFOX_INVERT` come out after the Playwright release with the fixing Firefox roll (owners in `13-repo-safety-test-debt/deferred-items.md`).
+- [Phase 13] The UAT, verification and transition commits after `98f2186` are local on `gsd/phase-13-repo-safety-test-debt`, whose remote branch was deleted by the #147 merge. They reach `main` only through a new PR, which needs Tim's ask.
 - [Phase 16] Needs Tim's inputs before planning can finish: the launch regions (inside the footprint, at least one in Italy or Austria), the new originals and the coarse-location choice per photo.
 - [Phase 19] Needs a graded drone clip from Tim before any byte budget is fixed.
 
@@ -193,6 +194,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-13T20:42:46.905Z
-Stopped at: Completed 13-22-PLAN.md
+Last session: 2026-11-14T00:15:00Z
+Stopped at: Phase 13 complete (UAT 3/3, verification passed), ready to discuss Phase 14
 Resume file: None
