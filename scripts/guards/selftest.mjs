@@ -796,9 +796,10 @@ const PHOTO_DATA_INPUTS = [
 ];
 /**
  * Copies the photo data build's inputs into a fresh temp root. `edit`, when
- * given, receives the parsed { sidecar, corrections } JSON and mutates it in
- * place; the result is written back and must differ from the original. Nested
- * one level down so the cleanup loop's path.dirname removes the mkdtemp directory.
+ * given, receives the parsed { sidecar, corrections, photoMap, regions, plates }
+ * JSON and mutates it in place; the result is written back and must differ from
+ * the original. Nested one level down so the cleanup loop's path.dirname removes
+ * the mkdtemp directory.
  */
 function tempPhotoDataRoot(edit) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
@@ -808,7 +809,13 @@ function tempPhotoDataRoot(edit) {
     fs.copyFileSync(path.join(repoRoot, rel), path.join(root, rel));
   }
   if (edit) {
-    const files = { sidecar: PHOTO_DATA_INPUTS[0], corrections: PHOTO_DATA_INPUTS[1] };
+    const files = {
+      sidecar: 'data/photos/exif-sidecar.json',
+      corrections: 'data/photos/corrections.json',
+      photoMap: 'data/photos/photo-map.json',
+      regions: 'data/regions/regions.json',
+      plates: 'data/terrain/plates.json',
+    };
     const before = Object.fromEntries(Object.entries(files).map(([k, rel]) => [k, fs.readFileSync(path.join(root, rel), 'utf-8')]));
     const data = Object.fromEntries(Object.entries(before).map(([k, text]) => [k, JSON.parse(text)]));
     edit(data);
@@ -828,10 +835,48 @@ const sidecarEntry = (sidecar, id) => {
   if (!entry) throw new Error(`selftest: ${id} is not in the sidecar`);
   return entry;
 };
+/** The photo-map record `id`, or a throw (a fixture edit must never miss silently). */
+const mapRecord = (photoMap, id) => {
+  const record = photoMap.photos[id];
+  if (!record) throw new Error(`selftest: ${id} is not in the photo map`);
+  return record;
+};
+/** The region `id` in the registry copy, or a throw. */
+const regionEntry = (regions, id) => {
+  const region = regions.regions.find((r) => r.id === id);
+  if (!region) throw new Error(`selftest: region ${id} is not in the registry`);
+  return region;
+};
+/**
+ * Adds a photo-map record and rebuilds `photos` sorted by key, so the schema's
+ * sorted-keys refine never fires and the case fails on the rule it names.
+ */
+function addMapRecord(photoMap, id, record) {
+  if (photoMap.photos[id]) throw new Error(`selftest: ${id} is already in the photo map`);
+  const entries = [...Object.entries(photoMap.photos), [id, record]];
+  entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  photoMap.photos = Object.fromEntries(entries);
+}
+/** Inserts a region at its sorted position, for the same reason. */
+function addRegion(regions, region) {
+  if (regions.regions.some((r) => r.id === region.id)) throw new Error(`selftest: region ${region.id} already exists`);
+  regions.regions.push(region);
+  regions.regions.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+/** Fails a case whose output names a sort refine: the edit broke the order, not the rule it tests. */
+const noSortRefine = (output) =>
+  /sorted ascending/.test(output) ? 'the output names a sorted-order refine; the fixture edit broke the order' : null;
 let photoDataControlRoot = null;
 let photoDataOffsetRoot = null;
 let photoDataGpsRoot = null;
 let photoDataOffPlateRoot = null;
+let photoMapMissingRoot = null;
+let photoMapOrphanRoot = null;
+let photoMapDuplicateRoot = null;
+let photoMapUnknownRegionRoot = null;
+let photoMapUnknownPlateRoot = null;
+let photoMapCountryRoot = null;
+let photoMapMovedRoot = null;
 
 /**
  * Runs git in a temp fixture repo with a fixed identity (no global config needed)
@@ -2442,6 +2487,117 @@ const cases = [
     expectExit: 1,
     expectOutput: ['r004-011: position lies outside the DEM extent', 'photos:build: stale'],
   },
+  // 15-06 (DATA-10, D-01 to D-05): the photo map and the region registry. Write mode
+  // (no --check) except the stale case: a failing build writes nothing.
+  {
+    name: 'photos:build: a sidecar photo with no photo-map record fails',
+    guard: PHOTO_DATA,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: [],
+    setup: () => {
+      photoMapMissingRoot = tempPhotoDataRoot(({ photoMap }) => {
+        mapRecord(photoMap, 'img-0629');
+        delete photoMap.photos['img-0629'];
+      });
+      return ['--root', photoMapMissingRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['photos:build: add a record for IMG_0629', '(img-0629) to data/photos/photo-map.json', 'photos:build: nothing written'],
+    check: noSortRefine,
+  },
+  {
+    name: 'photos:build: a photo-map record with no sidecar entry fails',
+    guard: PHOTO_DATA,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: [],
+    setup: () => {
+      photoMapOrphanRoot = tempPhotoDataRoot(({ photoMap }) => {
+        // Sorted between img-0662 and r004-011.
+        addMapRecord(photoMap, 'img-9999', { file: 'IMG_9999.jpg', region: 'zermatt', country: 'CH' });
+      });
+      return ['--root', photoMapOrphanRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['data/photos/photo-map.json has img-9999, but the sidecar has no entry', 'photos:build: nothing written'],
+    check: noSortRefine,
+  },
+  {
+    name: 'photos:build: two records naming one file fail',
+    guard: PHOTO_DATA,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: [],
+    setup: () => {
+      photoMapDuplicateRoot = tempPhotoDataRoot(({ photoMap }) => {
+        mapRecord(photoMap, 'img-0629').file = mapRecord(photoMap, 'img-0605').file;
+      });
+      return ['--root', photoMapDuplicateRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['is named by both img-0605 and img-0629; one original has one record', 'photos:build: nothing written'],
+    check: noSortRefine,
+  },
+  {
+    name: 'photos:build: an unknown region fails',
+    guard: PHOTO_DATA,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: [],
+    setup: () => {
+      photoMapUnknownRegionRoot = tempPhotoDataRoot(({ photoMap }) => {
+        mapRecord(photoMap, 'img-0662').region = 'saas';
+      });
+      return ['--root', photoMapUnknownRegionRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['img-0662: region saas is not in data/regions/regions.json', 'photos:build: nothing written'],
+    check: noSortRefine,
+  },
+  {
+    name: 'photos:build: a region on an unknown plate fails',
+    guard: PHOTO_DATA,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: [],
+    setup: () => {
+      photoMapUnknownPlateRoot = tempPhotoDataRoot(({ regions }) => {
+        regionEntry(regions, 'zermatt').plate = 'monte-rosa';
+      });
+      return ['--root', photoMapUnknownPlateRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['region zermatt: plate monte-rosa is not in data/terrain/plates.json', 'photos:build: nothing written'],
+    check: noSortRefine,
+  },
+  {
+    name: 'photos:build: a lowercase country fails the closed enum',
+    guard: PHOTO_DATA,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: [],
+    setup: () => {
+      photoMapCountryRoot = tempPhotoDataRoot(({ photoMap }) => {
+        mapRecord(photoMap, 'img-0605').country = 'ch';
+      });
+      return ['--root', photoMapCountryRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['photos:build: schema photos.img-0605.country:', 'photos:build: 1 schema violations', 'photos:build: nothing written'],
+    check: noSortRefine,
+  },
+  {
+    name: 'photos:build: a moved photo makes photos.ts stale',
+    guard: PHOTO_DATA,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--check'],
+    setup: () => {
+      photoMapMovedRoot = tempPhotoDataRoot(({ photoMap, regions }) => {
+        // Sorted before zermatt; same plate, so only the region in photos.ts changes.
+        addRegion(regions, { id: 'saas', name: 'Saas', plate: 'matterhorn' });
+        mapRecord(photoMap, 'img-0662').region = 'saas';
+      });
+      return ['--root', photoMapMovedRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['photos:build: data/generated/photos.ts differs from a fresh build', 'photos:build: stale'],
+    check: noSortRefine,
+  },
   {
     name: 'G6 photos:derive: an undecodable source after a valid one exits 1 and leaves every file in place (WR-05)',
     guard: PHOTO_DERIVE,
@@ -2567,7 +2723,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDeriveRoot, terrainFixtureRoot, terrainMissingRoot, terrainRemoveRoot, ...ciGateTempRoots]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, terrainFixtureRoot, terrainMissingRoot, terrainRemoveRoot, ...ciGateTempRoots]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 

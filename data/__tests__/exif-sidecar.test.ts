@@ -102,6 +102,16 @@ describe('photo schema boundaries', () => {
     expect(ExifSidecarEntry.safeParse({ ...entry, city: 'Zermatt' }).success).toBe(false);
   });
 
+  test('the sidecar schema stays closed to camera serials and XMP (PITFALLS "Drone material", T-15-09)', () => {
+    const entry = photo('img-0605');
+    expect(ExifSidecarEntry.safeParse(entry).success).toBe(true);
+    expect(ExifSidecarEntry.safeParse({ ...entry, serial: 'x' }).success).toBe(false);
+    expect(
+      ExifSidecarEntry.safeParse({ ...entry, xmp: { GPSLatitude: 46.0, FlightYawDegree: 12 } })
+        .success
+    ).toBe(false);
+  });
+
   test('ExifSidecar rejects duplicate or unsorted ids', () => {
     const [a, b] = sidecar.photos;
     expect(ExifSidecar.safeParse({ schemaVersion: 1, photos: [b, a] }).success).toBe(false);
