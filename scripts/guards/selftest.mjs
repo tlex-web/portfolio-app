@@ -746,6 +746,11 @@ function tempCrlfRoot(edit) {
 }
 const ALL_THREE_FLOW = 'on: [push, pull_request, workflow_dispatch]\n\n';
 const RELAY_ON_TARGET = 'on:\n  pull_request_target:\n    branches: [main]\n\n';
+/** The relay job's `steps:` line (group 1), just before its first step. */
+const RELAY_STEPS = /^( {4}steps:\r?\n)(?= {6}- name: Nothing to relay)/m;
+/** A relay action step (rule 17) whose `with:` input `script:` is `script`. */
+const relayActionStep = (script) =>
+  `      - name: Comment on the PR\n        uses: actions/github-script@v7\n        with:\n          script: ${script}\n`;
 const ciGateCase = (name, makeRoot, expectExit, expectOutput) => ({
   name: `ci-gate: ${name}`,
   guard: CI_GATE,
@@ -824,6 +829,24 @@ const CI_GATE_PARSER_CASES = [
     () => tempRelayEdit((text) => text.replace(ON_BLOCK, () => 'on: [pull_request_target, push]\n\n')),
     1,
     ['relay may trigger only on pull_request_target (on: declares pull_request_target, push)'],
+  ),
+  ciGateCase(
+    'rule 17: a relay action step with an expression in with: fails (13 IN-02)',
+    () => tempRelayEdit((text) => text.replace(RELAY_STEPS, `$1${relayActionStep('${{ github.event.pull_request.title }}')}`)),
+    1,
+    ['ci-skip-relay.yml: expression in an action input (line 111: script)', 'never through with:', 'ci-gate: 1 failure(s)'],
+  ),
+  ciGateCase(
+    'rule 17: a relay action step with literal with: values passes',
+    () => tempRelayEdit((text) => text.replace(RELAY_STEPS, `$1${relayActionStep("console.log('ok')")}`)),
+    0,
+    ['ci-gate: OK'],
+  ),
+  ciGateCase(
+    'a relay with: block scalar holding ${{ on a "#" line fails rule 17 (raw lines)',
+    () => tempRelayEdit((text) => text.replace(RELAY_STEPS, `$1${relayActionStep('|\n            # ${{ github.event.pull_request.title }}\n            core.info(1)')}`)),
+    1,
+    ['ci-skip-relay.yml: expression in an action input (line 112: script)', 'ci-gate: 1 failure(s)'],
   ),
 ];
 

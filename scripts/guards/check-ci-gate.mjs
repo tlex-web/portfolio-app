@@ -63,6 +63,13 @@
  *      default, so a hung step holds ci.yml's CI OK pending for six hours,
  *      while the relay's CI OK gives up at its own 100 minutes)
  *
+ * The relay again, for action steps (13 IN-02):
+ *  17. no `${{` in a `with:` value of any non-checkout `uses:` step or job
+ *      (raw lines, so a block scalar and a value continued over lines count):
+ *      GitHub substitutes an action input before the action runs, so an event
+ *      field there (say `script:` of actions/github-script) is the same
+ *      injection class as rule 12; event fields go through env: instead
+ *
  * Usage:
  *   node scripts/guards/check-ci-gate.mjs [--root <dir>]
  *   (Runs from `npm run lint` via `npm run guard:ci`)
@@ -567,11 +574,87 @@ const CHECKOUT_COMMAND = /(^|[\s;&|(])(git\s+(clone|checkout|switch|fetch|pull|w
 const WRITE_SCOPE = /(^|[\s{,])['"]?([A-Za-z-]+)['"]?\s*:\s*['"]?write\b/g;
 
 /**
- * 11-15. The skip-marker relay (D-06 option A) runs under pull_request_target,
+ * A mapping key line, `key:` or `- key:`: { key, column, dash, value }, where
+ * `column` is the key's own column (after a `- ` list marker), or null.
+ */
+function keyLine(line) {
+  const m = /^(\s*)(-\s+)?(['"]?)([A-Za-z0-9_-]+)\3\s*:(?:\s+(.*)|\s*)$/.exec(line);
+  if (!m) return null;
+  return { key: m[4], column: m[1].length + (m[2]?.length ?? 0), dash: Boolean(m[2]), value: (m[5] ?? '').trim() };
+}
+
+/**
+ * 17. The `with:` inputs of every `uses:` step (or reusable-workflow job) that
+ * is not a checkout, as [{ line, key }] for each raw line holding `${{`.
+ * Structure is read from the comment-stripped `lines`; values from `raw`, so a
+ * `#` inside a block scalar never hides an expression.
+ */
+function findExpressionInputs(lines, raw) {
+  const found = [];
+  const firstChar = (line) => line.trimStart()[0];
+  lines.forEach((line, i) => {
+    const uses = keyLine(line);
+    if (!uses || uses.key !== 'uses' || USES_CHECKOUT.test(line)) return;
+    const K = uses.column;
+    // The mapping that holds this uses: back to its `- ` line (a step) or its
+    // first key (a job), and forward to the first line outside it.
+    let start = i;
+    if (!uses.dash) {
+      for (let j = i - 1; j >= 0; j--) {
+        if (lines[j].trim() === '') continue;
+        const ind = indentOf(lines[j]);
+        const k = keyLine(lines[j]);
+        if (k?.dash && k.column === K) {
+          start = j;
+          break;
+        }
+        if (ind > K || (ind === K && firstChar(lines[j]) !== '-')) {
+          start = j;
+          continue;
+        }
+        break;
+      }
+    }
+    let end = i;
+    for (let j = i + 1; j < lines.length; j++) {
+      if (lines[j].trim() === '') continue;
+      const ind = indentOf(lines[j]);
+      if (ind > K || (ind === K && firstChar(lines[j]) !== '-')) {
+        end = j;
+        continue;
+      }
+      break;
+    }
+    for (let w = start; w <= end; w++) {
+      const k = keyLine(lines[w]);
+      if (!k || k.key !== 'with' || k.column !== K) continue;
+      if ((raw[w] ?? '').includes('${{')) found.push({ line: w, key: 'with' });
+      let childIndent = null;
+      let current = 'with';
+      for (let j = w + 1; j < raw.length; j++) {
+        const r = raw[j] ?? '';
+        if (r.trim() === '') continue;
+        if (indentOf(r) <= K) {
+          if (firstChar(r) === '#') continue; // a comment never ends the mapping
+          break;
+        }
+        if (childIndent === null && firstChar(r) !== '#') childIndent = indentOf(r);
+        const child = indentOf(r) === childIndent ? keyLine(r) : null;
+        if (child) current = child.key;
+        if (r.includes('${{')) found.push({ line: j, key: current });
+      }
+    }
+  });
+  return found;
+}
+
+/**
+ * 11-15 and 17. The skip-marker relay (D-06 option A) runs under pull_request_target,
  * with the base repository's token, on possibly untrusted PRs. When the file
  * exists it must never check out or run PR code, never interpolate an
- * expression into a shell, never skip its CI OK job by `if:`, run on no other
- * event, and hold no token scope beyond `actions: write` on its CI OK job.
+ * expression into a shell or an action input, never skip its CI OK job by
+ * `if:`, run on no other event, and hold no token scope beyond
+ * `actions: write` on its CI OK job.
  */
 function checkRelay({ rel, lines, jobs }) {
   const raw = readRawLines(rel) ?? [];
@@ -598,6 +681,12 @@ function checkRelay({ rel, lines, jobs }) {
         fail(rel, `expression inside a run block (line ${i + 1}); pass event fields through env: and quote them`);
       }
     }
+  }
+
+  // 17. no expression in an action input (GitHub substitutes it before the
+  // action runs, like rule 12; a checkout step is rule 11's failure already)
+  for (const { line, key } of findExpressionInputs(lines, raw)) {
+    fail(rel, `expression in an action input (line ${line + 1}: ${key}); a pull_request_target relay passes event fields through env:, never through with:`);
   }
 
   // 13. the job whose name can be CI OK has no job-level if:
