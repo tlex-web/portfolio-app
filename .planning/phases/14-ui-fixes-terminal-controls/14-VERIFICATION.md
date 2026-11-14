@@ -1,7 +1,7 @@
 ---
 phase: 14-ui-fixes-terminal-controls
 verified: 2026-11-14T16:00:00Z
-status: human_needed
+status: passed
 score: 5/5 must-haves verified
 covered_files:
   - .planning/phases/14-ui-fixes-terminal-controls/14-01-PLAN.md

@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v2.1
 milestone_name: Survey Expansion
-current_phase: 14
-current_phase_name: UI Fixes & Terminal Controls
-status: verifying
-stopped_at: Completed 14-08-PLAN.md
-last_updated: "2026-11-14T14:11:15.386Z"
+current_phase: 15
+current_phase_name: Region & Plate Data Model
+status: planning
+stopped_at: Phase 14 complete, ready to plan Phase 15
+last_updated: "2026-11-14T16:04:31.121Z"
 last_activity: 2026-11-14
-last_activity_desc: Phase 14 execution started
-state_head: 475c2ad7db99c4d2c690d00d5d474cf1df4f87b4
+last_activity_desc: Phase 14 complete, transitioned to Phase 15
+state_head: e000dba9b042d4d892ff604581267702d2ce1e3f
 progress:
   total_phases: 7
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 30
   completed_plans: 30
-  percent: 14
+  percent: 29
 ---
 
 # Project State
@@ -25,21 +25,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-11-14)
 
 **Core value:** A portfolio that is visually memorable and distinctive (not another generic Tailwind site) while being stable and well-maintained under the hood.
-**Current focus:** Phase 14 — UI Fixes & Terminal Controls
+**Current focus:** Phase 15 — Region & Plate Data Model
 
 ## Current Position
 
-Phase: 14 (UI Fixes & Terminal Controls) — EXECUTING
-Plan: 8 of 8
-Status: Phase complete — ready for verification
-Last activity: 2026-11-14 — Phase 14 execution started
+Phase: 15 — Region & Plate Data Model
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-11-14 — Phase 14 complete, transitioned to Phase 15
 
-Progress: [█░░░░░░░░░] 14%
+Progress: [███░░░░░░░] 29%
 
 ## Performance Metrics
 
 **Velocity (v2.1):**
-- Total plans completed: 22
+- Total plans completed: 30
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -48,6 +48,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 13 | 22 | - | - |
+| 14 | 8 | - | - |
 
 *Updated after each plan completion. v2.0: 128 plans in 6 phases, about 70 hours of plan execution; the per-plan table is in `.planning/milestones/v2.0-STATE.md`.*
 **Per-Plan Metrics:**
@@ -172,6 +173,7 @@ Recent decisions affecting current work:
 - [Phase 14]: 14-08: WebKit LBOX-08 passed on the first ci/14-08 push; the second-frame re-reveal contingency was not applied (LightboxDialog.tsx untouched)
 - [Phase 14]: 14-08: re-baseline changed 11 PNGs and added 1 (menu/375-current-focus), all inside the declared menu/home/box set; Tim committed them (55160a4) and CI OK passed on it (run 43600436335)
 - [Phase 14]: 14-08: no Deployment Checks proof recorded (D-20); ci/14-08 is throwaway and the phase branch is pushed later by /gsd-ship
+- [Phase 14]: 14-UAT passed 2026-11-14 (Tim asked Claude to run it): the 12-UAT test 3 keyboard re-check, 20/20 in Edge and Firefox on next dev; VERIFICATION canonicalized human_needed → passed and the phase transitioned to 15
 
 ### Pending Todos
 
@@ -181,6 +183,8 @@ None carried from v2.0.
 
 - [Phase 13] Carried, not blocking: the relay's ~40-minute long-mirror wait has not been seen live (watch the first code-changing `[ci skip]` PR); Dependabot PR #140 should close on its next run; the `@firefox-43967` tags and `FIREFOX_INVERT` come out after the Playwright release with the fixing Firefox roll (owners in `13-repo-safety-test-debt/deferred-items.md`).
 - [Phase 13] The UAT, verification and transition commits after `98f2186` are local on `gsd/phase-13-repo-safety-test-debt`, whose remote branch was deleted by the #147 merge. They reach `main` only through a new PR, which needs Tim's ask.
+- [Phase 14] The phase branch `gsd/phase-14-ui-fixes-terminal-controls` has no upstream; its commits (plans, UAT, verification, transition) reach `main` only through `/gsd-ship 14`, which needs Tim's ask.
+- [Phase 14] Open, Tim to decide: Escape from the open mobile menu scrolls the page up when scrolled down (`SiteNav.tsx` Escape handler lacks `preventScroll`; one-word fix plus a scroll assertion, see `14-ui-fixes-terminal-controls/deferred-items.md`). Six code-review findings are deferred to Phase 15 (`14-REVIEW-DISPOSITION.md`).
 - [Phase 16] Needs Tim's inputs before planning can finish: the launch regions (inside the footprint, at least one in Italy or Austria), the new originals and the coarse-location choice per photo.
 - [Phase 19] Needs a graded drone clip from Tim before any byte budget is fixed.
 
@@ -224,6 +228,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-14T14:11:15.315Z
-Stopped at: Completed 14-08-PLAN.md
+Last session: 2026-11-14T16:10:00Z
+Stopped at: Phase 14 complete, ready to plan Phase 15
 Resume file: None
