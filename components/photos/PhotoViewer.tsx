@@ -30,6 +30,7 @@ import { keyBelongsToChrome } from '@/components/site/SiteNav';
 import { site } from '@/data/site';
 import { cssEscape } from '@/lib/photos/css-escape';
 import { useLabelsOn } from '@/lib/photos/hotspot-pref';
+import { photoHref } from '@/lib/photos/routes';
 import { slugFromPath, stepIndex, swipeStep } from '@/lib/photos/stepping';
 import type { PhotoView } from '@/lib/photos/view-model';
 
@@ -238,7 +239,7 @@ export default function PhotoViewer({
       if (from < 0 || to === null) return;
       const { slug, title } = photos[to];
       lastWritten.current = slug;
-      window.history.replaceState(null, '', `/photos/${slug}`);
+      window.history.replaceState(null, '', photoHref(slug));
       // The lightbox learns the step at once: a browser Back close returns
       // focus by it, and usePathname can lag the replaceState (10-REVIEW WR-01).
       lightbox?.setShown(slug);
@@ -258,7 +259,7 @@ export default function PhotoViewer({
   // the next page's title is left alone, even before this effect is cleaned up.
   useEffect(() => {
     const wanted = `${current.title} · ${site.name}`;
-    const path = `/photos/${current.slug}`;
+    const path = photoHref(current.slug);
     const keep = () => {
       if (window.location.pathname === path && document.title !== wanted) document.title = wanted;
     };

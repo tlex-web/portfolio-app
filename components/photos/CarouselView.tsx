@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import CarouselControls from '@/components/photos/CarouselControls';
 import CarouselStepper, { CAROUSEL_FRAME } from '@/components/photos/CarouselStepper';
 import { LIGHTBOX_CLOSE_EVENT } from '@/components/photos/LightboxDialog';
+import { photoHref } from '@/lib/photos/routes';
 import { slugFromPath, stepIndex } from '@/lib/photos/stepping';
 import type { PhotoView } from '@/lib/photos/view-model';
 import { useAscentMode } from '@/lib/useAscentMode';
@@ -116,7 +117,7 @@ export default function CarouselView({ photos }: { photos: readonly PhotoView[] 
   };
 
   const onReady = useCallback(() => setReady(true), []);
-  const onOpen = (i: number) => router.push(`/photos/${photos[i].slug}`, { scroll: false });
+  const onOpen = (i: number) => router.push(photoHref(photos[i].slug), { scroll: false });
 
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;

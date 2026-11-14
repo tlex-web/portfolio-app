@@ -15,6 +15,7 @@ import {
   formatMetres,
   type CaptureLike,
 } from '@/lib/photo-format';
+import { photoHref } from '@/lib/photos/routes';
 
 /**
  * The one photo view-model (PHOTO-03, LBOX-01, LBOX-04, LBOX-07; D-05, D-07;
@@ -392,7 +393,7 @@ export function photoMetadata(slug: string): Metadata {
   return {
     title: view.title,
     description: `${view.title}: a photograph by ${site.name} from ${view.shortPlace} at ${view.altitudeLabel}, ${view.captureMonth}.`,
-    alternates: { canonical: `/photos/${view.slug}` },
+    alternates: { canonical: photoHref(view.slug) },
   };
 }
 

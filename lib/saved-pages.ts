@@ -17,7 +17,11 @@
  *    exact-URL cache match, so `/photos?view=grid` cached alone would not open
  *    `/photos`; when the bare path is cached too, the variant simply collapses
  *    into that one row. RSC (`_rsc`) entries drop the same way.
+ *
+ * The one import is photoHref (15 D-16). Its module reads the editorial copy
+ * only for a pure slug list, which the bundler drops from the client island.
  */
+import { photoHref } from '@/lib/photos/routes';
 
 export type SavedPageRow = {
   /** Same-origin path of the page, no query string. */
@@ -38,7 +42,7 @@ export type SavedPageSource = {
 export function savedPageCatalog({ nav, photos, projects }: SavedPageSource): readonly SavedPageRow[] {
   return [
     ...nav.map(({ label, href }) => ({ href, title: label })),
-    ...photos.map(({ slug, title }) => ({ href: `/photos/${slug}`, title, label: 'Photograph' as const })),
+    ...photos.map(({ slug, title }) => ({ href: photoHref(slug), title, label: 'Photograph' as const })),
     ...projects.map(({ slug, name }) => ({ href: `/projects/${slug}`, title: name, label: 'Project' as const })),
   ];
 }
