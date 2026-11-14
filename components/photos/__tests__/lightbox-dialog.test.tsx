@@ -8,6 +8,7 @@ import LightboxDialog, {
 } from '../LightboxDialog';
 import PhotoViewer from '../PhotoViewer';
 import { photoViews } from '@/lib/photos/view-model';
+import { HOTSPOT_PREF_KEY } from '@/lib/photos/hotspot-pref';
 
 /**
  * The lightbox shell in jsdom (LBOX-01; 10-RESEARCH Pitfall 11). jsdom has no
@@ -186,6 +187,46 @@ describe('LightboxDialog', () => {
       expect(mockRouter.back).not.toHaveBeenCalled();
     } finally {
       CSS.escape = escape;
+    }
+  });
+
+  it('hiding labels collapses the open callout; showing them again starts collapsed (D-12)', () => {
+    const view = photoViews.find((v) => v.id === 'img-0662')!;
+    try {
+      render(
+        <LightboxDialog labelledBy="photo-title">
+          <PhotoViewer variant="modal" photos={photoViews} initialSlug={view.slug} />
+        </LightboxDialog>
+      );
+      const key = screen.getByRole('list', { name: 'Labels', hidden: true });
+      const rows = () => within(key).getAllByRole('button', { hidden: true });
+      const expectAllCollapsed = () => {
+        for (const row of rows()) expect(row).toHaveAttribute('aria-expanded', 'false');
+      };
+      const hide = screen.getByRole('button', { name: 'Hide labels', hidden: true });
+
+      // The button: the key stays rendered while labels hide, every row collapsed.
+      fireEvent.click(rows()[0]);
+      expect(rows()[0]).toHaveAttribute('aria-expanded', 'true');
+      fireEvent.click(hide);
+      expect(hide).toHaveAttribute('aria-pressed', 'true');
+      expectAllCollapsed();
+      fireEvent.click(hide);
+      expect(hide).toHaveAttribute('aria-pressed', 'false');
+      expectAllCollapsed();
+
+      // The H key takes the same path.
+      fireEvent.click(rows()[0]);
+      expect(rows()[0]).toHaveAttribute('aria-expanded', 'true');
+      fireEvent.keyDown(document, { key: 'h' });
+      expect(hide).toHaveAttribute('aria-pressed', 'true');
+      expectAllCollapsed();
+      fireEvent.keyDown(document, { key: 'h' });
+      expect(hide).toHaveAttribute('aria-pressed', 'false');
+      expectAllCollapsed();
+    } finally {
+      // The preference is stored; keep it out of the other rows.
+      window.localStorage.removeItem(HOTSPOT_PREF_KEY);
     }
   });
 

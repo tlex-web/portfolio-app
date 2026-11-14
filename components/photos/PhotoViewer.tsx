@@ -318,8 +318,18 @@ export default function PhotoViewer({
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [isPage, toggleZoom]);
 
+  // Every labels toggle (the 'Hide labels' button and H) goes through here:
+  // hiding also collapses the open callout, so a hidden callout never holds
+  // the first Escape and showing labels again starts collapsed (D-12, ledger
+  // 10 IN-01). Not an effect on labelsOn: the preference is a cross-tab store,
+  // and another tab's change must not collapse a callout being read here.
+  function setLabels(on: boolean) {
+    setLabelsOn(on);
+    if (!on) setExpandedId(null);
+  }
+
   // H toggles Hide labels on both surfaces, under the same rules as Z.
-  const toggleLabels = useEffectEvent(() => setLabelsOn(!labelsOn));
+  const toggleLabels = useEffectEvent(() => setLabels(!labelsOn));
   useLayoutEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'h' && event.key !== 'H') return;
@@ -534,7 +544,7 @@ export default function PhotoViewer({
             aria-pressed={!labelsOn}
             aria-keyshortcuts="h"
             className={`${CHROME_BUTTON} aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-gallery aria-pressed:hover:border-ink`}
-            onClick={() => setLabelsOn(!labelsOn)}
+            onClick={() => setLabels(!labelsOn)}
           >
             <EyeSlashIcon size={24} aria-hidden="true" className="md:size-5" />
             <span className="hidden md:inline">Hide labels</span>
