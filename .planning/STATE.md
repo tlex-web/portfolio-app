@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 14
 current_phase_name: UI Fixes & Terminal Controls
 status: executing
-stopped_at: Phase 14 UI-SPEC approved
-last_updated: "2026-11-14T10:50:10.439Z"
+stopped_at: Completed 14-01-PLAN.md
+last_updated: "2026-11-14T11:07:56.276Z"
 last_activity: 2026-11-14
-last_activity_desc: Phase 13 complete, transitioned to Phase 14
-state_head: c3a06b3e8b8a07d4cd8439170f0aa5d0d1e6c68d
+last_activity_desc: Phase 14 execution started
+state_head: 6393325a606bb2b27a6f883f14926039f0a1a458
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 30
-  completed_plans: 22
+  completed_plans: 23
   percent: 14
 ---
 
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-11-14)
 
 ## Current Position
 
-Phase: 14 (UI Fixes & Terminal Controls) — READY TO EXECUTE
-Plan: Not started
+Phase: 14 (UI Fixes & Terminal Controls) — EXECUTING
+Plan: 2 of 8
 Status: Ready to execute
-Last activity: 2026-11-14 — Phase 13 complete, transitioned to Phase 14
+Last activity: 2026-11-14 — Phase 14 execution started
 
 Progress: [█░░░░░░░░░] 14%
 
@@ -76,6 +76,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 13 P20 | 2h40m | 3 tasks | 6 files |
 | Phase 13 P21 | 4min | 3 tasks | 1 files |
 | Phase 13 P22 | 10min | 3 tasks | 9 files |
+| Phase 14 P01 | 10min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -142,6 +143,9 @@ Recent decisions affecting current work:
 - [Phase 13]: 13-22: hand-overs: ROADMAP scope notes under Phases 14 (07 WR-06/SHELL-07, 10 IN-01, Deployment Checks proof fallback), 15 (GUARD-10, guard:tests suggestion, scripts/README 47 pairs), 17 (10 IN-03, E2E duration trend), 18 (10 IN-04, IN-05, IN-08, IN-09 switchTo wait); deferred-items.md names owner and trigger for the Firefox tag removal, limit-probe output, relay long-mirror path, Deployment Checks proof, npm audit decision and ci/13-pw165; no new requirement
 - [Phase 13]: 13-22: PROJECT.md Key Decisions: main ruleset 27216079, [ci skip] relay option A (a-confirmed), keep-alive monitor (60-day schedule pause, ~1 h Hobby logs), docs-only fast path; production gate recorded as Deployment Checks on CI OK (Tim, 2026-11-13) with the live proof pending the phase-close merge
 - [Phase 13]: 13-UAT (2026-11-14, 3/3 pass): Deployment Checks proven live on phase-close merge aef25e2 (PR #147): Vercel "Waiting for checks to complete" from 23:28:02Z, CI OK success 23:55:05Z, deployment completed 23:55:07Z. Tim passed test 2 with #140 still open (main carries @playwright/test 1.65.0; Dependabot runs weekly, Monday 09:00) and test 3 before any code-changing [ci skip] head had run the long-mirror path
+- [Phase 14]: 14-01: SHELL-07 fix 49b8fe1 (ledger row #6 write-back in 14-07): a plain tap on the panel link whose href strictly equals the pathname focuses Menu with preventScroll, then closes; default-prevented with no query (D-16), Next navigates with one (D-23). SHELL-08 75e9900: focus-visible:-outline-offset-4 on panel links, globals.css unchanged
+- [Phase 14]: 14-01: the global scroll-margin-top makes a plain focus() of the sticky Menu button scroll the page (600 to 530 Chromium, 185.5 Firefox); the Escape handler still does it, logged in 14 deferred-items.md. Panel onFocus revealFocusedRow keeps a focused row inside the scrolling panel (Firefox did not scroll it at 375 x 320)
+- [Phase 14]: 14-01: new visual test menu @375 current row focused declares menu/375-current-focus-visual-dark-linux.png, produced only by the 14-08 dispatch; CI compare reports it missing until then
 
 ### Pending Todos
 
@@ -194,6 +198,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-14T00:44:16.338Z
-Stopped at: Phase 14 UI-SPEC approved
-Resume file: .planning/phases/14-ui-fixes-terminal-controls/14-UI-SPEC.md
+Last session: 2026-11-14T11:07:56.215Z
+Stopped at: Completed 14-01-PLAN.md
+Resume file: None
