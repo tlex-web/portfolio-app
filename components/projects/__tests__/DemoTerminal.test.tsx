@@ -9,7 +9,8 @@
  * `data-playback` / `data-command` on the region, `aria-pressed` on the Pause
  * toggle, `aria-current` on the dots, `aria-disabled` on the step buttons,
  * `aria-live` on the screen-reader text,
- * `data-note` on the note line and the text itself, never from colour
+ * `data-note` on the note line, the `open` attribute on the transcript
+ * (`details[data-transcript]`, 14 D-04 to D-07) and the text itself, never from colour
  * classes. Each command is rendered in its own `data-cell` of one shared grid
  * cell, so the current one is read through its cell; the body-height tests
  * may assert that layout contract (`grid`, `[grid-area:1/1]`, `invisible`;
@@ -18,6 +19,7 @@
  */
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { renderToString } from 'react-dom/server';
 import DemoTerminal from '@/components/projects/DemoTerminal';
 import type { TerminalCommand } from '@/lib/demo-terminal';
 
@@ -272,6 +274,10 @@ describe('DemoTerminal sticky Pause and its release (D-02 amended)', () => {
 
     act(() => screen.getByRole('button', { name: 'Outside' }).focus());
     expect(region()).toHaveAttribute('data-playback', 'playing');
+    // The transcript summary sits between the region and Outside (14 D-04), outside the region.
+    await user.tab({ shift: true });
+    expect(document.activeElement).toBe(transcript().querySelector('summary'));
+    expect(region()).toHaveAttribute('data-playback', 'playing');
     await user.tab({ shift: true });
     expect(region()).toContainElement(document.activeElement as HTMLElement);
     expect(region()).toHaveAttribute('data-playback', 'paused');
@@ -424,7 +430,7 @@ describe('DemoTerminal step buttons (ENG-06, D-01 to D-03)', () => {
     expect(region()).toHaveAttribute('data-playback', 'paused');
   });
 
-  it('Tabs from Pause through Previous, every dot, then Next (DOM = visual = Tab order)', async () => {
+  it('Tabs from Pause through Previous, every dot, then Next, then out to the transcript (DOM = visual = Tab order)', async () => {
     const { user } = setup();
     act(() => toggle().focus());
     const order = [
@@ -439,6 +445,10 @@ describe('DemoTerminal step buttons (ENG-06, D-01 to D-03)', () => {
       await user.tab();
       expect(within(region()).getByRole('button', { name })).toHaveFocus();
     }
+    // Next leaves the region for the transcript summary below it (14 D-04), then Outside.
+    await user.tab();
+    expect(document.activeElement).toBe(transcript().querySelector('summary'));
+    expect(region().contains(document.activeElement)).toBe(false);
     await user.tab();
     expect(screen.getByRole('button', { name: 'Outside' })).toHaveFocus();
   });
@@ -683,5 +693,74 @@ describe('DemoTerminal screen-reader text', () => {
     expect(
       screen.getByText('Command 4 of 4. Command: box epoch 0. Output: 1970-01-01T00:00:00Z.')
     ).toBeInTheDocument();
+  });
+});
+
+function transcript() {
+  const el = document.querySelector('details[data-transcript]');
+  if (!el) throw new Error('no transcript');
+  return el as HTMLDetailsElement;
+}
+
+describe('DemoTerminal transcript (ENG-06, D-04 to D-07)', () => {
+  it('is in the server HTML, closed, with every command, output and note (D-04, D-06)', () => {
+    const html = renderToString(<DemoTerminal name="box" commands={COMMANDS} />);
+    const tag = html.match(/<details data-transcript[^>]*>/);
+    expect(tag).not.toBeNull();
+    expect(tag?.[0]).not.toMatch(/\sopen[\s=>]/);
+    expect(html).toContain('Transcript');
+    for (const c of COMMANDS) {
+      expect(html).toContain(c.input);
+      expect(html).toContain(c.output);
+      if (c.note) expect(html).toContain(c.note);
+    }
+  });
+
+  it('sits after the region, outside it, with one list item per command in order (D-04)', () => {
+    setup();
+    const details = transcript();
+    expect(region().contains(details)).toBe(false);
+    expect(
+      region().compareDocumentPosition(details) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(details.open).toBe(false);
+    expect(details.querySelector('summary')).toHaveTextContent('Transcript');
+    expect(details).not.toHaveAttribute('aria-live');
+    expect(details.querySelector('[aria-live]')).toBeNull();
+
+    const items = details.querySelectorAll('ol > li');
+    expect(items).toHaveLength(COMMANDS.length);
+    COMMANDS.forEach((c, i) => {
+      const item = items[i];
+      expect(item.querySelector('code')).toHaveTextContent(c.input);
+      // Exactly as captured: textContent keeps whitespace a matcher would collapse.
+      expect(item.querySelector('pre > samp')?.textContent).toBe(c.output);
+      const prompt = item.querySelector('p > span');
+      expect(prompt).toHaveTextContent('❯');
+      expect(prompt).toHaveAttribute('aria-hidden', 'true');
+      const paragraphs = item.querySelectorAll(':scope > p');
+      if (c.note) {
+        expect(paragraphs).toHaveLength(2);
+        expect(paragraphs[1]).toHaveTextContent(c.note);
+      } else {
+        expect(paragraphs).toHaveLength(1);
+      }
+    });
+  });
+
+  it('keeps the leading and trailing blank lines and the swatch of the captured output (11 D-26)', () => {
+    const output = ['', 'name  size', '██████████', ''].join('\n');
+    const padded: TerminalCommand[] = [COMMANDS[0], { input: 'box du', output }];
+    const html = renderToString(<DemoTerminal name="box" commands={padded} />);
+    expect(html).toContain(`<samp>${output}</samp>`);
+    setup(padded);
+    expect(transcript().querySelectorAll('pre > samp')[1].textContent).toBe(output);
+  });
+
+  it('renders no transcript for one command and nothing for none (G2, 11 IN-01)', () => {
+    setup([COMMANDS[0]]);
+    expect(document.querySelector('details[data-transcript]')).toBeNull();
+    const { container } = render(<DemoTerminal name="box" commands={[]} />);
+    expect(container).toBeEmptyDOMElement();
   });
 });

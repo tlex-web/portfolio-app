@@ -793,6 +793,27 @@ test.describe('Demo (ENG-05)', () => {
     await expect(region).toHaveAttribute('data-playback', 'paused');
   });
 
+  test('the transcript is closed, outside the terminal, and holds every command (ENG-06, D-04)', async ({
+    page,
+  }) => {
+    await page.goto(BOX);
+    const region = page.getByRole('region', { name: regionName });
+    const transcript = page.locator('details[data-transcript]');
+    await expect(region).toBeVisible();
+    await expect(transcript).toHaveCount(1);
+    await expect(transcript).not.toHaveAttribute('open');
+    await expect(region.locator('details[data-transcript]')).toHaveCount(0);
+    await expect(transcript.locator('ol > li')).toHaveCount(LAST_N);
+
+    await transcript.locator('summary').click();
+    await expect(transcript).toHaveAttribute('open', '');
+    const items = transcript.locator('ol > li');
+    for (const [i, command] of (box.demo?.commands ?? []).entries()) {
+      await expect(items.nth(i).locator('code')).toHaveText(command.input);
+      await expect(items.nth(i).locator('code')).toBeVisible();
+    }
+  });
+
   test('no horizontal scroll at 375 px', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 800 });
     await page.goto(BOX);

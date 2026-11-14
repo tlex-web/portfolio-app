@@ -8,7 +8,12 @@ import {
   useSyncExternalStore,
   type FocusEvent,
 } from 'react';
-import { CaretLeftIcon, CaretRightIcon, PauseIcon } from '@phosphor-icons/react/dist/ssr';
+import {
+  CaretDownIcon,
+  CaretLeftIcon,
+  CaretRightIcon,
+  PauseIcon,
+} from '@phosphor-icons/react/dist/ssr';
 import {
   delayFor,
   goTo,
@@ -39,6 +44,13 @@ const DOT =
  */
 const STEP =
   'inline-flex size-11 shrink-0 cursor-pointer touch-manipulation items-center justify-center rounded-sm border border-line-strong text-ink transition-colors duration-(--duration-fast) ease-erosion hover:bg-surface-overlay aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:bg-transparent';
+
+/**
+ * The transcript summary (14-UI-SPEC Contract 2): a 48 px row named
+ * 'Transcript', the caret on the right, no native marker.
+ */
+const SUMMARY =
+  'flex min-h-12 cursor-pointer touch-manipulation list-none items-center justify-between gap-4 rounded-lg px-4 text-base font-semibold text-ink transition-colors duration-(--duration-fast) ease-erosion hover:bg-surface-raised group-open:rounded-b-none [&::-webkit-details-marker]:hidden';
 
 /** document.hidden as an external store, so no state is set in an effect body. */
 function subscribeVisibility(callback: () => void): () => void {
@@ -162,6 +174,17 @@ function CommandLines({ command, lines }: { command: TerminalCommand; lines: Vis
  * at 375 px); when the dots outgrow it (G3) only the inner dot row wraps,
  * and Previous and Next stay beside it, vertically centred.
  *
+ * Transcript (ENG-06; 14 D-04; 14-UI-SPEC Contract 2): the island returns a
+ * fragment, the region and then a native `<details data-transcript>` below
+ * it, outside the region, so it is server-rendered and opens without
+ * JavaScript. It lists every command in order in an `<ol>`: the prompt glyph
+ * (aria-hidden, select-none) and the command, the output in `pre > samp`
+ * exactly as captured (11 D-26: real output is the proof; the `<samp>` keeps
+ * a leading newline the parser would drop right after `<pre>`), then the
+ * note when there is one. Plain selectable text, never aria-live. One
+ * command renders no transcript (G2 already shows it whole); none renders
+ * nothing.
+ *
  * Screen readers: the drawn lines are aria-hidden, so a command is never
  * read twice or half-typed; an sr-only block always holds the full current
  * command. Its container is aria-live 'off' while playing, so autoplay never
@@ -259,121 +282,153 @@ export default function DemoTerminal({
   const current = commands[state.index];
 
   return (
-    <div
-      ref={observeRegion}
-      role="region"
-      aria-label={`${name} demo`}
-      data-playback={playing ? 'playing' : 'paused'}
-      data-command={state.index + 1}
-      className="mt-6 rounded-lg border border-line bg-surface-raised"
-      onPointerEnter={() => setHover(true)}
-      onPointerLeave={() => setHover(false)}
-      onFocus={onFocus}
-      onBlur={onBlur}
-    >
-      {count > 1 && (
-        <div className="flex h-12 items-center justify-between gap-4 border-b border-line px-4">
-          <p className="font-mono text-sm text-ink-muted">
-            {name}{' '}
-            <span aria-hidden="true">
-              · {state.index + 1} / {count}
-            </span>
-          </p>
-          <button
-            type="button"
-            aria-pressed={sticky}
-            aria-label="Pause demo"
-            className={TOGGLE}
-            onClick={onToggle}
-          >
-            <PauseIcon size={20} aria-hidden="true" />
-            Pause
-          </button>
-        </div>
-      )}
-
-      <div className="grid p-4 font-mono text-sm">
-        {commands.map((command, i) => {
-          const isCurrent = i === state.index;
-          const complete = visibleLines({ index: i, phase: 'shown', chars: 0 }, command);
-          const lines = isCurrent ? visibleLines(shownState, command) : complete;
-          return (
-            <Fragment key={i}>
-              <div
-                data-cell={i + 1}
-                aria-hidden="true"
-                className={`min-w-0 [grid-area:1/1]${isCurrent ? '' : ' invisible'}`}
-              >
-                <CommandLines command={command} lines={lines} />
-              </div>
-              {isCurrent && !lines.complete && (
-                <div aria-hidden="true" className="invisible min-w-0 [grid-area:1/1]">
-                  <CommandLines command={command} lines={complete} />
-                </div>
-              )}
-            </Fragment>
-          );
-        })}
-      </div>
-
-      <div aria-live={playing ? 'off' : 'polite'} aria-atomic="true" className="sr-only">
-        <p>{spokenCommand(current, state.index + 1, count)}</p>
-      </div>
-
-      {count > 1 && (
-        <div
-          role="group"
-          aria-label="Commands"
-          className="flex min-h-12 items-center gap-2 border-t border-line px-4"
-        >
-          <button
-            type="button"
-            aria-label="Previous command"
-            aria-disabled={state.index === 0 ? 'true' : undefined}
-            className={STEP}
-            onClick={() => {
-              if (state.index > 0) show(stepTo(state.index, -1, count));
-            }}
-          >
-            <CaretLeftIcon size={24} aria-hidden="true" />
-          </button>
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            {commands.map((_, i) => {
-              const isCurrent = i === state.index;
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  aria-label={`Go to command ${i + 1}`}
-                  aria-current={isCurrent ? 'true' : undefined}
-                  className={DOT}
-                  onClick={() => show(goTo(i, count))}
-                >
-                  <span
-                    aria-hidden="true"
-                    className={
-                      isCurrent
-                        ? 'h-2 w-6 rounded-full bg-ink'
-                        : 'size-2 rounded-full bg-line-strong transition-colors duration-(--duration-fast) ease-erosion group-hover:bg-ink-muted'
-                    }
-                  />
-                </button>
-              );
-            })}
+    <>
+      <div
+        ref={observeRegion}
+        role="region"
+        aria-label={`${name} demo`}
+        data-playback={playing ? 'playing' : 'paused'}
+        data-command={state.index + 1}
+        className="mt-6 rounded-lg border border-line bg-surface-raised"
+        onPointerEnter={() => setHover(true)}
+        onPointerLeave={() => setHover(false)}
+        onFocus={onFocus}
+        onBlur={onBlur}
+      >
+        {count > 1 && (
+          <div className="flex h-12 items-center justify-between gap-4 border-b border-line px-4">
+            <p className="font-mono text-sm text-ink-muted">
+              {name}{' '}
+              <span aria-hidden="true">
+                · {state.index + 1} / {count}
+              </span>
+            </p>
+            <button
+              type="button"
+              aria-pressed={sticky}
+              aria-label="Pause demo"
+              className={TOGGLE}
+              onClick={onToggle}
+            >
+              <PauseIcon size={20} aria-hidden="true" />
+              Pause
+            </button>
           </div>
-          <button
-            type="button"
-            aria-label="Next command"
-            aria-disabled={state.index === count - 1 ? 'true' : undefined}
-            className={STEP}
-            onClick={() => {
-              if (state.index < count - 1) show(stepTo(state.index, 1, count));
-            }}
-          >
-            <CaretRightIcon size={24} aria-hidden="true" />
-          </button>
+        )}
+
+        <div className="grid p-4 font-mono text-sm">
+          {commands.map((command, i) => {
+            const isCurrent = i === state.index;
+            const complete = visibleLines({ index: i, phase: 'shown', chars: 0 }, command);
+            const lines = isCurrent ? visibleLines(shownState, command) : complete;
+            return (
+              <Fragment key={i}>
+                <div
+                  data-cell={i + 1}
+                  aria-hidden="true"
+                  className={`min-w-0 [grid-area:1/1]${isCurrent ? '' : ' invisible'}`}
+                >
+                  <CommandLines command={command} lines={lines} />
+                </div>
+                {isCurrent && !lines.complete && (
+                  <div aria-hidden="true" className="invisible min-w-0 [grid-area:1/1]">
+                    <CommandLines command={command} lines={complete} />
+                  </div>
+                )}
+              </Fragment>
+            );
+          })}
         </div>
+
+        <div aria-live={playing ? 'off' : 'polite'} aria-atomic="true" className="sr-only">
+          <p>{spokenCommand(current, state.index + 1, count)}</p>
+        </div>
+
+        {count > 1 && (
+          <div
+            role="group"
+            aria-label="Commands"
+            className="flex min-h-12 items-center gap-2 border-t border-line px-4"
+          >
+            <button
+              type="button"
+              aria-label="Previous command"
+              aria-disabled={state.index === 0 ? 'true' : undefined}
+              className={STEP}
+              onClick={() => {
+                if (state.index > 0) show(stepTo(state.index, -1, count));
+              }}
+            >
+              <CaretLeftIcon size={24} aria-hidden="true" />
+            </button>
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              {commands.map((_, i) => {
+                const isCurrent = i === state.index;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    aria-label={`Go to command ${i + 1}`}
+                    aria-current={isCurrent ? 'true' : undefined}
+                    className={DOT}
+                    onClick={() => show(goTo(i, count))}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={
+                        isCurrent
+                          ? 'h-2 w-6 rounded-full bg-ink'
+                          : 'size-2 rounded-full bg-line-strong transition-colors duration-(--duration-fast) ease-erosion group-hover:bg-ink-muted'
+                      }
+                    />
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              aria-label="Next command"
+              aria-disabled={state.index === count - 1 ? 'true' : undefined}
+              className={STEP}
+              onClick={() => {
+                if (state.index < count - 1) show(stepTo(state.index, 1, count));
+              }}
+            >
+              <CaretRightIcon size={24} aria-hidden="true" />
+            </button>
+          </div>
+        )}
+      </div>
+      {count > 1 && (
+        <details data-transcript className="group mt-4 rounded-lg border border-line">
+          <summary className={SUMMARY}>
+            Transcript
+            <CaretDownIcon
+              size={20}
+              aria-hidden="true"
+              className="shrink-0 group-open:rotate-180"
+            />
+          </summary>
+          <ol className="divide-y divide-line border-t border-line px-4">
+            {commands.map((command, i) => (
+              <li key={i} className="py-4 text-sm">
+                <p className="flex gap-2 font-mono">
+                  <span aria-hidden="true" className="select-none text-ink-muted">
+                    ❯
+                  </span>
+                  <code className="min-w-0 font-mono whitespace-pre-wrap wrap-anywhere text-ink">
+                    {command.input}
+                  </code>
+                </p>
+                <pre className="mt-1 font-mono whitespace-pre-wrap wrap-anywhere text-ink-muted">
+                  <samp>{command.output}</samp>
+                </pre>
+                {command.note && <p className="mt-2 font-body text-ink">{command.note}</p>}
+              </li>
+            ))}
+          </ol>
+        </details>
       )}
-    </div>
+    </>
   );
 }
