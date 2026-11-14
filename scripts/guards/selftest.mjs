@@ -14,7 +14,7 @@
  *   - nodeArgs: optional, node flags placed before the guard path
  *   - cwd: optional, working directory of the spawn (defaults to this process's cwd)
  *   - setup(): optional, runs before the spawn and may return extra args
- *   - check(): optional, runs after the spawn; returns an error string or null
+ *   - check(output): optional, runs after the spawn with its combined stdout+stderr; returns an error string or null
  *
  * Usage:
  *   node scripts/guards/selftest.mjs
@@ -1147,6 +1147,14 @@ function fixturePlateProblems(root, writeError) {
 }
 const terrainFixtureRoot = await tempTerrainRoot({ fixture: true, fixtureFirst: true });
 let terrainFixtureWrite = null;
+/** Pitfall 4: a deleted prefixed file must be named by --check. */
+const terrainMissingRoot = await tempTerrainRoot({ fixture: true });
+let terrainMissingWrite = null;
+let terrainMissingFile = null;
+/** F15 / T-15-33: dropping a plate from the registry sweeps exactly its files. */
+const terrainRemoveRoot = await tempTerrainRoot({ fixture: true });
+let terrainRemoveWrite = null;
+let terrainRemoveBuilt = 0;
 
 const cases = [
   {
@@ -2450,6 +2458,51 @@ const cases = [
     expectOutput: ['terrain: OK'],
     check: () => fixturePlateProblems(terrainFixtureRoot, terrainFixtureWrite),
   },
+  {
+    name: 'terrain: --check sees a missing prefixed plate file',
+    guard: TERRAIN_BUILD,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--check'],
+    setup: () => {
+      terrainMissingWrite = terrainWrite(terrainMissingRoot);
+      terrainMissingFile = terrainListing(terrainMissingRoot).find((f) => /^fixture-hillshade-640\.[0-9a-f]{10}\.webp$/.test(f)) ?? null;
+      if (terrainMissingFile) fs.unlinkSync(path.join(terrainMissingRoot, TERRAIN_PUBLIC, terrainMissingFile));
+      return ['--root', terrainMissingRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['terrain: 1 stale'],
+    check: (output) => {
+      if (terrainMissingWrite) return terrainMissingWrite;
+      if (!terrainMissingFile) return 'the write run built no fixture-hillshade-640.<hash>.webp to delete';
+      return output.includes(`${TERRAIN_PUBLIC}/${terrainMissingFile} (missing)`) ? null : `output does not name ${terrainMissingFile} as missing`;
+    },
+  },
+  {
+    name: 'terrain: removing a plate sweeps only its files',
+    guard: TERRAIN_BUILD,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: [],
+    setup: () => {
+      terrainRemoveWrite = terrainWrite(terrainRemoveRoot);
+      terrainRemoveBuilt = terrainListing(terrainRemoveRoot).filter((f) => f.startsWith('fixture-')).length;
+      const rel = path.join(terrainRemoveRoot, 'data/terrain/plates.json');
+      const registry = JSON.parse(fs.readFileSync(rel, 'utf-8'));
+      registry.plates = registry.plates.filter((p) => p.id !== FIXTURE_PLATE.id);
+      fs.writeFileSync(rel, `${JSON.stringify(registry, null, 2)}\n`);
+      return ['--root', terrainRemoveRoot];
+    },
+    expectExit: 0,
+    expectOutput: ['terrain: removed stale public/terrain/fixture-', 'terrain: OK'],
+    check: () => {
+      if (terrainRemoveWrite) return terrainRemoveWrite;
+      if (terrainRemoveBuilt !== FIXTURE_FILES.length) return `the first write built ${terrainRemoveBuilt} fixture files, expected ${FIXTURE_FILES.length}`;
+      const left = terrainListing(terrainRemoveRoot).filter((f) => f.startsWith('fixture-'));
+      if (left.length) return `fixture files survived the sweep: ${left.join(', ')}`;
+      if (JSON.stringify(terrainListing(terrainRemoveRoot)) !== JSON.stringify(terrainListing(repoRoot)))
+        return `public/terrain/ lists ${terrainListing(terrainRemoveRoot).join(', ')}, not the repo's files`;
+      return terrainBytesEqual(terrainRemoveRoot, [...matterhornFiles(), ...TERRAIN_HOME_MODULES, 'data/generated/plates.ts']);
+    },
+  },
   ...WORKFLOW_SHELL_CASES,
   ...CI_GATE_PARSER_CASES,
 ];
@@ -2483,7 +2536,7 @@ for (const [index, c] of cases.entries()) {
   for (const fragment of c.expectOutput ?? []) {
     if (!output.includes(fragment)) problems.push(`output lacks: ${fragment}`);
   }
-  const checkError = c.check ? c.check() : null;
+  const checkError = c.check ? c.check(output) : null;
   if (checkError) problems.push(checkError);
   report(index, c, problems, output);
 }
@@ -2507,7 +2560,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDeriveRoot, terrainFixtureRoot, ...ciGateTempRoots]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDeriveRoot, terrainFixtureRoot, terrainMissingRoot, terrainRemoveRoot, ...ciGateTempRoots]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 

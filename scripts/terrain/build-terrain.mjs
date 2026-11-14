@@ -45,6 +45,9 @@
  * never another plate's candidate. A threeD: false plate builds only the contour
  * LODs and poster sizes it declares, never a heightmap or a map LOD (D-12). The
  * stale-file sweep and --check compare against the union of every plate's names.
+ * Each plate is held to PLATE_BUDGET (data/schemas/terrain.ts): the bytes it
+ * serves and one visit's fetch; a plate over budget fails write mode before
+ * anything is written, and fails --check.
  *
  * --check by artifact type (RESEARCH Pattern 3):
  *   SVG, terrain.ts and  regenerated in memory and compared byte for byte.
@@ -62,6 +65,7 @@
  *   public/terrain/      missing or extra managed files (contours-*.svg,
  *                        heightmap-*.png, hillshade-*.avif/webp, with or without
  *                        a plate prefix) are reported.
+ *   plate budget         each plate's served and fetch bytes within PLATE_BUDGET.
  *
  * Modes:
  *   (default)  write every artifact and delete stale managed files. A committed
@@ -87,7 +91,13 @@ import { lv95ToUv, round4, stripBbox } from '../../lib/geo.ts';
 import { contourSvg, isIndexLevel, openRuns, runToPath } from '../../lib/terrain/contour-paths.ts';
 import { resampleBilinear, sampleAtLv95 } from '../../lib/terrain/dem-sample.ts';
 import { blendShades, hillshade, toGrey8 } from '../../lib/terrain/hillshade.ts';
-import { Plates, PlatesMeta, TerrainMeta, TerrainSource } from '../../data/schemas/terrain.ts';
+import {
+  PLATE_BUDGET,
+  Plates,
+  PlatesMeta,
+  TerrainMeta,
+  TerrainSource,
+} from '../../data/schemas/terrain.ts';
 
 const NAME = 'terrain';
 
@@ -666,8 +676,59 @@ const namesOf = (b) => [
   ...posterFiles(b.posters.urls),
 ];
 
+/**
+ * The byte size of a file one plate's build references: from memory when this
+ * run produced it, else from public/terrain/; null when it exists nowhere.
+ */
+function sizeLookup(b) {
+  const sizes = new Map();
+  for (const s of b.svgs) sizes.set(s.name, Buffer.byteLength(s.text));
+  for (const p of b.pngs) if (p.bytes) sizes.set(p.name, p.bytes.length);
+  for (const f of b.posters.files) sizes.set(f.name, f.bytes.length);
+  return (name) => {
+    if (sizes.has(name)) return sizes.get(name);
+    const p = path.join(PUBLIC_DIR, name);
+    return fs.existsSync(p) ? fs.statSync(p).size : null;
+  };
+}
+
+/**
+ * PLATE_BUDGET (research ARCHITECTURE §2.4) for one plate's build, as messages:
+ * the sum of every file its sheet references against servedMax3D or servedMax2D,
+ * and one visit's fetch (the AVIF poster, 1100 or else 640, + hero + strip)
+ * against fetchMax. Skipped when a file is missing, which is reported elsewhere.
+ */
+function budgetProblems(b) {
+  if (!b.sheet) return [];
+  const size = sizeLookup(b);
+  const served = namesOf(b).map(size);
+  const { avif } = b.sheet.assets.hillshade;
+  const poster = (avif[1100] ?? avif[640]).replace(/^\/terrain\//, '');
+  const { hero, strip } = b.sheet.assets.contours;
+  const fetched = [poster, hero, strip].map((u) => size(u.replace(/^\/terrain\//, '')));
+  if ([...served, ...fetched].some((n) => n === null)) return [];
+  const sum = (ns) => ns.reduce((a, n) => a + n, 0);
+  const servedMax = b.plate.threeD ? PLATE_BUDGET.servedMax3D : PLATE_BUDGET.servedMax2D;
+  const fix = '(PLATE_BUDGET in data/schemas/terrain.ts); shrink the plate extent or its outputs';
+  const out = [];
+  if (sum(served) > servedMax)
+    out.push(`plate ${b.plate.id} serves ${sum(served)} B, over its ${servedMax} B budget ${fix}`);
+  if (sum(fetched) > PLATE_BUDGET.fetchMax)
+    out.push(
+      `plate ${b.plate.id} fetches ${sum(fetched)} B per visit, over its ${PLATE_BUDGET.fetchMax} B budget ${fix}`
+    );
+  return out;
+}
+
 async function write() {
   const built = await buildPlates(loadRegistry().plates, { encode: true });
+  // Every plate within its budget before a single file is written.
+  const over = built.flatMap(budgetProblems);
+  if (over.length > 0) {
+    for (const m of over) console.log(`${NAME}: ${m}`);
+    console.log(`${NAME}: ${over.length} over budget`);
+    process.exit(1);
+  }
   fs.mkdirSync(PUBLIC_DIR, { recursive: true });
   for (const { svgs, pngs, posters } of built) {
     for (const s of svgs) {
@@ -769,6 +830,7 @@ async function check() {
   const expected = new Set(built.flatMap(namesOf));
   const reported = new Set();
   for (const b of built) plateLines(b, lines, reported);
+  for (const b of built) for (const m of budgetProblems(b)) lines.push(`${NAME}: ${m}`);
   for (const f of managedFiles()) {
     if (!expected.has(f) && !reported.has(f)) lines.push(`${NAME}: extra ${PUBLIC_REL}/${f}`);
   }
