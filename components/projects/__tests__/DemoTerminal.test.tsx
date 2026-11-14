@@ -1,12 +1,14 @@
 /**
- * The project demo terminal island (ENG-05; 11 D-02 amended pause sources and
- * release, D-03 selector dots, D-26 note line; 11-UI-SPEC "Demo — box:
- * DemoTerminal", G2 one command, G3 seven or more; 11-RESEARCH Pattern 3 and
- * Pitfall 1 single timer).
+ * The project demo terminal island (ENG-05, ENG-06; 11 D-02 amended pause
+ * sources and release, D-03 selector dots, D-26 note line; 14 D-01 to D-03
+ * step buttons, a step or dot press presses Pause, the ends never wrap;
+ * 11-UI-SPEC "Demo — box: DemoTerminal", G2 one command, G3 seven or more;
+ * 14-UI-SPEC Contract 1; 11-RESEARCH Pattern 3 and Pitfall 1 single timer).
  *
  * Fake timers drive the one pending timeout. State is read from
  * `data-playback` / `data-command` on the region, `aria-pressed` on the Pause
- * toggle, `aria-current` on the dots, `aria-live` on the screen-reader text,
+ * toggle, `aria-current` on the dots, `aria-disabled` on the step buttons,
+ * `aria-live` on the screen-reader text,
  * `data-note` on the note line and the text itself, never from colour
  * classes. Each command is rendered in its own `data-cell` of one shared grid
  * cell, so the current one is read through its cell; the body-height tests
@@ -275,13 +277,14 @@ describe('DemoTerminal sticky Pause and its release (D-02 amended)', () => {
     expect(region()).toHaveAttribute('data-playback', 'paused');
   });
 
-  it('keeps playing after a release when Tab moves from the toggle to a dot inside', async () => {
+  it('keeps playing after a release when Tab moves from the toggle to Previous inside (ENG-06)', async () => {
     const { user } = setup();
     await pressAndRelease(user);
     await user.unhover(region());
 
+    // Moving between the region's own controls is not an entry.
     await user.tab();
-    expect(within(region()).getByRole('button', { name: 'Go to command 1' })).toHaveFocus();
+    expect(within(region()).getByRole('button', { name: 'Previous command' })).toHaveFocus();
     expect(region()).toHaveAttribute('data-playback', 'playing');
   });
 
@@ -310,8 +313,8 @@ describe('DemoTerminal sticky Pause and its release (D-02 amended)', () => {
   });
 });
 
-describe('DemoTerminal selector dots (D-03)', () => {
-  it('shows the pressed command complete at once without touching the toggle, and runs one timer', async () => {
+describe('DemoTerminal selector dots (11 D-03, 14 D-02)', () => {
+  it('a dot shows its command complete at once, presses Pause and runs one timer (D-02)', async () => {
     const { user } = setup();
     advance(3000 + 100); // command 2 is typing
     expect(region()).toHaveAttribute('data-command', '2');
@@ -324,11 +327,20 @@ describe('DemoTerminal selector dots (D-03)', () => {
       'aria-current',
       'true'
     );
-    expect(toggle()).toHaveAttribute('aria-pressed', 'false');
+    expect(toggle()).toHaveAttribute('aria-pressed', 'true');
+    expect(region()).toHaveAttribute('data-playback', 'paused');
 
-    // Pointer and focus leave, so autoplay runs again; record every command shown.
+    // Pointer and focus leave: the dot press's sticky Pause still holds it.
     await user.click(screen.getByRole('button', { name: 'Outside' }));
+    expect(region()).toHaveAttribute('data-playback', 'paused');
+    advance(5000);
+    expect(region()).toHaveAttribute('data-command', '3');
+
+    // Only releasing Pause resumes; record every command shown, one timer pending.
+    await user.click(toggle());
+    expect(toggle()).toHaveAttribute('aria-pressed', 'false');
     expect(region()).toHaveAttribute('data-playback', 'playing');
+    expect(jest.getTimerCount()).toBe(1);
     const seen = ['3'];
     for (let t = 0; t < 10000; t += 10) {
       advance(10); // one step at a time, recording the command after each
@@ -382,6 +394,54 @@ describe('DemoTerminal step buttons (ENG-06, D-01 to D-03)', () => {
     await user.click(next());
     expect(region()).toHaveAttribute('data-command', '4');
   });
+
+  it('Previous is aria-disabled on command 1 and a press changes nothing and presses nothing (D-03)', async () => {
+    const { user } = setup();
+    const previous = within(region()).getByRole('button', { name: 'Previous command' });
+    expect(previous).toHaveAttribute('aria-disabled', 'true');
+    expect(next()).not.toHaveAttribute('aria-disabled');
+
+    act(() => previous.focus());
+    expect(previous).toHaveFocus();
+    await user.click(previous);
+    expect(region()).toHaveAttribute('data-command', '1');
+    expect(toggle()).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('Previous from command 3 shows command 2 complete and presses Pause (D-02)', () => {
+    setup();
+    // fireEvent: no hover or focus pause. The release clears the dot's Pause.
+    fireEvent.click(within(region()).getByRole('button', { name: 'Go to command 3' }));
+    fireEvent.click(toggle());
+    expect(toggle()).toHaveAttribute('aria-pressed', 'false');
+    expect(region()).toHaveAttribute('data-command', '3');
+
+    fireEvent.click(within(region()).getByRole('button', { name: 'Previous command' }));
+    expect(region()).toHaveAttribute('data-command', '2');
+    expect(cell(2)).toHaveTextContent('show disk');
+    expect(cell(2)).toHaveTextContent('df -h');
+    expect(toggle()).toHaveAttribute('aria-pressed', 'true');
+    expect(region()).toHaveAttribute('data-playback', 'paused');
+  });
+
+  it('Tabs from Pause through Previous, every dot, then Next (DOM = visual = Tab order)', async () => {
+    const { user } = setup();
+    act(() => toggle().focus());
+    const order = [
+      'Previous command',
+      'Go to command 1',
+      'Go to command 2',
+      'Go to command 3',
+      'Go to command 4',
+      'Next command',
+    ];
+    for (const name of order) {
+      await user.tab();
+      expect(within(region()).getByRole('button', { name })).toHaveFocus();
+    }
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Outside' })).toHaveFocus();
+  });
 });
 
 describe('DemoTerminal reduced motion', () => {
@@ -413,10 +473,12 @@ describe('DemoTerminal reduced motion', () => {
 });
 
 describe('DemoTerminal one and many commands (G2, G3)', () => {
-  it('is static with one command: no toggle, no dots, no counter, no timer', () => {
+  it('is static with one command: no toggle, no step buttons, no dots, no counter, no timer', () => {
     setup([COMMANDS[0]]);
     expect(within(region()).queryByRole('button', { name: 'Pause demo' })).toBeNull();
     expect(within(region()).queryAllByRole('button', { name: /^Go to command/ })).toHaveLength(0);
+    expect(within(region()).queryByRole('button', { name: 'Previous command' })).toBeNull();
+    expect(within(region()).queryByRole('button', { name: 'Next command' })).toBeNull();
     expect(region()).not.toHaveTextContent('1 / 1');
     expect(jest.getTimerCount()).toBe(0);
     expect(cell(1)).toHaveTextContent('box hash notes.txt');
@@ -441,9 +503,12 @@ describe('DemoTerminal one and many commands (G2, G3)', () => {
 
   it('keeps observing the region in the document after the list shrinks, so visibility still pauses and resumes it (WR-02)', () => {
     const { rerender } = setup();
-    // fireEvent, not user: no hover or focus pause, so only visibility decides.
+    // fireEvent, not user: no hover or focus pause, and the release clears the
+    // sticky Pause the dot press set (D-02), so only visibility decides.
     fireEvent.click(within(region()).getByRole('button', { name: 'Go to command 4' }));
     expect(region()).toHaveAttribute('data-command', '4');
+    fireEvent.click(toggle());
+    expect(toggle()).toHaveAttribute('aria-pressed', 'false');
     rerender(
       <>
         <DemoTerminal name="box" commands={COMMANDS.slice(0, 2)} />
@@ -508,15 +573,20 @@ describe('DemoTerminal one and many commands (G2, G3)', () => {
     expect(region()).toHaveAttribute('data-playback', 'playing');
   });
 
-  it('gives seven commands seven dots in a wrapping bar', () => {
+  it('gives seven commands seven dots in a wrapping dot row, with Previous and Next beside it (ENG-06)', () => {
     const seven = Array.from({ length: 7 }, (_, i) => ({
       ...COMMANDS[i % 4],
       input: `box uuid ${i + 1}`,
     }));
     setup(seven);
     const bar = within(region()).getByRole('group', { name: 'Commands' });
-    expect(within(bar).getAllByRole('button', { name: /^Go to command/ })).toHaveLength(7);
-    expect(bar).toHaveClass('flex-wrap');
+    const dots = within(bar).getAllByRole('button', { name: /^Go to command/ });
+    expect(dots).toHaveLength(7);
+    // Layout contract (14-UI-SPEC Contract 1): only the inner dot row wraps.
+    expect(dots[0].parentElement).toHaveClass('flex-wrap');
+    expect(bar).toHaveClass('min-h-12');
+    expect(within(bar).getByRole('button', { name: 'Previous command' })).toHaveClass('shrink-0');
+    expect(within(bar).getByRole('button', { name: 'Next command' })).toHaveClass('shrink-0');
   });
 });
 

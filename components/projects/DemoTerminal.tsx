@@ -8,7 +8,7 @@ import {
   useSyncExternalStore,
   type FocusEvent,
 } from 'react';
-import { CaretRightIcon, PauseIcon } from '@phosphor-icons/react/dist/ssr';
+import { CaretLeftIcon, CaretRightIcon, PauseIcon } from '@phosphor-icons/react/dist/ssr';
 import {
   delayFor,
   goTo,
@@ -106,8 +106,9 @@ function CommandLines({ command, lines }: { command: TerminalCommand; lines: Vis
 }
 
 /**
- * A project's demo as a flat token terminal, box first (ENG-05; 11 D-01,
- * D-02 amended, D-03, D-26; 11-UI-SPEC "Demo — box: DemoTerminal", G2, G3).
+ * A project's demo as a flat token terminal, box first (ENG-05, ENG-06; 11
+ * D-01, D-02 amended, D-26; 14 D-01 to D-03; 11-UI-SPEC "Demo — box:
+ * DemoTerminal", G2, G3; 14-UI-SPEC Contract 1).
  * A client island fed by the server page's props, `name` and `commands`
  * only: it imports the pure state machine in lib/demo-terminal.ts (and its
  * TerminalCommand type), the reduced-motion hook and an icon, never a data
@@ -116,16 +117,19 @@ function CommandLines({ command, lines }: { command: TerminalCommand; lines: Vis
  *
  * Timer: one effect schedules a single timeout of `delayFor(state)` that
  * applies `tick`, and clears it in cleanup, so exactly one timer is pending
- * at any time, a dot press mid-typing cannot double-advance and an unmount
- * leaves nothing running (11-RESEARCH Pitfall 1). State changes only in that
+ * at any time, a step or dot press mid-typing cannot double-advance and an
+ * unmount leaves nothing running (11-RESEARCH Pitfall 1). State changes only in that
  * timer callback, the observer callback and event handlers.
  *
  * Pausing (D-02 amended): autoplay runs only when no pause source is set.
  * The Pause toggle is sticky: after a press nothing resumes until it is
- * released. Releasing it resumes at once: it also clears the current hover
- * and focus pauses (releaseSticky), although the pointer is still over the
- * region and focus is still on the button; those re-arm only on the next
- * pointerenter or the next time focus enters the region from outside.
+ * released. A step or a dot press presses it too (14 D-02, `show`): the
+ * target command shows complete at once, with no typing replay, and the demo
+ * holds there until Pause is released. Releasing it resumes at once: it also
+ * clears the current hover and focus pauses (releaseSticky), although the
+ * pointer is still over the region and focus is still on the button; those
+ * re-arm only on the next pointerenter or the next time focus enters the
+ * region from outside.
  * It starts pressed under reduced motion (`override ?? reduced`); the server
  * renders it unpressed and the client flips it after hydration, before
  * anything can advance, because the first command is server-rendered complete
@@ -146,15 +150,25 @@ function CommandLines({ command, lines }: { command: TerminalCommand; lines: Vis
  * entries add height but no scroll width. While the current command types,
  * an invisible complete copy of it (note included) holds its full height in
  * the same cell. With one command (G2) only the body
- * renders: no toggle, counter, dots or timer. With seven or more (G3) the
- * dot bar wraps.
+ * renders: no toggle, counter, step buttons, dots or timer; with none,
+ * nothing renders (11 IN-01).
+ *
+ * Command bar (14-UI-SPEC Contract 1): `[‹] dots [›]`, a left-aligned
+ * cluster in the 'Commands' group, so DOM = visual = Tab order is Pause,
+ * Previous, dot 1 to n, Next. The ends never wrap (14 D-03): on command 1
+ * Previous, and on the last Next, is aria-disabled, stays focusable, and a
+ * press changes nothing and presses nothing; autoplay still loops from the
+ * last command to the first. The bar is one 48 px row (four commands fit
+ * at 375 px); when the dots outgrow it (G3) only the inner dot row wraps,
+ * and Previous and Next stay beside it, vertically centred.
  *
  * Screen readers: the drawn lines are aria-hidden, so a command is never
  * read twice or half-typed; an sr-only block always holds the full current
  * command. Its container is aria-live 'off' while playing, so autoplay never
- * chatters, and 'polite' while paused, so a dot press is announced (the WAI
- * carousel pattern). `data-playback` reports the effective state and
- * `data-command` the 1-based current command, for tests.
+ * chatters, and 'polite' while paused, so a step or dot press is announced
+ * (the WAI carousel pattern; no new live region). `data-playback` reports
+ * the effective state and `data-command` the 1-based current command, for
+ * tests.
  */
 export default function DemoTerminal({
   name,
@@ -201,7 +215,7 @@ export default function DemoTerminal({
   }, []);
 
   function onFocus(e: FocusEvent<HTMLDivElement>) {
-    // Focus moving between the toggle and the dots is not an entry (D-02 amended).
+    // Focus moving between the region's own controls is not an entry (D-02 amended).
     if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
     setFocusWithin(true);
   }
@@ -230,7 +244,7 @@ export default function DemoTerminal({
   }
 
   function onBlur(e: FocusEvent<HTMLDivElement>) {
-    // Focus moving between the toggle and the dots stays inside: keep the pause.
+    // Focus moving between the region's own controls stays inside: keep the pause.
     if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
     setFocusWithin(false);
   }
@@ -310,30 +324,43 @@ export default function DemoTerminal({
         <div
           role="group"
           aria-label="Commands"
-          className={`flex items-center gap-2 border-t border-line px-4 ${count >= 7 ? 'min-h-12 flex-wrap' : 'h-12'}`}
+          className="flex min-h-12 items-center gap-2 border-t border-line px-4"
         >
-          {commands.map((_, i) => {
-            const isCurrent = i === state.index;
-            return (
-              <button
-                key={i}
-                type="button"
-                aria-label={`Go to command ${i + 1}`}
-                aria-current={isCurrent ? 'true' : undefined}
-                className={DOT}
-                onClick={() => setState(goTo(i, count))}
-              >
-                <span
-                  aria-hidden="true"
-                  className={
-                    isCurrent
-                      ? 'h-2 w-6 rounded-full bg-ink'
-                      : 'size-2 rounded-full bg-line-strong transition-colors duration-(--duration-fast) ease-erosion group-hover:bg-ink-muted'
-                  }
-                />
-              </button>
-            );
-          })}
+          <button
+            type="button"
+            aria-label="Previous command"
+            aria-disabled={state.index === 0 ? 'true' : undefined}
+            className={STEP}
+            onClick={() => {
+              if (state.index > 0) show(stepTo(state.index, -1, count));
+            }}
+          >
+            <CaretLeftIcon size={24} aria-hidden="true" />
+          </button>
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            {commands.map((_, i) => {
+              const isCurrent = i === state.index;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  aria-label={`Go to command ${i + 1}`}
+                  aria-current={isCurrent ? 'true' : undefined}
+                  className={DOT}
+                  onClick={() => show(goTo(i, count))}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={
+                      isCurrent
+                        ? 'h-2 w-6 rounded-full bg-ink'
+                        : 'size-2 rounded-full bg-line-strong transition-colors duration-(--duration-fast) ease-erosion group-hover:bg-ink-muted'
+                    }
+                  />
+                </button>
+              );
+            })}
+          </div>
           <button
             type="button"
             aria-label="Next command"
