@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 14
 current_phase_name: UI Fixes & Terminal Controls
 status: executing
-stopped_at: Completed 14-01-PLAN.md
-last_updated: "2026-11-14T11:07:56.276Z"
+stopped_at: Completed 14-02-PLAN.md
+last_updated: "2026-11-14T11:23:04.531Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 14 execution started
-state_head: 6393325a606bb2b27a6f883f14926039f0a1a458
+state_head: c170254eb2588a051af93090ad1cb9924a9c17db
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 30
-  completed_plans: 23
+  completed_plans: 24
   percent: 14
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-14)
 ## Current Position
 
 Phase: 14 (UI Fixes & Terminal Controls) — EXECUTING
-Plan: 2 of 8
+Plan: 3 of 8
 Status: Ready to execute
 Last activity: 2026-11-14 — Phase 14 execution started
 
@@ -77,6 +77,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 13 P21 | 4min | 3 tasks | 1 files |
 | Phase 13 P22 | 10min | 3 tasks | 9 files |
 | Phase 14 P01 | 10min | 2 tasks | 4 files |
+| Phase 14 P02 | 9min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -146,6 +147,9 @@ Recent decisions affecting current work:
 - [Phase 14]: 14-01: SHELL-07 fix 49b8fe1 (ledger row #6 write-back in 14-07): a plain tap on the panel link whose href strictly equals the pathname focuses Menu with preventScroll, then closes; default-prevented with no query (D-16), Next navigates with one (D-23). SHELL-08 75e9900: focus-visible:-outline-offset-4 on panel links, globals.css unchanged
 - [Phase 14]: 14-01: the global scroll-margin-top makes a plain focus() of the sticky Menu button scroll the page (600 to 530 Chromium, 185.5 Firefox); the Escape handler still does it, logged in 14 deferred-items.md. Panel onFocus revealFocusedRow keeps a focused row inside the scrolling panel (Firefox did not scroll it at 375 x 320)
 - [Phase 14]: 14-01: new visual test menu @375 current row focused declares menu/375-current-focus-visual-dark-linux.png, produced only by the 14-08 dispatch; CI compare reports it missing until then
+- [Phase 14]: HOME-10: rail scrim takes the locked P3 stops at w-56 (reverses 12-07 D-24); B8 lowest 7.93:1 poster, 7.91:1 live, every label above the 5:1 aim (14-02)
+- [Phase 14]: B8 live rows opt into budgetMeasureOnly, the home-canvas rule for tests that need 3d (14-02)
+- [Phase 14]: HOME-09: fixed by 09-01, now guarded at 375 px in four modes and eight stops; no app change, no home/375 PNG (14-02)
 
 ### Pending Todos
 
@@ -198,6 +202,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-14T11:07:56.215Z
-Stopped at: Completed 14-01-PLAN.md
+Last session: 2026-11-14T11:23:04.470Z
+Stopped at: Completed 14-02-PLAN.md
 Resume file: None
