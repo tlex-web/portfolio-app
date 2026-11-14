@@ -245,3 +245,71 @@ describe('SiteNav mobile menu (disclosure)', () => {
     expect(panel()).toBeVisible();
   });
 });
+
+/**
+ * jsdom has no layout: give the open panel a scrollport (top 64, 260 px tall, so
+ * its client bottom is 324) and stack the rows 56 px apart from y 72 (48 px row +
+ * gap-2). Rows 0-3 fit with the 8 px clearance; the last row (296-344) sits 28 px
+ * past the bottom edge once the clearance is added.
+ */
+function layOutPanel(panel: HTMLElement) {
+  const rect = (top: number, height: number) =>
+    ({ top, bottom: top + height, left: 0, right: 375, width: 375, height, x: 0, y: top }) as DOMRect;
+  panel.getBoundingClientRect = () => rect(64, 260);
+  Object.defineProperty(panel, 'clientHeight', { configurable: true, value: 260 });
+  within(panel)
+    .getAllByRole('link')
+    .forEach((row, i) => {
+      row.getBoundingClientRect = () => rect(72 + 56 * i, 48);
+    });
+  panel.scrollTop = 0;
+}
+
+describe('SiteNav mobile menu: revealing the focused row (SHELL-08, D-17)', () => {
+  it('scrolls a partly hidden row fully into the panel when the keyboard focuses it', async () => {
+    const user = userEvent.setup();
+    const { menuButton, panel } = renderNav();
+
+    await user.click(menuButton());
+    layOutPanel(panel()!);
+    const last = within(panel()!).getByRole('link', { name: 'Contact' });
+
+    // Tab from Menu through the five rows. jsdom matches :focus-visible on any
+    // focused element, as a browser does after keyboard input.
+    for (let i = 0; i < 5; i += 1) await user.tab();
+
+    expect(last).toHaveFocus();
+    expect(last.matches(':focus-visible')).toBe(true);
+    expect(panel()!.scrollTop).toBe(28);
+  });
+
+  // 14-REVIEW WR-01: Firefox focuses a link on mousedown. Scrolling the panel
+  // between mousedown and mouseup moves the row from under the pointer, so the
+  // click misses it. A browser does not match :focus-visible after a pointer
+  // press, and jsdom cannot tell the two apart, so the browser's answer is stubbed.
+  it('leaves the panel where it is when a pointer press focuses a partly hidden row (WR-01)', async () => {
+    const user = userEvent.setup();
+    const { menuButton, panel } = renderNav();
+
+    await user.click(menuButton());
+    layOutPanel(panel()!);
+    const last = within(panel()!).getByRole('link', { name: 'Contact' });
+
+    const matches = Element.prototype.matches;
+    const spy = jest
+      .spyOn(Element.prototype, 'matches')
+      .mockImplementation(function (this: Element, selector: string) {
+        return selector === ':focus-visible' ? false : matches.call(this, selector);
+      });
+    try {
+      // Press without release: the mousedown that focuses the link, before any click.
+      await user.pointer({ keys: '[MouseLeft>]', target: last });
+
+      expect(last).toHaveFocus();
+      expect(panel()!.scrollTop).toBe(0);
+      expect(spy).toHaveBeenCalledWith(':focus-visible');
+    } finally {
+      spy.mockRestore();
+    }
+  });
+});

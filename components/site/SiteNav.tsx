@@ -63,11 +63,16 @@ const ROW_CLEARANCE = 8;
  * where it is when focus lands on it, cutting the row and its ring at the panel's
  * edge; Chromium already scrolls it in, so this is a no-op there. It scrolls the
  * panel only, never the page.
+ *
+ * Keyboard focus only (`:focus-visible`, the case the ring draws for; 14-REVIEW
+ * WR-01): Firefox focuses a link on mousedown, and scrolling the panel between
+ * mousedown and mouseup can move the row out from under the pointer, so the
+ * click lands on the list instead and nothing navigates.
  */
 function revealFocusedRow(event: ReactFocusEvent<HTMLDivElement>) {
   const panel = event.currentTarget;
   const row = event.target;
-  if (row === panel || !(row instanceof HTMLElement)) return;
+  if (row === panel || !(row instanceof HTMLElement) || !row.matches(':focus-visible')) return;
   const box = row.getBoundingClientRect();
   const top = panel.getBoundingClientRect().top + panel.clientTop;
   const bottom = top + panel.clientHeight;
