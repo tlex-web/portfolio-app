@@ -12,7 +12,7 @@ Requirements for milestone v2.1 Survey Expansion. Each maps to exactly one roadm
 - [x] **GUARD-07**: A pull request with a failing CI job cannot merge into `main`: one aggregate required check depends on every CI job, and a ruleset on `main` requires it (Tim applies the setting; verified with `gh api` and a deliberately red test PR)
 - [x] **GUARD-08**: Skipped CI cannot slip past the gate: a `[ci skip]` commit or a path-filtered workflow neither leaves a PR's required check pending forever nor reaches production unchecked
 - [x] **GUARD-09**: The contact form's rate limiter is confirmed active in production (the expected Upstash variables are set, and the sixth rapid honeypot submission gets a 429), and production never silently allows every request when the limiter is unconfigured or unreachable
-- [ ] **GUARD-10**: Tests, e2e specs and Playwright configs are type-checked by `npm run type-check` with zero errors (from ledger row 07 IN-08, decided at the 13-06 triage; needs Jest type declarations: `@types/jest`, which Tim vets first, or `@jest/globals` imports)
+- [x] **GUARD-10**: Tests, e2e specs and Playwright configs are type-checked by `npm run type-check` with zero errors (from ledger row 07 IN-08, decided at the 13-06 triage; needs Jest type declarations: `@types/jest`, which Tim vets first, or `@jest/globals` imports)
 - [x] **DEPS-06**: Playwright is upgraded to 1.65 together with its container image tag in its own commit, re-baselined alone before any intended visual change (closes Dependabot PR #140)
 
 ### Test Coverage
@@ -32,13 +32,13 @@ Requirements for milestone v2.1 Survey Expansion. Each maps to exactly one roadm
 
 ### Data & Terrain
 
-- [ ] **DATA-09**: Adding photos or regions never changes Home: the ascent keeps its four Matterhorn waypoints, the 1,617 m rail start and its footer ticks, read from an explicit Home waypoint list
-- [ ] **DATA-10**: Every photo belongs to an explicit region and records its country, in typed, committed data that CI checks for staleness
-- [ ] **DATA-11**: The terrain build produces a local plate (contours and hillshade) for every region from swissALTIRegio, stays deterministic under `terrain:build --check`, and keeps the Matterhorn plate's hashed files byte-identical
+- [x] **DATA-09**: Adding photos or regions never changes Home: the ascent keeps its four Matterhorn waypoints, the 1,617 m rail start and its footer ticks, read from an explicit Home waypoint list
+- [x] **DATA-10**: Every photo belongs to an explicit region and records its country, in typed, committed data that CI checks for staleness
+- [x] **DATA-11**: The terrain build produces a local plate (contours and hillshade) for every region from swissALTIRegio, stays deterministic under `terrain:build --check`, and keeps the Matterhorn plate's hashed files byte-identical
 - [ ] **DATA-12**: A build-time Alps overview map is generated from Copernicus GLO-90 contours, with each region's plate extent drawn as a rectangle and 3–5 labelled reference summits, within a size budget measured before it is fixed
 - [ ] **DATA-13**: New photos are published: more Zermatt photos and 1–2 new regions inside the swissALTIRegio footprint, at least one in Italy or Austria, each with EXIF facts, DEM heights and metadata-free hashed derivatives through the existing pipeline
 - [ ] **DATA-14**: A photo or clip can carry a coarser location than the 4-decimal default (for example near a home or a drone take-off point), and a coarse or approximate position is flagged wherever it is shown
-- [ ] **DATA-15**: The served-asset guard rejects drone sidecars and telemetry anywhere in the repo or the site (`.SRT`, `.LRF`, GPX, KML, and GPS or telemetry tracks inside MP4 files), proven by selftest fixtures
+- [x] **DATA-15**: The served-asset guard rejects drone sidecars and telemetry anywhere in the repo or the site (`.SRT`, `.LRF`, GPX, KML, and GPS or telemetry tracks inside MP4 files), proven by selftest fixtures
 
 ### Region Series
 
@@ -121,7 +121,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GUARD-07 | Phase 13 | Complete |
 | GUARD-08 | Phase 13 | Complete |
 | GUARD-09 | Phase 13 | Complete |
-| GUARD-10 | Phase 15 | Pending |
+| GUARD-10 | Phase 15 | Complete |
 | DEPS-06 | Phase 13 | Complete |
 | VERIFY-05 | Phase 13 | Complete |
 | VERIFY-06 | Phase 13 | Complete |
@@ -132,13 +132,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HOME-09 | Phase 14 | Complete |
 | HOME-10 | Phase 14 | Complete |
 | LBOX-08 | Phase 14 | Complete |
-| DATA-09 | Phase 15 | Pending |
-| DATA-10 | Phase 15 | Pending |
-| DATA-11 | Phase 15 | Pending |
+| DATA-09 | Phase 15 | Complete |
+| DATA-10 | Phase 15 | Complete |
+| DATA-11 | Phase 15 | Complete |
 | DATA-12 | Phase 16 | Pending |
 | DATA-13 | Phase 16 | Pending |
 | DATA-14 | Phase 16 | Pending |
-| DATA-15 | Phase 15 | Pending |
+| DATA-15 | Phase 15 | Complete |
 | REGION-01 | Phase 18 | Pending |
 | REGION-02 | Phase 18 | Pending |
 | REGION-03 | Phase 18 | Pending |

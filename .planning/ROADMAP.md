@@ -184,7 +184,7 @@ Plans:
   4. The served-asset guard fails on `.SRT`, `.LRF`, GPX and KML files and on MP4s carrying GPS or telemetry tracks anywhere in the repo or the site, proven by selftest fixtures.
   5. The phase lands with zero visual-baseline changes, and a test shows that every link to a photo comes from one URL helper (still `/photos/<slug>`).
   6. `npm run type-check` also type-checks the Jest tests, e2e specs and Playwright configs, with zero errors (GUARD-10; the 13-06 measurement found 5482 errors in 103 files as-is and 69 in 21 files with the Jest globals declared), using `@types/jest` only after Tim vets it, or `@jest/globals` imports.
-**Plans**: 15/16 plans executed in 16 waves (serial: one checkout, a shared `selftest.mjs` and `package.json`, and the production e2e server on port 3000)
+**Plans**: 16/16 plans executed in 16 waves (serial: one checkout, a shared `selftest.mjs` and `package.json`, and the production e2e server on port 3000)
 
 Plans:
 **Wave 1**
@@ -233,7 +233,7 @@ Plans:
 - [x] 15-15-PLAN.md — Named photo fixtures (`viewBySlug`) for every identity lookup in the photo tests
 
 **Wave 16** *(blocked on Wave 15 completion)*
-- [ ] 15-16-PLAN.md — D-29 write-backs, full local gate with per-commit snapshot checks and the client JS budget, `ci/15-16` push under D-31 with Visual Regression unchanged
+- [x] 15-16-PLAN.md — D-29 write-backs, full local gate with per-commit snapshot checks and the client JS budget, `ci/15-16` push under D-31 with Visual Regression unchanged
 **Research**: Not needed; the work follows in-repo patterns. Plan with explicit acceptance gates: every visual baseline unchanged, `data:check` green, and the Matterhorn terrain hashes equal to today's.
 **UI hint**: no
 **UI-SPEC**: Not needed. Nothing visible changes; extracting the footer's sheet margin into a shared component must be zero-diff.
@@ -344,7 +344,7 @@ Plans:
 | 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 34/34 | Complete | 2026-11-05 |
 | 13. Repo Safety & Test Debt | v2.1 | 22/22 | Complete    | 2026-11-14 |
 | 14. UI Fixes & Terminal Controls | v2.1 | 8/8 | Complete    | 2026-11-14 |
-| 15. Region & Plate Data Model | v2.1 | 15/16 | In Progress | - |
+| 15. Region & Plate Data Model | v2.1 | 16/16 | In Progress | - |
 | 16. New Regions & Alps Overview Data | v2.1 | 0/TBD | Not started | - |
 | 17. Region Routes, SEO & Structured Data | v2.1 | 0/TBD | Not started | - |
 | 18. Immersive Survey Layout | v2.1 | 0/TBD | Not started | - |
