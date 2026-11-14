@@ -65,3 +65,7 @@ The verifier wasn't dispatched, for the same reason as wave 2. The ENG-06 transc
 ## Wave 7 (plan 14-07): nothing_to_report / no_criteria
 
 14-07 states no UI acceptance criteria. It writes the ledger back and runs the local gate. The gate's one fix is test-only: the E5 row in `e2e/photos-sweep.spec.ts` now expects the D-22 Escape order. On the tip, the 9 Phase 14 e2e files pass 592/592 in Chromium and Firefox.
+
+## Wave 8 (plan 14-08): nothing_to_report / no_criteria
+
+14-08 states no UI acceptance criteria. It proves the phase in CI and re-baselines the declared PNGs. Its UI evidence comes from CI, not a live DOM. On Tim's baseline commit `55160a4` (run 43600436335), E2E passed 1471 rows in Chromium, Firefox and WebKit, including the WebKit LBOX-08, SHELL-07, SHELL-08, B8 poster and 375 px rows, and Visual Regression passed 98/98 against the 12 re-baselined shots. Tim reviewed those shots before committing them.
