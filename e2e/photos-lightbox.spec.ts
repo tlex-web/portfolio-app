@@ -821,6 +821,10 @@ test.describe('Focus on close stays in view (LBOX-08)', () => {
     // The other two close paths (D-10), through the same restoreFocus.
     { view: 'Map', width: 720, height: 450, setup: 'a', close: 'Close photo', tags: CHROMIUM },
     { view: 'Map', width: 720, height: 450, setup: 'a', close: 'browser Back', tags: CHROMIUM },
+    // Browser Back beyond Chromium (14 IN-06): Back is the close most tied to the engine's
+    // history scroll restoration, which the next-frame re-reveal races. This row guards that
+    // timing in Firefox and Linux WebKit before Phase 18 rewrites the lightbox.
+    { view: 'Map', width: 720, height: 450, setup: 'a', close: 'browser Back', tags: '@no-win-webkit' },
   ];
 
   /**

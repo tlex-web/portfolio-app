@@ -3,6 +3,7 @@ import { mediaManifest } from '@/data/generated/media-manifest';
 import { projects } from '@/data/projects';
 import { roadmapItems } from '@/data/roadmap';
 import type { Project } from '@/data/types';
+import { TIMINGS } from '@/lib/demo-terminal';
 import { plainText } from '@/lib/inline-code';
 import { clickFocusesButtons } from './helpers/engine';
 
@@ -682,7 +683,8 @@ test.describe('Demo (ENG-05)', () => {
     // A dot press sets the sticky Pause (D-02): leaving does not resume.
     await expect(region).toHaveAttribute('data-playback', 'paused');
     await leaveTerminal(page);
-    await page.waitForTimeout(4000);
+    // Outlast one autoplay hold, so "nothing advanced" stays true if the hold changes (14 IN-05).
+    await page.waitForTimeout(TIMINGS.holdMs + 1000);
     await expect(region).toHaveAttribute('data-playback', 'paused');
     await expect(region).toHaveAttribute('data-command', String(LAST_N));
   });
@@ -800,7 +802,8 @@ test.describe('Demo (ENG-05)', () => {
 
     // Pointer and focus leave: the step's sticky Pause still holds it.
     await leaveTerminal(page);
-    await page.waitForTimeout(4000);
+    // Outlast one autoplay hold, so "nothing advanced" stays true if the hold changes (14 IN-05).
+    await page.waitForTimeout(TIMINGS.holdMs + 1000);
     await expect(region).toHaveAttribute('data-command', stepped);
     await expect(region).toHaveAttribute('data-playback', 'paused');
   });
