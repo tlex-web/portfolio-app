@@ -131,11 +131,13 @@ function DefaultNav() {
 
     // Escape is the open menu's: a document capture listener that prevents the
     // press, so a page's own Escape handling (the photo page goes to /photos)
-    // skips it (10-REVIEW CR-01).
+    // skips it (10-REVIEW CR-01). Focus moves to Menu with preventScroll for the
+    // reason at the tap close below: a plain focus() scrolled the page up (/roadmap
+    // at 375 x 812 from 600 to 530 in Chromium, 185.5 in Firefox).
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       event.preventDefault();
-      buttonRef.current?.focus();
+      buttonRef.current?.focus({ preventScroll: true });
       setOpen(false);
     };
     const onPointerDown = (event: PointerEvent) => {
