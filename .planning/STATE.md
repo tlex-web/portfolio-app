@@ -5,11 +5,11 @@ milestone_name: Survey Expansion
 current_phase: 15
 current_phase_name: Region & Plate Data Model
 status: planning
-stopped_at: Phase 14 complete, ready to plan Phase 15
-last_updated: "2026-11-14T16:46:10.618Z"
+stopped_at: Phase 15 context gathered
+last_updated: "2026-11-14T17:10:25.758Z"
 last_activity: 2026-11-14
 last_activity_desc: "Phase 14 shipped as PR #148"
-state_head: fa74cf9d3cfa21cf468e69733bbdcf26a05263db
+state_head: c06c95465f0fafefb874f34c1939035e0bc5a765
 progress:
   total_phases: 7
   completed_phases: 2
@@ -229,6 +229,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-14T16:10:00Z
-Stopped at: Phase 14 complete, ready to plan Phase 15
-Resume file: None
+Last session: 2026-11-14T17:10:25.675Z
+Stopped at: Phase 15 context gathered
+Resume file: .planning/phases/15-region-plate-data-model/15-CONTEXT.md
