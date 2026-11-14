@@ -21,7 +21,7 @@ export default function EdgeArt() {
       aria-hidden="true"
       className="relative aspect-square w-full max-w-md overflow-hidden rounded-lg border border-line bg-surface-raised"
     >
-      <ContourField lod="hero" className="absolute inset-0" />
+      <ContourField plate="matterhorn" lod="hero" className="absolute inset-0" />
       <svg
         className="absolute inset-0 size-full"
         viewBox="0 0 512 512"

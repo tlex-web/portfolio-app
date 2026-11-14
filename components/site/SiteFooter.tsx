@@ -72,7 +72,7 @@ export default function SiteFooter() {
         aria-hidden="true"
         className="relative w-full aspect-[5/1] sm:aspect-[8/1] lg:aspect-[12/1] border-b border-line pointer-events-none"
       >
-        <ContourField lod="strip" className="absolute inset-0" />
+        <ContourField plate="matterhorn" lod="strip" className="absolute inset-0" />
         {homePhotos().map((photo) =>
           photo.position && photo.uv ? (
             <span

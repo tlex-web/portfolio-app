@@ -112,7 +112,7 @@ export default function MapSheet({ photos }: { photos: readonly PhotoView[] }) {
             className="absolute inset-0 block h-full w-full opacity-(--relief-opacity)"
           />
         </picture>
-        <ContourField lod="hero" className="absolute inset-0" />
+        <ContourField plate="matterhorn" lod="hero" className="absolute inset-0" />
         <div aria-hidden="true">
           <SummitMark style={summitAt} />
           <div
