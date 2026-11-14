@@ -99,7 +99,9 @@ describe('positions (DATA-04, D-02)', () => {
       approximate: true,
       radiusM: 100,
     });
-    expect(pos?.reason).toEqual(expect.stringContaining('Riffelsee'));
+    // Narrow the position union: only the hand-placed position carries a reason.
+    if (pos?.source !== 'hand-placed') throw new Error('r004-011 must be hand-placed');
+    expect(pos.reason).toEqual(expect.stringContaining('Riffelsee'));
   });
 
   test.each(DIGITAL)('%s has its EXIF position, not approximate', (id) => {

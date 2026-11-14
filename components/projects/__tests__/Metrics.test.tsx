@@ -208,6 +208,7 @@ describe('Metrics in the case-study slot order (ENG-02)', () => {
       slug: 'box',
       name: 'box',
       kicker: { version: 'v2.0', status: 'shipped' },
+      links: { github: 'https://github.com/tlex-web/box' },
       problem: ['A box problem paragraph.'],
       safety: { intro: 'Destructive commands preview first.' },
       metrics: { tiles: tiles(3) },

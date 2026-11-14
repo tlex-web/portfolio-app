@@ -154,7 +154,10 @@ describe('photo view-model (replaces the legacy bridge, DATA-08)', () => {
   it('resolves every annotation elevation to the official summit or the photo DEM height', () => {
     let checked = 0;
     for (const view of views) {
-      for (const a of editorial[view.id].annotations) {
+      // editorial is keyed by PhotoId, so look the view's id up among the photo ids.
+      const id = ids.find((photoId) => photoId === view.id);
+      if (!id) throw new Error(`view ${view.id} has no photo fact`);
+      for (const a of editorial[id].annotations) {
         if (!a.details?.elevation) continue;
         const expected =
           a.details.elevation.kind === 'summit'

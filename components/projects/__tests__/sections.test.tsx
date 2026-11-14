@@ -449,6 +449,7 @@ describe('Stack and Next steps in the case study (ENG-02, N4)', () => {
     slug: 'box',
     name: 'box',
     kicker: { version: 'v2.0', status: 'shipped' },
+    links: { github: 'https://github.com/tlex-web/box' },
     problem: ['A box problem paragraph.'],
     stack: { groups: [{ label: 'Language', items: ['Rust 2021'] }] },
   };
