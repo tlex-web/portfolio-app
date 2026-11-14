@@ -318,16 +318,40 @@ export function hotspotViews(
 }
 
 /**
+ * The region the v2.0 light table (/photos: map, grid, carousel, header,
+ * viewer stepping, sitemap and static params) shows. From Phase 15 on it is the
+ * Zermatt series only, so a photo Phase 16 adds in another region never lands on
+ * the Matterhorn map. Phase 18 replaces the light table with region plates.
+ */
+export const LIGHT_TABLE_REGION = 'zermatt';
+
+/**
+ * One region's series as a buildPhotoViews input: the generated photos whose
+ * `region` equals `region`, in generated order, with the committed editorial
+ * copy and image manifest. buildWaypoints still owns the order.
+ *
+ * @throws RangeError when no generated photo is in `region`.
+ */
+export function seriesInput(region: string): PhotoViewInput {
+  const series = photos.filter((p) => p.region === region);
+  if (series.length === 0) {
+    throw new RangeError(`seriesInput: region ${region} has no photos in data/generated/photos.ts`);
+  }
+  return { photos: series, editorial, imageManifest };
+}
+
+/**
  * Every photo view in the canonical order (buildWaypoints' order, unchanged).
  *
  * @param input the photo facts, editorial copy and image manifest; defaults to
- *   the committed data (the parameter exists for unit tests).
+ *   the light table's series, seriesInput(LIGHT_TABLE_REGION) (the parameter
+ *   exists for unit tests).
  * @throws RangeError for everything buildWaypoints rejects (an empty photo
  *   set, an orphan photo, a null position, uv or elevation), and for a photo
  *   without its 640, 1024, 1600 or 2560 px variant.
  */
 export function buildPhotoViews(
-  input: PhotoViewInput = { photos, editorial, imageManifest }
+  input: PhotoViewInput = seriesInput(LIGHT_TABLE_REGION)
 ): readonly PhotoView[] {
   const waypoints = buildWaypoints(input);
 
@@ -363,7 +387,7 @@ export function buildPhotoViews(
   });
 }
 
-/** The committed photos as views, built once per module load. */
+/** The light table's series (Zermatt) as views, built once per module load. */
 export const photoViews: readonly PhotoView[] = buildPhotoViews();
 
 /** The four locked slugs in canonical order (08 D-07); generateStaticParams reads these. */

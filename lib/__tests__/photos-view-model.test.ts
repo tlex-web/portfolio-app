@@ -18,6 +18,7 @@ import {
   photoMetadata,
   photoSlugs,
   photoViews,
+  seriesInput,
   stripFields,
   type PhotoViewInput,
 } from '@/lib/photos/view-model';
@@ -28,14 +29,16 @@ const DERIVATIVE = /^\/images\/photos\/[a-z0-9-]+\.[0-9a-f]{10}\.(avif|webp)$/;
 const committed: PhotoViewInput = { photos, editorial, imageManifest };
 
 describe('buildPhotoViews order (PHOTO-03)', () => {
-  it('returns the photos in exactly the buildWaypoints() order', () => {
-    expect(photoViews.map((v) => v.slug)).toEqual(buildWaypoints().map((w) => w.slug));
+  it('returns the Zermatt series in DEM order, ties by id (PHOTO-03)', () => {
+    expect(photoViews.map((v) => v.slug)).toEqual(buildWaypoints(seriesInput('zermatt')).map((w) => w.slug));
     expect(photoSlugs).toEqual([
       'matterhorn-from-zermatt',
       'gornerschlucht-waterfall',
       'matterhorn-glacier-trail',
       'riffelsee-reflection',
     ]);
+    // With today's data the Zermatt series is the Home ascent, in the same order.
+    expect(photoSlugs).toEqual(buildWaypoints().map((w) => w.slug));
   });
 
   it('breaks a tie in DEM height by id', () => {
