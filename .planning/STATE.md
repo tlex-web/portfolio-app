@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 14
 current_phase_name: UI Fixes & Terminal Controls
 status: executing
-stopped_at: Completed 14-04-PLAN.md
-last_updated: "2026-11-14T11:49:32.326Z"
+stopped_at: Completed 14-05-PLAN.md
+last_updated: "2026-11-14T12:06:38.244Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 14 execution started
-state_head: eae7bb4701d2e9d20c10edd60232319aa74a78c7
+state_head: 9e03d21e7b6d4fd1e901c77c279953f7a67102a5
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 30
-  completed_plans: 26
+  completed_plans: 27
   percent: 14
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-14)
 ## Current Position
 
 Phase: 14 (UI Fixes & Terminal Controls) — EXECUTING
-Plan: 5 of 8
+Plan: 6 of 8
 Status: Ready to execute
 Last activity: 2026-11-14 — Phase 14 execution started
 
@@ -80,6 +80,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 14 P02 | 9min | 3 tasks | 4 files |
 | Phase 14 P03 | 12min | 2 tasks | 3 files |
 | Phase 14 P04 | 7min | 2 tasks | 3 files |
+| Phase 14 P05 | 15 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -157,6 +158,8 @@ Recent decisions affecting current work:
 - [Phase 14]: 14-03: revealTrigger rounds its target outward to whole pixels (Chromium snapped 348.375 to 348, ring 0.375 px out); the :471 scroll-unchanged row now centres its tile because scrollIntoViewIfNeeded left its ring clipped in Chromium; 14-08 adds a second-frame reveal only if Linux WebKit needs it
 - [Phase 14]: 14-04 D-12: one setLabels(on) path for the Hide labels button and H clears expandedId on hide; never an effect on the cross-tab labels store (fix d6873c8)
 - [Phase 14]: 14-04 D-22: collapseCallout clears a hidden callout (no visible label or key row) and returns false, so zoom then close take the Escape; visible callouts stay first (fix 945d235, ledger 10 IN-01)
+- [Phase 14]: 14-05: Contract 1 classes ship as written; desktop Chromium's thin scrollbar gutter wraps the 375 px command bar (299 px inner), so the one-row e2e check runs as a phone (isMobile in Chromium) and a desktop row asserts the wrap rule; one-token tightening options logged in deferred-items for Tim
+- [Phase 14]: 14-05: A step or any dot press shows the target command complete and sets the sticky Pause through one show(target); ends are aria-disabled, focusable, and stepTo returns null so goTo never throws
 
 ### Pending Todos
 
@@ -209,6 +212,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-14T11:49:32.247Z
-Stopped at: Completed 14-04-PLAN.md
+Last session: 2026-11-14T12:06:38.162Z
+Stopped at: Completed 14-05-PLAN.md
 Resume file: None
