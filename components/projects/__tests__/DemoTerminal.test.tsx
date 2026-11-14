@@ -1,13 +1,16 @@
 /**
- * The project demo terminal island (ENG-05; 11 D-02 amended pause sources and
- * release, D-03 selector dots, D-26 note line; 11-UI-SPEC "Demo — box:
- * DemoTerminal", G2 one command, G3 seven or more; 11-RESEARCH Pattern 3 and
- * Pitfall 1 single timer).
+ * The project demo terminal island (ENG-05, ENG-06; 11 D-02 amended pause
+ * sources and release, D-03 selector dots, D-26 note line; 14 D-01 to D-03
+ * step buttons, a step or dot press presses Pause, the ends never wrap;
+ * 11-UI-SPEC "Demo — box: DemoTerminal", G2 one command, G3 seven or more;
+ * 14-UI-SPEC Contract 1; 11-RESEARCH Pattern 3 and Pitfall 1 single timer).
  *
  * Fake timers drive the one pending timeout. State is read from
  * `data-playback` / `data-command` on the region, `aria-pressed` on the Pause
- * toggle, `aria-current` on the dots, `aria-live` on the screen-reader text,
- * `data-note` on the note line and the text itself, never from colour
+ * toggle, `aria-current` on the dots, `aria-disabled` on the step buttons,
+ * `aria-live` on the screen-reader text,
+ * `data-note` on the note line, the `open` attribute on the transcript
+ * (`details[data-transcript]`, 14 D-04 to D-07) and the text itself, never from colour
  * classes. Each command is rendered in its own `data-cell` of one shared grid
  * cell, so the current one is read through its cell; the body-height tests
  * may assert that layout contract (`grid`, `[grid-area:1/1]`, `invisible`;
@@ -16,6 +19,7 @@
  */
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { renderToString } from 'react-dom/server';
 import DemoTerminal from '@/components/projects/DemoTerminal';
 import type { TerminalCommand } from '@/lib/demo-terminal';
 
@@ -270,18 +274,23 @@ describe('DemoTerminal sticky Pause and its release (D-02 amended)', () => {
 
     act(() => screen.getByRole('button', { name: 'Outside' }).focus());
     expect(region()).toHaveAttribute('data-playback', 'playing');
+    // The transcript summary sits between the region and Outside (14 D-04), outside the region.
+    await user.tab({ shift: true });
+    expect(document.activeElement).toBe(transcript().querySelector('summary'));
+    expect(region()).toHaveAttribute('data-playback', 'playing');
     await user.tab({ shift: true });
     expect(region()).toContainElement(document.activeElement as HTMLElement);
     expect(region()).toHaveAttribute('data-playback', 'paused');
   });
 
-  it('keeps playing after a release when Tab moves from the toggle to a dot inside', async () => {
+  it('keeps playing after a release when Tab moves from the toggle to Previous inside (ENG-06)', async () => {
     const { user } = setup();
     await pressAndRelease(user);
     await user.unhover(region());
 
+    // Moving between the region's own controls is not an entry.
     await user.tab();
-    expect(within(region()).getByRole('button', { name: 'Go to command 1' })).toHaveFocus();
+    expect(within(region()).getByRole('button', { name: 'Previous command' })).toHaveFocus();
     expect(region()).toHaveAttribute('data-playback', 'playing');
   });
 
@@ -310,8 +319,8 @@ describe('DemoTerminal sticky Pause and its release (D-02 amended)', () => {
   });
 });
 
-describe('DemoTerminal selector dots (D-03)', () => {
-  it('shows the pressed command complete at once without touching the toggle, and runs one timer', async () => {
+describe('DemoTerminal selector dots (11 D-03, 14 D-02)', () => {
+  it('a dot shows its command complete at once, presses Pause and runs one timer (D-02)', async () => {
     const { user } = setup();
     advance(3000 + 100); // command 2 is typing
     expect(region()).toHaveAttribute('data-command', '2');
@@ -324,11 +333,20 @@ describe('DemoTerminal selector dots (D-03)', () => {
       'aria-current',
       'true'
     );
-    expect(toggle()).toHaveAttribute('aria-pressed', 'false');
+    expect(toggle()).toHaveAttribute('aria-pressed', 'true');
+    expect(region()).toHaveAttribute('data-playback', 'paused');
 
-    // Pointer and focus leave, so autoplay runs again; record every command shown.
+    // Pointer and focus leave: the dot press's sticky Pause still holds it.
     await user.click(screen.getByRole('button', { name: 'Outside' }));
+    expect(region()).toHaveAttribute('data-playback', 'paused');
+    advance(5000);
+    expect(region()).toHaveAttribute('data-command', '3');
+
+    // Only releasing Pause resumes; record every command shown, one timer pending.
+    await user.click(toggle());
+    expect(toggle()).toHaveAttribute('aria-pressed', 'false');
     expect(region()).toHaveAttribute('data-playback', 'playing');
+    expect(jest.getTimerCount()).toBe(1);
     const seen = ['3'];
     for (let t = 0; t < 10000; t += 10) {
       advance(10); // one step at a time, recording the command after each
@@ -343,6 +361,102 @@ describe('DemoTerminal selector dots (D-03)', () => {
     expect(jest.getTimerCount()).toBe(1);
     unmount();
     expect(jest.getTimerCount()).toBe(0);
+  });
+});
+
+describe('DemoTerminal step buttons (ENG-06, D-01 to D-03)', () => {
+  function next() {
+    return within(region()).getByRole('button', { name: 'Next command' });
+  }
+
+  it('Next shows the next command complete and presses the sticky Pause (D-02)', async () => {
+    const { user } = setup();
+    expect(region()).toHaveAttribute('data-command', '1');
+
+    await user.click(next());
+    expect(region()).toHaveAttribute('data-command', '2');
+    expect(cell(2)).toHaveTextContent('show disk');
+    expect(cell(2)).toHaveTextContent('df -h');
+    expect(toggle()).toHaveAttribute('aria-pressed', 'true');
+    expect(region()).toHaveAttribute('data-playback', 'paused');
+
+    // Pointer and focus leave: only releasing Pause resumes.
+    await user.click(screen.getByRole('button', { name: 'Outside' }));
+    expect(region()).toHaveAttribute('data-playback', 'paused');
+    advance(10000);
+    expect(region()).toHaveAttribute('data-command', '2');
+  });
+
+  it('Next is aria-disabled on the last command, stays focusable and a press changes nothing and presses nothing (D-03)', async () => {
+    const { user } = setup();
+    await user.click(next());
+    await user.click(next());
+    await user.click(next());
+    expect(region()).toHaveAttribute('data-command', '4');
+    expect(next()).toHaveAttribute('aria-disabled', 'true');
+
+    // Release the Pause the three steps pressed, so the end press could show
+    // pressing it (stepTo's null reaches show, which owns the D-03 end rule).
+    fireEvent.click(toggle());
+    expect(toggle()).toHaveAttribute('aria-pressed', 'false');
+
+    act(() => next().focus());
+    expect(next()).toHaveFocus();
+    await user.click(next());
+    expect(region()).toHaveAttribute('data-command', '4');
+    expect(toggle()).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('Previous is aria-disabled on command 1 and a press changes nothing and presses nothing (D-03)', async () => {
+    const { user } = setup();
+    const previous = within(region()).getByRole('button', { name: 'Previous command' });
+    expect(previous).toHaveAttribute('aria-disabled', 'true');
+    expect(next()).not.toHaveAttribute('aria-disabled');
+
+    act(() => previous.focus());
+    expect(previous).toHaveFocus();
+    await user.click(previous);
+    expect(region()).toHaveAttribute('data-command', '1');
+    expect(toggle()).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('Previous from command 3 shows command 2 complete and presses Pause (D-02)', () => {
+    setup();
+    // fireEvent: no hover or focus pause. The release clears the dot's Pause.
+    fireEvent.click(within(region()).getByRole('button', { name: 'Go to command 3' }));
+    fireEvent.click(toggle());
+    expect(toggle()).toHaveAttribute('aria-pressed', 'false');
+    expect(region()).toHaveAttribute('data-command', '3');
+
+    fireEvent.click(within(region()).getByRole('button', { name: 'Previous command' }));
+    expect(region()).toHaveAttribute('data-command', '2');
+    expect(cell(2)).toHaveTextContent('show disk');
+    expect(cell(2)).toHaveTextContent('df -h');
+    expect(toggle()).toHaveAttribute('aria-pressed', 'true');
+    expect(region()).toHaveAttribute('data-playback', 'paused');
+  });
+
+  it('Tabs from Pause through Previous, every dot, then Next, then out to the transcript (DOM = visual = Tab order)', async () => {
+    const { user } = setup();
+    act(() => toggle().focus());
+    const order = [
+      'Previous command',
+      'Go to command 1',
+      'Go to command 2',
+      'Go to command 3',
+      'Go to command 4',
+      'Next command',
+    ];
+    for (const name of order) {
+      await user.tab();
+      expect(within(region()).getByRole('button', { name })).toHaveFocus();
+    }
+    // Next leaves the region for the transcript summary below it (14 D-04), then Outside.
+    await user.tab();
+    expect(document.activeElement).toBe(transcript().querySelector('summary'));
+    expect(region().contains(document.activeElement)).toBe(false);
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Outside' })).toHaveFocus();
   });
 });
 
@@ -375,10 +489,12 @@ describe('DemoTerminal reduced motion', () => {
 });
 
 describe('DemoTerminal one and many commands (G2, G3)', () => {
-  it('is static with one command: no toggle, no dots, no counter, no timer', () => {
+  it('is static with one command: no toggle, no step buttons, no dots, no counter, no timer', () => {
     setup([COMMANDS[0]]);
     expect(within(region()).queryByRole('button', { name: 'Pause demo' })).toBeNull();
     expect(within(region()).queryAllByRole('button', { name: /^Go to command/ })).toHaveLength(0);
+    expect(within(region()).queryByRole('button', { name: 'Previous command' })).toBeNull();
+    expect(within(region()).queryByRole('button', { name: 'Next command' })).toBeNull();
     expect(region()).not.toHaveTextContent('1 / 1');
     expect(jest.getTimerCount()).toBe(0);
     expect(cell(1)).toHaveTextContent('box hash notes.txt');
@@ -403,9 +519,12 @@ describe('DemoTerminal one and many commands (G2, G3)', () => {
 
   it('keeps observing the region in the document after the list shrinks, so visibility still pauses and resumes it (WR-02)', () => {
     const { rerender } = setup();
-    // fireEvent, not user: no hover or focus pause, so only visibility decides.
+    // fireEvent, not user: no hover or focus pause, and the release clears the
+    // sticky Pause the dot press set (D-02), so only visibility decides.
     fireEvent.click(within(region()).getByRole('button', { name: 'Go to command 4' }));
     expect(region()).toHaveAttribute('data-command', '4');
+    fireEvent.click(toggle());
+    expect(toggle()).toHaveAttribute('aria-pressed', 'false');
     rerender(
       <>
         <DemoTerminal name="box" commands={COMMANDS.slice(0, 2)} />
@@ -470,15 +589,20 @@ describe('DemoTerminal one and many commands (G2, G3)', () => {
     expect(region()).toHaveAttribute('data-playback', 'playing');
   });
 
-  it('gives seven commands seven dots in a wrapping bar', () => {
+  it('gives seven commands seven dots in a wrapping dot row, with Previous and Next beside it (ENG-06)', () => {
     const seven = Array.from({ length: 7 }, (_, i) => ({
       ...COMMANDS[i % 4],
       input: `box uuid ${i + 1}`,
     }));
     setup(seven);
     const bar = within(region()).getByRole('group', { name: 'Commands' });
-    expect(within(bar).getAllByRole('button', { name: /^Go to command/ })).toHaveLength(7);
-    expect(bar).toHaveClass('flex-wrap');
+    const dots = within(bar).getAllByRole('button', { name: /^Go to command/ });
+    expect(dots).toHaveLength(7);
+    // Layout contract (14-UI-SPEC Contract 1): only the inner dot row wraps.
+    expect(dots[0].parentElement).toHaveClass('flex-wrap');
+    expect(bar).toHaveClass('min-h-12');
+    expect(within(bar).getByRole('button', { name: 'Previous command' })).toHaveClass('shrink-0');
+    expect(within(bar).getByRole('button', { name: 'Next command' })).toHaveClass('shrink-0');
   });
 });
 
@@ -490,8 +614,12 @@ describe('DemoTerminal lines (D-26)', () => {
       within(region()).getByText((_, el) => el?.tagName === 'P' && el.textContent === 'box · 1 / 4')
     ).toBeInTheDocument();
     expect(region()).not.toHaveTextContent('Request');
-    // The Pause icon is the only drawn icon: no warning icon line.
-    expect(region().querySelectorAll('svg')).toHaveLength(1);
+    // The only drawn icons are the Pause icon and one caret per step button
+    // (ENG-06), all inside buttons: no warning icon line.
+    const steps = within(region()).getAllByRole('button', { name: /^(Previous|Next) command$/ });
+    const icons = Array.from(region().querySelectorAll('svg'));
+    expect(icons).toHaveLength(1 + steps.length);
+    icons.forEach((icon) => expect(icon.closest('button')).not.toBeNull());
   });
 
   it('draws a note once, under its output, in the hidden body', () => {
@@ -571,5 +699,127 @@ describe('DemoTerminal screen-reader text', () => {
     expect(
       screen.getByText('Command 4 of 4. Command: box epoch 0. Output: 1970-01-01T00:00:00Z.')
     ).toBeInTheDocument();
+  });
+});
+
+function transcript() {
+  const el = document.querySelector('details[data-transcript]');
+  if (!el) throw new Error('no transcript');
+  return el as HTMLDetailsElement;
+}
+
+describe('DemoTerminal transcript (ENG-06, D-04 to D-07)', () => {
+  it('is in the server HTML, closed, with every command, output and note (D-04, D-06)', () => {
+    const html = renderToString(<DemoTerminal name="box" commands={COMMANDS} />);
+    const tag = html.match(/<details data-transcript[^>]*>/);
+    expect(tag).not.toBeNull();
+    expect(tag?.[0]).not.toMatch(/\sopen[\s=>]/);
+    expect(html).toContain('Transcript');
+    for (const c of COMMANDS) {
+      expect(html).toContain(c.input);
+      expect(html).toContain(c.output);
+      if (c.note) expect(html).toContain(c.note);
+    }
+  });
+
+  it('sits after the region, outside it, with one list item per command in order (D-04)', () => {
+    setup();
+    const details = transcript();
+    expect(region().contains(details)).toBe(false);
+    expect(
+      region().compareDocumentPosition(details) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(details.open).toBe(false);
+    expect(details.querySelector('summary')).toHaveTextContent('Transcript');
+    expect(details).not.toHaveAttribute('aria-live');
+    expect(details.querySelector('[aria-live]')).toBeNull();
+
+    const items = details.querySelectorAll('ol > li');
+    expect(items).toHaveLength(COMMANDS.length);
+    COMMANDS.forEach((c, i) => {
+      const item = items[i];
+      expect(item.querySelector('code')).toHaveTextContent(c.input);
+      // Exactly as captured: textContent keeps whitespace a matcher would collapse.
+      expect(item.querySelector('pre > samp')?.textContent).toBe(c.output);
+      const prompt = item.querySelector('p > span');
+      expect(prompt).toHaveTextContent('❯');
+      expect(prompt).toHaveAttribute('aria-hidden', 'true');
+      const paragraphs = item.querySelectorAll(':scope > p');
+      if (c.note) {
+        expect(paragraphs).toHaveLength(2);
+        expect(paragraphs[1]).toHaveTextContent(c.note);
+      } else {
+        expect(paragraphs).toHaveLength(1);
+      }
+    });
+  });
+
+  it('keeps the leading and trailing blank lines and the swatch of the captured output (11 D-26)', () => {
+    const output = ['', 'name  size', '██████████', ''].join('\n');
+    const padded: TerminalCommand[] = [COMMANDS[0], { input: 'box du', output }];
+    const html = renderToString(<DemoTerminal name="box" commands={padded} />);
+    expect(html).toContain(`<samp>${output}</samp>`);
+    setup(padded);
+    expect(transcript().querySelectorAll('pre > samp')[1].textContent).toBe(output);
+  });
+
+  it('renders no transcript for one command and nothing for none (G2, 11 IN-01)', () => {
+    setup([COMMANDS[0]]);
+    expect(document.querySelector('details[data-transcript]')).toBeNull();
+    const { container } = render(<DemoTerminal name="box" commands={[]} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  /**
+   * Opens or closes the transcript the way the browser does: set `open`,
+   * then dispatch `toggle`. jsdom also queues its own toggle task on a real
+   * setTimeout(…, 0); the handler is idempotent, so that extra event changes
+   * nothing (14-RESEARCH Pitfall 9).
+   */
+  function setTranscriptOpen(open: boolean) {
+    act(() => {
+      transcript().open = open;
+      fireEvent(transcript(), new Event('toggle'));
+    });
+  }
+
+  it('opens once after mount under reduced motion, with Pause already pressed (D-05, D-06)', () => {
+    setReducedMotion(true);
+    setup();
+    expect(transcript().open).toBe(true);
+    expect(toggle()).toHaveAttribute('aria-pressed', 'true');
+    expect(region()).toHaveAttribute('data-playback', 'paused');
+  });
+
+  it('stays closed without reduced motion, and the toggle stays unpressed (D-06)', () => {
+    setup();
+    expect(transcript().open).toBe(false);
+    expect(toggle()).toHaveAttribute('aria-pressed', 'false');
+    expect(region()).toHaveAttribute('data-playback', 'playing');
+  });
+
+  it('does not open on a later reduced-motion change: the open is mount-only (D-06)', () => {
+    const { rerender } = setup();
+    setReducedMotion(true);
+    rerender(
+      <>
+        <DemoTerminal name="box" commands={COMMANDS} />
+        <button type="button">Outside</button>
+      </>
+    );
+    expect(transcript().open).toBe(false);
+  });
+
+  it('opening it presses the sticky Pause; closing it leaves Pause pressed (D-07)', () => {
+    setup();
+    expect(toggle()).toHaveAttribute('aria-pressed', 'false');
+    setTranscriptOpen(true);
+    expect(toggle()).toHaveAttribute('aria-pressed', 'true');
+    expect(region()).toHaveAttribute('data-playback', 'paused');
+    setTranscriptOpen(false);
+    expect(toggle()).toHaveAttribute('aria-pressed', 'true');
+    expect(region()).toHaveAttribute('data-playback', 'paused');
+    advance(6000);
+    expect(region()).toHaveAttribute('data-command', '1');
   });
 });

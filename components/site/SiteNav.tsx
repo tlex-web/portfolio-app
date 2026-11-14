@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type FocusEvent as ReactFocusEvent } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { List, X } from '@phosphor-icons/react/dist/ssr';
@@ -54,6 +54,32 @@ export function keyBelongsToChrome(event: KeyboardEvent): boolean {
   );
 }
 
+/** Space kept between a revealed row and the panel's edge: the panel's py-2. */
+const ROW_CLEARANCE = 8;
+
+/**
+ * Keeps a focused panel row fully inside the panel's scrollport (SHELL-08, D-17):
+ * when the panel scrolls (a short viewport), Firefox leaves a partly visible row
+ * where it is when focus lands on it, cutting the row and its ring at the panel's
+ * edge; Chromium already scrolls it in, so this is a no-op there. It scrolls the
+ * panel only, never the page.
+ *
+ * Keyboard focus only (`:focus-visible`, the case the ring draws for; 14-REVIEW
+ * WR-01): Firefox focuses a link on mousedown, and scrolling the panel between
+ * mousedown and mouseup can move the row out from under the pointer, so the
+ * click lands on the list instead and nothing navigates.
+ */
+function revealFocusedRow(event: ReactFocusEvent<HTMLDivElement>) {
+  const panel = event.currentTarget;
+  const row = event.target;
+  if (row === panel || !(row instanceof HTMLElement) || !row.matches(':focus-visible')) return;
+  const box = row.getBoundingClientRect();
+  const top = panel.getBoundingClientRect().top + panel.clientTop;
+  const bottom = top + panel.clientHeight;
+  if (box.bottom + ROW_CLEARANCE > bottom) panel.scrollTop += box.bottom + ROW_CLEARANCE - bottom;
+  else if (box.top - ROW_CLEARANCE < top) panel.scrollTop -= top - (box.top - ROW_CLEARANCE);
+}
+
 /** `/` matches exactly; every other destination also matches its sub-paths. */
 export function isCurrentPath(pathname: string | null, href: string): boolean {
   if (!pathname) return false;
@@ -87,6 +113,15 @@ function DefaultNav() {
     if (slugFromPath(pathname) === null || slugFromPath(menuPath) === null) setOpen(false);
   }
 
+  // Close trigger 7 (SHELL-07, D-16, D-23): a plain tap on the panel link whose
+  // href equals the pathname (strict equality, not isCurrentPath: 'Photographs'
+  // on a photo page is current but navigates, so trigger 1 closes it). With no
+  // query string the tap is default-prevented (no navigation, no scroll jump).
+  // With one (/photos?view=grid, /roadmap?project=box) Next still navigates to
+  // the plain page, but usePathname drops the query, so the pathname does not
+  // change and trigger 1 never fires: the link's click handler closes the panel
+  // at tap in both cases, focusing the Menu button first as Escape does.
+
   // Close triggers 2, 4, 5 and 6, attached only while the panel is open.
   useEffect(() => {
     if (!open) return;
@@ -96,11 +131,13 @@ function DefaultNav() {
 
     // Escape is the open menu's: a document capture listener that prevents the
     // press, so a page's own Escape handling (the photo page goes to /photos)
-    // skips it (10-REVIEW CR-01).
+    // skips it (10-REVIEW CR-01). Focus moves to Menu with preventScroll for the
+    // reason at the tap close below: a plain focus() scrolled the page up (/roadmap
+    // at 375 x 812 from 600 to 530 in Chromium, 185.5 in Firefox).
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       event.preventDefault();
-      buttonRef.current?.focus();
+      buttonRef.current?.focus({ preventScroll: true });
       setOpen(false);
     };
     const onPointerDown = (event: PointerEvent) => {
@@ -181,6 +218,7 @@ function DefaultNav() {
             id={MENU_ID}
             data-state={open ? 'open' : 'closed'}
             hidden={!open}
+            onFocus={revealFocusedRow}
             className={`md:hidden absolute inset-x-0 top-16 z-(--z-menu) bg-surface-raised border-b border-line max-h-[calc(100svh-var(--nav-h))] overflow-y-auto py-2 ${PANEL_MOTION}`}
           >
             <ul className="flex flex-col gap-2">
@@ -191,7 +229,33 @@ function DefaultNav() {
                     <Link
                       href={item.href}
                       aria-current={current ? 'page' : undefined}
-                      className={`relative flex min-h-12 items-center px-4 font-display text-heading font-normal ${COLOR_TRANSITION} ${
+                      onClick={(event) => {
+                        // Close trigger 7 (SHELL-07, D-16, D-23): a plain tap on the link
+                        // for the current pathname. Modified or non-primary activations
+                        // keep the browser's behaviour (new tab, download).
+                        const plain =
+                          event.button === 0 &&
+                          !event.metaKey &&
+                          !event.ctrlKey &&
+                          !event.shiftKey &&
+                          !event.altKey;
+                        if (!plain || item.href !== pathname) return;
+                        // The page already shown (no query): Next skips its navigation and
+                        // its scroll-to-top when the click is default-prevented.
+                        if (window.location.search === '') event.preventDefault();
+                        // Escape's order: focus Menu before the link hides, so focus never
+                        // drops to <body> and the header focusout close stays quiet.
+                        // preventScroll: the button sits in the sticky header, always in
+                        // view, but the global scroll-margin-top (nav height + 16 px) makes
+                        // a plain focus() scroll the page up to "reveal" it (D-16 keeps
+                        // the scroll position).
+                        buttonRef.current?.focus({ preventScroll: true });
+                        setOpen(false);
+                      }}
+                      // SHELL-08, D-17: the ring draws 2-4 px inside the row (offset -4,
+                      // width 2 from the global rule), so the panel's overflow-y-auto can
+                      // never clip it; it starts at x 2 and abuts the 2 px accent bar.
+                      className={`relative flex min-h-12 items-center px-4 font-display text-heading font-normal focus-visible:-outline-offset-4 ${COLOR_TRANSITION} ${
                         current ? 'text-ink' : 'text-ink-muted hover:text-ink'
                       }`}
                     >

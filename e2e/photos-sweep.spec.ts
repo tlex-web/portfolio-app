@@ -350,10 +350,9 @@ test.describe('The lightbox path end to end (10-UI-SPEC E5 populated)', () => {
     await page.keyboard.press('z');
     await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'true');
 
-    // 6. Escape unwinds callout -> zoom -> close (D-06).
-    await page.keyboard.press('Escape');
-    await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.getByRole('dialog')).toHaveCount(1);
+    // 6. Escape unwinds zoom -> close (D-06). Rewritten in place for 14-04's D-22: the callout
+    // is hidden while zoomed, so it no longer takes the first Escape; zoom does, and the
+    // hidden callout is dropped with it.
     await page.keyboard.press('Escape');
     await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'false');
     await expect(labels(dialog).first()).toHaveAttribute('aria-expanded', 'false');

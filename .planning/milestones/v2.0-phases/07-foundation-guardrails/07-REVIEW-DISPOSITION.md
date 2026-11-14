@@ -126,7 +126,7 @@ recorded: 2026-10-24T11:04:00.678Z
 | WR-03 | warning | fixed | 13-13: e64abc2 (RED), 2feb04b (fix) (13-LEDGER-TRIAGE.md #3) |
 | WR-04 | warning | fixed | 13-14: 4ca709b (RED), 18e75a4 (fix) (13-LEDGER-TRIAGE.md #4) |
 | WR-05 | warning | deferred | handed to DEPS-06 (13-18); DEPS-06 complete: 13-18 5ab6d15 (Playwright 1.65.0 and its container tag in one commit), 13-20 three-engine run (13-LEDGER-TRIAGE.md #5) |
-| WR-06 | warning | deferred | handed to SHELL-07 (Phase 14) (13-LEDGER-TRIAGE.md #6) |
+| WR-06 | warning | deferred | handed to SHELL-07 (Phase 14); SHELL-07 complete: 14-01 49b8fe1 (13-LEDGER-TRIAGE.md #6) |
 | WR-07 | warning | fixed | 13-11: 18d444e (RED), ddd356c (fix), Tim's call "fix" (13-LEDGER-TRIAGE.md #7) |
 | WR-08 | warning | fixed | cf369b5: component deleted (v2.0 audit) |
 | WR-09 | warning | fixed | 76e7a10: exact-name count plus a /skip to/i helper (v2.0 audit) |

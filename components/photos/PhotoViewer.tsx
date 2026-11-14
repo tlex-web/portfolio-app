@@ -318,8 +318,18 @@ export default function PhotoViewer({
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [isPage, toggleZoom]);
 
+  // Every labels toggle (the 'Hide labels' button and H) goes through here:
+  // hiding also collapses the open callout, so a hidden callout never holds
+  // the first Escape and showing labels again starts collapsed (D-12, ledger
+  // 10 IN-01). Not an effect on labelsOn: the preference is a cross-tab store,
+  // and another tab's change must not collapse a callout being read here.
+  function setLabels(on: boolean) {
+    setLabelsOn(on);
+    if (!on) setExpandedId(null);
+  }
+
   // H toggles Hide labels on both surfaces, under the same rules as Z.
-  const toggleLabels = useEffectEvent(() => setLabelsOn(!labelsOn));
+  const toggleLabels = useEffectEvent(() => setLabels(!labelsOn));
   useLayoutEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'h' && event.key !== 'H') return;
@@ -334,8 +344,12 @@ export default function PhotoViewer({
   }, [isPage]);
 
   // The callout Escape layer: collapse the open hotspot and return focus to
-  // its gutter label or key row, whichever is rendered and shown (while
-  // zoomed neither label is drawn, so focus stays where it is).
+  // its gutter label or key row, whichever is rendered and shown. The callout
+  // is the first Escape layer (10-UI-SPEC order: callout, zoom, close) only
+  // while that label or row is visible. A hidden callout (zoomed, labels
+  // hidden, or any later hide path) is cleared without taking the press, so
+  // the next layer handles it: a key press never acts on something the
+  // visitor cannot see (D-22, ledger 10 IN-01).
   const collapseCallout = useEffectEvent((): boolean => {
     if (expandedId === null) return false;
     const id = cssEscape(expandedId);
@@ -343,7 +357,9 @@ export default function PhotoViewer({
     const candidates = viewerRef.current?.querySelectorAll<HTMLElement>(
       `[data-hotspot-label="${id}"], [data-hotspot-row="${id}"]`
     );
-    [...(candidates ?? [])].find((el) => el.getClientRects().length > 0)?.focus();
+    const shown = [...(candidates ?? [])].find((el) => el.getClientRects().length > 0);
+    if (!shown) return false;
+    shown.focus();
     return true;
   });
   useLayoutEffect(() => lightbox?.registerEscape(() => collapseCallout()), [lightbox]);
@@ -534,7 +550,7 @@ export default function PhotoViewer({
             aria-pressed={!labelsOn}
             aria-keyshortcuts="h"
             className={`${CHROME_BUTTON} aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-gallery aria-pressed:hover:border-ink`}
-            onClick={() => setLabelsOn(!labelsOn)}
+            onClick={() => setLabels(!labelsOn)}
           >
             <EyeSlashIcon size={24} aria-hidden="true" className="md:size-5" />
             <span className="hidden md:inline">Hide labels</span>

@@ -47,8 +47,8 @@ Full details: [milestones/v2.0-ROADMAP.md](milestones/v2.0-ROADMAP.md)
 
 **Execution order:** 13 → 14 → 15 → 16 → 17 → 18 → 19, one at a time. Phase 13 goes first because the refactors after it must land behind required checks, and Playwright 1.65 must be re-baselined before any intended pixel change. Phase 14 depends only on Phase 13; it runs before Phase 15 so the pixel-neutral gate is measured against the post-fix baselines, and before Phase 18 so the LBOX-08 regression test exists before the lightbox is rewritten. Phases 15 to 19 are a strict chain: the neutral refactor before new content, content before routes, routes before layout, and the region page before its video.
 
-- [ ] **Phase 13: Repo Safety & Test Debt** - Required checks on `main`, a verified fail-closed rate limiter, Playwright 1.65 re-baselined alone, a wider audit gate, the G5/G6 tests, ledger triage and dead-code removal
-- [ ] **Phase 14: UI Fixes & Terminal Controls** - The carried v2.0 bugs in the mobile menu, Home at 375 px, the rail labels and lightbox focus fixed, plus terminal step buttons and a transcript
+- [x] **Phase 13: Repo Safety & Test Debt** - Required checks on `main`, a verified fail-closed rate limiter, Playwright 1.65 re-baselined alone, a wider audit gate, the G5/G6 tests, ledger triage and dead-code removal (completed 2026-11-14)
+- [x] **Phase 14: UI Fixes & Terminal Controls** - The carried v2.0 bugs in the mobile menu, Home at 375 px, the rail labels and lightbox focus fixed, plus terminal step buttons and a transcript (completed 2026-11-14)
 - [ ] **Phase 15: Region & Plate Data Model** - An explicit Home waypoint list, a region and country on every photo, an N-plate terrain build, a telemetry ban and one photo URL helper, with no visible change
 - [ ] **Phase 16: New Regions & Alps Overview Data** - Coarse-location overrides, new Zermatt photos and 1-2 new regions with their plates, and a Copernicus GLO-90 overview map
 - [ ] **Phase 17: Region Routes, SEO & Structured Data** - Region pages on their own path, the photo URL contract held, region metadata, JSON-LD and the saved-pages catalog
@@ -68,7 +68,7 @@ Full details: [milestones/v2.0-ROADMAP.md](milestones/v2.0-ROADMAP.md)
   3. Playwright 1.65 and its container image tag land in one commit that is re-baselined on its own, before any intended visual change, and Dependabot PR #140 is closed by it.
   4. The production audit gate runs `/projects/coin-flip` and every photo slug (each page template in all three engines, each slug at least once in Chromium) and takes its routes from the site's data, so a new photo or region page cannot ship outside it. A wrong capture-time offset fails the photo data build (G5), and an invalid source leaves existing derivatives in place with exit code 1 (G6).
   5. Every open review-ledger row from Phases 7, 9, 10 and 12 is fixed, accepted with a recorded reason, or turned into a requirement, and `TILT_CONFIG`, the test-only `cssDuration` and `cssEase`, the unused `next.config` images block, the service-worker `/_next/image` branch, the commented CI steps and the vercel.com `dns-prefetch` are gone with no visual diff.
-**Plans**: 22/22 plans executed in 12 waves
+**Plans**: 22/22 plans complete in 12 waves
 
 Plans:
 **Wave 1**
@@ -136,7 +136,32 @@ Plans:
   3. Every altimeter rail tick label keeps at least 4.5:1 contrast over the live canvas and over the poster at every breakpoint, and the rail scrim covers the full label run.
   4. After stepping in the lightbox and closing it with Escape, focus returns to the current photo's visible trigger and never lands off-screen, and a regression test holds this before Phase 18 rewrites the lightbox.
   5. The terminal demo has previous and next step buttons and a static transcript in a disclosure that is open by default under reduced motion.
-**Plans**: TBD
+**Plans**: 8/8 plans complete in 8 waves (serial: every plan runs the production e2e server on port 3000)
+
+Plans:
+**Wave 1**
+- [x] 14-01-PLAN.md — Mobile menu: current-page tap closes the panel (D-16, D-23) and the inset focus ring, with the new menu baseline test (SHELL-07, SHELL-08)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 14-02-PLAN.md — Rail scrim stops deepened at the same width, B8 matrix and geometric gate; Home 375 px guard in four modes at every stop (HOME-10, HOME-09)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 14-03-PLAN.md — Lightbox focus on close: `revealTrigger` after the history restoration, and the D-11 regression matrix (LBOX-08)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 14-04-PLAN.md — Hidden-callout Escape: hiding labels collapses the callout, and a hidden callout never takes Escape (D-12, D-22; ledger 10 IN-01)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [x] 14-05-PLAN.md — Terminal Previous and Next, sticky Pause on step and dot, end stops (ENG-06)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [x] 14-06-PLAN.md — Terminal transcript disclosure, open after hydration under reduced motion, Pause on open; box baseline wait (ENG-06)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [x] 14-07-PLAN.md — Ledger write-back (rows #6 and #30) and the full local gate with the declared PNG list
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [x] 14-08-PLAN.md — With Tim's approval: CI on ci/14-08 (WebKit contingency), one visual re-baseline, Tim commits the PNGs
 **UI hint**: yes
 **UI-SPEC**: Required, short: the terminal step buttons and transcript disclosure, the rail scrim and the menu focus-ring treatment.
 **Research**: Not needed (small, well-understood fixes). Diagnose the Escape-focus root cause before fixing it; it was not diagnosed at 12-UAT.
@@ -266,8 +291,8 @@ Plans:
 | 10. Photography | v2.0 | 13/13 | Complete | 2026-10-26 |
 | 11. Engineering & Roadmap | v2.0 | 19/19 | Complete | 2026-11-02 |
 | 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 34/34 | Complete | 2026-11-05 |
-| 13. Repo Safety & Test Debt | v2.1 | 22/22 | In Progress | - |
-| 14. UI Fixes & Terminal Controls | v2.1 | 0/TBD | Not started | - |
+| 13. Repo Safety & Test Debt | v2.1 | 22/22 | Complete    | 2026-11-14 |
+| 14. UI Fixes & Terminal Controls | v2.1 | 8/8 | Complete    | 2026-11-14 |
 | 15. Region & Plate Data Model | v2.1 | 0/TBD | Not started | - |
 | 16. New Regions & Alps Overview Data | v2.1 | 0/TBD | Not started | - |
 | 17. Region Routes, SEO & Structured Data | v2.1 | 0/TBD | Not started | - |

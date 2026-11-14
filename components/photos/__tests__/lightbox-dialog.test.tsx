@@ -1,8 +1,14 @@
 import { Activity } from 'react';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
-import LightboxDialog, { LIGHTBOX_CLOSE_EVENT, useLightbox } from '../LightboxDialog';
+import LightboxDialog, {
+  LIGHTBOX_CLOSE_EVENT,
+  restoreFocus,
+  revealTrigger,
+  useLightbox,
+} from '../LightboxDialog';
 import PhotoViewer from '../PhotoViewer';
 import { photoViews } from '@/lib/photos/view-model';
+import { HOTSPOT_PREF_KEY } from '@/lib/photos/hotspot-pref';
 
 /**
  * The lightbox shell in jsdom (LBOX-01; 10-RESEARCH Pitfall 11). jsdom has no
@@ -97,8 +103,9 @@ describe('LightboxDialog', () => {
         </>
       );
     }
-    const scrollIntoView = Element.prototype.scrollIntoView;
-    Element.prototype.scrollIntoView = jest.fn();
+    // jsdom does not implement window scrolling; the reveal (LBOX-08) scrolls the window only.
+    const scrollBy = window.scrollBy;
+    window.scrollBy = jest.fn();
     const closed: string[] = [];
     const onClose = (event: Event) => closed.push((event as CustomEvent<string>).detail);
     document.addEventListener(LIGHTBOX_CLOSE_EVENT, onClose);
@@ -113,9 +120,13 @@ describe('LightboxDialog', () => {
       });
       expect(closed).toEqual(['second']);
       expect(screen.getByRole('button', { name: 'Second tile' })).toHaveFocus();
+      // The re-reveal runs in the next frame; let it run while scrollBy is still stubbed.
+      await act(async () => {
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      });
     } finally {
       document.removeEventListener(LIGHTBOX_CLOSE_EVENT, onClose);
-      Element.prototype.scrollIntoView = scrollIntoView;
+      window.scrollBy = scrollBy;
     }
   });
 
@@ -170,12 +181,73 @@ describe('LightboxDialog', () => {
       const [first] = within(key).getAllByRole('button', { hidden: true });
       fireEvent.click(first);
       expect(first).toHaveAttribute('aria-expanded', 'true');
+      // jsdom has no layout, so no element has client rects. One rect stands in for the key
+      // tier, where the row is shown: only a visible callout takes Escape (D-22).
+      jest.spyOn(first, 'getClientRects').mockReturnValue([{}] as unknown as DOMRectList);
       fireEvent.keyDown(document, { key: 'Escape' });
       expect(first).toHaveAttribute('aria-expanded', 'false');
+      expect(first).toHaveFocus();
       // The callout took the press, so the lightbox did not close.
       expect(mockRouter.back).not.toHaveBeenCalled();
     } finally {
       CSS.escape = escape;
+    }
+  });
+
+  it('a hidden callout is cleared without taking Escape, so the lightbox closes (D-22)', () => {
+    const view = photoViews.find((v) => v.id === 'img-0662')!;
+    render(
+      <LightboxDialog labelledBy="photo-title">
+        <PhotoViewer variant="modal" photos={photoViews} initialSlug={view.slug} />
+      </LightboxDialog>
+    );
+    const key = screen.getByRole('list', { name: 'Labels', hidden: true });
+    const [first] = within(key).getAllByRole('button', { hidden: true });
+    fireEvent.click(first);
+    expect(first).toHaveAttribute('aria-expanded', 'true');
+    // No stub: jsdom reports no client rects, so neither the label nor the row is visible.
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(first).toHaveAttribute('aria-expanded', 'false');
+    expect(mockRouter.back).toHaveBeenCalledTimes(1);
+  });
+
+  it('hiding labels collapses the open callout; showing them again starts collapsed (D-12)', () => {
+    const view = photoViews.find((v) => v.id === 'img-0662')!;
+    try {
+      render(
+        <LightboxDialog labelledBy="photo-title">
+          <PhotoViewer variant="modal" photos={photoViews} initialSlug={view.slug} />
+        </LightboxDialog>
+      );
+      const key = screen.getByRole('list', { name: 'Labels', hidden: true });
+      const rows = () => within(key).getAllByRole('button', { hidden: true });
+      const expectAllCollapsed = () => {
+        for (const row of rows()) expect(row).toHaveAttribute('aria-expanded', 'false');
+      };
+      const hide = screen.getByRole('button', { name: 'Hide labels', hidden: true });
+
+      // The button: the key stays rendered while labels hide, every row collapsed.
+      fireEvent.click(rows()[0]);
+      expect(rows()[0]).toHaveAttribute('aria-expanded', 'true');
+      fireEvent.click(hide);
+      expect(hide).toHaveAttribute('aria-pressed', 'true');
+      expectAllCollapsed();
+      fireEvent.click(hide);
+      expect(hide).toHaveAttribute('aria-pressed', 'false');
+      expectAllCollapsed();
+
+      // The H key takes the same path.
+      fireEvent.click(rows()[0]);
+      expect(rows()[0]).toHaveAttribute('aria-expanded', 'true');
+      fireEvent.keyDown(document, { key: 'h' });
+      expect(hide).toHaveAttribute('aria-pressed', 'true');
+      expectAllCollapsed();
+      fireEvent.keyDown(document, { key: 'h' });
+      expect(hide).toHaveAttribute('aria-pressed', 'false');
+      expectAllCollapsed();
+    } finally {
+      // The preference is stored; keep it out of the other rows.
+      window.localStorage.removeItem(HOTSPOT_PREF_KEY);
     }
   });
 
@@ -189,5 +261,157 @@ describe('LightboxDialog', () => {
     expect(document.documentElement.style.overflow).toBe('hidden');
     unmount();
     expect(document.documentElement.style.overflow).toBe('');
+  });
+});
+
+/**
+ * The reveal after close (LBOX-08, D-09, D-21). jsdom has no layout, so each row stubs the
+ * trigger's rect, the viewport height and window.scrollBy; --nav-h is 64 px as in
+ * app/globals.css. The history traversal that makes the second, next-frame reveal necessary
+ * is browser behaviour, proven in e2e/photos-lightbox.spec.ts "Focus on close stays in view".
+ */
+describe('revealTrigger (LBOX-08)', () => {
+  const NAV_H = 64;
+  const RING = 4;
+  const INNER_HEIGHT = 450;
+  let innerHeight: PropertyDescriptor | undefined;
+  let scrollBy: typeof window.scrollBy;
+  let scrollSpy: jest.Mock;
+
+  beforeEach(() => {
+    innerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: INNER_HEIGHT });
+    document.documentElement.style.setProperty('--nav-h', `${NAV_H}px`);
+    scrollBy = window.scrollBy;
+    scrollSpy = jest.fn();
+    window.scrollBy = scrollSpy as unknown as typeof window.scrollBy;
+  });
+
+  afterEach(() => {
+    if (innerHeight) Object.defineProperty(window, 'innerHeight', innerHeight);
+    document.documentElement.style.removeProperty('--nav-h');
+    window.scrollBy = scrollBy;
+    document.body.innerHTML = '';
+  });
+
+  /** A focusable trigger whose box is `top`..`top + height` in viewport coordinates. */
+  function trigger(top: number, height: number, slug = 'shown'): HTMLElement {
+    const el = document.createElement('a');
+    el.href = `/photos/${slug}`;
+    el.setAttribute('data-photo-id', slug);
+    el.textContent = slug;
+    el.getBoundingClientRect = () =>
+      ({
+        top,
+        bottom: top + height,
+        left: 20,
+        right: 120,
+        width: 100,
+        height,
+        x: 20,
+        y: top,
+        toJSON: () => ({}),
+      }) as DOMRect;
+    document.body.appendChild(el);
+    return el;
+  }
+
+  it('reads --nav-h from the root element (the jsdom precondition the other rows rely on)', () => {
+    expect(
+      Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--nav-h'))
+    ).toBe(NAV_H);
+  });
+
+  it('revealTrigger scrolls a trigger below the viewport up by its overflow plus the ring', () => {
+    const el = trigger(500, 68);
+    revealTrigger(el);
+    expect(scrollSpy).toHaveBeenCalledTimes(1);
+    expect(scrollSpy).toHaveBeenCalledWith({
+      top: 500 + 68 + RING - INNER_HEIGHT,
+      behavior: 'instant',
+    });
+  });
+
+  it('revealTrigger scrolls a trigger under the nav down to just below it (negative delta)', () => {
+    const el = trigger(30, 44);
+    revealTrigger(el);
+    expect(scrollSpy).toHaveBeenCalledTimes(1);
+    expect(scrollSpy).toHaveBeenCalledWith({ top: 30 - RING - NAV_H, behavior: 'instant' });
+  });
+
+  it('revealTrigger top-aligns a trigger taller than the room below the nav', () => {
+    // The room is 450 - 64 - 8 = 378 px; a 503 px grid tile cannot fit.
+    const el = trigger(600, 503);
+    revealTrigger(el);
+    expect(scrollSpy).toHaveBeenCalledTimes(1);
+    expect(scrollSpy).toHaveBeenCalledWith({ top: 600 - RING - NAV_H, behavior: 'instant' });
+  });
+
+  it('revealTrigger rounds the target outward to a whole pixel, since the browser snaps window scrolling', () => {
+    // Below the fold by 4.4 px with the ring: 5, never 4 (Chromium snapped 348.375 to 348).
+    revealTrigger(trigger(300.4, 150, 'below'));
+    // Under the nav by 37.5 px with the ring: -38.
+    revealTrigger(trigger(30.5, 44, 'under'));
+    // Taller than the room: top-aligned, rounded so the ring stays clear of the nav.
+    revealTrigger(trigger(600.5, 503, 'tall'));
+    expect(scrollSpy.mock.calls).toEqual([
+      [{ top: 5, behavior: 'instant' }],
+      [{ top: -38, behavior: 'instant' }],
+      [{ top: 532, behavior: 'instant' }],
+    ]);
+  });
+
+  it('revealTrigger does not scroll when the trigger and its ring are already in view', () => {
+    // Exactly the ring's room on both edges: top - 4 = 64 and bottom + 4 = 450.
+    revealTrigger(trigger(NAV_H + RING, INNER_HEIGHT - NAV_H - 2 * RING));
+    // And with room to spare.
+    revealTrigger(trigger(200, 68, 'other'));
+    expect(scrollSpy).not.toHaveBeenCalled();
+  });
+
+  it('restoreFocus (LBOX-08) focuses the mark without a scroll and reveals it again in the next frame', async () => {
+    const el = trigger(500, 68);
+    const focus = jest.spyOn(el, 'focus');
+    restoreFocus('shown', null);
+    expect(el).toHaveFocus();
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    expect(scrollSpy).toHaveBeenCalledTimes(1);
+    // jsdom does not move the box, so the next-frame reveal finds it still below the fold.
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(scrollSpy).toHaveBeenCalledTimes(2);
+    expect(scrollSpy).toHaveBeenLastCalledWith({
+      top: 500 + 68 + RING - INNER_HEIGHT,
+      behavior: 'instant',
+    });
+  });
+
+  it('restoreFocus (LBOX-08) skips the next-frame reveal once focus has moved on', async () => {
+    trigger(500, 68);
+    const elsewhere = document.createElement('button');
+    document.body.appendChild(elsewhere);
+    restoreFocus('shown', null);
+    elsewhere.focus();
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(scrollSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('restoreFocus (LBOX-08) falls back to a connected opener when no mark carries the slug', () => {
+    const opener = document.createElement('button');
+    opener.textContent = 'Opener';
+    document.body.appendChild(opener);
+    restoreFocus('missing', opener);
+    expect(opener).toHaveFocus();
+    expect(scrollSpy).not.toHaveBeenCalled();
+  });
+
+  it('restoreFocus (LBOX-08) falls back to the main h1, made focusable, when the opener is gone', () => {
+    document.body.innerHTML = '<main><h1>Photographs</h1></main>';
+    const heading = document.querySelector('h1')!;
+    const opener = document.createElement('button');
+    restoreFocus('missing', opener);
+    expect(opener.isConnected).toBe(false);
+    expect(heading).toHaveAttribute('tabindex', '-1');
+    expect(heading).toHaveFocus();
+    expect(document.activeElement).not.toBe(document.body);
   });
 });

@@ -2,44 +2,44 @@
 gsd_state_version: "1.0"
 milestone: v2.1
 milestone_name: Survey Expansion
-current_phase: 13
-current_phase_name: Repo Safety & Test Debt
-status: verifying
-stopped_at: Completed 13-22-PLAN.md
-last_updated: "2026-11-13T20:42:46.945Z"
-last_activity: 2026-11-13
-last_activity_desc: Phase 13 execution started
-state_head: 06c9280fab2ef65d54c125c68c1a0210dddc34b0
+current_phase: 15
+current_phase_name: Region & Plate Data Model
+status: planning
+stopped_at: Phase 14 complete, ready to plan Phase 15
+last_updated: "2026-11-14T16:40:35.949Z"
+last_activity: 2026-11-14
+last_activity_desc: Completed quick task 261114-o8w: Fix the Escape scroll jump in the mobile menu
+state_head: d03811792eeda8b96911b3ea164520e222d80f00
 progress:
   total_phases: 7
-  completed_phases: 0
-  total_plans: 22
-  completed_plans: 22
-  percent: 0
+  completed_phases: 2
+  total_plans: 30
+  completed_plans: 30
+  percent: 29
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-11-12)
+See: .planning/PROJECT.md (updated 2026-11-14)
 
 **Core value:** A portfolio that is visually memorable and distinctive (not another generic Tailwind site) while being stable and well-maintained under the hood.
-**Current focus:** Phase 13 — Repo Safety & Test Debt
+**Current focus:** Phase 15 — Region & Plate Data Model
 
 ## Current Position
 
-Phase: 13 (Repo Safety & Test Debt) — EXECUTING
-Plan: 22 of 22
-Status: Phase complete — ready for verification
-Last activity: 2026-11-13 — Phase 13 execution started
+Phase: 15 — Region & Plate Data Model
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-11-14 - Completed quick task 261114-o8w: Fix the Escape scroll jump in the mobile menu
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [███░░░░░░░] 29%
 
 ## Performance Metrics
 
 **Velocity (v2.1):**
-- Total plans completed: 0
+- Total plans completed: 30
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -47,7 +47,8 @@ Progress: [░░░░░░░░░░] 0%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 13 | 22 | - | - |
+| 14 | 8 | - | - |
 
 *Updated after each plan completion. v2.0: 128 plans in 6 phases, about 70 hours of plan execution; the per-plan table is in `.planning/milestones/v2.0-STATE.md`.*
 **Per-Plan Metrics:**
@@ -76,6 +77,14 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 13 P20 | 2h40m | 3 tasks | 6 files |
 | Phase 13 P21 | 4min | 3 tasks | 1 files |
 | Phase 13 P22 | 10min | 3 tasks | 9 files |
+| Phase 14 P01 | 10min | 2 tasks | 4 files |
+| Phase 14 P02 | 9min | 3 tasks | 4 files |
+| Phase 14 P03 | 12min | 2 tasks | 3 files |
+| Phase 14 P04 | 7min | 2 tasks | 3 files |
+| Phase 14 P05 | 15 min | 2 tasks | 5 files |
+| Phase 14 P06 | 9 min | 2 tasks | 4 files |
+| Phase 14 P07 | 12 min | 2 tasks | 4 files |
+| Phase 14 P08 | 90min | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -141,6 +150,30 @@ Recent decisions affecting current work:
 - [Phase 13]: 13-22: VERIFY-07 closed: all 44 ledger rows final in 13-LEDGER-TRIAGE.md (Final column) and in the four archived disposition files (fixed 32 with resolvable SHAs, deferred 9 with owners, skipped 3 with approved reasons); every final enum equals the approved Enum cell
 - [Phase 13]: 13-22: hand-overs: ROADMAP scope notes under Phases 14 (07 WR-06/SHELL-07, 10 IN-01, Deployment Checks proof fallback), 15 (GUARD-10, guard:tests suggestion, scripts/README 47 pairs), 17 (10 IN-03, E2E duration trend), 18 (10 IN-04, IN-05, IN-08, IN-09 switchTo wait); deferred-items.md names owner and trigger for the Firefox tag removal, limit-probe output, relay long-mirror path, Deployment Checks proof, npm audit decision and ci/13-pw165; no new requirement
 - [Phase 13]: 13-22: PROJECT.md Key Decisions: main ruleset 27216079, [ci skip] relay option A (a-confirmed), keep-alive monitor (60-day schedule pause, ~1 h Hobby logs), docs-only fast path; production gate recorded as Deployment Checks on CI OK (Tim, 2026-11-13) with the live proof pending the phase-close merge
+- [Phase 13]: 13-UAT (2026-11-14, 3/3 pass): Deployment Checks proven live on phase-close merge aef25e2 (PR #147): Vercel "Waiting for checks to complete" from 23:28:02Z, CI OK success 23:55:05Z, deployment completed 23:55:07Z. Tim passed test 2 with #140 still open (main carries @playwright/test 1.65.0; Dependabot runs weekly, Monday 09:00) and test 3 before any code-changing [ci skip] head had run the long-mirror path
+- [Phase 14]: 14-01: SHELL-07 fix 49b8fe1 (ledger row #6 write-back in 14-07): a plain tap on the panel link whose href strictly equals the pathname focuses Menu with preventScroll, then closes; default-prevented with no query (D-16), Next navigates with one (D-23). SHELL-08 75e9900: focus-visible:-outline-offset-4 on panel links, globals.css unchanged
+- [Phase 14]: 14-01: the global scroll-margin-top makes a plain focus() of the sticky Menu button scroll the page (600 to 530 Chromium, 185.5 Firefox); the Escape handler still does it, logged in 14 deferred-items.md. Panel onFocus revealFocusedRow keeps a focused row inside the scrolling panel (Firefox did not scroll it at 375 x 320)
+- [Phase 14]: 14-01: new visual test menu @375 current row focused declares menu/375-current-focus-visual-dark-linux.png, produced only by the 14-08 dispatch; CI compare reports it missing until then
+- [Phase 14]: HOME-10: rail scrim takes the locked P3 stops at w-56 (reverses 12-07 D-24); B8 lowest 7.93:1 poster, 7.91:1 live, every label above the 5:1 aim (14-02)
+- [Phase 14]: B8 live rows opt into budgetMeasureOnly, the home-canvas rule for tests that need 3d (14-02)
+- [Phase 14]: HOME-09: fixed by 09-01, now guarded at 375 px in four modes and eight stops; no app change, no home/375 PNG (14-02)
+- [Phase 14]: 14-03 (LBOX-08, D-08): root cause is the browser's same-document scroll restoration after every lightbox close (all closes are history traversals; scrollRestoration stays 'auto'), which ran after restoreFocus's microtask and undid scrollIntoView; block 'nearest' also clipped the ring's bottom 4 px
+- [Phase 14]: 14-03: restoreFocus calls revealTrigger (window-only, instant, minimal scrollBy clearing --nav-h and the 4 px ring, oversized triggers top-aligned) once now and once in requestAnimationFrame while the mark keeps focus; history.scrollRestoration untouched; UI-SPEC P4 resolved to the restore code (no scroll-mb-4)
+- [Phase 14]: 14-03: revealTrigger rounds its target outward to whole pixels (Chromium snapped 348.375 to 348, ring 0.375 px out); the :471 scroll-unchanged row now centres its tile because scrollIntoViewIfNeeded left its ring clipped in Chromium; 14-08 adds a second-frame reveal only if Linux WebKit needs it
+- [Phase 14]: 14-04 D-12: one setLabels(on) path for the Hide labels button and H clears expandedId on hide; never an effect on the cross-tab labels store (fix d6873c8)
+- [Phase 14]: 14-04 D-22: collapseCallout clears a hidden callout (no visible label or key row) and returns false, so zoom then close take the Escape; visible callouts stay first (fix 945d235, ledger 10 IN-01)
+- [Phase 14]: 14-05: Contract 1 classes ship as written; desktop Chromium's thin scrollbar gutter wraps the 375 px command bar (299 px inner), so the one-row e2e check runs as a phone (isMobile in Chromium) and a desktop row asserts the wrap rule; one-token tightening options logged in deferred-items for Tim
+- [Phase 14]: 14-05: A step or any dot press shows the target command complete and sets the sticky Pause through one show(target); ends are aria-disabled, focusable, and stepTo returns null so goTo never throws
+- [Phase 14]: 14-06: The transcript summary sits between the terminal and the next focusable element, so two Jest Tab rows were rewritten in place to pass through it (GUARD-03).
+- [Phase 14]: 14-06: The box reduced visual shot waits for the open transcript before settle(); declared re-baseline box/375-reduced, box/768-reduced, box/1440-reduced for 14-08.
+- [Phase 14]: 14-05 follow-up: the terminal dot row is gap-1, not gap-2 (Tim's decision c, AskUserQuestion 2026-11-14, "c: dot row gap-1 (Recommended)"). Desktop Chromium's scrollbar gutter leaves 299 px inside the 375 px bar, and Previous, four dots and Next now need 292 px, so the bar is one 48 px row in Chromium and Firefox. 14-UI-SPEC Contract 1 amended; deferred-items entry resolved (61b390a).
+- [Phase 14]: 14-07: ledger rows #6 (07 WR-06, SHELL-07 49b8fe1) and #30 (10 IN-01, D-12 d6873c8, D-22 945d235) written back as done in 13-LEDGER-TRIAGE.md and the archived 07 and 10 disposition tables; enums, Owner and Tim cells unchanged (WR-05 precedent); write-back d78c251
+- [Phase 14]: 14-07: the wave-merge gate caught the photos-sweep E5 row still expecting the pre-D-22 Escape order; step 6 rewritten in place (accc7e5), no app change. Tip green: lint, type-check, Jest 1795 + guard:tests (2392 vs 2243), 592 e2e in Chromium (334) and Firefox (258)
+- [Phase 14]: 14-07: declared PNG set for 14-08: menu/375-current-focus (new), home/{768,1440}-ascent-{start,waypoint-2,summit} plus home/{768,1440}-reduced if the band shows, box/{375,768,1440}-reduced; no home/375; check-snapshot-commit --allow menu --allow home --allow box
+- [Phase 14]: 14-08: WebKit LBOX-08 passed on the first ci/14-08 push; the second-frame re-reveal contingency was not applied (LightboxDialog.tsx untouched)
+- [Phase 14]: 14-08: re-baseline changed 11 PNGs and added 1 (menu/375-current-focus), all inside the declared menu/home/box set; Tim committed them (55160a4) and CI OK passed on it (run 43600436335)
+- [Phase 14]: 14-08: no Deployment Checks proof recorded (D-20); ci/14-08 is throwaway and the phase branch is pushed later by /gsd-ship
+- [Phase 14]: 14-UAT passed 2026-11-14 (Tim asked Claude to run it): the 12-UAT test 3 keyboard re-check, 20/20 in Edge and Firefox on next dev; VERIFICATION canonicalized human_needed → passed and the phase transitioned to 15
 
 ### Pending Todos
 
@@ -148,8 +181,10 @@ None carried from v2.0.
 
 ### Blockers/Concerns
 
-- [Phase 13] The production Upstash names are confirmed (13-05: the complete `UPSTASH_REDIS_REST_*` pair is set in Production). What's left for GUARD-09 is the live 429 proof: `PROD_FORM_LIMIT=1 npm run test:prod-form` shows it but locks the IP out for up to an hour (13-15/13-17).
-- [Phase 13] `main` has no branch protection or required checks, so a red PR can merge and Vercel deploys it; `[ci skip]` commits produce no checks (GUARD-07, GUARD-08). Tim applies the settings.
+- [Phase 13] Carried, not blocking: the relay's ~40-minute long-mirror wait has not been seen live (watch the first code-changing `[ci skip]` PR); Dependabot PR #140 should close on its next run; the `@firefox-43967` tags and `FIREFOX_INVERT` come out after the Playwright release with the fixing Firefox roll (owners in `13-repo-safety-test-debt/deferred-items.md`).
+- [Phase 13] The UAT, verification and transition commits after `98f2186` are local on `gsd/phase-13-repo-safety-test-debt`, whose remote branch was deleted by the #147 merge. They reach `main` only through a new PR, which needs Tim's ask.
+- [Phase 14] The phase branch `gsd/phase-14-ui-fixes-terminal-controls` has no upstream; its commits (plans, UAT, verification, transition) reach `main` only through `/gsd-ship 14`, which needs Tim's ask.
+- [Phase 14] Six code-review findings (IN-01..06) are deferred to Phase 15 (`14-REVIEW-DISPOSITION.md`). The Escape scroll jump is fixed (quick 261114-o8w, `d038117`).
 - [Phase 16] Needs Tim's inputs before planning can finish: the launch regions (inside the footprint, at least one in Italy or Austria), the new originals and the coarse-location choice per photo.
 - [Phase 19] Needs a graded drone clip from Tim before any byte budget is fixed.
 
@@ -163,6 +198,7 @@ None carried from v2.0.
 | 261106-mzc | E2E reliability: E2E in the Playwright image, focus trap skips hidden controls, nav menu ignores photo steps, case-study axe measures final colours | 2026-11-06 | 8239f91 | [261106-mzc-e2e-reliability-run-e2e-in-the-playwrigh](./quick/261106-mzc-e2e-reliability-run-e2e-in-the-playwrigh/) |
 | 261106-qvn | Dependabot group C: next, resend, upstash, three, motion, Playwright 1.64.1, axe 4.14 with 14 names, Tailwind 4.3.4 with the note in Inter | 2026-11-06 | a5fa14a | [261106-qvn-dependabot-group-c-dependency-batches-ax](./quick/261106-qvn-dependabot-group-c-dependency-batches-ax/) |
 | 261106-www | Drop the unused Google Analytics env placeholder and correct the codebase docs that name it | 2026-11-06 | 35ff92b | [261106-www-drop-the-unused-google-analytics-env-pla](./quick/261106-www-drop-the-unused-google-analytics-env-pla/) |
+| 261114-o8w | Fix the Escape scroll jump in the mobile menu: Escape focuses Menu with preventScroll, and the shell e2e row asserts the scroll is kept | 2026-11-14 | d038117 | [261114-o8w-fix-the-escape-scroll-jump-in-the-mobile](./quick/261114-o8w-fix-the-escape-scroll-jump-in-the-mobile/) |
 
 ## Deferred Items
 
@@ -193,6 +229,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-13T20:42:46.905Z
-Stopped at: Completed 13-22-PLAN.md
+Last session: 2026-11-14T16:10:00Z
+Stopped at: Phase 14 complete, ready to plan Phase 15
 Resume file: None

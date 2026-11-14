@@ -29,7 +29,13 @@ import { formatMetres } from '@/lib/photo-format';
  * order: the poster, the lazy canvas (TerrainStage, eligible devices only) and
  * the rail scrim (md and up), which stays in the stage because the camera
  * (CameraRig) reads its width there. The poster and 3D pin layers are z-10,
- * so the pins paint above the scrim (G-09-3 a, 09-19).
+ * so the pins paint above the scrim (G-09-3 a, 09-19). HOME-10 (14-02, D-13):
+ * the scrim's dense stop holds alpha 0.85 to 85 % (190.4 px from the right
+ * edge), past the left edge of the longest label, '2,760 m approx.' (182 px),
+ * so every tick label keeps at least 5:1 even over pure white. This reverses
+ * 12-07 D-24, which accepted the 09 stops: they left alpha about 0.38 behind
+ * that label, which measured 4.81:1 at 768 px. Only the stops changed; the
+ * width (224 px) must not, because the camera reads it as the rail zone.
  *
  * The rail box lives in its own layer after the track (G-09-4 N1, Tim's option
  * B, 09-17): the hero scrim is part of the track and painted over the stage, so
@@ -83,7 +89,7 @@ export default function AscentHero() {
           <TerrainStage pins={pins} />
           <div
             data-ascent-rail-scrim
-            className="pointer-events-none absolute inset-y-0 right-0 hidden w-56 bg-linear-to-l from-surface/85 from-0% via-surface/60 via-70% to-transparent md:block"
+            className="pointer-events-none absolute inset-y-0 right-0 hidden w-56 bg-linear-to-l from-surface/90 from-0% via-surface/85 via-85% to-transparent to-100% md:block"
           />
         </AscentStageFrame>
         <div data-ascent-track className="relative col-start-1 row-start-1">

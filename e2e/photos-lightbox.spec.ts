@@ -474,7 +474,10 @@ test.describe('Focus and Escape (LBOX-03)', () => {
     await page.setViewportSize({ width: 1024, height: 700 });
     await page.goto('/photos?view=grid');
     const third = page.getByRole('list', { name: GRID_LIST }).getByRole('link').nth(2);
-    await third.scrollIntoViewIfNeeded();
+    // Centred, so the tile and its 4 px focus ring are fully in view and the reveal on close
+    // has nothing to do (LBOX-08, D-09). scrollIntoViewIfNeeded() left the tile's bottom at
+    // 700.375 in Chromium's 700 px viewport, ring clipped, which the reveal rightly fixes.
+    await third.evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
     const before = await page.evaluate(() => window.scrollY);
     expect(before, 'the grid must be scrolled to its second row').toBeGreaterThan(0);
 
@@ -753,6 +756,196 @@ test.describe('Moving between photos (LBOX-02)', () => {
     );
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
+});
+
+/**
+ * Focus on close stays in view (LBOX-08; 14-CONTEXT D-08 to D-11, 14-RESEARCH). Every close is
+ * a history traversal, and the browser's scroll restoration used to undo the reveal, so focus
+ * landed on a trigger off-screen. The contract asserted here is view-agnostic (D-11): focus is
+ * on `[data-photo-id={shown slug}]`, and that box inflated by the 4 px ring lies inside the
+ * viewport below `--nav-h`. Phase 18 rewrites only the open-and-step setup, never the
+ * assertion. Each row first proves the shown photo's trigger is off-screen while the dialog is
+ * still open, so it really exercises the reveal. The two setups (14-RESEARCH Pitfall 4):
+ * (a) bottom edge: from scrollY 0, the trigger of the last photo sits below the fold;
+ * (b) top edge: from the page end, it sits above the viewport, under the nav.
+ * Each row records the scroll delta the reveal applied as a `reveal-delta` annotation.
+ */
+// @no-win-webkit: history Back while the open's View Transition commit settles crashes
+// Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
+// in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
+test.describe('Focus on close stays in view (LBOX-08)', () => {
+  const first = views[0];
+  const last = views[views.length - 1];
+  /** The global focus ring: a 2 px outline at a 2 px offset (app/globals.css :focus-visible). */
+  const RING_PX = 4;
+
+  type View = 'Map' | 'Grid' | 'Carousel';
+  type Close = 'Escape' | 'Close photo' | 'browser Back';
+  type Row = {
+    view: View;
+    width: number;
+    height: number;
+    setup: 'a' | 'b';
+    close: Close;
+    tags: string;
+  };
+
+  const VIEW_URL: Record<View, { path: string; url: RegExp }> = {
+    Map: { path: '/photos', url: /\/photos$/ },
+    Grid: { path: '/photos?view=grid', url: GRID_URL },
+    Carousel: { path: '/photos?view=carousel', url: /\/photos\?view=carousel$/ },
+  };
+
+  /** The D-11 matrix engine is Chromium; every history close carries @no-win-webkit. */
+  const CHROMIUM = '@chromium-only @no-win-webkit';
+  const ROWS: Row[] = [
+    // The cross-engine row (D-11): Chromium, Firefox and Linux WebKit.
+    { view: 'Map', width: 720, height: 450, setup: 'a', close: 'Escape', tags: '@no-win-webkit' },
+    // Map: from the top, the last mark is below the fold at the three larger sizes; at 375x667
+    // every mark is on screen from the top, so that size starts at the page end (Pitfall 4).
+    { view: 'Map', width: 1366, height: 650, setup: 'a', close: 'Escape', tags: CHROMIUM },
+    { view: 'Map', width: 1280, height: 560, setup: 'a', close: 'Escape', tags: CHROMIUM },
+    { view: 'Map', width: 375, height: 667, setup: 'b', close: 'Escape', tags: CHROMIUM },
+    // Grid: the last tile is below the fold at every size. At 720x450 it is the 286 px tile,
+    // which fits below the nav (Pitfall 3).
+    { view: 'Grid', width: 1366, height: 650, setup: 'a', close: 'Escape', tags: CHROMIUM },
+    { view: 'Grid', width: 1280, height: 560, setup: 'a', close: 'Escape', tags: CHROMIUM },
+    { view: 'Grid', width: 720, height: 450, setup: 'a', close: 'Escape', tags: CHROMIUM },
+    { view: 'Grid', width: 375, height: 667, setup: 'a', close: 'Escape', tags: CHROMIUM },
+    // Carousel: its one trigger ('Open photo') stays where it was pressed, so every size starts
+    // at the page end and the trigger ends above the viewport, under the nav.
+    { view: 'Carousel', width: 1366, height: 650, setup: 'b', close: 'Escape', tags: CHROMIUM },
+    { view: 'Carousel', width: 1280, height: 560, setup: 'b', close: 'Escape', tags: CHROMIUM },
+    { view: 'Carousel', width: 720, height: 450, setup: 'b', close: 'Escape', tags: CHROMIUM },
+    { view: 'Carousel', width: 375, height: 667, setup: 'b', close: 'Escape', tags: CHROMIUM },
+    // The other two close paths (D-10), through the same restoreFocus.
+    { view: 'Map', width: 720, height: 450, setup: 'a', close: 'Close photo', tags: CHROMIUM },
+    { view: 'Map', width: 720, height: 450, setup: 'a', close: 'browser Back', tags: CHROMIUM },
+  ];
+
+  /**
+   * Where `[data-photo-id={slug}]` is: 'missing', 'in-view' (its box inflated by the ring lies
+   * inside the viewport below --nav-h) or 'off-screen' (any part of that box is outside).
+   * `focused` reads document.activeElement instead, which must carry the slug.
+   */
+  async function triggerState(
+    page: Page,
+    slug: string,
+    focused: boolean
+  ): Promise<'missing' | 'in-view' | 'off-screen'> {
+    return page.evaluate(
+      ({ slug, focused, ring }) => {
+        const el = focused
+          ? document.activeElement
+          : document.querySelector(`[data-photo-id="${CSS.escape(slug)}"]`);
+        if (!(el instanceof HTMLElement) || el.getAttribute('data-photo-id') !== slug) {
+          return 'missing';
+        }
+        const r = el.getBoundingClientRect();
+        const navH = Number.parseFloat(
+          getComputedStyle(document.documentElement).getPropertyValue('--nav-h')
+        );
+        const inView =
+          r.top - ring >= navH &&
+          r.bottom + ring <= window.innerHeight &&
+          r.left - ring >= 0 &&
+          r.right + ring <= document.documentElement.clientWidth;
+        return inView ? 'in-view' : 'off-screen';
+      },
+      { slug, focused, ring: RING_PX }
+    );
+  }
+
+  /** The D-11 outcome: focus on the shown photo's trigger, fully in view with its ring. */
+  async function expectTriggerFullyInView(page: Page, slug: string) {
+    await expect
+      .poll(() => page.evaluate(() => document.activeElement?.getAttribute('data-photo-id')))
+      .toBe(slug);
+    await expect
+      .poll(() => triggerState(page, slug, true), {
+        message: `the focused [data-photo-id="${slug}"] and its ring are fully in view`,
+      })
+      .toBe('in-view');
+  }
+
+  /** The row's precondition, checked while the dialog is open: the trigger is off-screen. */
+  async function expectTriggerOffscreen(page: Page, slug: string) {
+    await expect
+      .poll(() => triggerState(page, slug, false), {
+        message: `[data-photo-id="${slug}"] must start off-screen, or the row proves nothing`,
+      })
+      .toBe('off-screen');
+  }
+
+  /**
+   * Open the first photo from its trigger in the mounted view, without moving the page:
+   * focus without a scroll, then Enter (a click would scroll the trigger into view first).
+   * Setup (a) starts at scrollY 0, setup (b) at the page end.
+   */
+  async function openFirst(page: Page, setup: 'a' | 'b') {
+    const trigger = page.locator(`[data-photo-id="${first.slug}"]`);
+    await expect(trigger).toHaveCount(1);
+    await waitForHydration(trigger);
+    await page.evaluate((toEnd) => {
+      const top = toEnd ? document.documentElement.scrollHeight : 0;
+      window.scrollTo({ top, behavior: 'instant' });
+    }, setup === 'b');
+    if (setup === 'b') {
+      expect(await page.evaluate(() => window.scrollY), 'setup (b) starts scrolled').toBeGreaterThan(0);
+    }
+    await trigger.evaluate((el: HTMLElement) => el.focus({ preventScroll: true }));
+    await page.keyboard.press('Enter');
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible({ timeout: 20000 });
+    await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
+    return dialog;
+  }
+
+  /** Press 'Next photo' until the last photo is shown, checking the counter at each step. */
+  async function stepToLast(page: Page, dialog: Locator, browserName: string) {
+    const next = dialog.getByRole('button', { name: 'Next photo', exact: true });
+    const counter = dialog.locator('[data-photo-counter]');
+    await waitForHydration(next);
+    for (let n = 2; n <= views.length; n++) {
+      await pressButton(next, browserName);
+      await expect(counter).toHaveText(`${n} / ${views.length}`);
+    }
+    await expect(page).toHaveURL(new RegExp(`/photos/${last.slug}$`));
+  }
+
+  /** Close by the row's path; all three end in restoreFocus through a history traversal. */
+  async function closeBy(page: Page, dialog: Locator, close: Close) {
+    if (close === 'Escape') await page.keyboard.press('Escape');
+    else if (close === 'Close photo') {
+      await dialog.getByRole('button', { name: 'Close photo', exact: true }).click();
+    } else await page.goBack();
+  }
+
+  for (const row of ROWS) {
+    const { view, width, height, setup, close, tags } = row;
+    test(`${view} at ${width}x${height}: step to the last photo, ${close}, the trigger is fully in view ${tags}`, async ({
+      page,
+      browserName,
+    }) => {
+      await page.setViewportSize({ width, height });
+      await page.goto(VIEW_URL[view].path);
+      const dialog = await openFirst(page, setup);
+      await stepToLast(page, dialog, browserName);
+      await expectTriggerOffscreen(page, last.slug);
+      const before = await page.evaluate(() => window.scrollY);
+
+      await closeBy(page, dialog, close);
+      await expect(page.getByRole('dialog')).toHaveCount(0);
+      await expect(page).toHaveURL(VIEW_URL[view].url);
+      await expectTriggerFullyInView(page, last.slug);
+
+      const after = await page.evaluate(() => window.scrollY);
+      test.info().annotations.push({
+        type: 'reveal-delta',
+        description: `setup (${setup}): scrollY ${before} -> ${after} (${after - before >= 0 ? '+' : ''}${after - before} px)`,
+      });
+    });
+  }
 });
 
 test.describe('Morph and motion (LBOX-06)', () => {
@@ -1103,7 +1296,60 @@ test.describe('Hotspots (LBOX-05)', () => {
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 
-  test('from zoomed with a callout open, Escape unwinds callout, then zoom, then close', async ({
+  // @no-win-webkit: history Back while the open's View Transition commit settles crashes
+  // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
+  // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
+  test('with a callout open, H hides labels and one Escape closes the lightbox (D-12) @no-win-webkit', async ({
+    page,
+  }) => {
+    const dialog = await openTrail(page);
+    const first = labels(dialog).first();
+    await first.click();
+    await expect(first).toHaveAttribute('aria-expanded', 'true');
+    await page.keyboard.press('h');
+    await expect(hideLabels(dialog)).toHaveAttribute('aria-pressed', 'true');
+    await expect(labels(dialog)).toHaveCount(0);
+    // Hiding collapsed the callout, so nothing hidden holds the first Escape.
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
+
+  // @no-win-webkit: history Back while the open's View Transition commit settles crashes
+  // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
+  // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
+  test('with a callout open, the Hide labels button collapses it and one Escape closes the lightbox (D-12) @no-win-webkit', async ({
+    page,
+  }) => {
+    const dialog = await openTrail(page);
+    const first = labels(dialog).first();
+    await first.click();
+    await expect(first).toHaveAttribute('aria-expanded', 'true');
+    await hideLabels(dialog).click();
+    await expect(hideLabels(dialog)).toHaveAttribute('aria-pressed', 'true');
+    await expect(labels(dialog)).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
+
+  test('showing labels again starts with every callout collapsed (D-12)', async ({ page }) => {
+    const dialog = await openTrail(page);
+    const first = labels(dialog).first();
+    await first.click();
+    await expect(first).toHaveAttribute('aria-expanded', 'true');
+    await page.keyboard.press('h');
+    await expect(hideLabels(dialog)).toHaveAttribute('aria-pressed', 'true');
+    await expect(labels(dialog)).toHaveCount(0);
+    await page.keyboard.press('h');
+    await expect(hideLabels(dialog)).toHaveAttribute('aria-pressed', 'false');
+    await expect(labels(dialog)).toHaveCount(2);
+    for (const label of await labels(dialog).all()) {
+      await expect(label).toHaveAttribute('aria-expanded', 'false');
+    }
+  });
+
+  // Rewritten in place for D-22 (it expected the hidden callout to take the first Escape): a
+  // callout hidden by zoom no longer takes it, so zoom does, and the callout is dropped with it.
+  test('from zoomed with a callout open, one Escape leaves zoom and drops the hidden callout, the next closes (D-22)', async ({
     page,
   }) => {
     const dialog = await openTrail(page);
@@ -1117,11 +1363,12 @@ test.describe('Hotspots (LBOX-05)', () => {
     await expect(markers(dialog)).toHaveCount(0);
 
     await page.keyboard.press('Escape');
-    await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'true');
-    await page.keyboard.press('Escape');
     await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'false');
-    await expect(labels(dialog).first()).toHaveAttribute('aria-expanded', 'false');
     await expect(page.getByRole('dialog')).toHaveCount(1);
+    await expect(labels(dialog)).toHaveCount(2);
+    for (const label of await labels(dialog).all()) {
+      await expect(label).toHaveAttribute('aria-expanded', 'false');
+    }
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });

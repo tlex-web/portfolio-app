@@ -11,6 +11,7 @@ import {
   initialState,
   isPlaying,
   releaseSticky,
+  stepTo,
   tick,
   visibleLines,
   type PauseSources,
@@ -87,6 +88,16 @@ describe('demo terminal state machine', () => {
 
   it.each([4, -1, 1.5])('throws a RangeError for goTo(%p, 4)', (index) => {
     expect(() => goTo(index, 4)).toThrow(RangeError);
+  });
+
+  it('steps one command forward and back, complete (ENG-06, D-03)', () => {
+    expect(stepTo(1, 1, 4)).toEqual(goTo(2, 4));
+    expect(stepTo(2, -1, 4)).toEqual(goTo(1, 4));
+  });
+
+  it('stops at the ends instead of wrapping (ENG-06, D-03)', () => {
+    expect(stepTo(0, -1, 4)).toBeNull();
+    expect(stepTo(3, 1, 4)).toBeNull();
   });
 
   it.each(['sticky', 'hover', 'focusWithin', 'offscreen', 'hidden'] as const)(

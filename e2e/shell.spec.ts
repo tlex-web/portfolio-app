@@ -309,10 +309,28 @@ test.describe('Shell mobile menu', () => {
     if (tabReachesLinks(browserName)) await page.keyboard.press('Tab');
     else await rows.nth(0).focus();
     await expect(rows.nth(0)).toBeFocused();
+
+    // The disclosure has no scroll lock, so the page can sit scrolled down while the menu
+    // is open. Pin it part-way down only now, with focus already in the panel: opening
+    // (Playwright's actionability scroll) and keyboard focus honour the global
+    // scroll-margin-top and can move the page themselves, so this measures Escape alone.
+    // Guards Escape's focus of Menu scrolling the page up (600 to 530 in Chromium, 185.5
+    // in Firefox).
+    await page.evaluate(() => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      window.scrollTo(0, Math.min(600, max));
+    });
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+    await expect(rows.nth(0)).toBeFocused();
+    const scrollAtEscape = await page.evaluate(() => window.scrollY);
+
     await page.keyboard.press('Escape');
     await expect(panel).toBeHidden();
     await expect(button).toHaveAttribute('aria-expanded', 'false');
     await expect(button).toBeFocused();
+    expect(await page.evaluate(() => window.scrollY), 'Escape keeps the scroll position').toBe(
+      scrollAtEscape,
+    );
   });
 
   test('choosing Photographs navigates and closes the panel', async ({ page }) => {
@@ -327,6 +345,178 @@ test.describe('Shell mobile menu', () => {
     await expect(page).toHaveURL(/\/photos$/, { timeout: 15000 });
     await expect(panel).toBeHidden();
     await expect(button).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  test("tapping the current page's link closes the panel and keeps the scroll (SHELL-07, D-16)", async ({
+    page,
+  }) => {
+    await page.goto('/roadmap');
+
+    // Scroll down (600 px, or the page's maximum if shorter) so a jump to the top shows.
+    await page.evaluate(() => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      window.scrollTo(0, Math.min(600, max));
+    });
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+    // A marker on the window: a document reload would drop it.
+    await page.evaluate(() => {
+      (window as unknown as { __shell07?: number }).__shell07 = 1;
+    });
+
+    // Pointer clicks at the element's centre, not locator.click(): Playwright's
+    // actionability scroll honours the global scroll-margin-top and moves the page
+    // even for the sticky header, which would hide (or fake) a scroll change.
+    const tap = async (locator: ReturnType<Page['locator']>) => {
+      const box = await locator.boundingBox();
+      if (!box) throw new Error('tap target has no box');
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    };
+    const button = page.getByRole('button', { name: 'Menu' });
+    const panel = page.locator('#site-menu');
+    await expect(button).toHaveAttribute('aria-expanded', 'false');
+    await expect
+      .poll(() => button.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))))
+      .toBe(true);
+    await tap(button);
+    await expect(panel).toBeVisible();
+    await panel.evaluate((el) =>
+      Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined))),
+    );
+    const scrollBefore = await page.evaluate(() => window.scrollY);
+    expect(scrollBefore).toBeGreaterThan(0);
+
+    await tap(panel.getByRole('link', { name: 'Roadmap', exact: true }));
+
+    await expect(panel).toBeHidden();
+    await expect(button).toHaveAttribute('aria-expanded', 'false');
+    await expect(button).toBeFocused();
+    expect(await page.evaluate(() => window.scrollY)).toBe(scrollBefore);
+    expect(new URL(page.url()).pathname).toBe('/roadmap');
+    expect(new URL(page.url()).search).toBe('');
+    expect(
+      await page.evaluate(() => (window as unknown as { __shell07?: number }).__shell07),
+    ).toBe(1);
+  });
+
+  test('on a view URL, Photographs still navigates to the plain page (D-23)', async ({ page }) => {
+    await page.goto('/photos?view=grid');
+
+    const button = page.getByRole('button', { name: 'Menu' });
+    const panel = page.locator('#site-menu');
+    // A press before hydration does nothing, and the grid page hydrates late:
+    // wait for React's props on the button, as the D-16 row above does.
+    await expect
+      .poll(() => button.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))))
+      .toBe(true);
+    await button.click();
+    await expect(panel).toBeVisible();
+
+    // usePathname drops the query, so the pathname stays /photos and the route-change
+    // close never fires: the link's click handler has to close the panel at tap.
+    await panel.getByRole('link', { name: 'Photographs', exact: true }).click();
+    await expect(page).toHaveURL(/\/photos$/, { timeout: 15000 });
+    await expect(panel).toBeHidden();
+    await expect(button).toHaveAttribute('aria-expanded', 'false');
+    await expect(button).toBeFocused();
+  });
+
+  /**
+   * Opens the menu from the keyboard (focus Menu, Enter), so `:focus-visible`
+   * applies to the panel links focused next, and waits for the panel to settle.
+   */
+  async function openMenuByKeyboard(page: Page) {
+    const button = page.getByRole('button', { name: 'Menu' });
+    const panel = page.locator('#site-menu');
+    // Enter before hydration does nothing: wait for React's props on the button.
+    await expect
+      .poll(() => button.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))))
+      .toBe(true);
+    await button.focus();
+    await page.keyboard.press('Enter');
+    await expect(button).toHaveAttribute('aria-expanded', 'true');
+    await expect(panel).toBeVisible();
+    await panel.evaluate((el) =>
+      Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined))),
+    );
+    return panel;
+  }
+
+  /**
+   * Focuses the panel link at `index` (Tab from the Menu button, or `.focus()` in
+   * WebKit, which never Tabs to links) and asserts the inset ring: `:focus-visible`,
+   * outline offset -4px and width 2px, and the ring's outer rectangle (the link's
+   * box inset by -(offset + width) = 2 px) inside the panel's client rectangle.
+   * Returns the panel's scrollTop after the focus.
+   */
+  async function expectInsetRing(
+    page: Page,
+    panel: ReturnType<Page['locator']>,
+    index: number,
+    browserName: string,
+  ) {
+    const link = panel.getByRole('link').nth(index);
+    if (tabReachesLinks(browserName)) {
+      // Tab until the link has focus rather than a fixed count: when the panel
+      // scrolls (375 x 320) Firefox adds the scroll container itself as a Tab stop.
+      await page.getByRole('button', { name: 'Menu' }).focus();
+      for (let i = 0; i <= index + 2; i++) {
+        await page.keyboard.press('Tab');
+        if (await link.evaluate((el) => el === document.activeElement)) break;
+      }
+    } else {
+      await link.focus();
+    }
+    await expect(link).toBeFocused();
+    const m = await link.evaluate((el) => {
+      const menu = el.closest('#site-menu') as HTMLElement;
+      const cs = getComputedStyle(el);
+      const grow = parseFloat(cs.outlineOffset) + parseFloat(cs.outlineWidth);
+      const box = el.getBoundingClientRect();
+      const outer = menu.getBoundingClientRect();
+      const left = outer.left + menu.clientLeft;
+      const top = outer.top + menu.clientTop;
+      return {
+        focusVisible: el.matches(':focus-visible'),
+        offset: cs.outlineOffset,
+        width: cs.outlineWidth,
+        ring: { left: box.left - grow, top: box.top - grow, right: box.right + grow, bottom: box.bottom + grow },
+        inner: { left, top, right: left + menu.clientWidth, bottom: top + menu.clientHeight },
+        scrollTop: menu.scrollTop,
+      };
+    });
+    expect(m.focusVisible).toBe(true);
+    expect(m.offset).toBe('-4px');
+    expect(m.width).toBe('2px');
+    expect(m.ring.left).toBeGreaterThanOrEqual(m.inner.left);
+    expect(m.ring.top).toBeGreaterThanOrEqual(m.inner.top);
+    expect(m.ring.right).toBeLessThanOrEqual(m.inner.right);
+    expect(m.ring.bottom).toBeLessThanOrEqual(m.inner.bottom);
+    return m.scrollTop;
+  }
+
+  test('focused panel links draw an inset ring the panel never clips (SHELL-08, D-17)', async ({
+    page,
+    browserName,
+  }) => {
+    await page.goto('/roadmap');
+    const panel = await openMenuByKeyboard(page);
+
+    // Top row ('Home') and bottom row ('Contact').
+    await expectInsetRing(page, panel, 0, browserName);
+    await expectInsetRing(page, panel, site.nav.length - 1, browserName);
+  });
+
+  test('the inset ring stays inside the panel while it scrolls at 375 x 320 (SHELL-08, D-17)', async ({
+    page,
+    browserName,
+  }) => {
+    // max-h-[calc(100svh-var(--nav-h))] leaves the panel shorter than its rows here.
+    await page.setViewportSize({ width: 375, height: 320 });
+    await page.goto('/roadmap');
+    const panel = await openMenuByKeyboard(page);
+
+    const scrollTop = await expectInsetRing(page, panel, site.nav.length - 1, browserName);
+    expect(scrollTop).toBeGreaterThan(0);
   });
 });
 

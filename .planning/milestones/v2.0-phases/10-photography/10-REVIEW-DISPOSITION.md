@@ -62,7 +62,7 @@ recorded: 2026-10-26T18:58:22.182Z
 |---------|----------|-------------|--------|
 | CR-01 | critical | fixed | 10-REVIEW-FIX.md |
 | WR-01 | warning | fixed | 10-REVIEW-FIX.md |
-| IN-01 | info | deferred | handed to Phase 14 (ROADMAP.md scope note) (13-LEDGER-TRIAGE.md #30) |
+| IN-01 | info | deferred | handed to Phase 14 (ROADMAP.md scope note); fixed in Phase 14: 14-04 d6873c8, 945d235 (13-LEDGER-TRIAGE.md #30) |
 | IN-02 | info | fixed | 13-09: f03c424 (RED), 0aac3d3 (fix) (13-LEDGER-TRIAGE.md #31) |
 | IN-03 | info | deferred | handed to Phase 17 (ROADMAP.md scope note) (13-LEDGER-TRIAGE.md #32) |
 | IN-04 | info | deferred | handed to Phase 18, LBOX-09 stepping rework (ROADMAP.md scope note) (13-LEDGER-TRIAGE.md #33) |

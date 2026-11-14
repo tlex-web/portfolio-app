@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
 import { mediaManifest } from '@/data/generated/media-manifest';
 import { projects } from '@/data/projects';
 import { roadmapItems } from '@/data/roadmap';
@@ -23,8 +23,9 @@ const LAST = box.demo.commands[LAST_N - 1];
 
 /**
  * The case-study route, its trailhead and box's demo terminal (ENG-02 route
- * contract, ENG-05; 11 D-01 flat terminal, D-02 amended pause sources and
- * release, D-03 dots, D-12 links, D-22 slugs, D-26 note line).
+ * contract, ENG-05, ENG-06; 11 D-01 flat terminal, D-02 amended pause sources
+ * and release, D-03 dots, D-12 links, D-22 slugs, D-26 note line; 14 D-01 to
+ * D-03 step buttons, a step or dot press presses Pause, the ends never wrap).
  *
  * /projects/[slug] is a Server Component with generateStaticParams,
  * dynamicParams = false and generateMetadata: the title comes from the
@@ -34,7 +35,8 @@ const LAST = box.demo.commands[LAST_N - 1];
  *
  * The terminal's state is asserted through `aria-pressed` on the Pause toggle,
  * `data-playback` / `data-command` on the region, `data-cell` / `data-note` in
- * the body and `aria-current` on the dots, never through classes.
+ * the body, `aria-current` on the dots and `aria-disabled` on the step
+ * buttons, never through classes (the 375 px bar row measures boxes).
  * Reduced motion is pinned per describe, because the terminal starts paused
  * under it.
  */
@@ -60,13 +62,33 @@ async function loadedScriptBodies(page: Page): Promise<{ url: string; body: stri
 
 /**
  * Moves the pointer off the terminal and focus out of it, clearing both
- * temporary pauses. Needed after a dot or a Pause press, which leave the
+ * temporary pauses. Needed after a step, dot or Pause press, which leave the
  * pointer over the region and focus inside it; never after a release, which
  * clears both pauses itself (D-02 amended).
  */
 async function leaveTerminal(page: Page) {
   await page.mouse.move(0, 0);
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+}
+
+/**
+ * Asserts the terminal's command bar is one row: 48.5 px tall at most, with
+ * Previous, every dot and Next on the same top within 0.5 px (14-UI-SPEC
+ * "Width at 375 px").
+ */
+async function expectOneRowBar(bar: Locator) {
+  const box = await bar.boundingBox();
+  expect(box?.height ?? Infinity).toBeLessThanOrEqual(48.5);
+  const controls = [
+    bar.getByRole('button', { name: 'Previous command', exact: true }),
+    ...Array.from({ length: LAST_N }, (_, i) =>
+      bar.getByRole('button', { name: `Go to command ${i + 1}`, exact: true })
+    ),
+    bar.getByRole('button', { name: 'Next command', exact: true }),
+  ];
+  const tops = await Promise.all(controls.map(async (c) => (await c.boundingBox())?.y));
+  const first = tops[0] ?? NaN;
+  for (const top of tops) expect(Math.abs((top ?? Infinity) - first)).toBeLessThanOrEqual(0.5);
 }
 
 test.describe('Case-study route', () => {
@@ -100,7 +122,9 @@ test.describe('Case-study route', () => {
 
       expect(response?.status()).toBe(404);
       expect(new URL(page.url()).pathname).toBe(path);
-      await expect(page.getByRole('main').getByText('Error 404 · Page not found', { exact: true })).toHaveCount(1);
+      await expect(
+        page.getByRole('main').getByText('Error 404 · Page not found', { exact: true })
+      ).toHaveCount(1);
     });
   }
 
@@ -574,7 +598,7 @@ test.describe('Demo (ENG-05)', () => {
     await expect(toggle).toHaveAttribute('aria-pressed', 'false');
   });
 
-  test('Tab from the toggle to a dot after a release keeps playing (D-02 amended)', async ({
+  test('Tab from the toggle to Previous after a release keeps playing (D-02 amended, ENG-06)', async ({
     page,
   }) => {
     await page.goto(BOX);
@@ -595,7 +619,7 @@ test.describe('Demo (ENG-05)', () => {
     // Moving between the region's own controls is not an entry.
     await page.keyboard.press('Tab');
     await expect(
-      region.getByRole('button', { name: 'Go to command 1', exact: true })
+      region.getByRole('button', { name: 'Previous command', exact: true })
     ).toBeFocused();
     await expect(region).toHaveAttribute('data-playback', 'playing');
   });
@@ -635,7 +659,7 @@ test.describe('Demo (ENG-05)', () => {
     await expect(toggle).toHaveAttribute('aria-pressed', 'false');
   });
 
-  test('a dot shows its command complete with its note line, without touching the toggle (D-03, D-26)', async ({
+  test('a dot shows its command complete with its note line and presses Pause (D-02, D-26)', async ({
     page,
   }) => {
     await page.goto(BOX);
@@ -646,7 +670,7 @@ test.describe('Demo (ENG-05)', () => {
     await dot.click();
     await expect(region).toHaveAttribute('data-command', String(LAST_N));
     await expect(dot).toHaveAttribute('aria-current', 'true');
-    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
     const cell = region.locator(`[data-cell="${LAST_N}"]`);
     await expect(cell).toBeVisible();
     await expect(cell).toContainText(LAST.output);
@@ -655,22 +679,225 @@ test.describe('Demo (ENG-05)', () => {
     await expect(cell.locator('[data-note]')).toHaveText(LAST.note ?? '');
     await expect(region.locator('[data-note]:visible')).toHaveCount(1);
 
-    // A dot press keeps the hover and focus pauses: only leaving resumes.
+    // A dot press sets the sticky Pause (D-02): leaving does not resume.
     await expect(region).toHaveAttribute('data-playback', 'paused');
     await leaveTerminal(page);
-    await expect(region).toHaveAttribute('data-playback', 'playing');
+    await page.waitForTimeout(4000);
+    await expect(region).toHaveAttribute('data-playback', 'paused');
+    await expect(region).toHaveAttribute('data-command', String(LAST_N));
   });
 
-  test('no horizontal scroll at 375 px', async ({ page }) => {
+  test('the step buttons stop at the ends (ENG-06, D-03)', async ({ page }) => {
+    await page.goto(BOX);
+    const region = page.getByRole('region', { name: regionName });
+    const toggle = region.getByRole('button', { name: 'Pause demo', exact: true });
+    const previous = region.getByRole('button', { name: 'Previous command', exact: true });
+    const next = region.getByRole('button', { name: 'Next command', exact: true });
+    await region.scrollIntoViewIfNeeded();
+    // Hover first, so autoplay cannot leave command 1 before the press.
+    await previous.hover();
+    await expect(region).toHaveAttribute('data-playback', 'paused');
+    await expect(region).toHaveAttribute('data-command', '1');
+
+    // aria-disabled buttons still take clicks and keys (14-RESEARCH Pitfall 8),
+    // so press them both ways: `force` skips Playwright's enabled check, which
+    // counts aria-disabled as disabled. Each stays focusable.
+    await expect(previous).toHaveAttribute('aria-disabled', 'true');
+    await previous.click({ force: true });
+    await previous.focus();
+    await expect(previous).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(region).toHaveAttribute('data-command', '1');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+
+    for (let i = 1; i < LAST_N; i++) await next.click();
+    await expect(region).toHaveAttribute('data-command', String(LAST_N));
+    await expect(next).toHaveAttribute('aria-disabled', 'true');
+    await next.click({ force: true });
+    await next.focus();
+    await expect(next).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(region).toHaveAttribute('data-command', String(LAST_N));
+    await expect(previous).not.toHaveAttribute('aria-disabled');
+  });
+
+  /**
+   * The 375 px rows (14-UI-SPEC "Width at 375 px", amended 2026-11-14). The
+   * dot row is `gap-1` (Tim's decision c), so Previous, four dots and Next
+   * need 292 px. A 375 px phone draws overlay scrollbars, so the frame is
+   * 343 px and the bar has 309 px inside its borders and padding (Firefox here
+   * draws no gutter either). Desktop Chromium reserves a thin scrollbar gutter
+   * (`scrollbar-gutter: stable` on html), which leaves the bar 299 px inside,
+   * still 7 px more than it needs. Both rows therefore assert one row. The phone row runs as a
+   * phone (`isMobile` in Chromium, which Firefox does not support); the
+   * desktop row also holds centring and no sideways scroll. The wrap rule
+   * (G3: only the inner dot row wraps, the ends stay centred) still applies
+   * if more commands are ever added.
+   */
+  test.describe('at 375 px on a phone', () => {
+    test.use({
+      viewport: { width: 375, height: 800 },
+      hasTouch: true,
+      // The fixture callback is named `provide`, not `use`, for react-hooks/rules-of-hooks.
+      isMobile: async ({ browserName }, provide) => provide(browserName === 'chromium'),
+    });
+
+    test('at 375 px the command bar is one 48 px row (ENG-06)', async ({ page }) => {
+      await page.goto(BOX);
+      const region = page.getByRole('region', { name: regionName });
+      const bar = region.getByRole('group', { name: 'Commands' });
+      await expect(bar).toBeVisible();
+      await expectOneRowBar(bar);
+    });
+  });
+
+  test('at 375 px on the desktop the command bar is one row, Previous and Next stay centred beside the dots and nothing scrolls sideways (ENG-06, G3)', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 800 });
+    await page.goto(BOX);
+    const bar = page.getByRole('region', { name: regionName }).getByRole('group', {
+      name: 'Commands',
+    });
+    await expect(bar).toBeVisible();
+    await expectOneRowBar(bar);
+
+    const barBox = await bar.boundingBox();
+    const middle = (barBox?.y ?? 0) + (barBox?.height ?? 0) / 2;
+    const steps = [
+      bar.getByRole('button', { name: 'Previous command', exact: true }),
+      bar.getByRole('button', { name: 'Next command', exact: true }),
+    ];
+    for (const step of steps) {
+      const b = await step.boundingBox();
+      expect(b?.width).toBe(44);
+      expect(Math.abs((b?.y ?? 0) + (b?.height ?? 0) / 2 - middle)).toBeLessThanOrEqual(1);
+    }
+    const overflow = await bar.evaluate((el) => ({
+      bar: el.scrollWidth - el.clientWidth,
+      page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    }));
+    expect(overflow.bar).toBeLessThanOrEqual(0);
+    expect(overflow.page).toBeLessThanOrEqual(0);
+  });
+
+  test('Next command steps one command and presses Pause (ENG-06, D-02)', async ({ page }) => {
+    await page.goto(BOX);
+    const region = page.getByRole('region', { name: regionName });
+    const toggle = region.getByRole('button', { name: 'Pause demo', exact: true });
+    const next = region.getByRole('button', { name: 'Next command', exact: true });
+    await region.scrollIntoViewIfNeeded();
+    // Hover first, so autoplay cannot advance between the read and the press.
+    await next.hover();
+    await expect(region).toHaveAttribute('data-playback', 'paused');
+
+    const before = Number(await region.getAttribute('data-command'));
+    await next.click();
+    const stepped = String(before + 1);
+    await expect(region).toHaveAttribute('data-command', stepped);
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await expect(region).toHaveAttribute('data-playback', 'paused');
+
+    // Pointer and focus leave: the step's sticky Pause still holds it.
+    await leaveTerminal(page);
+    await page.waitForTimeout(4000);
+    await expect(region).toHaveAttribute('data-command', stepped);
+    await expect(region).toHaveAttribute('data-playback', 'paused');
+  });
+
+  test('the transcript is closed, outside the terminal, and holds every command (ENG-06, D-04)', async ({
+    page,
+  }) => {
+    await page.goto(BOX);
+    const region = page.getByRole('region', { name: regionName });
+    const transcript = page.locator('details[data-transcript]');
+    await expect(region).toBeVisible();
+    await expect(transcript).toHaveCount(1);
+    await expect(transcript).not.toHaveAttribute('open');
+    await expect(region.locator('details[data-transcript]')).toHaveCount(0);
+    await expect(transcript.locator('ol > li')).toHaveCount(LAST_N);
+
+    await transcript.locator('summary').click();
+    await expect(transcript).toHaveAttribute('open', '');
+    const items = transcript.locator('ol > li');
+    for (const [i, command] of (box.demo?.commands ?? []).entries()) {
+      await expect(items.nth(i).locator('code')).toHaveText(command.input);
+      await expect(items.nth(i).locator('code')).toBeVisible();
+    }
+  });
+
+  test('opening the transcript presses Pause, closing leaves it pressed (ENG-06, D-07)', async ({
+    page,
+  }) => {
+    await page.goto(BOX);
+    const region = page.getByRole('region', { name: regionName });
+    const toggle = region.getByRole('button', { name: 'Pause demo', exact: true });
+    const summary = page.locator('details[data-transcript] > summary');
+    await region.scrollIntoViewIfNeeded();
+    // The pointer off the terminal: only the transcript can press Pause here.
+    await page.mouse.move(0, 0);
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+
+    await summary.click();
+    await expect(page.locator('details[data-transcript]')).toHaveAttribute('open', '');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await expect(region).toHaveAttribute('data-playback', 'paused');
+
+    await summary.click();
+    await expect(page.locator('details[data-transcript]')).not.toHaveAttribute('open');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await expect(region).toHaveAttribute('data-playback', 'paused');
+  });
+
+  test('no horizontal scroll at 375 px with the transcript open (ENG-06)', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 800 });
     await page.goto(BOX);
     await expect(page.getByRole('region', { name: regionName })).toBeVisible();
+    const transcript = page.locator('details[data-transcript]');
+    await transcript.locator('summary').click();
+    await expect(transcript).toHaveAttribute('open', '');
 
     const { scrollWidth, clientWidth } = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,
       clientWidth: document.documentElement.clientWidth,
     }));
     expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+
+    // No max-height and no inner scroll: the list is as tall as its entries.
+    const frame = await transcript.evaluate((el) => {
+      const list = el.querySelector('ol') as HTMLElement;
+      return {
+        maxHeight: getComputedStyle(el).maxHeight,
+        listMaxHeight: getComputedStyle(list).maxHeight,
+        listOverflow: list.scrollHeight - list.clientHeight,
+      };
+    });
+    expect(frame.maxHeight).toBe('none');
+    expect(frame.listMaxHeight).toBe('none');
+    expect(frame.listOverflow).toBeLessThanOrEqual(0);
+
+    // The 160-character pipeline and the 64-character hash wrap inside the frame.
+    const commands = box.demo?.commands ?? [];
+    const longest = commands.reduce(
+      (a, c, i) => (c.input.length > commands[a].input.length ? i : a),
+      0
+    );
+    const hashed = commands.findIndex((c) => /\b[0-9a-f]{64}\b/.test(c.output));
+    expect(hashed).toBeGreaterThanOrEqual(0);
+    const items = transcript.locator('ol > li');
+    const frameBox = await transcript.boundingBox();
+    const codeBox = await items.nth(longest).locator('code').boundingBox();
+    const preBox = await items.nth(hashed).locator('pre').boundingBox();
+    if (!frameBox || !codeBox || !preBox) throw new Error('transcript not laid out');
+    for (const inner of [codeBox, preBox]) {
+      expect(inner.x).toBeGreaterThanOrEqual(frameBox.x);
+      expect(inner.x + inner.width).toBeLessThanOrEqual(frameBox.x + frameBox.width);
+    }
+    const preOverflow = await items
+      .nth(hashed)
+      .locator('pre')
+      .evaluate((el) => el.scrollWidth - el.clientWidth);
+    expect(preOverflow).toBeLessThanOrEqual(0);
   });
 
   /**
@@ -729,5 +956,47 @@ test.describe('Demo under reduced motion', () => {
       'true'
     );
     await expect(region).toHaveAttribute('data-playback', 'paused');
+  });
+
+  test('the transcript opens after hydration, below the paused terminal (ENG-06, D-05, D-06)', async ({
+    page,
+  }) => {
+    await page.goto(BOX);
+    const region = page.getByRole('region', { name: regionName });
+    const transcript = page.locator('details[data-transcript]');
+
+    // The server renders it closed; the client opens it once after hydration.
+    await expect(transcript).toHaveAttribute('open', '');
+    await expect(region.getByRole('button', { name: 'Pause demo', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    await expect(region).toHaveAttribute('data-playback', 'paused');
+
+    const regionBox = await region.boundingBox();
+    const transcriptBox = await transcript.boundingBox();
+    if (!regionBox || !transcriptBox) throw new Error('terminal not laid out');
+    expect(transcriptBox.y).toBeGreaterThanOrEqual(regionBox.y + regionBox.height);
+  });
+});
+
+test.describe('Transcript without JavaScript (ENG-06)', () => {
+  test.use({ javaScriptEnabled: false, reducedMotion: 'reduce' });
+
+  test('the transcript is in the HTML, closed, and opens natively (D-04, D-06)', async ({
+    page,
+  }) => {
+    await page.goto(BOX);
+    const transcript = page.locator('details[data-transcript]');
+    await expect(transcript).toHaveCount(1);
+    // Closed even under reduced motion: only the client effect opens it.
+    await expect(transcript).not.toHaveAttribute('open');
+    for (const command of box.demo?.commands ?? []) {
+      await expect(transcript).toContainText(command.input);
+      if (command.note) await expect(transcript).toContainText(command.note);
+    }
+    await transcript.locator('summary').click();
+    await expect(transcript).toHaveAttribute('open', '');
+    await expect(transcript.locator('ol > li').first().locator('code')).toBeVisible();
   });
 });
