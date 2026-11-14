@@ -9,6 +9,7 @@ import {
   waitForViewTransitionsSettled,
 } from './helpers/view-transitions';
 import { pressButton, tabReachesLinks } from './helpers/engine';
+import { SLUGS, viewBySlug } from './helpers/photo-fixtures';
 
 /**
  * The photo viewer in a browser (LBOX-01, LBOX-04, LBOX-07; D-05, D-08;
@@ -30,6 +31,8 @@ import { pressButton, tabReachesLinks } from './helpers/engine';
  */
 test.describe.configure({ mode: 'default' });
 
+// Index lookups into views here are positions in the series order (DEM ascending, ties
+// by id), not photo identities; a specific photo is named through viewBySlug.
 const views = buildPhotoViews();
 
 /** A content-hashed manifest derivative: /images/photos/<name>.<10 hex>.<avif|webp>. */
@@ -96,8 +99,8 @@ test.describe('Photo page (LBOX-01 direct load)', () => {
 });
 
 test.describe('Viewer layout tiers (D-05)', () => {
-  const first = views[0];
-  const ratio = first.aspect.w / first.aspect.h;
+  const subject = viewBySlug(SLUGS.matterhornFromZermatt);
+  const ratio = subject.aspect.w / subject.aspect.h;
   const NAV_H = 64;
 
   /** The bounding box of a selector inside the viewer; fails when it is not rendered. */
@@ -111,7 +114,7 @@ test.describe('Viewer layout tiers (D-05)', () => {
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto(`/photos/${first.slug}`);
+    await page.goto(`/photos/${subject.slug}`);
 
     const viewer = await box(page, '');
     expect(Math.abs(viewer.height - (900 - NAV_H))).toBeLessThanOrEqual(1);
@@ -143,7 +146,7 @@ test.describe('Viewer layout tiers (D-05)', () => {
     page,
   }) => {
     await page.setViewportSize({ width: 1024, height: 768 });
-    await page.goto(`/photos/${first.slug}`);
+    await page.goto(`/photos/${subject.slug}`);
 
     const stage = await box(page, '[data-viewer-stage]');
     const photo = await box(page, '[data-photo-box]');
@@ -167,7 +170,7 @@ test.describe('Viewer layout tiers (D-05)', () => {
     page,
   }) => {
     await page.setViewportSize({ width: 375, height: 800 });
-    await page.goto(`/photos/${first.slug}`);
+    await page.goto(`/photos/${subject.slug}`);
 
     const link = page.getByRole('link', { name: 'All photographs', exact: true });
     await expect(link).toHaveCount(1);
@@ -210,7 +213,7 @@ test.describe('Stage states (UI-SPEC E5)', () => {
   // page.route would never see them (STATE 09-22); block it for these cases.
   test.use({ serviceWorkers: 'block' });
 
-  const first = views[0];
+  const subject = viewBySlug(SLUGS.matterhornFromZermatt);
   /** Every stage and opener derivative (the 1024, 1600 and 2560 AVIF and WebP files). */
   const STAGE_DERIVATIVE = /-(1024|1600|2560)\.[0-9a-f]{10}\.(avif|webp)$/;
 
@@ -218,7 +221,7 @@ test.describe('Stage states (UI-SPEC E5)', () => {
     page,
   }) => {
     await page.route(STAGE_DERIVATIVE, (route) => route.abort());
-    await page.goto(`/photos/${first.slug}`);
+    await page.goto(`/photos/${subject.slug}`);
 
     const photoBox = page.locator('[data-photo-viewer] [data-photo-box]');
     await expect(photoBox.getByText("Couldn't load this photo.", { exact: true })).toBeVisible();
@@ -229,12 +232,12 @@ test.describe('Stage states (UI-SPEC E5)', () => {
 
     // The box keeps the photo's ratio.
     const rect = (await photoBox.boundingBox())!;
-    const ratio = first.aspect.w / first.aspect.h;
+    const ratio = subject.aspect.w / subject.aspect.h;
     expect(Math.abs(rect.width / rect.height - ratio) / ratio).toBeLessThan(0.01);
 
     // The strip and the chrome stay usable; nothing offers the file.
     const main = page.getByRole('main');
-    await expect(main.getByText(first.rights, { exact: true })).toBeVisible();
+    await expect(main.getByText(subject.rights, { exact: true })).toBeVisible();
     await expect(main.getByRole('link', { name: 'All photographs', exact: true })).toBeVisible();
     await expect(page.locator('[download]')).toHaveCount(0);
     await expect(page.locator('a[href*="/images/"]')).toHaveCount(0);
@@ -242,7 +245,7 @@ test.describe('Stage states (UI-SPEC E5)', () => {
 
   test('Retry reloads the large derivative once the network is back', async ({ page }) => {
     await page.route(STAGE_DERIVATIVE, (route) => route.abort());
-    await page.goto(`/photos/${first.slug}`);
+    await page.goto(`/photos/${subject.slug}`);
     const photoBox = page.locator('[data-photo-viewer] [data-photo-box]');
     const retry = photoBox.getByRole('button', { name: 'Retry loading photo', exact: true });
     await expect(retry).toBeVisible();
@@ -272,7 +275,7 @@ test.describe('Stage states (UI-SPEC E5)', () => {
     });
 
     const start = Date.now();
-    await page.goto(`/photos/${first.slug}`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/photos/${subject.slug}`, { waitUntil: 'domcontentloaded' });
     const photoBox = page.locator('[data-photo-viewer] [data-photo-box]');
     const loading = photoBox.getByText('Loading photo', { exact: true });
     await expect(page.locator('[data-stage-photo]')).toHaveAttribute('data-state', 'opener');

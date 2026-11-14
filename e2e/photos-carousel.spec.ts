@@ -3,6 +3,9 @@ import { buildPhotoViews } from '@/lib/photos/view-model';
 import { countDraws, readDraws } from './helpers/webgl';
 import { pressButton } from './helpers/engine';
 
+// Index lookups into views here are positions in the series order (DEM ascending, ties
+// by id), not photo identities; a specific photo is named through viewBySlug.
+
 /**
  * The Carousel view at /photos?view=carousel (PHOTO-02, PHOTO-03, PHOTO-04;
  * D-12, D-13; 10-UI-SPEC "Carousel View"; 10-RESEARCH Pattern 7, Pitfall 7).
