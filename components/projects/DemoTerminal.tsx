@@ -392,7 +392,7 @@ export default function DemoTerminal({
             >
               <CaretLeftIcon size={24} aria-hidden="true" />
             </button>
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-1">
               {commands.map((_, i) => {
                 const isCurrent = i === state.index;
                 return (

@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
 import { mediaManifest } from '@/data/generated/media-manifest';
 import { projects } from '@/data/projects';
 import { roadmapItems } from '@/data/roadmap';
@@ -69,6 +69,26 @@ async function loadedScriptBodies(page: Page): Promise<{ url: string; body: stri
 async function leaveTerminal(page: Page) {
   await page.mouse.move(0, 0);
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+}
+
+/**
+ * Asserts the terminal's command bar is one row: 48.5 px tall at most, with
+ * Previous, every dot and Next on the same top within 0.5 px (14-UI-SPEC
+ * "Width at 375 px").
+ */
+async function expectOneRowBar(bar: Locator) {
+  const box = await bar.boundingBox();
+  expect(box?.height ?? Infinity).toBeLessThanOrEqual(48.5);
+  const controls = [
+    bar.getByRole('button', { name: 'Previous command', exact: true }),
+    ...Array.from({ length: LAST_N }, (_, i) =>
+      bar.getByRole('button', { name: `Go to command ${i + 1}`, exact: true })
+    ),
+    bar.getByRole('button', { name: 'Next command', exact: true }),
+  ];
+  const tops = await Promise.all(controls.map(async (c) => (await c.boundingBox())?.y));
+  const first = tops[0] ?? NaN;
+  for (const top of tops) expect(Math.abs((top ?? Infinity) - first)).toBeLessThanOrEqual(0.5);
 }
 
 test.describe('Case-study route', () => {
@@ -702,14 +722,17 @@ test.describe('Demo (ENG-05)', () => {
   });
 
   /**
-   * The 375 px rows (14-UI-SPEC "Width at 375 px"). A 375 px phone draws
-   * overlay scrollbars, so the frame is 343 px and the bar has 311 px inside
-   * for the 304 px of Previous, four dots and Next. Desktop Chromium reserves a
-   * thin scrollbar gutter (`scrollbar-gutter: stable` on html), which leaves
-   * the bar 299 px, so there the dot row wraps inside the bar by design (G3).
-   * The one-row check therefore runs as a phone: `isMobile` in Chromium, which
-   * Firefox does not support (it draws no gutter here). The second row holds
-   * the wrap rule on the desktop page.
+   * The 375 px rows (14-UI-SPEC "Width at 375 px", amended 2026-11-14). The
+   * dot row is `gap-1` (Tim's decision c), so Previous, four dots and Next
+   * need 292 px. A 375 px phone draws overlay scrollbars, so the frame is
+   * 343 px and the bar has 309 px inside its borders and padding (Firefox here
+   * draws no gutter either). Desktop Chromium reserves a thin scrollbar gutter
+   * (`scrollbar-gutter: stable` on html), which leaves the bar 299 px inside,
+   * still 7 px more than it needs. Both rows therefore assert one row. The phone row runs as a
+   * phone (`isMobile` in Chromium, which Firefox does not support); the
+   * desktop row also holds centring and no sideways scroll. The wrap rule
+   * (G3: only the inner dot row wraps, the ends stay centred) still applies
+   * if more commands are ever added.
    */
   test.describe('at 375 px on a phone', () => {
     test.use({
@@ -724,23 +747,11 @@ test.describe('Demo (ENG-05)', () => {
       const region = page.getByRole('region', { name: regionName });
       const bar = region.getByRole('group', { name: 'Commands' });
       await expect(bar).toBeVisible();
-
-      const box = await bar.boundingBox();
-      expect(box?.height ?? Infinity).toBeLessThanOrEqual(48.5);
-      const controls = [
-        bar.getByRole('button', { name: 'Previous command', exact: true }),
-        ...Array.from({ length: LAST_N }, (_, i) =>
-          bar.getByRole('button', { name: `Go to command ${i + 1}`, exact: true })
-        ),
-        bar.getByRole('button', { name: 'Next command', exact: true }),
-      ];
-      const tops = await Promise.all(controls.map(async (c) => (await c.boundingBox())?.y));
-      const first = tops[0] ?? NaN;
-      for (const top of tops) expect(Math.abs((top ?? Infinity) - first)).toBeLessThanOrEqual(0.5);
+      await expectOneRowBar(bar);
     });
   });
 
-  test('at 375 px Previous and Next stay centred beside the dots and nothing scrolls sideways (ENG-06, G3)', async ({
+  test('at 375 px on the desktop the command bar is one row, Previous and Next stay centred beside the dots and nothing scrolls sideways (ENG-06, G3)', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 375, height: 800 });
@@ -749,6 +760,7 @@ test.describe('Demo (ENG-05)', () => {
       name: 'Commands',
     });
     await expect(bar).toBeVisible();
+    await expectOneRowBar(bar);
 
     const barBox = await bar.boundingBox();
     const middle = (barBox?.y ?? 0) + (barBox?.height ?? 0) / 2;
