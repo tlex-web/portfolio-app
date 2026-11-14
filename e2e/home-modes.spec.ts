@@ -361,31 +361,65 @@ test.describe('Home modes (HOME-02, HOME-07, HOME-08)', () => {
     await expect(canvas(page)).toHaveCount(0);
   });
 
+  /**
+   * HOME-09 (14-02, D-18): Home at 375 px never scrolls sideways, in every
+   * mode and at every scroll stop from the hero to the footer. Research found
+   * no overflow anywhere (fixed by 09-01), so this is the guard. The
+   * measurement is the page's (documentElement scrollWidth against
+   * clientWidth), and a missing stop fails on its count rather than passing.
+   * A fix, if one is ever needed, goes on the overflowing element, never
+   * overflow-x: hidden on html, body or main.
+   */
   test.describe('nothing scrolls sideways at 375 px', () => {
+    const sidewaysStops = [
+      ...waypoints.map((w, i) => ({ name: `waypoint ${i + 1}`, selector: `li[data-k="${w.k}"]` })),
+      { name: 'the summit', selector: '#summit' },
+      { name: 'About', selector: 'section[aria-labelledby="about-title"]' },
+      { name: 'the footer', selector: 'footer' },
+    ];
     const modes: (Setup & { tag?: string })[] = [
       { name: 'static', setup: disableWebGL },
       { name: 'static-reduced', setup: reduceMotion },
       { name: 'eligible', setup: async () => {}, tag: ' @chromium-only' },
     ];
     for (const { name, setup, tag = '' } of modes) {
-      test(`${name}: top, waypoint 2 and the summit${tag}`, async ({ page }) => {
+      test(`${name}: every stop from the hero to the footer${tag}`, async ({ page }) => {
         await setup(page);
         await page.setViewportSize({ width: 375, height: 812 });
         await page.goto('/');
         await nextFrames(page);
-        await expectNoHorizontalScroll(page, 'at the top');
+        await expectNoHorizontalScroll(page, 'at the hero');
 
-        await scrollBlockToCentre(page, `li[data-k="${second.k}"]`);
-        if (name === 'eligible') {
-          await expect(stage(page).locator('canvas')).toHaveCount(1, { timeout: 6000 });
-          await expect(page.locator('[data-ascent-stage] [data-grid-size]')).toHaveAttribute('data-grid-size', '256');
+        for (const stop of sidewaysStops) {
+          await expect(page.locator(stop.selector)).toHaveCount(1);
+          await scrollBlockToCentre(page, stop.selector);
+          if (name === 'eligible' && stop.selector === `li[data-k="${second.k}"]`) {
+            await expect(stage(page).locator('canvas')).toHaveCount(1, { timeout: 6000 });
+            await expect(page.locator('[data-ascent-stage] [data-grid-size]')).toHaveAttribute('data-grid-size', '256');
+          }
+          await expectNoHorizontalScroll(page, `at ${stop.name}`);
         }
-        await expectNoHorizontalScroll(page, 'with waypoint 2 centred');
-
-        await scrollBlockToCentre(page, '#summit');
-        await expectNoHorizontalScroll(page, 'with the summit centred');
       });
     }
+
+    test.describe('without JavaScript', () => {
+      test.use({ javaScriptEnabled: false });
+
+      test('nojs: every stop from the hero to the footer', async ({ page }) => {
+        await page.setViewportSize({ width: 375, height: 812 });
+        await page.goto('/');
+        await expectNoHorizontalScroll(page, 'at the hero');
+
+        for (const stop of sidewaysStops) {
+          const target = page.locator(stop.selector);
+          await expect(target).toHaveCount(1);
+          // Protocol-level scroll: page scripts are off, so no scrollIntoView
+          // from the page and no animation frames to wait for.
+          await target.scrollIntoViewIfNeeded();
+          await expectNoHorizontalScroll(page, `at ${stop.name}`);
+        }
+      });
+    });
   });
 
   test.describe('no layout shift from load through arming @chromium-only', () => {
