@@ -12,8 +12,8 @@ requires:
     provides: buildPhotoViews / photoViews default to the Zermatt series, so photoBySlug resolves the four current slugs
 provides:
   - "e2e/helpers/photo-fixtures.ts: SLUGS (four camel-case names) and viewBySlug(slug), which wraps photoBySlug and throws 'unknown photo slug <slug>'"
-  - "13 identity lookups across 7 test files now select their photo by slug"
-  - "70 positional lookups kept; each of the 7 files that keeps one carries a 'positions in the series' comment"
+  - "13 identity lookups across 8 test files now select their photo by slug"
+  - "70 positional lookups kept; each of the 6 files that keeps one carries a 'positions in the series' comment"
 affects: [phase-16-photo-additions, 15-16]
 
 actuals:
@@ -109,7 +109,7 @@ completed: 2026-11-14
 
 # Phase 15 Plan 15: Named photo fixtures instead of index lookups Summary
 
-**`viewBySlug(SLUGS.<name>)` in `e2e/helpers/photo-fixtures.ts` now selects every photo a test audits by identity (13 lookups in 7 files). The 70 lookups that mean a position in the series keep their index, and each of the 7 files that keeps one says so in a one-line comment.**
+**`viewBySlug(SLUGS.<name>)` in `e2e/helpers/photo-fixtures.ts` now selects every photo a test audits by identity (13 lookups in 8 files). The 70 lookups that mean a position in the series keep their index, and each of the 6 files that keeps one says so in a one-line comment.**
 
 ## Performance
 
@@ -124,7 +124,7 @@ completed: 2026-11-14
 - `e2e/helpers/photo-fixtures.ts`: `SLUGS` (`matterhornFromZermatt`, `gornerschluchtWaterfall`, `matterhornGlacierTrail`, `riffelseeReflection`) and `viewBySlug(slug)`, which wraps `photoBySlug` and throws `unknown photo slug <slug>`. Both the Jest and the e2e tsconfig type-check it.
 - Jest: the metadata, EXIF-omission, approximate-position, OG place-omission, saved-pages (mapper and island) and map-style tests audit their photo by slug.
 - e2e: the offline seed, the sweep's direct-load step, and the lightbox's viewer-tier and stage-state blocks audit their photo by slug.
-- Each of the 7 files that keeps positional lookups (`photos-view-model.test.ts`, `photos.spec`, `keyboard.spec`, `photos-sweep.spec`, `photos-carousel.spec`, `photos-lightbox.spec`) has one comment: index lookups are positions in the series order (DEM ascending, ties by id), not photo identities. `photos-view-model.test.ts` counts as one of the 7 together with the Jest files that keep none.
+- Each of the 6 files that keeps positional lookups (`photos-view-model.test.ts`, `photos.spec`, `keyboard.spec`, `photos-sweep.spec`, `photos-carousel.spec`, `photos-lightbox.spec`) has one comment: index lookups are positions in the series order (DEM ascending, ties by id), not photo identities.
 
 ## Task Commits
 

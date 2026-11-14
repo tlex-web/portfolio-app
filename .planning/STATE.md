@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 15
 current_phase_name: Region & Plate Data Model
 status: executing
-stopped_at: Completed 15-14-PLAN.md
-last_updated: "2026-11-14T22:46:41.510Z"
+stopped_at: Completed 15-15-PLAN.md
+last_updated: "2026-11-14T22:59:10.699Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 15 execution started
-state_head: 8a139a9fa351b874490207a0040a54bdbccef68f
+state_head: f053384650779432841d9cf47f7b6efa437442ae
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 46
-  completed_plans: 44
+  completed_plans: 45
   percent: 29
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-14)
 ## Current Position
 
 Phase: 15 (Region & Plate Data Model) — EXECUTING
-Plan: 15 of 16
+Plan: 16 of 16
 Status: Ready to execute
 Last activity: 2026-11-14 — Phase 15 execution started
 
@@ -99,6 +99,7 @@ Progress: [███░░░░░░░] 29%
 | Phase 15 P12 | 8min | 3 tasks | 5 files |
 | Phase 15 P13 | 8 min | 3 tasks | 4 files |
 | Phase 15 P14 | 10min | 3 tasks | 5 files |
+| Phase 15 P15 | 9 min | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -221,6 +222,8 @@ Recent decisions affecting current work:
 - [Phase 15]: 15-13: rule 18 follows the plan literally; a relay name expression without needs now reports both rule 5 and rule 18
 - [Phase 15]: 15-14: navHeightPx() reads --nav-h through a probe sized var(--nav-h) (getBoundingClientRect().height, fractional); revealTrigger and e2e triggerState both use it plus documentElement.clientHeight (14 IN-01, IN-02)
 - [Phase 15]: 15-14: the new Firefox browser-Back LBOX-08 row passed 8/8 with no Playwright #43967 crash, so no @firefox-43967 tag was added (14 IN-06)
+- [Phase 15]: 15-15: test identity lookups select their photo with viewBySlug(SLUGS.<name>) from e2e/helpers/photo-fixtures.ts (throws on an unknown slug); series-position lookups stay indexed under a 'positions in the series' file comment (13 identity, 70 position of 83)
+- [Phase 15]: 15-15: a lookup that follows a positional action (first tile, first map target, one Next) stays positional even when it reads the photo's title or slug
 
 ### Pending Todos
 
@@ -276,6 +279,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-14T22:46:41.152Z
-Stopped at: Completed 15-14-PLAN.md
+Last session: 2026-11-14T22:59:10.204Z
+Stopped at: Completed 15-15-PLAN.md
 Resume file: None
