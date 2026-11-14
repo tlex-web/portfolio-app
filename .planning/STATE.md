@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 14
 current_phase_name: UI Fixes & Terminal Controls
 status: executing
-stopped_at: Completed 14-02-PLAN.md
-last_updated: "2026-11-14T11:23:04.531Z"
+stopped_at: Completed 14-03-PLAN.md
+last_updated: "2026-11-14T11:39:42.445Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 14 execution started
-state_head: c170254eb2588a051af93090ad1cb9924a9c17db
+state_head: 62377a72ad1d845a0479d988bb10a8ab2d000b74
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 30
-  completed_plans: 24
+  completed_plans: 25
   percent: 14
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-14)
 ## Current Position
 
 Phase: 14 (UI Fixes & Terminal Controls) — EXECUTING
-Plan: 3 of 8
+Plan: 4 of 8
 Status: Ready to execute
 Last activity: 2026-11-14 — Phase 14 execution started
 
@@ -78,6 +78,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 13 P22 | 10min | 3 tasks | 9 files |
 | Phase 14 P01 | 10min | 2 tasks | 4 files |
 | Phase 14 P02 | 9min | 3 tasks | 4 files |
+| Phase 14 P03 | 12min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -150,6 +151,9 @@ Recent decisions affecting current work:
 - [Phase 14]: HOME-10: rail scrim takes the locked P3 stops at w-56 (reverses 12-07 D-24); B8 lowest 7.93:1 poster, 7.91:1 live, every label above the 5:1 aim (14-02)
 - [Phase 14]: B8 live rows opt into budgetMeasureOnly, the home-canvas rule for tests that need 3d (14-02)
 - [Phase 14]: HOME-09: fixed by 09-01, now guarded at 375 px in four modes and eight stops; no app change, no home/375 PNG (14-02)
+- [Phase 14]: 14-03 (LBOX-08, D-08): root cause is the browser's same-document scroll restoration after every lightbox close (all closes are history traversals; scrollRestoration stays 'auto'), which ran after restoreFocus's microtask and undid scrollIntoView; block 'nearest' also clipped the ring's bottom 4 px
+- [Phase 14]: 14-03: restoreFocus calls revealTrigger (window-only, instant, minimal scrollBy clearing --nav-h and the 4 px ring, oversized triggers top-aligned) once now and once in requestAnimationFrame while the mark keeps focus; history.scrollRestoration untouched; UI-SPEC P4 resolved to the restore code (no scroll-mb-4)
+- [Phase 14]: 14-03: revealTrigger rounds its target outward to whole pixels (Chromium snapped 348.375 to 348, ring 0.375 px out); the :471 scroll-unchanged row now centres its tile because scrollIntoViewIfNeeded left its ring clipped in Chromium; 14-08 adds a second-frame reveal only if Linux WebKit needs it
 
 ### Pending Todos
 
@@ -202,6 +206,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-14T11:23:04.470Z
-Stopped at: Completed 14-02-PLAN.md
+Last session: 2026-11-14T11:39:42.367Z
+Stopped at: Completed 14-03-PLAN.md
 Resume file: None
