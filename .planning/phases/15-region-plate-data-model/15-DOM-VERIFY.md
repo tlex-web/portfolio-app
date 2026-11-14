@@ -40,3 +40,5 @@ The live-DOM step is advisory: it never blocks a wave. The orchestrator wrote th
 | 7 | 15-07 | none (`photos:exif` ids) | n/a | `photos:exif -- --check` OK; selftest 232/232 |
 | 8 | 15-08 | Home footer ticks, trail sign and rail start are pixel-neutral | could_not_look / browser_not_selected | `home-waypoints.test.tsx` (4 ticks, "4 waypoints", 1,617 m first rail label); 15-09's two-engine e2e run |
 | 9 | 15-09 | Home pixel-neutral after the rail-start removal | could_not_look / browser_not_selected | Playwright `PW_PROD=1` Chromium + Firefox, 230 passed, 0 flaky (15-09 SUMMARY) |
+| 10 | 15-10 | photo links keep the same href (no URL string changes) | could_not_look / browser_not_selected | `photo-routes.test.ts` 34 rows; six photo-route specs `PW_PROD=1` Chromium, 152 passed |
+| 11 | 15-11 | footer, poster, map sheet and light table zero visual diff | could_not_look / browser_not_selected | `renderToStaticMarkup(<SiteFooter />)` byte-identical (7,433 B, same sha256); ContourField mask-URL test; light-table specs Chromium 62 passed; Linux pixel gate is the CI visual job at 15-16 |
