@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 15
 current_phase_name: Region & Plate Data Model
 status: executing
-stopped_at: Completed 15-08-PLAN.md
-last_updated: "2026-11-14T21:31:25.853Z"
+stopped_at: Completed 15-09-PLAN.md
+last_updated: "2026-11-14T21:42:16.770Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 15 execution started
-state_head: 193fbde9eca41bd3dd157d8fe9c42b33c23d110b
+state_head: 1f3766f89b47e404ff53059e54ef8452576f76ef
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 46
-  completed_plans: 38
+  completed_plans: 39
   percent: 29
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-14)
 ## Current Position
 
 Phase: 15 (Region & Plate Data Model) — EXECUTING
-Plan: 9 of 16
+Plan: 10 of 16
 Status: Ready to execute
 Last activity: 2026-11-14 — Phase 15 execution started
 
@@ -93,6 +93,7 @@ Progress: [███░░░░░░░] 29%
 | Phase 15 P06 | 10min | 2 tasks | 9 files |
 | Phase 15 P07 | 6 min | 2 tasks | 2 files |
 | Phase 15 P08 | 7 min | 2 tasks | 8 files |
+| Phase 15 P09 | 8min | 2 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -202,6 +203,8 @@ Recent decisions affecting current work:
 - [Phase 15]: 15-07: photos:exif assigns ids only from data/photos/photo-map.json (idFor, exact file-name lookup); the map is parsed with PhotoMap in both modes, CI included, so an unmapped original or two records naming one file fail extraction (D-01)
 - [Phase 15]: 15-08: Home membership is homeWaypointIds -> homePhotos (lib/ascent/home-photos.ts, client-light: generated photos + data/home only) -> homeInput, the default input of buildWaypoints; buildWaypoints filters nothing; homeLowestDemM = buildWaypoints()[0].altitudeM (1617) feeds Height gained
 - [Phase 15]: 15-08: injected-data component tests use jest.isolateModulesAsync + doMock of @/data/generated/photos and render with react-dom/server from the same isolated registry (hero.test.tsx precedent), not RTL render
+- [Phase 15]: 15-09: the generator's 'no photo has a DEM elevation' check was removed with the rail start; no other output needed it (PhotoFacts validates entries; homeLowestDemM fails at module load if a Home photo is missing)
+- [Phase 15]: 15-09: home-ascent.spec's card-order source (ascending) also moved to homePhotos(); it was a global read the seven-site list missed
 
 ### Pending Todos
 
@@ -257,6 +260,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-14T21:31:25.484Z
-Stopped at: Completed 15-08-PLAN.md
+Last session: 2026-11-14T21:42:16.186Z
+Stopped at: Completed 15-09-PLAN.md
 Resume file: None
