@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 15
 current_phase_name: Region & Plate Data Model
 status: executing
-stopped_at: Completed 15-11-PLAN.md
-last_updated: "2026-11-14T22:11:23.159Z"
+stopped_at: Completed 15-12-PLAN.md
+last_updated: "2026-11-14T22:22:43.610Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 15 execution started
-state_head: 544d6acf4f46ee56f2e6ab28b7e740706ad4a7ce
+state_head: 4888c0c29ec31d94d4d674c73264d2c53a1d2a26
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 46
-  completed_plans: 41
+  completed_plans: 42
   percent: 29
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-14)
 ## Current Position
 
 Phase: 15 (Region & Plate Data Model) — EXECUTING
-Plan: 12 of 16
+Plan: 13 of 16
 Status: Ready to execute
 Last activity: 2026-11-14 — Phase 15 execution started
 
@@ -96,6 +96,7 @@ Progress: [███░░░░░░░] 29%
 | Phase 15 P09 | 8min | 2 tasks | 13 files |
 | Phase 15 P10 | 11min | 3 tasks | 13 files |
 | Phase 15 P11 | 11min | 3 tasks | 12 files |
+| Phase 15 P12 | 8min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -212,6 +213,8 @@ Recent decisions affecting current work:
 - [Phase 15]: 15-11: ContourField indexes plates.ts through a mapped-type view (no cast); direct generic indexing fails TS2536
 - [Phase 15]: 15-11: footer composed from SheetBand + SheetLegend with byte-identical markup; error-boundary chunks now carry plates.ts instead of terrain.ts; client JS 1,851,125 B (+743 B over phase base, cap +4,096 B)
 - [Phase 15]: 15-11: the /photos light table is the Zermatt series via seriesInput(LIGHT_TABLE_REGION); region-series.test.ts keeps other regions off it
+- [Phase 15]: 15-12: no originals-folder exception in the telemetry rule: an ignored, untracked sidecar under assets/photos-original/ or assets/clips-original/ is skipped by --exclude-standard, a force-added one fails (flagged assumption A-15-12, pending Tim's review; reversible in one repoTelemetry() condition and one selftest case)
+- [Phase 15]: 15-12: the five MP4 telemetry-track clips (DJI djmd, dbgi, GoPro gpmd, sbtl, text) are spliced in memory from good-mp4 at selftest time; a determinism case pins them at 1,348 B; no MP4 or sidecar fixture enters git
 
 ### Pending Todos
 
@@ -267,6 +270,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-14T22:11:22.594Z
-Stopped at: Completed 15-11-PLAN.md
+Last session: 2026-11-14T22:22:43.251Z
+Stopped at: Completed 15-12-PLAN.md
 Resume file: None
