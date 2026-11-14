@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 15
 current_phase_name: Region & Plate Data Model
 status: executing
-stopped_at: Completed 15-04-PLAN.md
-last_updated: "2026-11-14T20:46:46.040Z"
+stopped_at: Completed 15-05-PLAN.md
+last_updated: "2026-11-14T20:59:52.727Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 15 execution started
-state_head: fae9a0f9e7e12a5deeede16bbb7083ddea06abfb
+state_head: 402ca6937629eb36b2cf2cdceff17a7890768241
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 46
-  completed_plans: 34
+  completed_plans: 35
   percent: 29
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-14)
 ## Current Position
 
 Phase: 15 (Region & Plate Data Model) — EXECUTING
-Plan: 5 of 16
+Plan: 6 of 16
 Status: Ready to execute
 Last activity: 2026-11-14 — Phase 15 execution started
 
@@ -89,6 +89,7 @@ Progress: [███░░░░░░░] 29%
 | Phase 15 P02 | 11 min | 2 tasks | 10 files |
 | Phase 15 P03 | 7 min | 3 tasks | 13 files |
 | Phase 15 P04 | 8 min | 2 tasks | 10 files |
+| Phase 15 P05 | 9min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -189,6 +190,9 @@ Recent decisions affecting current work:
 - [Phase 15]: 15-04: Plates requires the home plate to declare every output (terrain.ts records them all), so a trimmed home entry fails at the registry, not inside TerrainMeta
 - [Phase 15]: 15-04: resolvePosters takes the recording module; home passes terrain.ts, a non-home plate passes null (always encodes) until 15-05 adds committedPlates() and prefix-aware lookups
 - [Phase 15]: 15-04: the D-15 test compares the whole public/terrain/ listing as planned; Phase 16 must scope it to unprefixed names once real plates add prefixed files
+- [Phase 15]: 15-05: a non-home plate's poster set is read from plates.ts, compared with terrain.ts's recorded hillshade parameters (one global set)
+- [Phase 15]: 15-05: PLATE_BUDGET is checked in memory before write mode writes anything, and as a stale line in --check
+- [Phase 15]: 15-05: the selftest runner passes the spawn output to check(output) so a case can assert a runtime-hashed file name
 
 ### Pending Todos
 
@@ -244,6 +248,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-14T20:46:45.731Z
-Stopped at: Completed 15-04-PLAN.md
+Last session: 2026-11-14T20:59:52.395Z
+Stopped at: Completed 15-05-PLAN.md
 Resume file: None
