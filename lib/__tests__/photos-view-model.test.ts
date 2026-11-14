@@ -22,6 +22,10 @@ import {
   stripFields,
   type PhotoViewInput,
 } from '@/lib/photos/view-model';
+import { SLUGS, viewBySlug } from '../../e2e/helpers/photo-fixtures';
+
+// Index lookups into photoViews here are positions in the series order (DEM ascending,
+// ties by id), not photo identities; a specific photo is named through viewBySlug.
 
 /** A content-hashed manifest derivative: /images/photos/<name>.<10 hex>.<avif|webp>. */
 const DERIVATIVE = /^\/images\/photos\/[a-z0-9-]+\.[0-9a-f]{10}\.(avif|webp)$/;
@@ -128,7 +132,7 @@ describe('lookup and metadata (LBOX-01)', () => {
   // SEO-01, 12-01 meta.photo-slug: "{title}: a photograph by Tim Lui from
   // {short place} at {altitude}[ approx.], {Mon YYYY | YYYY}."
   it('describes an EXIF photo with its place, height, and capture month and year; the canonical is unchanged', () => {
-    const view = photoViews[1];
+    const view = viewBySlug(SLUGS.gornerschluchtWaterfall);
     expect(photoMetadata(view.slug)).toEqual({
       title: 'Waterfall in the Gornerschlucht',
       description: `Waterfall in the Gornerschlucht: a photograph by Tim Lui from Gornerschlucht at 1,668${' '}m, Sep 2021.`,
@@ -161,6 +165,13 @@ const NBSP = '\u00a0';
 const codePoints = (s: string) => Array.from(s, (c) => c.codePointAt(0));
 const viewOf = (views: ReturnType<typeof buildPhotoViews>, id: string) =>
   views.find((v) => v.id === id)!;
+/** The committed photo record behind a slug's view (named, not by index; the record carries the EXIF and position). */
+const photoOf = (slug: string) => {
+  const id = viewBySlug(slug).id;
+  const photo = photos.find((p) => p.id === id);
+  if (!photo) throw new Error(`no photo record for ${slug}`);
+  return photo;
+};
 /** The committed photos with one photo's facts replaced, for the D-07 omission cases. */
 const withPhoto = (id: string, patch: Record<string, unknown>) =>
   buildPhotoViews({
@@ -216,7 +227,7 @@ describe('strip fields (D-07, LBOX-04)', () => {
   });
 
   it('drops the shutter speed for an exposure that is not above 0 (WR-04)', () => {
-    const exif = { ...photos[0].exif, exposureTimeS: 0 };
+    const exif = { ...photoOf(SLUGS.matterhornFromZermatt).exif, exposureTimeS: 0 };
     const { strip } = viewOf(withPhoto('img-0605', { exif }), 'img-0605');
     expect(strip.exifRows.map((r) => r.term)).toEqual([
       'Camera',
@@ -234,7 +245,7 @@ describe('strip fields (D-07, LBOX-04)', () => {
   });
 
   it('marks an approximate position without a radius with (approx.) alone', () => {
-    const position = { ...photos[3].position, radiusM: undefined };
+    const position = { ...photoOf(SLUGS.riffelseeReflection).position, radiusM: undefined };
     const { strip } = viewOf(withPhoto('r004-011', { position }), 'r004-011');
     expect(strip.approxNote).toBe('(approx.)');
     expect(strip.positionRows[1].value.startsWith('≈ ')).toBe(true);

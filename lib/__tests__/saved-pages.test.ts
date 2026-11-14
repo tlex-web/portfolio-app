@@ -2,16 +2,17 @@ import { savedPageCatalog, savedPageRows, type SavedPageRow } from '@/lib/saved-
 import { site } from '@/data/site';
 import { photoViews } from '@/lib/photos/view-model';
 import { projects } from '@/data/projects';
+import { SLUGS, viewBySlug } from '../../e2e/helpers/photo-fixtures';
 
 /**
  * The offline saved-pages mapper (D-12; 12-UI-SPEC E11). Data-driven: every
- * href and title comes from site.nav, the photo view-model and the projects,
- * never a literal slug.
+ * href and title comes from site.nav, the photo view-model and the projects;
+ * the one photo the cache cases seed is named through viewBySlug.
  */
 
 const ORIGIN = 'https://x';
 const catalog = savedPageCatalog({ nav: site.nav, photos: photoViews, projects });
-const firstPhoto = photoViews[0];
+const seededPhoto = viewBySlug(SLUGS.matterhornFromZermatt);
 const firstProject = projects[0];
 const roadmap = site.nav.find((item) => item.href === '/roadmap');
 
@@ -53,14 +54,14 @@ describe('savedPageRows (D-12, UI-SPEC E11)', () => {
         url('/roadmap?view=1'),
         url('/offline'),
         url('/_next/static/a.js'),
-        url(`/photos/${firstPhoto.slug}`),
+        url(`/photos/${seededPhoto.slug}`),
         url('/nope'),
       ],
       catalog
     );
     const expected: SavedPageRow[] = [
       { href: '/roadmap', title: roadmap!.label },
-      { href: `/photos/${firstPhoto.slug}`, title: firstPhoto.title, label: 'Photograph' },
+      { href: `/photos/${seededPhoto.slug}`, title: seededPhoto.title, label: 'Photograph' },
     ];
     expect(rows).toEqual(expected);
   });

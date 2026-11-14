@@ -4,6 +4,7 @@ import { savedPageCatalog } from '@/lib/saved-pages';
 import { site } from '@/data/site';
 import { photoViews } from '@/lib/photos/view-model';
 import { projects } from '@/data/projects';
+import { SLUGS, viewBySlug } from '../../../e2e/helpers/photo-fixtures';
 
 /**
  * The offline saved-pages island (D-12; 12-UI-SPEC E11): checking, populated,
@@ -12,7 +13,7 @@ import { projects } from '@/data/projects';
  */
 
 const catalog = savedPageCatalog({ nav: site.nav, photos: photoViews, projects });
-const firstPhoto = photoViews[0];
+const seededPhoto = viewBySlug(SLUGS.matterhornFromZermatt);
 const roadmap = site.nav.find((item) => item.href === '/roadmap')!;
 const ORIGIN = window.location.origin;
 
@@ -64,7 +65,7 @@ describe('SavedPages', () => {
     stubCaches({
       'static-x': [`${ORIGIN}/offline`, `${ORIGIN}/_next/static/chunk.js`],
       'dynamic-x': [
-        `${ORIGIN}/photos/${firstPhoto.slug}`,
+        `${ORIGIN}/photos/${seededPhoto.slug}`,
         `${ORIGIN}/roadmap`,
         `${ORIGIN}/roadmap?view=1`,
         `${ORIGIN}/nope`,
@@ -77,8 +78,8 @@ describe('SavedPages', () => {
     expect(links).toHaveLength(2);
     expect(links[0]).toHaveAttribute('href', '/roadmap');
     expect(links[0]).toHaveTextContent(roadmap.label);
-    expect(links[1]).toHaveAttribute('href', `/photos/${firstPhoto.slug}`);
-    expect(links[1]).toHaveTextContent(firstPhoto.title);
+    expect(links[1]).toHaveAttribute('href', `/photos/${seededPhoto.slug}`);
+    expect(links[1]).toHaveTextContent(seededPhoto.title);
     expect(within(links[1]).getByText('Photograph')).toBeInTheDocument();
     expect(screen.queryByText(CHECKING)).not.toBeInTheDocument();
 

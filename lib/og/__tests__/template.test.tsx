@@ -32,6 +32,7 @@ import { formatLatLon } from '@/lib/home-format';
 import { OG_SIZE, OgFrame, ogPhotoFit } from '@/lib/og/template';
 import { formatMetres } from '@/lib/photo-format';
 import { photoViews, type PhotoView } from '@/lib/photos/view-model';
+import { SLUGS, viewBySlug } from '../../../e2e/helpers/photo-fixtures';
 
 const CONTOUR = 'data:image/svg+xml;base64,PHN2Zy8+';
 const JPEG = 'data:image/jpeg;base64,/9j/';
@@ -215,11 +216,12 @@ describe('photo variant (D-14)', () => {
   });
 
   it('leaves out the place line when the place is missing (SEO-02 empty)', () => {
-    const view = { ...photoViews[0], place: '' };
+    const photo = viewBySlug(SLUGS.matterhornFromZermatt);
+    const view = { ...photo, place: '' };
     const all = texts(photoCard(view));
     expect(all).toContain(view.title);
     expect(all.filter((t) => t.trim() === '')).toEqual([]);
-    expect(all).toHaveLength(texts(photoCard(photoViews[0])).length - 1);
+    expect(all).toHaveLength(texts(photoCard(photo)).length - 1);
   });
 });
 

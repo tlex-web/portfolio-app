@@ -10,6 +10,7 @@
 import { render, screen, within } from '@testing-library/react';
 import MapSheet from '@/components/photos/MapSheet';
 import { photoViews } from '@/lib/photos/view-model';
+import { SLUGS, viewBySlug } from '../../../e2e/helpers/photo-fixtures';
 
 const NBSP = String.fromCharCode(0xa0);
 
@@ -96,7 +97,9 @@ describe('MapSheet (PHOTO-01, PHOTO-03, D-01..D-04)', () => {
     const { container } = renderMap();
     const style = container.querySelector('style');
     expect(style?.textContent).toContain('@container map-sheet');
-    expect(style?.textContent).toContain(`[data-map-mark="${photoViews[0].slug}"]`);
+    expect(style?.textContent).toContain(
+      `[data-map-mark="${viewBySlug(SLUGS.matterhornFromZermatt).slug}"]`
+    );
   });
 
   it('names the sheet container and lays the relief and contours under the marks', () => {
