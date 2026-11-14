@@ -18,7 +18,7 @@ npm run data:check   # terrain:build -- --check && photos:exif -- --check && pho
 | `photos:derive` (`photos/build-derivatives.mjs`) | the originals and the sidecar | `public/images/photos/<id>-<edge>.<hash>.<ext>` and `data/generated/image-manifest.ts` |
 | `photos:build` (`photos/build-photo-data.mjs`) | the sidecar, `data/photos/corrections.json` and the committed DEM source (no originals) | `data/generated/photos.ts` (capture, position, DEM height, UV, exposure and tags per photo) |
 | `terrain:fetch` (`terrain/fetch-dem.mjs`) | swisstopo STAC + COG over the network (manual, never in CI) | `data/terrain/source/dem-10m.png` and `source.json` |
-| `terrain:build` (`terrain/build-terrain.mjs`) | the committed DEM source | `public/terrain/*`, `data/generated/terrain.ts` and `data/generated/precache.json` (the URLs the service worker precaches) |
+| `terrain:build` (`terrain/build-terrain.mjs`) | the plate registry `data/terrain/plates.json` and each plate's committed DEM source | `public/terrain/*`, `data/generated/terrain.ts` and `data/generated/precache.json` (the home plate; the URLs the service worker precaches) and `data/generated/plates.ts` (every plate's 2D sheet) |
 | `tokens:build` (`tokens/build-tokens.mjs`) | `app/globals.css` | `data/generated/tokens.ts` (the shader colour tokens) |
 
 Nothing image-related runs at build time: there is no `prebuild` step, so a Vercel build needs neither the originals nor full-resolution copies (D-11).

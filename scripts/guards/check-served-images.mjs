@@ -47,7 +47,7 @@
  *                    not the first 10 of sha256 over its bytes
  *   - orphan:        a file in those directories that no generated manifest
  *                    lists (data/generated/image-manifest.ts, terrain.ts,
- *                    media-manifest.ts)
+ *                    media-manifest.ts, plates.ts)
  *   - missing:       a manifest URL whose file is not in the scanned set (URLs
  *                    are read from quoted strings only, so a header comment that
  *                    names a directory is not an entry)
@@ -92,6 +92,7 @@ const MANIFESTS = [
   { file: 'data/generated/image-manifest.ts', regex: /(?<=['"])\/images\/photos\/[^'"]+(?=['"])/g },
   { file: 'data/generated/terrain.ts', regex: /(?<=['"])\/terrain\/[^'"]+(?=['"])/g },
   { file: 'data/generated/media-manifest.ts', regex: /(?<=['"])\/media\/[^'"]+(?=['"])/g },
+  { file: 'data/generated/plates.ts', regex: /(?<=['"])\/terrain\/[^'"]+(?=['"])/g },
 ];
 const METADATA_CALL = /\.\s*(withMetadata|keepMetadata|keepExif|withExif|withExifMerge|keepXmp|withXmp)\s*\(/g;
 const METADATA_MARKERS = [

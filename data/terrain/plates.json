@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "plates": [
+    {
+      "id": "matterhorn",
+      "prefix": "",
+      "source": "data/terrain/source",
+      "home": true,
+      "threeD": true,
+      "outputs": {
+        "heightmaps": [512, 256],
+        "contours": ["hero", "map", "strip"],
+        "hillshade": [1100, 640]
+      },
+      "strip": { "centreN": 1091673 }
+    }
+  ]
+}

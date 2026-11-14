@@ -235,3 +235,24 @@ describe('one extent (D-14, assumption-delta invariant)', () => {
     });
   });
 });
+
+describe('D-15: Matterhorn names and hashes', () => {
+  // Written out literally (15-CONTEXT D-15): the plate registry must not rename,
+  // move or re-encode a single Matterhorn file.
+  const D15 = [
+    'contours-hero.2f3a04accc.svg',
+    'contours-map.f78bc9a25c.svg',
+    'contours-strip.e1af353f82.svg',
+    'heightmap-512.548be40405.png',
+    'heightmap-256.f792a8921f.png',
+    'hillshade-1100.5b6bae8c54.webp',
+    'hillshade-1100.ba22a91f95.avif',
+    'hillshade-640.80f2045ea4.webp',
+    'hillshade-640.b019a3335a.avif',
+  ].sort();
+
+  test('public/terrain/ and terrain.assets hold exactly the nine D-15 names', () => {
+    expect(fs.readdirSync(path.join(ROOT, 'public/terrain')).sort()).toEqual(D15);
+    expect(urls.map((u) => path.posix.basename(u)).sort()).toEqual(D15);
+  });
+});

@@ -34,6 +34,13 @@
  *
  * File names are `<name>.<first 10 hex of sha256(bytes)>.<ext>`.
  *
+ * Plates (DATA-11, D-10 to D-12): data/terrain/plates.json lists every plate, and
+ * one run builds them all in registry order (a per-plate run would sweep the
+ * other plates' files, F15). Each plate reads its own `<source>/source.json` and
+ * DEM and builds the outputs its registry entry declares. The home plate keeps
+ * today's unprefixed names (D-11) and alone writes data/generated/terrain.ts and
+ * precache.json (D-14); data/generated/plates.ts carries every plate's 2D sheet.
+ *
  * --check by artifact type (RESEARCH Pattern 3):
  *   SVG, terrain.ts and  regenerated in memory and compared byte for byte.
  *   precache.json
@@ -55,6 +62,8 @@
  *              heightmap whose hash and pixels already match is kept as is, and
  *              so is a committed poster set that passes the --check rules.
  *   --check    one line per problem, then `terrain: OK` or `terrain: N stale` (exit 1).
+ *   --root <dir>  read and write under <dir> instead of the repository (the
+ *              guard selftest points it at a temp copy, D-13).
  *
  * Usage:
  *   npm run terrain:build               (write)
@@ -72,10 +81,49 @@ import { lv95ToUv, round4, stripBbox } from '../../lib/geo.ts';
 import { contourSvg, isIndexLevel, openRuns, runToPath } from '../../lib/terrain/contour-paths.ts';
 import { resampleBilinear, sampleAtLv95 } from '../../lib/terrain/dem-sample.ts';
 import { blendShades, hillshade, toGrey8 } from '../../lib/terrain/hillshade.ts';
-import { TerrainMeta, TerrainSource } from '../../data/schemas/terrain.ts';
+import { Plates, PlatesMeta, TerrainMeta, TerrainSource } from '../../data/schemas/terrain.ts';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-const SOURCE_DIR = path.join(ROOT, 'data', 'terrain', 'source');
+const NAME = 'terrain';
+
+/**
+ * `--check` and `--root <dir>` (the build-photo-data.mjs pattern). The root
+ * defaults to the repository above this script. Parsed before any ROOT-derived
+ * path, so every read and write follows --root.
+ */
+function parseArgs(argv) {
+  const args = {
+    check: false,
+    root: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..'),
+  };
+  const unknown = [];
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '--check') {
+      args.check = true;
+    } else if (argv[i] === '--root') {
+      const value = argv[i + 1];
+      if (!value || value.startsWith('--')) {
+        console.log(`${NAME}: --root needs a directory`);
+        process.exit(1);
+      }
+      args.root = path.resolve(value);
+      i++;
+    } else {
+      unknown.push(argv[i]);
+    }
+  }
+  if (unknown.length > 0) {
+    console.log(
+      `${NAME}: unknown argument(s) ${unknown.join(' ')}; the flags are --check and --root <dir>`
+    );
+    process.exit(1);
+  }
+  return args;
+}
+
+const ARGS = parseArgs(process.argv.slice(2));
+const ROOT = ARGS.root;
+/** The plate registry (D-10): every plate this script builds, in build order. */
+const PLATES_REL = 'data/terrain/plates.json';
 const PUBLIC_REL = 'public/terrain';
 const PUBLIC_DIR = path.join(ROOT, PUBLIC_REL);
 const META_REL = 'data/generated/terrain.ts';
@@ -83,13 +131,19 @@ const META_PATH = path.join(ROOT, META_REL);
 /** Same-origin URLs the service worker precaches (postbuild injects them, SHELL-04). */
 const PRECACHE_REL = 'data/generated/precache.json';
 const PRECACHE_PATH = path.join(ROOT, PRECACHE_REL);
-const NAME = 'terrain';
+/** Every plate's 2D sheet (scalars and hashed URLs), keyed by plate id. */
+const PLATES_META_REL = 'data/generated/plates.ts';
+const PLATES_META_PATH = path.join(ROOT, PLATES_META_REL);
 
 /** Files this script owns in public/terrain/; anything else there is left alone. */
 const MANAGED =
   /^(contours-[a-z0-9-]+\.[^.]+\.svg|heightmap-[0-9]+\.[^.]+\.png|hillshade-[0-9]+\.[^.]+\.(avif|webp))$/;
 
-/** D-17: the official summit, beside the DEM-sampled height. */
+/**
+ * D-17: the official summit, beside the DEM-sampled height. A home-plate
+ * constant (terrain.ts only); the registry's matterhorn strip.centreN equals
+ * lv95.n, so the strip bbox is unchanged (pinned in data/__tests__/plates.test.ts).
+ */
 const SUMMIT = {
   name: 'Matterhorn',
   officialM: 4478,
@@ -138,16 +192,22 @@ async function decodeGrey16(png, width, height) {
   return new Uint16Array(data.buffer.slice(data.byteOffset, data.byteOffset + data.length));
 }
 
-/** Read source.json + PNG, verify the sha256, decode to metres. */
-async function loadSource() {
-  const raw = JSON.parse(fs.readFileSync(path.join(SOURCE_DIR, 'source.json'), 'utf8'));
+/** The plate registry, parsed (an invalid registry throws the schema issues). */
+function loadRegistry() {
+  return Plates.parse(JSON.parse(fs.readFileSync(path.join(ROOT, PLATES_REL), 'utf8')));
+}
+
+/** Read a plate's source.json + PNG, verify the sha256, decode to metres. */
+async function loadSource(plate) {
+  const dir = path.join(ROOT, plate.source);
+  const raw = JSON.parse(fs.readFileSync(path.join(dir, 'source.json'), 'utf8'));
   const source = TerrainSource.parse(raw);
-  const png = fs.readFileSync(path.join(SOURCE_DIR, source.file));
+  const png = fs.readFileSync(path.join(dir, source.file));
   const actual = sha256(png);
   if (actual !== source.sha256) {
     return {
       source,
-      error: `stale data/terrain/source/${source.file} (sha256 ${actual.slice(0, 10)} != source.json ${source.sha256.slice(0, 10)})`,
+      error: `stale ${plate.source}/${source.file} (sha256 ${actual.slice(0, 10)} != source.json ${source.sha256.slice(0, 10)})`,
     };
   }
   const u16 = await decodeGrey16(png, source.width, source.height);
@@ -343,18 +403,25 @@ function committedMeta() {
  * each file that does not, with the reasons. With `encode`, a failing set is
  * replaced by a fresh encoding (`files`); without it (--check), `urls` stays the
  * recorded set so the terrain.ts comparison reports only other drift.
+ *
+ * `committed` is the module that records the plate's poster set: terrain.ts for
+ * the home plate. A non-home plate passes null for now, so it always encodes
+ * (15-05 reads its recorded set from plates.ts and makes the lookups prefix-aware).
  */
-async function resolvePosters(source, metres, { encode }) {
-  const committed = committedMeta();
+async function resolvePosters(plate, source, metres, committed, { encode }) {
+  const sizes = POSTER_SIZES.filter((s) => plate.outputs.hillshade.includes(s));
   const rec = committed?.assets?.hillshade;
   const problems = [];
   if (!rec) {
-    problems.push({ file: 'hillshade-*', reason: `no assets.hillshade in ${META_REL}` });
+    problems.push({
+      file: `${plate.prefix}hillshade-*`,
+      reason: `no assets.hillshade in ${plate.home ? META_REL : PLATES_META_REL}`,
+    });
   } else {
     const sameSource = rec.sourceSha256 === source.sha256;
     const sameParams = JSON.stringify(committed.hillshade) === JSON.stringify(HILLSHADE);
     for (const format of POSTER_FORMATS) {
-      for (const size of POSTER_SIZES) {
+      for (const size of sizes) {
         const url = rec[format]?.[size];
         const file =
           typeof url === 'string'
@@ -380,11 +447,11 @@ async function resolvePosters(source, metres, { encode }) {
   if (!encode) return { urls: recorded, files: [], committed: false, problems };
   const urls = { avif: {}, webp: {} };
   const files = [];
-  for (const size of POSTER_SIZES) {
+  for (const size of sizes) {
     const grey = posterGrey8(source, metres, size);
     for (const format of POSTER_FORMATS) {
       const bytes = await encodePoster(grey, size, format);
-      const name = hashedName(`hillshade-${size}`, format, bytes);
+      const name = hashedName(`${plate.prefix}hillshade-${size}`, format, bytes);
       files.push({ name, bytes });
       urls[format][size] = `/terrain/${name}`;
     }
@@ -392,41 +459,80 @@ async function resolvePosters(source, metres, { encode }) {
   return { urls, files, committed: false, problems };
 }
 
-/** Every artifact plus the terrain.ts text, all in memory. */
-async function buildAll(source, metres, { encode }) {
+/**
+ * One plate's artifacts and its 2D sheet, all in memory; the home plate also
+ * yields the terrain.ts and precache.json texts. Every output is a pure function
+ * of the plate's own raster, so the registry order changes no byte.
+ */
+async function buildPlate(plate, source, metres, { encode }) {
   const { extent, width: W, height: H } = source;
+  const { prefix, outputs } = plate;
   const svgs = [];
   const pngs = [];
 
-  // Heightmaps and the 512 grid the hero/map LODs are contoured on.
+  // Heightmaps (declared sizes, in GRIDS order) and the 512 grid the hero/map LODs
+  // are contoured on.
   const grid512 = Float64Array.from(resampleBilinear(metres, W, H, GRIDS.desktop, GRIDS.desktop));
-  const grid256 = Float64Array.from(resampleBilinear(metres, W, H, GRIDS.mobile, GRIDS.mobile));
-  for (const [size, grid] of [
-    [GRIDS.desktop, grid512],
-    [GRIDS.mobile, grid256],
-  ]) {
+  for (const size of [GRIDS.desktop, GRIDS.mobile]) {
+    if (!(outputs.heightmaps ?? []).includes(size)) continue;
+    const grid =
+      size === GRIDS.desktop
+        ? grid512
+        : Float64Array.from(resampleBilinear(metres, W, H, size, size));
     pngs.push({ size, ...(await resolveHeightmap(size, toUnit(grid, source.heightScale))) });
   }
 
   const lod = (base, text) => {
-    const name = hashedName(base, 'svg', text);
+    const name = hashedName(`${prefix}${base}`, 'svg', text);
     svgs.push({ name, text });
     return `/terrain/${name}`;
   };
   const heroUrl = lod('contours-hero', contourText(grid512, GRIDS.desktop, GRIDS.desktop, HERO));
-  const mapUrl = lod('contours-map', contourText(grid512, GRIDS.desktop, GRIDS.desktop, MAP));
-  const strip = stripBbox(extent, SUMMIT.lv95.n, STRIP.ratio);
+  const mapUrl = outputs.contours.includes('map')
+    ? lod('contours-map', contourText(grid512, GRIDS.desktop, GRIDS.desktop, MAP))
+    : null;
+  const strip = stripBbox(extent, plate.strip.centreN, STRIP.ratio);
   const sw = rowWindow(metres, source, strip);
   const stripUrl = lod('contours-strip', contourText(sw.grid, sw.W, sw.H, STRIP));
-
-  const demM = Math.round(sampleAtLv95(metres, W, H, extent, SUMMIT.lv95));
-  const uv = lv95ToUv(SUMMIT.lv95, extent);
   const pngUrl = (size) => `/terrain/${pngs.find((p) => p.size === size).name}`;
 
-  const posters = await resolvePosters(source, metres, { encode });
-  // --check with no recorded poster: terrain.ts cannot be rebuilt, the problem says why.
-  if (!posters.urls) return { svgs, pngs, posters, metaText: null, precacheText: null };
+  const posters = await resolvePosters(plate, source, metres, plate.home ? committedMeta() : null, {
+    encode,
+  });
+  // --check with no recorded poster: the modules cannot be rebuilt, the problem says why.
+  if (!posters.urls)
+    return { svgs, pngs, posters, sheet: null, metaText: null, precacheText: null };
 
+  const sheet = {
+    id: plate.id,
+    prefix,
+    home: plate.home,
+    threeD: plate.threeD,
+    crs: source.crs,
+    extent: {
+      lv95: extent,
+      widthM: extent.east - extent.west,
+      heightM: extent.north - extent.south,
+    },
+    dem: { product: source.product, edition: source.edition, cellM: source.cellM },
+    contours: {
+      hero: HERO,
+      ...(mapUrl ? { map: MAP } : {}),
+      strip: { intervalM: STRIP.intervalM, indexEvery: STRIP.indexEvery, lv95: strip },
+    },
+    assets: {
+      ...(pngs.length > 0
+        ? { heightmap: Object.fromEntries(pngs.map((p) => [p.size, pngUrl(p.size)])) }
+        : {}),
+      contours: { hero: heroUrl, ...(mapUrl ? { map: mapUrl } : {}), strip: stripUrl },
+      hillshade: { ...posters.urls, sourceSha256: source.sha256 },
+    },
+  };
+  if (!plate.home) return { svgs, pngs, posters, sheet, metaText: null, precacheText: null };
+
+  // The home plate's full module: SUMMIT and GRIDS are home-plate constants.
+  const demM = Math.round(sampleAtLv95(metres, W, H, extent, SUMMIT.lv95));
+  const uv = lv95ToUv(SUMMIT.lv95, extent);
   const meta = TerrainMeta.parse({
     crs: source.crs,
     extent: {
@@ -468,7 +574,18 @@ async function buildAll(source, metres, { encode }) {
     null,
     2
   )}\n`;
-  return { svgs, pngs, posters, metaText, precacheText };
+  return { svgs, pngs, posters, sheet, metaText, precacheText };
+}
+
+/** The plates.ts text for every plate's sheet (registry order), or null when one is missing. */
+function platesText(built) {
+  if (built.some((b) => b.sheet === null)) return null;
+  const meta = PlatesMeta.parse(Object.fromEntries(built.map((b) => [b.plate.id, b.sheet])));
+  return (
+    '// AUTO-GENERATED by scripts/terrain/build-terrain.mjs from data/terrain/plates.json. Do not edit.\n' +
+    "// Every plate's 2D sheet: scalars and content-hashed URLs only (client-safe).\n" +
+    `export const plates = ${JSON.stringify(meta, null, 2)} as const;\n`
+  );
 }
 
 /** File names of a poster URL set ({ avif: { 1100, 640 }, webp: { 1100, 640 } }). */
@@ -487,79 +604,72 @@ function managedFiles() {
     .sort();
 }
 
+/** Every plate of the registry built in memory, in registry order. */
+async function buildPlates(plates, { encode }) {
+  const built = [];
+  for (const plate of plates) {
+    const loaded = await loadSource(plate);
+    if (loaded.error) throw new Error(`${loaded.error}; re-run npm run terrain:fetch`);
+    built.push({ plate, ...(await buildPlate(plate, loaded.source, loaded.metres, { encode })) });
+  }
+  return built;
+}
+
+/** The home plate's build (Plates guarantees exactly one). */
+const homeOf = (built) => built.find((b) => b.plate.home);
+
+/** Every public/terrain/ file name one plate's build references. */
+const namesOf = (b) => [
+  ...b.svgs.map((a) => a.name),
+  ...b.pngs.map((a) => a.name),
+  ...posterFiles(b.posters.urls),
+];
+
 async function write() {
-  const loaded = await loadSource();
-  if (loaded.error) throw new Error(`${loaded.error}; re-run npm run terrain:fetch`);
-  const { svgs, pngs, posters, metaText, precacheText } = await buildAll(
-    loaded.source,
-    loaded.metres,
-    { encode: true }
-  );
+  const built = await buildPlates(loadRegistry().plates, { encode: true });
   fs.mkdirSync(PUBLIC_DIR, { recursive: true });
-  for (const s of svgs) {
-    fs.writeFileSync(path.join(PUBLIC_DIR, s.name), s.text, 'utf8');
-    console.log(`${NAME}: wrote ${PUBLIC_REL}/${s.name} (${Buffer.byteLength(s.text)} bytes)`);
-  }
-  for (const p of pngs) {
-    if (p.committed) {
-      console.log(`${NAME}: kept ${PUBLIC_REL}/${p.name} (hash and pixels match)`);
-      continue;
+  for (const { svgs, pngs, posters } of built) {
+    for (const s of svgs) {
+      fs.writeFileSync(path.join(PUBLIC_DIR, s.name), s.text, 'utf8');
+      console.log(`${NAME}: wrote ${PUBLIC_REL}/${s.name} (${Buffer.byteLength(s.text)} bytes)`);
     }
-    fs.writeFileSync(path.join(PUBLIC_DIR, p.name), p.bytes);
-    console.log(`${NAME}: wrote ${PUBLIC_REL}/${p.name} (${p.bytes.length} bytes)`);
+    for (const p of pngs) {
+      if (p.committed) {
+        console.log(`${NAME}: kept ${PUBLIC_REL}/${p.name} (hash and pixels match)`);
+        continue;
+      }
+      fs.writeFileSync(path.join(PUBLIC_DIR, p.name), p.bytes);
+      console.log(`${NAME}: wrote ${PUBLIC_REL}/${p.name} (${p.bytes.length} bytes)`);
+    }
+    for (const f of posters.files) {
+      fs.writeFileSync(path.join(PUBLIC_DIR, f.name), f.bytes);
+      console.log(`${NAME}: wrote ${PUBLIC_REL}/${f.name} (${f.bytes.length} bytes)`);
+    }
+    if (posters.committed)
+      for (const f of posterFiles(posters.urls))
+        console.log(`${NAME}: kept ${PUBLIC_REL}/${f} (poster checks pass)`);
   }
-  for (const f of posters.files) {
-    fs.writeFileSync(path.join(PUBLIC_DIR, f.name), f.bytes);
-    console.log(`${NAME}: wrote ${PUBLIC_REL}/${f.name} (${f.bytes.length} bytes)`);
-  }
-  const posterNames = posterFiles(posters.urls);
-  if (posters.committed)
-    for (const f of posterNames)
-      console.log(`${NAME}: kept ${PUBLIC_REL}/${f} (poster checks pass)`);
-  const keep = new Set([...svgs.map((a) => a.name), ...pngs.map((a) => a.name), ...posterNames]);
+  const keep = new Set(built.flatMap(namesOf));
   for (const f of managedFiles()) {
     if (!keep.has(f)) {
       fs.unlinkSync(path.join(PUBLIC_DIR, f));
       console.log(`${NAME}: removed stale ${PUBLIC_REL}/${f}`);
     }
   }
+  const { metaText, precacheText } = homeOf(built);
+  const plates = platesText(built);
   fs.mkdirSync(path.dirname(META_PATH), { recursive: true });
   fs.writeFileSync(META_PATH, metaText, 'utf8');
   console.log(`${NAME}: wrote ${META_REL} (${Buffer.byteLength(metaText)} bytes)`);
   fs.writeFileSync(PRECACHE_PATH, precacheText, 'utf8');
   console.log(`${NAME}: wrote ${PRECACHE_REL} (${Buffer.byteLength(precacheText)} bytes)`);
+  fs.writeFileSync(PLATES_META_PATH, plates, 'utf8');
+  console.log(`${NAME}: wrote ${PLATES_META_REL} (${Buffer.byteLength(plates)} bytes)`);
   console.log(`${NAME}: OK`);
 }
 
-async function check() {
-  const lines = [];
-  const loaded = await loadSource();
-  if (loaded.error) {
-    lines.push(`${NAME}: ${loaded.error}`);
-    // The posters record the source they were generated from; name every one
-    // that source.json no longer vouches for.
-    const rec = committedMeta()?.assets?.hillshade;
-    if (rec && rec.sourceSha256 !== loaded.source.sha256) {
-      for (const f of posterFiles(rec))
-        lines.push(
-          `${NAME}: stale ${PUBLIC_REL}/${f} (generated from source sha256 ${String(rec.sourceSha256).slice(0, 10)}, source.json has ${loaded.source.sha256.slice(0, 10)})`
-        );
-    }
-    for (const l of lines) console.log(l);
-    console.log(`${NAME}: ${lines.length} stale`);
-    process.exit(1);
-  }
-  const { svgs, pngs, posters, metaText, precacheText } = await buildAll(
-    loaded.source,
-    loaded.metres,
-    { encode: false }
-  );
-  const expected = new Set([
-    ...svgs.map((a) => a.name),
-    ...pngs.map((a) => a.name),
-    ...posterFiles(posters.urls),
-  ]);
-  const reported = new Set();
+/** One plate's problems: its recorded posters, contour SVGs and heightmaps. */
+function plateLines({ svgs, pngs, posters }, lines, reported) {
   for (const bad of posters.problems) {
     lines.push(`${NAME}: stale ${PUBLIC_REL}/${bad.file} (${bad.reason})`);
     reported.add(bad.file);
@@ -578,31 +688,61 @@ async function check() {
     if (!p.committed && p.problems.length === 0)
       lines.push(`${NAME}: missing ${PUBLIC_REL}/${p.name}`);
   }
+}
+
+/** A generated module compared byte for byte; null text means a problem already reported it. */
+function moduleLine(rel, full, text, lines) {
+  if (!fs.existsSync(full)) lines.push(`${NAME}: missing ${rel}`);
+  else if (text !== null && fs.readFileSync(full, 'utf8') !== text)
+    lines.push(`${NAME}: stale ${rel} (bytes differ from a fresh build)`);
+}
+
+async function check() {
+  const lines = [];
+  const { plates } = loadRegistry();
+  const loadedAll = [];
+  for (const plate of plates) {
+    const loaded = await loadSource(plate);
+    loadedAll.push({ plate, ...loaded });
+    if (!loaded.error) continue;
+    lines.push(`${NAME}: ${loaded.error}`);
+    // The home plate's posters record the source they were generated from; name
+    // every one that source.json no longer vouches for.
+    const rec = plate.home ? committedMeta()?.assets?.hillshade : null;
+    if (rec && rec.sourceSha256 !== loaded.source.sha256) {
+      for (const f of posterFiles(rec))
+        lines.push(
+          `${NAME}: stale ${PUBLIC_REL}/${f} (generated from source sha256 ${String(rec.sourceSha256).slice(0, 10)}, source.json has ${loaded.source.sha256.slice(0, 10)})`
+        );
+    }
+  }
+  if (lines.length > 0) {
+    for (const l of lines) console.log(l);
+    console.log(`${NAME}: ${lines.length} stale`);
+    process.exit(1);
+  }
+  const built = [];
+  for (const { plate, source, metres } of loadedAll)
+    built.push({ plate, ...(await buildPlate(plate, source, metres, { encode: false })) });
+
+  const expected = new Set(built.flatMap(namesOf));
+  const reported = new Set();
+  for (const b of built) plateLines(b, lines, reported);
   for (const f of managedFiles()) {
     if (!expected.has(f) && !reported.has(f)) lines.push(`${NAME}: extra ${PUBLIC_REL}/${f}`);
   }
-  if (!fs.existsSync(META_PATH)) lines.push(`${NAME}: missing ${META_REL}`);
-  else if (metaText !== null && fs.readFileSync(META_PATH, 'utf8') !== metaText)
-    lines.push(`${NAME}: stale ${META_REL} (bytes differ from a fresh build)`);
-  if (precacheText === null) {
-    // Without a recorded poster set terrain.ts cannot be rebuilt; reported above.
-  } else if (!fs.existsSync(PRECACHE_PATH)) lines.push(`${NAME}: missing ${PRECACHE_REL}`);
-  else if (fs.readFileSync(PRECACHE_PATH, 'utf8') !== precacheText)
-    lines.push(`${NAME}: stale ${PRECACHE_REL} (bytes differ from a fresh build)`);
+  const { metaText, precacheText } = homeOf(built);
+  moduleLine(META_REL, META_PATH, metaText, lines);
+  // Without a recorded poster set terrain.ts cannot be rebuilt; reported above.
+  if (precacheText !== null) moduleLine(PRECACHE_REL, PRECACHE_PATH, precacheText, lines);
+  moduleLine(PLATES_META_REL, PLATES_META_PATH, platesText(built), lines);
 
   for (const l of lines) console.log(l);
   console.log(lines.length === 0 ? `${NAME}: OK` : `${NAME}: ${lines.length} stale`);
   process.exit(lines.length === 0 ? 0 : 1);
 }
 
-const args = process.argv.slice(2);
-const unknown = args.filter((a) => a !== '--check');
-if (unknown.length > 0) {
-  console.log(`${NAME}: unknown argument(s) ${unknown.join(' ')}; the only flag is --check`);
-  process.exit(1);
-}
-
-(args.includes('--check') ? check() : write()).catch((e) => {
+(ARGS.check ? check() : write()).catch((e) => {
   if (e && Array.isArray(e.issues)) {
     for (const i of e.issues) console.log(`${NAME}: schema ${i.path.join('.')}: ${i.message}`);
     console.log(`${NAME}: ${e.issues.length} schema violations`);
