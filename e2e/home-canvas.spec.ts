@@ -12,7 +12,7 @@ import { RELIEF_EXAGGERATION, curveParamAt } from '@/lib/ascent/route';
 import { buildWaypoints } from '@/lib/ascent/waypoints';
 import { formatMetres } from '@/lib/photo-format';
 import { meshHeightAtUv, toMetres } from '@/lib/terrain/heightmap';
-import { readout, scrollBlockToCentre } from './helpers/ascent';
+import { readout, scrollBlockToCentre, waitForRevealed } from './helpers/ascent';
 import {
   budgetMeasureOnly,
   countDraws,
@@ -80,14 +80,6 @@ const waypoints = buildWaypoints();
 /** R3F's wrapper div: it carries the class (and so the fade) and data-grid-size. */
 const canvasBox = (page: Page) => page.locator('[data-ascent-stage] [data-grid-size]');
 const HEIGHTMAP = /\/terrain\/heightmap-/;
-
-/** Waits until the stage reads '3d' and the canvas has finished fading in. */
-async function waitForRevealed(page: Page) {
-  await expect(stage(page)).toHaveAttribute('data-ascent-mode', '3d', { timeout: 20000 });
-  await expect
-    .poll(() => canvasBox(page).evaluate((el) => getComputedStyle(el).opacity), { timeout: 5000 })
-    .toBe('1');
-}
 
 /** Holds every heightmap response for `ms` (a slow network), then lets it through. */
 async function delayHeightmap(page: Page, ms: number) {

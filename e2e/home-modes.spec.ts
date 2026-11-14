@@ -1,8 +1,9 @@
 import AxeBuilder from '@axe-core/playwright';
 import { test, expect, type Locator, type Page } from '@playwright/test';
 import { buildWaypoints } from '@/lib/ascent/waypoints';
-import { scrollBlockToCentre } from './helpers/ascent';
+import { scrollBlockToCentre, waitForCameraSettled, waitForRevealed } from './helpers/ascent';
 import {
+  budgetMeasureOnly,
   disableWebGL,
   expectNoErrorPage,
   nextFrames,
@@ -571,7 +572,7 @@ test.describe('Home modes (HOME-02, HOME-07, HOME-08)', () => {
       });
     }
 
-    for (const { width, height } of WIDTHS.slice(0, 1)) {
+    for (const { width, height } of WIDTHS) {
       test(`B8: poster at ${width} x ${height}, every waypoint stop and the summit`, async ({ page }) => {
         await disableWebGL(page);
         await page.setViewportSize({ width, height });
@@ -587,6 +588,31 @@ test.describe('Home modes (HOME-02, HOME-07, HOME-08)', () => {
           failures.push(...(await sampleTicks(page, `poster ${width} px, ${stop.name}`)));
         }
         expect(failures, `rail tick labels below 4.5:1 on the poster at ${width} px`).toEqual([]);
+      });
+    }
+
+    // Live canvas (D-15): software WebGL in Firefox and WebKit is unreliable in
+    // CI, so these rows are Chromium-only. budgetMeasureOnly keeps a
+    // SwiftShader frame-budget decline from swapping the canvas for the poster
+    // mid-run (the home-canvas.spec rule for tests that need '3d').
+    for (const { width, height } of WIDTHS) {
+      test(`B8: live canvas at ${width} x ${height}, every waypoint stop and the summit @chromium-only`, async ({ page }) => {
+        test.setTimeout(180000);
+        await budgetMeasureOnly(page);
+        await page.setViewportSize({ width, height });
+        await page.goto('/');
+        await scrollOnce(page);
+        await waitForRevealed(page);
+
+        const failures: string[] = [];
+        for (const stop of stops) {
+          await expect(page.locator(stop.selector)).toHaveCount(1);
+          await scrollBlockToCentre(page, stop.selector);
+          await waitForCameraSettled(page);
+          failures.push(...(await sampleTicks(page, `live ${width} px, ${stop.name}`)));
+        }
+        await expect(stage(page)).toHaveAttribute('data-ascent-mode', '3d');
+        expect(failures, `rail tick labels below 4.5:1 on the live canvas at ${width} px`).toEqual([]);
       });
     }
   });
