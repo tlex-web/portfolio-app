@@ -168,6 +168,8 @@ describe('SiteFooter static source (D-21)', () => {
   const sources = {
     'components/site/SiteFooter.tsx': read('components/site/SiteFooter.tsx'),
     'components/terrain/ContourField.tsx': read('components/terrain/ContourField.tsx'),
+    'components/terrain/SheetBand.tsx': read('components/terrain/SheetBand.tsx'),
+    'components/terrain/SheetLegend.tsx': read('components/terrain/SheetLegend.tsx'),
   };
 
   test.each(Object.entries(sources))('%s has no client, motion, locale or animation code', (_file, src) => {
@@ -179,11 +181,13 @@ describe('SiteFooter static source (D-21)', () => {
     expect(src).not.toMatch(/\banimate-/);
   });
 
-  it('puts no transition utility on band elements (only the 07 link hover keeps one)', () => {
+  it('puts no transition utility on band or legend elements (only the 07 link hover keeps one)', () => {
     const footerSrc = sources['components/site/SiteFooter.tsx'];
     const transitions = footerSrc.match(/transition-[a-z]+/g) ?? [];
     expect(transitions).toEqual(['transition-colors']);
     expect(footerSrc).toMatch(/const LINK =\s*\n\s*'[^']*transition-colors/);
-    expect(sources['components/terrain/ContourField.tsx']).not.toMatch(/transition/);
+    const terrainFiles = Object.entries(sources).filter(([file]) => file.startsWith('components/terrain/'));
+    expect(terrainFiles.map(([file]) => file)).toHaveLength(3);
+    for (const [, src] of terrainFiles) expect(src).not.toMatch(/transition/);
   });
 });
