@@ -97,6 +97,7 @@ Keeps photo originals and their GPS out of the repository and out of what is ser
 | `orphan` / `missing` | a hashed file no generated manifest lists, or a manifest URL with no file |
 | `svg-content` | an SVG under `public/` with a script element, an `on*=` handler, an `href` or a `foreignObject` |
 | `metadata-call` | a `scripts/photos/` or `scripts/terrain/` source calling a metadata-keeping sharp method |
+| `telemetry` | a drone, camera or GPS sidecar or track (DATA-15): `.srt`, `.lrf`, `.dat`, `.lrv`, `.thm`, standalone `.xmp`, `.gpx`, `.kml`, `.kmz`, `.nmea`, `.igc`, `.fit` and `.tcx`, any case, anywhere in the repo or under `public/` (`.geojson` stays allowed) |
 
 ```bash
 npm run guard:images

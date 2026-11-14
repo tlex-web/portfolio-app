@@ -59,6 +59,10 @@
  *                    sharp method that keeps or writes metadata (withMetadata,
  *                    keepMetadata, keepExif, withExif, withExifMerge, keepXmp,
  *                    withXmp)
+ *   - telemetry:     a drone, camera or GPS sidecar or track (DATA-15, D-20):
+ *                    .srt .lrf .dat .lrv .thm, a standalone .xmp, .gpx .kml
+ *                    .kmz .nmea .igc .fit .tcx (case-insensitive); .geojson is
+ *                    allowed
  *
  * Usage:
  *   node scripts/guards/check-served-images.mjs [--root <dir>]
@@ -83,6 +87,12 @@ const SERVED_VIDEO_EXT = '.mp4';
 // Equal to MAX_CLIP_BYTES in data/schemas/media-manifest.ts (1.5 MiB, 11-RESEARCH Q4).
 const MAX_CLIP_BYTES = 1_572_864;
 const PATHSPECS = [...IMAGE_EXT, ...VIDEO_EXT].map((ext) => `:(icase)*${ext}`);
+// Telemetry (DATA-15, D-20): DJI sidecars and flight logs (.srt .lrf .dat), GoPro
+// previews and thumbnails (.lrv .thm), standalone XMP sidecars (Lightroom writes
+// GPS there) and GPS tracks (.gpx .kml .kmz .nmea .igc .fit .tcx). Each can carry
+// a take-off location. GeoJSON stays allowed: Phase 16 may use it for map data.
+const TELEMETRY_EXT = new Set(['.srt', '.lrf', '.dat', '.lrv', '.thm', '.xmp', '.gpx', '.kml', '.kmz', '.nmea', '.igc', '.fit', '.tcx']);
+const TELEMETRY_PATHSPECS = [...TELEMETRY_EXT].map((ext) => `:(icase)*${ext}`);
 const SELFTEST_PREFIX = 'scripts/guards/__selftest__/';
 const HASHED_DIRS = ['public/terrain/', 'public/images/photos/', 'public/media/'];
 const HASH_NAME = /^[a-z0-9-]+\.([0-9a-f]{10})\.(png|svg|avif|webp|jpg|mp4)$/;
@@ -150,8 +160,9 @@ function gitLsFiles(root, pathspecs) {
 
 const isImage = (rel) => IMAGE_EXT.has(path.extname(rel).toLowerCase());
 const isVideo = (rel) => VIDEO_EXT.has(path.extname(rel).toLowerCase());
+const isTelemetry = (rel) => TELEMETRY_EXT.has(path.extname(rel).toLowerCase());
 
-/** Image, video and script paths in scope, relative to root. Throws when git fails (never a silent pass). */
+/** Image, video, script and telemetry paths in scope, relative to root. Throws when git fails (never a silent pass). */
 function collect(root, fixture) {
   if (fixture) {
     const all = walk(root).map((full) => toPosix(path.relative(root, full)));
@@ -159,6 +170,7 @@ function collect(root, fixture) {
       images: all.filter(isImage),
       videos: all.filter(isVideo),
       scripts: all.filter((rel) => SCRIPT_DIRS.some((d) => rel.startsWith(d)) && SCRIPT_EXT.test(rel)),
+      telemetry: all.filter(isTelemetry),
     };
   }
   const inScope = (rel) => !rel.startsWith(SELFTEST_PREFIX) && fs.existsSync(path.join(root, rel));
@@ -167,6 +179,7 @@ function collect(root, fixture) {
     images: tracked.filter(isImage),
     videos: tracked.filter(isVideo),
     scripts: gitLsFiles(root, SCRIPT_DIRS).filter((rel) => SCRIPT_EXT.test(rel) && inScope(rel)),
+    telemetry: gitLsFiles(root, TELEMETRY_PATHSPECS).filter(inScope),
   };
 }
 
@@ -297,6 +310,10 @@ async function main() {
 
   for (const rel of [...scope.scripts].sort()) {
     checkScript(rel, fs.readFileSync(path.join(root, rel), 'utf-8'), violations);
+  }
+
+  for (const rel of [...scope.telemetry].sort()) {
+    violations.push(`${rel} telemetry: ${path.extname(rel)} is a drone, camera or GPS sidecar or track (DATA-15); delete it, never commit or serve it`);
   }
 
   for (const v of violations) console.log(v);

@@ -897,6 +897,24 @@ function putFiles(root, files) {
 }
 
 /**
+ * DATA-15 sidecar fixtures (generated, no real data): a fresh temp root holding
+ * each named file as a few bytes of placeholder text. Generated at run time,
+ * never committed, because the D-22 .gitignore block would ignore a committed
+ * .srt, .xmp or .dat fixture and a real sidecar would carry take-off GPS.
+ * Nested one level down so the cleanup loop's path.dirname removes the mkdtemp
+ * directory.
+ */
+const telemetryTempRoots = [];
+function tempTelemetryRoot(files) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
+  const root = path.join(dir, 'root');
+  fs.mkdirSync(root);
+  putFiles(root, Object.fromEntries(files.map((rel) => [rel, 'selftest placeholder, no telemetry\n'])));
+  telemetryTempRoots.push(root);
+  return root;
+}
+
+/**
  * 07 WR-04 fixture: a temp git repo with app/card.tsx committed, then `edit(root)`
  * applied to the work tree (same-classnames compares HEAD with the work tree).
  * Nested one level down so the cleanup loop's path.dirname removes the mkdtemp
@@ -2017,6 +2035,14 @@ const cases = [
     expectOutput: ['public/media/coin-flip-toss.eebff415df.webm video-format: only MP4 is served'],
   },
   {
+    name: 'served-images: telemetry: a DJI .SRT sidecar fails',
+    guard: SERVED,
+    args: [],
+    setup: () => ['--root', tempTelemetryRoot(['clips/DJI_0001.SRT'])],
+    expectExit: 1,
+    expectOutput: ['clips/DJI_0001.SRT telemetry:', 'served-images: 1 violations'],
+  },
+  {
     name: 'mp4-boxes: checkMp4 finds no violation in the clean fixture clip',
     fn: () => expectEqual('violations', checkMp4(goodMp4()).join('; '), ''),
   },
@@ -2811,7 +2837,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, exifMappedRoot, exifUnmappedRoot, exifDuplicateRoot, terrainFixtureRoot, terrainMissingRoot, terrainRemoveRoot, ...ciGateTempRoots]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, exifMappedRoot, exifUnmappedRoot, exifDuplicateRoot, terrainFixtureRoot, terrainMissingRoot, terrainRemoveRoot, ...ciGateTempRoots, ...telemetryTempRoots]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 
