@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 14
 current_phase_name: UI Fixes & Terminal Controls
 status: executing
-stopped_at: Completed 14-05-PLAN.md
-last_updated: "2026-11-14T12:06:38.244Z"
+stopped_at: Completed 14-06-PLAN.md
+last_updated: "2026-11-14T12:18:49.256Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 14 execution started
-state_head: 9e03d21e7b6d4fd1e901c77c279953f7a67102a5
+state_head: b023bd037062ec1ac5a0c3beaddd478025719e17
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 30
-  completed_plans: 27
+  completed_plans: 28
   percent: 14
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-14)
 ## Current Position
 
 Phase: 14 (UI Fixes & Terminal Controls) — EXECUTING
-Plan: 6 of 8
+Plan: 7 of 8
 Status: Ready to execute
 Last activity: 2026-11-14 — Phase 14 execution started
 
@@ -81,6 +81,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 14 P03 | 12min | 2 tasks | 3 files |
 | Phase 14 P04 | 7min | 2 tasks | 3 files |
 | Phase 14 P05 | 15 min | 2 tasks | 5 files |
+| Phase 14 P06 | 9 min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -160,6 +161,8 @@ Recent decisions affecting current work:
 - [Phase 14]: 14-04 D-22: collapseCallout clears a hidden callout (no visible label or key row) and returns false, so zoom then close take the Escape; visible callouts stay first (fix 945d235, ledger 10 IN-01)
 - [Phase 14]: 14-05: Contract 1 classes ship as written; desktop Chromium's thin scrollbar gutter wraps the 375 px command bar (299 px inner), so the one-row e2e check runs as a phone (isMobile in Chromium) and a desktop row asserts the wrap rule; one-token tightening options logged in deferred-items for Tim
 - [Phase 14]: 14-05: A step or any dot press shows the target command complete and sets the sticky Pause through one show(target); ends are aria-disabled, focusable, and stepTo returns null so goTo never throws
+- [Phase 14]: 14-06: The transcript summary sits between the terminal and the next focusable element, so two Jest Tab rows were rewritten in place to pass through it (GUARD-03).
+- [Phase 14]: 14-06: The box reduced visual shot waits for the open transcript before settle(); declared re-baseline box/375-reduced, box/768-reduced, box/1440-reduced for 14-08.
 
 ### Pending Todos
 
@@ -212,6 +215,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-14T12:06:38.162Z
-Stopped at: Completed 14-05-PLAN.md
+Last session: 2026-11-14T12:18:49.175Z
+Stopped at: Completed 14-06-PLAN.md
 Resume file: None
