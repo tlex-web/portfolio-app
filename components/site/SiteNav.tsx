@@ -1,6 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState, type FocusEvent as ReactFocusEvent } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FocusEvent as ReactFocusEvent,
+  type MouseEvent as ReactMouseEvent,
+} from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { List, X } from '@phosphor-icons/react/dist/ssr';
@@ -115,12 +121,25 @@ function DefaultNav() {
 
   // Close trigger 7 (SHELL-07, D-16, D-23): a plain tap on the panel link whose
   // href equals the pathname (strict equality, not isCurrentPath: 'Photographs'
-  // on a photo page is current but navigates, so trigger 1 closes it). With no
-  // query string the tap is default-prevented (no navigation, no scroll jump).
-  // With one (/photos?view=grid, /roadmap?project=box) Next still navigates to
-  // the plain page, but usePathname drops the query, so the pathname does not
-  // change and trigger 1 never fires: the link's click handler closes the panel
-  // at tap in both cases, focusing the Menu button first as Escape does.
+  // on a photo page is current but navigates, so trigger 1 closes it). Modified or
+  // non-primary activations keep the browser's behaviour (new tab, download). With
+  // no query string the tap is default-prevented: Next skips its navigation and its
+  // scroll-to-top (no scroll jump). With one (/photos?view=grid, /roadmap?project=box)
+  // Next still navigates to the plain page, but usePathname drops the query, so the
+  // pathname does not change and trigger 1 never fires: this handler closes the panel
+  // at tap in both cases. Escape's order: focus Menu before the link hides, so focus
+  // never drops to <body> and the header focusout close stays quiet. preventScroll:
+  // the button sits in the sticky header, always in view, but the global
+  // scroll-margin-top (nav height + 16 px) makes a plain focus() scroll the page up
+  // to "reveal" it (D-16 keeps the scroll position).
+  function closeOnCurrentLink(event: ReactMouseEvent<HTMLAnchorElement>, href: string) {
+    const plain =
+      event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
+    if (!plain || href !== pathname) return;
+    if (window.location.search === '') event.preventDefault();
+    buttonRef.current?.focus({ preventScroll: true });
+    setOpen(false);
+  }
 
   // Close triggers 2, 4, 5 and 6, attached only while the panel is open.
   useEffect(() => {
@@ -132,7 +151,7 @@ function DefaultNav() {
     // Escape is the open menu's: a document capture listener that prevents the
     // press, so a page's own Escape handling (the photo page goes to /photos)
     // skips it (10-REVIEW CR-01). Focus moves to Menu with preventScroll for the
-    // reason at the tap close below: a plain focus() scrolled the page up (/roadmap
+    // reason at the tap close above: a plain focus() scrolled the page up (/roadmap
     // at 375 x 812 from 600 to 530 in Chromium, 185.5 in Firefox).
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
@@ -229,29 +248,7 @@ function DefaultNav() {
                     <Link
                       href={item.href}
                       aria-current={current ? 'page' : undefined}
-                      onClick={(event) => {
-                        // Close trigger 7 (SHELL-07, D-16, D-23): a plain tap on the link
-                        // for the current pathname. Modified or non-primary activations
-                        // keep the browser's behaviour (new tab, download).
-                        const plain =
-                          event.button === 0 &&
-                          !event.metaKey &&
-                          !event.ctrlKey &&
-                          !event.shiftKey &&
-                          !event.altKey;
-                        if (!plain || item.href !== pathname) return;
-                        // The page already shown (no query): Next skips its navigation and
-                        // its scroll-to-top when the click is default-prevented.
-                        if (window.location.search === '') event.preventDefault();
-                        // Escape's order: focus Menu before the link hides, so focus never
-                        // drops to <body> and the header focusout close stays quiet.
-                        // preventScroll: the button sits in the sticky header, always in
-                        // view, but the global scroll-margin-top (nav height + 16 px) makes
-                        // a plain focus() scroll the page up to "reveal" it (D-16 keeps
-                        // the scroll position).
-                        buttonRef.current?.focus({ preventScroll: true });
-                        setOpen(false);
-                      }}
+                      onClick={(event) => closeOnCurrentLink(event, item.href)}
                       // SHELL-08, D-17: the ring draws 2-4 px inside the row (offset -4,
                       // width 2 from the global rule), so the panel's overflow-y-auto can
                       // never clip it; it starts at x 2 and abuts the 2 px accent bar.
