@@ -5,58 +5,58 @@ titles: json
 findings:
   - id: WR-01
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "`revealFocusedRow` also scrolls the panel on pointer focus, so a tap near a partly hidden row's edge can miss the link"
   - id: WR-02
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Already-defended-elsewhere: the Previous/Next end press is guarded three times"
   - id: WR-03
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "The new D-23 shell row clicks Menu without waiting for hydration, which its sibling row says is required"
   - id: IN-01
     severity: info
-    disposition: open
+    disposition: deferred
     title: "`revealTrigger` parses `--nav-h` with `parseFloat`, which silently assumes px"
   - id: IN-02
     severity: info
-    disposition: open
+    disposition: deferred
     title: "`revealTrigger` measures the viewport with `window.innerHeight`"
   - id: IN-03
     severity: info
-    disposition: open
+    disposition: deferred
     title: "Orphaned \"Close trigger 7\" comment block duplicates the inline handler comment"
   - id: IN-04
     severity: info
-    disposition: open
+    disposition: deferred
     title: "The `STEP` class string is a verbatim copy of `CarouselControls`' `STEP_BUTTON`"
   - id: IN-05
     severity: info
-    disposition: open
+    disposition: deferred
     title: "Fixed 4 s sleeps prove \"nothing advanced\""
   - id: IN-06
     severity: info
-    disposition: open
+    disposition: deferred
     title: "The next-frame re-reveal is a timing assumption with thin cross-engine coverage"
-open: 9
+open: 0
 total: 9
-recorded: 2026-11-14T14:24:58.079Z
+recorded: 2026-11-14T14:36:28.002Z
 ---
 
 # Phase 14: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | open | - |
-| WR-02 | warning | open | - |
-| WR-03 | warning | open | - |
-| IN-01 | info | open | - |
-| IN-02 | info | open | - |
-| IN-03 | info | open | - |
-| IN-04 | info | open | - |
-| IN-05 | info | open | - |
-| IN-06 | info | open | - |
+| WR-01 | warning | fixed | 14-REVIEW-FIX.md |
+| WR-02 | warning | fixed | 14-REVIEW-FIX.md |
+| WR-03 | warning | fixed | 14-REVIEW-FIX.md |
+| IN-01 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only) |
+| IN-02 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only) |
+| IN-03 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only) |
+| IN-04 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only) |
+| IN-05 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only) |
+| IN-06 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only) |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.

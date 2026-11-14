@@ -25,7 +25,7 @@ status: all_fixed
 
 ## Fixed Issues
 
-### WR-01: `revealFocusedRow` also scrolls the panel on pointer focus
+### WR-01: `revealFocusedRow` also scrolls the panel on pointer focus, so a tap near a partly hidden row's edge can miss the link
 
 **Files modified:** `components/site/SiteNav.tsx`, `components/site/__tests__/SiteNav.test.tsx`
 **Commit:** b8f3b1f
@@ -40,7 +40,7 @@ Browser proof (prod build, `next start`):
 - `e2e/shell.spec.ts`: SHELL-08 rows green in Chromium and Firefox. That includes the Firefox 375 x 320 row, which needs `scrollTop > 0`, and Firefox depends on `revealFocusedRow` for that scroll. So the keyboard reveal still works with the gate, both through Tab and after the keyboard-driven open.
 - A scratch probe pressed the partly hidden Contact row with the mouse at 375 x 320. In Firefox and in Chromium: the row was focused, `:focus-visible` was false, `scrollTop` stayed 0 after mousedown, and the click navigated to `/contact`. The probe ran on the fixed build only; the pre-fix failure is shown by the Jest row.
 
-### WR-02: The Previous/Next end press is guarded three times (necessity)
+### WR-02: Already-defended-elsewhere: the Previous/Next end press is guarded three times
 
 **Files modified:** `components/projects/DemoTerminal.tsx`, `components/projects/__tests__/DemoTerminal.test.tsx`
 **Commit:** ea7d7f2
@@ -49,7 +49,7 @@ Browser proof (prod build, `next start`):
 
 The Next end-press Jest row only checked `data-command`, and Pause was already pressed when it ran. It was rewritten, not deleted: it now releases Pause first and also asserts that the end press leaves `aria-pressed="false"`, matching the Previous row. As a check, a temporary change made `show` press Pause on a null target. Both end rows failed under that change, and it was reverted before the commit. The D-03 browser row ("the step buttons stop at the ends") is green in Chromium and Firefox.
 
-### WR-03: The D-23 shell row clicks Menu before hydration
+### WR-03: The new D-23 shell row clicks Menu without waiting for hydration, which its sibling row says is required
 
 **Files modified:** `e2e/shell.spec.ts`
 **Commit:** 050b15b
