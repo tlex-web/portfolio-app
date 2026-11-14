@@ -61,3 +61,7 @@ needs_review: in desktop Chromium at 375 px, the command bar wraps onto 2 rows, 
 ## Wave 6 (plan 14-06): could_not_look / target_unreachable
 
 The verifier wasn't dispatched, for the same reason as wave 2. The ENG-06 transcript is unobserved and nothing failed. It's a server-rendered `<details data-transcript>` under the terminal, closed by default, opened once under reduced motion, and it presses Pause when a visitor opens it. Covered by 65 Jest rows and 126/126 case-study e2e rows in Chromium and Firefox, including axe with the transcript present and the sitemap audit (no hydration mismatch on /projects/box).
+
+## Wave 7 (plan 14-07): nothing_to_report / no_criteria
+
+14-07 states no UI acceptance criteria. It writes the ledger back and runs the local gate. The gate's one fix is test-only: the E5 row in `e2e/photos-sweep.spec.ts` now expects the D-22 Escape order. On the tip, the 9 Phase 14 e2e files pass 592/592 in Chromium and Firefox.
