@@ -385,6 +385,11 @@ test.describe('Shell mobile menu', () => {
 
     const button = page.getByRole('button', { name: 'Menu' });
     const panel = page.locator('#site-menu');
+    // A press before hydration does nothing, and the grid page hydrates late:
+    // wait for React's props on the button, as the D-16 row above does.
+    await expect
+      .poll(() => button.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))))
+      .toBe(true);
     await button.click();
     await expect(panel).toBeVisible();
 
