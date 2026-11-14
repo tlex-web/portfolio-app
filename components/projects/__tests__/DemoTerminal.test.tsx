@@ -763,4 +763,57 @@ describe('DemoTerminal transcript (ENG-06, D-04 to D-07)', () => {
     const { container } = render(<DemoTerminal name="box" commands={[]} />);
     expect(container).toBeEmptyDOMElement();
   });
+
+  /**
+   * Opens or closes the transcript the way the browser does: set `open`,
+   * then dispatch `toggle`. jsdom also queues its own toggle task on a real
+   * setTimeout(…, 0); the handler is idempotent, so that extra event changes
+   * nothing (14-RESEARCH Pitfall 9).
+   */
+  function setTranscriptOpen(open: boolean) {
+    act(() => {
+      transcript().open = open;
+      fireEvent(transcript(), new Event('toggle'));
+    });
+  }
+
+  it('opens once after mount under reduced motion, with Pause already pressed (D-05, D-06)', () => {
+    setReducedMotion(true);
+    setup();
+    expect(transcript().open).toBe(true);
+    expect(toggle()).toHaveAttribute('aria-pressed', 'true');
+    expect(region()).toHaveAttribute('data-playback', 'paused');
+  });
+
+  it('stays closed without reduced motion, and the toggle stays unpressed (D-06)', () => {
+    setup();
+    expect(transcript().open).toBe(false);
+    expect(toggle()).toHaveAttribute('aria-pressed', 'false');
+    expect(region()).toHaveAttribute('data-playback', 'playing');
+  });
+
+  it('does not open on a later reduced-motion change: the open is mount-only (D-06)', () => {
+    const { rerender } = setup();
+    setReducedMotion(true);
+    rerender(
+      <>
+        <DemoTerminal name="box" commands={COMMANDS} />
+        <button type="button">Outside</button>
+      </>
+    );
+    expect(transcript().open).toBe(false);
+  });
+
+  it('opening it presses the sticky Pause; closing it leaves Pause pressed (D-07)', () => {
+    setup();
+    expect(toggle()).toHaveAttribute('aria-pressed', 'false');
+    setTranscriptOpen(true);
+    expect(toggle()).toHaveAttribute('aria-pressed', 'true');
+    expect(region()).toHaveAttribute('data-playback', 'paused');
+    setTranscriptOpen(false);
+    expect(toggle()).toHaveAttribute('aria-pressed', 'true');
+    expect(region()).toHaveAttribute('data-playback', 'paused');
+    advance(6000);
+    expect(region()).toHaveAttribute('data-command', '1');
+  });
 });

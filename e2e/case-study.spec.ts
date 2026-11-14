@@ -814,16 +814,78 @@ test.describe('Demo (ENG-05)', () => {
     }
   });
 
-  test('no horizontal scroll at 375 px', async ({ page }) => {
+  test('opening the transcript presses Pause, closing leaves it pressed (ENG-06, D-07)', async ({
+    page,
+  }) => {
+    await page.goto(BOX);
+    const region = page.getByRole('region', { name: regionName });
+    const toggle = region.getByRole('button', { name: 'Pause demo', exact: true });
+    const summary = page.locator('details[data-transcript] > summary');
+    await region.scrollIntoViewIfNeeded();
+    // The pointer off the terminal: only the transcript can press Pause here.
+    await page.mouse.move(0, 0);
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+
+    await summary.click();
+    await expect(page.locator('details[data-transcript]')).toHaveAttribute('open', '');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await expect(region).toHaveAttribute('data-playback', 'paused');
+
+    await summary.click();
+    await expect(page.locator('details[data-transcript]')).not.toHaveAttribute('open');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await expect(region).toHaveAttribute('data-playback', 'paused');
+  });
+
+  test('no horizontal scroll at 375 px with the transcript open (ENG-06)', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 800 });
     await page.goto(BOX);
     await expect(page.getByRole('region', { name: regionName })).toBeVisible();
+    const transcript = page.locator('details[data-transcript]');
+    await transcript.locator('summary').click();
+    await expect(transcript).toHaveAttribute('open', '');
 
     const { scrollWidth, clientWidth } = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,
       clientWidth: document.documentElement.clientWidth,
     }));
     expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+
+    // No max-height and no inner scroll: the list is as tall as its entries.
+    const frame = await transcript.evaluate((el) => {
+      const list = el.querySelector('ol') as HTMLElement;
+      return {
+        maxHeight: getComputedStyle(el).maxHeight,
+        listMaxHeight: getComputedStyle(list).maxHeight,
+        listOverflow: list.scrollHeight - list.clientHeight,
+      };
+    });
+    expect(frame.maxHeight).toBe('none');
+    expect(frame.listMaxHeight).toBe('none');
+    expect(frame.listOverflow).toBeLessThanOrEqual(0);
+
+    // The 160-character pipeline and the 64-character hash wrap inside the frame.
+    const commands = box.demo?.commands ?? [];
+    const longest = commands.reduce(
+      (a, c, i) => (c.input.length > commands[a].input.length ? i : a),
+      0
+    );
+    const hashed = commands.findIndex((c) => /\b[0-9a-f]{64}\b/.test(c.output));
+    expect(hashed).toBeGreaterThanOrEqual(0);
+    const items = transcript.locator('ol > li');
+    const frameBox = await transcript.boundingBox();
+    const codeBox = await items.nth(longest).locator('code').boundingBox();
+    const preBox = await items.nth(hashed).locator('pre').boundingBox();
+    if (!frameBox || !codeBox || !preBox) throw new Error('transcript not laid out');
+    for (const inner of [codeBox, preBox]) {
+      expect(inner.x).toBeGreaterThanOrEqual(frameBox.x);
+      expect(inner.x + inner.width).toBeLessThanOrEqual(frameBox.x + frameBox.width);
+    }
+    const preOverflow = await items
+      .nth(hashed)
+      .locator('pre')
+      .evaluate((el) => el.scrollWidth - el.clientWidth);
+    expect(preOverflow).toBeLessThanOrEqual(0);
   });
 
   /**
@@ -882,5 +944,47 @@ test.describe('Demo under reduced motion', () => {
       'true'
     );
     await expect(region).toHaveAttribute('data-playback', 'paused');
+  });
+
+  test('the transcript opens after hydration, below the paused terminal (ENG-06, D-05, D-06)', async ({
+    page,
+  }) => {
+    await page.goto(BOX);
+    const region = page.getByRole('region', { name: regionName });
+    const transcript = page.locator('details[data-transcript]');
+
+    // The server renders it closed; the client opens it once after hydration.
+    await expect(transcript).toHaveAttribute('open', '');
+    await expect(region.getByRole('button', { name: 'Pause demo', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    await expect(region).toHaveAttribute('data-playback', 'paused');
+
+    const regionBox = await region.boundingBox();
+    const transcriptBox = await transcript.boundingBox();
+    if (!regionBox || !transcriptBox) throw new Error('terminal not laid out');
+    expect(transcriptBox.y).toBeGreaterThanOrEqual(regionBox.y + regionBox.height);
+  });
+});
+
+test.describe('Transcript without JavaScript (ENG-06)', () => {
+  test.use({ javaScriptEnabled: false, reducedMotion: 'reduce' });
+
+  test('the transcript is in the HTML, closed, and opens natively (D-04, D-06)', async ({
+    page,
+  }) => {
+    await page.goto(BOX);
+    const transcript = page.locator('details[data-transcript]');
+    await expect(transcript).toHaveCount(1);
+    // Closed even under reduced motion: only the client effect opens it.
+    await expect(transcript).not.toHaveAttribute('open');
+    for (const command of box.demo?.commands ?? []) {
+      await expect(transcript).toContainText(command.input);
+      if (command.note) await expect(transcript).toContainText(command.note);
+    }
+    await transcript.locator('summary').click();
+    await expect(transcript).toHaveAttribute('open', '');
+    await expect(transcript.locator('ol > li').first().locator('code')).toBeVisible();
   });
 });

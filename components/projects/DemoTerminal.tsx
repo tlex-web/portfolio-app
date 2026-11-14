@@ -4,9 +4,11 @@ import {
   Fragment,
   useCallback,
   useEffect,
+  useRef,
   useState,
   useSyncExternalStore,
   type FocusEvent,
+  type SyntheticEvent,
 } from 'react';
 import {
   CaretDownIcon,
@@ -183,7 +185,13 @@ function CommandLines({ command, lines }: { command: TerminalCommand; lines: Vis
  * a leading newline the parser would drop right after `<pre>`), then the
  * note when there is one. Plain selectable text, never aria-live. One
  * command renders no transcript (G2 already shows it whole); none renders
- * nothing.
+ * nothing. The server renders it closed; under reduced motion a mount-only
+ * effect opens it once after hydration (D-06), so default visitors,
+ * Lighthouse and no-JS visitors see it closed, a later OS preference change
+ * does not toggle it and the open state is not stored. The reduced-motion
+ * view is the paused, steppable terminal above the open transcript, the
+ * duplicate text accepted (D-05). A visitor opening it presses the sticky
+ * Pause; closing it resumes nothing (D-07).
  *
  * Screen readers: the drawn lines are aria-hidden, so a command is never
  * read twice or half-typed; an sr-only block always holds the full current
@@ -220,6 +228,20 @@ export default function DemoTerminal({
     );
     return () => window.clearTimeout(id);
   }, [state, playing, reduced, commands]);
+
+  const transcriptRef = useRef<HTMLDetailsElement>(null);
+
+  // D-06: open the transcript once after hydration under reduced motion. A
+  // mount-only effect that reads the media query itself, not the reactive
+  // `reduced`, so a later OS preference change never toggles it, and no
+  // `open` prop, so the server HTML (closed) and the first client render
+  // match (14-RESEARCH Pitfall 9). It sits above the early return so the
+  // hook order never changes; the ref is null without a transcript.
+  useEffect(() => {
+    if (transcriptRef.current && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      transcriptRef.current.open = true;
+    }
+  }, []);
 
   // A callback ref, not a mount-only effect (12-31 WR-02): React calls it with
   // each new region node and runs its cleanup when that node goes, so the
@@ -264,6 +286,15 @@ export default function DemoTerminal({
     if (target === null) return;
     setState(target);
     setOverride(true);
+  }
+
+  /**
+   * D-07: a visitor opening the transcript presses the sticky Pause (the D-02
+   * rule); closing it resumes nothing. Under reduced motion Pause is already
+   * pressed, so the automatic open (D-06) changes no state.
+   */
+  function onTranscriptToggle(e: SyntheticEvent<HTMLDetailsElement>) {
+    if (e.currentTarget.open && !sticky) setOverride(true);
   }
 
   function onBlur(e: FocusEvent<HTMLDivElement>) {
@@ -400,7 +431,12 @@ export default function DemoTerminal({
         )}
       </div>
       {count > 1 && (
-        <details data-transcript className="group mt-4 rounded-lg border border-line">
+        <details
+          ref={transcriptRef}
+          data-transcript
+          className="group mt-4 rounded-lg border border-line"
+          onToggle={onTranscriptToggle}
+        >
           <summary className={SUMMARY}>
             Transcript
             <CaretDownIcon

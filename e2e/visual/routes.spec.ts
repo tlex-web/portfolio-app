@@ -87,14 +87,14 @@ async function settle(page: Page) {
   // map's hover previews) cannot be in the shot, and a lazy one is never
   // fetched, so its `complete` stays false: only rendered images are awaited.
   await page.waitForFunction(() =>
-    Array.from(document.images).every((img) => img.complete || img.getClientRects().length === 0),
+    Array.from(document.images).every((img) => img.complete || img.getClientRects().length === 0)
   );
   await page.waitForFunction(() =>
     document
       .getAnimations()
       .filter((a) => a.timeline === document.timeline)
       .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
-      .every((a) => a.playState !== 'running'),
+      .every((a) => a.playState !== 'running')
   );
   // The footer's contour band is a CSS mask image, which does not hold up the
   // load event: wait for the hashed strip SVG, then two frames for the paint,
@@ -102,7 +102,7 @@ async function settle(page: Page) {
   await page.waitForFunction(() =>
     performance
       .getEntriesByType('resource')
-      .some((entry) => /\/terrain\/contours-strip\.[0-9a-f]{10}\.svg$/.test(entry.name)),
+      .some((entry) => /\/terrain\/contours-strip\.[0-9a-f]{10}\.svg$/.test(entry.name))
   );
   // Home's poster and the /photos map sheet draw their contour lines from the
   // hashed hero SVG, which does not hold up the load event either: wait for it
@@ -113,10 +113,10 @@ async function settle(page: Page) {
       !document.querySelector('[data-map-mark], [data-ascent-stage]') ||
       performance
         .getEntriesByType('resource')
-        .some((entry) => /\/terrain\/contours-hero\.[0-9a-f]{10}\.svg$/.test(entry.name)),
+        .some((entry) => /\/terrain\/contours-hero\.[0-9a-f]{10}\.svg$/.test(entry.name))
   );
   await page.evaluate(
-    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
   );
 }
 
@@ -147,6 +147,15 @@ for (const [name, route] of ROUTES) {
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.setViewportSize({ width: w, height: HEIGHT });
       await page.goto(route);
+      if (name === 'box') {
+        // 14 D-06: under reduced motion the client opens the terminal's
+        // transcript once after hydration, so the full-page shot waits for it
+        // (before settle, whose scroll pass then covers the taller page).
+        // Declared re-baseline (14-06): box/{375,768,1440}-reduced, for the
+        // step buttons in the command bar (14-05) and the open transcript,
+        // produced in 14-08 and committed by Tim.
+        await expect(page.locator('details[data-transcript]')).toHaveAttribute('open', '');
+      }
       await settle(page);
       await expect(page).toHaveScreenshot([name, `${w}-reduced.png`], {
         fullPage: true,
@@ -215,9 +224,12 @@ for (const w of WIDTHS) {
       .first();
     // A click before hydration is a document navigation (no dialog).
     await expect
-      .poll(() => tile.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))), {
-        timeout: 15000,
-      })
+      .poll(
+        () => tile.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))),
+        {
+          timeout: 15000,
+        }
+      )
       .toBe(true);
     await tile.click();
     const dialog = page.getByRole('dialog');
@@ -227,12 +239,12 @@ for (const w of WIDTHS) {
         dialog
           .locator('img')
           .evaluateAll((imgs: HTMLImageElement[]) =>
-            imgs.every((img) => img.complete && img.naturalWidth > 0),
-          ),
+            imgs.every((img) => img.complete && img.naturalWidth > 0)
+          )
       )
       .toBe(true);
     await page.evaluate(
-      () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+      () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
     );
     await expect(page).toHaveScreenshot(['lightbox', `${w}.png`], { stylePath });
   });
@@ -253,9 +265,12 @@ test('menu @375 current row focused', async ({ page }) => {
   const button = page.getByRole('button', { name: 'Menu' });
   // Enter before hydration does nothing: wait for React's props on the button.
   await expect
-    .poll(() => button.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))), {
-      timeout: 15000,
-    })
+    .poll(
+      () => button.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))),
+      {
+        timeout: 15000,
+      }
+    )
     .toBe(true);
   // A keyboard activation, so :focus-visible draws the ring on the row Tabbed to.
   await button.focus();
@@ -270,7 +285,7 @@ test('menu @375 current row focused', async ({ page }) => {
   await expect(current).toBeFocused();
   await expect(current).toHaveAttribute('aria-current', 'page');
   await panel.evaluate((el) =>
-    Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined))),
+    Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined)))
   );
   await expect(page).toHaveScreenshot(['menu', '375-current-focus.png'], { stylePath });
 });
