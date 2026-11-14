@@ -1314,7 +1314,42 @@ test.describe('Hotspots (LBOX-05)', () => {
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 
-  test('from zoomed with a callout open, Escape unwinds callout, then zoom, then close', async ({
+  // @no-win-webkit: history Back while the open's View Transition commit settles crashes
+  // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
+  // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
+  test('with a callout open, the Hide labels button collapses it and one Escape closes the lightbox (D-12) @no-win-webkit', async ({
+    page,
+  }) => {
+    const dialog = await openTrail(page);
+    const first = labels(dialog).first();
+    await first.click();
+    await expect(first).toHaveAttribute('aria-expanded', 'true');
+    await hideLabels(dialog).click();
+    await expect(hideLabels(dialog)).toHaveAttribute('aria-pressed', 'true');
+    await expect(labels(dialog)).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
+
+  test('showing labels again starts with every callout collapsed (D-12)', async ({ page }) => {
+    const dialog = await openTrail(page);
+    const first = labels(dialog).first();
+    await first.click();
+    await expect(first).toHaveAttribute('aria-expanded', 'true');
+    await page.keyboard.press('h');
+    await expect(hideLabels(dialog)).toHaveAttribute('aria-pressed', 'true');
+    await expect(labels(dialog)).toHaveCount(0);
+    await page.keyboard.press('h');
+    await expect(hideLabels(dialog)).toHaveAttribute('aria-pressed', 'false');
+    await expect(labels(dialog)).toHaveCount(2);
+    for (const label of await labels(dialog).all()) {
+      await expect(label).toHaveAttribute('aria-expanded', 'false');
+    }
+  });
+
+  // Rewritten in place for D-22 (it expected the hidden callout to take the first Escape): a
+  // callout hidden by zoom no longer takes it, so zoom does, and the callout is dropped with it.
+  test('from zoomed with a callout open, one Escape leaves zoom and drops the hidden callout, the next closes (D-22)', async ({
     page,
   }) => {
     const dialog = await openTrail(page);
@@ -1328,11 +1363,12 @@ test.describe('Hotspots (LBOX-05)', () => {
     await expect(markers(dialog)).toHaveCount(0);
 
     await page.keyboard.press('Escape');
-    await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'true');
-    await page.keyboard.press('Escape');
     await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'false');
-    await expect(labels(dialog).first()).toHaveAttribute('aria-expanded', 'false');
     await expect(page.getByRole('dialog')).toHaveCount(1);
+    await expect(labels(dialog)).toHaveCount(2);
+    for (const label of await labels(dialog).all()) {
+      await expect(label).toHaveAttribute('aria-expanded', 'false');
+    }
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });

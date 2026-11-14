@@ -344,8 +344,12 @@ export default function PhotoViewer({
   }, [isPage]);
 
   // The callout Escape layer: collapse the open hotspot and return focus to
-  // its gutter label or key row, whichever is rendered and shown (while
-  // zoomed neither label is drawn, so focus stays where it is).
+  // its gutter label or key row, whichever is rendered and shown. The callout
+  // is the first Escape layer (10-UI-SPEC order: callout, zoom, close) only
+  // while that label or row is visible. A hidden callout (zoomed, labels
+  // hidden, or any later hide path) is cleared without taking the press, so
+  // the next layer handles it: a key press never acts on something the
+  // visitor cannot see (D-22, ledger 10 IN-01).
   const collapseCallout = useEffectEvent((): boolean => {
     if (expandedId === null) return false;
     const id = cssEscape(expandedId);
@@ -353,7 +357,9 @@ export default function PhotoViewer({
     const candidates = viewerRef.current?.querySelectorAll<HTMLElement>(
       `[data-hotspot-label="${id}"], [data-hotspot-row="${id}"]`
     );
-    [...(candidates ?? [])].find((el) => el.getClientRects().length > 0)?.focus();
+    const shown = [...(candidates ?? [])].find((el) => el.getClientRects().length > 0);
+    if (!shown) return false;
+    shown.focus();
     return true;
   });
   useLayoutEffect(() => lightbox?.registerEscape(() => collapseCallout()), [lightbox]);

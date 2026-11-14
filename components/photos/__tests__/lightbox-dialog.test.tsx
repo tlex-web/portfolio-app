@@ -181,13 +181,34 @@ describe('LightboxDialog', () => {
       const [first] = within(key).getAllByRole('button', { hidden: true });
       fireEvent.click(first);
       expect(first).toHaveAttribute('aria-expanded', 'true');
+      // jsdom has no layout, so no element has client rects. One rect stands in for the key
+      // tier, where the row is shown: only a visible callout takes Escape (D-22).
+      jest.spyOn(first, 'getClientRects').mockReturnValue([{}] as unknown as DOMRectList);
       fireEvent.keyDown(document, { key: 'Escape' });
       expect(first).toHaveAttribute('aria-expanded', 'false');
+      expect(first).toHaveFocus();
       // The callout took the press, so the lightbox did not close.
       expect(mockRouter.back).not.toHaveBeenCalled();
     } finally {
       CSS.escape = escape;
     }
+  });
+
+  it('a hidden callout is cleared without taking Escape, so the lightbox closes (D-22)', () => {
+    const view = photoViews.find((v) => v.id === 'img-0662')!;
+    render(
+      <LightboxDialog labelledBy="photo-title">
+        <PhotoViewer variant="modal" photos={photoViews} initialSlug={view.slug} />
+      </LightboxDialog>
+    );
+    const key = screen.getByRole('list', { name: 'Labels', hidden: true });
+    const [first] = within(key).getAllByRole('button', { hidden: true });
+    fireEvent.click(first);
+    expect(first).toHaveAttribute('aria-expanded', 'true');
+    // No stub: jsdom reports no client rects, so neither the label nor the row is visible.
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(first).toHaveAttribute('aria-expanded', 'false');
+    expect(mockRouter.back).toHaveBeenCalledTimes(1);
   });
 
   it('hiding labels collapses the open callout; showing them again starts collapsed (D-12)', () => {
