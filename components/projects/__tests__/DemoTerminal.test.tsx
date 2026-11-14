@@ -387,7 +387,7 @@ describe('DemoTerminal step buttons (ENG-06, D-01 to D-03)', () => {
     expect(region()).toHaveAttribute('data-command', '2');
   });
 
-  it('Next is aria-disabled on the last command, stays focusable and a press changes nothing (D-03)', async () => {
+  it('Next is aria-disabled on the last command, stays focusable and a press changes nothing and presses nothing (D-03)', async () => {
     const { user } = setup();
     await user.click(next());
     await user.click(next());
@@ -395,10 +395,16 @@ describe('DemoTerminal step buttons (ENG-06, D-01 to D-03)', () => {
     expect(region()).toHaveAttribute('data-command', '4');
     expect(next()).toHaveAttribute('aria-disabled', 'true');
 
+    // Release the Pause the three steps pressed, so the end press could show
+    // pressing it (stepTo's null reaches show, which owns the D-03 end rule).
+    fireEvent.click(toggle());
+    expect(toggle()).toHaveAttribute('aria-pressed', 'false');
+
     act(() => next().focus());
     expect(next()).toHaveFocus();
     await user.click(next());
     expect(region()).toHaveAttribute('data-command', '4');
+    expect(toggle()).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('Previous is aria-disabled on command 1 and a press changes nothing and presses nothing (D-03)', async () => {

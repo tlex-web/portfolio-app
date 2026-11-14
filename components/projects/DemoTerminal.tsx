@@ -386,9 +386,7 @@ export default function DemoTerminal({
               aria-label="Previous command"
               aria-disabled={state.index === 0 ? 'true' : undefined}
               className={STEP}
-              onClick={() => {
-                if (state.index > 0) show(stepTo(state.index, -1, count));
-              }}
+              onClick={() => show(stepTo(state.index, -1, count))}
             >
               <CaretLeftIcon size={24} aria-hidden="true" />
             </button>
@@ -421,9 +419,7 @@ export default function DemoTerminal({
               aria-label="Next command"
               aria-disabled={state.index === count - 1 ? 'true' : undefined}
               className={STEP}
-              onClick={() => {
-                if (state.index < count - 1) show(stepTo(state.index, 1, count));
-              }}
+              onClick={() => show(stepTo(state.index, 1, count))}
             >
               <CaretRightIcon size={24} aria-hidden="true" />
             </button>
