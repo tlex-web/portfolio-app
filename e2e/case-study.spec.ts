@@ -661,6 +661,30 @@ test.describe('Demo (ENG-05)', () => {
     await expect(region).toHaveAttribute('data-playback', 'playing');
   });
 
+  test('Next command steps one command and presses Pause (ENG-06, D-02)', async ({ page }) => {
+    await page.goto(BOX);
+    const region = page.getByRole('region', { name: regionName });
+    const toggle = region.getByRole('button', { name: 'Pause demo', exact: true });
+    const next = region.getByRole('button', { name: 'Next command', exact: true });
+    await region.scrollIntoViewIfNeeded();
+    // Hover first, so autoplay cannot advance between the read and the press.
+    await next.hover();
+    await expect(region).toHaveAttribute('data-playback', 'paused');
+
+    const before = Number(await region.getAttribute('data-command'));
+    await next.click();
+    const stepped = String(before + 1);
+    await expect(region).toHaveAttribute('data-command', stepped);
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await expect(region).toHaveAttribute('data-playback', 'paused');
+
+    // Pointer and focus leave: the step's sticky Pause still holds it.
+    await leaveTerminal(page);
+    await page.waitForTimeout(4000);
+    await expect(region).toHaveAttribute('data-command', stepped);
+    await expect(region).toHaveAttribute('data-playback', 'paused');
+  });
+
   test('no horizontal scroll at 375 px', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 800 });
     await page.goto(BOX);

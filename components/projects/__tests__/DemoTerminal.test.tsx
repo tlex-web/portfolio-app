@@ -346,6 +346,44 @@ describe('DemoTerminal selector dots (D-03)', () => {
   });
 });
 
+describe('DemoTerminal step buttons (ENG-06, D-01 to D-03)', () => {
+  function next() {
+    return within(region()).getByRole('button', { name: 'Next command' });
+  }
+
+  it('Next shows the next command complete and presses the sticky Pause (D-02)', async () => {
+    const { user } = setup();
+    expect(region()).toHaveAttribute('data-command', '1');
+
+    await user.click(next());
+    expect(region()).toHaveAttribute('data-command', '2');
+    expect(cell(2)).toHaveTextContent('show disk');
+    expect(cell(2)).toHaveTextContent('df -h');
+    expect(toggle()).toHaveAttribute('aria-pressed', 'true');
+    expect(region()).toHaveAttribute('data-playback', 'paused');
+
+    // Pointer and focus leave: only releasing Pause resumes.
+    await user.click(screen.getByRole('button', { name: 'Outside' }));
+    expect(region()).toHaveAttribute('data-playback', 'paused');
+    advance(10000);
+    expect(region()).toHaveAttribute('data-command', '2');
+  });
+
+  it('Next is aria-disabled on the last command, stays focusable and a press changes nothing (D-03)', async () => {
+    const { user } = setup();
+    await user.click(next());
+    await user.click(next());
+    await user.click(next());
+    expect(region()).toHaveAttribute('data-command', '4');
+    expect(next()).toHaveAttribute('aria-disabled', 'true');
+
+    act(() => next().focus());
+    expect(next()).toHaveFocus();
+    await user.click(next());
+    expect(region()).toHaveAttribute('data-command', '4');
+  });
+});
+
 describe('DemoTerminal reduced motion', () => {
   it('starts pressed with every command complete and nothing advancing', () => {
     setReducedMotion(true);
@@ -490,8 +528,12 @@ describe('DemoTerminal lines (D-26)', () => {
       within(region()).getByText((_, el) => el?.tagName === 'P' && el.textContent === 'box · 1 / 4')
     ).toBeInTheDocument();
     expect(region()).not.toHaveTextContent('Request');
-    // The Pause icon is the only drawn icon: no warning icon line.
-    expect(region().querySelectorAll('svg')).toHaveLength(1);
+    // The only drawn icons are the Pause icon and one caret per step button
+    // (ENG-06), all inside buttons: no warning icon line.
+    const steps = within(region()).getAllByRole('button', { name: /^(Previous|Next) command$/ });
+    const icons = Array.from(region().querySelectorAll('svg'));
+    expect(icons).toHaveLength(1 + steps.length);
+    icons.forEach((icon) => expect(icon.closest('button')).not.toBeNull());
   });
 
   it('draws a note once, under its output, in the hidden body', () => {

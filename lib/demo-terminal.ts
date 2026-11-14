@@ -99,6 +99,18 @@ export function goTo(index: number, count: number): TerminalState {
   return { index, phase: 'shown', chars: 0 };
 }
 
+/**
+ * One manual step, Previous (-1) or Next (1), to the neighbouring command,
+ * complete (D-03, 14-CONTEXT; 14-UI-SPEC Contract 1). Steps stop at the ends:
+ * it returns null when `index + dir` is outside [0, count), so it never wraps
+ * and never reaches goTo's RangeError (14-RESEARCH Pitfall 8). Autoplay's
+ * loop from the last command back to the first, in `tick`, is unchanged.
+ */
+export function stepTo(index: number, dir: -1 | 1, count: number): TerminalState | null {
+  const next = index + dir;
+  return next >= 0 && next < count ? goTo(next, count) : null;
+}
+
 /** How long the state lasts before the next tick, in ms. */
 export function delayFor(state: TerminalState): number {
   switch (state.phase) {

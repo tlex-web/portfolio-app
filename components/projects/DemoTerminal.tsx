@@ -8,13 +8,14 @@ import {
   useSyncExternalStore,
   type FocusEvent,
 } from 'react';
-import { PauseIcon } from '@phosphor-icons/react/dist/ssr';
+import { CaretRightIcon, PauseIcon } from '@phosphor-icons/react/dist/ssr';
 import {
   delayFor,
   goTo,
   initialState,
   isPlaying,
   releaseSticky,
+  stepTo,
   tick,
   visibleLines,
   type TerminalCommand,
@@ -30,6 +31,14 @@ const TOGGLE =
 /** One selector dot: a 44 x 44 px hit area around the drawn dot (11-UI-SPEC "Selector dots"). */
 const DOT =
   'group inline-flex size-11 shrink-0 cursor-pointer touch-manipulation items-center justify-center rounded-sm';
+
+/**
+ * Previous and Next command (14-UI-SPEC Contract 1): the CarouselControls
+ * STEP_BUTTON string verbatim, one look for every ‹ › on the site; at an end
+ * aria-disabled, dimmed, hover off.
+ */
+const STEP =
+  'inline-flex size-11 shrink-0 cursor-pointer touch-manipulation items-center justify-center rounded-sm border border-line-strong text-ink transition-colors duration-(--duration-fast) ease-erosion hover:bg-surface-overlay aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:bg-transparent';
 
 /** document.hidden as an external store, so no state is set in an effect body. */
 function subscribeVisibility(callback: () => void): () => void {
@@ -209,6 +218,17 @@ export default function DemoTerminal({
     setFocusWithin(released.focusWithin);
   }
 
+  /**
+   * A manual move (a step or a dot): show the target complete and press the
+   * sticky Pause (D-02). A null target is an end press: nothing changes and
+   * nothing is pressed (D-03).
+   */
+  function show(target: TerminalState | null) {
+    if (target === null) return;
+    setState(target);
+    setOverride(true);
+  }
+
   function onBlur(e: FocusEvent<HTMLDivElement>) {
     // Focus moving between the toggle and the dots stays inside: keep the pause.
     if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
@@ -314,6 +334,17 @@ export default function DemoTerminal({
               </button>
             );
           })}
+          <button
+            type="button"
+            aria-label="Next command"
+            aria-disabled={state.index === count - 1 ? 'true' : undefined}
+            className={STEP}
+            onClick={() => {
+              if (state.index < count - 1) show(stepTo(state.index, 1, count));
+            }}
+          >
+            <CaretRightIcon size={24} aria-hidden="true" />
+          </button>
         </div>
       )}
     </div>
