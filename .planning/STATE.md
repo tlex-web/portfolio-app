@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 15
 current_phase_name: Region & Plate Data Model
 status: executing
-stopped_at: Completed 15-13-PLAN.md
-last_updated: "2026-11-14T22:33:49.635Z"
+stopped_at: Completed 15-14-PLAN.md
+last_updated: "2026-11-14T22:46:41.510Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 15 execution started
-state_head: 54b2af126304ce7fc2054e66014dbd8de079f9b8
+state_head: 8a139a9fa351b874490207a0040a54bdbccef68f
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 46
-  completed_plans: 43
+  completed_plans: 44
   percent: 29
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-14)
 ## Current Position
 
 Phase: 15 (Region & Plate Data Model) — EXECUTING
-Plan: 14 of 16
+Plan: 15 of 16
 Status: Ready to execute
 Last activity: 2026-11-14 — Phase 15 execution started
 
@@ -98,6 +98,7 @@ Progress: [███░░░░░░░] 29%
 | Phase 15 P11 | 11min | 3 tasks | 12 files |
 | Phase 15 P12 | 8min | 3 tasks | 5 files |
 | Phase 15 P13 | 8 min | 3 tasks | 4 files |
+| Phase 15 P14 | 10min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -218,6 +219,8 @@ Recent decisions affecting current work:
 - [Phase 15]: 15-12: the five MP4 telemetry-track clips (DJI djmd, dbgi, GoPro gpmd, sbtl, text) are spliced in memory from good-mp4 at selftest time; a determinism case pins them at 1,348 B; no MP4 or sidecar fixture enters git
 - [Phase 15]: 15-13: ci-gate rule 17 covers job-level reusable-workflow with: blocks as well as uses: steps (inputs are substituted before either runs)
 - [Phase 15]: 15-13: rule 18 follows the plan literally; a relay name expression without needs now reports both rule 5 and rule 18
+- [Phase 15]: 15-14: navHeightPx() reads --nav-h through a probe sized var(--nav-h) (getBoundingClientRect().height, fractional); revealTrigger and e2e triggerState both use it plus documentElement.clientHeight (14 IN-01, IN-02)
+- [Phase 15]: 15-14: the new Firefox browser-Back LBOX-08 row passed 8/8 with no Playwright #43967 crash, so no @firefox-43967 tag was added (14 IN-06)
 
 ### Pending Todos
 
@@ -273,6 +276,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-14T22:33:49.279Z
-Stopped at: Completed 15-13-PLAN.md
+Last session: 2026-11-14T22:46:41.152Z
+Stopped at: Completed 15-14-PLAN.md
 Resume file: None
