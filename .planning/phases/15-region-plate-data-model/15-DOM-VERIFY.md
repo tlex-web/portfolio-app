@@ -42,3 +42,6 @@ The live-DOM step is advisory: it never blocks a wave. The orchestrator wrote th
 | 9 | 15-09 | Home pixel-neutral after the rail-start removal | could_not_look / browser_not_selected | Playwright `PW_PROD=1` Chromium + Firefox, 230 passed, 0 flaky (15-09 SUMMARY) |
 | 10 | 15-10 | photo links keep the same href (no URL string changes) | could_not_look / browser_not_selected | `photo-routes.test.ts` 34 rows; six photo-route specs `PW_PROD=1` Chromium, 152 passed |
 | 11 | 15-11 | footer, poster, map sheet and light table zero visual diff | could_not_look / browser_not_selected | `renderToStaticMarkup(<SiteFooter />)` byte-identical (7,433 B, same sha256); ContourField mask-URL test; light-table specs Chromium 62 passed; Linux pixel gate is the CI visual job at 15-16 |
+| 12 | 15-12 | none (telemetry guard, `.gitignore`, MP4 walker fixtures) | n/a | `guard:selftest` 250/250; `guard:images` OK |
+| 13 | 15-13 | none (ci-gate rules 17-18, SafeCanvas comment) | n/a | `guard:ci` on real workflows; selftest 256/256; SafeCanvas Jest 10/10 |
+| 14 | 15-14 | lightbox reveal (LBOX-08) correct for any `--nav-h` unit; SiteNav current-link close unchanged; no visual change | could_not_look / browser_not_selected | lightbox spec Chromium + Firefox 122 passed (incl. new browser-Back row in Firefox 8/8); shell spec 74; ENG-06 20; LBOX-08 17; Jest rem + clientHeight rows |
