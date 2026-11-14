@@ -429,6 +429,8 @@ Quick-reference rules applied: `color-contrast`, `focus-states`, `focus-appearan
 | P4 | `scroll-mb-4` on `[data-photo-id]` triggers for the ring's bottom clearance | Handle the 4 px in the restore code instead |
 | P5 | Menu baseline on `/projects` with the current row focused | Any other route; the current row is what shows the ring/bar meeting |
 
+**Resolved at plan review (Tim, 2026-11-14):** P1, P2, P3 and P5 keep the defaults. P4 takes the alternative: the 4 px ring clearance is handled in the restore code (`revealTrigger` in `LightboxDialog.tsx`, 14-RESEARCH.md), and no `scroll-mb-4` class is added. See 14-CONTEXT.md D-21.
+
 ---
 
 ## Checker Sign-Off
@@ -441,7 +443,7 @@ Quick-reference rules applied: `color-contrast`, `focus-states`, `focus-appearan
 - [x] Dimension 6 Registry Safety: PASS
 - [x] Dimension 7 Inventory Provenance: PASS
 
-**Approval:** approved 2026-11-14 (gsd-ui-checker: 7/7 PASS on the first pass with no revisions and 5 non-blocking recommendations; UI-consideration probe 40/40 resolved, 0 unresolved). Defaults P1–P5 above stay open for Tim at plan review.
+**Approval:** approved 2026-11-14 (gsd-ui-checker: 7/7 PASS on the first pass with no revisions and 5 non-blocking recommendations; UI-consideration probe 40/40 resolved, 0 unresolved). Defaults P1–P5 were resolved by Tim at plan review on 2026-11-14 (P4 → restore code; the rest as drafted).
 
 **Checker recommendations carried to planning (non-blocking):**
 - "Transcript" is a bare-noun disclosure label. It is fine under the "Demo" h2; switch to "Command transcript" if that heading context changes.
