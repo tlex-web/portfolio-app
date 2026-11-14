@@ -285,6 +285,20 @@ describe('revealTrigger (LBOX-08)', () => {
     expect(scrollSpy).toHaveBeenCalledWith({ top: 600 - RING - NAV_H, behavior: 'instant' });
   });
 
+  it('revealTrigger rounds the target outward to a whole pixel, since the browser snaps window scrolling', () => {
+    // Below the fold by 4.4 px with the ring: 5, never 4 (Chromium snapped 348.375 to 348).
+    revealTrigger(trigger(300.4, 150, 'below'));
+    // Under the nav by 37.5 px with the ring: -38.
+    revealTrigger(trigger(30.5, 44, 'under'));
+    // Taller than the room: top-aligned, rounded so the ring stays clear of the nav.
+    revealTrigger(trigger(600.5, 503, 'tall'));
+    expect(scrollSpy.mock.calls).toEqual([
+      [{ top: 5, behavior: 'instant' }],
+      [{ top: -38, behavior: 'instant' }],
+      [{ top: 532, behavior: 'instant' }],
+    ]);
+  });
+
   it('revealTrigger does not scroll when the trigger and its ring are already in view', () => {
     // Exactly the ring's room on both edges: top - 4 = 64 and bottom + 4 = 450.
     revealTrigger(trigger(NAV_H + RING, INNER_HEIGHT - NAV_H - 2 * RING));

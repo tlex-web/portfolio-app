@@ -120,6 +120,9 @@ const RING_PX = 4;
  * (LBOX-08, D-09). A trigger taller than the room below the nav is top-aligned, its ring just
  * below the nav. Window only, never scrollIntoView: that also scrolls scrollable ancestors,
  * and the map plates sit inside the sheet's overflow-hidden box (14-RESEARCH Pitfall 2).
+ * The target scroll position is rounded outward to a whole pixel: Chromium snaps the window's
+ * scroll position, and a request for 348.375 px landed on 348, leaving the ring 0.375 px
+ * under the viewport edge (Grid at 1366 x 650).
  */
 export function revealTrigger(el: HTMLElement): void {
   const navH =
@@ -127,9 +130,13 @@ export function revealTrigger(el: HTMLElement): void {
   const rect = el.getBoundingClientRect();
   const top = rect.top - RING_PX;
   const bottom = rect.bottom + RING_PX;
-  let delta = 0;
-  if (top < navH) delta = top - navH;
-  else if (bottom > window.innerHeight) delta = Math.min(bottom - window.innerHeight, top - navH);
+  const y = window.scrollY;
+  let target = y;
+  if (top < navH) target = Math.floor(y + top - navH);
+  else if (bottom > window.innerHeight) {
+    target = Math.min(Math.ceil(y + bottom - window.innerHeight), Math.floor(y + top - navH));
+  }
+  const delta = target - y;
   if (delta !== 0) window.scrollBy({ top: delta, behavior: 'instant' });
 }
 
