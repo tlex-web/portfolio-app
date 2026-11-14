@@ -997,6 +997,157 @@ async function tempDeriveRoot() {
 const photoDeriveRoot = await tempDeriveRoot();
 const photoDeriveBefore = snapshotTree(photoDeriveRoot);
 
+// scripts/terrain/: the plate registry through --root (DATA-11, 15-05 D-13)
+const TERRAIN_BUILD = path.join(repoRoot, 'scripts', 'terrain', 'build-terrain.mjs');
+const TERRAIN_PUBLIC = 'public/terrain';
+/** Every file a terrain build reads or compares, besides public/terrain/ (copied whole). */
+const TERRAIN_INPUTS = [
+  'data/terrain/source/source.json',
+  'data/terrain/source/dem-10m.png',
+  'data/terrain/plates.json',
+  'data/generated/terrain.ts',
+  'data/generated/precache.json',
+  'data/generated/plates.ts',
+];
+/** The modules a fixture plate must leave byte-equal (D-14, D-15). */
+const TERRAIN_HOME_MODULES = ['data/generated/terrain.ts', 'data/generated/precache.json'];
+/** The synthetic second plate (D-13): a 2D plate with the declared output set (D-12). */
+const FIXTURE_PLATE = {
+  id: 'fixture',
+  prefix: 'fixture-',
+  source: 'data/terrain/plates/fixture',
+  home: false,
+  threeD: false,
+  outputs: { contours: ['hero', 'strip'], hillshade: [1100, 640] },
+  strip: { centreN: 1200500 },
+};
+/** The six files the fixture plate builds, flat in public/terrain/ (D-11). */
+const FIXTURE_FILES = [
+  /^fixture-contours-hero\.[0-9a-f]{10}\.svg$/,
+  /^fixture-contours-strip\.[0-9a-f]{10}\.svg$/,
+  /^fixture-hillshade-1100\.[0-9a-f]{10}\.avif$/,
+  /^fixture-hillshade-1100\.[0-9a-f]{10}\.webp$/,
+  /^fixture-hillshade-640\.[0-9a-f]{10}\.avif$/,
+  /^fixture-hillshade-640\.[0-9a-f]{10}\.webp$/,
+];
+/**
+ * The fixture DEM: 100 x 100 grey16 PNG bytes, a cosine hill from 1,500 m at the
+ * corners to about 2,500 m at the centre, stored in decimetres (heightScale 0.1),
+ * so 100 m contours exist. Synthetic, so no network and no real region data.
+ */
+async function fixtureDem() {
+  const n = 100;
+  const u16 = new Uint16Array(n * n);
+  const rMax = Math.hypot(49.5, 49.5);
+  for (let y = 0; y < n; y++) {
+    for (let x = 0; x < n; x++) {
+      const r = Math.hypot(x - 49.5, y - 49.5) / rMax;
+      u16[y * n + x] = Math.round((1500 + 1000 * (0.5 + 0.5 * Math.cos(Math.PI * r))) * 10);
+    }
+  }
+  // Pass the Uint16Array itself: a Buffer with raw depth 'ushort' corrupts silently (build-terrain.mjs encodeGrey16).
+  return sharp(u16, { raw: { width: n, height: n, channels: 1 } }).toColourspace('grey16').png().toBuffer();
+}
+/**
+ * Copies the terrain build's inputs and every public/terrain/ file into a fresh
+ * temp root. With `fixture`, writes the synthetic plate (its DEM and source.json
+ * under data/terrain/plates/fixture/) and lists it in the copy's registry, before
+ * matterhorn when `fixtureFirst` (registry order must change no Matterhorn byte).
+ * Async because sharp makes the DEM; nested one level down so the cleanup loop's
+ * path.dirname removes the mkdtemp directory.
+ */
+async function tempTerrainRoot({ fixture = false, fixtureFirst = false } = {}) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
+  const root = path.join(dir, 'root');
+  const put = (rel, bytes) => {
+    fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
+    fs.writeFileSync(path.join(root, rel), bytes);
+  };
+  const terrainFiles = fs
+    .readdirSync(path.join(repoRoot, TERRAIN_PUBLIC), { withFileTypes: true })
+    .filter((d) => d.isFile())
+    .map((d) => `${TERRAIN_PUBLIC}/${d.name}`);
+  for (const rel of [...TERRAIN_INPUTS, ...terrainFiles]) put(rel, fs.readFileSync(path.join(repoRoot, rel)));
+  if (fixture) {
+    const png = await fixtureDem();
+    put(`${FIXTURE_PLATE.source}/dem-10m.png`, png);
+    const source = {
+      product: 'swissALTIRegio',
+      stacItemUrl: 'https://example.invalid/fixture/stac-item',
+      cogUrl: 'https://example.invalid/fixture/dem.tif',
+      stacDatetime: '2026-05-28T00:00:00Z',
+      stacUpdated: '2026-05-28T00:00:00Z',
+      checksum: `1220${'0'.repeat(64)}`,
+      edition: '2026-05',
+      editionSource: 'stac:datetime',
+      crs: 'EPSG:2056',
+      heightSystem: 'LN02',
+      extent: { west: 2600000, south: 1200000, east: 2601000, north: 1201000 },
+      cellM: 10,
+      width: 100,
+      height: 100,
+      heightScale: 0.1,
+      file: 'dem-10m.png',
+      sha256: crypto.createHash('sha256').update(png).digest('hex'),
+    };
+    put(`${FIXTURE_PLATE.source}/source.json`, `${JSON.stringify(source, null, 2)}\n`);
+    const registry = JSON.parse(fs.readFileSync(path.join(root, 'data/terrain/plates.json'), 'utf-8'));
+    registry.plates = fixtureFirst ? [FIXTURE_PLATE, ...registry.plates] : [...registry.plates, FIXTURE_PLATE];
+    put('data/terrain/plates.json', `${JSON.stringify(registry, null, 2)}\n`);
+  }
+  return root;
+}
+/** Runs the terrain build in write mode on `root`; null on success, else why it failed. */
+function terrainWrite(root) {
+  const r = spawnSync(process.execPath, [...PHOTO_NODE_ARGS, TERRAIN_BUILD, '--root', root], { encoding: 'utf-8' });
+  if (r.status === 0) return null;
+  return `terrain:build (write) on the fixture root exited ${r.status}: ${`${r.stdout ?? ''}${r.stderr ?? ''}`.trim().split('\n').slice(-5).join(' | ')}`;
+}
+/** The file names in `root`'s public/terrain/. */
+const terrainListing = (root) => fs.readdirSync(path.join(root, TERRAIN_PUBLIC)).sort();
+/** Each repo file in `rels` that differs in `root`, by name; null when all are byte-equal. */
+function terrainBytesEqual(root, rels) {
+  const differ = rels.filter((rel) => {
+    const p = path.join(root, rel);
+    return !fs.existsSync(p) || !fs.readFileSync(p).equals(fs.readFileSync(path.join(repoRoot, rel)));
+  });
+  return differ.length ? `not byte-equal to the repo: ${differ.join(', ')}` : null;
+}
+/** The plate ids of `root`'s generated plates.ts, in file order. */
+function terrainPlateIds(root) {
+  const text = fs.readFileSync(path.join(root, 'data/generated/plates.ts'), 'utf-8');
+  const m = /export const plates = ([\s\S]*) as const;\s*$/.exec(text);
+  return m ? Object.keys(JSON.parse(m[1])) : [];
+}
+/** The Matterhorn files the repo serves today (the nine D-15 names). */
+const matterhornFiles = () => terrainListing(repoRoot).map((f) => `${TERRAIN_PUBLIC}/${f}`);
+/**
+ * The fixture case's assertions after a write run: Matterhorn files and the home
+ * modules byte-equal, exactly the six prefixed files new, plates.ts lists both.
+ */
+function fixturePlateProblems(root, writeError) {
+  if (writeError) return writeError;
+  const problems = [];
+  const same = terrainBytesEqual(root, [...matterhornFiles(), ...TERRAIN_HOME_MODULES]);
+  if (same) problems.push(same);
+  const repoNames = new Set(terrainListing(repoRoot));
+  const added = terrainListing(root).filter((f) => !repoNames.has(f));
+  const unmatched = added.filter((f) => !FIXTURE_FILES.some((re) => re.test(f)));
+  if (unmatched.length) problems.push(`unexpected new files: ${unmatched.join(', ')}`);
+  for (const re of FIXTURE_FILES) {
+    const n = added.filter((f) => re.test(f)).length;
+    if (n !== 1) problems.push(`${n} files match ${re.source}, expected 1`);
+  }
+  if (added.some((f) => f.startsWith('fixture-heightmap-') || f.startsWith('fixture-contours-map-')))
+    problems.push('a 2D plate got a heightmap or a map LOD (D-12)');
+  const ids = terrainPlateIds(root);
+  if (JSON.stringify([...ids].sort()) !== JSON.stringify(['fixture', 'matterhorn']))
+    problems.push(`plates.ts lists ${ids.join(', ') || 'nothing'}, expected fixture and matterhorn`);
+  return problems.length ? problems.join('; ') : null;
+}
+const terrainFixtureRoot = await tempTerrainRoot({ fixture: true, fixtureFirst: true });
+let terrainFixtureWrite = null;
+
 const cases = [
   {
     name: 'parity: good fixture passes',
@@ -2285,6 +2436,20 @@ const cases = [
     expectOutput: ['photos:derive: encoded img-0001 (9 files)', 'unsupported image format'],
     check: () => treeUnchanged(photoDeriveRoot, photoDeriveBefore),
   },
+  {
+    // D-13: the fixture is listed before matterhorn, so a byte-equal Matterhorn also proves registry order changes no output.
+    name: 'terrain: a fixture 2D plate gets its own prefixed files and Matterhorn stays byte-equal',
+    guard: TERRAIN_BUILD,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--check'],
+    setup: () => {
+      terrainFixtureWrite = terrainWrite(terrainFixtureRoot);
+      return ['--root', terrainFixtureRoot];
+    },
+    expectExit: 0,
+    expectOutput: ['terrain: OK'],
+    check: () => fixturePlateProblems(terrainFixtureRoot, terrainFixtureWrite),
+  },
   ...WORKFLOW_SHELL_CASES,
   ...CI_GATE_PARSER_CASES,
 ];
@@ -2342,7 +2507,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDeriveRoot, ...ciGateTempRoots]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDeriveRoot, terrainFixtureRoot, ...ciGateTempRoots]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 

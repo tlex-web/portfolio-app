@@ -40,6 +40,11 @@
  * DEM and builds the outputs its registry entry declares. The home plate keeps
  * today's unprefixed names (D-11) and alone writes data/generated/terrain.ts and
  * precache.json (D-14); data/generated/plates.ts carries every plate's 2D sheet.
+ * Every other plate's files are `<id>-<asset>.<hash>.<ext>`, flat in public/terrain/
+ * (D-11); every lookup is anchored to the plate's own prefix, so one plate's file is
+ * never another plate's candidate. A threeD: false plate builds only the contour
+ * LODs and poster sizes it declares, never a heightmap or a map LOD (D-12). The
+ * stale-file sweep and --check compare against the union of every plate's names.
  *
  * --check by artifact type (RESEARCH Pattern 3):
  *   SVG, terrain.ts and  regenerated in memory and compared byte for byte.
@@ -55,7 +60,8 @@
  *                        terrain.ts must equal source.json and HILLSHADE.
  *   source raster        sha256 equals source.json.
  *   public/terrain/      missing or extra managed files (contours-*.svg,
- *                        heightmap-*.png, hillshade-*.avif/webp) are reported.
+ *                        heightmap-*.png, hillshade-*.avif/webp, with or without
+ *                        a plate prefix) are reported.
  *
  * Modes:
  *   (default)  write every artifact and delete stale managed files. A committed
@@ -135,9 +141,12 @@ const PRECACHE_PATH = path.join(ROOT, PRECACHE_REL);
 const PLATES_META_REL = 'data/generated/plates.ts';
 const PLATES_META_PATH = path.join(ROOT, PLATES_META_REL);
 
-/** Files this script owns in public/terrain/; anything else there is left alone. */
+/**
+ * Files this script owns in public/terrain/, with or without a plate prefix
+ * (<id>-, D-11); anything else there is left alone.
+ */
 const MANAGED =
-  /^(contours-[a-z0-9-]+\.[^.]+\.svg|heightmap-[0-9]+\.[^.]+\.png|hillshade-[0-9]+\.[^.]+\.(avif|webp))$/;
+  /^(?:[a-z]+(?:-[a-z]+)*-)?(contours-[a-z0-9-]+\.[^.]+\.svg|heightmap-[0-9]+\.[^.]+\.png|hillshade-[0-9]+\.[^.]+\.(avif|webp))$/;
 
 /**
  * D-17: the official summit, beside the DEM-sampled height. A home-plate
@@ -301,10 +310,11 @@ async function encodeGrey16(u16, size) {
 /**
  * The heightmap for `size`: the committed file when its name hash matches its
  * bytes and its pixels equal `u16`, else a fresh encoding. `problems` lists each
- * committed candidate that failed, with the reason.
+ * committed candidate that failed, with the reason. Candidates are anchored to the
+ * plate's own prefix (PlatePrefix admits only [a-z-], so it is literal here).
  */
-async function resolveHeightmap(size, u16) {
-  const base = `heightmap-${size}`;
+async function resolveHeightmap(prefix, size, u16) {
+  const base = `${prefix}heightmap-${size}`;
   const re = new RegExp(`^${base}\\.([0-9a-f]{10})\\.png$`);
   const problems = [];
   for (const f of managedFiles().filter((n) => re.test(n))) {
@@ -358,10 +368,13 @@ function encodePoster(grey8, size, format) {
     : img.webp({ quality: HILLSHADE.quality.webp }).toBuffer();
 }
 
-/** Why the committed poster `file` fails the --check rules, or null when it passes. */
-async function inspectPoster(file, size, format) {
-  const m = new RegExp(`^hillshade-${size}\\.([0-9a-f]{10})\\.${format}$`).exec(file);
-  if (!m) return `name is not hillshade-${size}.<hash>.${format}`;
+/**
+ * Why the committed poster `file` fails the --check rules, or null when it
+ * passes. The name is anchored to the plate's own prefix.
+ */
+async function inspectPoster(file, prefix, size, format) {
+  const m = new RegExp(`^${prefix}hillshade-${size}\\.([0-9a-f]{10})\\.${format}$`).exec(file);
+  if (!m) return `name is not ${prefix}hillshade-${size}.<hash>.${format}`;
   const p = path.join(PUBLIC_DIR, file);
   if (!fs.existsSync(p)) return 'missing';
   const bytes = fs.readFileSync(p);
@@ -397,41 +410,68 @@ function committedMeta() {
 }
 
 /**
- * Lossy posters are never compared with a regeneration. The committed set (the
- * URLs recorded in terrain.ts) is kept when every file passes inspectPoster and
- * terrain.ts records the current source sha256 and HILLSHADE; `problems` lists
- * each file that does not, with the reasons. With `encode`, a failing set is
- * replaced by a fresh encoding (`files`); without it (--check), `urls` stays the
- * recorded set so the terrain.ts comparison reports only other drift.
- *
- * `committed` is the module that records the plate's poster set: terrain.ts for
- * the home plate. A non-home plate passes null for now, so it always encodes
- * (15-05 reads its recorded set from plates.ts and makes the lookups prefix-aware).
+ * The committed plates.ts as data (every plate's sheet keyed by id), or null when
+ * it is missing or unreadable. An anchored parse, like committedMeta().
  */
-async function resolvePosters(plate, source, metres, committed, { encode }) {
+function committedPlates() {
+  if (!fs.existsSync(PLATES_META_PATH)) return null;
+  const m = /export const plates = ([\s\S]*) as const;\s*$/.exec(
+    fs.readFileSync(PLATES_META_PATH, 'utf8')
+  );
+  if (!m) return null;
+  try {
+    return JSON.parse(m[1]);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * A plate's recorded poster set and the shading parameters it was generated
+ * with. The home plate's set is in terrain.ts, any other plate's is its sheet in
+ * plates.ts. There is one global parameter set, recorded in terrain.ts.
+ */
+function recordedPosters(plate) {
+  const meta = committedMeta();
+  if (plate.home) return { rec: meta?.assets?.hillshade, params: meta?.hillshade, rel: META_REL };
+  return {
+    rec: committedPlates()?.[plate.id]?.assets?.hillshade,
+    params: meta?.hillshade,
+    rel: PLATES_META_REL,
+  };
+}
+
+/**
+ * Lossy posters are never compared with a regeneration. The committed set (the
+ * URLs recordedPosters() finds for the plate) is kept when every file passes
+ * inspectPoster and the record carries the current source sha256 and HILLSHADE;
+ * `problems` lists each file that does not, with the reasons. With `encode`, a
+ * failing set is replaced by a fresh encoding (`files`); without it (--check),
+ * `urls` stays the recorded set so the module comparisons report only other drift.
+ */
+async function resolvePosters(plate, source, metres, { rec, params, rel }, { encode }) {
   const sizes = POSTER_SIZES.filter((s) => plate.outputs.hillshade.includes(s));
-  const rec = committed?.assets?.hillshade;
   const problems = [];
   if (!rec) {
     problems.push({
       file: `${plate.prefix}hillshade-*`,
-      reason: `no assets.hillshade in ${plate.home ? META_REL : PLATES_META_REL}`,
+      reason: plate.home ? `no assets.hillshade in ${rel}` : `no ${plate.id} poster set in ${rel}`,
     });
   } else {
     const sameSource = rec.sourceSha256 === source.sha256;
-    const sameParams = JSON.stringify(committed.hillshade) === JSON.stringify(HILLSHADE);
+    const sameParams = JSON.stringify(params) === JSON.stringify(HILLSHADE);
     for (const format of POSTER_FORMATS) {
       for (const size of sizes) {
         const url = rec[format]?.[size];
         const file =
           typeof url === 'string'
             ? url.replace(/^\/terrain\//, '')
-            : `hillshade-${size}.<hash>.${format}`;
+            : `${plate.prefix}hillshade-${size}.<hash>.${format}`;
         const reasons = [];
         const bad =
           typeof url === 'string'
-            ? await inspectPoster(file, size, format)
-            : `not recorded in ${META_REL}`;
+            ? await inspectPoster(file, plate.prefix, size, format)
+            : `not recorded in ${rel}`;
         if (bad) reasons.push(bad);
         if (!sameSource)
           reasons.push(
@@ -479,7 +519,10 @@ async function buildPlate(plate, source, metres, { encode }) {
       size === GRIDS.desktop
         ? grid512
         : Float64Array.from(resampleBilinear(metres, W, H, size, size));
-    pngs.push({ size, ...(await resolveHeightmap(size, toUnit(grid, source.heightScale))) });
+    pngs.push({
+      size,
+      ...(await resolveHeightmap(prefix, size, toUnit(grid, source.heightScale))),
+    });
   }
 
   const lod = (base, text) => {
@@ -496,9 +539,7 @@ async function buildPlate(plate, source, metres, { encode }) {
   const stripUrl = lod('contours-strip', contourText(sw.grid, sw.W, sw.H, STRIP));
   const pngUrl = (size) => `/terrain/${pngs.find((p) => p.size === size).name}`;
 
-  const posters = await resolvePosters(plate, source, metres, plate.home ? committedMeta() : null, {
-    encode,
-  });
+  const posters = await resolvePosters(plate, source, metres, recordedPosters(plate), { encode });
   // --check with no recorded poster: the modules cannot be rebuilt, the problem says why.
   if (!posters.urls)
     return { svgs, pngs, posters, sheet: null, metaText: null, precacheText: null };
@@ -706,9 +747,9 @@ async function check() {
     loadedAll.push({ plate, ...loaded });
     if (!loaded.error) continue;
     lines.push(`${NAME}: ${loaded.error}`);
-    // The home plate's posters record the source they were generated from; name
+    // A plate's recorded posters name the source they were generated from; name
     // every one that source.json no longer vouches for.
-    const rec = plate.home ? committedMeta()?.assets?.hillshade : null;
+    const { rec } = recordedPosters(plate);
     if (rec && rec.sourceSha256 !== loaded.source.sha256) {
       for (const f of posterFiles(rec))
         lines.push(
