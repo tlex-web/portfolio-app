@@ -5,11 +5,11 @@ milestone_name: Survey Expansion
 current_phase: 14
 current_phase_name: UI Fixes & Terminal Controls
 status: planning
-stopped_at: Phase 14 context gathered
-last_updated: "2026-11-14T00:29:31.336Z"
+stopped_at: Phase 14 UI-SPEC approved
+last_updated: "2026-11-14T00:44:16.400Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 13 complete, transitioned to Phase 14
-state_head: 5fa465a8977b3acaae8c8a2c7651e6a2a7831027
+state_head: ad786606953e4e1cc612e6f408452b657b97e607
 progress:
   total_phases: 7
   completed_phases: 1
@@ -194,6 +194,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-14T00:29:31.274Z
-Stopped at: Phase 14 context gathered
-Resume file: .planning/phases/14-ui-fixes-terminal-controls/14-CONTEXT.md
+Last session: 2026-11-14T00:44:16.338Z
+Stopped at: Phase 14 UI-SPEC approved
+Resume file: .planning/phases/14-ui-fixes-terminal-controls/14-UI-SPEC.md
