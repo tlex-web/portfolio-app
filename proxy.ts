@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { projects } from '@/data/projects';
 import { site } from '@/data/site';
 import { EDGE_SECTION_HEADER, type EdgeSection } from '@/lib/edge-section';
-import { photoSlugs } from '@/lib/photos/view-model';
+import { photoRouteSlugs } from '@/lib/photos/routes';
 
 /**
  * Known detail slugs per section (EDGE-01). A miss is decided here, before
@@ -11,7 +11,7 @@ import { photoSlugs } from '@/lib/photos/view-model';
  * the 07-23 STATE blocker), so unknown slugs never reach those pages.
  */
 const KNOWN: Record<EdgeSection, ReadonlySet<string>> = {
-  photos: new Set(photoSlugs),
+  photos: new Set(photoRouteSlugs),
   projects: new Set(projects.map((p) => p.slug)),
 };
 

@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { projects } from '@/data/projects';
 import { site } from '@/data/site';
+import { photoHref } from '@/lib/photos/routes';
 import { photoSlugs } from '@/lib/photos/view-model';
 
 /**
@@ -15,7 +16,7 @@ import { photoSlugs } from '@/lib/photos/view-model';
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     ...site.nav.map((n) => ({ url: n.href === '/' ? site.url : `${site.url}${n.href}` })),
-    ...photoSlugs.map((slug) => ({ url: `${site.url}/photos/${slug}` })),
+    ...photoSlugs.map((slug) => ({ url: `${site.url}${photoHref(slug)}` })),
     ...projects.map((p) => ({ url: `${site.url}/projects/${p.slug}` })),
   ];
 }
