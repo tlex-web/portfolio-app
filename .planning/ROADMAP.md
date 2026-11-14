@@ -136,7 +136,32 @@ Plans:
   3. Every altimeter rail tick label keeps at least 4.5:1 contrast over the live canvas and over the poster at every breakpoint, and the rail scrim covers the full label run.
   4. After stepping in the lightbox and closing it with Escape, focus returns to the current photo's visible trigger and never lands off-screen, and a regression test holds this before Phase 18 rewrites the lightbox.
   5. The terminal demo has previous and next step buttons and a static transcript in a disclosure that is open by default under reduced motion.
-**Plans**: TBD
+**Plans**: 8 plans in 8 waves (serial: every plan runs the production e2e server on port 3000)
+
+Plans:
+**Wave 1**
+- [ ] 14-01-PLAN.md — Mobile menu: current-page tap closes the panel (D-16, D-23) and the inset focus ring, with the new menu baseline test (SHELL-07, SHELL-08)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 14-02-PLAN.md — Rail scrim stops deepened at the same width, B8 matrix and geometric gate; Home 375 px guard in four modes at every stop (HOME-10, HOME-09)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 14-03-PLAN.md — Lightbox focus on close: `revealTrigger` after the history restoration, and the D-11 regression matrix (LBOX-08)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 14-04-PLAN.md — Hidden-callout Escape: hiding labels collapses the callout, and a hidden callout never takes Escape (D-12, D-22; ledger 10 IN-01)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 14-05-PLAN.md — Terminal Previous and Next, sticky Pause on step and dot, end stops (ENG-06)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 14-06-PLAN.md — Terminal transcript disclosure, open after hydration under reduced motion, Pause on open; box baseline wait (ENG-06)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 14-07-PLAN.md — Ledger write-back (rows #6 and #30) and the full local gate with the declared PNG list
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 14-08-PLAN.md — With Tim's approval: CI on ci/14-08 (WebKit contingency), one visual re-baseline, Tim commits the PNGs
 **UI hint**: yes
 **UI-SPEC**: Required, short: the terminal step buttons and transcript disclosure, the rail scrim and the menu focus-ring treatment.
 **Research**: Not needed (small, well-understood fixes). Diagnose the Escape-focus root cause before fixing it; it was not diagnosed at 12-UAT.
