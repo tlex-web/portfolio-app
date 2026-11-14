@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 15
 current_phase_name: Region & Plate Data Model
 status: executing
-stopped_at: Completed 15-03-PLAN.md
-last_updated: "2026-11-14T20:33:13.081Z"
+stopped_at: Completed 15-04-PLAN.md
+last_updated: "2026-11-14T20:46:46.040Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 15 execution started
-state_head: bed94bfed457683f4a5bcf6a7419c421cd916ac8
+state_head: fae9a0f9e7e12a5deeede16bbb7083ddea06abfb
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 46
-  completed_plans: 33
+  completed_plans: 34
   percent: 29
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-14)
 ## Current Position
 
 Phase: 15 (Region & Plate Data Model) — EXECUTING
-Plan: 4 of 16
+Plan: 5 of 16
 Status: Ready to execute
 Last activity: 2026-11-14 — Phase 15 execution started
 
@@ -88,6 +88,7 @@ Progress: [███░░░░░░░] 29%
 | Phase 15 P01 | 9min | 2 tasks | 12 files |
 | Phase 15 P02 | 11 min | 2 tasks | 10 files |
 | Phase 15 P03 | 7 min | 3 tasks | 13 files |
+| Phase 15 P04 | 8 min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -185,6 +186,9 @@ Recent decisions affecting current work:
 - [Phase 15]: 15-02: template no-profile test uses route undefined instead of the out-of-schema 'no-such-trail' (no @ts-expect-error; D-26 alternative noted in SUMMARY)
 - [Phase 15]: 15-03: test-count --scan-only (guard:tests:scan) is the last step of npm run lint and also rejects an explicit --baseline; the GUARD-03 ratchet path is unchanged
 - [Phase 15]: 15-03: npm run type-check runs tsc --noEmit, tsconfig.jest.json and tsconfig.e2e.json at zero errors; the last 9 Jest-scope errors were fixed from real signatures with no any, ignore directive or new @ts-expect-error
+- [Phase 15]: 15-04: Plates requires the home plate to declare every output (terrain.ts records them all), so a trimmed home entry fails at the registry, not inside TerrainMeta
+- [Phase 15]: 15-04: resolvePosters takes the recording module; home passes terrain.ts, a non-home plate passes null (always encodes) until 15-05 adds committedPlates() and prefix-aware lookups
+- [Phase 15]: 15-04: the D-15 test compares the whole public/terrain/ listing as planned; Phase 16 must scope it to unprefixed names once real plates add prefixed files
 
 ### Pending Todos
 
@@ -240,6 +244,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-14T20:33:12.792Z
-Stopped at: Completed 15-03-PLAN.md
+Last session: 2026-11-14T20:46:45.731Z
+Stopped at: Completed 15-04-PLAN.md
 Resume file: None
