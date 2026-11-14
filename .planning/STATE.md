@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 15
 current_phase_name: Region & Plate Data Model
 status: executing
-stopped_at: Completed 15-05-PLAN.md
-last_updated: "2026-11-14T20:59:52.727Z"
+stopped_at: Completed 15-06-PLAN.md
+last_updated: "2026-11-14T21:12:51.662Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 15 execution started
-state_head: 402ca6937629eb36b2cf2cdceff17a7890768241
+state_head: 40e161ecebd22fa6a19c776c89368b42adf3652a
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 46
-  completed_plans: 35
+  completed_plans: 36
   percent: 29
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-14)
 ## Current Position
 
 Phase: 15 (Region & Plate Data Model) — EXECUTING
-Plan: 6 of 16
+Plan: 7 of 16
 Status: Ready to execute
 Last activity: 2026-11-14 — Phase 15 execution started
 
@@ -90,6 +90,7 @@ Progress: [███░░░░░░░] 29%
 | Phase 15 P03 | 7 min | 3 tasks | 13 files |
 | Phase 15 P04 | 8 min | 2 tasks | 10 files |
 | Phase 15 P05 | 9min | 2 tasks | 2 files |
+| Phase 15 P06 | 10min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -193,6 +194,9 @@ Recent decisions affecting current work:
 - [Phase 15]: 15-05: a non-home plate's poster set is read from plates.ts, compared with terrain.ts's recorded hillshade parameters (one global set)
 - [Phase 15]: 15-05: PLATE_BUDGET is checked in memory before write mode writes anything, and as a stale line in --check
 - [Phase 15]: 15-05: the selftest runner passes the spawn output to check(output) so a case can assert a runtime-hashed file name
+- [Phase 15]: 15-06: Country is a closed enum (AT, CH, DE, FR, IT, LI, MC, SI) copied from each photo-map record; never defaulted from the region or derived from coordinates (D-02)
+- [Phase 15]: 15-06: photos:build samples each photo on its own region's plate (photoMap -> regions -> plates.json source), one DEM load per plate; the off-extent message keeps its text plus '; plate <id>'
+- [Phase 15]: 15-06: lowestDemM stays exported until 15-08/15-09 move its readers (D-08)
 
 ### Pending Todos
 
@@ -248,6 +252,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-14T20:59:52.395Z
-Stopped at: Completed 15-05-PLAN.md
+Last session: 2026-11-14T21:12:51.292Z
+Stopped at: Completed 15-06-PLAN.md
 Resume file: None
