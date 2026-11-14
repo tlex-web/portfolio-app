@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { photos } from '@/data/generated/photos';
+import { homeWaypointIds } from '@/data/home';
 import { projects } from '@/data/projects';
 import { site } from '@/data/site';
 import { countLabel } from '@/lib/home-format';
@@ -18,7 +18,8 @@ function navLabel(href: string): string {
  * The two trail signs, Home's call to action (HOME-01, HOME-06; D-13;
  * 09-UI-SPEC "Trail Signs" and "Trail yellow"). Server component.
  *
- * Labels and hrefs come from site.nav, counts from the photo and project data,
+ * Labels and hrefs come from site.nav, counts from the Home waypoint list
+ * (DATA-09, D-09; still 4 after photos are added elsewhere) and the projects,
  * so the accessible names read "Photographs, 4 waypoints" and "Engineering, 2
  * routes". The name is an explicit aria-label built from the same strings: the
  * plate is a flex box, so its children are blockified and name computation
@@ -33,7 +34,7 @@ function navLabel(href: string): string {
  */
 export default function TrailSigns() {
   const signs = [
-    { href: '/photos', count: countLabel(photos.length, 'waypoint', 'waypoints') },
+    { href: '/photos', count: countLabel(homeWaypointIds.length, 'waypoint', 'waypoints') },
     { href: '/projects', count: countLabel(projects.length, 'route', 'routes') },
   ].map((sign) => ({ ...sign, label: navLabel(sign.href) }));
 

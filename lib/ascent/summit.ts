@@ -1,6 +1,5 @@
-import { lowestDemM } from '@/data/generated/photos';
 import { terrain } from '@/data/generated/terrain';
-import { buildWaypoints, type Waypoint } from '@/lib/ascent/waypoints';
+import { buildWaypoints, homeLowestDemM, type Waypoint } from '@/lib/ascent/waypoints';
 import { lv95ToWgs84, wgs84ToLv95 } from '@/lib/geo';
 import { formatKilometres, formatLatLon, formatYearRange } from '@/lib/home-format';
 import { formatMetres } from '@/lib/photo-format';
@@ -21,8 +20,9 @@ export type SummitPlaque = {
  * "Summit-plaque stats").
  *
  * UI-SPEC chose the four stats; every value is derived, never typed:
- * - Height gained: the official summit height minus the lowest photo's DEM
- *   height (the rail start), so the plaque states the climb the page made.
+ * - Height gained: the official summit height minus the lowest Home
+ *   waypoint's DEM height (homeLowestDemM, the rail start; D-08), so the
+ *   plaque states the climb the page made.
  * - Highest photograph: the waypoint with the largest altitude (an altitude
  *   tie keeps the earlier one in ascent order); its short place is the note,
  *   with ', approx.' when its position was placed by hand.
@@ -49,7 +49,7 @@ export function summitPlaque(waypoints: readonly Waypoint[] = buildWaypoints()):
     title: `${summit.name} summit`,
     height: formatMetres(summit.officialM),
     stats: [
-      { label: 'Height gained', value: formatMetres(summit.officialM - lowestDemM) },
+      { label: 'Height gained', value: formatMetres(summit.officialM - homeLowestDemM) },
       {
         label: 'Highest photograph',
         value: formatMetres(highest.altitudeM),

@@ -1,6 +1,7 @@
 import { imageManifest } from '@/data/generated/image-manifest';
-import { photos } from '@/data/generated/photos';
+import { homeWaypointIds } from '@/data/home';
 import { editorial } from '@/data/photos/editorial';
+import { homePhotos } from '@/lib/ascent/home-photos';
 import { formatCaptureMonth, shortPlace, type CaptureLike } from '@/lib/home-format';
 import { formatMetres } from '@/lib/photo-format';
 
@@ -66,6 +67,21 @@ export type WaypointInput = {
   imageManifest: ManifestInput;
 };
 
+/**
+ * Home's input for buildWaypoints (DATA-09; 15-CONTEXT D-06, D-09): the
+ * generated photos on the Home list, with the editorial copy and the image
+ * manifest. Membership comes from the list (homePhotos), the order still from
+ * buildWaypoints, so a photo added in another region, or an unlisted one,
+ * never reaches the cards, the poster pins, the 3D pins or the rail.
+ *
+ * @param ids the Home waypoint ids; defaults to homeWaypointIds (the parameter
+ *   exists for tests).
+ * @throws RangeError naming the id when a listed id has no generated photo.
+ */
+export function homeInput(ids: readonly string[] = homeWaypointIds): WaypointInput {
+  return { photos: homePhotos(ids), editorial, imageManifest };
+}
+
 const CARD_EDGES = [640, 1024] as const;
 
 function fail(id: string, problem: string): never {
@@ -84,13 +100,14 @@ function captureYear(capture: CaptureLike): number {
  * Every waypoint in ascent order, k = 1..n.
  *
  * @param input the photo facts, editorial copy and image manifest; defaults to
- *   the committed data (the parameter exists for unit tests).
+ *   Home's input, homeInput() (the parameter exists for unit tests, which pass
+ *   their own synthetic photos; nothing is filtered inside this function).
  * @throws RangeError on an empty photo set, a photo without its editorial or
  *   manifest entry (or its 640/1024 variant), a null position, uv or
  *   elevation, or a uv outside [0, 1].
  */
 export function buildWaypoints(
-  input: WaypointInput = { photos, editorial, imageManifest },
+  input: WaypointInput = homeInput(),
 ): readonly Waypoint[] {
   if (input.photos.length === 0) {
     throw new RangeError('buildWaypoints: the photo set is empty; Home needs at least one waypoint');
@@ -163,3 +180,11 @@ export function waypointKickerParts(w: Waypoint): readonly [altitude: string, wa
 export function waypointKicker(w: Waypoint): string {
   return waypointKickerParts(w).join(' ');
 }
+
+/**
+ * The altimeter rail start (DATA-09; 15-CONTEXT D-08): the lowest DEM height
+ * among the Home waypoints, 1,617 m today (img-0605). It is computed over the
+ * Home list, not over every photo, so a lower photo added elsewhere in the
+ * Alps cannot move the rail. summitPlaque's Height gained reads it.
+ */
+export const homeLowestDemM: number = buildWaypoints()[0].altitudeM;

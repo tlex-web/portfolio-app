@@ -1,9 +1,9 @@
 import { EnvelopeSimple, GithubLogo, LinkedinLogo } from '@phosphor-icons/react/dist/ssr';
 import ContourField from '@/components/terrain/ContourField';
-import { photos } from '@/data/generated/photos';
 import { terrain } from '@/data/generated/terrain';
 import { sheet } from '@/data/sheet';
 import { site } from '@/data/site';
+import { homePhotos } from '@/lib/ascent/home-photos';
 import {
   SCALE_TIERS,
   formatEquidistance,
@@ -45,8 +45,10 @@ const DD_VALUE = 'mt-1 font-mono text-sm text-ink tabular-nums';
  *
  * The full-bleed contour band (D-19) is the terrain strip LOD as a CSS mask; its
  * aspect ratio reserves the height before the mask loads. Waypoint ticks
- * (D-20, DATA-04) stand on the neatline at each positioned photo's easting:
- * solid when exact, dashed when `position.approximate`.
+ * (D-20, DATA-04) stand on the neatline at each positioned Home waypoint's
+ * easting, solid when exact, dashed when `position.approximate`. They read the
+ * Home list through lib/ascent/home-photos (DATA-09, D-09), a module kept light
+ * because global-error ships this footer in a client chunk.
  *
  * The sheet margin (D-18) reads required terrain metadata, so missing data is a
  * build failure, never a dash. The scale bar is `L / extentWidthM` of the
@@ -71,7 +73,7 @@ export default function SiteFooter() {
         className="relative w-full aspect-[5/1] sm:aspect-[8/1] lg:aspect-[12/1] border-b border-line pointer-events-none"
       >
         <ContourField lod="strip" className="absolute inset-0" />
-        {photos.map((photo) =>
+        {homePhotos().map((photo) =>
           photo.position && photo.uv ? (
             <span
               key={photo.id}
