@@ -309,10 +309,28 @@ test.describe('Shell mobile menu', () => {
     if (tabReachesLinks(browserName)) await page.keyboard.press('Tab');
     else await rows.nth(0).focus();
     await expect(rows.nth(0)).toBeFocused();
+
+    // The disclosure has no scroll lock, so the page can sit scrolled down while the menu
+    // is open. Pin it part-way down only now, with focus already in the panel: opening
+    // (Playwright's actionability scroll) and keyboard focus honour the global
+    // scroll-margin-top and can move the page themselves, so this measures Escape alone.
+    // Guards Escape's focus of Menu scrolling the page up (600 to 530 in Chromium, 185.5
+    // in Firefox).
+    await page.evaluate(() => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      window.scrollTo(0, Math.min(600, max));
+    });
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+    await expect(rows.nth(0)).toBeFocused();
+    const scrollAtEscape = await page.evaluate(() => window.scrollY);
+
     await page.keyboard.press('Escape');
     await expect(panel).toBeHidden();
     await expect(button).toHaveAttribute('aria-expanded', 'false');
     await expect(button).toBeFocused();
+    expect(await page.evaluate(() => window.scrollY), 'Escape keeps the scroll position').toBe(
+      scrollAtEscape,
+    );
   });
 
   test('choosing Photographs navigates and closes the panel', async ({ page }) => {
