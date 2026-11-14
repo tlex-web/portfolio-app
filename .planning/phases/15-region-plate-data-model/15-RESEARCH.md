@@ -401,7 +401,7 @@ The repo uses these namespace members: `jest.Mock` (45), `jest.SpyInstance` (5),
 - The CI `lint-and-typecheck` job runs `npm run type-check` with no `next-env.d.ts` (gitignored) and no `.next/types`. The measurement above matched that case.
 - `incremental: false` in the children avoids two new `.tsbuildinfo` files. `*.tsbuildinfo` is already gitignored, so either setting is safe.
 
-**`@jest/globals` pin:** D-24 says "pinned to the jest version". `jest` is `^30.5.2`. An exact `30.5.2` pin drifts when Dependabot bumps jest to 30.6 (two copies, mismatched types). Use the same range as jest (`^30.5.2`) or group them in Dependabot (Open Question 1).
+**`@jest/globals` pin:** D-24 says "pinned to the jest version". `jest` is `^30.5.2`. An exact `30.5.2` pin drifts when Dependabot bumps jest to 30.6 (two copies, mismatched types). Use the same range as jest (`^30.5.2`) or group them in Dependabot (Open Question 1, resolved: `^30.5.2`, carried by 15-01).
 
 **D-27 `--scan-only`:** `test-count.mjs` `parseArgs` requires `--jest` (`if (!args.jest) usage('--jest <file> is required')`) [VERIFIED: scripts/guards/test-count.mjs:63]. The scan is self-contained: `findFocusedOrSkipped(root)` walks `<root>/e2e/` and every `__tests__` under `UNIT_TEST_ROOTS = ['app', 'components', 'lib', 'data']` with `FOCUS_OR_SKIP = /\.(only|skip|fixme)\(/` [VERIFIED: scripts/guards/test-count.mjs:35-37]. Add a `--scan-only` flag that skips the `--jest` requirement, the Jest read and `loadPlaywrightList` (which spawns `npx playwright test --list`, slow), and runs only `findFocusedOrSkipped(args.root)`. Reject `--scan-only` together with `--jest`, `--list` or `--update`. Script: `"guard:tests:scan": "node scripts/guards/test-count.mjs --scan-only"`, appended to `lint`. Selftest: reuse the existing fixtures `tc('focused')` (expect exit 1 and `x.ts:2`) and `tc('clean')` (exit 0). No guard parses `package.json` scripts, so adding to `lint` needs no guard change [VERIFIED: `git grep` over scripts/guards and scripts/ci].
 
@@ -530,7 +530,7 @@ They differ on purpose (`/media/` video is network-only in the SW). A reconcile 
 - **New rule (`telemetry`):** a set `TELEMETRY_EXT = ['.srt','.lrf','.dat','.lrv','.thm','.xmp','.gpx','.kml','.kmz','.nmea','.igc','.fit','.tcx']`, matched on `path.extname(rel).toLowerCase()`.
   - Repo: `git ls-files -z -co --exclude-standard -- ':(icase)*.srt' …`. Measured this session: lists untracked-not-ignored `track.GPX` and `flight.Kml`, and a force-added ignored `a.srt` [VERIFIED].
   - Plus `walk(root/public)` including ignored files.
-  - Allow `assets/photos-original/` and `assets/clips-original/`. They are ignored, so `--exclude-standard` already drops them; add an explicit allow so a future `git add -f` of an original's sidecar is still reported (Open Question 3).
+  - Allow `assets/photos-original/` and `assets/clips-original/`. They are ignored, so `--exclude-standard` already drops them; add an explicit allow so a future `git add -f` of an original's sidecar is still reported (Open Question 3, resolved: no explicit originals exception; a tracked file there fails, carried by 15-12).
   - Keep `scripts/guards/__selftest__/` out of repo mode, as `SELFTEST_PREFIX` does today.
 - **MP4 telemetry tracks (D-23), measured:** splicing one extra `trak{tkhd, mdia{mdhd, hdlr(<h>), minf{nmhd, stbl{stsd{<entry>}}}}}` into `moov` of the committed clean fixture (`good-mp4/public/media/coin-flip-toss.d423c62633.mp4`, 1,115 B) and fixing the `moov` size gives:
 
@@ -760,15 +760,21 @@ export const photoRouteSlugs: readonly string[] = Object.values(editorial).map((
 | A4 | Real DJI/GoPro files carry telemetry as `meta`-handler tracks with `djmd`/`dbgi`/`gpmd` sample entries and subtitles as `sbtl`/`text` | DATA-15 | low: the walker rejects *any* second track regardless of type, as measured |
 | A5 | `jest.mock` of `@/data/generated/photos` with an appended photo works under next/jest SWC hoisting | DATA-09 | medium: the fallback is calling the pure builders with an injected input plus rendering components with props |
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+All four are resolved by the planner (2026-11-14). Each resolution is a planner decision pending Tim's review, not a Tim decision; each names the plan that carries it, and each is reversible in one small change.
 
 1. **`@jest/globals` pin: exact `30.5.2` or `^30.5.2`?**
    - What we know: D-24 says "pinned to the jest version"; jest is `^30.5.2`; lockfile has 30.5.2 hoisted.
    - Unclear: whether "pinned" means exact. An exact pin diverges at the next jest minor.
-   - Recommendation: `^30.5.2`, identical to jest's range, with a one-line note in the plan. Ask Tim only if exact is preferred.
+   - Recommendation (at research time): `^30.5.2`, identical to jest's range, with a one-line note in the plan; Tim's review of the plan can switch it to an exact pin.
+   - **RESOLVED (planner decision pending Tim's review): `^30.5.2`, the same range as `jest`.** Carried by `15-01-PLAN.md` ("Planner decisions": the `@jest/globals` range; Task 1 installs `@jest/globals@^30.5.2` with the bundled npm and gates `package.json` on that exact spec). If Tim prefers an exact pin, it is one line in `package.json`.
 2. **D-07 "a test or the build"**: a Jest test is sufficient and simpler, because the Home list is TS and generators can't import `@/` modules. Recommend the Jest test plus tsc typing of the ids.
+   - **RESOLVED (planner decision pending Tim's review): a Jest test plus tsc typing.** Carried by `15-08-PLAN.md`: Task 1 types `homeWaypointIds` `as const satisfies readonly PhotoId[]`, Task 2 adds the strict-list test `data/__tests__/home.test.ts`.
 3. **Telemetry files under ignored originals folders:** D-21 allows the two ignored folders. Should a *force-added* `assets/photos-original/x.xmp` still pass? Recommend: allow only while ignored-and-untracked; fail when tracked. This matches "the guard still catches `git add -f`" (D-22).
+   - **RESOLVED (planner decision pending Tim's review): allowed only while ignored and untracked; a tracked (force-added) telemetry file under the originals folders fails.** Carried by `15-12-PLAN.md` as flagged assumption A-15-12 (Task 2's repo scan adds no originals exception, and the selftest case `served-images: telemetry: a force-added sidecar under the originals folder fails` pins it). If Tim reads D-21 the other way, the change is one path condition in `collect()` and one selftest case.
 4. **Fixture plate in selftest vs Jest:** sharp is ESLint-banned outside `scripts/` (eslint.config.mjs:74), so the write-and-assert test must be in `selftest.mjs`. Jest can still assert the committed-state invariants (D-15 literal pin, `plates.ts` ↔ `terrain.ts` equality, asset budget on committed plates). Planner: put the fixture in `guard:selftest` (runs in `lint`).
+   - **RESOLVED (planner decision): the fixture plate lives in `guard:selftest`; Jest holds the committed-state invariants.** Carried by `15-05-PLAN.md` (the `tempTerrainRoot` fixture plate and its three selftest cases) and `15-04-PLAN.md` (the D-15 literal pin in `terrain.test.ts` and `plates.test.ts`: `plates.ts` equals `terrain.ts`, the asset roots, the budget of the committed plates).
 
 ## Environment Availability
 

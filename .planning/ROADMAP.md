@@ -184,7 +184,56 @@ Plans:
   4. The served-asset guard fails on `.SRT`, `.LRF`, GPX and KML files and on MP4s carrying GPS or telemetry tracks anywhere in the repo or the site, proven by selftest fixtures.
   5. The phase lands with zero visual-baseline changes, and a test shows that every link to a photo comes from one URL helper (still `/photos/<slug>`).
   6. `npm run type-check` also type-checks the Jest tests, e2e specs and Playwright configs, with zero errors (GUARD-10; the 13-06 measurement found 5482 errors in 103 files as-is and 69 in 21 files with the Jest globals declared), using `@types/jest` only after Tim vets it, or `@jest/globals` imports.
-**Plans**: TBD
+**Plans**: 16 plans in 16 waves (serial: one checkout, a shared `selftest.mjs` and `package.json`, and the production e2e server on port 3000)
+
+Plans:
+**Wave 1**
+- [ ] 15-01-PLAN.md — GUARD-10 part 1: phase-base client JS total, `@jest/globals` globals d.ts with a canary, `tsconfig.jest.json` and `tsconfig.e2e.json`, e2e in `type-check`, first 50 Jest-scope errors fixed
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 15-02-PLAN.md — GUARD-10 part 2: spy, matchMedia, it.each and mock-arity errors fixed (40 more; 9 left)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 15-03-PLAN.md — GUARD-10 part 3 and D-27: `test-count.mjs --scan-only` in `lint`, the last 9 errors fixed, three-config `type-check` at zero
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 15-04-PLAN.md — DATA-11 part 1: plate registry, plate-looping builder with `--root`, `plates.ts`, D-15 pin, `plates.test.ts`
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 15-05-PLAN.md — DATA-11 part 2: prefix-aware union sweep, anchored lookups, per-plate budget, synthetic fixture plate in selftest
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 15-06-PLAN.md — DATA-10 part 1: `photo-map.json` and `regions.json`, region and country in the generated photos, per-plate sampling, G5 cases
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 15-07-PLAN.md — DATA-10 part 2: map-driven `photos:exif` with `--root` and selftest cases
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 15-08-PLAN.md — DATA-09 part 1: explicit Home waypoint list, rail start over it, footer ticks (client-light `homePhotos`) and trail sign on it, success-criterion-1 and strict-list tests
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [ ] 15-09-PLAN.md — DATA-09 part 2: generated rail start removed, Home-surface tests on the Home list, Home e2e in two engines
+
+**Wave 10** *(blocked on Wave 9 completion)*
+- [ ] 15-10-PLAN.md — One photo URL helper (`photoHref`), slim proxy slug list, every call site switched, source-scan test
+
+**Wave 11** *(blocked on Wave 10 completion)*
+- [ ] 15-11-PLAN.md — `ContourField(plate, lod)`, `SheetBand`/`SheetLegend` extracted with zero diff, light table as the Zermatt series, client JS checked against the phase base
+
+**Wave 12** *(blocked on Wave 11 completion)*
+- [ ] 15-12-PLAN.md — DATA-15: telemetry rule, repo scan over untracked files and all of `public/`, `.gitignore` block, synthetic MP4 track fixtures, README 47 pairs
+
+**Wave 13** *(blocked on Wave 12 completion)*
+- [ ] 15-13-PLAN.md — Phase 13 IN-01..03: ci-gate rules 17 and 18 with selftest cases, honest SafeCanvas comment
+
+**Wave 14** *(blocked on Wave 13 completion)*
+- [ ] 15-14-PLAN.md — Phase 14 IN-01..03, IN-05, IN-06: unit-independent reveal, `closeOnCurrentLink`, derived terminal waits, Firefox Back row
+
+**Wave 15** *(blocked on Wave 14 completion)*
+- [ ] 15-15-PLAN.md — Named photo fixtures (`viewBySlug`) for every identity lookup in the photo tests
+
+**Wave 16** *(blocked on Wave 15 completion)*
+- [ ] 15-16-PLAN.md — D-29 write-backs, full local gate with per-commit snapshot checks and the client JS budget, `ci/15-16` push under D-31 with Visual Regression unchanged
 **Research**: Not needed; the work follows in-repo patterns. Plan with explicit acceptance gates: every visual baseline unchanged, `data:check` green, and the Matterhorn terrain hashes equal to today's.
 **UI hint**: no
 **UI-SPEC**: Not needed. Nothing visible changes; extracting the footer's sheet margin into a shared component must be zero-diff.
