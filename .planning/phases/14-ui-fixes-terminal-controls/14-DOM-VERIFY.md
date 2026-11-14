@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-wave: 1
+wave: 2
 outcome: could_not_look
 reason: target_unreachable
 checked: 0
@@ -32,3 +32,10 @@ Criteria not observed (all could_not_look / target_unreachable):
 - SHELL-08: the ring is still contained at 375x320 while the panel scrolls. Covered by e2e/shell.spec.ts "the inset ring stays inside the panel while it scrolls at 375 x 320 (SHELL-08, D-17)".
 
 To fix (for the operator): check why Chrome can't open `http://localhost:3000` while `next start` is running from the agent shell. Look at the proxy and VPN bypass for `<-loopback>` and at Chrome policy. Then re-run this verifier. Meanwhile, the e2e rows above cover every criterion in Chromium and Firefox (14-01 SUMMARY: shell.spec 74/74). The window size was restored to 1280x900. The service-worker registration and caches for localhost:3000 were already removed during the first load. No end-of-run cleanup was possible because the origin did not load.
+
+## Wave 2 (plan 14-02): could_not_look / target_unreachable
+
+The verifier wasn't dispatched. A pre-check showed Chrome can't reach any server this session starts. A bare Node `http` server on `localhost:3999` gave the same "This site can't be reached" page. Every 14-02 criterion stays unobserved and none failed:
+- HOME-10 rail scrim contrast, at least 4.5:1 for every tick label on the poster and the live canvas: covered by B8 in `e2e/home-modes.spec.ts`, now 12 rows. Lowest values: 7.93:1 poster and 7.91:1 live in Chromium, 7.85:1 poster in Firefox.
+- The scrim stays 224 px wide (CameraRig reads its width): covered by the 4 B8 geometry rows in Chromium and Firefox.
+- HOME-09, no sideways scroll at 375 px in every mode and stop: covered by the extended 375 px guard (4 modes × 8 stops).
