@@ -237,3 +237,40 @@ for (const w of WIDTHS) {
     await expect(page).toHaveScreenshot(['lightbox', `${w}.png`], { stylePath });
   });
 }
+
+// The mobile menu open at 375 on /projects with keyboard focus on the current row
+// ('Engineering', aria-current="page"): SHELL-08's inset ring meeting the accent bar
+// (14-UI-SPEC "Visual Baselines", P5). A new set: no menu set existed before, so the
+// PNG comes only from the 14-08 visual-baselines.yml dispatch and Tim commits it.
+// Review the 1.21:1 focus-versus-accent pair in that PNG: the ring and the bar must
+// abut, never overlap. Never run --update-snapshots locally. A viewport shot: the
+// panel is absolutely positioned under the sticky header.
+test('menu @375 current row focused', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.setViewportSize({ width: 375, height: HEIGHT });
+  await page.goto('/projects');
+  await settle(page);
+  const button = page.getByRole('button', { name: 'Menu' });
+  // Enter before hydration does nothing: wait for React's props on the button.
+  await expect
+    .poll(() => button.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))), {
+      timeout: 15000,
+    })
+    .toBe(true);
+  // A keyboard activation, so :focus-visible draws the ring on the row Tabbed to.
+  await button.focus();
+  await page.keyboard.press('Enter');
+  const panel = page.locator('#site-menu');
+  await expect(panel).toBeVisible();
+  const current = panel.getByRole('link', { name: 'Engineering', exact: true });
+  for (let i = 0; i < 6; i++) {
+    if (await current.evaluate((el) => el === document.activeElement)) break;
+    await page.keyboard.press('Tab');
+  }
+  await expect(current).toBeFocused();
+  await expect(current).toHaveAttribute('aria-current', 'page');
+  await panel.evaluate((el) =>
+    Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined))),
+  );
+  await expect(page).toHaveScreenshot(['menu', '375-current-focus.png'], { stylePath });
+});

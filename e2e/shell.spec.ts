@@ -396,6 +396,105 @@ test.describe('Shell mobile menu', () => {
     await expect(button).toHaveAttribute('aria-expanded', 'false');
     await expect(button).toBeFocused();
   });
+
+  /**
+   * Opens the menu from the keyboard (focus Menu, Enter), so `:focus-visible`
+   * applies to the panel links focused next, and waits for the panel to settle.
+   */
+  async function openMenuByKeyboard(page: Page) {
+    const button = page.getByRole('button', { name: 'Menu' });
+    const panel = page.locator('#site-menu');
+    // Enter before hydration does nothing: wait for React's props on the button.
+    await expect
+      .poll(() => button.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))))
+      .toBe(true);
+    await button.focus();
+    await page.keyboard.press('Enter');
+    await expect(button).toHaveAttribute('aria-expanded', 'true');
+    await expect(panel).toBeVisible();
+    await panel.evaluate((el) =>
+      Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined))),
+    );
+    return panel;
+  }
+
+  /**
+   * Focuses the panel link at `index` (Tab from the Menu button, or `.focus()` in
+   * WebKit, which never Tabs to links) and asserts the inset ring: `:focus-visible`,
+   * outline offset -4px and width 2px, and the ring's outer rectangle (the link's
+   * box inset by -(offset + width) = 2 px) inside the panel's client rectangle.
+   * Returns the panel's scrollTop after the focus.
+   */
+  async function expectInsetRing(
+    page: Page,
+    panel: ReturnType<Page['locator']>,
+    index: number,
+    browserName: string,
+  ) {
+    const link = panel.getByRole('link').nth(index);
+    if (tabReachesLinks(browserName)) {
+      // Tab until the link has focus rather than a fixed count: when the panel
+      // scrolls (375 x 320) Firefox adds the scroll container itself as a Tab stop.
+      await page.getByRole('button', { name: 'Menu' }).focus();
+      for (let i = 0; i <= index + 2; i++) {
+        await page.keyboard.press('Tab');
+        if (await link.evaluate((el) => el === document.activeElement)) break;
+      }
+    } else {
+      await link.focus();
+    }
+    await expect(link).toBeFocused();
+    const m = await link.evaluate((el) => {
+      const menu = el.closest('#site-menu') as HTMLElement;
+      const cs = getComputedStyle(el);
+      const grow = parseFloat(cs.outlineOffset) + parseFloat(cs.outlineWidth);
+      const box = el.getBoundingClientRect();
+      const outer = menu.getBoundingClientRect();
+      const left = outer.left + menu.clientLeft;
+      const top = outer.top + menu.clientTop;
+      return {
+        focusVisible: el.matches(':focus-visible'),
+        offset: cs.outlineOffset,
+        width: cs.outlineWidth,
+        ring: { left: box.left - grow, top: box.top - grow, right: box.right + grow, bottom: box.bottom + grow },
+        inner: { left, top, right: left + menu.clientWidth, bottom: top + menu.clientHeight },
+        scrollTop: menu.scrollTop,
+      };
+    });
+    expect(m.focusVisible).toBe(true);
+    expect(m.offset).toBe('-4px');
+    expect(m.width).toBe('2px');
+    expect(m.ring.left).toBeGreaterThanOrEqual(m.inner.left);
+    expect(m.ring.top).toBeGreaterThanOrEqual(m.inner.top);
+    expect(m.ring.right).toBeLessThanOrEqual(m.inner.right);
+    expect(m.ring.bottom).toBeLessThanOrEqual(m.inner.bottom);
+    return m.scrollTop;
+  }
+
+  test('focused panel links draw an inset ring the panel never clips (SHELL-08, D-17)', async ({
+    page,
+    browserName,
+  }) => {
+    await page.goto('/roadmap');
+    const panel = await openMenuByKeyboard(page);
+
+    // Top row ('Home') and bottom row ('Contact').
+    await expectInsetRing(page, panel, 0, browserName);
+    await expectInsetRing(page, panel, site.nav.length - 1, browserName);
+  });
+
+  test('the inset ring stays inside the panel while it scrolls at 375 x 320 (SHELL-08, D-17)', async ({
+    page,
+    browserName,
+  }) => {
+    // max-h-[calc(100svh-var(--nav-h))] leaves the panel shorter than its rows here.
+    await page.setViewportSize({ width: 375, height: 320 });
+    await page.goto('/roadmap');
+    const panel = await openMenuByKeyboard(page);
+
+    const scrollTop = await expectInsetRing(page, panel, site.nav.length - 1, browserName);
+    expect(scrollTop).toBeGreaterThan(0);
+  });
 });
 
 test.describe('Shell reduced motion', () => {
