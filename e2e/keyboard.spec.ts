@@ -4,6 +4,9 @@ import { buildPhotoViews } from '@/lib/photos/view-model';
 import { ROUTES } from './routes';
 import { tabReachesLinks } from './helpers/engine';
 
+// Index lookups into views here are positions in the series order (DEM ascending, ties
+// by id), not photo identities; a specific photo is named through viewBySlug.
+
 /**
  * Keyboard-only flows (VERIFY-02, D-22; 12-UI-SPEC "Keyboard paths the D-22
  * e2e flows assert"). Tim repeats this pass by hand at UAT (12-24's

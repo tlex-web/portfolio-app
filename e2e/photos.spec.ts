@@ -4,6 +4,9 @@ import { buildPhotoViews } from '@/lib/photos/view-model';
 import { readViewTransitions, recordViewTransitions } from './helpers/view-transitions';
 import { clickFocusesButtons } from './helpers/engine';
 
+// Index lookups into views here are positions in the series order (DEM ascending, ties
+// by id), not photo identities; a specific photo is named through viewBySlug.
+
 /**
  * The Map view in a browser (PHOTO-01, PHOTO-03; D-01 to D-04; 10-UI-SPEC
  * "Map View" and UI Considerations E2). /photos opens on the full survey sheet

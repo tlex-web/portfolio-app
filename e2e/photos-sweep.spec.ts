@@ -1,5 +1,6 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
 import { buildPhotoViews } from '@/lib/photos/view-model';
+import { SLUGS, viewBySlug } from './helpers/photo-fixtures';
 
 /**
  * Cross-view sweep of the photography surface (PHOTO-02, LBOX-01, LBOX-02,
@@ -20,6 +21,9 @@ import { buildPhotoViews } from '@/lib/photos/view-model';
  *
  * Every expected value comes from buildPhotoViews(), never hand-typed.
  */
+
+// Index lookups into views here are positions in the series order (DEM ascending, ties
+// by id), not photo identities; a specific photo is named through viewBySlug.
 
 const views = buildPhotoViews();
 const GRID_LIST = 'Photographs, lowest first';
@@ -297,12 +301,13 @@ test.describe('The lightbox path end to end (10-UI-SPEC E5 populated)', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
 
     // 1. A direct load is the page surface: shell landmarks and no dialog (LBOX-01).
-    await page.goto(`/photos/${views[0].slug}`);
+    const direct = viewBySlug(SLUGS.matterhornFromZermatt);
+    await page.goto(`/photos/${direct.slug}`);
     await expect(page.getByRole('banner')).toHaveCount(1);
     await expect(page.getByRole('main')).toHaveCount(1);
     await expect(page.getByRole('contentinfo')).toHaveCount(1);
     await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toHaveText(
-      views[0].title
+      direct.title
     );
     await expect(page.getByRole('dialog')).toHaveCount(0);
 

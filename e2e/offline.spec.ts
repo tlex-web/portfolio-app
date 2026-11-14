@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { site } from '@/data/site';
-import { photoViews } from '@/lib/photos/view-model';
+import { SLUGS, viewBySlug } from './helpers/photo-fixtures';
 
 /**
  * The offline page (EDGE-02, D-12; 12-UI-SPEC "Per-page content" /offline and
@@ -10,11 +10,11 @@ import { photoViews } from '@/lib/photos/view-model';
  * the worker: the page is visited online, and Cache Storage (which works
  * without a worker) is seeded by the test itself. What the worker stores and
  * serves offline is covered by the SW Jest harness (12-08) and the SW spec
- * (12-17). Data-driven: the photo and the nav label come from the data
- * modules, never a literal slug.
+ * (12-17). Data-driven: the nav label comes from the data modules, and the
+ * seeded photo is named through viewBySlug (its title and slug from the view).
  */
 
-const firstPhoto = photoViews[0];
+const seededPhoto = viewBySlug(SLUGS.matterhornFromZermatt);
 const roadmap = site.nav.find((item) => item.href === '/roadmap')!;
 
 const H1 = "You're offline";
@@ -23,7 +23,7 @@ const EMPTY = 'No pages are saved on this device yet.';
 const UNSUPPORTED = "This browser can't list saved pages.";
 
 /** Cache keys the seeded test stores: two pages, plus four entries the list must drop. */
-const SEEDED = ['/roadmap', '/roadmap?view=1', '/offline', '/_next/static/e2e-seed.js', `/photos/${firstPhoto.slug}`];
+const SEEDED = ['/roadmap', '/roadmap?view=1', '/offline', '/_next/static/e2e-seed.js', `/photos/${seededPhoto.slug}`];
 
 function savedRegion(page: Page) {
   return page.getByRole('region', { name: 'Saved on this device' });
@@ -107,8 +107,8 @@ test.describe('Offline page (EDGE-02, D-12)', () => {
     await expect(links).toHaveCount(2);
     await expect(links.nth(0)).toHaveAttribute('href', '/roadmap');
     await expect(links.nth(0)).toHaveText(roadmap.label);
-    await expect(links.nth(1)).toHaveAttribute('href', `/photos/${firstPhoto.slug}`);
-    await expect(links.nth(1)).toContainText(firstPhoto.title);
+    await expect(links.nth(1)).toHaveAttribute('href', `/photos/${seededPhoto.slug}`);
+    await expect(links.nth(1)).toContainText(seededPhoto.title);
     await expect(links.nth(1)).toContainText('Photograph');
 
     const text = (await region.textContent()) ?? '';
