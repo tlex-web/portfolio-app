@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-wave: 3
+wave: 4
 outcome: could_not_look
 reason: target_unreachable
 checked: 0
@@ -43,3 +43,7 @@ The verifier wasn't dispatched. A pre-check showed Chrome can't reach any server
 ## Wave 3 (plan 14-03): could_not_look / target_unreachable
 
 The verifier wasn't dispatched, for the same reason as wave 2: Chrome reaches no server this session starts. LBOX-08 is unobserved and nothing failed. After stepping and then closing by Escape, 'Close photo' or Back, focus lands on the shown photo's trigger, and the trigger plus its 4 px ring sit fully in view below the nav. This is covered by the D-11 matrix in `e2e/photos-lightbox.spec.ts`: 14 rows in Chromium and 1 in Firefox; the WebKit row runs in CI (14-08). The whole lightbox file passes 116/116 in Chromium and Firefox.
+
+## Wave 4 (plan 14-04): could_not_look / target_unreachable
+
+The verifier wasn't dispatched, for the same reason as wave 2. D-12 and D-22 are unobserved and nothing failed. Hiding labels collapses the open callout; a callout that can't be seen (zoomed, or labels hidden) doesn't take Escape; for a visible callout the order is still callout, then zoom, then close. Covered by the D-12 and D-22 Jest rows, the rewritten IN-02 and zoom-unwind rows, and 3 new D-12 Playwright rows. `e2e/photos-lightbox.spec.ts` passes 122/122 in Chromium and Firefox; WebKit runs in CI (14-08).
