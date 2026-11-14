@@ -186,6 +186,7 @@ Plans:
   6. `npm run type-check` also type-checks the Jest tests, e2e specs and Playwright configs, with zero errors (GUARD-10; the 13-06 measurement found 5482 errors in 103 files as-is and 69 in 21 files with the Jest globals declared), using `@types/jest` only after Tim vets it, or `@jest/globals` imports.
 **Plans**: TBD
 **Research**: Not needed; the work follows in-repo patterns. Plan with explicit acceptance gates: every visual baseline unchanged, `data:check` green, and the Matterhorn terrain hashes equal to today's.
+**UI hint**: no
 **UI-SPEC**: Not needed. Nothing visible changes; extracting the footer's sheet margin into a shared component must be zero-diff.
 **Scope notes**:
   - Groundwork for later phases: `photoHref` and `regionHref` in place of the hand-built photo URLs; a slim route list the proxy can import instead of the view-model; a view-model split into Home waypoints, region series and photo views; region and plate registries as JSON so the `.mjs` generators can read them; `SheetMargin` extracted from `SiteFooter`; `ContourField(plate)`; named test fixtures instead of index lookups; a closed sidecar schema and an explicit photo id map.
