@@ -7,6 +7,9 @@ data/photos/exif-sidecar.json text eol=lf
 data/terrain/source/source.json text eol=lf
 data/generated/terrain.ts text eol=lf
 data/generated/precache.json text eol=lf
+# Plate registry and every plate's sheet (15-04): plates.ts is byte-compared too.
+data/terrain/plates.json text eol=lf
+data/generated/plates.ts text eol=lf
 public/terrain/*.svg text eol=lf
 # 16-bit PNGs: never touch the bytes (source sha256 and hashed file names).
 data/terrain/source/*.png binary
