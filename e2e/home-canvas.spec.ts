@@ -1001,7 +1001,9 @@ test.describe('Home canvas resilience (HOME-02, HOME-07)', () => {
     await waitForRevealed(page);
 
     const lost = await page.evaluate(() => {
-      const gl = document.querySelector('[data-ascent-stage] canvas')?.getContext('webgl2');
+      const gl = document
+        .querySelector<HTMLCanvasElement>('[data-ascent-stage] canvas')
+        ?.getContext('webgl2');
       const ext = gl?.getExtension('WEBGL_lose_context');
       ext?.loseContext();
       return !!ext;

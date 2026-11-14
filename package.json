@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint . && npm run guard:parity && npm run guard:ci && npm run guard:palette && npm run guard:contrast && npm run guard:identity && npm run guard:selftest && npm run data:check && npm run guard:images",
     "format": "prettier --write .",
-    "type-check": "tsc --noEmit",
+    "type-check": "tsc --noEmit && tsc -p tsconfig.e2e.json",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -82,6 +82,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",
+    "@jest/globals": "^30.5.2",
     "@playwright/test": "^1.65.0",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",
