@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 15
 current_phase_name: Region & Plate Data Model
 status: executing
-stopped_at: Completed 15-06-PLAN.md
-last_updated: "2026-11-14T21:12:51.662Z"
+stopped_at: Completed 15-07-PLAN.md
+last_updated: "2026-11-14T21:21:06.225Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 15 execution started
-state_head: 40e161ecebd22fa6a19c776c89368b42adf3652a
+state_head: c14b938d3037adacdbc7291d2c9287cd148c10bd
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 46
-  completed_plans: 36
+  completed_plans: 37
   percent: 29
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-14)
 ## Current Position
 
 Phase: 15 (Region & Plate Data Model) — EXECUTING
-Plan: 7 of 16
+Plan: 8 of 16
 Status: Ready to execute
 Last activity: 2026-11-14 — Phase 15 execution started
 
@@ -91,6 +91,7 @@ Progress: [███░░░░░░░] 29%
 | Phase 15 P04 | 8 min | 2 tasks | 10 files |
 | Phase 15 P05 | 9min | 2 tasks | 2 files |
 | Phase 15 P06 | 10min | 2 tasks | 9 files |
+| Phase 15 P07 | 6 min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -197,6 +198,7 @@ Recent decisions affecting current work:
 - [Phase 15]: 15-06: Country is a closed enum (AT, CH, DE, FR, IT, LI, MC, SI) copied from each photo-map record; never defaulted from the region or derived from coordinates (D-02)
 - [Phase 15]: 15-06: photos:build samples each photo on its own region's plate (photoMap -> regions -> plates.json source), one DEM load per plate; the off-extent message keeps its text plus '; plate <id>'
 - [Phase 15]: 15-06: lowestDemM stays exported until 15-08/15-09 move its readers (D-08)
+- [Phase 15]: 15-07: photos:exif assigns ids only from data/photos/photo-map.json (idFor, exact file-name lookup); the map is parsed with PhotoMap in both modes, CI included, so an unmapped original or two records naming one file fail extraction (D-01)
 
 ### Pending Todos
 
@@ -252,6 +254,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-14T21:12:51.292Z
-Stopped at: Completed 15-06-PLAN.md
+Last session: 2026-11-14T21:21:05.844Z
+Stopped at: Completed 15-07-PLAN.md
 Resume file: None
