@@ -796,9 +796,31 @@ test.describe('Focus on close stays in view (LBOX-08)', () => {
     Carousel: { path: '/photos?view=carousel', url: /\/photos\?view=carousel$/ },
   };
 
+  /** The D-11 matrix engine is Chromium; every history close carries @no-win-webkit. */
+  const CHROMIUM = '@chromium-only @no-win-webkit';
   const ROWS: Row[] = [
     // The cross-engine row (D-11): Chromium, Firefox and Linux WebKit.
     { view: 'Map', width: 720, height: 450, setup: 'a', close: 'Escape', tags: '@no-win-webkit' },
+    // Map: from the top, the last mark is below the fold at the three larger sizes; at 375x667
+    // every mark is on screen from the top, so that size starts at the page end (Pitfall 4).
+    { view: 'Map', width: 1366, height: 650, setup: 'a', close: 'Escape', tags: CHROMIUM },
+    { view: 'Map', width: 1280, height: 560, setup: 'a', close: 'Escape', tags: CHROMIUM },
+    { view: 'Map', width: 375, height: 667, setup: 'b', close: 'Escape', tags: CHROMIUM },
+    // Grid: the last tile is below the fold at every size. At 720x450 it is the 286 px tile,
+    // which fits below the nav (Pitfall 3).
+    { view: 'Grid', width: 1366, height: 650, setup: 'a', close: 'Escape', tags: CHROMIUM },
+    { view: 'Grid', width: 1280, height: 560, setup: 'a', close: 'Escape', tags: CHROMIUM },
+    { view: 'Grid', width: 720, height: 450, setup: 'a', close: 'Escape', tags: CHROMIUM },
+    { view: 'Grid', width: 375, height: 667, setup: 'a', close: 'Escape', tags: CHROMIUM },
+    // Carousel: its one trigger ('Open photo') stays where it was pressed, so every size starts
+    // at the page end and the trigger ends above the viewport, under the nav.
+    { view: 'Carousel', width: 1366, height: 650, setup: 'b', close: 'Escape', tags: CHROMIUM },
+    { view: 'Carousel', width: 1280, height: 560, setup: 'b', close: 'Escape', tags: CHROMIUM },
+    { view: 'Carousel', width: 720, height: 450, setup: 'b', close: 'Escape', tags: CHROMIUM },
+    { view: 'Carousel', width: 375, height: 667, setup: 'b', close: 'Escape', tags: CHROMIUM },
+    // The other two close paths (D-10), through the same restoreFocus.
+    { view: 'Map', width: 720, height: 450, setup: 'a', close: 'Close photo', tags: CHROMIUM },
+    { view: 'Map', width: 720, height: 450, setup: 'a', close: 'browser Back', tags: CHROMIUM },
   ];
 
   /**
