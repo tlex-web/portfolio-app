@@ -51,12 +51,12 @@ recorded: 2026-11-14T14:36:28.002Z
 | WR-01 | warning | fixed | 14-REVIEW-FIX.md |
 | WR-02 | warning | fixed | 14-REVIEW-FIX.md |
 | WR-03 | warning | fixed | 14-REVIEW-FIX.md |
-| IN-01 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only) |
-| IN-02 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only) |
-| IN-03 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only) |
-| IN-04 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only) |
-| IN-05 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only) |
-| IN-06 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only) |
+| IN-01 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only); fixed in Phase 15: 15-14 `66eb7f2` |
+| IN-02 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only); fixed in Phase 15: 15-14 `66eb7f2` |
+| IN-03 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only); fixed in Phase 15: 15-14 `c24b622` |
+| IN-04 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only); deferred to Phase 18 (D-29): CarouselControls.tsx retires with the Carousel there, leaving DemoTerminal's STEP string the only copy |
+| IN-05 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only); fixed in Phase 15: 15-14 `065d628` |
+| IN-06 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only); fixed in Phase 15: 15-14 `065d628` |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.

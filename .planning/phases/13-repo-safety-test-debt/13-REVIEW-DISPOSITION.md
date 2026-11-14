@@ -49,9 +49,9 @@ recorded: 2026-11-13T22:27:57.705Z
 | WR-03 | warning | fixed | 13-REVIEW-FIX.md, commit bc76d03 |
 | WR-04 | warning | fixed | 13-REVIEW-FIX.md, commit 4dfeee9 |
 | WR-05 | warning | fixed | 13-REVIEW-FIX.md, commit cb5983f |
-| IN-01 | info | deferred | Phase 15 (guards): Tim, 2026-11-13; ROADMAP Phase 15 scope note |
-| IN-02 | info | deferred | Phase 15 (guards): Tim, 2026-11-13; ROADMAP Phase 15 scope note |
-| IN-03 | info | deferred | Phase 15 (guards): Tim, 2026-11-13; ROADMAP Phase 15 scope note |
+| IN-01 | info | deferred | Phase 15 (guards): Tim, 2026-11-13; ROADMAP Phase 15 scope note; fixed in Phase 15: 15-13 `61ea7ed` |
+| IN-02 | info | deferred | Phase 15 (guards): Tim, 2026-11-13; ROADMAP Phase 15 scope note; fixed in Phase 15: 15-13 `de025fa` |
+| IN-03 | info | deferred | Phase 15 (guards): Tim, 2026-11-13; ROADMAP Phase 15 scope note; fixed in Phase 15: 15-13 `40a4e9e` |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.

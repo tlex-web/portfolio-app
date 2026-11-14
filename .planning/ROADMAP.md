@@ -308,6 +308,7 @@ Plans:
   - 10 IN-05 (`STAGE_SIZES` ignores the gutter tier's height condition and the key tier's height-limited box): the immersive layout resizes the stage, so derive `sizes` from the new layout (13-LEDGER-TRIAGE.md #34).
   - 10 IN-08 (the row-height drift guard does not tie each value to its breakpoint, `GalleryGrid.test.tsx`): PHOTO-06 rewrites the view tests; tie each value to its breakpoint there, or retire the guard with the grid (13-LEDGER-TRIAGE.md #37).
   - 10 IN-09, remainder: 13-09 (`86b34dc`) gave the three surviving lightbox tests a positive settle signal; the 600 ms `waitForTimeout` after `switchTo` in `e2e/photos-sweep.spec.ts` stays, because PHOTO-06 retires the view switch. Its rewritten test must wait on a positive signal, not a fixed sleep (13-LEDGER-TRIAGE.md #38, 13-09-SUMMARY).
+  - 14 IN-04 (the `STEP` class string in `DemoTerminal.tsx` copies `CarouselControls.tsx`'s `STEP_BUTTON`): resolves when PHOTO-06 retires the Carousel; if any copy survives, move it to one shared module then (14-REVIEW-DISPOSITION.md, D-29 of Phase 15).
 
 ### Phase 19: Drone Loops
 
