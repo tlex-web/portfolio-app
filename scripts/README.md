@@ -142,6 +142,7 @@ A new `ci.yml` job must join `ci-ok.needs` in the same commit. A new heavy job a
 
 - `check-install-parity.mjs` (`guard:parity`): npm ci everywhere, Node 24 pins, Playwright image matches the lockfile, version floors. A floor in `version-floors.json` applies to every lockfile copy of the package, nested `.../node_modules/<name>` copies included. It is either a string (one minimum for all copies) or a list with one floor per version line (the major, or major.minor for 0.x), for example `"fflate": ["0.6.11", "0.8.3"]`; with a list, a copy on a line that has no floor fails.
 - `test-count.mjs` (`guard:tests`, CI unit job): the test count may only go up; no skipped or focused tests.
+- `test-count.mjs --scan-only` (`guard:tests:scan`, last step of `npm run lint`): runs only the `.only(` / `.skip(` / `.fixme(` scan over `e2e/` and the unit-test folders, needs no Jest results, and closes the local gap where a focused or skipped e2e test failed only in CI; `guard:tests` in CI is unchanged.
 - `same-classnames.mjs`: proves a refactor left every `className` literal unchanged. A moved or renamed file is paired with its old path, and a run against a ref that compared no file fails.
 
 ## Adding New Scripts

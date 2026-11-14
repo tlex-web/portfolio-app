@@ -24,6 +24,14 @@
  *   node scripts/guards/test-count.mjs --jest jest-results.json
  *     [--list <playwright-list.json>] [--baseline <file>] [--root <dir>] [--update]
  *   (CI unit job: `npm run guard:tests` after `jest --json --outputFile=jest-results.json`)
+ *
+ *   node scripts/guards/test-count.mjs --scan-only [--root <dir>]
+ *   (local: `npm run guard:tests:scan`, the last step of `npm run lint`)
+ *
+ * --scan-only runs only the .only( / .skip( / .fixme( scan. It needs no Jest
+ * results and no Playwright listing, so it can run in every local lint; it
+ * rejects --jest, --list, --baseline and --update. The count ratchet above
+ * stays CI's job (GUARD-03).
  */
 
 import { execSync } from 'child_process';
@@ -41,26 +49,42 @@ function usage(message) {
   console.error(
     'usage: test-count.mjs --jest <file> [--list <file>] [--baseline <file>] [--root <dir>] [--update]',
   );
+  console.error('       test-count.mjs --scan-only [--root <dir>]');
   process.exit(1);
 }
 
 function parseArgs(argv) {
-  const args = { jest: null, list: null, baseline: DEFAULT_BASELINE, root: process.cwd(), update: false };
+  const args = {
+    jest: null,
+    list: null,
+    baseline: DEFAULT_BASELINE,
+    root: process.cwd(),
+    update: false,
+    scanOnly: false,
+  };
+  let baselineGiven = false;
   const valued = { '--jest': 'jest', '--list': 'list', '--baseline': 'baseline', '--root': 'root' };
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i];
     if (flag === '--update') {
       args.update = true;
+    } else if (flag === '--scan-only') {
+      args.scanOnly = true;
     } else if (valued[flag]) {
       const value = argv[i + 1];
       if (!value || value.startsWith('--')) usage(`${flag} needs a value`);
       args[valued[flag]] = path.resolve(value);
+      if (flag === '--baseline') baselineGiven = true;
       i++;
     } else {
       usage(`unknown argument ${flag}`);
     }
   }
-  if (!args.jest) usage('--jest <file> is required');
+  if (args.scanOnly) {
+    if (args.jest || args.list || args.update || baselineGiven) usage('--scan-only takes only --root');
+  } else if (!args.jest) {
+    usage('--jest <file> is required');
+  }
   return args;
 }
 
@@ -139,6 +163,19 @@ function findFocusedOrSkipped(root) {
 }
 
 const args = parseArgs(process.argv.slice(2));
+
+// --scan-only: the focus/skip scan alone, before any Jest read or Playwright spawn.
+if (args.scanOnly) {
+  const hits = findFocusedOrSkipped(args.root);
+  for (const hit of hits) console.error(`test-count: FAIL ${hit}`);
+  if (hits.length > 0) {
+    console.error(`test-count: ${hits.length} focused/skipped call(s)`);
+    process.exit(1);
+  }
+  console.log('test-count: scan OK');
+  process.exit(0);
+}
+
 const failures = [];
 
 const jest = readJson(args.jest, 'Jest results');

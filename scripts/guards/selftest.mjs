@@ -1099,6 +1099,27 @@ const cases = [
     expectOutput: ['focused/skipped call', 'x.ts:2'],
   },
   {
+    name: 'test-count: --scan-only fails on a focused call under e2e/',
+    guard: TEST_COUNT,
+    args: ['--scan-only', '--root', tc('focused')],
+    expectExit: 1,
+    expectOutput: ['focused/skipped call', 'x.ts:2'],
+  },
+  {
+    name: 'test-count: --scan-only passes a clean tree',
+    guard: TEST_COUNT,
+    args: ['--scan-only', '--root', tc('clean')],
+    expectExit: 0,
+    expectOutput: ['test-count: scan OK'],
+  },
+  {
+    name: 'test-count: --scan-only rejects --jest',
+    guard: TEST_COUNT,
+    args: ['--scan-only', '--jest', tc('jest-66.json')],
+    expectExit: 1,
+    expectOutput: ['--scan-only takes only --root'],
+  },
+  {
     name: 'test-count: --update with a lower total fails and leaves the baseline unchanged',
     guard: TEST_COUNT,
     args: ['--jest', tc('jest-65.json'), '--list', tc('list-25.json'), '--root', tc('clean'), '--update'],
