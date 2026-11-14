@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { ArrowsOutIcon, CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/react/dist/ssr';
+import { photoHref } from '@/lib/photos/routes';
 import type { PhotoView } from '@/lib/photos/view-model';
 
 /** ‹ › (UI-SPEC Interaction States "Carousel ‹ ›"): secondary icon buttons, 44 px; at an end aria-disabled, dimmed, hover off. */
@@ -93,7 +94,7 @@ export default function CarouselControls({
         </p>
       </div>
       <Link
-        href={`/photos/${photo.slug}`}
+        href={photoHref(photo.slug)}
         scroll={false}
         data-photo-id={photo.slug}
         className={OPEN_PHOTO}

@@ -13,6 +13,8 @@
  *   empty error shell (12-RESEARCH Pitfall 1).
  * - The sitemap lists every photo page at its absolute /photos/<slug> URL.
  */
+import fs from 'node:fs';
+import path from 'node:path';
 import sitemap from '@/app/sitemap';
 import { site } from '@/data/site';
 import { photoHref, photoRouteSlugs } from '@/lib/photos/routes';
@@ -38,7 +40,7 @@ describe('proxy slugs and static photo pages (F5)', () => {
       throw new Error(
         'Every slug the proxy admits (photoRouteSlugs) needs a static photo page (photoSlugs), ' +
           'and every photo page must be admitted (Phase 17, PHOTO-05). ' +
-          `Admitted without a page: [${withoutPage.join(', ')}]. Page not admitted: [${notAdmitted.join(', ')}].`,
+          `Admitted without a page: [${withoutPage.join(', ')}]. Page not admitted: [${notAdmitted.join(', ')}].`
       );
     }
     expect(admitted).toEqual(pages);
@@ -46,6 +48,11 @@ describe('proxy slugs and static photo pages (F5)', () => {
 
   it('has no duplicate slugs', () => {
     expect(new Set(photoRouteSlugs).size).toBe(photoRouteSlugs.length);
+  });
+
+  it('marks the slug list pure, so client chunks that import photoHref carry no editorial copy', () => {
+    const src = fs.readFileSync(path.join(process.cwd(), 'lib', 'photos', 'routes.ts'), 'utf8');
+    expect(src).toMatch(/export const photoRouteSlugs\b[^=]*=\s*\/\*\s*@__PURE__\s*\*\//);
   });
 });
 

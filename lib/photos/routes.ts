@@ -21,5 +21,13 @@ export const photoHref = (slug: string): `/photos/${string}` => `/photos/${slug}
  * Every photo slug with editorial copy, for proxy.ts's unknown-slug 404 (F5).
  * The photo-routes test pins this set to generateStaticParams' slugs, so the
  * proxy never admits a slug that has no static photo page.
+ *
+ * The pure annotation is load-bearing: client components import photoHref
+ * from this module, and without it the bundler keeps this top-level call and
+ * the editorial copy it reads in their chunks (measured in 15-10: the copy
+ * appeared in a client chunk). With it, an unused list is dropped along with
+ * the copy. The photo-routes test fails if the annotation goes.
  */
-export const photoRouteSlugs: readonly string[] = Object.values(editorial).map((e) => e.slug);
+export const photoRouteSlugs: readonly string[] = /* @__PURE__ */ Object.values(editorial).map(
+  (e) => e.slug
+);

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowRightIcon } from '@phosphor-icons/react/dist/ssr';
 import { waypointKickerParts, type Waypoint } from '@/lib/ascent/waypoints';
+import { photoHref } from '@/lib/photos/routes';
 
 /**
  * Three layouts from one markup (D-20, D-21; 09-UI-SPEC "Layout by breakpoint
@@ -107,7 +108,7 @@ export default function WaypointCard({ waypoint }: { waypoint: Waypoint }) {
         </p>
       </div>
       <p className="mt-2 hidden max-w-prose text-base text-ink-muted md:block motion-reduce:block">{story}</p>
-      <Link href={`/photos/${slug}`} aria-label={`View photo: ${title}`} className={LINK}>
+      <Link href={photoHref(slug)} aria-label={`View photo: ${title}`} className={LINK}>
         View photo
         <ArrowRightIcon size={20} aria-hidden="true" />
       </Link>

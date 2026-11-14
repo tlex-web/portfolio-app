@@ -5,6 +5,7 @@ import { terrain } from '@/data/generated/terrain';
 import { sheet } from '@/data/sheet';
 import { formatMetres } from '@/lib/photo-format';
 import { mapMarkCss } from '@/lib/photos/label-layout';
+import { photoHref } from '@/lib/photos/routes';
 import type { PhotoView } from '@/lib/photos/view-model';
 
 /**
@@ -128,7 +129,7 @@ export default function MapSheet({ photos }: { photos: readonly PhotoView[] }) {
           {photos.map((p) => (
             <li key={p.slug}>
               <Link
-                href={`/photos/${p.slug}`}
+                href={photoHref(p.slug)}
                 scroll={false}
                 data-photo-id={p.slug}
                 data-map-mark={p.slug}

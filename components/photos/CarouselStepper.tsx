@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
+import { photoHref } from '@/lib/photos/routes';
 import type { PhotoView } from '@/lib/photos/view-model';
 
 /** The carousel frame box, shared by the stepper and the 3D carousel (UI-SPEC "Carousel View", Frame box). */
@@ -31,7 +32,7 @@ export default function CarouselStepper({ photo }: { photo: PhotoView }) {
       <div className="flex h-full w-full items-center justify-center [container-type:size]">
         <Link
           key={slug}
-          href={`/photos/${slug}`}
+          href={photoHref(slug)}
           scroll={false}
           tabIndex={-1}
           aria-hidden="true"

@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import TileTransition from '@/components/photos/TileTransition';
 import { justifyTile } from '@/lib/photos/justify';
+import { photoHref } from '@/lib/photos/routes';
 import type { PhotoView } from '@/lib/photos/view-model';
 
 /**
@@ -62,7 +63,7 @@ export default function JustifiedGrid({ photos }: { photos: readonly PhotoView[]
             style={{ '--tile-flex': justified.flex } as CSSProperties}
           >
             <Link
-              href={`/photos/${slug}`}
+              href={photoHref(slug)}
               scroll={false}
               data-photo-id={slug}
               aria-label={`${title}, ${shortPlace}, ${altitudeLabel}, ${captureMonth}`}
