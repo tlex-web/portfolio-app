@@ -35,7 +35,9 @@ import { cssEscape } from '@/lib/photos/css-escape';
  * - Focus return (UI-SPEC "Return on close", Tim 2026-10-26): after unmount,
  *   in a microtask (once the gallery is no longer inert), focus goes to
  *   `[data-photo-id="{slug shown at close}"]` in the still-mounted view, else
- *   to the opener if it is still in the document, else to the main h1.
+ *   to the opener if it is still in the document, else to the main h1. The
+ *   mark and its ring are then scrolled fully into view below the nav, again
+ *   after the browser's scroll restoration (restoreFocus, LBOX-08).
  *   Before going back, close() dispatches LIGHTBOX_CLOSE_EVENT on `document`
  *   with the slug shown, so a view whose front photo follows the lightbox
  *   (the carousel, 10-07) can show that photo before focus returns, even
@@ -109,11 +111,46 @@ function tabbables(root: HTMLElement): HTMLElement[] {
   );
 }
 
+/** The global focus ring: a 2 px outline at a 2 px offset (app/globals.css :focus-visible). */
+const RING_PX = 4;
+
+/**
+ * Scroll the window as little as needed, instantly, so `el` and its focus ring sit fully
+ * inside the viewport below the sticky nav (`--nav-h`); no move when they already do
+ * (LBOX-08, D-09). A trigger taller than the room below the nav is top-aligned, its ring just
+ * below the nav. Window only, never scrollIntoView: that also scrolls scrollable ancestors,
+ * and the map plates sit inside the sheet's overflow-hidden box (14-RESEARCH Pitfall 2).
+ */
+export function revealTrigger(el: HTMLElement): void {
+  const navH =
+    Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--nav-h')) || 0;
+  const rect = el.getBoundingClientRect();
+  const top = rect.top - RING_PX;
+  const bottom = rect.bottom + RING_PX;
+  let delta = 0;
+  if (top < navH) delta = top - navH;
+  else if (bottom > window.innerHeight) delta = Math.min(bottom - window.innerHeight, top - navH);
+  if (delta !== 0) window.scrollBy({ top: delta, behavior: 'instant' });
+}
+
 /**
  * Return focus after the lightbox closes (UI-SPEC "Return on close"): the
  * shown photo's mark in the mounted view, else the opener, else the main h1.
  * The slug only ever comes from the pathname of a known photo route, and it is
  * escaped for the selector (T-10-12).
+ *
+ * The mark is revealed twice (LBOX-08; 14-RESEARCH, D-08 diagnosis). Every close is
+ * a history traversal: router.back() for Escape and 'Close photo', the browser
+ * itself for Back. The app router leaves history.scrollRestoration at 'auto', so
+ * after this microtask the browser's same-document scroll restoration puts the
+ * window back at the gallery entry's saved position (where it was at open time,
+ * since the page was scroll-locked) and undoes a reveal made here. So the reveal
+ * runs once now and again in the next animation frame, after the restoration and
+ * before paint, only while the mark still has focus; never on scroll events or
+ * timers, so it cannot fight the visitor's own scrolling. The old
+ * scrollIntoView({ block: 'nearest' }) also left the ring's bottom 4 px under the
+ * viewport edge: the ring clearance lives in revealTrigger (RING_PX), not in a
+ * scroll-margin utility (UI-SPEC P4, resolved to the restore code).
  */
 export function restoreFocus(slug: string, opener: Element | null): void {
   const mark = slug
@@ -121,7 +158,10 @@ export function restoreFocus(slug: string, opener: Element | null): void {
     : null;
   if (mark) {
     mark.focus({ preventScroll: true });
-    mark.scrollIntoView({ block: 'nearest' });
+    revealTrigger(mark);
+    requestAnimationFrame(() => {
+      if (document.activeElement === mark) revealTrigger(mark);
+    });
     return;
   }
   if (opener instanceof HTMLElement && opener.isConnected) {

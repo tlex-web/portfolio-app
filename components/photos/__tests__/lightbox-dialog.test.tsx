@@ -1,6 +1,11 @@
 import { Activity } from 'react';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
-import LightboxDialog, { LIGHTBOX_CLOSE_EVENT, useLightbox } from '../LightboxDialog';
+import LightboxDialog, {
+  LIGHTBOX_CLOSE_EVENT,
+  restoreFocus,
+  revealTrigger,
+  useLightbox,
+} from '../LightboxDialog';
 import PhotoViewer from '../PhotoViewer';
 import { photoViews } from '@/lib/photos/view-model';
 
@@ -97,8 +102,9 @@ describe('LightboxDialog', () => {
         </>
       );
     }
-    const scrollIntoView = Element.prototype.scrollIntoView;
-    Element.prototype.scrollIntoView = jest.fn();
+    // jsdom does not implement window scrolling; the reveal (LBOX-08) scrolls the window only.
+    const scrollBy = window.scrollBy;
+    window.scrollBy = jest.fn();
     const closed: string[] = [];
     const onClose = (event: Event) => closed.push((event as CustomEvent<string>).detail);
     document.addEventListener(LIGHTBOX_CLOSE_EVENT, onClose);
@@ -113,9 +119,13 @@ describe('LightboxDialog', () => {
       });
       expect(closed).toEqual(['second']);
       expect(screen.getByRole('button', { name: 'Second tile' })).toHaveFocus();
+      // The re-reveal runs in the next frame; let it run while scrollBy is still stubbed.
+      await act(async () => {
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      });
     } finally {
       document.removeEventListener(LIGHTBOX_CLOSE_EVENT, onClose);
-      Element.prototype.scrollIntoView = scrollIntoView;
+      window.scrollBy = scrollBy;
     }
   });
 
@@ -189,5 +199,143 @@ describe('LightboxDialog', () => {
     expect(document.documentElement.style.overflow).toBe('hidden');
     unmount();
     expect(document.documentElement.style.overflow).toBe('');
+  });
+});
+
+/**
+ * The reveal after close (LBOX-08, D-09, D-21). jsdom has no layout, so each row stubs the
+ * trigger's rect, the viewport height and window.scrollBy; --nav-h is 64 px as in
+ * app/globals.css. The history traversal that makes the second, next-frame reveal necessary
+ * is browser behaviour, proven in e2e/photos-lightbox.spec.ts "Focus on close stays in view".
+ */
+describe('revealTrigger (LBOX-08)', () => {
+  const NAV_H = 64;
+  const RING = 4;
+  const INNER_HEIGHT = 450;
+  let innerHeight: PropertyDescriptor | undefined;
+  let scrollBy: typeof window.scrollBy;
+  let scrollSpy: jest.Mock;
+
+  beforeEach(() => {
+    innerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: INNER_HEIGHT });
+    document.documentElement.style.setProperty('--nav-h', `${NAV_H}px`);
+    scrollBy = window.scrollBy;
+    scrollSpy = jest.fn();
+    window.scrollBy = scrollSpy as unknown as typeof window.scrollBy;
+  });
+
+  afterEach(() => {
+    if (innerHeight) Object.defineProperty(window, 'innerHeight', innerHeight);
+    document.documentElement.style.removeProperty('--nav-h');
+    window.scrollBy = scrollBy;
+    document.body.innerHTML = '';
+  });
+
+  /** A focusable trigger whose box is `top`..`top + height` in viewport coordinates. */
+  function trigger(top: number, height: number, slug = 'shown'): HTMLElement {
+    const el = document.createElement('a');
+    el.href = `/photos/${slug}`;
+    el.setAttribute('data-photo-id', slug);
+    el.textContent = slug;
+    el.getBoundingClientRect = () =>
+      ({
+        top,
+        bottom: top + height,
+        left: 20,
+        right: 120,
+        width: 100,
+        height,
+        x: 20,
+        y: top,
+        toJSON: () => ({}),
+      }) as DOMRect;
+    document.body.appendChild(el);
+    return el;
+  }
+
+  it('reads --nav-h from the root element (the jsdom precondition the other rows rely on)', () => {
+    expect(
+      Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--nav-h'))
+    ).toBe(NAV_H);
+  });
+
+  it('revealTrigger scrolls a trigger below the viewport up by its overflow plus the ring', () => {
+    const el = trigger(500, 68);
+    revealTrigger(el);
+    expect(scrollSpy).toHaveBeenCalledTimes(1);
+    expect(scrollSpy).toHaveBeenCalledWith({
+      top: 500 + 68 + RING - INNER_HEIGHT,
+      behavior: 'instant',
+    });
+  });
+
+  it('revealTrigger scrolls a trigger under the nav down to just below it (negative delta)', () => {
+    const el = trigger(30, 44);
+    revealTrigger(el);
+    expect(scrollSpy).toHaveBeenCalledTimes(1);
+    expect(scrollSpy).toHaveBeenCalledWith({ top: 30 - RING - NAV_H, behavior: 'instant' });
+  });
+
+  it('revealTrigger top-aligns a trigger taller than the room below the nav', () => {
+    // The room is 450 - 64 - 8 = 378 px; a 503 px grid tile cannot fit.
+    const el = trigger(600, 503);
+    revealTrigger(el);
+    expect(scrollSpy).toHaveBeenCalledTimes(1);
+    expect(scrollSpy).toHaveBeenCalledWith({ top: 600 - RING - NAV_H, behavior: 'instant' });
+  });
+
+  it('revealTrigger does not scroll when the trigger and its ring are already in view', () => {
+    // Exactly the ring's room on both edges: top - 4 = 64 and bottom + 4 = 450.
+    revealTrigger(trigger(NAV_H + RING, INNER_HEIGHT - NAV_H - 2 * RING));
+    // And with room to spare.
+    revealTrigger(trigger(200, 68, 'other'));
+    expect(scrollSpy).not.toHaveBeenCalled();
+  });
+
+  it('restoreFocus (LBOX-08) focuses the mark without a scroll and reveals it again in the next frame', async () => {
+    const el = trigger(500, 68);
+    const focus = jest.spyOn(el, 'focus');
+    restoreFocus('shown', null);
+    expect(el).toHaveFocus();
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    expect(scrollSpy).toHaveBeenCalledTimes(1);
+    // jsdom does not move the box, so the next-frame reveal finds it still below the fold.
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(scrollSpy).toHaveBeenCalledTimes(2);
+    expect(scrollSpy).toHaveBeenLastCalledWith({
+      top: 500 + 68 + RING - INNER_HEIGHT,
+      behavior: 'instant',
+    });
+  });
+
+  it('restoreFocus (LBOX-08) skips the next-frame reveal once focus has moved on', async () => {
+    trigger(500, 68);
+    const elsewhere = document.createElement('button');
+    document.body.appendChild(elsewhere);
+    restoreFocus('shown', null);
+    elsewhere.focus();
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(scrollSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('restoreFocus (LBOX-08) falls back to a connected opener when no mark carries the slug', () => {
+    const opener = document.createElement('button');
+    opener.textContent = 'Opener';
+    document.body.appendChild(opener);
+    restoreFocus('missing', opener);
+    expect(opener).toHaveFocus();
+    expect(scrollSpy).not.toHaveBeenCalled();
+  });
+
+  it('restoreFocus (LBOX-08) falls back to the main h1, made focusable, when the opener is gone', () => {
+    document.body.innerHTML = '<main><h1>Photographs</h1></main>';
+    const heading = document.querySelector('h1')!;
+    const opener = document.createElement('button');
+    restoreFocus('missing', opener);
+    expect(opener.isConnected).toBe(false);
+    expect(heading).toHaveAttribute('tabindex', '-1');
+    expect(heading).toHaveFocus();
+    expect(document.activeElement).not.toBe(document.body);
   });
 });
