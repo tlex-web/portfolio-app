@@ -75,7 +75,7 @@ The ratchet only goes down: a higher count fails, a lower count fails until `--u
 
 ### `check-contrast.mjs` (GUARD-05)
 
-Reads every token from `app/globals.css` (the top-level `:root` and `@theme` blocks; a token block nested in an at-rule such as `@media` or `@supports` is not merged, and fails if it declares a custom property, because media-scoped palettes are not measured), resolves `var()` chains and measures 36 pairs (the 28 UI-SPEC pairs, 4 `accent-strong` pairs and the 4 photo-viewer `gallery` pairs: `accent`/`gallery`, `gallery`/`ink`, `focus`/`gallery`, `line-strong`/`gallery`) with `colorjs.io` (`contrast(…, 'WCAG21')`): text pairs need 4.5:1, non-text pairs (focus, line-strong) 3:1, compared as raw floats. An unknown `--color-*` token, a missing pair token, an alpha token in a measured pair or a file without token blocks fails. v1 alias tokens are skipped; `line` and `contour` are decorative and exempt. Adding a semantic token means adding it and its pairs to the script in the same commit.
+Reads every token from `app/globals.css` (the top-level `:root` and `@theme` blocks; a token block nested in an at-rule such as `@media` or `@supports` is not merged, and fails if it declares a custom property, because media-scoped palettes are not measured), resolves `var()` chains and measures 47 pairs (the 28 UI-SPEC pairs, 4 `accent-strong` pairs, the 4 photo-viewer `gallery` pairs: `accent`/`gallery`, `gallery`/`ink`, `focus`/`gallery`, `line-strong`/`gallery`, the Phase 11 `ink-inverse`/`ink` toggle pair and the 10 non-text trail pairs: `trail-mountain` and `trail-alpine` on `trail-blaze` and the three surfaces, `trail-blaze` and `trail-yellow` on `surface-raised`) with `colorjs.io` (`contrast(…, 'WCAG21')`): text pairs need 4.5:1, non-text pairs (focus, line-strong) 3:1, compared as raw floats. An unknown `--color-*` token, a missing pair token, an alpha token in a measured pair or a file without token blocks fails. v1 alias tokens are skipped; `line` and `contour` are decorative and exempt. Adding a semantic token means adding it and its pairs to the script in the same commit.
 
 ```bash
 npm run guard:contrast
@@ -86,7 +86,7 @@ This replaces the old `verify-contrast.mjs` postbuild step, which checked a hand
 
 ### `check-served-images.mjs` (DATA-05)
 
-Keeps photo originals and their GPS out of the repository and out of what is served. In repo mode it scans every tracked image anywhere in the repo (`git ls-files`, case-insensitive): `.jpg`, `.jpeg`, `.jfif`, `.png`, `.webp`, `.avif`, `.gif`, `.tif`, `.tiff`, `.heic`, `.heif`, `.jxl`, `.bmp`, `.svg` and the camera raws `.dng`, `.cr2`, `.cr3`, `.nef`, `.arw`. The `__selftest__` fixtures are excluded; with `--root <dir>` it walks a fixture folder instead.
+Keeps photo originals and their GPS out of the repository and out of what is served. In repo mode it scans every tracked image anywhere in the repo (`git ls-files`, case-insensitive): `.jpg`, `.jpeg`, `.jfif`, `.png`, `.webp`, `.avif`, `.gif`, `.tif`, `.tiff`, `.heic`, `.heif`, `.jxl`, `.bmp`, `.svg` and the camera raws `.dng`, `.cr2`, `.cr3`, `.nef`, `.arw`, and every tracked video (`.mp4`, `.m4v`, `.mov`, `.webm`, `.mkv`, `.3gp`). For the `telemetry` rule the repo scan also covers untracked files no ignore rule covers (`git ls-files -co --exclude-standard`) and every file under `public/`, ignored files included, because `next start` serves them (D-21); an ignored, untracked file under `assets/photos-original/` or `assets/clips-original/` is skipped, a force-added one fails. The `__selftest__` fixtures are excluded; with `--root <dir>` it walks a fixture folder instead.
 
 | Rule | Fails on |
 |------|----------|
@@ -97,6 +97,7 @@ Keeps photo originals and their GPS out of the repository and out of what is ser
 | `orphan` / `missing` | a hashed file no generated manifest lists, or a manifest URL with no file |
 | `svg-content` | an SVG under `public/` with a script element, an `on*=` handler, an `href` or a `foreignObject` |
 | `metadata-call` | a `scripts/photos/` or `scripts/terrain/` source calling a metadata-keeping sharp method |
+| `video-format` / `video` | a video container other than MP4 anywhere; an MP4 the box walker rejects (`moov` after `mdat`, a `uuid`, `XMP_`, `©xyz` or `loci` box, metadata items, non-zero times, a clip over 1.5 MiB under `public/`) or that holds anything but exactly one video track, which rejects audio, DJI `djmd`/`dbgi` and GoPro `gpmd` telemetry tracks, subtitle (`sbtl`) and text tracks (D-23, proven by synthetic selftest clips spliced from the `good-mp4` fixture at run time; no telemetry clip is committed) |
 | `telemetry` | a drone, camera or GPS sidecar or track (DATA-15): `.srt`, `.lrf`, `.dat`, `.lrv`, `.thm`, standalone `.xmp`, `.gpx`, `.kml`, `.kmz`, `.nmea`, `.igc`, `.fit` and `.tcx`, any case, anywhere in the repo or under `public/` (`.geojson` stays allowed) |
 
 ```bash

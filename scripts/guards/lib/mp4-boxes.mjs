@@ -98,7 +98,7 @@ export function checkMp4(buf, { maxBytes } = {}) {
   }
   const handlers = trackHandlers(buf, all);
   if (handlers.length !== 1 || handlers[0] !== 'vide') {
-    v.push(`tracks: ${handlers.join(',') || 'none'} (need exactly one video track, no audio)`);
+    v.push(`tracks: ${handlers.join(',') || 'none'} (need exactly one video track: no audio, telemetry or subtitle track)`);
   }
   if (maxBytes && buf.length > maxBytes) v.push(`size ${buf.length} B over ${maxBytes} B`);
   return v;

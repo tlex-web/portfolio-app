@@ -34,7 +34,7 @@ import sharp from 'sharp';
 import { evaluate, pickRun } from '../ci/check-visual-run.mjs';
 import { evaluateSnapshotChanges, snapshotDiffArgs } from '../ci/check-snapshot-commit.mjs';
 import { DOCS_ONLY_FILES, classify } from '../ci/classify-changes.mjs';
-import { checkMp4 } from './lib/mp4-boxes.mjs';
+import { boxes, checkMp4 } from './lib/mp4-boxes.mjs';
 import { extractRunBlock, runStep } from './lib/workflow-shell.mjs';
 import { LEGACY_DEAD_FILES, assertNoImporters, isLegacyDeadFile } from './lib/legacy-dead-files.mjs';
 
@@ -57,6 +57,58 @@ const idf = (name) => path.join(fixtures, 'identity', name);
 const si = (name) => path.join(fixtures, 'served-images', name);
 /** The clean 0.2 s fixture clip (see served-images/good-mp4/README.md). */
 const goodMp4 = () => fs.readFileSync(path.join(si('good-mp4'), 'public', 'media', 'coin-flip-toss.d423c62633.mp4'));
+/*
+ * Telemetry-track MP4 fixtures (generated, synthetic; DATA-15, D-23): each clip
+ * is the committed good-mp4 clip with one extra `trak` spliced into its `moov`
+ * after the video track, built in memory by a Node `Buffer.concat` (no ffmpeg).
+ * The extra track is trak{tkhd, mdia{mdhd, hdlr(<handler>), minf{nmhd,
+ * stbl{stsd{<entry>}}}}} with zero timestamps and zero-filled payloads: no camera
+ * data, no GPS, no device tags, never a real drone or camera file. A clip is a
+ * pure function of the committed clip's bytes, so every run builds the same
+ * bytes (a determinism case pins them). Write spliced clips only into temp
+ * roots; never write one into scripts/guards/__selftest__/ or commit one,
+ * because a real telemetry track carries take-off GPS that git history cannot
+ * forget. The walker reads only the hdlr handler; the stsd entry (djmd, dbgi,
+ * gpmd, tx3g) mirrors what a DJI or GoPro file holds. Stale stco offsets after
+ * the splice do not matter to the walker.
+ */
+const box = (type, ...payload) => {
+  const body = Buffer.concat(payload);
+  const header = Buffer.alloc(8);
+  header.writeUInt32BE(8 + body.length);
+  header.write(type, 4, 'latin1');
+  return Buffer.concat([header, body]);
+};
+/** A FullBox version byte and 24-bit flags. */
+const full = (version, flags = 0) => Buffer.from([version, (flags >> 16) & 255, (flags >> 8) & 255, flags & 255]);
+const zeros = (n) => Buffer.alloc(n);
+/** One non-video track: `handler` in its hdlr (meta, sbtl, text) and one `entry` sample description. */
+function trak(handler, entry) {
+  const tkhd = box('tkhd', full(0, 3), zeros(80));
+  const mdhd = box('mdhd', full(0), zeros(20));
+  const hdlr = box('hdlr', full(0), zeros(4), Buffer.from(handler, 'latin1'), zeros(12), Buffer.from('\0'));
+  const stsd = box('stsd', full(0), Buffer.from([0, 0, 0, 1]), box(entry, zeros(8)));
+  return box('trak', tkhd, box('mdia', mdhd, hdlr, box('minf', box('nmhd', full(0)), box('stbl', stsd))));
+}
+/** `buf` with track `t` inserted after its first trak and its moov size grown to match. */
+function withTrack(buf, t) {
+  const all = boxes(buf);
+  const moov = all.find((b) => b.type === 'moov');
+  const first = all.find((b) => b.type === 'trak');
+  const at = first.offset + first.size;
+  const out = Buffer.concat([buf.subarray(0, at), t, buf.subarray(at)]);
+  out.writeUInt32BE(moov.size + t.length, moov.offset);
+  return out;
+}
+/** The five D-23 telemetry-track kinds: clip name, hdlr handler, stsd entry. */
+const TELEMETRY_TRACKS = [
+  { name: 'DJI_0001.MP4', handler: 'meta', entry: 'djmd', kind: 'DJI djmd telemetry' },
+  { name: 'DJI_0002.MP4', handler: 'meta', entry: 'dbgi', kind: 'DJI dbgi debug' },
+  { name: 'GX010001.MP4', handler: 'meta', entry: 'gpmd', kind: 'GoPro gpmd telemetry' },
+  { name: 'DJI_0003.MP4', handler: 'sbtl', entry: 'tx3g', kind: 'subtitle (sbtl)' },
+  { name: 'DJI_0004.MP4', handler: 'text', entry: 'tx3g', kind: 'text' },
+];
+const TRACK_MESSAGE = (handler) => `tracks: vide,${handler} (need exactly one video track: no audio, telemetry or subtitle track)`;
 const tc = (...parts) => path.join(fixtures, 'test-count', ...parts);
 const pal = (...parts) => path.join(fixtures, 'palette', ...parts);
 const sc = (...parts) => path.join(fixtures, 'same-classnames', ...parts);
@@ -910,6 +962,19 @@ function tempTelemetryRoot(files) {
   const root = path.join(dir, 'root');
   fs.mkdirSync(root);
   putFiles(root, Object.fromEntries(files.map((rel) => [rel, 'selftest placeholder, no telemetry\n'])));
+  telemetryTempRoots.push(root);
+  return root;
+}
+/**
+ * A fresh temp root with one spliced telemetry-track clip at clips/<name>
+ * (outside public/ and any hashed directory, so only the video rule fires).
+ * Nested one level down like tempTelemetryRoot.
+ */
+function tempMp4TrackRoot(name, handler, entry) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
+  const root = path.join(dir, 'root');
+  fs.mkdirSync(path.join(root, 'clips'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'clips', name), withTrack(goodMp4(), trak(handler, entry)));
   telemetryTempRoots.push(root);
   return root;
 }
@@ -2134,6 +2199,33 @@ const cases = [
     expectExit: 1,
     expectOutput: ['scope: git ls-files failed', 'served-images: 1 violations'],
     check: () => (telemetryNoGit.insideWorkTree ? `git finds a work tree at ${telemetryNoGit.root}, so this case proves nothing` : null),
+  },
+  ...TELEMETRY_TRACKS.map(({ name, handler, entry, kind }) => ({
+    name: `served-images: an MP4 with a ${kind} track fails the video rule`,
+    guard: SERVED,
+    args: [],
+    setup: () => ['--root', tempMp4TrackRoot(name, handler, entry)],
+    expectExit: 1,
+    expectOutput: [`clips/${name} video: tracks: vide,${handler}`, 'served-images: 1 violations'],
+  })),
+  ...TELEMETRY_TRACKS.map(({ handler, entry, kind }) => ({
+    name: `mp4-boxes: checkMp4 reports only the track rule for a spliced ${kind} track (${handler}/${entry})`,
+    fn: () => expectEqual('violations', checkMp4(withTrack(goodMp4(), trak(handler, entry))).join('; '), TRACK_MESSAGE(handler)),
+  })),
+  {
+    name: 'mp4-boxes: the spliced telemetry clips are deterministic',
+    fn: () => {
+      const good = goodMp4();
+      for (const { handler, entry, kind } of TELEMETRY_TRACKS) {
+        const t = trak(handler, entry);
+        const a = withTrack(goodMp4(), trak(handler, entry));
+        const b = withTrack(goodMp4(), trak(handler, entry));
+        if (Buffer.compare(a, b) !== 0) return `${kind}: two builds differ`;
+        if (a.length !== good.length + t.length) return `${kind}: ${a.length} B, expected ${good.length} + ${t.length} B`;
+        if (a.length !== 1348) return `${kind}: ${a.length} B, expected 1,348 B (15-RESEARCH measurement)`;
+      }
+      return null;
+    },
   },
   {
     name: 'mp4-boxes: checkMp4 finds no violation in the clean fixture clip',
