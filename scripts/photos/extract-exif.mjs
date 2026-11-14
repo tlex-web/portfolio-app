@@ -20,10 +20,16 @@
  *              memory and compare bytes: one line per stale entry and per
  *              missing/extra original. Without originals (CI) the schema check
  *              alone runs and the hash check is reported as skipped.
+ *   --root <dir>  read the originals, the photo map and the sidecar (and write
+ *              the sidecar) under <dir> instead of the repository root (default
+ *              unchanged). The guard selftest runs it on generated JPEGs.
  *
- * File id rule: the name starts with IMG_dddd or Rddd-ddd; id is that prefix
- * lowercased with `_` -> `-` (IMG_0605-Enhanced (...).jpg -> img-0605). Any other
- * name fails the script.
+ * File id rule (15 D-01): an original's id is the key of the record in
+ * data/photos/photo-map.json whose `file` is the original's name, never a
+ * prefix of the name, so a DJI still or a second camera's IMG_0605 cannot
+ * collide on a derived id. The map is parsed with PhotoMap in both modes (CI
+ * included); an original with no record fails the script, and so do two
+ * records naming one file (the schema refine).
  *
  * DateTimeOriginal: exif-reader returns the naive local wall time as a UTC Date
  * (RESEARCH Pitfall 4); it is formatted with UTC getters, with no offset.
@@ -43,14 +49,76 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import exifReader from 'exif-reader';
-import { ExifSidecar } from '../../data/schemas/photo.ts';
+import { ExifSidecar, PhotoMap } from '../../data/schemas/photo.ts';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const NAME = 'photos:exif';
+
+/**
+ * `--check` and `--root <dir>`. The root defaults to the repository above this
+ * script; the guard selftest points it at a temp root of generated JPEGs.
+ * Parsed before any ROOT-derived path, so every read and write follows --root.
+ */
+function parseArgs(argv) {
+  const args = {
+    check: false,
+    root: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..'),
+  };
+  const unknown = [];
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '--check') {
+      args.check = true;
+    } else if (argv[i] === '--root') {
+      const value = argv[i + 1];
+      if (!value || value.startsWith('--')) {
+        console.log(`${NAME}: --root needs a directory`);
+        process.exit(1);
+      }
+      args.root = path.resolve(value);
+      i++;
+    } else {
+      unknown.push(argv[i]);
+    }
+  }
+  if (unknown.length > 0) {
+    console.log(
+      `${NAME}: unknown argument(s) ${unknown.join(' ')}; the flags are --check and --root <dir>`
+    );
+    process.exit(1);
+  }
+  return args;
+}
+
+const ARGS = parseArgs(process.argv.slice(2));
+const ROOT = ARGS.root;
 const ORIGINALS_REL = 'assets/photos-original/';
 const SIDECAR_REL = 'data/photos/exif-sidecar.json';
+const PHOTO_MAP_REL = 'data/photos/photo-map.json';
 const ORIGINALS_DIR = path.join(ROOT, ORIGINALS_REL);
 const SIDECAR_PATH = path.join(ROOT, SIDECAR_REL);
-const NAME = 'photos:exif';
+const PHOTO_MAP_PATH = path.join(ROOT, PHOTO_MAP_REL);
+
+/**
+ * data/photos/photo-map.json parsed with PhotoMap (15 D-01). Schema issues are
+ * printed one per line with the map's path; a duplicate file fails here through
+ * the schema refine. Throws on any failure.
+ */
+function loadPhotoMap() {
+  if (!fs.existsSync(PHOTO_MAP_PATH)) throw new Error(`${PHOTO_MAP_REL} is missing`);
+  let raw;
+  try {
+    raw = JSON.parse(fs.readFileSync(PHOTO_MAP_PATH, 'utf8'));
+  } catch (e) {
+    throw new Error(`${PHOTO_MAP_REL} is not valid JSON (${e.message})`);
+  }
+  const parsed = PhotoMap.safeParse(raw);
+  if (!parsed.success) {
+    for (const i of parsed.error.issues) {
+      console.log(`${NAME}: ${PHOTO_MAP_REL} ${i.path.length ? i.path.join('.') : '(root)'}: ${i.message}`);
+    }
+    throw new Error(`${PHOTO_MAP_REL}: ${parsed.error.issues.length} schema violations`);
+  }
+  return parsed.data;
+}
 
 /**
  * Sorted *.jpg and *.jpeg names in the originals folder, or null when the folder
@@ -64,12 +132,14 @@ function listOriginals() {
     .sort();
 }
 
-/** IMG_0605-Enhanced (...).jpg -> img-0605; R004-011-Edit (...).jpg -> r004-011. */
-function idFromFile(file) {
-  const m = /^(IMG_\d{4}|R\d{3}-\d{3})/.exec(file);
-  if (!m)
-    throw new Error(`cannot derive an id from "${file}" (expected IMG_dddd or Rddd-ddd prefix)`);
-  return m[1].toLowerCase().replace('_', '-');
+/**
+ * The id of the photo-map record whose `file` is `file` (15 D-01). The name is
+ * never parsed: an original with no record fails, whatever its name.
+ */
+function idFor(file, map) {
+  const hit = Object.entries(map.photos).find(([, entry]) => entry.file === file);
+  if (!hit) throw new Error(`add a record for ${file} to ${PHOTO_MAP_REL}`);
+  return hit[0];
 }
 
 /** Trim trailing NUL and whitespace from an EXIF ASCII value; empty -> null. */
@@ -160,7 +230,7 @@ function iccDescription(icc) {
   return null;
 }
 
-async function extractEntry(file) {
+async function extractEntry(file, map) {
   const abs = path.join(ORIGINALS_DIR, file);
   const bytes = fs.readFileSync(abs);
   const sha256 = crypto.createHash('sha256').update(bytes).digest('hex');
@@ -169,7 +239,7 @@ async function extractEntry(file) {
   const img = ex.Image ?? {};
   const photo = ex.Photo ?? {};
   return {
-    id: idFromFile(file),
+    id: idFor(file, map),
     file,
     sha256,
     width: md.width,
@@ -191,9 +261,9 @@ async function extractEntry(file) {
 }
 
 /** Extract every original, validate, and return { value, text }. Throws on a schema failure. */
-async function buildSidecar(files) {
+async function buildSidecar(files, map) {
   const photos = [];
-  for (const file of files) photos.push(await extractEntry(file));
+  for (const file of files) photos.push(await extractEntry(file, map));
   photos.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   const value = ExifSidecar.parse({ schemaVersion: 1, photos });
   return { value, text: JSON.stringify(value, null, 2) + '\n' };
@@ -206,12 +276,13 @@ function formatIssues(error) {
 }
 
 async function write() {
+  const map = loadPhotoMap();
   const files = listOriginals();
   if (!files || files.length === 0) {
     console.log(`${NAME}: no originals found in ${ORIGINALS_REL}`);
     process.exit(1);
   }
-  const { value, text } = await buildSidecar(files);
+  const { value, text } = await buildSidecar(files, map);
   fs.mkdirSync(path.dirname(SIDECAR_PATH), { recursive: true });
   fs.writeFileSync(SIDECAR_PATH, text, 'utf8');
   console.log(`${NAME}: wrote ${SIDECAR_REL} (${value.photos.length} photos)`);
@@ -239,6 +310,9 @@ async function check() {
     process.exit(1);
   }
 
+  // Parsed with or without the originals, so CI checks the map too (15 D-01).
+  const map = loadPhotoMap();
+
   const files = listOriginals();
   if (!files || files.length === 0) {
     console.log(`${NAME}: originals absent, schema OK, hash check skipped`);
@@ -248,7 +322,7 @@ async function check() {
 
   let fresh;
   try {
-    fresh = await buildSidecar(files);
+    fresh = await buildSidecar(files, map);
   } catch (e) {
     if (e && Array.isArray(e.issues)) {
       for (const l of formatIssues(e)) console.log(`${l} (fresh extraction)`);
@@ -283,14 +357,7 @@ async function check() {
   process.exit(lines.length === 0 ? 0 : 1);
 }
 
-const args = process.argv.slice(2);
-const unknown = args.filter((a) => a !== '--check');
-if (unknown.length > 0) {
-  console.log(`${NAME}: unknown argument(s) ${unknown.join(' ')}; the only flag is --check`);
-  process.exit(1);
-}
-
-(args.includes('--check') ? check() : write()).catch((e) => {
+(ARGS.check ? check() : write()).catch((e) => {
   if (e && Array.isArray(e.issues)) {
     for (const l of formatIssues(e)) console.log(l);
     console.log(`${NAME}: ${e.issues.length} schema violations; nothing written`);
