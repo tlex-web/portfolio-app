@@ -1049,6 +1049,65 @@ async function tempDeriveRoot() {
 const photoDeriveRoot = await tempDeriveRoot();
 const photoDeriveBefore = snapshotTree(photoDeriveRoot);
 
+// 15-07 (DATA-10, D-01): photos:exif takes each original's id from the photo map.
+const PHOTO_EXIF = path.join(repoRoot, 'scripts', 'photos', 'extract-exif.mjs');
+const EXIF_SIDECAR_REL = 'data/photos/exif-sidecar.json';
+/**
+ * Extraction fixture (generated, no camera data): a temp root with two sharp
+ * JPEGs in assets/photos-original/ (no EXIF, no GPS, no serial; nothing is copied
+ * from the real originals) and a data/photos/photo-map.json mapping both, keys
+ * sorted. DJI_0001.JPG is a name the old IMG_/R regex could never parse, and
+ * IMG_0605.jpg is a second camera's file the regex would have called img-0605;
+ * the map gives them img-9001 and img-9002. `mapEdit(map)` mutates the map
+ * before it is written. No sidecar exists until a run writes one. Built with
+ * top-level await because case setup hooks are synchronous; nested one level
+ * down so the cleanup loop's path.dirname removes the mkdtemp directory.
+ */
+async function tempExifRoot({ mapEdit } = {}) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
+  const root = path.join(dir, 'root');
+  const put = (rel, bytes) => {
+    fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
+    fs.writeFileSync(path.join(root, rel), bytes);
+  };
+  const jpeg = (r) => sharp({ create: { width: 16, height: 12, channels: 3, background: { r, g: 110, b: 140 } } }).jpeg().toBuffer();
+  put('assets/photos-original/DJI_0001.JPG', await jpeg(60));
+  put('assets/photos-original/IMG_0605.jpg', await jpeg(180));
+  const map = {
+    schemaVersion: 1,
+    photos: {
+      'img-9001': { file: 'DJI_0001.JPG', region: 'zermatt', country: 'CH' },
+      'img-9002': { file: 'IMG_0605.jpg', region: 'zermatt', country: 'CH' },
+    },
+  };
+  if (mapEdit) mapEdit(map);
+  put('data/photos/photo-map.json', `${JSON.stringify(map, null, 2)}\n`);
+  return root;
+}
+const exifMappedRoot = await tempExifRoot();
+const exifUnmappedRoot = await tempExifRoot({ mapEdit: (map) => delete map.photos['img-9002'] });
+const exifDuplicateRoot = await tempExifRoot({
+  mapEdit: (map) => {
+    map.photos['img-9002'].file = 'DJI_0001.JPG';
+  },
+});
+/** Null when each named file's sidecar entry carries the expected id; else what is wrong. */
+function exifSidecarIds(root, expected) {
+  const abs = path.join(root, EXIF_SIDECAR_REL);
+  if (!fs.existsSync(abs)) return `${EXIF_SIDECAR_REL} was not written`;
+  const { photos } = JSON.parse(fs.readFileSync(abs, 'utf-8'));
+  const problems = [];
+  for (const [file, id] of Object.entries(expected)) {
+    const entry = photos.find((p) => p.file === file);
+    if (!entry) problems.push(`no sidecar entry for ${file}`);
+    else if (entry.id !== id) problems.push(`${file} has id ${entry.id}, expected ${id}`);
+  }
+  return problems.length ? problems.join('; ') : null;
+}
+/** A failed extraction writes no sidecar. */
+const noExifSidecar = (root) => () =>
+  fs.existsSync(path.join(root, EXIF_SIDECAR_REL)) ? `${EXIF_SIDECAR_REL} was written by a failing run` : null;
+
 // scripts/terrain/: the plate registry through --root (DATA-11, 15-05 D-13)
 const TERRAIN_BUILD = path.join(repoRoot, 'scripts', 'terrain', 'build-terrain.mjs');
 const TERRAIN_PUBLIC = 'public/terrain';
@@ -2598,6 +2657,35 @@ const cases = [
     expectOutput: ['photos:build: data/generated/photos.ts differs from a fresh build', 'photos:build: stale'],
     check: noSortRefine,
   },
+  // 15-07 (DATA-10, D-01): extraction ids come from the photo map, never the file name.
+  // Write mode on generated JPEGs (tempExifRoot); a failing run writes no sidecar.
+  {
+    name: 'photos:exif: ids come from the photo map',
+    guard: PHOTO_EXIF,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--root', exifMappedRoot],
+    expectExit: 0,
+    expectOutput: ['photos:exif: wrote data/photos/exif-sidecar.json (2 photos)', 'photos:exif: OK'],
+    check: () => exifSidecarIds(exifMappedRoot, { 'DJI_0001.JPG': 'img-9001', 'IMG_0605.jpg': 'img-9002' }),
+  },
+  {
+    name: 'photos:exif: an original with no photo-map record fails',
+    guard: PHOTO_EXIF,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--root', exifUnmappedRoot],
+    expectExit: 1,
+    expectOutput: ['photos:exif: add a record for IMG_0605.jpg to data/photos/photo-map.json'],
+    check: noExifSidecar(exifUnmappedRoot),
+  },
+  {
+    name: 'photos:exif: two records naming one file fail',
+    guard: PHOTO_EXIF,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--root', exifDuplicateRoot],
+    expectExit: 1,
+    expectOutput: ['DJI_0001.JPG is named by both img-9001 and img-9002; one original has one record', 'photos:exif: data/photos/photo-map.json: 1 schema violations'],
+    check: noExifSidecar(exifDuplicateRoot),
+  },
   {
     name: 'G6 photos:derive: an undecodable source after a valid one exits 1 and leaves every file in place (WR-05)',
     guard: PHOTO_DERIVE,
@@ -2723,7 +2811,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, terrainFixtureRoot, terrainMissingRoot, terrainRemoveRoot, ...ciGateTempRoots]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, exifMappedRoot, exifUnmappedRoot, exifDuplicateRoot, terrainFixtureRoot, terrainMissingRoot, terrainRemoveRoot, ...ciGateTempRoots]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 
