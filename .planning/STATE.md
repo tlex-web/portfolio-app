@@ -6,10 +6,10 @@ current_phase: 15
 current_phase_name: Region & Plate Data Model
 status: planning
 stopped_at: Phase 14 complete, ready to plan Phase 15
-last_updated: "2026-11-14T16:04:31.121Z"
+last_updated: "2026-11-14T16:40:35.949Z"
 last_activity: 2026-11-14
-last_activity_desc: Phase 14 complete, transitioned to Phase 15
-state_head: e000dba9b042d4d892ff604581267702d2ce1e3f
+last_activity_desc: Completed quick task 261114-o8w: Fix the Escape scroll jump in the mobile menu
+state_head: d03811792eeda8b96911b3ea164520e222d80f00
 progress:
   total_phases: 7
   completed_phases: 2
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-11-14)
 Phase: 15 — Region & Plate Data Model
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-11-14 — Phase 14 complete, transitioned to Phase 15
+Last activity: 2026-11-14 - Completed quick task 261114-o8w: Fix the Escape scroll jump in the mobile menu
 
 Progress: [███░░░░░░░] 29%
 
@@ -184,7 +184,7 @@ None carried from v2.0.
 - [Phase 13] Carried, not blocking: the relay's ~40-minute long-mirror wait has not been seen live (watch the first code-changing `[ci skip]` PR); Dependabot PR #140 should close on its next run; the `@firefox-43967` tags and `FIREFOX_INVERT` come out after the Playwright release with the fixing Firefox roll (owners in `13-repo-safety-test-debt/deferred-items.md`).
 - [Phase 13] The UAT, verification and transition commits after `98f2186` are local on `gsd/phase-13-repo-safety-test-debt`, whose remote branch was deleted by the #147 merge. They reach `main` only through a new PR, which needs Tim's ask.
 - [Phase 14] The phase branch `gsd/phase-14-ui-fixes-terminal-controls` has no upstream; its commits (plans, UAT, verification, transition) reach `main` only through `/gsd-ship 14`, which needs Tim's ask.
-- [Phase 14] Open, Tim to decide: Escape from the open mobile menu scrolls the page up when scrolled down (`SiteNav.tsx` Escape handler lacks `preventScroll`; one-word fix plus a scroll assertion, see `14-ui-fixes-terminal-controls/deferred-items.md`). Six code-review findings are deferred to Phase 15 (`14-REVIEW-DISPOSITION.md`).
+- [Phase 14] Six code-review findings (IN-01..06) are deferred to Phase 15 (`14-REVIEW-DISPOSITION.md`). The Escape scroll jump is fixed (quick 261114-o8w, `d038117`).
 - [Phase 16] Needs Tim's inputs before planning can finish: the launch regions (inside the footprint, at least one in Italy or Austria), the new originals and the coarse-location choice per photo.
 - [Phase 19] Needs a graded drone clip from Tim before any byte budget is fixed.
 
@@ -198,6 +198,7 @@ None carried from v2.0.
 | 261106-mzc | E2E reliability: E2E in the Playwright image, focus trap skips hidden controls, nav menu ignores photo steps, case-study axe measures final colours | 2026-11-06 | 8239f91 | [261106-mzc-e2e-reliability-run-e2e-in-the-playwrigh](./quick/261106-mzc-e2e-reliability-run-e2e-in-the-playwrigh/) |
 | 261106-qvn | Dependabot group C: next, resend, upstash, three, motion, Playwright 1.64.1, axe 4.14 with 14 names, Tailwind 4.3.4 with the note in Inter | 2026-11-06 | a5fa14a | [261106-qvn-dependabot-group-c-dependency-batches-ax](./quick/261106-qvn-dependabot-group-c-dependency-batches-ax/) |
 | 261106-www | Drop the unused Google Analytics env placeholder and correct the codebase docs that name it | 2026-11-06 | 35ff92b | [261106-www-drop-the-unused-google-analytics-env-pla](./quick/261106-www-drop-the-unused-google-analytics-env-pla/) |
+| 261114-o8w | Fix the Escape scroll jump in the mobile menu: Escape focuses Menu with preventScroll, and the shell e2e row asserts the scroll is kept | 2026-11-14 | d038117 | [261114-o8w-fix-the-escape-scroll-jump-in-the-mobile](./quick/261114-o8w-fix-the-escape-scroll-jump-in-the-mobile/) |
 
 ## Deferred Items
 
