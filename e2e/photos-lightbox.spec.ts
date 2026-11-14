@@ -842,12 +842,18 @@ test.describe('Focus on close stays in view (LBOX-08)', () => {
           return 'missing';
         }
         const r = el.getBoundingClientRect();
-        const navH = Number.parseFloat(
-          getComputedStyle(document.documentElement).getPropertyValue('--nav-h')
-        );
+        // Mirrors revealTrigger's navHeightPx and viewport (14-REVIEW IN-01, IN-02): a probe
+        // sized var(--nav-h) resolves any unit, so a rem or calc() nav cannot be misread here
+        // in agreement with a broken reveal; clientHeight excludes a horizontal scrollbar.
+        const probe = document.createElement('div');
+        probe.style.cssText =
+          'position:absolute;top:0;left:0;width:0;visibility:hidden;pointer-events:none;height:var(--nav-h)';
+        document.body.appendChild(probe);
+        const navH = probe.getBoundingClientRect().height;
+        probe.remove();
         const inView =
           r.top - ring >= navH &&
-          r.bottom + ring <= window.innerHeight &&
+          r.bottom + ring <= document.documentElement.clientHeight &&
           r.left - ring >= 0 &&
           r.right + ring <= document.documentElement.clientWidth;
         return inView ? 'in-view' : 'off-screen';

@@ -115,6 +115,24 @@ function tabbables(root: HTMLElement): HTMLElement[] {
 const RING_PX = 4;
 
 /**
+ * The sticky nav's height in CSS px, whatever unit `--nav-h` is written in: a hidden,
+ * absolutely positioned probe sized `var(--nav-h)` is measured and removed in the same call,
+ * so the browser resolves rem or calc() for us (a parse of the raw value assumed px). A
+ * missing variable leaves the probe at height auto, which is 0. The probe sits in body
+ * rather than a query of the nav's own box, because SiteNav renders two header elements.
+ */
+function navHeightPx(): number {
+  const probe = document.createElement('div');
+  probe.setAttribute('aria-hidden', 'true');
+  probe.style.cssText =
+    'position:absolute;top:0;left:0;width:0;visibility:hidden;pointer-events:none;height:var(--nav-h)';
+  document.body.appendChild(probe);
+  const height = probe.getBoundingClientRect().height;
+  probe.remove();
+  return height || 0;
+}
+
+/**
  * Scroll the window as little as needed, instantly, so `el` and its focus ring sit fully
  * inside the viewport below the sticky nav (`--nav-h`); no move when they already do
  * (LBOX-08, D-09). A trigger taller than the room below the nav is top-aligned, its ring just
@@ -123,18 +141,21 @@ const RING_PX = 4;
  * The target scroll position is rounded outward to a whole pixel: Chromium snaps the window's
  * scroll position, and a request for 348.375 px landed on 348, leaving the ring 0.375 px
  * under the viewport edge (Grid at 1366 x 650).
+ * The nav height comes from navHeightPx, which resolves `--nav-h` in any unit (rem, calc()),
+ * not just px (14-REVIEW IN-01). The viewport bottom is documentElement.clientHeight, which
+ * excludes a horizontal scrollbar, unlike the window's inner height (14-REVIEW IN-02).
  */
 export function revealTrigger(el: HTMLElement): void {
-  const navH =
-    Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--nav-h')) || 0;
+  const navH = navHeightPx();
   const rect = el.getBoundingClientRect();
   const top = rect.top - RING_PX;
   const bottom = rect.bottom + RING_PX;
   const y = window.scrollY;
+  const viewH = document.documentElement.clientHeight;
   let target = y;
   if (top < navH) target = Math.floor(y + top - navH);
-  else if (bottom > window.innerHeight) {
-    target = Math.min(Math.ceil(y + bottom - window.innerHeight), Math.floor(y + top - navH));
+  else if (bottom > viewH) {
+    target = Math.min(Math.ceil(y + bottom - viewH), Math.floor(y + top - navH));
   }
   const delta = target - y;
   if (delta !== 0) window.scrollBy({ top: delta, behavior: 'instant' });

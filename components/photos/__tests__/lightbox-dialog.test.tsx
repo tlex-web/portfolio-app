@@ -266,29 +266,60 @@ describe('LightboxDialog', () => {
 
 /**
  * The reveal after close (LBOX-08, D-09, D-21). jsdom has no layout, so each row stubs the
- * trigger's rect, the viewport height and window.scrollBy; --nav-h is 64 px as in
- * app/globals.css. The history traversal that makes the second, next-frame reveal necessary
- * is browser behaviour, proven in e2e/photos-lightbox.spec.ts "Focus on close stays in view".
+ * trigger's rect, the viewport height (documentElement.clientHeight, 14-REVIEW IN-02) and
+ * window.scrollBy. The nav height is read through a probe sized var(--nav-h) (14-REVIEW
+ * IN-01), so the probe's measured height is stubbed too: 64 px as in app/globals.css. The
+ * history traversal that makes the second, next-frame reveal necessary is browser behaviour,
+ * proven in e2e/photos-lightbox.spec.ts "Focus on close stays in view".
  */
 describe('revealTrigger (LBOX-08)', () => {
   const NAV_H = 64;
   const RING = 4;
   const INNER_HEIGHT = 450;
-  let innerHeight: PropertyDescriptor | undefined;
   let scrollBy: typeof window.scrollBy;
   let scrollSpy: jest.Mock;
+  /** What the nav-height probe measures; a real browser resolves var(--nav-h) to CSS px. */
+  let probeHeight: number;
+  /** The inline height of every element measured through the prototype (only the probe is). */
+  let probed: string[];
+  let rectSpy: { mockRestore(): void };
 
   beforeEach(() => {
-    innerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
-    Object.defineProperty(window, 'innerHeight', { configurable: true, value: INNER_HEIGHT });
+    Object.defineProperty(document.documentElement, 'clientHeight', {
+      configurable: true,
+      value: INNER_HEIGHT,
+    });
     document.documentElement.style.setProperty('--nav-h', `${NAV_H}px`);
+    probeHeight = NAV_H;
+    probed = [];
+    // trigger() gives each trigger its own getBoundingClientRect, so only the probe reaches
+    // the prototype; it measures probeHeight when sized var(--nav-h), else 0.
+    rectSpy = jest.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element
+    ) {
+      const height =
+        this instanceof HTMLElement && this.style.height === 'var(--nav-h)' ? probeHeight : 0;
+      if (this instanceof HTMLElement) probed.push(this.style.height);
+      return {
+        top: 0,
+        bottom: height,
+        left: 0,
+        right: 0,
+        width: 0,
+        height,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      } as DOMRect;
+    });
     scrollBy = window.scrollBy;
     scrollSpy = jest.fn();
     window.scrollBy = scrollSpy as unknown as typeof window.scrollBy;
   });
 
   afterEach(() => {
-    if (innerHeight) Object.defineProperty(window, 'innerHeight', innerHeight);
+    delete (document.documentElement as { clientHeight?: number }).clientHeight;
+    rectSpy.mockRestore();
     document.documentElement.style.removeProperty('--nav-h');
     window.scrollBy = scrollBy;
     document.body.innerHTML = '';
@@ -316,10 +347,33 @@ describe('revealTrigger (LBOX-08)', () => {
     return el;
   }
 
-  it('reads --nav-h from the root element (the jsdom precondition the other rows rely on)', () => {
-    expect(
-      Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--nav-h'))
-    ).toBe(NAV_H);
+  it('measures --nav-h through a probe sized var(--nav-h), removed in the same call (14 IN-01)', () => {
+    revealTrigger(trigger(30, 44));
+    expect(probed).toEqual(['var(--nav-h)']);
+    expect(document.body.children).toHaveLength(1);
+    expect(scrollSpy).toHaveBeenCalledWith({ top: 30 - RING - NAV_H, behavior: 'instant' });
+  });
+
+  it('revealTrigger clears a nav height given in rem by its resolved px, not the parsed number (14 IN-01)', () => {
+    // A parse of '4rem' would read 4 and leave the trigger 60 px under the nav.
+    document.documentElement.style.setProperty('--nav-h', '4rem');
+    probeHeight = 64;
+    revealTrigger(trigger(30, 44));
+    expect(scrollSpy).toHaveBeenCalledTimes(1);
+    expect(scrollSpy).toHaveBeenCalledWith({ top: 30 - RING - 64, behavior: 'instant' });
+  });
+
+  it('revealTrigger measures the viewport bottom with documentElement.clientHeight (14 IN-02)', () => {
+    // A horizontal scrollbar makes innerHeight taller than the visible area; clientHeight wins.
+    const inner = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: INNER_HEIGHT + 17 });
+    try {
+      revealTrigger(trigger(INNER_HEIGHT - 50, 48));
+    } finally {
+      if (inner) Object.defineProperty(window, 'innerHeight', inner);
+      else delete (window as { innerHeight?: number }).innerHeight;
+    }
+    expect(scrollSpy).toHaveBeenCalledWith({ top: 2, behavior: 'instant' });
   });
 
   it('revealTrigger scrolls a trigger below the viewport up by its overflow plus the ring', () => {
