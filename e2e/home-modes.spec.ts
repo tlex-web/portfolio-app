@@ -480,31 +480,113 @@ test.describe('Home modes (HOME-02, HOME-07, HOME-08)', () => {
     });
   });
 
-  test.describe('B8: rail tick labels keep 4.5:1 at the summit', () => {
-    for (const [width, height] of [
-      [768, 1024],
-      [1440, 900],
-    ]) {
-      test(`at ${width} px with #summit centred`, async ({ page }) => {
+  /**
+   * B8 rewritten for HOME-10 (14-02; D-13, D-14, D-15; 14-UI-SPEC Contract 3).
+   * The rail scrim's dense stop (alpha 0.85 to 85 % of its 224 px) now covers
+   * every tick label, so each label keeps 4.5:1 (the gate) and aims for 5:1
+   * (every value is annotated so the aim is visible in the report).
+   *
+   * Geometry rows: the scrim is still 224 px wide (CameraRig reads that width
+   * as the rail zone), and every label's drawn left edge (Range client rects of
+   * its text, never a character count) lies inside the dense stop. A label
+   * exactly on the boundary counts as inside.
+   *
+   * Pixel rows: every tick label's worst pixel at each waypoint's stop and the
+   * summit, with the readout hidden while sampling (it covers the label of the
+   * tick it sits on and is not what the label is read against). Failures are
+   * collected per stop, so one run reports every low label. Zero labels fail
+   * on the count assertion, never pass vacuously.
+   */
+  test.describe('B8: rail tick labels keep 4.5:1 at every stop', () => {
+    const WIDTHS: { width: number; height: number }[] = [
+      { width: 768, height: 1024 },
+      { width: 1023, height: 900 },
+      { width: 1280, height: 900 },
+      { width: 1440, height: 900 },
+    ];
+    const tickCount = waypoints.length + 1;
+    const stops = [
+      ...waypoints.map((w, i) => ({ name: `waypoint ${i + 1}`, selector: `li[data-k="${w.k}"]` })),
+      { name: 'summit', selector: '#summit' },
+    ];
+
+    /**
+     * Samples every tick label at the current scroll stop with the readout
+     * hidden, annotates each value and returns the labels below 4.5:1.
+     */
+    async function sampleTicks(page: Page, where: string): Promise<string[]> {
+      const cursor = page.locator('[data-ascent-cursor]');
+      await cursor.evaluate((el: HTMLElement) => {
+        el.style.visibility = 'hidden';
+      });
+      const labels = page.locator('[data-ascent-rail] [data-tick-label]');
+      await expect(labels).toHaveCount(tickCount);
+      const failures: string[] = [];
+      for (let i = 0; i < tickCount; i++) {
+        const label = labels.nth(i);
+        const text = (await label.textContent())?.replace(/\u00a0/g, ' ');
+        const worst = await worstContrastBehind(page, label);
+        test.info().annotations.push({ type: 'contrast', description: `${where}, tick ${i} (${text}): ${worst.toFixed(2)}` });
+        if (worst < 4.5) failures.push(`${where}, tick ${i} (${text}) ${worst.toFixed(2)}`);
+      }
+      await cursor.evaluate((el: HTMLElement) => {
+        el.style.visibility = '';
+      });
+      return failures;
+    }
+
+    for (const { width, height } of WIDTHS) {
+      test(`B8: scrim geometry at ${width} px, every label inside the dense stop`, async ({ page }) => {
         await disableWebGL(page);
         await page.setViewportSize({ width, height });
         await page.goto('/');
-        await page.locator('[data-sheet-box] img').evaluate((img: HTMLImageElement) => img.decode());
-        await scrollBlockToCentre(page, '#summit');
-        // The readout box covers the label of the tick it sits on; it is not
-        // what the label is read against, so it is hidden while sampling.
-        await page.locator('[data-ascent-cursor]').evaluate((el: HTMLElement) => {
-          el.style.visibility = 'hidden';
+        await expect(stage(page)).toHaveAttribute('data-ascent-mode', 'static');
+        await page.evaluate(async () => {
+          await document.fonts.ready;
         });
+        await nextFrames(page);
 
-        const labels = page.locator('[data-ascent-rail] [data-tick-label]');
-        await expect(labels).toHaveCount(waypoints.length + 1);
-        for (let i = 0; i < waypoints.length + 1; i++) {
-          const label = labels.nth(i);
-          const worst = await worstContrastBehind(page, label);
-          test.info().annotations.push({ type: 'contrast', description: `tick ${i} @ ${width}: ${worst.toFixed(2)}` });
-          expect(worst, `tick ${i} (${await label.textContent()}) at ${width} px`).toBeGreaterThanOrEqual(4.5);
+        await expect(page.locator('[data-ascent-rail] [data-tick-label]')).toHaveCount(tickCount);
+        const { scrimWidth, scrimRight, labels } = await page.evaluate(() => {
+          const scrim = document.querySelector('[data-ascent-rail-scrim]') as HTMLElement;
+          const labelEls = Array.from(document.querySelectorAll('[data-ascent-rail] [data-tick-label]'));
+          return {
+            scrimWidth: scrim.offsetWidth,
+            scrimRight: scrim.getBoundingClientRect().right,
+            labels: labelEls.map((el) => {
+              const range = document.createRange();
+              range.selectNodeContents(el);
+              const lefts = Array.from(range.getClientRects(), (r) => r.left);
+              return { text: (el.textContent ?? '').replace(/\u00a0/g, ' '), left: Math.min(...lefts) };
+            }),
+          };
+        });
+        expect(scrimWidth, 'scrim offsetWidth (CameraRig rail zone)').toBe(224);
+        for (const { text, left } of labels) {
+          const reach = scrimRight - left;
+          test.info().annotations.push({ type: 'geometry', description: `${text} @ ${width}: ${reach.toFixed(1)} px of ${(0.85 * scrimWidth).toFixed(1)}` });
+          expect(Number.isFinite(reach), `${text} renders text`).toBe(true);
+          expect(reach, `${text} at ${width} px: distance from the scrim's right edge`).toBeLessThanOrEqual(0.85 * scrimWidth);
         }
+      });
+    }
+
+    for (const { width, height } of WIDTHS.slice(0, 1)) {
+      test(`B8: poster at ${width} x ${height}, every waypoint stop and the summit`, async ({ page }) => {
+        await disableWebGL(page);
+        await page.setViewportSize({ width, height });
+        await page.goto('/');
+        await expect(stage(page)).toHaveAttribute('data-ascent-mode', 'static');
+        await page.locator('[data-sheet-box] img').evaluate((img: HTMLImageElement) => img.decode());
+
+        const failures: string[] = [];
+        for (const stop of stops) {
+          await expect(page.locator(stop.selector)).toHaveCount(1);
+          await scrollBlockToCentre(page, stop.selector);
+          await nextFrames(page, 10);
+          failures.push(...(await sampleTicks(page, `poster ${width} px, ${stop.name}`)));
+        }
+        expect(failures, `rail tick labels below 4.5:1 on the poster at ${width} px`).toEqual([]);
       });
     }
   });
