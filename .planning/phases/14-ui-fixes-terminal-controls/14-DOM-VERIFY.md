@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-wave: 2
+wave: 3
 outcome: could_not_look
 reason: target_unreachable
 checked: 0
@@ -39,3 +39,7 @@ The verifier wasn't dispatched. A pre-check showed Chrome can't reach any server
 - HOME-10 rail scrim contrast, at least 4.5:1 for every tick label on the poster and the live canvas: covered by B8 in `e2e/home-modes.spec.ts`, now 12 rows. Lowest values: 7.93:1 poster and 7.91:1 live in Chromium, 7.85:1 poster in Firefox.
 - The scrim stays 224 px wide (CameraRig reads its width): covered by the 4 B8 geometry rows in Chromium and Firefox.
 - HOME-09, no sideways scroll at 375 px in every mode and stop: covered by the extended 375 px guard (4 modes × 8 stops).
+
+## Wave 3 (plan 14-03): could_not_look / target_unreachable
+
+The verifier wasn't dispatched, for the same reason as wave 2: Chrome reaches no server this session starts. LBOX-08 is unobserved and nothing failed. After stepping and then closing by Escape, 'Close photo' or Back, focus lands on the shown photo's trigger, and the trigger plus its 4 px ring sit fully in view below the nav. This is covered by the D-11 matrix in `e2e/photos-lightbox.spec.ts`: 14 rows in Chromium and 1 in Firefox; the WebKit row runs in CI (14-08). The whole lightbox file passes 116/116 in Chromium and Firefox.
