@@ -32,9 +32,10 @@ import path from 'node:path';
 import type { ReactElement } from 'react';
 import { imageManifest } from '@/data/generated/image-manifest';
 import { projects } from '@/data/projects';
+import type { Project } from '@/data/types';
 import { site } from '@/data/site';
 import { OG_SIZE, type OgFrameProps } from '@/lib/og/template';
-import { photoSlugs, photoViews } from '@/lib/photos/view-model';
+import { photoSlugs, photoViews, type PhotoView } from '@/lib/photos/view-model';
 import * as photoRoute from '@/app/(site)/photos/[slug]/opengraph-image';
 import * as projectRoute from '@/app/(site)/projects/[slug]/opengraph-image';
 
@@ -50,7 +51,7 @@ jest.mock('next/og', () => ({
 }));
 
 jest.mock('node:fs/promises', () => {
-  const actual = jest.requireActual('node:fs/promises');
+  const actual = jest.requireActual<typeof import('node:fs/promises')>('node:fs/promises');
   return { ...actual, readFile: jest.fn(actual.readFile) };
 });
 
@@ -70,8 +71,10 @@ const manifest = imageManifest as Readonly<
   >
 >;
 
+type OgCard = { route: typeof photoRoute | typeof projectRoute; slug: string };
+
 /** Every slug the data knows, with its route, for the shared cases. */
-const allCards = [
+const allCards: OgCard[] = [
   ...photoSlugs.map((slug) => ({ route: photoRoute, slug })),
   ...projects.map((p) => ({ route: projectRoute, slug: p.slug })),
 ];
@@ -82,10 +85,12 @@ function onlyCard(route: typeof photoRoute | typeof projectRoute, slug: string) 
   return entries[0];
 }
 
-beforeEach(() => readFile.mockClear());
+beforeEach(() => {
+  readFile.mockClear();
+});
 
 describe('generateImageMetadata', () => {
-  it.each(allCards.map((c) => [c.slug, c]))(
+  it.each<[string, OgCard]>(allCards.map((c) => [c.slug, c]))(
     '%s has one 1200 x 630 PNG card with a printable alt',
     (_, { route, slug }) => {
       const card = onlyCard(route, slug);
@@ -97,7 +102,7 @@ describe('generateImageMetadata', () => {
     }
   );
 
-  it.each(photoViews.map((v) => [v.slug, v]))(
+  it.each<[string, PhotoView]>(photoViews.map((v) => [v.slug, v]))(
     "%s's alt is Tim's og.alt-photo template filled from its view",
     (slug, view) => {
       expect(onlyCard(photoRoute, slug).alt).toBe(
@@ -114,7 +119,7 @@ describe('generateImageMetadata', () => {
     }
   });
 
-  it.each(projects.map((p) => [p.slug, p]))(
+  it.each<[string, Project]>(projects.map((p) => [p.slug, p]))(
     "%s's alt is Tim's og.alt-project template, '{name}: {pitch}'",
     (slug, project) => {
       expect(onlyCard(projectRoute, slug).alt).toBe(
@@ -138,7 +143,7 @@ describe('generateImageMetadata', () => {
 });
 
 describe('photo route: derivatives only (T-12-27)', () => {
-  it.each(photoViews.map((v) => [v.slug, v]))(
+  it.each<[string, PhotoView]>(photoViews.map((v) => [v.slug, v]))(
     "%s's manifest JPEG is a hashed derivative under public/, at most 2560 px",
     (_, view) => {
       const { jpeg } = manifest[view.id];
@@ -148,7 +153,7 @@ describe('photo route: derivatives only (T-12-27)', () => {
     }
   );
 
-  it.each(photoViews.map((v) => [v.slug, v]))(
+  it.each<[string, PhotoView]>(photoViews.map((v) => [v.slug, v]))(
     '%s renders the photo variant from its JPEG derivative and reads no other photo file',
     async (slug, view) => {
       const response = (await photoRoute.default({
@@ -182,7 +187,7 @@ describe('photo route: derivatives only (T-12-27)', () => {
 });
 
 describe('project route', () => {
-  it.each(projects.map((p) => [p.slug, p]))(
+  it.each<[string, Project]>(projects.map((p) => [p.slug, p]))(
     '%s renders the project variant for its own project, with no photo read',
     async (slug, project) => {
       const response = (await projectRoute.default({

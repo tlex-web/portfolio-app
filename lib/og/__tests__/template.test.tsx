@@ -244,7 +244,9 @@ describe('project variant (D-15)', () => {
   );
 
   it('leaves out the profile, caption and grade for a route with no committed profile (SEO-02 empty)', () => {
-    const project = { ...projects[0], route: 'no-such-trail' };
+    // The schema only admits trail ids that have a committed profile, so a project with no
+    // route is the reachable way to hit the no-profile branch (the same find() miss).
+    const project = { ...projects[0], route: undefined };
     const card = projectCard(project);
     const all = texts(card);
     expect(card.svgs).toBe(0);
@@ -307,7 +309,9 @@ describe('long text fits its box (UI-SPEC E12 long text, backstop)', () => {
   it.each(projects.map((p) => [p.slug, p] as const))(
     '%s: the pitch wraps in 640 px at 32 px Inter and the text block fits the slot',
     (_slug, project) => {
-      const lines = lineCount(FONTS.Inter, project.pitch, 32, 640);
+      const { pitch } = project;
+      if (pitch === undefined) throw new Error(`${project.slug} has no pitch to wrap`);
+      const lines = lineCount(FONTS.Inter, pitch, 32, 640);
       // kicker 32 + name 76 + 16 + pitch lines x 40, inside the slot's 630 - 2 x 64 px
       expect(32 + 76 + 16 + lines * 40).toBeLessThanOrEqual(OG_SIZE.height - 2 * 64);
       expect(lines).toBeLessThanOrEqual(4);

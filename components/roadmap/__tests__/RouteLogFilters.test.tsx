@@ -21,7 +21,9 @@ import RouteLogFilters from '@/components/roadmap/RouteLogFilters';
 import type { LogCounts, LogFilter } from '@/lib/route-log';
 
 let navigate: (href: string) => void = () => {};
-const replace = jest.fn((href: string) => navigate(href));
+const replace = jest.fn<(href: string, options?: { scroll?: boolean }) => void>((href) =>
+  navigate(href)
+);
 const push = jest.fn();
 
 jest.mock('next/navigation', () => ({

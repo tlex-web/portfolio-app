@@ -120,7 +120,7 @@ describe('startUpdateChecks (IN-04)', () => {
       resolve: () => {},
       reject: () => {},
     };
-    const register = jest.fn(
+    const register = jest.fn<(scriptURL: string | URL, options?: RegistrationOptions) => Promise<unknown>>(
       () =>
         new Promise((resolve, reject) => {
           settle = {

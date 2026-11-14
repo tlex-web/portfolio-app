@@ -155,12 +155,14 @@ const quotaExceeded = () => Promise.reject(new DOMException('Quota exceeded', 'Q
 
 // WR-04: every cache write runs under event.waitUntil, so the browser keeps the
 // worker alive until the copy is stored, and a rejected put is caught there.
+type CacheWrite = readonly [label: string, pathname: string, destination: string, cacheName: string];
+
 describe('service worker cache writes (WR-04)', () => {
-  const paths = [
+  const paths: readonly CacheWrite[] = [
     ['a cache-first /_next/static/ asset', '/_next/static/chunks/app.0123456789.js', 'script', 'static-__BUILD_HASH__'],
     ['a cache-first /media/ poster image', '/media/coin-flip-toss-poster.0123456789.webp', 'image', 'images-__BUILD_HASH__'],
     ['a network-first GET', '/feed.json', '', 'dynamic-__BUILD_HASH__'],
-  ] as const;
+  ];
 
   test.each(paths)('%s hands its cache write to event.waitUntil', async (_label, pathname, destination, cacheName) => {
     const response = okResponse();
