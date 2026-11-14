@@ -162,7 +162,7 @@ None. The plan ran as written. The two additions above (the focus assertion, kee
 - The whole file in Chromium and Firefox: 122 passed (116 before, plus 3 new rows in 2 engines).
 - Mutations (Jest): without the hide clear, the D-12 row fails. With `return true` for a hidden callout, the D-22 row fails and IN-02 still passes. Source restored both times.
 - `npm run lint`: exit 0. `npm run type-check`: clean.
-- Acceptance greps: `setLabels(` 3, `setLabelsOn(!labelsOn)` 0, `D-12` in e2e 4 rows, `D-22` in e2e 2, `unwinds callout, then zoom, then close` 0, `D-22` in Jest 2, `10-REVIEW IN-02` 1.
+- Acceptance greps: `setLabels(` 3, `setLabelsOn(!labelsOn)` 0, `D-12` in e2e 3, `D-22` in e2e 2, `unwinds callout, then zoom, then close` 0, `D-22` in Jest 2, `10-REVIEW IN-02` 1.
 
 ## User Setup Required
 
