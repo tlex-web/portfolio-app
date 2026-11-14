@@ -15,6 +15,7 @@ import {
 import { imageManifest } from '@/data/generated/image-manifest';
 import { photos } from '@/data/generated/photos';
 import { editorial } from '@/data/photos/editorial';
+import { homeWaypointIds } from '@/data/home';
 import { formatMetres } from '@/lib/photo-format';
 
 /** formatMetres keeps the unit on its number with U+00A0. */
@@ -26,7 +27,7 @@ describe('buildWaypoints on the committed data (HOME-05, D-01)', () => {
   it('orders the photos by DEM height ascending, k = 1..n of n', () => {
     expect(waypoints.map((w) => w.id)).toEqual(['img-0605', 'img-0629', 'img-0662', 'r004-011']);
     expect(waypoints.map((w) => w.k)).toEqual([1, 2, 3, 4]);
-    expect(waypoints.every((w) => w.n === photos.length)).toBe(true);
+    expect(waypoints.every((w) => w.n === homeWaypointIds.length)).toBe(true);
   });
 
   it('takes each altitude from the generated photo facts', () => {

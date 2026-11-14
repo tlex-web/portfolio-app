@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { site } from '@/data/site';
 import { terrain } from '@/data/generated/terrain';
-import { photos } from '@/data/generated/photos';
+import { homeWaypointIds } from '@/data/home';
 import { projects } from '@/data/projects';
 import { lv95ToWgs84 } from '@/lib/geo';
 import { countLabel, formatLatLon } from '@/lib/home-format';
@@ -76,7 +76,7 @@ test.describe('Home without JavaScript (HOME-01)', () => {
 
   const kicker = formatLatLon(lv95ToWgs84(terrain.summit.lv95));
   const signs = [
-    signName('/photos', countLabel(photos.length, 'waypoint', 'waypoints')),
+    signName('/photos', countLabel(homeWaypointIds.length, 'waypoint', 'waypoints')),
     signName('/projects', countLabel(projects.length, 'route', 'routes')),
   ];
 

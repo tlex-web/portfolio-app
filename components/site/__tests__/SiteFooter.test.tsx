@@ -9,13 +9,15 @@ import { render, screen, within } from '@testing-library/react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import SiteFooter from '../SiteFooter';
 import { terrain } from '@/data/generated/terrain';
-import { photos } from '@/data/generated/photos';
 import { site } from '@/data/site';
+import { homePhotos } from '@/lib/ascent/home-photos';
 import { SCALE_TIERS, formatEquidistance, formatExtentLines, formatMonthYear, scaleFraction, tickLeft } from '@/lib/footer-format';
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
-const positioned = photos.filter((p) => p.position !== null && p.uv !== null);
+/** The footer ticks are the Home waypoints (DATA-09): photos outside the Home list add none. */
+const homeList = homePhotos();
+const positioned = homeList.filter((p) => p.position !== null && p.uv !== null);
 
 function renderFooter() {
   render(<SiteFooter />);

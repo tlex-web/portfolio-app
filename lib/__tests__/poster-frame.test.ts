@@ -3,13 +3,14 @@
  * and UI Considerations E1 populated): the one poster-frame rule shared by the
  * poster CSS and the 3D camera at scroll 0.
  *
- * The visible UV window must contain every photo anchor at the three baseline
+ * The visible UV window must contain every Home photo anchor (DATA-09: the
+ * Home list, not every photo) at the three baseline
  * stage sizes (375 x 603, 768 x 960, 1440 x 836) and the summit on landscape.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { POSTER_X_BIAS, posterFrame } from '@/lib/ascent/poster-frame';
-import { photos } from '@/data/generated/photos';
+import { homePhotos } from '@/lib/ascent/home-photos';
 import { terrain } from '@/data/generated/terrain';
 
 const STAGES = [
@@ -18,7 +19,8 @@ const STAGES = [
   [1440, 836],
 ] as const;
 
-const anchored = photos.filter((p) => p.uv !== null);
+const homeList = homePhotos();
+const anchored = homeList.filter((p) => p.uv !== null);
 
 describe('posterFrame', () => {
   it('uses the 0.64 horizontal bias', () => {

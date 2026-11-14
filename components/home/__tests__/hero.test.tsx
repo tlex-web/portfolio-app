@@ -9,14 +9,13 @@ import PosterSheet from '../PosterSheet';
 import HeroBlock from '../HeroBlock';
 import TrailSigns from '../TrailSigns';
 import { terrain } from '@/data/generated/terrain';
-import { photos } from '@/data/generated/photos';
 import { projects } from '@/data/projects';
-import { home } from '@/data/home';
+import { home, homeWaypointIds } from '@/data/home';
 import { site } from '@/data/site';
 import { lv95ToWgs84 } from '@/lib/geo';
 import { countLabel, formatLatLon } from '@/lib/home-format';
 
-const waypoints = countLabel(photos.length, 'waypoint', 'waypoints');
+const waypoints = countLabel(homeWaypointIds.length, 'waypoint', 'waypoints');
 const routes = countLabel(projects.length, 'route', 'routes');
 
 describe('PosterSheet (HOME-02, D-17)', () => {

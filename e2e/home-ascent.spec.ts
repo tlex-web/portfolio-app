@@ -1,10 +1,10 @@
 import { test, expect, type Page } from '@playwright/test';
-import { photos } from '@/data/generated/photos';
 import { terrain } from '@/data/generated/terrain';
 import { editorial } from '@/data/photos/editorial';
 import { projects } from '@/data/projects';
-import { home } from '@/data/home';
+import { home, homeWaypointIds } from '@/data/home';
 import { site } from '@/data/site';
+import { homePhotos } from '@/lib/ascent/home-photos';
 import { summitPlaque } from '@/lib/ascent/summit';
 import { summitColumnBox, summitLayoutAt } from '@/lib/ascent/summit-layout';
 import { buildWaypoints, homeLowestDemM, waypointKicker } from '@/lib/ascent/waypoints';
@@ -26,7 +26,9 @@ import { tabReachesLinks } from './helpers/engine';
  * expected value is derived from the committed data, never hand-typed.
  */
 
-const ascending = [...photos].sort(
+/** The Home waypoints (DATA-09), not every photo: a photo outside the Home list adds no card. */
+const homeList = homePhotos();
+const ascending = [...homeList].sort(
   (a, b) => a.elevation.m - b.elevation.m || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
 );
 const slugs = ascending.map((photo) => editorial[photo.id].slug);
@@ -378,7 +380,7 @@ test.describe('Summit, trail signs and About (HOME-03, HOME-06)', () => {
     await expect(groups).toHaveCount(2);
     const signs = [
       {
-        name: signName('/photos', countLabel(photos.length, 'waypoint', 'waypoints')),
+        name: signName('/photos', countLabel(homeWaypointIds.length, 'waypoint', 'waypoints')),
         href: '/photos',
       },
       {

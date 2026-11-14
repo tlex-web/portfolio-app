@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { site } from '@/data/site';
 import { terrain } from '@/data/generated/terrain';
-import { photos } from '@/data/generated/photos';
+import { homePhotos } from '@/lib/ascent/home-photos';
 import { ROUTES, type Label } from './routes';
 import { tabReachesLinks } from './helpers/engine';
 
@@ -560,7 +560,9 @@ const LEGEND_VIEWPORTS = [
 ] as const;
 
 const FOOTER_FOCUSABLE = 'a[href], button, [tabindex]:not([tabindex="-1"])';
-const positionedPhotos = photos.filter((p) => p.position !== null);
+/** The footer ticks are the Home waypoints (DATA-09): photos outside the Home list add none. */
+const homeList = homePhotos();
+const positionedPhotos = homeList.filter((p) => p.position !== null);
 
 test.describe('Footer map legend (SHELL-04)', () => {
   for (const [width, height, aspect, lengthM] of LEGEND_VIEWPORTS) {
