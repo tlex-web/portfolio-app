@@ -20,13 +20,16 @@
  * the network.
  */
 
-const mockLimit = jest.fn();
+const mockLimit = jest.fn<Ratelimit['limit']>();
 const mockSlidingWindow = jest.fn((tokens: number, window: string) => ({ tokens, window }));
 const mockRatelimitConstructor = jest.fn();
 
 jest.mock('@upstash/ratelimit', () => ({
   Ratelimit: class {
-    static slidingWindow = (tokens: number, window: string) => mockSlidingWindow(tokens, window);
+    static slidingWindow: (tokens: number, window: string) => { tokens: number; window: string } = (
+      tokens,
+      window
+    ) => mockSlidingWindow(tokens, window);
     limit = mockLimit;
     constructor(config: unknown) {
       mockRatelimitConstructor(config);
@@ -40,8 +43,12 @@ jest.mock('@upstash/redis', () => ({
   Redis: Object.assign(jest.fn(), { fromEnv: jest.fn(() => ({})) }),
 }));
 
-import { Redis } from '@upstash/redis';
+import type { Ratelimit } from '@upstash/ratelimit';
+import { Redis, type RedisConfigNodejs } from '@upstash/redis';
 import { createRateLimiter, LIMIT_TIMEOUT_MS, upstashCredentials } from '@/lib/rate-limit';
+
+/** The real Redis constructor's signature, as the module under test calls it. */
+type RedisConstructor = (config: RedisConfigNodejs) => Redis;
 
 const MockRedis = Redis as unknown as jest.Mock & { fromEnv: jest.Mock };
 
@@ -54,8 +61,8 @@ const KV_PAIR = {
   KV_REST_API_TOKEN: 'kv-token',
 };
 
-const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
-const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
 /** The `[rate-limit]` entries written with console.error so far. */
 const refusalLogs = () =>
@@ -350,15 +357,15 @@ describe('module import with the real Redis client (13 WR-03)', () => {
    * URL synchronously. Construction makes no request. Returns the module and
    * the Redis mock it received; rethrows whatever the import threw.
    */
-  function importWithRealRedis(env: Record<string, string>): { mod: RateLimitModule; redis: jest.Mock } {
+  function importWithRealRedis(env: Record<string, string>): { mod: RateLimitModule; redis: jest.Mock<RedisConstructor> } {
     const swapped = jest.replaceProperty(process, 'env', { NODE_ENV: 'test', ...env });
     try {
-      let result: { mod: RateLimitModule; redis: jest.Mock } | undefined;
+      let result: { mod: RateLimitModule; redis: jest.Mock<RedisConstructor> } | undefined;
       jest.isolateModules(() => {
         const { Redis: RealRedis } = jest.requireActual<typeof import('@upstash/redis')>('@upstash/redis');
         // eslint-disable-next-line @typescript-eslint/no-require-imports -- the mock the module under test receives
-        const redis = (require('@upstash/redis') as { Redis: jest.Mock }).Redis;
-        redis.mockImplementationOnce((config: ConstructorParameters<typeof RealRedis>[0]) => new RealRedis(config));
+        const redis = (require('@upstash/redis') as { Redis: jest.Mock<RedisConstructor> }).Redis;
+        redis.mockImplementationOnce((config: RedisConfigNodejs) => new RealRedis(config));
         // eslint-disable-next-line @typescript-eslint/no-require-imports -- fresh registry under the swapped env
         result = { mod: require('@/lib/rate-limit') as RateLimitModule, redis };
       });
@@ -369,12 +376,12 @@ describe('module import with the real Redis client (13 WR-03)', () => {
   }
 
   // The file-level console spies are restored after the createRateLimiter block.
-  let errorSpy: jest.SpyInstance;
+  let errorSpy: jest.Spied<typeof console.error>;
   const refusals = () =>
     errorSpy.mock.calls.filter((args) => args[0] === '[rate-limit]').map((args) => args[1] as Record<string, unknown>);
 
   beforeEach(() => {
-    errorSpy = jest.spyOn(console, 'error').mockImplementation();
+    errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     MockRedis.mockReset();
   });
 

@@ -74,7 +74,7 @@ describe('CopyEmailButton', () => {
   });
 
   it('writes exactly the address, shows Copied and announces it for 2,000 ms', async () => {
-    const writeText = jest.fn().mockResolvedValue(undefined);
+    const writeText = jest.fn<Clipboard['writeText']>().mockResolvedValue(undefined);
     setClipboard({ writeText });
     renderButton();
 
@@ -100,7 +100,7 @@ describe('CopyEmailButton', () => {
   });
 
   it('restarts the 2,000 ms window on a second press without stacking timers', async () => {
-    const writeText = jest.fn().mockResolvedValue(undefined);
+    const writeText = jest.fn<Clipboard['writeText']>().mockResolvedValue(undefined);
     setClipboard({ writeText });
     renderButton();
 
@@ -139,7 +139,9 @@ describe('CopyEmailButton', () => {
   });
 
   it('selects the address quietly when the clipboard write rejects', async () => {
-    const writeText = jest.fn().mockRejectedValue(new Error('NotAllowedError'));
+    const writeText = jest
+      .fn<Clipboard['writeText']>()
+      .mockRejectedValue(new Error('NotAllowedError'));
     setClipboard({ writeText });
     renderButton();
 
@@ -152,7 +154,7 @@ describe('CopyEmailButton', () => {
   });
 
   it('clears its timer when unmounted inside the Copied window', async () => {
-    setClipboard({ writeText: jest.fn().mockResolvedValue(undefined) });
+    setClipboard({ writeText: jest.fn<Clipboard['writeText']>().mockResolvedValue(undefined) });
     const { unmount } = renderButton();
 
     await press();

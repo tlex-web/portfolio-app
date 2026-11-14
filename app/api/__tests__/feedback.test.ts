@@ -31,10 +31,10 @@ import { validateOrigin } from '@/lib/csrf';
 import { feedbackRateLimit } from '@/lib/rate-limit';
 
 // Spy on all four console methods (D-04: no visitor text in any of them)
-const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
-const consoleInfoSpy = jest.spyOn(console, 'info').mockImplementation();
-const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
-const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+const consoleInfoSpy = jest.spyOn(console, 'info').mockImplementation(() => {});
+const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 const consoleSpies = [consoleLogSpy, consoleInfoSpy, consoleWarnSpy, consoleErrorSpy];
 
 /**
@@ -74,13 +74,13 @@ const outcomes = () => feedbackLogs().map((entry) => entry.outcome);
 describe('Feedback API Route', () => {
   beforeEach(() => {
     consoleSpies.forEach((spy) => spy.mockClear());
-    (sendFeedbackEmail as jest.Mock).mockReset();
-    (sendFeedbackEmail as jest.Mock).mockResolvedValue(undefined);
+    jest.mocked(sendFeedbackEmail).mockReset();
+    jest.mocked(sendFeedbackEmail).mockResolvedValue(undefined);
     // Default: CSRF passes, rate limit passes
-    (validateOrigin as jest.Mock).mockReset();
-    (validateOrigin as jest.Mock).mockReturnValue(true);
-    (feedbackRateLimit.limit as jest.Mock).mockReset();
-    (feedbackRateLimit.limit as jest.Mock).mockResolvedValue({ success: true, limit: 5, remaining: 4, reset: 0 });
+    jest.mocked(validateOrigin).mockReset();
+    jest.mocked(validateOrigin).mockReturnValue(true);
+    jest.mocked(feedbackRateLimit.limit).mockReset();
+    jest.mocked(feedbackRateLimit.limit).mockResolvedValue({ success: true, limit: 5, remaining: 4, reset: 0 });
   });
 
   afterEach(() => {
@@ -343,7 +343,7 @@ describe('Feedback API Route', () => {
 
   describe('CSRF Protection', () => {
     it('rejects cross-origin requests with origin-rejected', async () => {
-      (validateOrigin as jest.Mock).mockReturnValue(false);
+      jest.mocked(validateOrigin).mockReturnValue(false);
 
       const request = createMockRequest(validBody);
 
@@ -356,7 +356,7 @@ describe('Feedback API Route', () => {
     });
 
     it('logs csrf-rejected with ip and timestamp only', async () => {
-      (validateOrigin as jest.Mock).mockReturnValue(false);
+      jest.mocked(validateOrigin).mockReturnValue(false);
 
       await POST(createMockRequest(validBody, { origin: 'https://evil.example', host: 'timlui.dev' }));
 
@@ -368,7 +368,7 @@ describe('Feedback API Route', () => {
     });
 
     it('allows same-origin requests', async () => {
-      (validateOrigin as jest.Mock).mockReturnValue(true);
+      jest.mocked(validateOrigin).mockReturnValue(true);
 
       const request = createMockRequest(validBody);
 
@@ -380,7 +380,7 @@ describe('Feedback API Route', () => {
     });
 
     it('rejects a bad origin with a filled honeypot as 403 and never calls the limiter or reads the body', async () => {
-      (validateOrigin as jest.Mock).mockReturnValue(false);
+      jest.mocked(validateOrigin).mockReturnValue(false);
       const request = createMockRequest({ ...validBody, trail_note: 'http://spam.example' });
 
       const response = await POST(request);
@@ -396,7 +396,7 @@ describe('Feedback API Route', () => {
 
   describe('Rate Limiting', () => {
     it('allows when rate limit not exceeded', async () => {
-      (feedbackRateLimit.limit as jest.Mock).mockResolvedValue({ success: true, limit: 5, remaining: 4, reset: 0 });
+      jest.mocked(feedbackRateLimit.limit).mockResolvedValue({ success: true, limit: 5, remaining: 4, reset: 0 });
 
       const request = createMockRequest(validBody);
 
@@ -408,7 +408,7 @@ describe('Feedback API Route', () => {
     });
 
     it('rejects when rate limit exceeded with rate-limited, retryAfterS and a Retry-After header', async () => {
-      (feedbackRateLimit.limit as jest.Mock).mockResolvedValue({
+      jest.mocked(feedbackRateLimit.limit).mockResolvedValue({
         success: false,
         limit: 5,
         remaining: 0,
@@ -427,7 +427,7 @@ describe('Feedback API Route', () => {
     });
 
     it('clamps the dev fallback reset of 0 to a 1-second Retry-After', async () => {
-      (feedbackRateLimit.limit as jest.Mock).mockResolvedValue({ success: false, limit: 5, remaining: 0, reset: 0 });
+      jest.mocked(feedbackRateLimit.limit).mockResolvedValue({ success: false, limit: 5, remaining: 0, reset: 0 });
 
       const response = await POST(createMockRequest(validBody));
       const data = await response.json();
@@ -438,7 +438,7 @@ describe('Feedback API Route', () => {
     });
 
     it('logs rate-limited with metadata only', async () => {
-      (feedbackRateLimit.limit as jest.Mock).mockResolvedValue({ success: false, limit: 5, remaining: 0, reset: 0 });
+      jest.mocked(feedbackRateLimit.limit).mockResolvedValue({ success: false, limit: 5, remaining: 0, reset: 0 });
 
       await POST(createMockRequest(validBody));
 
@@ -450,7 +450,7 @@ describe('Feedback API Route', () => {
     });
 
     it('answers 503 server-error with no Retry-After when the limiter is unavailable (GUARD-09, D-11)', async () => {
-      (feedbackRateLimit.limit as jest.Mock).mockResolvedValue({
+      jest.mocked(feedbackRateLimit.limit).mockResolvedValue({
         success: false,
         limit: 0,
         remaining: 0,
@@ -475,7 +475,7 @@ describe('Feedback API Route', () => {
     });
 
     it('answers 429, not 200, when rate limited with a filled honeypot, without reading the body', async () => {
-      (feedbackRateLimit.limit as jest.Mock).mockResolvedValue({ success: false, limit: 5, remaining: 0, reset: 0 });
+      jest.mocked(feedbackRateLimit.limit).mockResolvedValue({ success: false, limit: 5, remaining: 0, reset: 0 });
       const request = createMockRequest({ ...validBody, trail_note: 'bot text' });
 
       const response = await POST(request);
@@ -489,15 +489,15 @@ describe('Feedback API Route', () => {
 
     it('runs validateOrigin, then the limiter, then the body parse', async () => {
       const order: string[] = [];
-      (validateOrigin as jest.Mock).mockImplementation(() => {
+      jest.mocked(validateOrigin).mockImplementation(() => {
         order.push('origin');
         return true;
       });
-      (feedbackRateLimit.limit as jest.Mock).mockImplementation(async () => {
+      jest.mocked(feedbackRateLimit.limit).mockImplementation(async () => {
         order.push('limit');
         return { success: true, limit: 5, remaining: 4, reset: 0 };
       });
-      (sendFeedbackEmail as jest.Mock).mockImplementation(async () => {
+      jest.mocked(sendFeedbackEmail).mockImplementation(async () => {
         order.push('send');
       });
       const request = {
@@ -589,7 +589,7 @@ describe('Feedback API Route', () => {
     it('does not pass the honeypot field on to the email', async () => {
       await POST(createMockRequest({ ...validBody, trail_note: '' }));
 
-      expect((sendFeedbackEmail as jest.Mock).mock.calls[0][0]).not.toHaveProperty('trail_note');
+      expect(jest.mocked(sendFeedbackEmail).mock.calls[0][0]).not.toHaveProperty('trail_note');
     });
   });
 
@@ -615,9 +615,9 @@ describe('Feedback API Route', () => {
 
     it.each([
       ['sent', () => undefined],
-      ['email-failed', () => (sendFeedbackEmail as jest.Mock).mockRejectedValue(new Error('Resend said no for john@example.com'))],
-      ['rate-limited', () => (feedbackRateLimit.limit as jest.Mock).mockResolvedValue({ success: false, limit: 5, remaining: 0, reset: 0 })],
-      ['csrf-rejected', () => (validateOrigin as jest.Mock).mockReturnValue(false)],
+      ['email-failed', () => jest.mocked(sendFeedbackEmail).mockRejectedValue(new Error('Resend said no for john@example.com'))],
+      ['rate-limited', () => jest.mocked(feedbackRateLimit.limit).mockResolvedValue({ success: false, limit: 5, remaining: 0, reset: 0 })],
+      ['csrf-rejected', () => jest.mocked(validateOrigin).mockReturnValue(false)],
     ])('writes exactly one [feedback] line for %s and no visitor text', async (outcome, arrange) => {
       arrange();
 
@@ -661,7 +661,7 @@ describe('Feedback API Route', () => {
     });
 
     it('returns 502 send-failed, never 200, when sending fails', async () => {
-      (sendFeedbackEmail as jest.Mock).mockRejectedValueOnce(new Error('Email service error'));
+      jest.mocked(sendFeedbackEmail).mockRejectedValueOnce(new Error('Email service error'));
 
       const request = createMockRequest(validBody);
 
@@ -674,7 +674,7 @@ describe('Feedback API Route', () => {
     });
 
     it('returns 502 send-failed when the Resend key is missing', async () => {
-      (sendFeedbackEmail as jest.Mock).mockRejectedValueOnce(new Error('RESEND_API_KEY environment variable is not set'));
+      jest.mocked(sendFeedbackEmail).mockRejectedValueOnce(new Error('RESEND_API_KEY environment variable is not set'));
 
       const response = await POST(createMockRequest(validBody));
 
@@ -685,7 +685,7 @@ describe('Feedback API Route', () => {
 
   describe('Error Handling', () => {
     it('returns 500 server-error when the limiter throws', async () => {
-      (feedbackRateLimit.limit as jest.Mock).mockRejectedValue(new TypeError('Upstash unreachable'));
+      jest.mocked(feedbackRateLimit.limit).mockRejectedValue(new TypeError('Upstash unreachable'));
 
       const response = await POST(createMockRequest(validBody));
       const text = await response.text();
@@ -697,7 +697,7 @@ describe('Feedback API Route', () => {
     });
 
     it('logs only the error name for an unexpected throw', async () => {
-      (feedbackRateLimit.limit as jest.Mock).mockRejectedValue(new TypeError('Upstash unreachable'));
+      jest.mocked(feedbackRateLimit.limit).mockRejectedValue(new TypeError('Upstash unreachable'));
 
       await POST(createMockRequest(validBody));
 

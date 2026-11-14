@@ -21,13 +21,21 @@ import SummitRegister, {
 import { formatEntryTime } from '@/lib/home-format';
 import { site } from '@/data/site';
 
-const fetchMock = jest.fn();
+/** The part of a fetch Response the register reads (jsdom has no Response). */
+interface FetchAnswer {
+  ok: boolean;
+  status: number;
+  headers: { get: (key: string) => string | null };
+  json: () => Promise<unknown>;
+}
+
+const fetchMock = jest.fn<(input: string, init?: RequestInit) => Promise<FetchAnswer>>();
 global.fetch = fetchMock as unknown as typeof fetch;
 
 const MESSAGE = 'This is a test message that is long enough.';
 
 /** A duck-typed fetch Response with a JSON body and optional headers. */
-function answer(status: number, body: unknown, headers: Record<string, string> = {}) {
+function answer(status: number, body: unknown, headers: Record<string, string> = {}): FetchAnswer {
   return {
     ok: status >= 200 && status < 300,
     status,
@@ -233,7 +241,7 @@ describe('SummitRegister', () => {
 
   it('times out a never-settling send after 15 s, keeps the fields and ignores a late answer', async () => {
     jest.useFakeTimers();
-    let lateAnswer: (value: unknown) => void = () => {};
+    let lateAnswer: (value: FetchAnswer) => void = () => {};
     fetchMock.mockReturnValueOnce(new Promise((resolve) => (lateAnswer = resolve)));
     render(<SummitRegister />);
 
@@ -262,7 +270,7 @@ describe('SummitRegister', () => {
   });
 
   it('retries with the kept values once while the failure box stays', async () => {
-    let second: (value: unknown) => void = () => {};
+    let second: (value: FetchAnswer) => void = () => {};
     fetchMock
       .mockResolvedValueOnce(answer(500, { code: 'server-error' }))
       .mockReturnValueOnce(new Promise((resolve) => (second = resolve)));
