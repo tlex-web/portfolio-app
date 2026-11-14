@@ -28,7 +28,8 @@ jest.mock('next/dynamic', () => () => {
 
 let readyState: DocumentReadyState = 'complete';
 const idleCallbacks: IdleRequestCallback[] = [];
-const requestIdle = jest.fn((cb: IdleRequestCallback) => {
+// Typed from the real two-argument requestIdleCallback, so the { timeout } assertion type-checks.
+const requestIdle = jest.fn<typeof window.requestIdleCallback>((cb) => {
   idleCallbacks.push(cb);
   return idleCallbacks.length;
 });

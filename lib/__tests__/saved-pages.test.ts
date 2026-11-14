@@ -58,10 +58,11 @@ describe('savedPageRows (D-12, UI-SPEC E11)', () => {
       ],
       catalog
     );
-    expect(rows).toEqual<SavedPageRow[]>([
+    const expected: SavedPageRow[] = [
       { href: '/roadmap', title: roadmap!.label },
       { href: `/photos/${firstPhoto.slug}`, title: firstPhoto.title, label: 'Photograph' },
-    ]);
+    ];
+    expect(rows).toEqual(expected);
   });
 
   it('orders rows nav, then photos in data order, then projects, whatever the cache order', () => {

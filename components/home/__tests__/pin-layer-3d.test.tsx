@@ -31,7 +31,9 @@ function renderLayer() {
   return { ...utils, pinsRef };
 }
 
-beforeEach(() => syncPins.mockClear());
+beforeEach(() => {
+  syncPins.mockClear();
+});
 
 describe('PinLayer3D (D-09, C3)', () => {
   it('is one decorative layer that shows only when the stage reads 3d', () => {

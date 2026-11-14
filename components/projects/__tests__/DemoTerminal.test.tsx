@@ -75,16 +75,18 @@ function reportVisibility(isIntersecting: boolean) {
 }
 
 function setReducedMotion(reduce: boolean) {
-  (window.matchMedia as jest.Mock).mockImplementation((query: string) => ({
-    matches: reduce && query.includes('reduce'),
-    media: query,
-    onchange: null,
-    addListener: jest.fn(),
-    removeListener: jest.fn(),
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
-  }));
+  (window.matchMedia as jest.Mock<typeof window.matchMedia>).mockImplementation(
+    (query: string): MediaQueryList => ({
+      matches: reduce && query.includes('reduce'),
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn<MediaQueryList['dispatchEvent']>(),
+    })
+  );
 }
 
 function setHidden(hidden: boolean) {

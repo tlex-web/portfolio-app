@@ -41,9 +41,12 @@ interface FakeRequest {
   headers: { has: (name: string) => boolean; get: (name: string) => string | null };
 }
 
+/** The worker always answers a navigation with a promise (respondWith(networkFirstNavigation(event))). */
+type RespondWith = (answer: Promise<unknown>) => void;
+
 interface FakeEvent {
   request: FakeRequest;
-  respondWith: jest.Mock;
+  respondWith: jest.Mock<RespondWith>;
   waitUntil: jest.Mock;
 }
 
@@ -144,7 +147,7 @@ function fakeRequest(pathAndQuery: string, mode: string, destination: string, he
 }
 
 function fakeEvent(request: FakeRequest): FakeEvent {
-  return { request, respondWith: jest.fn(), waitUntil: jest.fn() };
+  return { request, respondWith: jest.fn<RespondWith>(), waitUntil: jest.fn() };
 }
 
 /** Dispatches a navigation to `pathname` and resolves with the worker's answer. */
