@@ -328,6 +328,74 @@ test.describe('Shell mobile menu', () => {
     await expect(panel).toBeHidden();
     await expect(button).toHaveAttribute('aria-expanded', 'false');
   });
+
+  test("tapping the current page's link closes the panel and keeps the scroll (SHELL-07, D-16)", async ({
+    page,
+  }) => {
+    await page.goto('/roadmap');
+
+    // Scroll down (600 px, or the page's maximum if shorter) so a jump to the top shows.
+    await page.evaluate(() => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      window.scrollTo(0, Math.min(600, max));
+    });
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+    // A marker on the window: a document reload would drop it.
+    await page.evaluate(() => {
+      (window as unknown as { __shell07?: number }).__shell07 = 1;
+    });
+
+    // Pointer clicks at the element's centre, not locator.click(): Playwright's
+    // actionability scroll honours the global scroll-margin-top and moves the page
+    // even for the sticky header, which would hide (or fake) a scroll change.
+    const tap = async (locator: ReturnType<Page['locator']>) => {
+      const box = await locator.boundingBox();
+      if (!box) throw new Error('tap target has no box');
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    };
+    const button = page.getByRole('button', { name: 'Menu' });
+    const panel = page.locator('#site-menu');
+    await expect(button).toHaveAttribute('aria-expanded', 'false');
+    await expect
+      .poll(() => button.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))))
+      .toBe(true);
+    await tap(button);
+    await expect(panel).toBeVisible();
+    await panel.evaluate((el) =>
+      Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined))),
+    );
+    const scrollBefore = await page.evaluate(() => window.scrollY);
+    expect(scrollBefore).toBeGreaterThan(0);
+
+    await tap(panel.getByRole('link', { name: 'Roadmap', exact: true }));
+
+    await expect(panel).toBeHidden();
+    await expect(button).toHaveAttribute('aria-expanded', 'false');
+    await expect(button).toBeFocused();
+    expect(await page.evaluate(() => window.scrollY)).toBe(scrollBefore);
+    expect(new URL(page.url()).pathname).toBe('/roadmap');
+    expect(new URL(page.url()).search).toBe('');
+    expect(
+      await page.evaluate(() => (window as unknown as { __shell07?: number }).__shell07),
+    ).toBe(1);
+  });
+
+  test('on a view URL, Photographs still navigates to the plain page (D-23)', async ({ page }) => {
+    await page.goto('/photos?view=grid');
+
+    const button = page.getByRole('button', { name: 'Menu' });
+    const panel = page.locator('#site-menu');
+    await button.click();
+    await expect(panel).toBeVisible();
+
+    // usePathname drops the query, so the pathname stays /photos and the route-change
+    // close never fires: the link's click handler has to close the panel at tap.
+    await panel.getByRole('link', { name: 'Photographs', exact: true }).click();
+    await expect(page).toHaveURL(/\/photos$/, { timeout: 15000 });
+    await expect(panel).toBeHidden();
+    await expect(button).toHaveAttribute('aria-expanded', 'false');
+    await expect(button).toBeFocused();
+  });
 });
 
 test.describe('Shell reduced motion', () => {

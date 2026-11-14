@@ -87,6 +87,15 @@ function DefaultNav() {
     if (slugFromPath(pathname) === null || slugFromPath(menuPath) === null) setOpen(false);
   }
 
+  // Close trigger 7 (SHELL-07, D-16, D-23): a plain tap on the panel link whose
+  // href equals the pathname (strict equality, not isCurrentPath: 'Photographs'
+  // on a photo page is current but navigates, so trigger 1 closes it). With no
+  // query string the tap is default-prevented (no navigation, no scroll jump).
+  // With one (/photos?view=grid, /roadmap?project=box) Next still navigates to
+  // the plain page, but usePathname drops the query, so the pathname does not
+  // change and trigger 1 never fires: the link's click handler closes the panel
+  // at tap in both cases, focusing the Menu button first as Escape does.
+
   // Close triggers 2, 4, 5 and 6, attached only while the panel is open.
   useEffect(() => {
     if (!open) return;
@@ -191,6 +200,29 @@ function DefaultNav() {
                     <Link
                       href={item.href}
                       aria-current={current ? 'page' : undefined}
+                      onClick={(event) => {
+                        // Close trigger 7 (SHELL-07, D-16, D-23): a plain tap on the link
+                        // for the current pathname. Modified or non-primary activations
+                        // keep the browser's behaviour (new tab, download).
+                        const plain =
+                          event.button === 0 &&
+                          !event.metaKey &&
+                          !event.ctrlKey &&
+                          !event.shiftKey &&
+                          !event.altKey;
+                        if (!plain || item.href !== pathname) return;
+                        // The page already shown (no query): Next skips its navigation and
+                        // its scroll-to-top when the click is default-prevented.
+                        if (window.location.search === '') event.preventDefault();
+                        // Escape's order: focus Menu before the link hides, so focus never
+                        // drops to <body> and the header focusout close stays quiet.
+                        // preventScroll: the button sits in the sticky header, always in
+                        // view, but the global scroll-margin-top (nav height + 16 px) makes
+                        // a plain focus() scroll the page up to "reveal" it (D-16 keeps
+                        // the scroll position).
+                        buttonRef.current?.focus({ preventScroll: true });
+                        setOpen(false);
+                      }}
                       className={`relative flex min-h-12 items-center px-4 font-display text-heading font-normal ${COLOR_TRANSITION} ${
                         current ? 'text-ink' : 'text-ink-muted hover:text-ink'
                       }`}

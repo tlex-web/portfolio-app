@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { usePathname } from 'next/navigation';
 import SiteNav from '../SiteNav';
@@ -205,5 +205,43 @@ describe('SiteNav mobile menu (disclosure)', () => {
     expect(menuButton()).toHaveAttribute('aria-expanded', 'false');
     expect(panel()).not.toBeVisible();
     expect(menuButton()).toHaveFocus();
+  });
+
+  // Only the current-page link is clicked here: a click that is not prevented runs
+  // Next's navigate, which needs the app router Jest does not mount, so the D-23
+  // query-string case is proven in the browser (e2e/shell.spec.ts).
+  it('closes on a plain tap on the current page link, prevents the navigation and focuses Menu (SHELL-07, D-16)', async () => {
+    mockUsePathname.mockReturnValue('/roadmap');
+    const user = userEvent.setup();
+    const { menuButton, panel } = renderNav();
+
+    await user.click(menuButton());
+    const link = within(panel()!).getByRole('link', { name: 'Roadmap' });
+    expect(panel()).toContainElement(link);
+
+    const notPrevented = fireEvent.click(link);
+
+    expect(notPrevented).toBe(false);
+    expect(menuButton()).toHaveAttribute('aria-expanded', 'false');
+    expect(panel()).not.toBeVisible();
+    expect(menuButton()).toHaveFocus();
+  });
+
+  it('keeps the panel open on a Ctrl or Shift click of the current page link (SHELL-07)', async () => {
+    mockUsePathname.mockReturnValue('/roadmap');
+    const user = userEvent.setup();
+    const { menuButton, panel } = renderNav();
+
+    await user.click(menuButton());
+    const link = () => within(panel()!).getByRole('link', { name: 'Roadmap' });
+
+    // jsdom may log "Not implemented: navigation" for these unprevented clicks.
+    fireEvent.click(link(), { ctrlKey: true });
+    expect(menuButton()).toHaveAttribute('aria-expanded', 'true');
+    expect(panel()).toBeVisible();
+
+    fireEvent.click(link(), { shiftKey: true });
+    expect(menuButton()).toHaveAttribute('aria-expanded', 'true');
+    expect(panel()).toBeVisible();
   });
 });
