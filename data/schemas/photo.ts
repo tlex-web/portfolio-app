@@ -92,8 +92,82 @@ export type ExifSidecar = z.infer<typeof ExifSidecar>;
 // Stage 2 (D-10, 08-08): sidecar + corrections + DEM -> data/generated/photos.ts
 // ---------------------------------------------------------------------------
 
-/** Internal photo key shared by the sidecar, the corrections and the derivatives. */
-const PhotoId = z.string().regex(/^(img-\d{4}|r\d{3}-\d{3})$/);
+/** Internal photo key shared by the sidecar, the corrections, the photo map and the derivatives. */
+export const PhotoId = z.string().regex(/^(img-\d{4}|r\d{3}-\d{3})$/);
+export type PhotoId = z.infer<typeof PhotoId>;
+
+/**
+ * The country a photo was taken in, ISO 3166-1 alpha-2 (D-02). A closed enum of
+ * the Alpine Convention states, so `ch`, `CHE` or `XX` fail (a regex would accept
+ * `XX`). It is always explicit on the photo's record: never defaulted from the
+ * region and never derived from coordinates (there is no borders dataset), because
+ * a wrong country would put LV95 on an Italian photo (PHOTO-08). Widening it is
+ * one line.
+ */
+export const Country = z.enum(['AT', 'CH', 'DE', 'FR', 'IT', 'LI', 'MC', 'SI']);
+export type Country = z.infer<typeof Country>;
+
+/** A region id slug; whether it is in data/regions/regions.json is checked by photos:build. */
+const RegionSlug = z
+  .string()
+  .regex(/^[a-z]+(-[a-z]+)*$/, 'region id: lowercase words joined by single hyphens');
+
+/**
+ * One photo's record in data/photos/photo-map.json (D-01, D-02): the original's
+ * file name (equal to the sidecar's `file`; a bare name, no directory), its region
+ * and its country.
+ */
+export const PhotoMapEntry = z.strictObject({
+  file: z
+    .string()
+    .min(1)
+    .refine((f) => !f.includes('/') && !f.includes('\\'), 'file is a bare file name (no / or \\)'),
+  region: RegionSlug,
+  country: Country,
+});
+export type PhotoMapEntry = z.infer<typeof PhotoMapEntry>;
+
+/** The first pair of ids whose records name the same file, or null. */
+function duplicateFile(photos: Record<string, { file: string }>): [string, string, string] | null {
+  const seen = new Map<string, string>();
+  for (const [id, entry] of Object.entries(photos)) {
+    const first = seen.get(entry.file);
+    if (first !== undefined) return [entry.file, first, id];
+    seen.set(entry.file, id);
+  }
+  return null;
+}
+
+/**
+ * data/photos/photo-map.json (D-01): the source-file -> id map and the membership
+ * record, keyed by photo id. At least one record, keys sorted ascending, and one
+ * record per original (no two records name one file). That every record has a
+ * sidecar entry and every sidecar entry a record is checked by photos:build.
+ */
+export const PhotoMap = z
+  .strictObject({
+    schemaVersion: z.literal(1),
+    photos: z.record(PhotoId, PhotoMapEntry),
+  })
+  .refine((m) => Object.keys(m.photos).length > 0, {
+    message: 'photo-map: the map needs at least one record',
+    path: ['photos'],
+  })
+  .refine((m) => Object.keys(m.photos).every((id, i, ids) => i === 0 || ids[i - 1] < id), {
+    message: 'photo-map: photo ids must be unique and sorted ascending',
+    path: ['photos'],
+  })
+  .superRefine((m, ctx) => {
+    const dup = duplicateFile(m.photos);
+    if (dup) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `photo-map: ${dup[0]} is named by both ${dup[1]} and ${dup[2]}; one original has one record`,
+        path: ['photos'],
+      });
+    }
+  });
+export type PhotoMap = z.infer<typeof PhotoMap>;
 
 /**
  * When a photo was taken (D-03, D-04).
@@ -215,6 +289,10 @@ export type Corrections = z.infer<typeof Corrections>;
  */
 export const PhotoFacts = z.strictObject({
   id: PhotoId,
+  /** The photo's region (D-05), from its photo-map record. */
+  region: RegionSlug,
+  /** The photo's country (D-02, D-05), from its photo-map record; never derived. */
+  country: Country,
   medium: z.enum(['digital', 'film-scan']),
   capture: Capture,
   position: Position.nullable(),

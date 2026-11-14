@@ -779,10 +779,17 @@ const CI_GATE_PARSER_CASES = [
 const PHOTO_DATA = path.join(repoRoot, 'scripts', 'photos', 'build-photo-data.mjs');
 /** The flag the npm photo scripts pass: the .ts schema imports otherwise warn on stderr. */
 const PHOTO_NODE_ARGS = ['--disable-warning=MODULE_TYPELESS_PACKAGE_JSON'];
-/** Every input build-photo-data.mjs reads (sidecar, corrections, DEM source) and the output --check compares. */
+/**
+ * Every input build-photo-data.mjs reads (sidecar, corrections, photo map, region
+ * and plate registries, DEM source) and the output --check compares. The three
+ * registries joined in 15-06; without them the control case fails (15-RESEARCH Pitfall 5).
+ */
 const PHOTO_DATA_INPUTS = [
   'data/photos/exif-sidecar.json',
   'data/photos/corrections.json',
+  'data/photos/photo-map.json',
+  'data/regions/regions.json',
+  'data/terrain/plates.json',
   'data/terrain/source/source.json',
   'data/terrain/source/dem-10m.png',
   'data/generated/photos.ts',

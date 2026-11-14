@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "regions": [
+    {
+      "id": "zermatt",
+      "name": "Zermatt",
+      "plate": "matterhorn"
+    }
+  ]
+}
