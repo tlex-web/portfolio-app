@@ -717,6 +717,18 @@ const tempCiEdit = (edit) => {
   ciGateTempRoots.push(root);
   return root;
 };
+/** A temp copy of the good fixture plus one extra workflow `.github/workflows/<file>` holding `text`. */
+const tempExtraWorkflow = (file, text) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
+  const root = path.join(dir, 'root');
+  fs.cpSync(cig('good'), root, { recursive: true });
+  fs.writeFileSync(path.join(root, '.github', 'workflows', file), text);
+  ciGateTempRoots.push(root);
+  return root;
+};
+/** A workflow with one job, scoped and timed, whose name is `name` (rule 18). */
+const namedJobWorkflow = (name) =>
+  `name: Other\n\non:\n  push:\n\njobs:\n  shadow:\n    name: ${name}\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    permissions:\n      contents: read\n    steps:\n      - run: echo hi\n`;
 /** The good fixture's build-job `timeout-minutes: 5` line (group 1: the job's lines before it; group 2: the line ending). */
 const BUILD_TIMEOUT = /^( {2}build:\r?\n(?: {4}.*\r?\n)*?) {4}timeout-minutes: 5(\r?\n)/m;
 /**
@@ -847,6 +859,22 @@ const CI_GATE_PARSER_CASES = [
     () => tempRelayEdit((text) => text.replace(RELAY_STEPS, `$1${relayActionStep('|\n            # ${{ github.event.pull_request.title }}\n            core.info(1)')}`)),
     1,
     ['ci-skip-relay.yml: expression in an action input (line 112: script)', 'ci-gate: 1 failure(s)'],
+  ),
+  ciGateCase(
+    'rule 18: an expression job name in another workflow fails (13 IN-03)',
+    () => tempExtraWorkflow('other.yml', namedJobWorkflow("${{ format('CI {0}', 'OK') }}")),
+    1,
+    [
+      "other.yml: expression job name outside ci.yml: .github/workflows/other.yml (job shadow); only the relay's needs-based CI OK name expression is allowed",
+      'ci-gate: 1 failure(s)',
+    ],
+  ),
+  ciGateCase("rule 18: the relay's needs-based name expression passes", () => cig('good'), 0, ['ci-gate: OK']),
+  ciGateCase(
+    'a literal job name in another workflow passes rule 18',
+    () => tempExtraWorkflow('other.yml', namedJobWorkflow('Format check')),
+    0,
+    ['ci-gate: OK'],
   ),
 ];
 

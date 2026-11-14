@@ -70,6 +70,12 @@
  *      field there (say `script:` of actions/github-script) is the same
  *      injection class as rule 12; event fields go through env: instead
  *
+ * Every workflow but ci.yml (13 IN-03):
+ *  18. no job `name:` holds `${{`, except the rule 5 exception in its exact
+ *      needs-based shape (rule 5 sees only a literal CI OK, so a name built
+ *      from parts, say `${{ format('CI {0}', 'OK') }}`, would slip past it and
+ *      post a CI OK check run; no other workflow needs an expression name)
+ *
  * Usage:
  *   node scripts/guards/check-ci-gate.mjs [--root <dir>]
  *   (Runs from `npm run lint` via `npm run guard:ci`)
@@ -513,6 +519,26 @@ function findCiOkOutsideCi(workflows, allowed) {
   return found;
 }
 
+/**
+ * 18. Jobs outside ci.yml whose `name:` holds `${{`, except the `allowed`
+ * { file, job } pairs in the needs-based name-expression shape (13 IN-03: rule 5
+ * sees only a literal CI OK, so a name built from parts slips past it).
+ * Returns [{ rel, job }].
+ */
+function findExpressionNamesOutsideCi(workflows, allowed) {
+  const found = [];
+  for (const { file, rel, jobs } of workflows) {
+    if (file === 'ci.yml') continue;
+    for (const job of jobs) {
+      if (!(jobName(job) ?? '').includes('${{')) continue;
+      const isAllowed = allowed.some((a) => a.file === file && a.job === job.id);
+      if (isAllowed && isNeedsNameExpression(job)) continue;
+      found.push({ rel, job: job.id });
+    }
+  }
+  return found;
+}
+
 const workflows = readWorkflows();
 
 // 5. CI OK is emitted by ci.yml only
@@ -523,6 +549,11 @@ for (const { rel, job, shape } of findCiOkOutsideCi(workflows, CI_OK_ELSEWHERE_A
       ? `a job named CI OK outside ci.yml: ${rel} (job ${job}); the relay may carry CI OK only inside one \${{ }} name expression that reads needs., on a job with needs:`
       : `a job named CI OK outside ci.yml: ${rel} (job ${job})`,
   );
+}
+
+// 18. no expression job name outside ci.yml but the relay's allowed shape
+for (const { rel, job } of findExpressionNamesOutsideCi(workflows, CI_OK_ELSEWHERE_ALLOWED)) {
+  fail(rel, `expression job name outside ci.yml: ${rel} (job ${job}); only the relay's needs-based CI OK name expression is allowed`);
 }
 
 for (const { rel, lines, jobs } of workflows) {

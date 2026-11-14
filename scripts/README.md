@@ -121,6 +121,7 @@ The docs-only fast path (D-08, D-09): `scripts/ci/classify-changes.mjs` gets eve
 | needs set | `ci-ok.needs` missing a job id (`ci-ok needs is missing <id>`) or listing one that does not exist; the lists are compared as sets, so order never matters |
 | jq verdict | `ci-ok` not running `jq` with `-f scripts/ci/ci-ok.jq`, or that file missing |
 | unique name | a job named `CI OK` in any other workflow. The one exception (`CI_OK_ELSEWHERE_ALLOWED`) is job `relay` in `ci-skip-relay.yml`, and only while `CI OK` sits inside one `${{ }}` name expression that reads `needs.` on a job with `needs:`; a literal `name: CI OK` there still fails |
+| expression names | a job `name:` holding `${{` in any workflow but `ci.yml`, unless it is the relay's allowed needs-based `CI OK` expression (the unique-name rule sees only a literal `CI OK`, so a name built from parts would slip past it; 13 IN-03) |
 | `checks: write` | any workflow line granting it, directly or through `permissions: write-all` (such a job could post a forged `CI OK` check run) |
 | token scope | a job with no `permissions:` block in a workflow that sets none at the top (the repository default token may include `checks: write`) |
 | triggers | `ci.yml` without `push`, `pull_request` or `workflow_dispatch` in `on:` (the skip-marker relay dispatches `ci.yml`) |
