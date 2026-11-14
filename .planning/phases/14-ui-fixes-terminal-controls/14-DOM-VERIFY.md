@@ -1,12 +1,12 @@
 ---
 schema_version: 1
-wave: 4
+wave: 5
 outcome: could_not_look
 reason: target_unreachable
 checked: 0
 passed: 0
 failed: 0
-needs_review: 0
+needs_review: 1
 ---
 
 # Phase 14 wave 1 (plan 14-01) live-DOM verification
@@ -47,3 +47,13 @@ The verifier wasn't dispatched, for the same reason as wave 2: Chrome reaches no
 ## Wave 4 (plan 14-04): could_not_look / target_unreachable
 
 The verifier wasn't dispatched, for the same reason as wave 2. D-12 and D-22 are unobserved and nothing failed. Hiding labels collapses the open callout; a callout that can't be seen (zoomed, or labels hidden) doesn't take Escape; for a visible callout the order is still callout, then zoom, then close. Covered by the D-12 and D-22 Jest rows, the rewritten IN-02 and zoom-unwind rows, and 3 new D-12 Playwright rows. `e2e/photos-lightbox.spec.ts` passes 122/122 in Chromium and Firefox; WebKit runs in CI (14-08).
+
+## Wave 5 (plan 14-05): could_not_look / target_unreachable
+
+The verifier wasn't dispatched, for the same reason as wave 2. ENG-06 step controls are unobserved and nothing failed:
+- Previous and Next sit around the dots.
+- Pressing a step or a dot shows that command complete and turns on the sticky Pause.
+- At the end stops the buttons are aria-disabled but still focusable, and they never wrap.
+Covered by the 14-05 Jest rows (57 tests) and `e2e/case-study.spec.ts` (118 in Chromium and Firefox).
+
+needs_review: in desktop Chromium at 375 px, the command bar wraps onto 2 rows, because the reserved scrollbar gutter leaves 299 px inside against the 304 px it needs. Phones and Firefox show 1 row. This goes to Tim before the 14-08 baseline.
