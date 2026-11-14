@@ -21,7 +21,11 @@
  *                           (case-insensitive) anywhere in the repo, minus
  *                           scripts/guards/__selftest__/**; the
  *                           metadata-call rule reads tracked scripts/photos,
- *                           scripts/terrain and scripts/media sources
+ *                           scripts/terrain and scripts/media sources; the
+ *                           telemetry rule reads git ls-files -co
+ *                           --exclude-standard (tracked plus untracked files
+ *                           no ignore rule covers) and every file under
+ *                           public/, ignored ones included (D-21)
  *   fixture mode (--root):  recursive walk of <dir> (fixtures are not a git repo)
  *
  * Rules (each violation prints one line `<posix rel path> <rule>: <detail>`):
@@ -158,6 +162,16 @@ function gitLsFiles(root, pathspecs) {
   return out.split('\0').filter(Boolean);
 }
 
+/**
+ * Tracked plus untracked-but-not-ignored paths matching the pathspecs, via
+ * git ls-files -z -co --exclude-standard (D-21). Throws on git failure like
+ * gitLsFiles, so a repo git cannot list is never a silent pass.
+ */
+function gitLsFilesVisible(root, pathspecs) {
+  const out = execFileSync('git', ['ls-files', '-z', '-co', '--exclude-standard', '--', ...pathspecs], { cwd: root, encoding: 'utf-8', maxBuffer: 64 * 1024 * 1024 });
+  return out.split('\0').filter(Boolean);
+}
+
 const isImage = (rel) => IMAGE_EXT.has(path.extname(rel).toLowerCase());
 const isVideo = (rel) => VIDEO_EXT.has(path.extname(rel).toLowerCase());
 const isTelemetry = (rel) => TELEMETRY_EXT.has(path.extname(rel).toLowerCase());
@@ -179,8 +193,21 @@ function collect(root, fixture) {
     images: tracked.filter(isImage),
     videos: tracked.filter(isVideo),
     scripts: gitLsFiles(root, SCRIPT_DIRS).filter((rel) => SCRIPT_EXT.test(rel) && inScope(rel)),
-    telemetry: gitLsFiles(root, TELEMETRY_PATHSPECS).filter(inScope),
+    telemetry: repoTelemetry(root, inScope),
   };
+}
+
+/**
+ * Telemetry in repo mode (D-21): what git would show (tracked, including a
+ * `git add -f` under the ignored originals folders, plus untracked files no
+ * ignore rule covers) and every file under public/, ignored ones included,
+ * because `next start` serves them. Ignored, untracked originals are skipped by
+ * --exclude-standard; there is no other originals exception (A-15-12).
+ */
+function repoTelemetry(root, inScope) {
+  const listed = gitLsFilesVisible(root, TELEMETRY_PATHSPECS);
+  const served = walk(path.join(root, 'public')).map((full) => toPosix(path.relative(root, full)));
+  return [...new Set([...listed, ...served])].filter((rel) => isTelemetry(rel) && inScope(rel));
 }
 
 const isSvg = (rel) => path.extname(rel).toLowerCase() === '.svg';

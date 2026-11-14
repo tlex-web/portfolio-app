@@ -88,3 +88,18 @@ Desktop.ini
 *.cache
 
 project_concept/
+
+# Drone and GPS telemetry (DATA-15, D-22): never staged by `git add -A`; the guard still catches `git add -f` and public/
+*.[sS][rR][tT]
+*.[lL][rR][fF]
+*.[dD][aA][tT]
+*.[lL][rR][vV]
+*.[tT][hH][mM]
+*.[xX][mM][pP]
+*.[gG][pP][xX]
+*.[kK][mM][lL]
+*.[kK][mM][zZ]
+*.[nN][mM][eE][aA]
+*.[iI][gG][cC]
+*.[fF][iI][tT]
+*.[tT][cC][xX]

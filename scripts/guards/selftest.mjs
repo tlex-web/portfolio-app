@@ -913,6 +913,49 @@ function tempTelemetryRoot(files) {
   telemetryTempRoots.push(root);
   return root;
 }
+/**
+ * D-21 repo-mode fixture: a temp git work tree (nothing committed) with the
+ * given `.gitignore` lines and placeholder files, plus `git add -f` of each
+ * `forceAdd` path, as a force-added sidecar would be staged. The guard then runs
+ * with no --root and this root as its cwd. Nested one level down like
+ * tempTelemetryRoot.
+ */
+function tempTelemetryRepo({ files, ignore = [], forceAdd = [] }) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
+  const root = path.join(dir, 'root');
+  fs.mkdirSync(root);
+  telemetryTempRoots.push(root);
+  gitIn(root, 'init', '-q');
+  putFiles(root, { '.gitignore': ignore.map((line) => `${line}\n`).join('') });
+  putFiles(root, Object.fromEntries(files.map((rel) => [rel, 'selftest placeholder, no telemetry\n'])));
+  for (const rel of forceAdd) gitIn(root, 'add', '-f', '--', rel);
+  return root;
+}
+const telemetryUntrackedRepo = tempTelemetryRepo({ files: ['DJI_0001.SRT'] });
+const telemetryPublicRepo = tempTelemetryRepo({ files: ['public/flight.gpx'], ignore: ['public/flight.gpx'] });
+const telemetryOriginalRepo = tempTelemetryRepo({ files: ['assets/photos-original/IMG_0001.xmp'], ignore: ['assets/photos-original/'] });
+const telemetryForcedRepo = tempTelemetryRepo({
+  files: ['assets/photos-original/route.KML'],
+  ignore: ['assets/photos-original/'],
+  forceAdd: ['assets/photos-original/route.KML'],
+});
+/**
+ * A fresh temp directory with no `git init`, for the "never a silent pass" case.
+ * `insideWorkTree` records whether git still finds a work tree there (a temp dir
+ * under some checkout), which would make the case prove nothing; the case
+ * reports it instead of passing.
+ */
+function tempNoGitDir() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
+  const root = path.join(dir, 'root');
+  fs.mkdirSync(root);
+  telemetryTempRoots.push(root);
+  const r = spawnSync('git', ['rev-parse', '--is-inside-work-tree'], { cwd: root, encoding: 'utf-8' });
+  return { root, insideWorkTree: r.status === 0 };
+}
+const telemetryNoGit = tempNoGitDir();
+/** The 13 D-20 types in mixed case (DATA-15), plus a GeoJSON file that must pass. */
+const TELEMETRY_FILES = ['DJI_0001.SRT', 'DJI_0001.LRF', 'FLY001.DAT', 'GL010001.LRV', 'GOPR0001.THM', 'IMG_0001.xmp', 'track.GPX', 'route.Kml', 'route.kmz', 'log.NMEA', 'flight.igc', 'ride.FIT', 'run.tcx'];
 
 /**
  * 07 WR-04 fixture: a temp git repo with app/card.tsx committed, then `edit(root)`
@@ -2041,6 +2084,56 @@ const cases = [
     setup: () => ['--root', tempTelemetryRoot(['clips/DJI_0001.SRT'])],
     expectExit: 1,
     expectOutput: ['clips/DJI_0001.SRT telemetry:', 'served-images: 1 violations'],
+  },
+  {
+    name: 'served-images: telemetry: every sidecar and track type fails in any case, GeoJSON passes',
+    guard: SERVED,
+    args: [],
+    setup: () => ['--root', tempTelemetryRoot([...TELEMETRY_FILES, 'map.geojson'])],
+    expectExit: 1,
+    expectOutput: [...TELEMETRY_FILES.map((rel) => `${rel} telemetry:`), `served-images: ${TELEMETRY_FILES.length} violations`],
+    check: (output) => (output.includes('map.geojson') ? 'the output names map.geojson, which must stay allowed (D-20)' : null),
+  },
+  {
+    name: 'served-images: telemetry: an untracked unignored sidecar fails',
+    guard: SERVED,
+    args: [],
+    cwd: telemetryUntrackedRepo,
+    expectExit: 1,
+    expectOutput: ['DJI_0001.SRT telemetry:', 'served-images: 1 violations'],
+  },
+  {
+    name: 'served-images: telemetry: an ignored file under public/ fails',
+    guard: SERVED,
+    args: [],
+    cwd: telemetryPublicRepo,
+    expectExit: 1,
+    expectOutput: ['public/flight.gpx telemetry:', 'served-images: 1 violations'],
+  },
+  {
+    name: "served-images: telemetry: an ignored untracked original's sidecar passes",
+    guard: SERVED,
+    args: [],
+    cwd: telemetryOriginalRepo,
+    expectExit: 0,
+    expectOutput: ['served-images: OK'],
+  },
+  {
+    name: 'served-images: telemetry: a force-added sidecar under the originals folder fails',
+    guard: SERVED,
+    args: [],
+    cwd: telemetryForcedRepo,
+    expectExit: 1,
+    expectOutput: ['assets/photos-original/route.KML telemetry:', 'served-images: 1 violations'],
+  },
+  {
+    name: 'served-images: telemetry: outside a git work tree the scan fails, never a silent pass',
+    guard: SERVED,
+    args: [],
+    cwd: telemetryNoGit.root,
+    expectExit: 1,
+    expectOutput: ['scope: git ls-files failed', 'served-images: 1 violations'],
+    check: () => (telemetryNoGit.insideWorkTree ? `git finds a work tree at ${telemetryNoGit.root}, so this case proves nothing` : null),
   },
   {
     name: 'mp4-boxes: checkMp4 finds no violation in the clean fixture clip',
