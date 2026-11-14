@@ -36,7 +36,10 @@ export class CanvasErrorBoundary extends Component<
   }
 
   componentDidCatch(error: unknown, _info: ErrorInfo) {
-    // 07 WR-07: a scene bug is logged; the expected no-WebGL fallback stays silent
+    // 07 WR-07 (kept by 13-11): a scene bug gets this extra [SafeCanvas] log; the
+    // expected no-WebGL failure is not logged by this boundary. Next's own
+    // caught-error reporting still logs every error a boundary catches, so the
+    // fallback is not silent in the console (13 IN-01).
     if (!isWebGLUnavailable(error)) console.error('[SafeCanvas]', error);
     this.props.onError?.(error);
   }
