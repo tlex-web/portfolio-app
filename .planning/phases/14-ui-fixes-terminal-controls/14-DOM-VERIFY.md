@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-wave: 5
+wave: 6
 outcome: could_not_look
 reason: target_unreachable
 checked: 0
@@ -57,3 +57,7 @@ The verifier wasn't dispatched, for the same reason as wave 2. ENG-06 step contr
 Covered by the 14-05 Jest rows (57 tests) and `e2e/case-study.spec.ts` (118 in Chromium and Firefox).
 
 needs_review: in desktop Chromium at 375 px, the command bar wraps onto 2 rows, because the reserved scrollbar gutter leaves 299 px inside against the 304 px it needs. Phones and Firefox show 1 row. This goes to Tim before the 14-08 baseline.
+
+## Wave 6 (plan 14-06): could_not_look / target_unreachable
+
+The verifier wasn't dispatched, for the same reason as wave 2. The ENG-06 transcript is unobserved and nothing failed. It's a server-rendered `<details data-transcript>` under the terminal, closed by default, opened once under reduced motion, and it presses Pause when a visitor opens it. Covered by 65 Jest rows and 126/126 case-study e2e rows in Chromium and Firefox, including axe with the transcript present and the sitemap audit (no hydration mismatch on /projects/box).
