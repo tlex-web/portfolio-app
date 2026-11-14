@@ -184,11 +184,11 @@ Plans:
   4. The served-asset guard fails on `.SRT`, `.LRF`, GPX and KML files and on MP4s carrying GPS or telemetry tracks anywhere in the repo or the site, proven by selftest fixtures.
   5. The phase lands with zero visual-baseline changes, and a test shows that every link to a photo comes from one URL helper (still `/photos/<slug>`).
   6. `npm run type-check` also type-checks the Jest tests, e2e specs and Playwright configs, with zero errors (GUARD-10; the 13-06 measurement found 5482 errors in 103 files as-is and 69 in 21 files with the Jest globals declared), using `@types/jest` only after Tim vets it, or `@jest/globals` imports.
-**Plans**: 16 plans in 16 waves (serial: one checkout, a shared `selftest.mjs` and `package.json`, and the production e2e server on port 3000)
+**Plans**: 1/16 plans executed in 16 waves (serial: one checkout, a shared `selftest.mjs` and `package.json`, and the production e2e server on port 3000)
 
 Plans:
 **Wave 1**
-- [ ] 15-01-PLAN.md — GUARD-10 part 1: phase-base client JS total, `@jest/globals` globals d.ts with a canary, `tsconfig.jest.json` and `tsconfig.e2e.json`, e2e in `type-check`, first 50 Jest-scope errors fixed
+- [x] 15-01-PLAN.md — GUARD-10 part 1: phase-base client JS total, `@jest/globals` globals d.ts with a canary, `tsconfig.jest.json` and `tsconfig.e2e.json`, e2e in `type-check`, first 50 Jest-scope errors fixed
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 15-02-PLAN.md — GUARD-10 part 2: spy, matchMedia, it.each and mock-arity errors fixed (40 more; 9 left)
@@ -343,7 +343,7 @@ Plans:
 | 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 34/34 | Complete | 2026-11-05 |
 | 13. Repo Safety & Test Debt | v2.1 | 22/22 | Complete    | 2026-11-14 |
 | 14. UI Fixes & Terminal Controls | v2.1 | 8/8 | Complete    | 2026-11-14 |
-| 15. Region & Plate Data Model | v2.1 | 0/TBD | Not started | - |
+| 15. Region & Plate Data Model | v2.1 | 1/16 | In Progress | - |
 | 16. New Regions & Alps Overview Data | v2.1 | 0/TBD | Not started | - |
 | 17. Region Routes, SEO & Structured Data | v2.1 | 0/TBD | Not started | - |
 | 18. Immersive Survey Layout | v2.1 | 0/TBD | Not started | - |

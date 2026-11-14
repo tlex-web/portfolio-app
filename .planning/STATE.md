@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 15
 current_phase_name: Region & Plate Data Model
 status: executing
-stopped_at: Phase 15 context gathered
-last_updated: "2026-11-14T19:53:26.346Z"
+stopped_at: Completed 15-01-PLAN.md
+last_updated: "2026-11-14T20:11:24.173Z"
 last_activity: 2026-11-14
-last_activity_desc: "Phase 14 shipped as PR #148"
-state_head: 6d13db43600a9ed47aa2730eaf54ec5cfbdd5e71
+last_activity_desc: Phase 15 execution started
+state_head: 5bb0398a59125d795c6ed700f50044788dde6738
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 46
-  completed_plans: 30
+  completed_plans: 31
   percent: 29
 ---
 
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-11-14)
 
 ## Current Position
 
-Phase: 15 (Region & Plate Data Model) — READY TO EXECUTE
-Plan: Not started
+Phase: 15 (Region & Plate Data Model) — EXECUTING
+Plan: 2 of 16
 Status: Ready to execute
-Last activity: 2026-11-14 -- Phase 14 shipped as PR #148
+Last activity: 2026-11-14 — Phase 15 execution started
 
 Progress: [███░░░░░░░] 29%
 
@@ -85,6 +85,7 @@ Progress: [███░░░░░░░] 29%
 | Phase 14 P06 | 9 min | 2 tasks | 4 files |
 | Phase 14 P07 | 12 min | 2 tasks | 4 files |
 | Phase 14 P08 | 90min | 3 tasks | 13 files |
+| Phase 15 P01 | 9min | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -174,6 +175,9 @@ Recent decisions affecting current work:
 - [Phase 14]: 14-08: re-baseline changed 11 PNGs and added 1 (menu/375-current-focus), all inside the declared menu/home/box set; Tim committed them (55160a4) and CI OK passed on it (run 43600436335)
 - [Phase 14]: 14-08: no Deployment Checks proof recorded (D-20); ci/14-08 is throwaway and the phase branch is pushed later by /gsd-ship
 - [Phase 14]: 14-UAT passed 2026-11-14 (Tim asked Claude to run it): the 12-UAT test 3 keyboard re-check, 20/20 in Edge and Firefox on next dev; VERIFICATION canonicalized human_needed → passed and the phase transitioned to 15
+- [Phase 15]: 15-01: @jest/globals uses the same range as jest (^30.5.2), not an exact pin
+- [Phase 15]: 15-01: Upstash mocks typed from Upstash's own signatures (Ratelimit['limit'], RedisConfigNodejs constructor), not from the app's RateLimitResult
+- [Phase 15]: 15-01: phase-base client JS is 1,850,382 bytes (24 files) at 05d736a; 15-11/15-16 budget <= 1,854,478
 
 ### Pending Todos
 
@@ -229,6 +233,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-14T17:10:25.675Z
-Stopped at: Phase 15 context gathered
-Resume file: .planning/phases/15-region-plate-data-model/15-CONTEXT.md
+Last session: 2026-11-14T20:11:23.856Z
+Stopped at: Completed 15-01-PLAN.md
+Resume file: None
