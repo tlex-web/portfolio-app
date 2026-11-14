@@ -9,7 +9,7 @@
   **Fix when owned:** the same one-word change (`focus({ preventScroll: true })`) in the Escape handler, plus a scroll assertion on the existing "Escape closes to the button" e2e row. Owner: Tim to decide (a quick task, or fold into a Phase 14 plan that already touches SiteNav).
 
 - Desktop Chromium at 375 px wraps the terminal's command bar to two rows
-  status: open
+  status: resolved (2026-11-14, Tim's AskUserQuestion answer "c: dot row gap-1 (Recommended)"; commit 61b390a. The dot row is `gap-1`, Previous, four dots and Next need 292 px against 299 px inside, and the bar measured one 48 px row in Chromium and Firefox. 14-UI-SPEC Contract 1 amended.)
   **Found during:** 14-05 Task 2 (the 375 px one-row e2e row, 2026-11-14)
   **What:** `html` has `scrollbar-gutter: stable` with `scrollbar-width: thin`, so desktop Chromium reserves a 10 px gutter at a 375 px window: the terminal frame is 333 px, not the 343 px 14-UI-SPEC "Width at 375 px" measured, and the bar has 299 px inside, not 311. Previous, four dots and Next need 304 px, so the dot row wraps 3 + 1 inside a 97 px bar (Previous and Next stay centred, nothing scrolls sideways; the spec's own wrap rule). Phones draw overlay scrollbars and get the one 48 px row; Firefox here draws no gutter. The e2e one-row check runs as a phone (`isMobile` in Chromium), and a desktop row asserts the wrap rule.
   **Why it matters:** the Chromium case-study 375 px visual baseline (14-08) will show the two-row bar.

@@ -6,10 +6,10 @@ current_phase: 14
 current_phase_name: UI Fixes & Terminal Controls
 status: executing
 stopped_at: Completed 14-06-PLAN.md
-last_updated: "2026-11-14T12:18:49.256Z"
+last_updated: "2026-11-14T12:25:14.730Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 14 execution started
-state_head: b023bd037062ec1ac5a0c3beaddd478025719e17
+state_head: 61b390af20229c02a34c4eee6067cf66c7e15c40
 progress:
   total_phases: 7
   completed_phases: 1
@@ -163,6 +163,7 @@ Recent decisions affecting current work:
 - [Phase 14]: 14-05: A step or any dot press shows the target command complete and sets the sticky Pause through one show(target); ends are aria-disabled, focusable, and stepTo returns null so goTo never throws
 - [Phase 14]: 14-06: The transcript summary sits between the terminal and the next focusable element, so two Jest Tab rows were rewritten in place to pass through it (GUARD-03).
 - [Phase 14]: 14-06: The box reduced visual shot waits for the open transcript before settle(); declared re-baseline box/375-reduced, box/768-reduced, box/1440-reduced for 14-08.
+- [Phase 14]: 14-05 follow-up: the terminal dot row is gap-1, not gap-2 (Tim's decision c, AskUserQuestion 2026-11-14, "c: dot row gap-1 (Recommended)"). Desktop Chromium's scrollbar gutter leaves 299 px inside the 375 px bar, and Previous, four dots and Next now need 292 px, so the bar is one 48 px row in Chromium and Firefox. 14-UI-SPEC Contract 1 amended; deferred-items entry resolved (61b390a).
 
 ### Pending Todos
 

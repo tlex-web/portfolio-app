@@ -135,7 +135,7 @@ The bottom bar becomes `[‹]  • ━ • •  [›]`: a compact cluster, left-
           onClick={() => { if (!atStart) step(-1); }}>
     <CaretLeftIcon size={24} aria-hidden="true" />
   </button>
-  <div className="flex min-w-0 flex-wrap items-center gap-2">{/* DOT buttons, unchanged */}</div>
+  <div className="flex min-w-0 flex-wrap items-center gap-1">{/* DOT buttons, unchanged; gap-1 since the 2026-11-14 amendment, was gap-2 */}</div>
   <button type="button" aria-label="Next command"
           aria-disabled={atEnd ? 'true' : undefined} className={STEP}
           onClick={() => { if (!atEnd) step(1); }}>
@@ -150,9 +150,11 @@ The bottom bar becomes `[‹]  • ━ • •  [›]`: a compact cluster, left-
 | Bar | Always `min-h-12 items-center` (one row = 48 px, as today's `h-12`). The `count >= 7 ? 'min-h-12 flex-wrap' : 'h-12'` switch is **retired**: only the inner dot row wraps. Previous and Next are `shrink-0`, so they never wrap away from the dots |
 | Group | The existing `role="group" aria-label="Commands"` now wraps Previous, the dots and Next. The dot wrapper `<div>` has no role |
 | Order | DOM = visual = Tab order: Pause → Previous → dot 1…n → Next [UUPM `keyboard-nav`] |
-| Width at 375 px | Frame 343 px, bar inner 311 px. With 4 commands: 6 × 44 + 5 × 8 = **304 px**, one row [MEAS]. With 5–6 commands the dot row wraps to two rows inside the bar while Previous and Next stay vertically centred; nothing scrolls sideways |
+| Width at 375 px | ~~Frame 343 px, bar inner 311 px. With 4 commands: 6 × 44 + 5 × 8 = **304 px**, one row [MEAS].~~ Amended 2026-11-14 (note below): with 4 commands 6 × 44 + 2 × 8 + 3 × 4 = **292 px**, one row in phones, Firefox and desktop Chromium. With 5–6 commands the dot row wraps to two rows inside the bar while Previous and Next stay vertically centred; nothing scrolls sideways |
 | Render rule | Only when `count >= 2`, like the dots (G2 unchanged) |
 | No new keys | No arrow-key shortcuts on the terminal (CONTEXT: no new interactions beyond the buttons) |
+
+> **Amendment 2026-11-14 (Tim's decision c, after 14-05).** The dot row is now `gap-1`. It was `gap-2`. The bar's own `gap-2`, the 44 px `size-11` targets and every other class are unchanged. **Why:** `html` has `scrollbar-gutter: stable` with a thin scrollbar, so desktop Chromium reserves a gutter at a 375 px window. That makes the frame 333 px and leaves the bar 299 px inside, not 311. The 304 px row wrapped the dots 3 + 1 there. **Now:** Previous, four dots and Next need **292 px**, which leaves 7 px spare in desktop Chromium. Measured on the 14-05 follow-up build, the bar is one 48 px row in Chromium (299 px inside) and in Firefox (309 px inside, because the frame's 1 px borders take 2 px of the 311). Dot centres move from 52 px apart to 48 px, and the dot hit areas still do not overlap. Tim's answer (AskUserQuestion, 2026-11-14) was "c: dot row gap-1 (Recommended)". The wrap rule above (G3) still holds if more commands are ever added.
 
 ### Behaviour
 
@@ -314,7 +316,7 @@ Applicable state considerations resolved: 15 covered, 6 backstop, 0 unresolved (
 | empty | E1 terminal step controls | ✅ covered | A terminal with zero commands renders nothing: no bar, no step buttons, no dots (11 IN-01) |
 | loading | E1 terminal step controls | ⛔ dismissed | The commands are static data in the island's props; a step is a synchronous client state change, so there is no in-flight state |
 | error | E1 terminal step controls | ⛔ dismissed | No fetch or failure path; the ends are handled by `aria-disabled` (open-axis "ends" row) |
-| populated | E1 terminal step controls | ✅ covered | With 4 commands at 375 px the bottom bar is one 48 px row: Previous, 4 dots and Next take 304 of the 311 px available |
+| populated | E1 terminal step controls | ✅ covered | With 4 commands at 375 px the bottom bar is one 48 px row: Previous, 4 dots and Next take ~~304 of the 311 px available~~ 292 px, against 299 px inside in desktop Chromium and 309 px in Firefox and on phones (amended 2026-11-14, Contract 1 note) |
 | partial | E1 terminal step controls | ⛔ dismissed | The bar shows only dots and step buttons, with no per-command fields that could be missing |
 | overflow | E1 terminal step controls | ✅ covered | With 5–6 commands the inner dot row wraps inside the bar, Previous and Next stay `shrink-0` beside it and vertically centred, and nothing scrolls sideways at 375 px |
 | zero-one-many | E1 terminal step controls | ✅ covered | 0 commands: nothing renders. 1 command: a static terminal with no step buttons, dots or Pause. 2+ commands: Previous, dots, Next and Pause render |

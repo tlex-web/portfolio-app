@@ -112,13 +112,13 @@ coverage:
         ref: "e2e/case-study.spec.ts#at 375 px on a phone > at 375 px the command bar is one 48 px row (ENG-06)"
         status: pass
       - kind: e2e
-        ref: "e2e/case-study.spec.ts#at 375 px Previous and Next stay centred beside the dots and nothing scrolls sideways (ENG-06, G3)"
+        ref: "e2e/case-study.spec.ts#at 375 px on the desktop the command bar is one row, Previous and Next stay centred beside the dots and nothing scrolls sideways (ENG-06, G3)"
         status: pass
       - kind: unit
         ref: "components/projects/__tests__/DemoTerminal.test.tsx#gives seven commands seven dots in a wrapping dot row, with Previous and Next beside it (ENG-06)"
         status: pass
     human_judgment: true
-    rationale: "Desktop Chromium at a 375 px window wraps the bar to two rows (scrollbar gutter). Tim decides whether that is acceptable (deferred-items options a to d) before the 14-08 baseline."
+    rationale: "Desktop Chromium at a 375 px window wrapped the bar to two rows (scrollbar gutter). Resolved 2026-11-14 by Tim's decision c (dot row gap-1, commit 61b390a): one row in both engines; see Post-plan decision."
 
 duration: 15 min
 completed: 2026-11-14
@@ -219,6 +219,10 @@ None.
 ## Next Phase Readiness
 
 Ready for 14-06 (the transcript, on the same files). Before the 14-08 Chromium 375 px case-study baseline, Tim should pick an option for the desktop-narrow bar wrap (deferred-items.md).
+
+## Post-plan decision (2026-11-14)
+
+Tim answered the deferred-items question with "c: dot row gap-1 (Recommended)" (AskUserQuestion). Commit `61b390a` changes one class token in `components/projects/DemoTerminal.tsx`: the dot row's `gap-2` becomes `gap-1`. The bar's `gap-2` and the 44 px targets are unchanged. Previous, four dots and Next now need 292 px, and desktop Chromium has 299 px inside the bar, so the bar is one 48 px row there too. It measured 48 px in both Chromium and Firefox, with every control on the same top. The desktop 375 px e2e row was rewritten in place (GUARD-03) to assert one row as well as centring and no sideways scroll. The phone row is kept. Both rows share an `expectOneRowBar` helper. Results: `case-study.spec.ts` passed 86 of 86 in Chromium and Firefox on a fresh `PW_PROD` build, and DemoTerminal Jest passed 42 of 42. 14-UI-SPEC Contract 1 has a dated amendment, and the deferred-items entry is resolved. The 14-08 `box/375-*` baseline will now show the one-row bar.
 
 ## Self-Check: PASSED
 
