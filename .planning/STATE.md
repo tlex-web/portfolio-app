@@ -6,10 +6,10 @@ current_phase: 15
 current_phase_name: Region & Plate Data Model
 status: planning
 stopped_at: Phase 14 complete, ready to plan Phase 15
-last_updated: "2026-11-14T16:40:35.949Z"
+last_updated: "2026-11-14T16:46:10.618Z"
 last_activity: 2026-11-14
-last_activity_desc: Completed quick task 261114-o8w: Fix the Escape scroll jump in the mobile menu
-state_head: d03811792eeda8b96911b3ea164520e222d80f00
+last_activity_desc: "Phase 14 shipped as PR #148"
+state_head: fa74cf9d3cfa21cf468e69733bbdcf26a05263db
 progress:
   total_phases: 7
   completed_phases: 2
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-11-14)
 Phase: 15 — Region & Plate Data Model
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-11-14 - Completed quick task 261114-o8w: Fix the Escape scroll jump in the mobile menu
+Last activity: 2026-11-14 -- Phase 14 shipped as PR #148
 
 Progress: [███░░░░░░░] 29%
 
