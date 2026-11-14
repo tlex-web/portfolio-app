@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 14
 current_phase_name: UI Fixes & Terminal Controls
 status: executing
-stopped_at: Completed 14-06-PLAN.md
-last_updated: "2026-11-14T12:25:14.730Z"
+stopped_at: Completed 14-07-PLAN.md
+last_updated: "2026-11-14T12:39:57.834Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 14 execution started
-state_head: 61b390af20229c02a34c4eee6067cf66c7e15c40
+state_head: 2c69d4cd7681c501b2e88d94dcb48a72a77afa9c
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 30
-  completed_plans: 28
+  completed_plans: 29
   percent: 14
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-14)
 ## Current Position
 
 Phase: 14 (UI Fixes & Terminal Controls) — EXECUTING
-Plan: 7 of 8
+Plan: 8 of 8
 Status: Ready to execute
 Last activity: 2026-11-14 — Phase 14 execution started
 
@@ -82,6 +82,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 14 P04 | 7min | 2 tasks | 3 files |
 | Phase 14 P05 | 15 min | 2 tasks | 5 files |
 | Phase 14 P06 | 9 min | 2 tasks | 4 files |
+| Phase 14 P07 | 12 min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -164,6 +165,9 @@ Recent decisions affecting current work:
 - [Phase 14]: 14-06: The transcript summary sits between the terminal and the next focusable element, so two Jest Tab rows were rewritten in place to pass through it (GUARD-03).
 - [Phase 14]: 14-06: The box reduced visual shot waits for the open transcript before settle(); declared re-baseline box/375-reduced, box/768-reduced, box/1440-reduced for 14-08.
 - [Phase 14]: 14-05 follow-up: the terminal dot row is gap-1, not gap-2 (Tim's decision c, AskUserQuestion 2026-11-14, "c: dot row gap-1 (Recommended)"). Desktop Chromium's scrollbar gutter leaves 299 px inside the 375 px bar, and Previous, four dots and Next now need 292 px, so the bar is one 48 px row in Chromium and Firefox. 14-UI-SPEC Contract 1 amended; deferred-items entry resolved (61b390a).
+- [Phase 14]: 14-07: ledger rows #6 (07 WR-06, SHELL-07 49b8fe1) and #30 (10 IN-01, D-12 d6873c8, D-22 945d235) written back as done in 13-LEDGER-TRIAGE.md and the archived 07 and 10 disposition tables; enums, Owner and Tim cells unchanged (WR-05 precedent); write-back d78c251
+- [Phase 14]: 14-07: the wave-merge gate caught the photos-sweep E5 row still expecting the pre-D-22 Escape order; step 6 rewritten in place (accc7e5), no app change. Tip green: lint, type-check, Jest 1795 + guard:tests (2392 vs 2243), 592 e2e in Chromium (334) and Firefox (258)
+- [Phase 14]: 14-07: declared PNG set for 14-08: menu/375-current-focus (new), home/{768,1440}-ascent-{start,waypoint-2,summit} plus home/{768,1440}-reduced if the band shows, box/{375,768,1440}-reduced; no home/375; check-snapshot-commit --allow menu --allow home --allow box
 
 ### Pending Todos
 
@@ -216,6 +220,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-14T12:18:49.175Z
-Stopped at: Completed 14-06-PLAN.md
+Last session: 2026-11-14T12:39:57.764Z
+Stopped at: Completed 14-07-PLAN.md
 Resume file: None
