@@ -5,11 +5,11 @@ milestone_name: Survey Expansion
 current_phase: 16
 current_phase_name: New Regions & Alps Overview Data
 status: planning
-stopped_at: Phase 15 complete, ready to plan Phase 16
-last_updated: "2026-11-15T00:51:57.534Z"
+stopped_at: Phase 16 context gathered
+last_updated: "2026-11-15T12:18:36.735Z"
 last_activity: 2026-11-15
 last_activity_desc: Phase 15 complete, transitioned to Phase 16
-state_head: eaf45a76ed5231095cd66a9b71cf13192bd31c06
+state_head: 49a3562eed9f88a63eaf5f3bd4550c290d97db38
 progress:
   total_phases: 7
   completed_phases: 3
@@ -286,6 +286,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-15T00:53:51Z
-Stopped at: Phase 15 complete, ready to plan Phase 16
-Resume file: None
+Last session: 2026-11-15T12:18:36.325Z
+Stopped at: Phase 16 context gathered
+Resume file: .planning/phases/16-new-regions-alps-overview-data/16-CONTEXT.md
