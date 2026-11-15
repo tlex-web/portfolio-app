@@ -49,7 +49,7 @@ Full details: [milestones/v2.0-ROADMAP.md](milestones/v2.0-ROADMAP.md)
 
 - [x] **Phase 13: Repo Safety & Test Debt** - Required checks on `main`, a verified fail-closed rate limiter, Playwright 1.65 re-baselined alone, a wider audit gate, the G5/G6 tests, ledger triage and dead-code removal (completed 2026-11-14)
 - [x] **Phase 14: UI Fixes & Terminal Controls** - The carried v2.0 bugs in the mobile menu, Home at 375 px, the rail labels and lightbox focus fixed, plus terminal step buttons and a transcript (completed 2026-11-14)
-- [ ] **Phase 15: Region & Plate Data Model** - An explicit Home waypoint list, a region and country on every photo, an N-plate terrain build, a telemetry ban and one photo URL helper, with no visible change
+- [x] **Phase 15: Region & Plate Data Model** - An explicit Home waypoint list, a region and country on every photo, an N-plate terrain build, a telemetry ban and one photo URL helper, with no visible change (completed 2026-11-15)
 - [ ] **Phase 16: New Regions & Alps Overview Data** - Coarse-location overrides, new Zermatt photos and 1-2 new regions with their plates, and a Copernicus GLO-90 overview map
 - [ ] **Phase 17: Region Routes, SEO & Structured Data** - Region pages on their own path, the photo URL contract held, region metadata, JSON-LD and the saved-pages catalog
 - [ ] **Phase 18: Immersive Survey Layout** - The Alps overview on `/photos`, immersive region pages with map collar and altimeter rail, a region-scoped lightbox, Share, LV95 and data credits
@@ -184,7 +184,7 @@ Plans:
   4. The served-asset guard fails on `.SRT`, `.LRF`, GPX and KML files and on MP4s carrying GPS or telemetry tracks anywhere in the repo or the site, proven by selftest fixtures.
   5. The phase lands with zero visual-baseline changes, and a test shows that every link to a photo comes from one URL helper (still `/photos/<slug>`).
   6. `npm run type-check` also type-checks the Jest tests, e2e specs and Playwright configs, with zero errors (GUARD-10; the 13-06 measurement found 5482 errors in 103 files as-is and 69 in 21 files with the Jest globals declared), using `@types/jest` only after Tim vets it, or `@jest/globals` imports.
-**Plans**: 16/16 plans executed in 16 waves (serial: one checkout, a shared `selftest.mjs` and `package.json`, and the production e2e server on port 3000)
+**Plans**: 16/16 plans complete in 16 waves (serial: one checkout, a shared `selftest.mjs` and `package.json`, and the production e2e server on port 3000)
 
 Plans:
 **Wave 1**
@@ -344,7 +344,7 @@ Plans:
 | 12. Contact, Edge Pages, Cleanup & Verification | v2.0 | 34/34 | Complete | 2026-11-05 |
 | 13. Repo Safety & Test Debt | v2.1 | 22/22 | Complete    | 2026-11-14 |
 | 14. UI Fixes & Terminal Controls | v2.1 | 8/8 | Complete    | 2026-11-14 |
-| 15. Region & Plate Data Model | v2.1 | 16/16 | In Progress | - |
+| 15. Region & Plate Data Model | v2.1 | 16/16 | Complete    | 2026-11-15 |
 | 16. New Regions & Alps Overview Data | v2.1 | 0/TBD | Not started | - |
 | 17. Region Routes, SEO & Structured Data | v2.1 | 0/TBD | Not started | - |
 | 18. Immersive Survey Layout | v2.1 | 0/TBD | Not started | - |

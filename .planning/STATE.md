@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v2.1
 milestone_name: Survey Expansion
-current_phase: 15
-current_phase_name: Region & Plate Data Model
-status: verifying
-stopped_at: Completed 15-16-PLAN.md
-last_updated: "2026-11-14T23:41:44.326Z"
-last_activity: 2026-11-14
-last_activity_desc: Phase 15 execution started
-state_head: 36ed9e221ae7bf31e604a497885cc851611985fe
+current_phase: 16
+current_phase_name: New Regions & Alps Overview Data
+status: planning
+stopped_at: Phase 15 complete, ready to plan Phase 16
+last_updated: "2026-11-15T00:51:57.534Z"
+last_activity: 2026-11-15
+last_activity_desc: Phase 15 complete, transitioned to Phase 16
+state_head: eaf45a76ed5231095cd66a9b71cf13192bd31c06
 progress:
   total_phases: 7
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 46
   completed_plans: 46
-  percent: 29
+  percent: 43
 ---
 
 # Project State
@@ -29,17 +29,17 @@ See: .planning/PROJECT.md (updated 2026-11-14)
 
 ## Current Position
 
-Phase: 15 (Region & Plate Data Model) — EXECUTING
-Plan: 16 of 16
-Status: Phase complete — ready for verification
-Last activity: 2026-11-14 — Phase 15 execution started
+Phase: 16 — New Regions & Alps Overview Data
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-11-15 — Phase 15 complete, transitioned to Phase 16
 
-Progress: [███░░░░░░░] 29%
+Progress: [████░░░░░░] 43%
 
 ## Performance Metrics
 
 **Velocity (v2.1):**
-- Total plans completed: 30
+- Total plans completed: 46
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -49,6 +49,7 @@ Progress: [███░░░░░░░] 29%
 |-------|-------|-------|----------|
 | 13 | 22 | - | - |
 | 14 | 8 | - | - |
+| 15 | 16 | - | - |
 
 *Updated after each plan completion. v2.0: 128 plans in 6 phases, about 70 hours of plan execution; the per-plan table is in `.planning/milestones/v2.0-STATE.md`.*
 **Per-Plan Metrics:**
@@ -282,5 +283,5 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 ## Session Continuity
 
 Last session: 2026-11-14T23:41:43.934Z
-Stopped at: Completed 15-16-PLAN.md
+Stopped at: Phase 15 complete, ready to plan Phase 16
 Resume file: None
