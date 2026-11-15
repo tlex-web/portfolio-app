@@ -726,9 +726,9 @@ const tempExtraWorkflow = (file, text) => {
   ciGateTempRoots.push(root);
   return root;
 };
-/** A workflow with one job, scoped and timed, whose name is `name` (rule 18). */
-const namedJobWorkflow = (name) =>
-  `name: Other\n\non:\n  push:\n\njobs:\n  shadow:\n    name: ${name}\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    permissions:\n      contents: read\n    steps:\n      - run: echo hi\n`;
+/** A workflow with one job, scoped and timed, whose name is `name` under the key `key` (rules 5 and 18). */
+const namedJobWorkflow = (name, key = 'name') =>
+  `name: Other\n\non:\n  push:\n\njobs:\n  shadow:\n    ${key}: ${name}\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    permissions:\n      contents: read\n    steps:\n      - run: echo hi\n`;
 /** The good fixture's build-job `timeout-minutes: 5` line (group 1: the job's lines before it; group 2: the line ending). */
 const BUILD_TIMEOUT = /^( {2}build:\r?\n(?: {4}.*\r?\n)*?) {4}timeout-minutes: 5(\r?\n)/m;
 /**
@@ -873,6 +873,64 @@ const CI_GATE_PARSER_CASES = [
   ciGateCase(
     'a literal job name in another workflow passes rule 18',
     () => tempExtraWorkflow('other.yml', namedJobWorkflow('Format check')),
+    0,
+    ['ci-gate: OK'],
+  ),
+  // 15 WR-02: the name is read whole, so a block scalar, a continued scalar or a quoted key cannot hide it.
+  ciGateCase(
+    'rule 18: a folded block-scalar job name (name: >-) with the expression on the next line fails (15 WR-02)',
+    () => tempExtraWorkflow('other.yml', namedJobWorkflow(">-\n      ${{ format('CI {0}', 'OK') }}")),
+    1,
+    [
+      "other.yml: expression job name outside ci.yml: .github/workflows/other.yml (job shadow); only the relay's needs-based CI OK name expression is allowed",
+      'ci-gate: 1 failure(s)',
+    ],
+  ),
+  ciGateCase(
+    'rule 18: a literal block-scalar job name (name: |) with the expression on the next line fails (15 WR-02)',
+    () => tempExtraWorkflow('other.yml', namedJobWorkflow("|\n      ${{ format('CI {0}', 'OK') }}")),
+    1,
+    ['other.yml: expression job name outside ci.yml: .github/workflows/other.yml (job shadow)', 'ci-gate: 1 failure(s)'],
+  ),
+  ciGateCase(
+    'rule 18: a block-scalar job name whose expression sits after a "#" fails (raw lines, 15 WR-02)',
+    () => tempExtraWorkflow('other.yml', namedJobWorkflow("|\n      # ${{ format('CI {0}', 'OK') }}")),
+    1,
+    ['other.yml: expression job name outside ci.yml: .github/workflows/other.yml (job shadow)', 'ci-gate: 1 failure(s)'],
+  ),
+  ciGateCase(
+    'rule 18: a quoted "name": key holding an expression fails (15 WR-02)',
+    () => tempExtraWorkflow('other.yml', namedJobWorkflow("${{ format('CI {0}', 'OK') }}", '"name"')),
+    1,
+    ['other.yml: expression job name outside ci.yml: .github/workflows/other.yml (job shadow)', 'ci-gate: 1 failure(s)'],
+  ),
+  ciGateCase(
+    'rule 5: a block-scalar job name (name: >-) of CI OK in another workflow fails (15 WR-02)',
+    () => tempExtraWorkflow('other.yml', namedJobWorkflow('>-\n      CI OK')),
+    1,
+    ['other.yml: a job named CI OK outside ci.yml: .github/workflows/other.yml (job shadow)', 'ci-gate: 1 failure(s)'],
+  ),
+  ciGateCase(
+    'rule 5: a plain job name continued over lines (CI / OK) in another workflow fails (15 WR-02)',
+    () => tempExtraWorkflow('other.yml', namedJobWorkflow('CI\n      OK')),
+    1,
+    ['other.yml: a job named CI OK outside ci.yml: .github/workflows/other.yml (job shadow)', 'ci-gate: 1 failure(s)'],
+  ),
+  ciGateCase(
+    "rule 5: a quoted 'name': key of CI OK in another workflow fails (15 WR-02)",
+    () => tempExtraWorkflow('other.yml', namedJobWorkflow('CI OK', "'name'")),
+    1,
+    ['other.yml: a job named CI OK outside ci.yml: .github/workflows/other.yml (job shadow)', 'ci-gate: 1 failure(s)'],
+  ),
+  ciGateCase(
+    'a literal block-scalar job name (name: >-) in another workflow passes rules 5 and 18 (15 WR-02)',
+    () => tempExtraWorkflow('other.yml', namedJobWorkflow('>-\n      Format check')),
+    0,
+    ['ci-gate: OK'],
+  ),
+  ciGateCase(
+    'a literal job name under a quoted "name": key passes rules 5 and 18 (15 WR-02)',
+    () => tempExtraWorkflow('other.yml', namedJobWorkflow('Format check', '"name"')),
     0,
     ['ci-gate: OK'],
   ),

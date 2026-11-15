@@ -84,7 +84,10 @@
  *
  * YAML is read line by line (no YAML library): comments are stripped, job ids
  * are the keys one level under `jobs:`, and `needs:` is read in flow
- * (`[a, b]`, also across lines), scalar (`needs: a`) and block-list form.
+ * (`[a, b]`, also across lines), scalar (`needs: a`) and block-list form. A
+ * job key may be quoted, and a job `name:` is read whole: a block scalar
+ * (`name: >-` with the text below, from raw lines) or a value continued over
+ * lines (15 WR-02).
  */
 
 import fs from 'fs';
@@ -182,12 +185,14 @@ function normalizeIf(value) {
 }
 
 /**
- * Returns [{ id, keyIndent, lines, start, end }] for every job under the
- * top-level `jobs:` key, or null when there is no `jobs:` key. `lines` are the
- * job's body lines; `keyIndent` is the indentation of its own keys; `start`
- * and `end` are the file line indexes of its id line and last body line.
+ * Returns [{ id, keyIndent, lines, at, raw, start, end }] for every job under
+ * the top-level `jobs:` key, or null when there is no `jobs:` key. `lines` are
+ * the job's body lines and `at` their file line indexes; `raw` is the file's
+ * raw lines (comments kept) when given; `keyIndent` is the indentation of its
+ * own keys; `start` and `end` are the file line indexes of its id line and
+ * last body line.
  */
-function readJobs(lines) {
+function readJobs(lines, raw = null) {
   const start = lines.findIndex((l) => /^jobs:\s*$/.test(l));
   if (start === -1) return null;
   const jobs = [];
@@ -202,25 +207,29 @@ function readJobs(lines) {
     if (indent < jobIndent) break;
     if (indent === jobIndent) {
       const m = /^\s*([A-Za-z0-9_-]+)\s*:/.exec(line);
-      current = { id: m ? m[1] : line.trim(), keyIndent: null, lines: [], start: i };
+      current = { id: m ? m[1] : line.trim(), keyIndent: null, lines: [], at: [], raw, start: i };
       jobs.push(current);
       continue;
     }
     if (current.keyIndent === null) current.keyIndent = indent;
     current.lines.push(line);
+    current.at.push(i);
     current.end = i;
   }
   return jobs;
 }
 
-/** A job-level key: { value, index } of the line at the job's key indent, or null. */
+/**
+ * A job-level key: { value, index } of the line at the job's key indent, or
+ * null. The key may be quoted (`"name":`, 15 WR-02).
+ */
 function jobKey(job, key) {
-  const re = new RegExp(`^\\s*${key}\\s*:\\s*(.*)$`);
+  const re = new RegExp(`^\\s*(['"]?)${key}\\1\\s*:\\s*(.*)$`);
   for (let i = 0; i < job.lines.length; i++) {
     const line = job.lines[i];
     if (indentOf(line) !== job.keyIndent) continue;
     const m = re.exec(line);
-    if (m) return { value: m[1].trim(), index: i };
+    if (m) return { value: m[2].trim(), index: i };
   }
   return null;
 }
@@ -273,9 +282,41 @@ function extractRunCommands(lines) {
   return commands;
 }
 
+/** A block scalar header (`|`, `>-`, `|2+`), optionally followed by a comment. */
+const BLOCK_SCALAR = /^([|>])[-+0-9]*(?:\s+#.*)?$/;
+
+/** The lines of a job after its line `index` that sit deeper than its key indent. */
+function continuation(job, index) {
+  const more = [];
+  for (let i = index + 1; i < job.lines.length && indentOf(job.lines[i]) > job.keyIndent; i++) {
+    more.push(job.lines[i].trim());
+  }
+  return more;
+}
+
+/**
+ * A job's `name:` as GitHub reads it (15 WR-02), so rules 2, 5 and 18 see the
+ * whole value. A block scalar (`name: >-` with the text on the lines below) is
+ * read from the raw lines indented deeper than the key (a `#` there is text,
+ * not a comment), folded with spaces (`>`) or kept line by line (`|`); a plain
+ * or quoted scalar continued over deeper lines is joined with spaces.
+ */
 const jobName = (job) => {
   const entry = jobKey(job, 'name');
-  return entry ? unquote(entry.value) : null;
+  if (!entry) return null;
+  const block = BLOCK_SCALAR.exec(entry.value);
+  if (!block) return unquote([entry.value, ...continuation(job, entry.index)].join(' '));
+  let text = continuation(job, entry.index);
+  if (job.raw) {
+    text = [];
+    for (let i = job.at[entry.index] + 1; i < job.raw.length; i++) {
+      const line = job.raw[i];
+      if (line.trim() === '') continue;
+      if (indentOf(line) <= job.keyIndent) break;
+      text.push(line.trim());
+    }
+  }
+  return text.join(block[1] === '>' ? ' ' : '\n');
 };
 
 /** The top-level `on:` key and its body as [{ line, index }] (key line first), or null. */
@@ -381,7 +422,7 @@ const ciLines = readLines(CI_FILE);
 if (ciLines === null) {
   fail(CI_FILE, 'cannot be read');
 } else {
-  const jobs = readJobs(ciLines);
+  const jobs = readJobs(ciLines, readRawLines(CI_FILE));
   if (!jobs || jobs.length === 0) {
     fail(CI_FILE, 'has no jobs under a top-level "jobs:" key');
   } else {
@@ -485,7 +526,7 @@ function readWorkflows() {
       fail(rel, 'cannot be read');
       return [];
     }
-    return [{ file, rel, lines, jobs: readJobs(lines) ?? [] }];
+    return [{ file, rel, lines, jobs: readJobs(lines, readRawLines(rel)) ?? [] }];
   });
 }
 
