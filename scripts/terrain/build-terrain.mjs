@@ -457,7 +457,8 @@ function recordedPosters(plate) {
  * inspectPoster and the record carries the current source sha256 and HILLSHADE;
  * `problems` lists each file that does not, with the reasons. With `encode`, a
  * failing set is replaced by a fresh encoding (`files`); without it (--check),
- * `urls` stays the recorded set so the module comparisons report only other drift.
+ * `urls` stays the recorded set (its declared sizes only) so the module
+ * comparisons report only other drift.
  */
 async function resolvePosters(plate, source, metres, { rec, params, rel }, { encode }) {
   const sizes = POSTER_SIZES.filter((s) => plate.outputs.hillshade.includes(s));
@@ -492,7 +493,12 @@ async function resolvePosters(plate, source, metres, { rec, params, rel }, { enc
       }
     }
   }
-  const recorded = rec ? { avif: { ...rec.avif }, webp: { ...rec.webp } } : null;
+  // Only the declared sizes are kept (15 WR-01): a size dropped from the plate's
+  // outputs then leaves plates.ts stale and its files unreferenced, so --check
+  // names them as extra and write mode sweeps them.
+  const pick = (o) =>
+    Object.fromEntries(sizes.filter((s) => typeof o?.[s] === 'string').map((s) => [s, o[s]]));
+  const recorded = rec ? { avif: pick(rec.avif), webp: pick(rec.webp) } : null;
   if (problems.length === 0) return { urls: recorded, files: [], committed: true, problems };
   if (!encode) return { urls: recorded, files: [], committed: false, problems };
   const urls = { avif: {}, webp: {} };

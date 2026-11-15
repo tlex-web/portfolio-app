@@ -1443,6 +1443,26 @@ let terrainMissingFile = null;
 const terrainRemoveRoot = await tempTerrainRoot({ fixture: true });
 let terrainRemoveWrite = null;
 let terrainRemoveBuilt = 0;
+/** 15 WR-01: a hillshade size dropped from a plate's outputs is named by --check and swept by a write. */
+const FIXTURE_1100 = /^fixture-hillshade-1100\.[0-9a-f]{10}\.(avif|webp)$/;
+/**
+ * Builds the fixture plate in write mode, then drops 1100 from its declared
+ * hillshade sizes in `root`'s registry. Returns the write error (or null) and
+ * the 1100 file names that write produced.
+ */
+function terrainDropSize(root) {
+  const writeError = terrainWrite(root);
+  const dropped = terrainListing(root).filter((f) => FIXTURE_1100.test(f));
+  const rel = path.join(root, 'data/terrain/plates.json');
+  const registry = JSON.parse(fs.readFileSync(rel, 'utf-8'));
+  for (const p of registry.plates) if (p.id === FIXTURE_PLATE.id) p.outputs.hillshade = [640];
+  fs.writeFileSync(rel, `${JSON.stringify(registry, null, 2)}\n`);
+  return { writeError, dropped };
+}
+const terrainDropCheckRoot = await tempTerrainRoot({ fixture: true });
+let terrainDropCheck = { writeError: null, dropped: [] };
+const terrainDropWriteRoot = await tempTerrainRoot({ fixture: true });
+let terrainDropWrite = { writeError: null, dropped: [] };
 
 const cases = [
   {
@@ -3023,6 +3043,52 @@ const cases = [
       return terrainBytesEqual(terrainRemoveRoot, [...matterhornFiles(), ...TERRAIN_HOME_MODULES, 'data/generated/plates.ts']);
     },
   },
+  {
+    name: 'terrain: --check names the files of a hillshade size dropped from a plate (15 WR-01)',
+    guard: TERRAIN_BUILD,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--check'],
+    setup: () => {
+      terrainDropCheck = terrainDropSize(terrainDropCheckRoot);
+      return ['--root', terrainDropCheckRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['terrain: stale data/generated/plates.ts (bytes differ from a fresh build)', 'terrain: 3 stale'],
+    check: (output) => {
+      const { writeError, dropped } = terrainDropCheck;
+      if (writeError) return writeError;
+      if (dropped.length !== 2) return `the first write built ${dropped.length} fixture-hillshade-1100 files, expected 2`;
+      const unnamed = dropped.filter((f) => !output.includes(`terrain: extra ${TERRAIN_PUBLIC}/${f}`));
+      return unnamed.length ? `output does not name ${unnamed.join(', ')} as extra` : null;
+    },
+  },
+  {
+    name: 'terrain: a write sweeps a dropped hillshade size, plates.ts stops naming it, Matterhorn stays byte-equal (15 WR-01)',
+    guard: TERRAIN_BUILD,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: [],
+    setup: () => {
+      terrainDropWrite = terrainDropSize(terrainDropWriteRoot);
+      return ['--root', terrainDropWriteRoot];
+    },
+    expectExit: 0,
+    expectOutput: ['terrain: removed stale public/terrain/fixture-hillshade-1100.', 'terrain: OK'],
+    check: () => {
+      const { writeError, dropped } = terrainDropWrite;
+      if (writeError) return writeError;
+      if (dropped.length !== 2) return `the first write built ${dropped.length} fixture-hillshade-1100 files, expected 2`;
+      const left = terrainListing(terrainDropWriteRoot).filter((f) => FIXTURE_1100.test(f));
+      if (left.length) return `dropped-size files survived the sweep: ${left.join(', ')}`;
+      const kept = terrainListing(terrainDropWriteRoot).filter((f) => f.startsWith('fixture-'));
+      if (kept.length !== FIXTURE_FILES.length - 2) return `${kept.length} fixture files left, expected ${FIXTURE_FILES.length - 2}: ${kept.join(', ')}`;
+      const plates = fs.readFileSync(path.join(terrainDropWriteRoot, 'data/generated/plates.ts'), 'utf-8');
+      if (plates.includes('fixture-hillshade-1100')) return 'plates.ts still references a fixture-hillshade-1100 poster';
+      const same = terrainBytesEqual(terrainDropWriteRoot, [...matterhornFiles(), ...TERRAIN_HOME_MODULES]);
+      if (same) return same;
+      const r = spawnSync(process.execPath, [...PHOTO_NODE_ARGS, TERRAIN_BUILD, '--check', '--root', terrainDropWriteRoot], { encoding: 'utf-8' });
+      return r.status === 0 ? null : `--check after the sweep exited ${r.status}: ${`${r.stdout ?? ''}${r.stderr ?? ''}`.trim()}`;
+    },
+  },
   ...WORKFLOW_SHELL_CASES,
   ...CI_GATE_PARSER_CASES,
 ];
@@ -3080,7 +3146,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, exifMappedRoot, exifUnmappedRoot, exifDuplicateRoot, terrainFixtureRoot, terrainMissingRoot, terrainRemoveRoot, ...ciGateTempRoots, ...telemetryTempRoots]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, exifMappedRoot, exifUnmappedRoot, exifDuplicateRoot, terrainFixtureRoot, terrainMissingRoot, terrainRemoveRoot, terrainDropCheckRoot, terrainDropWriteRoot, ...ciGateTempRoots, ...telemetryTempRoots]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 
