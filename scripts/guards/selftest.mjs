@@ -1522,6 +1522,63 @@ let terrainDropCheck = { writeError: null, dropped: [] };
 const terrainDropWriteRoot = await tempTerrainRoot({ fixture: true });
 let terrainDropWrite = { writeError: null, dropped: [] };
 
+// tsconfig.jest.json type-checks every file Jest runs (GUARD-10, 15 WR-03): probe files in a temp copy of the configs.
+const TSC = createRequire(import.meta.url).resolve('typescript/bin/tsc');
+/** The jest.config.js testMatch the probes model; changing it means updating tsconfig.jest.json's include too. */
+const JEST_TEST_MATCH = "testMatch: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'],";
+/** TypeScript files that testMatch runs, inside and outside __tests__/ (e2e/ is in testPathIgnorePatterns). */
+const JEST_RUN_PROBES = [
+  'lib/__tests__/probe.ts',
+  'components/__tests__/probe.tsx',
+  'lib/probe.test.ts',
+  'components/probe.test.tsx',
+  'lib/probe.spec.ts',
+  'components/probe.spec.tsx',
+];
+/** Files no Jest run reaches, which tsconfig.jest.json must leave to their own configs. */
+const JEST_SKIP_PROBES = ['e2e/probe.spec.ts', 'scripts/guards/__selftest__/probe.test.ts'];
+/** A plain source file: the base tsconfig.json checks it, tsconfig.jest.json does not. */
+const SOURCE_PROBE = 'lib/probe.ts';
+/** The files `tsc -p <config> --listFilesOnly` lists under `root`, as root-relative paths. */
+function tscListFiles(root, config) {
+  const r = spawnSync(process.execPath, [TSC, '-p', path.join(root, config), '--listFilesOnly'], { encoding: 'utf-8' });
+  if (r.status !== 0) throw new Error(`tsc -p ${config} --listFilesOnly exited ${r.status}: ${`${r.stdout}${r.stderr}`.trim()}`);
+  const marker = '/root/';
+  return new Set(
+    r.stdout
+      .split(/\r?\n/)
+      .map((f) => f.trim().replace(/\\/g, '/'))
+      .filter((f) => f.includes(marker))
+      .map((f) => f.slice(f.lastIndexOf(marker) + marker.length)),
+  );
+}
+function jestTypeCheckCoverage() {
+  const jestConfig = fs.readFileSync(path.join(repoRoot, 'jest.config.js'), 'utf-8');
+  if (!jestConfig.includes(JEST_TEST_MATCH))
+    return `jest.config.js no longer holds ${JEST_TEST_MATCH}; align tsconfig.jest.json's include and these probes with the new testMatch`;
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
+  const root = path.join(dir, 'root');
+  try {
+    putFiles(root, {
+      'tsconfig.json': fs.readFileSync(path.join(repoRoot, 'tsconfig.json'), 'utf-8'),
+      'tsconfig.jest.json': fs.readFileSync(path.join(repoRoot, 'tsconfig.jest.json'), 'utf-8'),
+      ...Object.fromEntries([...JEST_RUN_PROBES, ...JEST_SKIP_PROBES, SOURCE_PROBE].map((rel) => [rel, 'export {};\n'])),
+    });
+    const jestFiles = tscListFiles(root, 'tsconfig.jest.json');
+    const baseFiles = tscListFiles(root, 'tsconfig.json');
+    const problems = [];
+    for (const rel of JEST_RUN_PROBES) {
+      if (!jestFiles.has(rel)) problems.push(`tsconfig.jest.json does not type-check ${rel}, which Jest runs`);
+      if (baseFiles.has(rel)) problems.push(`tsconfig.json also checks ${rel}, without the Jest globals`);
+    }
+    for (const rel of JEST_SKIP_PROBES) if (jestFiles.has(rel)) problems.push(`tsconfig.jest.json reaches ${rel}, which Jest does not run`);
+    if (!baseFiles.has(SOURCE_PROBE) || jestFiles.has(SOURCE_PROBE)) problems.push(`${SOURCE_PROBE} should be checked by tsconfig.json only`);
+    return problems.length ? problems.join('; ') : null;
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
+
 const cases = [
   {
     name: 'parity: good fixture passes',
@@ -3146,6 +3203,10 @@ const cases = [
       const r = spawnSync(process.execPath, [...PHOTO_NODE_ARGS, TERRAIN_BUILD, '--check', '--root', terrainDropWriteRoot], { encoding: 'utf-8' });
       return r.status === 0 ? null : `--check after the sweep exited ${r.status}: ${`${r.stdout ?? ''}${r.stderr ?? ''}`.trim()}`;
     },
+  },
+  {
+    name: "type-check: tsconfig.jest.json covers every file Jest's testMatch runs, outside __tests__/ too (15 WR-03)",
+    fn: jestTypeCheckCoverage,
   },
   ...WORKFLOW_SHELL_CASES,
   ...CI_GATE_PARSER_CASES,
