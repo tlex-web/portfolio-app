@@ -22,10 +22,10 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-11-14)
+See: .planning/PROJECT.md (updated 2026-11-15)
 
 **Core value:** A portfolio that is visually memorable and distinctive (not another generic Tailwind site) while being stable and well-maintained under the hood.
-**Current focus:** Phase 15 — Region & Plate Data Model
+**Current focus:** Phase 16 — New Regions & Alps Overview Data
 
 ## Current Position
 
@@ -237,7 +237,11 @@ None carried from v2.0.
 - [Phase 13] Carried, not blocking: the relay's ~40-minute long-mirror wait has not been seen live (watch the first code-changing `[ci skip]` PR); Dependabot PR #140 should close on its next run; the `@firefox-43967` tags and `FIREFOX_INVERT` come out after the Playwright release with the fixing Firefox roll (owners in `13-repo-safety-test-debt/deferred-items.md`).
 - [Phase 13] The UAT, verification and transition commits after `98f2186` are local on `gsd/phase-13-repo-safety-test-debt`, whose remote branch was deleted by the #147 merge. They reach `main` only through a new PR, which needs Tim's ask.
 - [Phase 14] The phase branch `gsd/phase-14-ui-fixes-terminal-controls` has no upstream; its commits (plans, UAT, verification, transition) reach `main` only through `/gsd-ship 14`, which needs Tim's ask.
-- [Phase 14] Six code-review findings (IN-01..06) are deferred to Phase 15 (`14-REVIEW-DISPOSITION.md`). The Escape scroll jump is fixed (quick 261114-o8w, `d038117`).
+- [Phase 14] Code-review finding IN-04 is handed to Phase 18 (15-16 write-back); IN-01/02/03/05/06 were fixed in 15-14. The Escape scroll jump is fixed (quick 261114-o8w, `d038117`).
+- [Phase 15] The phase branch `gsd/phase-15-region-plate-data-model` is local only and stacked on the Phase 14 tip; `ci/15-16` holds the plan tip `0b06608`. Its commits reach `main` only through `/gsd-ship 15` after Phase 14 ships, which needs Tim's ask.
+- [Phase 15] On this stacked branch, 13-VERIFICATION.md and 14-VERIFICATION.md read `stale` because Phase 15 edited files they cover (13: `package.json`, `check-ci-gate.mjs`, `selftest.mjs`; 14: `LightboxDialog.tsx`, `PhotoViewer.tsx`, `SiteNav.tsx`, two e2e specs and one more file). Both passed; this is expected here and does not apply on their own branches.
+- [Phase 15] Eight info-level review findings (IN-01..08) are deferred to Phase 16 (`15-REVIEW-DISPOSITION.md`). IN-01 must land with the first real second plate: the D-15 test pins the whole `public/terrain/` listing.
+- [Phase 15] Assumption A-15-12 awaits Tim's review: the telemetry guard has no originals-folder exception (a force-added sidecar under `assets/photos-original/` or `assets/clips-original/` fails).
 - [Phase 16] Needs Tim's inputs before planning can finish: the launch regions (inside the footprint, at least one in Italy or Austria), the new originals and the coarse-location choice per photo.
 - [Phase 19] Needs a graded drone clip from Tim before any byte budget is fixed.
 
@@ -282,6 +286,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-14T23:41:43.934Z
+Last session: 2026-11-15T00:53:51Z
 Stopped at: Phase 15 complete, ready to plan Phase 16
 Resume file: None
