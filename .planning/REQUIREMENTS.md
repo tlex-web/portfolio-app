@@ -34,9 +34,9 @@ Requirements for milestone v2.1 Survey Expansion. Each maps to exactly one roadm
 
 - [x] **DATA-09**: Adding photos or regions never changes Home: the ascent keeps its four Matterhorn waypoints, the 1,617 m rail start and its footer ticks, read from an explicit Home waypoint list
 - [x] **DATA-10**: Every photo belongs to an explicit region and records its country, in typed, committed data that CI checks for staleness
-- [x] **DATA-11**: The terrain build produces a local plate (contours and hillshade) for every region from swissALTIRegio, stays deterministic under `terrain:build --check`, and keeps the Matterhorn plate's hashed files byte-identical
+- [x] **DATA-11**: The terrain build produces a local plate (contours and hillshade) for every region from swissALTIRegio, or from BEV ALS DTM for an Austrian region outside its footprint (one source per plate; amended 2026-11-15, Phase 16 D-09), stays deterministic under `terrain:build --check`, and keeps the Matterhorn plate's hashed files byte-identical
 - [ ] **DATA-12**: A build-time Alps overview map is generated from Copernicus GLO-90 contours, with each region's plate extent drawn as a rectangle and 3–5 labelled reference summits, within a size budget measured before it is fixed
-- [ ] **DATA-13**: New photos are published: more Zermatt photos and 1–2 new regions inside the swissALTIRegio footprint, at least one in Italy or Austria, each with EXIF facts, DEM heights and metadata-free hashed derivatives through the existing pipeline
+- [ ] **DATA-13**: New photos are published: more Zermatt photos and two new regions, Ortler (Italy, inside the swissALTIRegio footprint) and Saalfelden (Austria, outside it, on BEV ALS DTM), each with EXIF facts, DEM heights and metadata-free hashed derivatives through the existing pipeline (amended 2026-11-15, Phase 16 D-06 to D-09)
 - [ ] **DATA-14**: A photo or clip can carry a coarser location than the 4-decimal default (for example near a home or a drone take-off point), and a coarse or approximate position is flagged wherever it is shown
 - [x] **DATA-15**: The served-asset guard rejects drone sidecars and telemetry anywhere in the repo or the site (`.SRT`, `.LRF`, GPX, KML, and GPS or telemetry tracks inside MP4 files), proven by selftest fixtures
 
@@ -81,7 +81,7 @@ Deferred to a later release. Tracked but not in the current roadmap.
 - **REGION-F3**: Lightbox thumbnail index once a region passes about 12 photos
 - **REGION-F4**: Overview pin to local plate morph (View Transition)
 - **REGION-F5**: Country borders on the overview map (needs a borders dataset and its licence)
-- **DATA-F1**: Regions outside the swissALTIRegio footprint (Dolomites core, Hohe Tauern) with a second elevation source (TINITALY 1.1 or BEV ALS DTM), proj4 and per-source credit
+- **DATA-F1**: Further regions outside the swissALTIRegio footprint (Dolomites core, Hohe Tauern) with a second elevation source (TINITALY 1.1, or BEV ALS DTM as Saalfelden uses from v2.1 Phase 16), proj4 and per-source credit
 - **PHOTO-F1**: "Ask about this photo" link in the lightbox that pre-fills Contact (carried from v2.0)
 - **PHOTO-F3**: Tag filters (carried from v2.0)
 
@@ -167,4 +167,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-11-12*
-*Last updated: 2026-11-13 after the 13-06 ledger triage (GUARD-10 added, Phase 15)*
+*Last updated: 2026-11-15 after the Phase 16 discussion (DATA-11, DATA-13 and DATA-F1 amended: Saalfelden on BEV ALS DTM)*

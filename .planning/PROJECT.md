@@ -21,7 +21,7 @@ A portfolio that is visually memorable and distinctive — not another generic T
 **Target features:**
 - Region series: photos grouped by region. Zermatt becomes the first region and gets new photos, and 1–2 new regions launch with it, at least one in Italy or Austria
 - Map model: an Alps-wide contour overview with one pin per region; each region opens on its own local terrain plate, as the Matterhorn map works today
-- Terrain pipeline for more than one region. Launch regions sit inside the swissALTIRegio footprint (about 4.5–12.0° E, including its Italian and Austrian fill), so local plates need no second elevation source; Copernicus GLO-90 feeds only the Alps overview
+- Terrain pipeline for more than one region. Zermatt and Ortler sit inside the swissALTIRegio footprint (about 4.5–12.0° E, including its Italian and Austrian fill); Saalfelden (about 12.85° E) is outside it and gets its plate from BEV ALS DTM (decided 2026-11-15, Phase 16 D-09); Copernicus GLO-90 feeds only the Alps overview
 - A fresh, more immersive photo layout (large full-bleed images, less chrome) that stays topographic: contours, coordinates and altitudes frame everything
 - Drone video: one silent, same-origin loop per region page (decided after research; films with sound deferred)
 - Deferred ideas: PHOTO-F2 Share (Web Share API), PHOTO-F4 LV95 next to WGS84 (Swiss photos only), ENG-F1 terminal step controls and transcript, PLAT-F1 JSON-LD, and the PLAT-F2 saved-pages list (shipped in v2.0) extended to the new pages
@@ -245,7 +245,7 @@ UI audit (2026-10-10, the starting point for v2.0):
 | Alps-wide contour overview plus one local terrain plate per region (2026-11-12) | Keeps the Matterhorn map model per region while the album spans the Alps (Tim: "Overview + local") | — Pending |
 | Home ascent stays the Matterhorn with its four waypoints (2026-11-12) | The Matterhorn remains the site's signature; Home links to the wider album | — Pending |
 | Drone video: one silent, same-origin loop per region page, in a slot near the header; films with sound deferred (2026-11-12, after research) | Loops reuse the clip pipeline and need no CSP change; films can't be self-hosted on Vercel Hobby (100 GB/month shared transfer, 30-day pause on overrun) | — Pending |
-| v2.1 launch regions stay inside the swissALTIRegio footprint (2026-11-12) | Its Italian and Austrian fill (TINITALY, DGM Österreich) is already credited, so local plates need no second source, library or credit; regions further east are deferred (DATA-F1) | — Pending |
+| v2.1 launch regions stay inside the swissALTIRegio footprint (2026-11-12) | Its Italian and Austrian fill (TINITALY, DGM Österreich) is already credited, so local plates need no second source, library or credit; regions further east are deferred (DATA-F1) | ⚠️ Revisited — 2026-11-15 (16-CONTEXT D-06 to D-09): the launch regions are Ortler (inside) and Saalfelden (outside, about 12.85° E), where Tim's Austrian photos and drone shots are. Tim chose "B: Saalfelden on BEV now" over deferring it, so v2.1 adds BEV ALS DTM, an EPSG:3035 plate type, proj4 (scripts only) and a BEV credit; one source per plate still holds |
 | Photo URLs stay `/photos/<slug>`; regions get their own pages on a non-colliding path (2026-11-12) | No redirects, every existing link and OG card keeps working, and the lightbox intercept and proxy 404 handling stay as they are (Tim chose this over nesting photos under regions) | — Pending |
 | The Map/Grid/Carousel view switch is retired; the overview and region pages replace it (2026-11-12) | The Carousel was built for 4 photos; old `?view=` URLs land on the matching new page and their tests are rewritten, not deleted; a Grid toggle is deferred (REGION-F2) | — Pending |
 | Data credits: a short credit in each map's sheet margin plus a `/sources` page linked from the footer (2026-11-12) | The footer can't change per page on client navigation, and Copernicus needs its full notice | — Pending |
@@ -261,7 +261,7 @@ UI audit (2026-10-10, the starting point for v2.0):
 | Photo identity and country come only from `data/photos/photo-map.json` (2026-11-14, 15-06/15-07, D-01, D-02) | `photos:exif` assigns ids by exact file-name lookup, so an unmapped original or two records naming one file fail extraction; country is a closed enum (AT, CH, DE, FR, IT, LI, MC, SI) copied from each record, never defaulted from the region or derived from coordinates | ✓ Good — 4/4 photos carry Zermatt/CH; selftest covers missing, stale, unknown-region and bad-country records |
 | Home membership is an explicit list: `homeWaypointIds` → `homePhotos()` → `buildWaypoints`, and the rail start exists only as `homeLowestDemM` (2026-11-14, 15-08/15-09, D-08) | A global "lowest photo" would move the Home rail the day a lower region lands; the generator's global rail start was removed with its five readers | ✓ Good — an injected-data test adds a 900 m photo from another region and an unlisted Zermatt tie; ascent, 1,617 m, 4 ticks and the trail sign are unchanged |
 | GUARD-10 via `@jest/globals` imports, not `@types/jest` (2026-11-14, 15-01 to 15-03) | `@types/jest` needed Tim's vetting; explicit imports type the globals with no new dependency, and every remaining error was fixed from real signatures with no `any`, ignore directive or new `@ts-expect-error` | ✓ Good — `npm run type-check` (app, Jest, e2e) exits 0 |
-| Telemetry guard has no originals-folder exception (2026-11-14, 15-12, assumption A-15-12) | An ignored, untracked sidecar under `assets/photos-original/` or `assets/clips-original/` is skipped by `--exclude-standard`; a force-added one fails like anywhere else | — Pending Tim's review; reversible in one `repoTelemetry()` condition and one selftest case |
+| Telemetry guard has no originals-folder exception (2026-11-14, 15-12, assumption A-15-12) | An ignored, untracked sidecar under `assets/photos-original/` or `assets/clips-original/` is skipped by `--exclude-standard`; a force-added one fails like anywhere else | ✓ Good — Tim kept it on 2026-11-15 ("Keep it (Recommended)", 16-CONTEXT D-05); reversible in one `repoTelemetry()` condition and one selftest case |
 
 ## Evolution
 
@@ -281,4 +281,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-11-15 after Phase 15*
+*Last updated: 2026-11-15 after the Phase 16 discussion (Saalfelden on BEV; A-15-12 kept)*

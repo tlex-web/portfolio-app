@@ -50,7 +50,7 @@ Full details: [milestones/v2.0-ROADMAP.md](milestones/v2.0-ROADMAP.md)
 - [x] **Phase 13: Repo Safety & Test Debt** - Required checks on `main`, a verified fail-closed rate limiter, Playwright 1.65 re-baselined alone, a wider audit gate, the G5/G6 tests, ledger triage and dead-code removal (completed 2026-11-14)
 - [x] **Phase 14: UI Fixes & Terminal Controls** - The carried v2.0 bugs in the mobile menu, Home at 375 px, the rail labels and lightbox focus fixed, plus terminal step buttons and a transcript (completed 2026-11-14)
 - [x] **Phase 15: Region & Plate Data Model** - An explicit Home waypoint list, a region and country on every photo, an N-plate terrain build, a telemetry ban and one photo URL helper, with no visible change (completed 2026-11-15)
-- [ ] **Phase 16: New Regions & Alps Overview Data** - Coarse-location overrides, new Zermatt photos and 1-2 new regions with their plates, and a Copernicus GLO-90 overview map
+- [ ] **Phase 16: New Regions & Alps Overview Data** - Coarse-location overrides, new Zermatt photos, Ortler and Saalfelden (BEV) with their plates, and a Copernicus GLO-90 overview map
 - [ ] **Phase 17: Region Routes, SEO & Structured Data** - Region pages on their own path, the photo URL contract held, region metadata, JSON-LD and the saved-pages catalog
 - [ ] **Phase 18: Immersive Survey Layout** - The Alps overview on `/photos`, immersive region pages with map collar and altimeter rail, a region-scoped lightbox, Share, LV95 and data credits
 - [ ] **Phase 19: Drone Loops** - One silent, same-origin drone loop near a region page header, within a measured byte budget
@@ -253,19 +253,21 @@ Plans:
 **Requirements**: DATA-12, DATA-13, DATA-14
 **Success Criteria** (what must be TRUE):
   1. Before any new original is ingested, a photo or clip can carry a coarser location than the 4-decimal default (for example near a home or a drone take-off point), and every place that shows a position marks it as coarse or approximate.
-  2. More Zermatt photos and 1-2 new regions inside the swissALTIRegio footprint, at least one in Italy or Austria, are in the committed photo data with EXIF facts, DEM heights and metadata-free hashed derivatives from the existing pipeline. The served-image guard and `data:check` pass, and each region's footprint check is recorded.
-  3. Each new region has its own local plate (contours and hillshade) from swissALTIRegio, `terrain:build --check` stays deterministic, and the Matterhorn plate's hashed files and Home stay unchanged.
+  2. More Zermatt photos and two new regions, Ortler (Italy, inside the swissALTIRegio footprint) and Saalfelden (Austria, outside it), are in the committed photo data with EXIF facts, DEM heights and metadata-free hashed derivatives from the existing pipeline. The served-image guard and `data:check` pass, and each region's footprint check is recorded (amended 2026-11-15, 16-CONTEXT D-06 to D-09).
+  3. Each new region has its own local plate (contours and hillshade) from exactly one source: swissALTIRegio for Ortler (and for a Zermatt region plate if one is needed), BEV ALS DTM for Saalfelden. `terrain:build --check` stays deterministic, and the Matterhorn plate's hashed files and Home stay unchanged.
   4. A build-time Alps overview is generated from Copernicus GLO-90 contours, with each region's plate extent drawn as a rectangle and 3-5 labelled reference summits, within a size budget that a spike measured before it was fixed.
 **Plans**: TBD
 **Research**: Needed during planning:
-  - The footprint check of the chosen regions against swissALTIRegio (about 4.5-12.0° E), and whether the Matterhorn plate must grow for any new Zermatt photo (the Monte Rosa side).
-  - The `lib/geo.ts` error at the far pins (measured 2-3 m at Seceda and Innsbruck against 0.15 m at Zermatt). Add proj4 only if the measured error requires it.
+  - The footprint check of the chosen photos against their plates: Ortler against swissALTIRegio (about 4.5-12.0° E), Saalfelden against BEV ALS DTM tiles, and whether any new Zermatt photo needs a Zermatt region plate (the Monte Rosa side). Record inside/outside per photo id, never a position (16-CONTEXT D-12).
+  - The BEV path for Saalfelden: COG range reads, an EPSG:3035 plate type with its height system and edition, proj4 (scripts only) and the BEV credit wording confirmed on data.bev.gv.at.
+  - The `lib/geo.ts` error at the far LV95 pins (measured 2-3 m at Seceda and Innsbruck against 0.15 m at Zermatt). proj4 arrives for BEV anyway; use it for LV95 plates only if the measured error requires it.
   - An overview spike: projection (plate carrée scaled by cos 46.5° or LAEA), contour interval, smoothing and ring filtering, and the size budget (unsmoothed 1,000 m contours measured 43 KB brotli).
   - The Copernicus GLO-90 notice, copied verbatim for Phase 18's sources page.
   - Privacy rules for new material: per-photo precision, aerial photos without altitude or labelled as ground height, and an explicit id map for DJI and second-camera filenames. Location data in git history cannot be recalled (D-12), so these rules land before the first new original.
+**UI hint**: no
 **UI-SPEC**: Not needed. The coarse flag reuses the existing approximate-pin treatment; any new treatment goes into Phase 18's UI-SPEC.
 **Baselines**: New photos must not churn the baselines twice. Either new Zermatt photos join the v2.0 light table now with one declared content re-baseline, or they stay off it until Phase 18 replaces it. Home and the footer never change (DATA-09).
-**Inputs from Tim**: The launch regions (inside the footprint, at least one in Italy or Austria), the new originals, the coarse-location choice per photo, editorial copy (titles, stories, region facts) and the 3-5 reference summits.
+**Inputs from Tim**: The launch regions (decided 2026-11-15: Ortler and Saalfelden), the new originals (in `assets/photos-original/` before planning), the coarse-location choice per photo, editorial copy (titles, stories, region facts) and the 3-5 reference summits.
 
 ### Phase 17: Region Routes, SEO & Structured Data
 
