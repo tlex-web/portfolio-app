@@ -46,7 +46,7 @@ The phase changes **no pixels.** The new photos stay off the v2.0 light table (D
 - **D-08: Saalfelden is the Austrian region,** around Saalfelden am Steinernen Meer (about 12.85° E, 47.43° N). Tim's photos and drone shots were taken there.
 - **D-09: Saalfelden's plate comes from BEV ALS DTM 1 m** (Tim chose this over deferring Saalfelden, 2026-11-15). The research path is STACK.md §1.1–1.2 and the BEV sketch:
   - a BEV fetcher with COG range reads through the installed `geotiff` (an 11 km Grossglockner window read in 1.5 s);
-  - an EPSG:3035 plate type with its own `crs`, height system (Adriatic, GHA) and edition (the per-tile date) in the plate record;
+  - an EPSG:3035 plate type with its own `crs`, height system (~~Adriatic, GHA~~ EVRF2000 Austria, EPSG:9274, per D-29) and edition (the per-tile date) in the plate record;
   - `proj4` as a devDependency for `scripts/` only (STACK pins 2.22.0), so pins transform at build time and plate data stores UV, not CRS coordinates;
   - a BEV credit line under CC BY 4.0. BEV hasn't confirmed its preferred wording (STACK gaps), so research checks data.bev.gv.at and the planner adds a checkpoint before the credit is fixed.
   - **One source per plate** still holds (Out of Scope: no blending). Saalfelden's plate is BEV only, and a window that spans two BEV tiles (same CRS and grid) is a concatenation, not a mosaic.
@@ -121,6 +121,26 @@ The phase changes **no pixels.** The new photos stay off the v2.0 light table (D
   - No photo coordinate appears in a committed planning file (D-12).
   - The phase declares no PNG set.
 - **D-26: ROADMAP Phase 16 gets `**UI hint**: no`.** Nothing visible changes, and the wave UI gate token-sniffs roadmap prose otherwise (memory; `d16d15b` precedent). This discussion's commit adds the line.
+
+### Planning amendments (2026-11-22, after research)
+
+The 16-RESEARCH.md footprint check (booleans only) found three facts that changed the plan shape. Tim answered each at plan-phase on 2026-11-22.
+
+- **D-27: Tim adds Ortler originals before execution** (Tim: "I'll add Ortler originals"). No new original from 2026-11-22 is in Ortler: the six with GPS are in Zermatt (3) or Saalfelden (3), and `20210912_193833.jpg` (Galaxy S20) has no GPS.
+  - Ortler stays in Phase 16, and DATA-13 and success criterion 2 are unchanged.
+  - The Ortler intake waits on a `checkpoint:human-action`: Tim copies GPS-tagged Ortler JPEG exports into `assets/photos-original/`.
+  - A footprint check then runs (booleans only, D-12) against the research default plate: swissALTIRegio, 12 × 12 km, W 2,832,000 S 1,150,000 E 2,844,000 N 1,162,000 (LV95), centred on the summit, not on a photo. If a chosen photo falls outside it, the extent moves on the plate grid. It stays compact (D-10) and is recorded as an extent only.
+  - Those files go through the D-02 precision checkpoint like every other new photo.
+  - `20210912_193833.jpg` has no position, so it is not in any series in Phase 16.
+- **D-28: Saalfelden gets the 12 km plate with no missing data, research Option A** (Tim: "A: 12 km, no gaps (Recommended)").
+  - The plate is BEV ALS DTM, EPSG:3035, W 4,529,000 S 2,701,000 E 4,541,000 N 2,713,000, 1200² at 10 m, from one tile (`N2700000E4500000`).
+  - It holds both DJI stills and Saalfelden town, and serves 361,692 B against the 550,000 B cap.
+  - The fetcher keeps "fail on any nodata". No nodata code path is added.
+  - The Galaxy S25 photo `20260916_125705.jpg` is outside the plate, so it is not in any series in Phase 16 (it seeds a later region, D-10). Its position is never committed.
+  - **Planner's call:** how extraction leaves it and `20210912_193833.jpg` out, either by Tim moving them aside or by an explicit exclusion that names only the file.
+- **D-29: The BEV plate records the height system its source declares: EVRF2000 Austria height, EPSG:9274** (Tim: "EVRF2000-AT (Recommended)").
+  - This amends D-09's "Adriatic, GHA". Only the stored label changes, and the heights come from the same files.
+  - The BEV credit wording still goes to the D-09 checkpoint. BEV publishes only "Standardlizenz CC-BY-4.0", and 16-RESEARCH.md § Licences and Credits has the proposed line.
 
 ### Claude's Discretion
 
