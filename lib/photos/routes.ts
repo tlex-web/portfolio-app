@@ -8,19 +8,22 @@
  * The URL contract is fixed: /photos/<slug>, no redirect (PHOTO-05).
  * Phase 17 adds regionHref here (D-19).
  *
- * This module imports only the editorial copy, so proxy.ts can read the slug
- * list without bundling the view-model's manifests, generated facts or terrain
- * (F5).
+ * This module imports only the editorial copy and the light-table id list, so
+ * proxy.ts can read the slug list without bundling the view-model's
+ * manifests, generated facts or terrain (F5).
  */
+import { lightTableIds } from '@/data/light-table';
 import { editorial } from '@/data/photos/editorial';
 
 /** The path of a photo page: /photos/<slug>. */
 export const photoHref = (slug: string): `/photos/${string}` => `/photos/${slug}`;
 
 /**
- * Every photo slug with editorial copy, for proxy.ts's unknown-slug 404 (F5).
- * The photo-routes test pins this set to generateStaticParams' slugs, so the
- * proxy never admits a slug that has no static photo page.
+ * The light-table photos' slugs (lightTableIds in data/light-table.ts, D-15),
+ * for proxy.ts's unknown-slug 404 (F5). A photo with editorial copy that is
+ * not on the light table gets no slug here until Phase 17 (PHOTO-05). The
+ * photo-routes test pins this set to generateStaticParams' slugs, so the proxy
+ * never admits a slug that has no static photo page.
  *
  * The pure annotation is load-bearing: client components import photoHref
  * from this module, and without it the bundler keeps this top-level call and
@@ -28,6 +31,6 @@ export const photoHref = (slug: string): `/photos/${string}` => `/photos/${slug}
  * appeared in a client chunk). With it, an unused list is dropped along with
  * the copy. The photo-routes test fails if the annotation goes.
  */
-export const photoRouteSlugs: readonly string[] = /* @__PURE__ */ Object.values(editorial).map(
-  (e) => e.slug
+export const photoRouteSlugs: readonly string[] = /* @__PURE__ */ lightTableIds.map(
+  (id) => editorial[id].slug
 );

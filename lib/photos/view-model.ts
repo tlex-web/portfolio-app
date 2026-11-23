@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { imageManifest } from '@/data/generated/image-manifest';
 import { photos } from '@/data/generated/photos';
 import { terrain } from '@/data/generated/terrain';
+import { lightTableIds } from '@/data/light-table';
 import { editorial } from '@/data/photos/editorial';
 import type { EditorialAnnotation, ElevationRef, Fact } from '@/data/schemas/editorial';
 import { site } from '@/data/site';
@@ -318,10 +319,11 @@ export function hotspotViews(
 }
 
 /**
- * The region the v2.0 light table (/photos: map, grid, carousel, header,
- * viewer stepping, sitemap and static params) shows. From Phase 15 on it is the
- * Zermatt series only, so a photo Phase 16 adds in another region never lands on
- * the Matterhorn map. Phase 18 replaces the light table with region plates.
+ * The region every v2.0 light-table photo is in (Zermatt). From Phase 16 on
+ * this is a documented check, not the filter: the membership is the explicit
+ * lightTableIds list (D-15, lightTableInput below), and region-series.test.ts
+ * asserts every listed photo is in this region. Phase 18 replaces the light
+ * table with region plates.
  */
 export const LIGHT_TABLE_REGION = 'zermatt';
 
@@ -341,18 +343,38 @@ export function seriesInput(region: string): PhotoViewInput {
 }
 
 /**
+ * The v2.0 light table as a buildPhotoViews input (D-15): the generated photos
+ * whose id is in `ids`, in generated order, with the committed editorial copy
+ * and image manifest. buildWaypoints still owns the order. Any other photo,
+ * in Zermatt or elsewhere, stays off the light table, the photo pages, the
+ * sitemap and the saved-pages catalog until Phase 17 (PHOTO-05).
+ *
+ * @param ids the light-table photo ids; defaults to lightTableIds (the
+ *   parameter exists for tests).
+ * @throws RangeError naming the id when a listed id has no generated photo.
+ */
+export function lightTableInput(ids: readonly string[] = lightTableIds): PhotoViewInput {
+  for (const id of ids) {
+    if (!photos.some((p) => p.id === id)) {
+      throw new RangeError(
+        `lightTableInput: light-table photo ${id} has no photo in data/generated/photos.ts; fix lightTableIds in data/light-table.ts`
+      );
+    }
+  }
+  return { photos: photos.filter((p) => ids.includes(p.id)), editorial, imageManifest };
+}
+
+/**
  * Every photo view in the canonical order (buildWaypoints' order, unchanged).
  *
  * @param input the photo facts, editorial copy and image manifest; defaults to
- *   the light table's series, seriesInput(LIGHT_TABLE_REGION) (the parameter
- *   exists for unit tests).
+ *   the light table, lightTableInput() (the explicit lightTableIds list, D-15;
+ *   the parameter exists for unit tests).
  * @throws RangeError for everything buildWaypoints rejects (an empty photo
  *   set, an orphan photo, a null position, uv or elevation), and for a photo
  *   without its 640, 1024, 1600 or 2560 px variant.
  */
-export function buildPhotoViews(
-  input: PhotoViewInput = seriesInput(LIGHT_TABLE_REGION)
-): readonly PhotoView[] {
+export function buildPhotoViews(input: PhotoViewInput = lightTableInput()): readonly PhotoView[] {
   const waypoints = buildWaypoints(input);
 
   return waypoints.map((w, i) => {
@@ -387,7 +409,7 @@ export function buildPhotoViews(
   });
 }
 
-/** The light table's series (Zermatt) as views, built once per module load. */
+/** The light table (lightTableIds, D-15) as views, built once per module load. */
 export const photoViews: readonly PhotoView[] = buildPhotoViews();
 
 /** The four locked slugs in canonical order (08 D-07); generateStaticParams reads these. */
