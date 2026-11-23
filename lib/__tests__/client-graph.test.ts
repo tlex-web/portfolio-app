@@ -16,7 +16,12 @@
  * only), so the plate registry data/generated/plates.ts must not be reached
  * either, or every new plate would grow the footer chunk.
  *
- * The walk starts at app/global-error.tsx and follows `import … from`,
+ * The overview module is server-only for every client component, not just the
+ * footer (16-REVIEW WR-04): a second walk starts at every file under app/,
+ * components/ and lib/ whose first statement is 'use client' (a client entry),
+ * and SERVER_ONLY_MODULES must be reached from none of them.
+ *
+ * Each walk follows `import … from`,
  * `export … from` and side-effect `import '…'` statements, resolving `@/` to the
  * repository root and relative paths (trying .ts, .tsx, /index.ts, /index.tsx).
  * It skips `import type` / `export type` statements, imports whose every
@@ -39,6 +44,13 @@ export const FORBIDDEN_IN_CLIENT_GRAPH = [
   'data/generated/plates.ts',
   'data/generated/overview.ts',
 ] as const;
+
+/**
+ * Modules that no client entry may reach (repo-relative), whatever its page: the
+ * Alps overview's outlines, summits and GLO-90 notice (16-15, T-16-36). The
+ * generated header of data/generated/overview.ts points here.
+ */
+export const SERVER_ONLY_MODULES = ['data/generated/overview.ts'] as const;
 
 const ROOT = process.cwd();
 const ENTRY = 'app/global-error.tsx';
@@ -84,10 +96,34 @@ function resolve(fromFile: string, spec: string): string | null {
   throw new Error(`client-graph: ${fromFile} imports '${spec}', which resolves to no file`);
 }
 
-/** Breadth-first walk from ENTRY: every reached file and the file that first imported it. */
-function walk(): Map<string, string | null> {
-  const parent = new Map<string, string | null>([[ENTRY, null]]);
-  const queue = [ENTRY];
+/** True when the first statement (after comments) is the client directive. */
+export const isClientModule = (text: string) =>
+  /^(?:\s|\/\/[^\n]*\n|\/\*[\s\S]*?\*\/)*['"]use client['"]/.test(text);
+
+/** Every source file under `dir` (recursive, repo-relative, forward slashes). */
+function sourceFiles(dir: string): string[] {
+  const abs = path.join(ROOT, dir);
+  if (!fs.existsSync(abs)) return [];
+  const out: string[] = [];
+  for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
+    const rel = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) {
+      if (entry.name !== 'node_modules') out.push(...sourceFiles(rel));
+    } else if (/\.(?:tsx?|jsx?|mjs)$/.test(entry.name)) out.push(rel);
+  }
+  return out;
+}
+
+/** Every client entry: a file under app/, components/ or lib/ that starts with 'use client'. */
+const CLIENT_ENTRIES = ['app', 'components', 'lib']
+  .flatMap(sourceFiles)
+  .filter((f) => isClientModule(fs.readFileSync(path.join(ROOT, f), 'utf8')))
+  .sort();
+
+/** Breadth-first walk from `entries`: every reached file and the file that first imported it. */
+function walk(entries: readonly string[]): Map<string, string | null> {
+  const parent = new Map<string, string | null>(entries.map((e) => [e, null]));
+  const queue = [...entries];
   while (queue.length > 0) {
     const file = queue.shift() as string;
     if (!PARSED.test(file)) continue;
@@ -107,7 +143,8 @@ function chainTo(parent: Map<string, string | null>, file: string): string {
   return chain.join(' -> ');
 }
 
-const graph = walk();
+const graph = walk([ENTRY]);
+const clientGraph = walk(CLIENT_ENTRIES);
 
 describe('the import parser the walk relies on', () => {
   it.each([
@@ -139,6 +176,27 @@ describe('the global-error client graph (16-05, T-16-11)', () => {
 
   it('the global-error client graph imports no forbidden data module', () => {
     const reached = FORBIDDEN_IN_CLIENT_GRAPH.filter((file) => graph.has(file)).map((file) => chainTo(graph, file));
+    expect(reached).toEqual([]);
+  });
+});
+
+describe('the graph of every client entry (16-REVIEW WR-04, T-16-36)', () => {
+  it('finds the client entries, global-error among them, so the walk is not vacuous', () => {
+    expect(CLIENT_ENTRIES.length).toBeGreaterThan(20);
+    expect(CLIENT_ENTRIES).toContain(ENTRY);
+    expect(clientGraph.has('components/site/SiteFooter.tsx')).toBe(true);
+  });
+
+  it('the client-directive detector recognises a client module', () => {
+    expect(isClientModule("'use client';\nimport x from 'y';")).toBe(true);
+    expect(isClientModule('/** doc */\n"use client";')).toBe(true);
+    expect(isClientModule("import x from 'y';\n'use client';")).toBe(false);
+  });
+
+  it('no client entry reaches a server-only module', () => {
+    const reached = SERVER_ONLY_MODULES.filter((file) => clientGraph.has(file)).map((file) =>
+      chainTo(clientGraph, file)
+    );
     expect(reached).toEqual([]);
   });
 });
