@@ -78,10 +78,12 @@ describe('photo map and region registry: committed data', () => {
     }
   });
 
-  test('D-02: all four current photos are zermatt / CH, read from their records', () => {
+  test('D-02: all four current photos are zermatt / CH / 4dp / ground, read from their records', () => {
     for (const id of ['img-0605', 'img-0629', 'img-0662', 'r004-011']) {
       expect(record(id).region).toBe('zermatt');
       expect(record(id).country).toBe('CH');
+      expect(record(id).precision).toBe('4dp');
+      expect(record(id).kind).toBe('ground');
     }
   });
 
@@ -136,6 +138,22 @@ describe('photo map and region registry: schema boundaries', () => {
     expect(PhotoMap.safeParse(one(base)).success).toBe(true);
     expect(PhotoMap.safeParse(one({ ...base, file: `photos/${base.file}` })).success).toBe(false);
     expect(PhotoMap.safeParse(one({ ...base, lat: 46.0 })).success).toBe(false);
+  });
+
+  test('16 D-02: PhotoMap rejects a record without a precision (no default)', () => {
+    const { precision, ...rest } = record('img-0605');
+    expect(precision).toBe('4dp');
+    const one = (entry: unknown) => ({ schemaVersion: 1, photos: { 'img-0605': entry } });
+    expect(() => PhotoMap.parse(one(rest))).toThrow();
+    expect(PhotoMap.safeParse(one({ ...rest, precision: '5dp' })).success).toBe(false);
+  });
+
+  test('16 D-04: PhotoMap rejects a record without a kind (no default)', () => {
+    const { kind, ...rest } = record('img-0605');
+    expect(kind).toBe('ground');
+    const one = (entry: unknown) => ({ schemaVersion: 1, photos: { 'img-0605': entry } });
+    expect(() => PhotoMap.parse(one(rest))).toThrow();
+    expect(PhotoMap.safeParse(one({ ...rest, kind: 'drone' })).success).toBe(false);
   });
 
   test('Regions rejects unsorted ids', () => {

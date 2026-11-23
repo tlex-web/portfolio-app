@@ -55,6 +55,18 @@ describe('photo facts: schema and order', () => {
   test('holds the four photos sorted by id', () => {
     expect(photos.map((p) => p.id)).toEqual(['img-0605', 'img-0629', 'img-0662', 'r004-011']);
   });
+
+  test("16 D-02, D-04: every position's precision and every fact's kind equal its photo-map record's", () => {
+    const photoMap = JSON.parse(read('data/photos/photo-map.json')) as {
+      photos: Record<string, { precision: string; kind: string }>;
+    };
+    for (const p of photos) {
+      const rec = photoMap.photos[p.id];
+      if (!rec) throw new Error(`photo-map.json has no record ${p.id}`);
+      expect(p.kind).toBe(rec.kind);
+      if (p.position) expect(p.position.precision).toBe(rec.precision);
+    }
+  });
 });
 
 describe('captures (D-03, D-04)', () => {

@@ -1349,12 +1349,13 @@ const GEO_URL = pathToFileURL(path.join(repoRoot, 'lib', 'geo.ts')).href;
 /**
  * `fn` of lib/geo.ts applied to each of `args`, in a child node with the photo
  * scripts' flag (importing a .ts module here would print a module-type warning
- * into every selftest run). JSON round-trips a double exactly.
+ * into every selftest run). The arguments go through stdin (a long batch would
+ * overflow the Windows command line). JSON round-trips a double exactly.
  */
 function geoBatch(fn, args) {
-  const code = `const m = await import(${JSON.stringify(GEO_URL)}); process.stdout.write(JSON.stringify(${JSON.stringify(args)}.map((a) => m[${JSON.stringify(fn)}](a))));`;
-  const r = spawnSync(process.execPath, [...PHOTO_NODE_ARGS, '--input-type=module', '-e', code], { encoding: 'utf-8' });
-  if (r.status !== 0) throw new Error(`selftest: lib/geo.ts ${fn} failed: ${r.stderr}`);
+  const code = `const m = await import(${JSON.stringify(GEO_URL)}); let s = ''; for await (const c of process.stdin) s += c; process.stdout.write(JSON.stringify(JSON.parse(s).map((a) => m[${JSON.stringify(fn)}](a))));`;
+  const r = spawnSync(process.execPath, [...PHOTO_NODE_ARGS, '--input-type=module', '-e', code], { encoding: 'utf-8', input: JSON.stringify(args) });
+  if (r.status !== 0) throw new Error(`selftest: lib/geo.ts ${fn} failed: ${r.error?.message ?? r.stderr}`);
   return JSON.parse(r.stdout);
 }
 const geo = (fn, arg) => geoBatch(fn, [arg])[0];
@@ -3395,6 +3396,142 @@ const cases = [
         radiusM: 100,
         reasonPart: 'about 100 m',
       }),
+  },
+  {
+    name: 'privacy: a 2dp photo gets a 50 m ground height and a 1 km radius',
+    fn: () =>
+      coarseCase({
+        id: 'img-9102',
+        point: { e: 2602345.678, n: 1202123.456 },
+        precision: '2dp',
+        d: 2,
+        step: 50,
+        radiusM: 1000,
+        reasonPart: 'about 1 km',
+      }),
+  },
+  {
+    name: 'privacy: an aerial DJI still keeps no GPS altitude',
+    fn: async () => {
+      const id = 'img-9103';
+      const truth = geo('lv95ToWgs84', { e: 2601567.891, n: 1202456.789 });
+      const jpeg = await gpsJpeg({ make: 'DJI', lat: truth.lat, lon: truth.lon, altM: 2500.3 });
+      const rounded = { lat: roundDp(jpeg.lat, 4), lon: roundDp(jpeg.lon, 4) };
+      const height = rampM(geo('wgs84ToLv95', rounded).e);
+      clearOfBoundary(height, 1, 'the ramp height at the 4dp position');
+      const root = await tempPrivacyRoot({
+        records: { [id]: { file: 'DJI_0153.JPG', region: 'fixture', country: 'CH', precision: '4dp', kind: 'aerial', bytes: jpeg.bytes } },
+      });
+      const result = privacyRun(root, id);
+      const failed = bothPassed(result);
+      if (failed) return failed;
+      const { entry, fact, output } = result;
+      if (!entry?.gps || !fact?.position) return 'no sidecar GPS or no generated position was written';
+      if (Object.hasOwn(entry.gps, 'groundM')) return 'a 4dp aerial photo got a groundM';
+      if (output.includes('2500')) return 'an output line holds the GPS altitude';
+      return firstDifference([
+        ['sidecar make', entry.make, 'DJI'],
+        ['sidecar altM', entry.gps.altM, null],
+        ['sidecar lat', entry.gps.lat, rounded.lat],
+        ['sidecar lon', entry.gps.lon, rounded.lon],
+        ['elevation.m', fact.elevation?.m, Math.round(height)],
+        ['kind', fact.kind, 'aerial'],
+        ['position.approximate', fact.position.approximate, false],
+        ['position.precision', fact.position.precision, '4dp'],
+      ]);
+    },
+  },
+  {
+    name: 'privacy: a DJI still not marked aerial fails and writes nothing',
+    fn: async () => {
+      const id = 'img-9104';
+      const truth = geo('lv95ToWgs84', { e: 2601500, n: 1202500 });
+      const jpeg = await gpsJpeg({ make: 'dji', lat: truth.lat, lon: truth.lon, altM: 2400 });
+      const file = 'DJI_0163.JPG';
+      const root = await tempPrivacyRoot({
+        records: { [id]: { file, region: 'fixture', country: 'CH', precision: '4dp', kind: 'ground', bytes: jpeg.bytes } },
+      });
+      const { exif, build, output } = privacyRun(root, id);
+      if (exif.status !== 1 || build !== null) return `photos:exif exited ${exif.status}, expected 1`;
+      if (!output.includes(`${file} is a DJI still`) || !output.includes('"kind": "aerial"')) return `the message lacks the file or the fix: ${output.trim()}`;
+      return noExifSidecar(root)();
+    },
+  },
+  {
+    name: 'privacy: a record without a precision fails naming the file',
+    fn: async () => {
+      const id = 'img-9105';
+      const truth = geo('lv95ToWgs84', { e: 2601500, n: 1202500 });
+      const jpeg = await gpsJpeg({ make: 'SELFTEST', lat: truth.lat, lon: truth.lon });
+      const file = 'IMG_9105.jpg';
+      const root = await tempPrivacyRoot({ records: { [id]: { file, region: 'fixture', country: 'CH', kind: 'ground', bytes: jpeg.bytes } } });
+      const { exif, output } = privacyRun(root, id);
+      if (exif.status !== 1) return `photos:exif exited ${exif.status}, expected 1`;
+      if (!output.includes(`add a precision ('4dp', '3dp' or '2dp') to the record for ${file} in data/photos/photo-map.json`)) {
+        return `the message lacks the fix or the file: ${output.trim()}`;
+      }
+      return noExifSidecar(root)();
+    },
+  },
+  {
+    name: 'privacy: a coarse photo rounded off its plate fails without printing its position',
+    fn: async () => {
+      // Scan points 20 to 500 m inside each edge for a true spot on the plate whose
+      // 2-decimal rounding lands off it; assert the choice before running.
+      const x = PRIVACY_EXTENT;
+      const candidates = [];
+      for (let t = 1; t < 16; t++) {
+        const along = t * 250;
+        for (let dist = 20; dist <= 500; dist += 20) {
+          candidates.push({ e: x.west + dist, n: x.south + along }, { e: x.east - dist, n: x.south + along });
+          candidates.push({ e: x.west + along, n: x.south + dist }, { e: x.west + along, n: x.north - dist });
+        }
+      }
+      const raws = geoBatch('lv95ToWgs84', candidates);
+      // The position extraction decodes from the EXIF rationals gpsJpeg writes for each raw value.
+      const truths = raws.map(({ lat, lon }) => ({ lat: toDms(lat).decoded, lon: toDms(lon).decoded }));
+      const roundeds = truths.map(({ lat, lon }) => ({ lat: roundDp(lat, 2), lon: roundDp(lon, 2) }));
+      const trueGrids = geoBatch('wgs84ToLv95', truths);
+      const roundedGrids = geoBatch('wgs84ToLv95', roundeds);
+      const inner = { west: x.west + 10, south: x.south + 10, east: x.east - 10, north: x.north - 10 };
+      const pick = candidates.findIndex((_, i) => insideExtent(trueGrids[i], inner) && !insideExtent(roundedGrids[i]));
+      if (pick < 0) throw new Error('selftest: no candidate rounds off the fixture plate');
+      const truth = truths[pick];
+      const rounded = roundeds[pick];
+      const id = 'img-9106';
+      const jpeg = await gpsJpeg({ make: 'SELFTEST', lat: raws[pick].lat, lon: raws[pick].lon, altM: 1500 });
+      if (jpeg.lat !== truth.lat || jpeg.lon !== truth.lon) throw new Error('selftest: the encoded position differs from the scanned one');
+      const root = await tempPrivacyRoot({
+        records: { [id]: { file: 'IMG_9106.jpg', region: 'fixture', country: 'CH', precision: '2dp', kind: 'ground', bytes: jpeg.bytes } },
+      });
+      const { exif, build, output } = privacyRun(root, id);
+      if (exif.status !== 0) return `photos:exif exited ${exif.status}; the true spot is on the plate: ${output.trim()}`;
+      if (build?.status !== 1) return `photos:build exited ${build?.status}, expected 1`;
+      if (!output.includes('img-9106: position lies outside the DEM extent; plate fixture')) return `the message lacks the off-plate fix: ${output.trim()}`;
+      const strings = [truth.lat.toFixed(5), truth.lon.toFixed(5), truth.lat.toFixed(4), truth.lon.toFixed(4), rounded.lat.toFixed(2), rounded.lon.toFixed(2)];
+      const leaked = leaks(output, strings);
+      return leaked.length ? `the output holds the true or the rounded position (${leaked.length} strings)` : null;
+    },
+  },
+  {
+    name: 'privacy: a hand-placed position finer than its precision fails',
+    fn: async () => {
+      const id = 'img-9107';
+      const centre = geo('lv95ToWgs84', { e: 2602111, n: 1202222 });
+      const placed = { lat: roundDp(centre.lat, 4), lon: roundDp(centre.lon, 4) };
+      if (roundDp(placed.lat, 3) === placed.lat && roundDp(placed.lon, 3) === placed.lon) throw new Error('selftest: the hand-placed position has only 3 decimals; pick another point');
+      const jpeg = await gpsJpeg({ make: 'SELFTEST' });
+      const root = await tempPrivacyRoot({
+        records: { [id]: { file: 'R900-001.jpg', region: 'fixture', country: 'CH', precision: '3dp', kind: 'ground', bytes: jpeg.bytes } },
+        corrections: { [id]: { position: { ...placed, source: 'hand-placed', approximate: true, reason: 'selftest: placed by hand', radiusM: 100 } } },
+      });
+      const { exif, build, output } = privacyRun(root, id);
+      if (exif.status !== 0) return `photos:exif exited ${exif.status}: ${output.trim()}`;
+      if (build?.status !== 1) return `photos:build exited ${build?.status}, expected 1`;
+      if (!output.includes('img-9107: position has more decimals than its precision 3dp')) return `the message lacks the precision rule: ${output.trim()}`;
+      const leaked = leaks(output, [String(placed.lat), String(placed.lon)]);
+      return leaked.length ? 'the output holds the hand-placed position' : null;
+    },
   },
   {
     name: 'G6 photos:derive: an undecodable source after a valid one exits 1 and leaves every file in place (WR-05)',
