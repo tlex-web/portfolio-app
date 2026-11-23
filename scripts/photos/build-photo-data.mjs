@@ -14,6 +14,8 @@
  *   <plate.source>/                 source.json + the native 10 m grey16 PNG of the
  *                                   photo's own plate, whose sha256 is verified
  *                                   against source.json (one load per plate, 15 D-04)
+ *   data/home-waypoints.ts          homeWaypointIds, the Home list (DATA-09), loaded
+ *                                   with a dynamic import under the root (16-05)
  *
  * Per sidecar entry:
  *   region,    the photo-map record's, copied verbatim (15 D-02, D-05): the country
@@ -49,16 +51,26 @@
  * Every entry is parsed with PhotoFacts. The altimeter rail start is not emitted
  * here: it is computed over the Home list in lib/ascent/waypoints.ts (15 D-08).
  *
- * Output: two header comment lines and `export const photos = <JSON, 2 spaces> as const;`,
- * LF endings, trailing newline.
+ * Outputs (each two header comment lines, then the export; LF endings, trailing newline):
+ *   data/generated/photos.ts       `export const photos = <JSON, 2 spaces> as const;`
+ *   data/generated/home-photos.ts  `export const homePhotoFacts = <JSON, 2 spaces> as const;`:
+ *                                  only the Home waypoints' facts, in generated order
+ *                                  (16-05). The footer renders in the client-rendered
+ *                                  app/global-error.tsx, so this is all of the photo
+ *                                  data that reaches its chunk. Built after every
+ *                                  photo's facts are validated, so an earlier failure
+ *                                  is still the one reported; a Home id with no fact
+ *                                  fails the build.
  *
  * Modes:
- *   (default)  write data/generated/photos.ts.
- *   --check    rebuild the text in memory and compare bytes with the committed
- *              file; `photos:build: OK` or `photos:build: stale` (exit 1).
- *   --root <dir>  read the inputs and the output under <dir> instead of the
- *              repository root (default unchanged). The guard selftest runs
- *              `--check --root <temp copy>` for the G5 cases (VERIFY-06).
+ *   (default)  write both outputs.
+ *   --check    rebuild both texts in memory and compare bytes with the committed
+ *              files, naming a stale one; `photos:build: OK` or `photos:build: stale` (exit 1).
+ *   --root <dir>  read the inputs (the Home list included) and the outputs under
+ *              <dir> instead of the repository root (default unchanged). A root
+ *              without data/home-waypoints.ts fails; no root skips the Home output.
+ *              The guard selftest runs `--check --root <temp copy>` for the G5 cases
+ *              (VERIFY-06), and its privacy roots carry an empty Home list.
  *
  * Usage:
  *   npm run photos:build
@@ -67,7 +79,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Corrections, ExifSidecar, PhotoFacts, PhotoMap } from '../../data/schemas/photo.ts';
 import { Regions } from '../../data/schemas/region.ts';
 import { Plates } from '../../data/schemas/terrain.ts';
@@ -119,8 +131,11 @@ const CORRECTIONS_REL = 'data/photos/corrections.json';
 const PHOTO_MAP_REL = 'data/photos/photo-map.json';
 const REGIONS_REL = 'data/regions/regions.json';
 const PLATES_REL = 'data/terrain/plates.json';
+const HOME_WAYPOINTS_REL = 'data/home-waypoints.ts';
 const OUT_REL = 'data/generated/photos.ts';
 const OUT_PATH = path.join(ROOT, OUT_REL);
+const HOME_OUT_REL = 'data/generated/home-photos.ts';
+const HOME_OUT_PATH = path.join(ROOT, HOME_OUT_REL);
 const TIME_ZONE = 'Europe/Zurich';
 const MAX_GPS_DRIFT_S = 60;
 
@@ -315,8 +330,40 @@ function resolveMembership(sidecar, photoMap, regions, plates) {
 }
 
 /**
+ * homeWaypointIds from <root>/data/home-waypoints.ts (DATA-09). A dynamic import
+ * through a file URL, not a static import beside the script, so the Home list
+ * follows --root like every other input and a Windows path loads.
+ */
+async function loadHomeWaypointIds() {
+  const file = path.join(ROOT, HOME_WAYPOINTS_REL);
+  let ids;
+  try {
+    ({ homeWaypointIds: ids } = await import(pathToFileURL(file).href));
+  } catch {
+    throw new Error(`cannot read ${HOME_WAYPOINTS_REL}; every photos:build root needs a Home list`);
+  }
+  if (!Array.isArray(ids) || !ids.every((id) => typeof id === 'string')) {
+    throw new Error(`${HOME_WAYPOINTS_REL} must export homeWaypointIds, an array of photo ids`);
+  }
+  return ids;
+}
+
+/**
+ * The Home waypoints' facts, in generated order (16-05). Runs after every photo
+ * is built and validated; a listed id with no fact fails.
+ */
+function homeFacts(photos, homeIds) {
+  for (const id of homeIds) {
+    if (!photos.some((p) => p.id === id)) {
+      throw new Error(`home waypoint ${id} has no photo; fix homeWaypointIds in ${HOME_WAYPOINTS_REL}`);
+    }
+  }
+  return photos.filter((p) => homeIds.includes(p.id));
+}
+
+/**
  * Sidecar + corrections + photo map + regions + plates (and each plate's DEM) ->
- * { photos, text }. Throws on any violation.
+ * { photos, text }, then the Home list -> { home, homeText }. Throws on any violation.
  */
 async function build() {
   const sidecar = ExifSidecar.parse(readJson(SIDECAR_REL));
@@ -402,7 +449,13 @@ async function build() {
     `// AUTO-GENERATED by scripts/photos/build-photo-data.mjs from ${SIDECAR_REL}, ${CORRECTIONS_REL}, ${PHOTO_MAP_REL}, ${REGIONS_REL}, ${PLATES_REL} and each plate's source/. Do not edit.\n` +
     `// Typed photo facts (DATA-02..04, DATA-06).\n` +
     `export const photos = ${JSON.stringify(photos, null, 2)} as const;\n`;
-  return { photos, text };
+
+  const home = homeFacts(photos, await loadHomeWaypointIds());
+  const homeText =
+    `// AUTO-GENERATED by scripts/photos/build-photo-data.mjs from ${HOME_WAYPOINTS_REL} and the facts of ${OUT_REL}. Do not edit.\n` +
+    `// The Home waypoints' photo facts only, the footer's client-safe input (DATA-09).\n` +
+    `export const homePhotoFacts = ${JSON.stringify(home, null, 2)} as const;\n`;
+  return { photos, text, home, homeText };
 }
 
 function formatIssues(error) {
@@ -412,29 +465,36 @@ function formatIssues(error) {
 }
 
 async function write() {
-  const { photos, text } = await build();
+  const { photos, text, home, homeText } = await build();
   fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
   fs.writeFileSync(OUT_PATH, text, 'utf8');
+  fs.writeFileSync(HOME_OUT_PATH, homeText, 'utf8');
   for (const p of photos) {
     console.log(
       `${NAME}: ${p.id} ${p.elevation ? `${p.elevation.m} m` : 'no position'} ${p.tags.year} ${p.tags.season ?? '-'}`
     );
   }
   console.log(`${NAME}: wrote ${OUT_REL} (${photos.length} photos)`);
+  console.log(`${NAME}: wrote ${HOME_OUT_REL} (${home.length} Home photos)`);
   console.log(`${NAME}: OK`);
 }
 
 async function check() {
-  const { text } = await build();
-  if (!fs.existsSync(OUT_PATH)) {
-    console.log(`${NAME}: ${OUT_REL} is missing; run npm run photos:build`);
-    console.log(`${NAME}: stale`);
-    process.exit(1);
-  }
-  if (fs.readFileSync(OUT_PATH, 'utf8') !== text) {
-    console.log(`${NAME}: ${OUT_REL} differs from a fresh build; run npm run photos:build`);
-    console.log(`${NAME}: stale`);
-    process.exit(1);
+  const { text, homeText } = await build();
+  for (const [rel, file, expected] of [
+    [OUT_REL, OUT_PATH, text],
+    [HOME_OUT_REL, HOME_OUT_PATH, homeText],
+  ]) {
+    if (!fs.existsSync(file)) {
+      console.log(`${NAME}: ${rel} is missing; run npm run photos:build`);
+      console.log(`${NAME}: stale`);
+      process.exit(1);
+    }
+    if (fs.readFileSync(file, 'utf8') !== expected) {
+      console.log(`${NAME}: ${rel} differs from a fresh build; run npm run photos:build`);
+      console.log(`${NAME}: stale`);
+      process.exit(1);
+    }
   }
   console.log(`${NAME}: OK`);
 }

@@ -942,8 +942,10 @@ const PHOTO_DATA = path.join(repoRoot, 'scripts', 'photos', 'build-photo-data.mj
 const PHOTO_NODE_ARGS = ['--disable-warning=MODULE_TYPELESS_PACKAGE_JSON'];
 /**
  * Every input build-photo-data.mjs reads (sidecar, corrections, photo map, region
- * and plate registries, DEM source) and the output --check compares. The three
- * registries joined in 15-06; without them the control case fails (15-RESEARCH Pitfall 5).
+ * and plate registries, DEM source, the Home list) and the outputs --check compares.
+ * The three registries joined in 15-06; without them the control case fails
+ * (15-RESEARCH Pitfall 5). The Home list and the Home output joined in 16-05: a
+ * copy holds the real Home list and its four real photos, so the Home-id check passes.
  */
 const PHOTO_DATA_INPUTS = [
   'data/photos/exif-sidecar.json',
@@ -953,7 +955,9 @@ const PHOTO_DATA_INPUTS = [
   'data/terrain/plates.json',
   'data/terrain/source/source.json',
   'data/terrain/source/dem-10m.png',
+  'data/home-waypoints.ts',
   'data/generated/photos.ts',
+  'data/generated/home-photos.ts',
 ];
 /**
  * Copies the photo data build's inputs into a fresh temp root. `edit`, when
@@ -1562,6 +1566,10 @@ async function tempPrivacyRoot({ records, corrections = {} }) {
   }
   put('data/photos/photo-map.json', json(map));
   put('data/photos/corrections.json', json(fixes));
+  // 16-05: photos:build reads the Home list under --root. This photo map holds only
+  // synthetic records, so no Home waypoint: an empty list (overwriting any copy)
+  // keeps the Home-id check in place and writes an empty homePhotoFacts.
+  put('data/home-waypoints.ts', 'export const homeWaypointIds = [];\n');
   return root;
 }
 /**

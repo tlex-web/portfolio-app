@@ -1,4 +1,4 @@
-import { photos } from '@/data/generated/photos';
+import { homePhotoFacts } from '@/data/generated/home-photos';
 import { homeWaypointIds } from '@/data/home';
 
 /**
@@ -8,16 +8,18 @@ import { homeWaypointIds } from '@/data/home';
  * input (homeInput in lib/ascent/waypoints.ts) and the footer's waypoint ticks.
  * The module stays light on purpose. The footer renders inside the
  * client-rendered app/global-error.tsx, so whatever it imports ships in a
- * client chunk; this file imports only the generated photo facts and the id
- * list, never the editorial copy or the image manifest.
+ * client chunk; this file imports only the Home waypoints' generated facts
+ * (data/generated/home-photos.ts, which photos:build writes from the Home list,
+ * 16-05) and the id list, never the full photo set, the editorial copy or the
+ * image manifest. lib/__tests__/client-graph.test.ts pins that graph.
  */
 
-/** The generated photo record type. */
-export type HomePhoto = (typeof photos)[number];
+/** The generated Home photo record type. */
+export type HomePhoto = (typeof homePhotoFacts)[number];
 
 /**
- * The generated photos whose id is in `ids`, in the generated module's order
- * (filtering keeps it, so the footer's tick markup is unchanged).
+ * The generated Home photos whose id is in `ids`, in the generated module's
+ * order (filtering keeps it, so the footer's tick markup is unchanged).
  *
  * @param ids the Home waypoint ids; defaults to homeWaypointIds (the parameter
  *   exists for tests).
@@ -25,11 +27,11 @@ export type HomePhoto = (typeof photos)[number];
  */
 export function homePhotos(ids: readonly string[] = homeWaypointIds): readonly HomePhoto[] {
   for (const id of ids) {
-    if (!photos.some((photo) => photo.id === id)) {
+    if (!homePhotoFacts.some((photo) => photo.id === id)) {
       throw new RangeError(
         `homePhotos: Home waypoint ${id} has no photo in data/generated/photos.ts; fix homeWaypointIds in data/home.ts`,
       );
     }
   }
-  return photos.filter((photo) => ids.includes(photo.id));
+  return homePhotoFacts.filter((photo) => ids.includes(photo.id));
 }
