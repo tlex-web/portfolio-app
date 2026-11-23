@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 16
 current_phase_name: New Regions & Alps Overview Data
 status: executing
-stopped_at: Completed 16-14-PLAN.md
-last_updated: "2026-11-23T11:48:48.095Z"
+stopped_at: Completed 16-15-PLAN.md
+last_updated: "2026-11-23T12:10:02.675Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 16 execution started
-state_head: 2ff070e7a18681b0bd9b5ae5d898bc068e4c2446
+state_head: 9ea9e957b42a92bec1dea965703504f89c01e4c6
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 64
-  completed_plans: 60
+  completed_plans: 61
   percent: 43
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-15)
 ## Current Position
 
 Phase: 16 (New Regions & Alps Overview Data) — EXECUTING
-Plan: 15 of 18
+Plan: 16 of 18
 Status: Ready to execute
 Last activity: 2026-11-23 — Phase 16 execution started
 
@@ -116,6 +116,7 @@ Progress: [████░░░░░░] 43%
 | Phase 16 P12 | 10min | 2 tasks | 13 files |
 | Phase 16 P13 | 8min | 2 tasks | 7 files |
 | Phase 16 P14 | 25min | 3 tasks | 16 files |
+| Phase 16 P15 | 17min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -271,6 +272,9 @@ Recent decisions affecting current work:
 - [Phase 16]: Tim's 16-08 values applied exactly to the five non-Ortler photos (img-0680, img-0682, sam-20240910-143659 zermatt/CH/4dp/ground; both dji-20260919 stills saalfelden/AT/3dp/aerial)
 - [Phase 16]: Light-table order and layout tests read lightTableInput() (the four D-15 photos), so photos added before Phase 18 stay data only
 - [Phase 16]: Region record gains required country (closed list) and one to three sourced facts, the editorial Fact shape duplicated in region.ts
+- [Phase 16]: 16-15: terrain:build builds the Alps overview in the same run as every plate (variant C, 53,880 B raw / 14,302 B brotli); data/generated/overview.ts is server-only and in FORBIDDEN_IN_CLIENT_GRAPH
+- [Phase 16]: 16-15: overview outlines are each region's plate extent as four corners (SW, SE, NE, NW) in overview UV; regions.json is now a terrain build input, so editing it leaves --check stale until terrain:build runs
+- [Phase 16]: 16-15: no overview poster (hillshade false); a config asking for one fails the build; OVERVIEW_BUDGET is enforced by the builder and by Jest
 
 ### Pending Todos
 
@@ -331,6 +335,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-23T11:48:47.325Z
-Stopped at: Completed 16-14-PLAN.md
+Last session: 2026-11-23T12:10:01.905Z
+Stopped at: Completed 16-15-PLAN.md
 Resume file: None
