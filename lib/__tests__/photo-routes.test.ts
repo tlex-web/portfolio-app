@@ -21,6 +21,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import sitemap from '@/app/sitemap';
+import { lightTableIds } from '@/data/light-table';
+import { editorial } from '@/data/photos/editorial';
 import { site } from '@/data/site';
 import { photoHref, photoRouteSlugs } from '@/lib/photos/routes';
 import { photoSlugs } from '@/lib/photos/view-model';
@@ -49,6 +51,11 @@ describe('proxy slugs and static photo pages (F5)', () => {
       );
     }
     expect(admitted).toEqual(pages);
+  });
+
+  it('is the light-table list: the editorial slugs of lightTableIds, in order, four of them (D-15)', () => {
+    expect(photoRouteSlugs).toEqual(lightTableIds.map((id) => editorial[id].slug));
+    expect(photoRouteSlugs).toHaveLength(4);
   });
 
   it('has no duplicate slugs', () => {
