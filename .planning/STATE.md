@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 17
 current_phase_name: Region Routes, SEO & Structured Data
 status: executing
-stopped_at: Phase 17 context gathered
-last_updated: "2026-11-23T21:33:13.848Z"
+stopped_at: Completed 17-02-PLAN.md
+last_updated: "2026-11-23T22:06:27.131Z"
 last_activity: 2026-11-23
-last_activity_desc: Phase 16 complete, transitioned to Phase 17
-state_head: ea30f5e9aa0de3d7fc955b367be1f4c617f02859
+last_activity_desc: Phase 17 execution started
+state_head: dafe5ea3e6004138782cad7fc314b60d188e9b2f
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 80
-  completed_plans: 64
+  completed_plans: 65
   percent: 57
 ---
 
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-11-23)
 
 ## Current Position
 
-Phase: 17 (Region Routes, SEO & Structured Data) — READY TO EXECUTE
-Plan: Not started
+Phase: 17 (Region Routes, SEO & Structured Data) — EXECUTING
+Plan: 2 of 16
 Status: Ready to execute
-Last activity: 2026-11-23 — Phase 16 complete, transitioned to Phase 17
+Last activity: 2026-11-23 — Phase 17 execution started
 
 Progress: [██████░░░░] 57%
 
@@ -121,6 +121,7 @@ Progress: [██████░░░░] 57%
 | Phase 16 P16 | 9min | 2 tasks | 11 files |
 | Phase 16 P17 | 14min | 3 tasks | 28 files |
 | Phase 16 P18 | 47min | 3 tasks | 3 files |
+| Phase 17 P02 | 5 min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -284,6 +285,8 @@ Recent decisions affecting current work:
 - [Phase 16]: 16-17 (Tim): both Ortler photos at 3dp, ground, IT, region ortler (sam-20160717-120906, sam-20160717-124904)
 - [Phase 16]: 16-17 (Tim): Ortler location 'Ortler Alps, Italy'; one region fact (highest mountain in South Tyrol, main peak of the Ortler Alps); copy approved as drafted
 - [Phase 16]: 16-18: ci/16-18 holds the Task 1 tip e96f266; the SUMMARY/STATE/ROADMAP/REQUIREMENTS commit after it stays on the local phase branch — D-24 covers a new ci/16-* branch and fast-forward fix pushes, not docs pushes; CI verified the last commit that changes anything outside .planning/ (scripts/README.md)
+- [Phase 17]: 17-02: E2E Tests runs as an engine matrix (chromium, firefox, webkit; fail-fast false) under the unchanged e2e-tests id and literal name; needs.e2e-tests.result aggregates every leg, so ci-ok.jq is unchanged (D-25)
+- [Phase 17]: 17-02: audit sweep timeout = 60 s + 30 s per AUDIT_SWEEP page (AUDIT_SWEEP_PAGE_MS), equal to the old 180 s for four pages
 
 ### Pending Todos
 
@@ -343,6 +346,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-23T19:19:15.328Z
-Stopped at: Phase 17 context gathered
-Resume file: .planning/phases/17-region-routes-seo-structured-data/17-CONTEXT.md
+Last session: 2026-11-23T22:06:26.053Z
+Stopped at: Completed 17-02-PLAN.md
+Resume file: None
