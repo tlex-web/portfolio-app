@@ -14,7 +14,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { photos } from '@/data/generated/photos';
+import { plates as plates2d } from '@/data/generated/plates';
 import { Country, ExifSidecar, PhotoMap } from '@/data/schemas/photo';
+import { type Bbox, lv95ToUv, round4, wgs84ToLv95 } from '@/lib/geo';
 import { Regions } from '@/data/schemas/region';
 import { Plates } from '@/data/schemas/terrain';
 
@@ -71,11 +73,30 @@ describe('photo map and region registry: committed data', () => {
     for (const r of regions.regions) expect(plateIds.has(r.plate)).toBe(true);
   });
 
-  test('every photo is in exactly one known region', () => {
+  // 15 IN-07: the schema already makes region ids unique, so these check what it cannot.
+  test('every registry region holds at least one photo', () => {
+    const held = new Set<string>(photos.map((p) => p.region));
+    const empty = regions.regions.map((r) => r.id).filter((id) => !held.has(id));
+    expect(empty).toEqual([]);
+  });
+
+  test('every photo on an EPSG:2056 plate has the uv of its position on that plate (EPSG:3035 plates are checked by photos:build and the guard selftest)', () => {
+    const sheets = plates2d as Record<string, { crs: string; extent: { lv95: Bbox } }>;
+    let checked = 0;
     for (const p of photos) {
-      const holders = regions.regions.filter((r) => r.id === record(p.id).region);
-      expect(holders).toHaveLength(1);
+      if (!p.position) continue;
+      const plateId = region(p.region).plate;
+      const sheet = sheets[plateId];
+      if (!sheet) throw new Error(`plates.ts has no sheet ${plateId} for ${p.id}`);
+      if (sheet.crs !== 'EPSG:2056') continue;
+      const uv = lv95ToUv(wgs84ToLv95(p.position), sheet.extent.lv95);
+      expect({ id: p.id, uv: p.uv }).toEqual({
+        id: p.id,
+        uv: { u: round4(uv.u), v: round4(uv.v) },
+      });
+      checked += 1;
     }
+    expect(checked).toBeGreaterThan(0);
   });
 
   test('D-02: all four current photos are zermatt / CH / 4dp / ground, read from their records', () => {
