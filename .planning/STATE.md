@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 17
 current_phase_name: Region Routes, SEO & Structured Data
 status: executing
-stopped_at: Completed 17-04-PLAN.md
-last_updated: "2026-11-23T22:40:54.315Z"
+stopped_at: Completed 17-05-PLAN.md
+last_updated: "2026-11-23T23:19:17.831Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 17 execution started
-state_head: 972b1ec58e153b3437c6f86b7d7fd6f367717071
+state_head: 34d5d09a5525d6b83cab7a491453328040824e40
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 80
-  completed_plans: 68
+  completed_plans: 69
   percent: 57
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-23)
 ## Current Position
 
 Phase: 17 (Region Routes, SEO & Structured Data) — EXECUTING
-Plan: 5 of 16
+Plan: 6 of 16
 Status: Ready to execute
 Last activity: 2026-11-23 — Phase 17 execution started
 
@@ -125,6 +125,7 @@ Progress: [██████░░░░] 57%
 | Phase 17 P01 | 35min (Task 3 continuation) | 3 tasks | 13 files |
 | Phase 17 P03 | 7min | 3 tasks | 5 files |
 | Phase 17 P04 | 10min | 2 tasks | 6 files |
+| Phase 17 P05 | 14min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -297,6 +298,9 @@ Recent decisions affecting current work:
 - [Phase 17]: 17-03: schema-dts 2.1.0 (+ schema-dts-lib 1.1.0) pinned exact as a type-only devDependency after Tim's literal 'verified (Recommended)'; jsonLdHtml in lib/json-ld.ts is the one '<'-escaping serializer every later block (17-13, 17-14) uses
 - [Phase 17]: 17-04: D-26 capture zones come from ZONE_BY_COUNTRY in data/schemas/photo.ts (closed map over all eight Country values), keyed by the photo-map record's country; PhotoFacts refuses a capture whose zone is not its country's. Saalfelden reads Europe/Vienna, Ortler Europe/Rome; every CH output byte-identical
 - [Phase 17]: 17-04: the 16 IN-04 fix (loadHomeWaypointIds names the import cause) is commit fed9a67, for the 17-15 16-REVIEW-DISPOSITION write-back
+- [Phase 17]: 17-05 D-07: the photo route set (static params, proxy KNOWN slugs, per-photo OG card) is the eleven published photos (publishedSlugs); photoViews/photoSlugs stay the four-photo light table and stepping set until Phase 18
+- [Phase 17]: 17-05 D-14: the aerial meta description ships as Tim approved it, '{title}: an aerial photograph by Tim Lui over {short place}, {altitudeLabel}, {captureMonth}.'; ground photos keep the v2.0 template
+- [Phase 17]: 17-05: the v2.0 identity script's stripped-HTML hash also replaces nonce="..." values (Next puts the per-request CSP nonce on link elements); later re-checks recreate the script and base JSON from 17-05-SUMMARY (base=51b7f4d9b291)
 
 ### Pending Todos
 
@@ -356,6 +360,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-23T22:40:53.200Z
-Stopped at: Completed 17-04-PLAN.md
+Last session: 2026-11-23T23:19:16.797Z
+Stopped at: Completed 17-05-PLAN.md
 Resume file: None
