@@ -22,10 +22,10 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-11-15)
+See: .planning/PROJECT.md (updated 2026-11-23)
 
 **Core value:** A portfolio that is visually memorable and distinctive (not another generic Tailwind site) while being stable and well-maintained under the hood.
-**Current focus:** Phase 16 — New Regions & Alps Overview Data
+**Current focus:** Phase 17 — Region Routes, SEO & Structured Data
 
 ## Current Position
 
@@ -131,7 +131,7 @@ Recent decisions affecting current work:
 
 - [Roadmap]: 7 phases (13-19) in strict order: repo safety → UI fixes → pixel-neutral data model → new content → routes and SEO → immersive layout → drone loops
 - [Phase 15]: The data and plate refactor is pixel- and hash-neutral (every baseline unchanged, Matterhorn terrain hashes unchanged); new content waits for Phase 16
-- [Phase 16]: Launch regions stay inside the swissALTIRegio footprint; Copernicus GLO-90 feeds only the overview; proj4 only if the measured `lib/geo.ts` error requires it
+- [Phase 16]: Done 2026-11-23. Ortler is on swissALTIRegio, and Saalfelden is on BEV ALS DTM (EPSG:3035, proj4 in scripts only). Copernicus GLO-90 feeds only the overview. Every photo carries a required precision (4dp/3dp/2dp) and kind (ground/aerial). New photos, plates and the overview stay data-only until Phase 18 (D-15).
 - [Phase 17]: Photo URLs stay `/photos/<slug>` with no redirects; the region path is fixed after the static-sibling intercept spike
 - [Phase 18]: The Map/Grid/Carousel switch is retired; map collar, altimeter rail, sheet-index rectangles and 3-5 reference summits are in scope; credits go in each sheet margin plus a `/sources` page
 - [Phase 13]: 13-01: CI OK verdict is scripts/ci/ci-ok.jq (jq -e over toJSON(needs)); only dependency-review may skip, and only outside pull_request; empty needs fails
@@ -297,11 +297,10 @@ None carried from v2.0.
 - [Phase 14] Code-review finding IN-04 is handed to Phase 18 (15-16 write-back); IN-01/02/03/05/06 were fixed in 15-14. The Escape scroll jump is fixed (quick 261114-o8w, `d038117`).
 - [Phase 15] The phase branch `gsd/phase-15-region-plate-data-model` is local only and stacked on the Phase 14 tip; `ci/15-16` holds the plan tip `0b06608`. Its commits reach `main` only through `/gsd-ship 15` after Phase 14 ships, which needs Tim's ask.
 - [Phase 15] On this stacked branch, 13-VERIFICATION.md and 14-VERIFICATION.md read `stale` because Phase 15 edited files they cover (13: `package.json`, `check-ci-gate.mjs`, `selftest.mjs`; 14: `LightboxDialog.tsx`, `PhotoViewer.tsx`, `SiteNav.tsx`, two e2e specs and one more file). Both passed; this is expected here and does not apply on their own branches.
-- [Phase 15] Eight info-level review findings (IN-01..08) are deferred to Phase 16 (`15-REVIEW-DISPOSITION.md`). IN-01 must land with the first real second plate: the D-15 test pins the whole `public/terrain/` listing.
-- [Phase 15] Assumption A-15-12 awaits Tim's review: the telemetry guard has no originals-folder exception (a force-added sidecar under `assets/photos-original/` or `assets/clips-original/` fails).
-- [Phase 16] Needs Tim's inputs before planning can finish: the launch regions (inside the footprint, at least one in Italy or Austria), the new originals and the coarse-location choice per photo.
+- [Phase 16] The phase branch `gsd/phase-16-new-regions-alps-overview-data` is local only and stacked on the Phase 15 tip. `ci/16-18` holds `e96f266`, which was green with Visual Regression PASS. The six code-review fix commits after it (`b754d73`..`61451dd`) have passed the local gate but have not run in CI. The branch reaches `main` only through `/gsd-ship 16` after Phases 14 and 15 ship, which needs Tim's ask.
+- [Phase 16] Deferred to Phase 17: the code-review info findings IN-01..09 (`16-REVIEW-DISPOSITION.md`). Deferred to Phase 17/18: the time-zone label for the Austrian stills (`deferred-items.md`). WR-05's BEV scale assertion has not run against a live tile yet; it runs on the next `terrain:fetch:bev`.
+- [Phase 16] The live-DOM step was not dispatched (`16-DOM-VERIFY.md`). Only one Chrome browser is connected now, so a pass is possible once a production build is served.
 - [Phase 19] Needs a graded drone clip from Tim before any byte budget is fixed.
-- [x] 16-14: move 20210912_193833.jpg and 20260916_125705.jpg from assets/photos-original/incoming/ to assets/photos-original/not-in-series/ (gitignored; the auto-mode classifier denied the move; Tim action). Done by Tim, verified by the orchestrator at the 16-16 Task 1 answer (2026-11-23).
 
 ### Quick Tasks Completed
 
@@ -344,6 +343,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-23T18:09:27.540Z
+Last session: 2026-11-23T18:52:38.660Z
 Stopped at: Phase 16 complete, ready to plan Phase 17
 Resume file: None
