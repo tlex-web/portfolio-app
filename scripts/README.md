@@ -9,24 +9,29 @@ This directory contains utility scripts for maintaining and optimizing the portf
 The generators below need inputs that CI does not have (the photo originals, the network), so their write mode runs only on Tim's machine and their outputs are committed. `npm run data:check`, the last step of `npm run lint`, re-checks every committed output in CI without those inputs:
 
 ```bash
-npm run data:check   # terrain:build -- --check && photos:exif -- --check && photos:derive -- --check && photos:build -- --check && tokens:build -- --check
+npm run data:check   # terrain:build -- --check && photos:exif -- --check && photos:derive -- --check && photos:build -- --check && tokens:build -- --check && trails:build -- --check && clip:derive -- --check
 ```
 
 | Script | Reads (local) | Writes (committed) |
 |--------|---------------|--------------------|
-| `photos:exif` (`photos/extract-exif.mjs`) | originals in `assets/photos-original/` (gitignored, never committed; D-09) | `data/photos/exif-sidecar.json` (EXIF facts, sha256 per original, GPS rounded to 4 decimals) |
+| `photos:exif` (`photos/extract-exif.mjs`) | the top-level originals in `assets/photos-original/` (gitignored, never committed; D-09; `incoming/` is not read), `data/photos/photo-map.json` (each record's `precision` `4dp`/`3dp`/`2dp` and `kind` `ground`/`aerial`) and, for a coarse (`3dp`/`2dp`) record only, `data/regions/regions.json`, `data/terrain/plates.json` and the region's plate source (the ground height at the true position, sampled in memory) | `data/photos/exif-sidecar.json` (EXIF facts, sha256 per original, GPS rounded at extraction to the record's precision; `altM` only for a `4dp` ground photo, `groundM` for a coarse one) |
 | `photos:derive` (`photos/build-derivatives.mjs`) | the originals and the sidecar | `public/images/photos/<id>-<edge>.<hash>.<ext>` and `data/generated/image-manifest.ts` |
-| `photos:build` (`photos/build-photo-data.mjs`) | the sidecar, `data/photos/corrections.json` and the committed DEM source (no originals) | `data/generated/photos.ts` (capture, position, DEM height, UV, exposure and tags per photo) |
-| `terrain:fetch` (`terrain/fetch-dem.mjs`) | swisstopo STAC + COG over the network (manual, never in CI) | `data/terrain/source/dem-10m.png` and `source.json` |
-| `terrain:build` (`terrain/build-terrain.mjs`) | the plate registry `data/terrain/plates.json` and each plate's committed DEM source | `public/terrain/*`, `data/generated/terrain.ts` and `data/generated/precache.json` (the home plate; the URLs the service worker precaches) and `data/generated/plates.ts` (every plate's 2D sheet) |
+| `photos:build` (`photos/build-photo-data.mjs`) | the sidecar, `data/photos/corrections.json`, `data/photos/photo-map.json`, `data/regions/regions.json`, `data/terrain/plates.json`, each photo's plate source (`source.json` and its DEM, sha256 verified) and `data/home-waypoints.ts` (no originals) | `data/generated/photos.ts` (capture, kind, position with its precision, DEM height, UV on the region's plate, exposure and tags per photo) and `data/generated/home-photos.ts` (the Home waypoints' facts only) |
+| `terrain:fetch -- --plate <id>` (`terrain/fetch-dem.mjs`) | swissALTIRegio: swisstopo STAC + COG over the network (manual, never in CI). A new plate needs a square `--extent W,S,E,N`; a recorded plate reuses its extent; `--plate matterhorn` also needs `--force-home` (Phase 15 D-15); `--out <dir>` for a dry run | `data/terrain/plates/<id>/dem-10m.png` and `source.json` (Matterhorn: `data/terrain/source/`) |
+| `terrain:fetch:bev -- --plate <id>` (`terrain/fetch-bev.mjs`) | BEV ALS DTM: one tile by COG range reads over the network (manual, never in CI), with a bounded retry (5 attempts, 500 ms × attempt backoff; the last failure names the tile and writes nothing). Same `--extent` and `--out` rules | `data/terrain/plates/<id>/dem-10m.png` and `source.json` (EPSG:3035) |
+| `terrain:fetch:overview` (`terrain/fetch-overview.mjs`) | Copernicus GLO-90: the listed tiles over the network (manual, never in CI), a bounded retry per tile | `data/terrain/overview/dem.png` and `source.json` (with the verbatim GLO-90 notice) |
+| `terrain:build` (`terrain/build-terrain.mjs`) | the plate registry `data/terrain/plates.json`, every plate's committed source (`source.json` and DEM), `data/regions/regions.json` (the overview outlines), the overview source `data/terrain/overview/` and its parameters `data/terrain/overview.json` | `public/terrain/*`, `data/generated/terrain.ts` and `data/generated/precache.json` (the home plate; the URLs the service worker precaches), `data/generated/plates.ts` (every plate's 2D sheet), `data/generated/home-plate.ts` (the home plate's sheet, the footer's client-safe input) and `data/generated/overview.ts` (server-only: the overview contour URL, region outlines, summits and the GLO-90 notice) |
 | `tokens:build` (`tokens/build-tokens.mjs`) | `app/globals.css` | `data/generated/tokens.ts` (the shader colour tokens) |
 
 Nothing image-related runs at build time: there is no `prebuild` step, so a Vercel build needs neither the originals nor full-resolution copies (D-11).
 
+A coarse photo's sidecar `groundM` comes from its region's plate, so `photos:exif -- --check` with the originals present reports that photo stale after the plate source changes, until `photos:exif` runs again. `terrain:build` reads `data/regions/regions.json` for the overview outlines, so editing it leaves `terrain:build -- --check` stale until `terrain:build` runs again; a region whose plate is not registered fails.
+
 **After adding or editing a photo:**
 
 ```bash
-# 1. Put the original (an sRGB JPEG) in assets/photos-original/
+# 1. Put the original (an sRGB JPEG) in assets/photos-original/ and give it a record
+#    (region, country, precision, kind) in data/photos/photo-map.json
 npm run photos:exif     # refresh the sidecar (sha256, EXIF facts)
 npm run photos:derive   # hashed AVIF/WebP at 640/1024/1600/2560 + one 1200 JPEG, image manifest
 npm run photos:build    # typed photo facts (data/generated/photos.ts) from the sidecar and corrections
