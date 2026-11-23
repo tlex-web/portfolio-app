@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import PhotoViewer from '@/components/photos/PhotoViewer';
-import { photoBySlug, photoMetadata, photoSlugs, photoViews } from '@/lib/photos/view-model';
+import { photoBySlug, photoMetadata, publishedSlugs, viewerPhotos } from '@/lib/photos/view-model';
 
 /**
  * The full photo page (LBOX-01 direct load; D-08; 10-UI-SPEC "Photo Viewer",
@@ -8,10 +8,13 @@ import { photoBySlug, photoMetadata, photoSlugs, photoViews } from '@/lib/photos
  * lightbox, inside the site shell: SiteNav above, SiteFooter below, the title
  * as the h1 and an "All photographs" link back to /photos. No dialog.
  *
- * Only the four locked slugs exist (08 D-07): generateStaticParams lists them,
- * turning dynamicParams off makes every other slug a 404, and notFound()
- * guards the exact, case-sensitive match (T-10-01). The slug is never echoed
- * into the page before it matches a known view.
+ * Only the published slugs exist (17 D-07, PHOTO-05: every photo with
+ * editorial copy): generateStaticParams lists them, turning dynamicParams off
+ * makes every other slug a 404, and notFound() guards the exact,
+ * case-sensitive match (T-10-01). The slug is never echoed into the page
+ * before it matches a known view. The viewer steps through viewerPhotos(view):
+ * the four light-table photos for a v2.0 photo, the photo alone otherwise
+ * (17 D-08).
  *
  * generateMetadata reads photoMetadata(slug), the function the intercepted
  * lightbox route exports too, so both surfaces carry '{title} · Tim Lui'.
@@ -23,7 +26,7 @@ type PageProps = { params: Promise<{ slug: string }> };
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return photoSlugs.map((slug) => ({ slug }));
+  return publishedSlugs.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: PageProps) {
@@ -36,5 +39,5 @@ export default async function PhotoPage({ params }: PageProps) {
   const view = photoBySlug(slug);
   if (!view) notFound();
 
-  return <PhotoViewer variant="page" photos={photoViews} initialSlug={view.slug} />;
+  return <PhotoViewer variant="page" photos={viewerPhotos(view)} initialSlug={view.slug} />;
 }

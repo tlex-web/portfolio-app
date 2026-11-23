@@ -376,8 +376,9 @@ export function seriesInput(region: string): PhotoViewInput {
  * The v2.0 light table as a buildPhotoViews input (D-15): the generated photos
  * whose id is in `ids`, in generated order, with the committed editorial copy
  * and image manifest. buildWaypoints still owns the order. Any other photo,
- * in Zermatt or elsewhere, stays off the light table, the photo pages, the
- * sitemap and the saved-pages catalog until Phase 17 (PHOTO-05).
+ * in Zermatt or elsewhere, stays off the light table and the four's stepping
+ * set; since 17-05 it has its own photo page through publishedViews (D-07,
+ * PHOTO-05). Phase 18 replaces the light table with region plates.
  *
  * @param ids the light-table photo ids; defaults to lightTableIds (the
  *   parameter exists for tests).
@@ -444,15 +445,56 @@ export function buildPhotoViews(input: PhotoViewInput = lightTableInput()): read
   });
 }
 
-/** The light table (lightTableIds, D-15) as views, built once per module load. */
+/**
+ * The light table (lightTableIds, D-15) as views, built once per module load.
+ * It drives only the /photos light table and the four v2.0 photos' stepping
+ * set (16 D-15, 17 D-07); the route set is publishedViews. Phase 18 retires
+ * the light table and renames this.
+ */
 export const photoViews: readonly PhotoView[] = buildPhotoViews();
 
-/** The four locked slugs in canonical order (08 D-07); generateStaticParams reads these. */
+/** The four light-table slugs in canonical order (08 D-07); the /photos light table reads these. */
 export const photoSlugs: readonly string[] = photoViews.map((v) => v.slug);
 
-/** The view for an exact, case-sensitive slug, or undefined (the routes then call notFound()). */
+/**
+ * Every published photo as a view (D-07, PHOTO-05): every generated photo,
+ * each with its editorial copy and image manifest entry, built once per module
+ * load in buildWaypoints' order (DEM height ascending, ties broken by id).
+ * This is the route set: the photo pages' static params, the proxy's known
+ * slugs (photoRouteSlugs in lib/photos/routes.ts holds the same set) and the
+ * per-photo OG card. Never feed it to the four's viewer: prevSlug and nextSlug
+ * here cross regions and would break their 'n / 4' (17-RESEARCH Anti-Patterns).
+ */
+export const publishedViews: readonly PhotoView[] = buildPhotoViews({
+  photos,
+  editorial,
+  imageManifest,
+});
+
+/** The published slugs in canonical order; generateStaticParams reads these. */
+export const publishedSlugs: readonly string[] = publishedViews.map((v) => v.slug);
+
+/** The light-table slugs as a set, for viewerPhotos. */
+const lightTableSlugs: ReadonlySet<string> = new Set(photoSlugs);
+
+/**
+ * The view for an exact, case-sensitive slug, or undefined (the routes then
+ * call notFound()). A light-table photo gets its light-table view, whose k, n,
+ * prevSlug and nextSlug are among the four, so the v2.0 pages and OG cards stay
+ * as they were (17 D-07); every other photo gets its published view.
+ */
 export function photoBySlug(slug: string): PhotoView | undefined {
-  return photoViews.find((v) => v.slug === slug);
+  return photoViews.find((v) => v.slug === slug) ?? publishedViews.find((v) => v.slug === slug);
+}
+
+/**
+ * The photos a viewer steps through for `view` (17 D-08): the four light-table
+ * views for a v2.0 photo, otherwise the photo alone with no neighbours. The
+ * full page and the intercepted lightbox both pass this to PhotoViewer.
+ */
+export function viewerPhotos(view: PhotoView): readonly PhotoView[] {
+  if (lightTableSlugs.has(view.slug)) return photoViews;
+  return [{ ...view, prevSlug: null, nextSlug: null }];
 }
 
 /**
