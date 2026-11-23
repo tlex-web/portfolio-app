@@ -74,6 +74,11 @@ export default defineConfig([
               name: 'sharp',
               message: 'Build-time only: import generator libraries from scripts/** (DATA-01).',
             },
+            {
+              // WGS84 <-> EPSG:3035 for BEV plates (16 D-09); scripts only.
+              name: 'proj4',
+              message: 'Build-time only: import generator libraries from scripts/** (DATA-01).',
+            },
           ],
           patterns: BANNED_PATTERNS,
         },

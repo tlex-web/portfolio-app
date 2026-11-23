@@ -110,6 +110,7 @@
     "jest-mock": "30.5.2",
     "postcss": "^8.5.32",
     "prettier": "^3.9.10",
+    "proj4": "2.22.0",
     "sharp": "^0.35.5",
     "simplify-js": "1.2.4",
     "tailwindcss": "^4.3.4",
@@ -117,6 +118,7 @@
   },
   "overrides": {
     "fflate@^0.8.0": "0.8.3",
-    "fflate@^0.6.0": "0.6.11"
+    "fflate@^0.6.0": "0.6.11",
+    "wkt-parser@^1.5.5": "1.5.6"
   }
 }

@@ -1363,6 +1363,21 @@ function geoBatch(fn, args) {
   return JSON.parse(r.stdout);
 }
 const geo = (fn, arg) => geoBatch(fn, [arg])[0];
+
+// 16-09 (D-09): the plate grid dispatch in scripts/photos/plate-dem.mjs, which
+// imports lib/geo.ts (EPSG:2056) and proj4 (EPSG:3035).
+const PLATE_DEM_URL = pathToFileURL(path.join(repoRoot, 'scripts', 'photos', 'plate-dem.mjs')).href;
+/** `fn` ('toGrid' or 'fromGrid') of plate-dem.mjs on `crs` for each of `args`, in a child node like geoBatch. */
+function plateGridBatch(fn, crs, args) {
+  const code = `const m = await import(${JSON.stringify(PLATE_DEM_URL)}); let s = ''; for await (const c of process.stdin) s += c; process.stdout.write(JSON.stringify(JSON.parse(s).map((a) => m[${JSON.stringify(fn)}](${JSON.stringify(crs)}, a))));`;
+  const r = spawnSync(process.execPath, [...PHOTO_NODE_ARGS, '--input-type=module', '-e', code], { encoding: 'utf-8', input: JSON.stringify(args) });
+  if (r.status !== 0) throw new Error(`selftest: plate-dem.mjs ${fn} ${crs} failed: ${r.error?.message ?? r.stderr}`);
+  return JSON.parse(r.stdout);
+}
+/** Euclidean distance in metres between two grid points { e, n }. */
+const gridDistance = (a, b) => Math.hypot(a.e - b.e, a.n - b.n);
+/** The Saalfelden default plate (RESEARCH Option A), EPSG:3035. */
+const SAALFELDEN_LAEA = { west: 4529000, south: 2701000, east: 4541000, north: 2713000 };
 /** Half-up rounding to `d` decimals, the extraction contract (16 D-01). */
 const roundDp = (v, d) => Math.round(v * 10 ** d) / 10 ** d;
 /** Half-up rounding to a multiple of `step` metres (16 D-03). */
@@ -3654,6 +3669,25 @@ const cases = [
       if (same) return same;
       const r = spawnSync(process.execPath, [...PHOTO_NODE_ARGS, TERRAIN_BUILD, '--check', '--root', terrainDropWriteRoot], { encoding: 'utf-8' });
       return r.status === 0 ? null : `--check after the sweep exited ${r.status}: ${`${r.stdout ?? ''}${r.stderr ?? ''}`.trim()}`;
+    },
+  },
+  {
+    name: 'geo: EPSG:3035 maps its centre to its false origin and round-trips the Saalfelden corners',
+    fn: () => {
+      // lat_0 52, lon_0 10 is the LAEA projection centre; x_0 / y_0 its false origin.
+      const [centre] = plateGridBatch('toGrid', 'EPSG:3035', [{ lat: 52, lon: 10 }]);
+      const off = gridDistance(centre, { e: 4321000, n: 3210000 });
+      if (!(off <= 0.001)) return `the centre maps ${off.toFixed(4)} m from the false origin (limit 0.001 m)`;
+      const x = SAALFELDEN_LAEA;
+      const corners = [
+        { e: x.west, n: x.south },
+        { e: x.east, n: x.south },
+        { e: x.east, n: x.north },
+        { e: x.west, n: x.north },
+      ];
+      const back = plateGridBatch('toGrid', 'EPSG:3035', plateGridBatch('fromGrid', 'EPSG:3035', corners));
+      const worst = Math.max(...corners.map((c, i) => gridDistance(c, back[i])));
+      return worst <= 0.001 ? null : `a Saalfelden corner round-trips ${worst.toFixed(4)} m off (limit 0.001 m)`;
     },
   },
   {
