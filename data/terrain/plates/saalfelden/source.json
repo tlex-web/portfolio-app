@@ -1,0 +1,33 @@
+{
+  "product": "BEV ALS DTM",
+  "tiles": [
+    {
+      "url": "https://data.bev.gv.at/download/ALS/DTM/20250915/ALS_DTM_CRS3035RES50000mN2700000E4500000.tif",
+      "contentLength": 4449243099,
+      "lastModified": "Wed, 02 Sep 2026 20:24:32 GMT"
+    }
+  ],
+  "doi": "10.48677/1d2d42c2-10dc-4be6-9917-8784d1cfe37c",
+  "metadataUrl": "https://data.bev.gv.at/geonetwork/srv/metadata/1d2d42c2-10dc-4be6-9917-8784d1cfe37c",
+  "edition": "2025-09",
+  "editionSource": "https://data.bev.gv.at/geonetwork/srv/metadata/1d2d42c2-10dc-4be6-9917-8784d1cfe37c (Stichtag 15.09.2025, a creation date)",
+  "crs": "EPSG:3035",
+  "heightSystem": "EVRF2000-AT",
+  "heightSystemEpsg": "EPSG:9274",
+  "resampling": "bilinear from overview level 3 (about 8 m) to 10 m cell centres",
+  "credit": "Terrain: ALS DTM, © BEV – Bundesamt für Eich- und Vermessungswesen, CC BY 4.0, modified (doi:10.48677/1d2d42c2-10dc-4be6-9917-8784d1cfe37c)",
+  "licence": "CC BY 4.0",
+  "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+  "extent": {
+    "west": 4529000,
+    "south": 2701000,
+    "east": 4541000,
+    "north": 2713000
+  },
+  "cellM": 10,
+  "width": 1200,
+  "height": 1200,
+  "heightScale": 0.1,
+  "file": "dem-10m.png",
+  "sha256": "67d390edede54366296fe3a615f6dfa90edb59ff5ed672eda43422ab373595b2"
+}

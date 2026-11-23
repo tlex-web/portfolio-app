@@ -13,6 +13,18 @@
         "hillshade": [1100, 640]
       },
       "strip": { "centreN": 1091673 }
+    },
+    {
+      "id": "saalfelden",
+      "prefix": "saalfelden-",
+      "source": "data/terrain/plates/saalfelden",
+      "home": false,
+      "threeD": false,
+      "outputs": {
+        "contours": ["hero", "strip"],
+        "hillshade": [1100, 640]
+      },
+      "strip": { "centreN": 2707000 }
     }
   ]
 }

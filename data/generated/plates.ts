@@ -64,5 +64,60 @@ export const plates = {
         "sourceSha256": "fa08701af6ed3724b825464b4088d50224e67ac7f8461cc287e9436ac2e99e7f"
       }
     }
+  },
+  "saalfelden": {
+    "id": "saalfelden",
+    "prefix": "saalfelden-",
+    "home": false,
+    "threeD": false,
+    "crs": "EPSG:3035",
+    "extent": {
+      "laea": {
+        "west": 4529000,
+        "south": 2701000,
+        "east": 4541000,
+        "north": 2713000
+      },
+      "widthM": 12000,
+      "heightM": 12000
+    },
+    "dem": {
+      "product": "BEV ALS DTM",
+      "edition": "2025-09",
+      "cellM": 10
+    },
+    "contours": {
+      "hero": {
+        "intervalM": 100,
+        "indexEvery": 5
+      },
+      "strip": {
+        "intervalM": 100,
+        "indexEvery": 5,
+        "laea": {
+          "west": 4529000,
+          "south": 2705800,
+          "east": 4541000,
+          "north": 2708200
+        }
+      }
+    },
+    "assets": {
+      "contours": {
+        "hero": "/terrain/saalfelden-contours-hero.f64fae21cc.svg",
+        "strip": "/terrain/saalfelden-contours-strip.aef86e0d3c.svg"
+      },
+      "hillshade": {
+        "avif": {
+          "640": "/terrain/saalfelden-hillshade-640.4b8382dc18.avif",
+          "1100": "/terrain/saalfelden-hillshade-1100.e330d140f5.avif"
+        },
+        "webp": {
+          "640": "/terrain/saalfelden-hillshade-640.efcaf47c79.webp",
+          "1100": "/terrain/saalfelden-hillshade-1100.c6c9b7134a.webp"
+        },
+        "sourceSha256": "67d390edede54366296fe3a615f6dfa90edb59ff5ed672eda43422ab373595b2"
+      }
+    }
   }
 } as const;

@@ -942,6 +942,23 @@ const PHOTO_DATA = path.join(repoRoot, 'scripts', 'photos', 'build-photo-data.mj
 /** The flag the npm photo scripts pass: the .ts schema imports otherwise warn on stderr. */
 const PHOTO_NODE_ARGS = ['--disable-warning=MODULE_TYPELESS_PACKAGE_JSON'];
 /**
+ * The committed source of every plate the repository's data/terrain/plates.json
+ * registers: each plate's `<source>/source.json` and the `<source>/<file>` that
+ * record names, as forward-slash repo-relative paths in registry order. Reads the
+ * repository's registry, never a temp copy, so fixture plates a temp root adds
+ * after the copy are not listed (16-12).
+ */
+function plateSourceFiles() {
+  const registry = JSON.parse(fs.readFileSync(path.join(repoRoot, 'data/terrain/plates.json'), 'utf-8'));
+  return registry.plates.flatMap((plate) => {
+    const dir = plate.source.replace(/\\/g, '/').replace(/\/+$/, '');
+    const record = JSON.parse(fs.readFileSync(path.join(repoRoot, dir, 'source.json'), 'utf-8'));
+    return [`${dir}/source.json`, `${dir}/${record.file}`];
+  });
+}
+/** The plate ids the repository's data/terrain/plates.json registers. */
+const repoPlateIds = () => JSON.parse(fs.readFileSync(path.join(repoRoot, 'data/terrain/plates.json'), 'utf-8')).plates.map((p) => p.id);
+/**
  * Every input build-photo-data.mjs reads (sidecar, corrections, photo map, region
  * and plate registries, DEM source, the Home list) and the outputs --check compares.
  * The three registries joined in 15-06; without them the control case fails
@@ -1714,10 +1731,12 @@ async function coarseCase({ id, point, precision, d, step, radiusM, reasonPart }
 // scripts/terrain/: the plate registry through --root (DATA-11, 15-05 D-13)
 const TERRAIN_BUILD = path.join(repoRoot, 'scripts', 'terrain', 'build-terrain.mjs');
 const TERRAIN_PUBLIC = 'public/terrain';
-/** Every file a terrain build reads or compares, besides public/terrain/ (copied whole). */
+/**
+ * Every file a terrain build reads or compares, besides public/terrain/ (copied
+ * whole) and the plate sources: those follow data/terrain/plates.json through
+ * plateSourceFiles(), so a newly registered plate needs no edit here (16-12).
+ */
 const TERRAIN_INPUTS = [
-  'data/terrain/source/source.json',
-  'data/terrain/source/dem-10m.png',
   'data/terrain/plates.json',
   'data/generated/terrain.ts',
   'data/generated/precache.json',
@@ -1830,7 +1849,7 @@ async function tempTerrainRoot({ fixture = false, fixtureFirst = false, bevFixtu
     .readdirSync(path.join(repoRoot, TERRAIN_PUBLIC), { withFileTypes: true })
     .filter((d) => d.isFile())
     .map((d) => `${TERRAIN_PUBLIC}/${d.name}`);
-  for (const rel of [...TERRAIN_INPUTS, ...terrainFiles]) put(rel, fs.readFileSync(path.join(repoRoot, rel)));
+  for (const rel of [...TERRAIN_INPUTS, ...plateSourceFiles(), ...terrainFiles]) put(rel, fs.readFileSync(path.join(repoRoot, rel)));
   if (fixture) {
     const png = await fixtureDem();
     put(`${FIXTURE_PLATE.source}/dem-10m.png`, png);
@@ -1913,9 +1932,11 @@ function fixturePlateProblems(root, writeError, { plate = FIXTURE_PLATE, files =
   }
   if (added.some((f) => f.startsWith(`${plate.prefix}heightmap-`) || f.startsWith(`${plate.prefix}contours-map-`)))
     problems.push('a 2D plate got a heightmap or a map LOD (D-12)');
+  // The registry's plates plus the fixture this root registered: a fixed list would fail once a real plate joins (16-12).
   const ids = terrainPlateIds(root);
-  if (JSON.stringify([...ids].sort()) !== JSON.stringify([plate.id, 'matterhorn'].sort()))
-    problems.push(`plates.ts lists ${ids.join(', ') || 'nothing'}, expected ${plate.id} and matterhorn`);
+  const expected = [...repoPlateIds(), plate.id].sort();
+  if (JSON.stringify([...ids].sort()) !== JSON.stringify(expected))
+    problems.push(`plates.ts lists ${ids.join(', ') || 'nothing'}, expected ${expected.join(', ')}`);
   return problems.length ? problems.join('; ') : null;
 }
 const terrainFixtureRoot = await tempTerrainRoot({ fixture: true, fixtureFirst: true });
