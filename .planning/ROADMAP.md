@@ -326,6 +326,7 @@ Plans:
 **Plans**: TBD
 **Research**: Needed: spike the region path next to the `/photos/<slug>` intercepting route (the static-sibling case, for example `/photos/regions/<region>`) under webpack (dev) and Turbopack (build) in Next 16.4.5; how the proxy's two-segment 404 regex and `dynamicParams` treat the new path; region cards on the shared OG template; JSON-LD typing (schema-dts as a type-only devDependency) with a parse, `<`-escaping and precision test.
 **UI-SPEC**: Not needed. The region page here is a plain server-rendered page in the existing shell (heading, facts, links to its photos) whose job is to fix the route, the metadata and the structured data; Phase 18 designs it. If phases merge to `main` one at a time, region pages stay unlinked from navigation until Phase 18.
+**UI hint**: no
 **Inputs from Tim**: The region path, chosen after the spike.
 **Scope notes** (hand-overs from Phase 13):
   - 10 IN-03 (duplicated photo-path parsing and `isEditable`, with different behaviour): `LightboxDialog.tsx` keeps its own `PHOTO_PATH`/`slugOf` beside `lib/photos/stepping.ts` `slugFromPath`, and `isEditable` lives in both `PhotoViewer.tsx` and `ZoomStage.tsx`; unify them when the region routes change the parsing (13-LEDGER-TRIAGE.md #32).
