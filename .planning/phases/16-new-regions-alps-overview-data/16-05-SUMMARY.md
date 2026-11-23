@@ -168,7 +168,7 @@ completed: 2026-11-23
 - Full Jest: 114 suites, 1,933/1,933 passed
 - `npm run lint` (eslint, every guard, the selftest and data:check): exit 0
 - `npm run type-check`: exit 0
-- Acceptance greps: homePhotoFacts in home-photos.ts 1, home-waypoints in build-photo-data.mjs 4, home-waypoints in selftest.mjs 2, pathToFileURL in build-photo-data.mjs 2, FORBIDDEN_IN_CLIENT_GRAPH in client-graph.test.ts 3
+- Acceptance greps: homePhotoFacts in home-photos.ts 1, home-waypoints in build-photo-data.mjs 4, home-waypoints in selftest.mjs 2, pathToFileURL in build-photo-data.mjs 2, FORBIDDEN_IN_CLIENT_GRAPH in client-graph.test.ts 2
 
 ## Issues Encountered
 

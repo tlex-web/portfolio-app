@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 16
 current_phase_name: New Regions & Alps Overview Data
 status: executing
-stopped_at: Completed 16-04-PLAN.md
-last_updated: "2026-11-23T01:19:47.561Z"
+stopped_at: Completed 16-05-PLAN.md
+last_updated: "2026-11-23T01:30:26.522Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 16 execution started
-state_head: 5c5298b8656f3e0589f1a91feca3050e8a39840b
+state_head: 84290c6093d2288bb173bed0015f07a8aa82b5d6
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 64
-  completed_plans: 50
+  completed_plans: 51
   percent: 43
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-15)
 ## Current Position
 
 Phase: 16 (New Regions & Alps Overview Data) — EXECUTING
-Plan: 5 of 18
+Plan: 6 of 18
 Status: Ready to execute
 Last activity: 2026-11-23 — Phase 16 execution started
 
@@ -106,6 +106,7 @@ Progress: [████░░░░░░] 43%
 | Phase 16 P02 | 21min | 3 tasks | 1 files |
 | Phase 16 P03 | 4 min | 2 tasks | 5 files |
 | Phase 16 P04 | 6min | 3 tasks | 6 files |
+| Phase 16 P05 | 8min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -240,6 +241,8 @@ Recent decisions affecting current work:
 - [Phase 16]: 16-03: light-table membership is the explicit lightTableIds list (data/light-table.ts); LIGHT_TABLE_REGION stays as a tested check and seriesInput is unchanged for Phases 17-18
 - [Phase 16]: 16-04: each carried 15 info finding has its own commit (IN-04 7d5acb8, IN-03 6874684, IN-08 0a4274c, IN-07 1197c8d) for 16-18's disposition write-back
 - [Phase 16]: 16-04: @not-chromium drops a cross-engine e2e row from the chromium project in both modes when a @chromium-only row already covers it
+- [Phase 16]: 16-05: photos:build writes data/generated/home-photos.ts (homePhotoFacts) from data/home-waypoints.ts read under --root; homePhotos() reads it, so the global-error footer chunk no longer imports the full photo set; privacy selftest roots carry an empty Home list
+- [Phase 16]: 16-05: lib/__tests__/client-graph.test.ts walks static value imports from app/global-error.tsx; FORBIDDEN_IN_CLIENT_GRAPH (photos.ts, image-manifest.ts) fails naming the chain. Client JS 1,851,814 B (budget 1,855,668 B)
 
 ### Pending Todos
 
@@ -299,6 +302,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-23T01:19:46.970Z
-Stopped at: Completed 16-04-PLAN.md
+Last session: 2026-11-23T01:30:25.974Z
+Stopped at: Completed 16-05-PLAN.md
 Resume file: None
