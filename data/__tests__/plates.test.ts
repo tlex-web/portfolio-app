@@ -249,6 +249,12 @@ describe('per-plate asset budget (PLATE_BUDGET, research §2.4)', () => {
   const bytes = (url: string) => fs.statSync(path.join(ROOT, 'public', url)).size;
   const sheets = Object.entries(PlatesMeta.parse(plates));
 
+  // 16 D-09: PlateSheet is a union on crs; the budget sees every plate's sheet,
+  // LV95 (EPSG:2056) and LAEA (EPSG:3035) alike.
+  test('the budget covers every registry plate, whatever its crs', () => {
+    expect(sheets).toHaveLength(registry.plates.length);
+  });
+
   test.each(sheets)('%s serves and fetches within its budget', (_id, sheet) => {
     const served = sheetUrls(sheet).reduce((sum, u) => sum + bytes(u), 0);
     const servedMax = sheet.threeD ? PLATE_BUDGET.servedMax3D : PLATE_BUDGET.servedMax2D;

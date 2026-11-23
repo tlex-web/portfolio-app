@@ -1375,6 +1375,13 @@ function plateGridBatch(fn, crs, args) {
   if (r.status !== 0) throw new Error(`selftest: plate-dem.mjs ${fn} ${crs} failed: ${r.error?.message ?? r.stderr}`);
   return JSON.parse(r.stdout);
 }
+/** `fn` of plate-dem.mjs applied to each argument list of `argLists` (spread), in a child node like geoBatch. */
+function plateDemBatch(fn, argLists) {
+  const code = `const m = await import(${JSON.stringify(PLATE_DEM_URL)}); let s = ''; for await (const c of process.stdin) s += c; process.stdout.write(JSON.stringify(JSON.parse(s).map((a) => m[${JSON.stringify(fn)}](...a))));`;
+  const r = spawnSync(process.execPath, [...PHOTO_NODE_ARGS, '--input-type=module', '-e', code], { encoding: 'utf-8', input: JSON.stringify(argLists) });
+  if (r.status !== 0) throw new Error(`selftest: plate-dem.mjs ${fn} failed: ${r.error?.message ?? r.stderr}`);
+  return JSON.parse(r.stdout);
+}
 /** Euclidean distance in metres between two grid points { e, n }. */
 const gridDistance = (a, b) => Math.hypot(a.e - b.e, a.n - b.n);
 /** The Ortler default plate, LV95 (EPSG:2056). */
@@ -1521,6 +1528,39 @@ async function privacyDem() {
   // Pass the Uint16Array itself: a Buffer with raw depth 'ushort' corrupts silently (build-terrain.mjs encodeGrey16).
   return sharp(u16, { raw: { width: n, height: n, channels: 1 } }).toColourspace('grey16').png().toBuffer();
 }
+/** The privacy fixture's EPSG:3035 plate extent (16 D-09): 400 x 400 cells of 10 m, synthetic. */
+const PRIVACY_LAEA_EXTENT = { west: 4000000, south: 2000000, east: 4004000, north: 2004000 };
+/** The LAEA ramp: 1,000 m plus 1 m per 4 m east of the plate's west edge. */
+const laeaRampM = (e) => 1000 + (e - PRIVACY_LAEA_EXTENT.west) / 4;
+/**
+ * At every pixel centre (e = west + 10 x + 5) the ramp ends in half a decimetre
+ * (10,012.5 + 25 x dm), which the grey16 PNG stores rounded half-up, so the stored
+ * DEM is this constant above laeaRampM everywhere. A constant offset keeps the
+ * bilinear sample between centres exactly linear.
+ */
+const LAEA_RAMP_STORED_M = 0.05;
+/** The height the plate DEM holds (and a bilinear sample returns) at easting `e`. */
+const laeaDemM = (e) => laeaRampM(e) + LAEA_RAMP_STORED_M;
+/** The privacy fixture's EPSG:3035 plate (2D) and its region. */
+const PRIVACY_LAEA_PLATE = {
+  id: 'fixture-laea',
+  prefix: 'fixture-laea-',
+  source: 'data/terrain/plates/fixture-laea',
+  home: false,
+  threeD: false,
+  outputs: { contours: ['hero', 'strip'], hillshade: [1100, 640] },
+  strip: { centreN: 2002000 },
+};
+/** The 400 x 400 grey16 LAEA ramp DEM in decimetres (laeaRampM, stored half-up). */
+async function privacyLaeaDem() {
+  const n = 400;
+  const u16 = new Uint16Array(n * n);
+  for (let y = 0; y < n; y++) {
+    for (let x = 0; x < n; x++) u16[y * n + x] = Math.round(laeaRampM(PRIVACY_LAEA_EXTENT.west + 10 * x + 5) * 10);
+  }
+  // Pass the Uint16Array itself: a Buffer with raw depth 'ushort' corrupts silently (build-terrain.mjs encodeGrey16).
+  return sharp(u16, { raw: { width: n, height: n, channels: 1 } }).toColourspace('grey16').png().toBuffer();
+}
 const privacyTempRoots = [];
 /**
  * A temp root for both photo stages: the real region and plate registries and
@@ -1529,10 +1569,12 @@ const privacyTempRoots = [];
  * a photo map of only the synthetic records; and corrections giving each
  * synthetic id a film-scan medium and a year capture (so no camera EXIF is
  * needed), merged with `corrections[id]`. `records` maps an id to its photo-map
- * record plus `bytes`, the original. Nested one level down so the cleanup
- * loop's path.dirname removes the mkdtemp directory.
+ * record plus `bytes`, the original. With `laeaPlate`, also a region
+ * `fixture-laea` on the BEV-variant EPSG:3035 plate `fixture-laea` with the LAEA
+ * ramp DEM (16 D-09); the Home list stays empty either way. Nested one level down
+ * so the cleanup loop's path.dirname removes the mkdtemp directory.
  */
-async function tempPrivacyRoot({ records, corrections = {} }) {
+async function tempPrivacyRoot({ records, corrections = {}, laeaPlate = false }) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
   const root = path.join(dir, 'root');
   privacyTempRoots.push(root);
@@ -1544,10 +1586,17 @@ async function tempPrivacyRoot({ records, corrections = {} }) {
   for (const rel of ['data/terrain/source/source.json', 'data/terrain/source/dem-10m.png']) put(rel, fs.readFileSync(path.join(repoRoot, rel)));
   const regions = JSON.parse(fs.readFileSync(path.join(repoRoot, 'data/regions/regions.json'), 'utf-8'));
   addRegion(regions, { id: 'fixture', name: 'Fixture', plate: 'fixture' });
+  if (laeaPlate) addRegion(regions, { id: 'fixture-laea', name: 'Fixture LAEA', plate: PRIVACY_LAEA_PLATE.id });
   put('data/regions/regions.json', json(regions));
   const plates = JSON.parse(fs.readFileSync(path.join(repoRoot, 'data/terrain/plates.json'), 'utf-8'));
   plates.plates.push(PRIVACY_PLATE);
+  if (laeaPlate) plates.plates.push(PRIVACY_LAEA_PLATE);
   put('data/terrain/plates.json', json(plates));
+  if (laeaPlate) {
+    const laeaPng = await privacyLaeaDem();
+    put(`${PRIVACY_LAEA_PLATE.source}/dem-10m.png`, laeaPng);
+    put(`${PRIVACY_LAEA_PLATE.source}/source.json`, json(bevFixtureSource({ extent: PRIVACY_LAEA_EXTENT, width: 400, height: 400, png: laeaPng })));
+  }
   const png = await privacyDem();
   put(`${PRIVACY_PLATE.source}/dem-10m.png`, png);
   put(`${PRIVACY_PLATE.source}/source.json`, json({
@@ -1600,6 +1649,10 @@ function privacyRun(root, id) {
   const exif = run(PHOTO_EXIF);
   const build = exif.status === 0 ? run(PHOTO_DATA) : null;
   const text = (r) => (r ? `${r.stdout ?? ''}${r.stderr ?? ''}` : '');
+  return { exif, build, output: `${text(exif)}${text(build)}`, ...privacyWritten(root, id) };
+}
+/** The sidecar entry and generated fact of `id` written in `root` (null when absent). */
+function privacyWritten(root, id) {
   const sidecarPath = path.join(root, EXIF_SIDECAR_REL);
   const entry = fs.existsSync(sidecarPath) ? JSON.parse(fs.readFileSync(sidecarPath, 'utf-8')).photos.find((p) => p.id === id) ?? null : null;
   const factsPath = path.join(root, 'data/generated/photos.ts');
@@ -1608,7 +1661,7 @@ function privacyRun(root, id) {
     const m = /export const photos = ([\s\S]*) as const;\s*$/.exec(fs.readFileSync(factsPath, 'utf-8'));
     fact = m ? JSON.parse(m[1]).find((p) => p.id === id) ?? null : null;
   }
-  return { exif, build, output: `${text(exif)}${text(build)}`, entry, fact };
+  return { entry, fact };
 }
 /** Null when every [label, actual, expected] pair is equal (Object.is); else the first difference. */
 function firstDifference(pairs) {
@@ -3635,6 +3688,71 @@ const cases = [
       if (!output.includes('img-9107: position has more decimals than its precision 3dp')) return `the message lacks the precision rule: ${output.trim()}`;
       const leaked = leaks(output, [String(placed.lat), String(placed.lon)]);
       return leaked.length ? 'the output holds the hand-placed position' : null;
+    },
+  },
+  {
+    name: 'privacy: a photo on an EPSG:3035 plate gets its uv and height through proj4',
+    fn: async () => {
+      // Two synthetic photos inside the LAEA plate, placed through fromGrid('EPSG:3035'):
+      // a 4dp one (stage 2 projects and samples the rounded position) and a 3dp one
+      // (stage 1 samples the true spot; stage 2 projects the rounded position).
+      const x = PRIVACY_LAEA_EXTENT;
+      const [fine, coarse] = plateGridBatch('fromGrid', 'EPSG:3035', [
+        { e: 4001234.567, n: 2001789.123 },
+        { e: 4002345.678, n: 2002123.456 },
+      ]);
+      const fineJpeg = await gpsJpeg({ make: 'SELFTEST', lat: fine.lat, lon: fine.lon });
+      const coarseJpeg = await gpsJpeg({ make: 'SELFTEST', lat: coarse.lat, lon: coarse.lon, altM: 1500 });
+      const fineRounded = { lat: roundDp(fineJpeg.lat, 4), lon: roundDp(fineJpeg.lon, 4) };
+      const coarseRounded = { lat: roundDp(coarseJpeg.lat, 3), lon: roundDp(coarseJpeg.lon, 3) };
+      const [fineGrid, coarseTrueGrid, coarseGrid] = plateGridBatch('toGrid', 'EPSG:3035', [
+        fineRounded,
+        { lat: coarseJpeg.lat, lon: coarseJpeg.lon },
+        coarseRounded,
+      ]);
+      for (const g of [fineGrid, coarseTrueGrid, coarseGrid]) {
+        if (!insideExtent(g, { west: x.west + 10, south: x.south + 10, east: x.east - 10, north: x.north - 10 })) throw new Error('selftest: a fixture position leaves the LAEA plate; pick another point');
+      }
+      const fineHeight = laeaDemM(fineGrid.e);
+      clearOfBoundary(fineHeight, 1, 'the LAEA ramp height at the 4dp position');
+      const coarseGround = laeaDemM(coarseTrueGrid.e);
+      clearOfBoundary(coarseGround, 10, 'the LAEA ramp height at the 3dp true spot');
+      const [fineUv, coarseUv] = plateDemBatch('gridToUv', [
+        [fineGrid, x],
+        [coarseGrid, x],
+      ]).map(({ u, v }) => ({ u: roundDp(u, 4), v: roundDp(v, 4) }));
+      const root = await tempPrivacyRoot({
+        laeaPlate: true,
+        records: {
+          'img-9108': { file: 'IMG_9108.jpg', region: 'fixture-laea', country: 'AT', precision: '4dp', kind: 'ground', bytes: fineJpeg.bytes },
+          'img-9109': { file: 'IMG_9109.jpg', region: 'fixture-laea', country: 'AT', precision: '3dp', kind: 'ground', bytes: coarseJpeg.bytes },
+        },
+      });
+      const result = privacyRun(root, 'img-9108');
+      const failed = bothPassed(result);
+      if (failed) return failed;
+      const { entry: fineEntry, fact: fineFact } = result;
+      const { entry: coarseEntry, fact: coarseFact } = privacyWritten(root, 'img-9109');
+      if (!fineEntry?.gps || !fineFact?.uv || !coarseEntry?.gps || !coarseFact?.uv) return 'no sidecar GPS or no generated uv was written';
+      const leaked = leaks(result.output, [coarseJpeg.lat.toFixed(5), coarseJpeg.lon.toFixed(5)]);
+      if (leaked.length) return `an output line holds the 3dp true position at 5 decimals (${leaked.length} strings)`;
+      return firstDifference([
+        ['4dp sidecar lat', fineEntry.gps.lat, fineRounded.lat],
+        ['4dp sidecar lon', fineEntry.gps.lon, fineRounded.lon],
+        ['4dp groundM absent', Object.hasOwn(fineEntry.gps, 'groundM'), false],
+        ['4dp uv.u', fineFact.uv.u, fineUv.u],
+        ['4dp uv.v', fineFact.uv.v, fineUv.v],
+        ['4dp elevation.m', fineFact.elevation?.m, Math.round(fineHeight)],
+        ['4dp country', fineFact.country, 'AT'],
+        ['3dp sidecar lat', coarseEntry.gps.lat, coarseRounded.lat],
+        ['3dp sidecar lon', coarseEntry.gps.lon, coarseRounded.lon],
+        ['3dp sidecar altM', coarseEntry.gps.altM, null],
+        ['3dp sidecar groundM', coarseEntry.gps.groundM, roundStep(coarseGround, 10)],
+        ['3dp uv.u', coarseFact.uv.u, coarseUv.u],
+        ['3dp uv.v', coarseFact.uv.v, coarseUv.v],
+        ['3dp elevation.m', coarseFact.elevation?.m, coarseEntry.gps.groundM],
+        ['3dp position.approximate', coarseFact.position?.approximate, true],
+      ]);
     },
   },
   {
