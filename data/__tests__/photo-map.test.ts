@@ -55,9 +55,48 @@ describe('photo map and region registry: committed data', () => {
     expect(Regions.safeParse(readJson('data/regions/regions.json')).success).toBe(true);
   });
 
-  test('D-03: the registry holds only zermatt, named Zermatt, on plate matterhorn', () => {
-    expect(regions.regions.map((r) => r.id)).toEqual(['zermatt']);
-    expect(region('zermatt')).toEqual({ id: 'zermatt', name: 'Zermatt', plate: 'matterhorn' });
+  test('D-03, 16 D-08 / D-13: the registry holds saalfelden and zermatt, each with its country, plate and approved facts', () => {
+    // 16-14 rewrite in place (GUARD-03): the registry grew from zermatt alone to the
+    // two regions Tim approved in 16-08; zermatt keeps plate matterhorn (D-14).
+    expect(regions.regions.map((r) => r.id)).toEqual(['saalfelden', 'zermatt']);
+    expect(region('zermatt')).toEqual({
+      id: 'zermatt',
+      name: 'Zermatt',
+      country: 'CH',
+      plate: 'matterhorn',
+      facts: [
+        {
+          text: 'Zermatt lies at the head of the Matter Valley in the Swiss canton of Valais.',
+          source: 'https://en.wikipedia.org/wiki/Zermatt',
+        },
+        {
+          text: 'The town bans combustion-engine cars, apart from some emergency, municipal and permitted vehicles, and most visitors arrive by rack railway.',
+          source: 'https://en.wikipedia.org/wiki/Zermatt',
+        },
+      ],
+    });
+    expect(region('saalfelden')).toEqual({
+      id: 'saalfelden',
+      name: 'Saalfelden',
+      country: 'AT',
+      plate: 'saalfelden',
+      facts: [
+        {
+          text: 'Saalfelden am Steinernen Meer is a town in the Zell am See district of the Austrian state of Salzburg, in the historic Pinzgau region.',
+          source: 'https://en.wikipedia.org/wiki/Saalfelden',
+        },
+        {
+          text: "The Steinernes Meer, the karst plateau in the town's full name, is part of the Berchtesgaden Alps.",
+          source: 'https://en.wikipedia.org/wiki/Steinernes_Meer',
+        },
+      ],
+    });
+  });
+
+  test("16 D-08: every record's country is its region's country", () => {
+    for (const id of Object.keys(photoMap.photos)) {
+      expect(record(id).country).toBe(region(record(id).region).country);
+    }
   });
 
   test("D-01: the map's ids equal the sidecar's and each record's file is the sidecar entry's", () => {
@@ -156,9 +195,7 @@ describe('photo map and region registry: committed data', () => {
   };
 
   test("D-02: every 16-08 photo's record is exactly Tim's recorded file, region, country, precision and kind", () => {
-    const present = Object.keys(TIM_16_08).filter((id) => id in photoMap.photos);
-    expect(present.length).toBeGreaterThan(0);
-    for (const id of present) expect(record(id)).toEqual(TIM_16_08[id]);
+    for (const id of Object.keys(TIM_16_08)) expect(record(id)).toEqual(TIM_16_08[id]);
   });
 
   test("D-05: each generated photo's region and country equal its record's", () => {
@@ -231,7 +268,7 @@ describe('photo map and region registry: schema boundaries', () => {
   });
 
   test('Regions rejects unsorted ids', () => {
-    const saas = { id: 'saas', name: 'Saas', plate: 'matterhorn' };
+    const saas = { ...region('zermatt'), id: 'saas', name: 'Saas' };
     const zermatt = region('zermatt');
     expect(Regions.safeParse({ schemaVersion: 1, regions: [saas, zermatt] }).success).toBe(true);
     expect(Regions.safeParse({ schemaVersion: 1, regions: [zermatt, saas] }).success).toBe(false);

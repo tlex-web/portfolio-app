@@ -2,6 +2,58 @@
   "schemaVersion": 1,
   "photos": [
     {
+      "id": "dji-20260919-162232",
+      "file": "dji_fly_20260919_162232_0153_1789843115521_photo.jpg",
+      "sha256": "787fd80e15eb100292a1e48ae2adaa5734b31ac705526053c334f970b14673ac",
+      "width": 8192,
+      "height": 4608,
+      "orientation": null,
+      "space": "srgb",
+      "iccDescription": "sRGB IEC61966-2.1",
+      "make": "DJI",
+      "model": "FC9113",
+      "lens": "24.0 mm f/1.8",
+      "focalLengthMm": 8.67,
+      "fNumber": 1.8,
+      "exposureTimeS": 0.04,
+      "iso": 140,
+      "dateTimeOriginal": "2026-09-19T16:22:30",
+      "offsetTimeOriginal": "+02:00",
+      "gps": {
+        "lat": 47.44,
+        "lon": 12.859,
+        "altM": null,
+        "utc": null,
+        "groundM": 880
+      }
+    },
+    {
+      "id": "dji-20260919-163558",
+      "file": "dji_fly_20260919_163558_0163_1789843047771_photo.jpg",
+      "sha256": "0944b235cea6911e197858831965246b3b12705212be20e9c65fb668cb2b765b",
+      "width": 8192,
+      "height": 4608,
+      "orientation": null,
+      "space": "srgb",
+      "iccDescription": "sRGB IEC61966-2.1",
+      "make": "DJI",
+      "model": "FC9113",
+      "lens": "24.0 mm f/1.8",
+      "focalLengthMm": 8.67,
+      "fNumber": 1.8,
+      "exposureTimeS": 0.05,
+      "iso": 120,
+      "dateTimeOriginal": "2026-09-19T16:35:55",
+      "offsetTimeOriginal": "+02:00",
+      "gps": {
+        "lat": 47.439,
+        "lon": 12.858,
+        "altM": null,
+        "utc": null,
+        "groundM": 820
+      }
+    },
+    {
       "id": "img-0605",
       "file": "IMG_0605-Enhanced (2022_02_01 09_47_03 UTC).jpg",
       "sha256": "2b9eebcbd80422a135a6cd211750e3987072d538a7818d9256c29c9d3860fb11",
@@ -102,6 +154,31 @@
       }
     },
     {
+      "id": "img-0682",
+      "file": "IMG_0682.jpg",
+      "sha256": "c276ff428760f4789c8e416ec0a434f41b7be7f5065f014562c0ef89d04c88a2",
+      "width": 6240,
+      "height": 4160,
+      "orientation": null,
+      "space": "srgb",
+      "iccDescription": "sRGB IEC61966-2.1",
+      "make": "Canon",
+      "model": "Canon EOS 6D Mark II",
+      "lens": "EF24-105mm f/4L IS II USM",
+      "focalLengthMm": 105,
+      "fNumber": 5,
+      "exposureTimeS": 0.0025,
+      "iso": 100,
+      "dateTimeOriginal": "2021-09-07T13:39:23",
+      "offsetTimeOriginal": null,
+      "gps": {
+        "lat": 45.9747,
+        "lon": 7.698,
+        "altM": 2881.9,
+        "utc": "2021-09-07T11:39:22.988Z"
+      }
+    },
+    {
       "id": "r004-011",
       "file": "R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC).jpg",
       "sha256": "c89db1dab9d96caed67bf57f0e4e9ab92663564235da04998f295f03a0c7f0f1",
@@ -120,6 +197,31 @@
       "dateTimeOriginal": "2020-02-12T15:38:16",
       "offsetTimeOriginal": null,
       "gps": null
+    },
+    {
+      "id": "sam-20240910-143659",
+      "file": "20240910_143659.jpg",
+      "sha256": "17819a169996051ed36fb83bf9004e56f386e3f3277e229e42c051e4f01e1148",
+      "width": 16320,
+      "height": 7612,
+      "orientation": null,
+      "space": "srgb",
+      "iccDescription": "sRGB IEC61966-2.1",
+      "make": "samsung",
+      "model": "Galaxy S23 Ultra",
+      "lens": "Samsung Galaxy S23 Ultra Rear Wide Camera",
+      "focalLengthMm": 6.3,
+      "fNumber": 1.7,
+      "exposureTimeS": 0.0009090909090909091,
+      "iso": 10,
+      "dateTimeOriginal": "2024-09-10T14:36:59",
+      "offsetTimeOriginal": "+02:00",
+      "gps": {
+        "lat": 45.9715,
+        "lon": 7.7219,
+        "altM": 2997,
+        "utc": null
+      }
     }
   ]
 }

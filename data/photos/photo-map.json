@@ -1,6 +1,20 @@
 {
   "schemaVersion": 1,
   "photos": {
+    "dji-20260919-162232": {
+      "file": "dji_fly_20260919_162232_0153_1789843115521_photo.jpg",
+      "region": "saalfelden",
+      "country": "AT",
+      "precision": "3dp",
+      "kind": "aerial"
+    },
+    "dji-20260919-163558": {
+      "file": "dji_fly_20260919_163558_0163_1789843047771_photo.jpg",
+      "region": "saalfelden",
+      "country": "AT",
+      "precision": "3dp",
+      "kind": "aerial"
+    },
     "img-0605": {
       "file": "IMG_0605-Enhanced (2022_02_01 09_47_03 UTC).jpg",
       "region": "zermatt",
@@ -29,8 +43,22 @@
       "precision": "4dp",
       "kind": "ground"
     },
+    "img-0682": {
+      "file": "IMG_0682.jpg",
+      "region": "zermatt",
+      "country": "CH",
+      "precision": "4dp",
+      "kind": "ground"
+    },
     "r004-011": {
       "file": "R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC).jpg",
+      "region": "zermatt",
+      "country": "CH",
+      "precision": "4dp",
+      "kind": "ground"
+    },
+    "sam-20240910-143659": {
+      "file": "20240910_143659.jpg",
       "region": "zermatt",
       "country": "CH",
       "precision": "4dp",

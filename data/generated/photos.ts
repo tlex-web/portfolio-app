@@ -2,6 +2,94 @@
 // Typed photo facts (DATA-02..04, DATA-06).
 export const photos = [
   {
+    "id": "dji-20260919-162232",
+    "region": "saalfelden",
+    "country": "AT",
+    "kind": "aerial",
+    "medium": "digital",
+    "capture": {
+      "precision": "second",
+      "local": "2026-09-19T16:22:30",
+      "timeZone": "Europe/Zurich",
+      "offset": "+02:00",
+      "source": "exif"
+    },
+    "position": {
+      "lat": 47.44,
+      "lon": 12.859,
+      "precision": "3dp",
+      "source": "exif",
+      "approximate": true,
+      "reason": "Position rounded to about 100 m (3 decimals) for privacy",
+      "radiusM": 100
+    },
+    "uv": {
+      "u": 0.6453,
+      "v": 0.4918
+    },
+    "elevation": {
+      "source": "dem",
+      "m": 880
+    },
+    "exif": {
+      "camera": "FC9113",
+      "lens": "24.0 mm f/1.8",
+      "focalLengthMm": 8.67,
+      "fNumber": 1.8,
+      "exposureTimeS": 0.04,
+      "iso": 140
+    },
+    "tags": {
+      "year": "2026",
+      "season": "autumn"
+    },
+    "locationOverride": null
+  },
+  {
+    "id": "dji-20260919-163558",
+    "region": "saalfelden",
+    "country": "AT",
+    "kind": "aerial",
+    "medium": "digital",
+    "capture": {
+      "precision": "second",
+      "local": "2026-09-19T16:35:55",
+      "timeZone": "Europe/Zurich",
+      "offset": "+02:00",
+      "source": "exif"
+    },
+    "position": {
+      "lat": 47.439,
+      "lon": 12.858,
+      "precision": "3dp",
+      "source": "exif",
+      "approximate": true,
+      "reason": "Position rounded to about 100 m (3 decimals) for privacy",
+      "radiusM": 100
+    },
+    "uv": {
+      "u": 0.6393,
+      "v": 0.5013
+    },
+    "elevation": {
+      "source": "dem",
+      "m": 820
+    },
+    "exif": {
+      "camera": "FC9113",
+      "lens": "24.0 mm f/1.8",
+      "focalLengthMm": 8.67,
+      "fNumber": 1.8,
+      "exposureTimeS": 0.05,
+      "iso": 120
+    },
+    "tags": {
+      "year": "2026",
+      "season": "autumn"
+    },
+    "locationOverride": null
+  },
+  {
     "id": "img-0605",
     "region": "zermatt",
     "country": "CH",
@@ -174,6 +262,48 @@ export const photos = [
     "locationOverride": null
   },
   {
+    "id": "img-0682",
+    "region": "zermatt",
+    "country": "CH",
+    "kind": "ground",
+    "medium": "digital",
+    "capture": {
+      "precision": "second",
+      "local": "2021-09-07T13:39:23",
+      "timeZone": "Europe/Zurich",
+      "offset": "+02:00",
+      "source": "exif"
+    },
+    "position": {
+      "lat": 45.9747,
+      "lon": 7.698,
+      "precision": "4dp",
+      "source": "exif",
+      "approximate": false
+    },
+    "uv": {
+      "u": 0.3729,
+      "v": 0.6825
+    },
+    "elevation": {
+      "source": "dem",
+      "m": 2878
+    },
+    "exif": {
+      "camera": "Canon EOS 6D Mark II",
+      "lens": "EF24-105mm f/4L IS II USM",
+      "focalLengthMm": 105,
+      "fNumber": 5,
+      "exposureTimeS": 0.0025,
+      "iso": 100
+    },
+    "tags": {
+      "year": "2021",
+      "season": "autumn"
+    },
+    "locationOverride": null
+  },
+  {
     "id": "r004-011",
     "region": "zermatt",
     "country": "CH",
@@ -211,5 +341,47 @@ export const photos = [
       "reason": "Identified by Tim (D-02)",
       "source": "Tim"
     }
+  },
+  {
+    "id": "sam-20240910-143659",
+    "region": "zermatt",
+    "country": "CH",
+    "kind": "ground",
+    "medium": "digital",
+    "capture": {
+      "precision": "second",
+      "local": "2024-09-10T14:36:59",
+      "timeZone": "Europe/Zurich",
+      "offset": "+02:00",
+      "source": "exif"
+    },
+    "position": {
+      "lat": 45.9715,
+      "lon": 7.7219,
+      "precision": "4dp",
+      "source": "exif",
+      "approximate": false
+    },
+    "uv": {
+      "u": 0.5415,
+      "v": 0.7143
+    },
+    "elevation": {
+      "source": "dem",
+      "m": 2928
+    },
+    "exif": {
+      "camera": "Galaxy S23 Ultra",
+      "lens": "Samsung Galaxy S23 Ultra Rear Wide Camera",
+      "focalLengthMm": 6.3,
+      "fNumber": 1.7,
+      "exposureTimeS": 0.0009090909090909091,
+      "iso": 10
+    },
+    "tags": {
+      "year": "2024",
+      "season": "autumn"
+    },
+    "locationOverride": null
   }
 ] as const;

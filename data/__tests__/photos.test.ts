@@ -240,8 +240,17 @@ describe('derived tags (D-08)', () => {
     expect(photo('r004-011').tags).toEqual({ year: '2019', season: null });
   });
 
-  test("no photo carries the old hand-typed '2024' tag", () => {
-    for (const p of photos) expect(p.tags.year).not.toBe('2024');
+  test("no v2.0 photo carries the old hand-typed '2024' tag; every year tag is its capture year", () => {
+    // 16-14 rewrite in place (GUARD-03): sam-20240910-143659 was taken in 2024, so
+    // the old-tag check covers the four v2.0 photos it was written for, and every
+    // photo's year tag must be derived from its capture (D-08).
+    for (const id of ['img-0605', 'img-0629', 'img-0662', 'r004-011']) {
+      expect(photo(id).tags.year).not.toBe('2024');
+    }
+    for (const p of photos) {
+      const c = p.capture;
+      expect(p.tags.year).toBe('local' in c ? c.local.slice(0, 4) : String(c.year));
+    }
   });
 });
 

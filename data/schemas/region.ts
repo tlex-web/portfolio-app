@@ -5,8 +5,8 @@
  * series (the photos it holds are named in data/photos/photo-map.json, D-01); a
  * plate is a terrain sheet (data/terrain/plates.json). They are separate on
  * purpose, so a later plate can serve a region while Home keeps its own plate.
- * The schema holds only the fields Phase 15 needs and is strict, so it grows
- * deliberately (Phase 16).
+ * The schema is strict, so it grows deliberately: Phase 15 gave it id, name and
+ * plate; 16-14 adds the country and the sourced facts Tim approved in 16-08.
  *
  * Imports only 'zod' on purpose (RESEARCH Pattern 1): Node 24 type-strips this
  * file when a scripts/*.mjs generator imports it, and Node cannot resolve `@/`
@@ -30,11 +30,38 @@ const PlateSlug = z
   .string()
   .regex(/^[a-z]+(-[a-z]+)*$/, 'plate id: lowercase words joined by single hyphens');
 
-/** One region: its id, display name and the plate its photos are sampled on (D-03, D-04). */
+/**
+ * The region's country: the same closed list as photo.ts's Country, duplicated
+ * like PlateSlug (schema files import only zod). A region spans one country (16
+ * D-08 / D-13).
+ */
+const RegionCountry = z.enum(['AT', 'CH', 'DE', 'FR', 'IT', 'LI', 'MC', 'SI']);
+
+/**
+ * One sourced region fact: the editorial Fact shape (data/schemas/editorial.ts),
+ * duplicated for the same reason. The source is an https URL that was read when
+ * the text was written, or 'Tim' (16-08: Tim approved each fact's text).
+ */
+export const RegionFact = z.strictObject({
+  text: z.string().min(1),
+  source: z.union([z.url({ protocol: /^https$/ }), z.literal('Tim')]),
+});
+export type RegionFact = z.infer<typeof RegionFact>;
+
+/**
+ * One region: its id, display name, country, the plate its photos are sampled on
+ * (D-03, D-04) and one to three short sourced facts (16 CONTEXT: a country and a
+ * short facts block, as data on the strict record).
+ */
 export const Region = z.strictObject({
   id: RegionId,
   name: z.string().min(1),
+  country: RegionCountry,
   plate: PlateSlug,
+  facts: z
+    .array(RegionFact)
+    .min(1, 'a region needs at least one fact')
+    .max(3, 'a region holds at most three facts'),
 });
 export type Region = z.infer<typeof Region>;
 

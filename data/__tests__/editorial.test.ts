@@ -67,7 +67,11 @@ describe('editorial copy (DATA-03, D-05, D-07)', () => {
       'img-0605': 'matterhorn-from-zermatt',
       'img-0629': 'gornerschlucht-waterfall',
       'img-0662': 'matterhorn-glacier-trail',
+      'dji-20260919-162232': 'castle-below-limestone-peaks',
+      'dji-20260919-163558': 'saalfelden-valley-from-the-air',
       'img-0680': 'mirrored-snow-peaks',
+      'img-0682': 'butterfly-on-a-thistle',
+      'sam-20240910-143659': 'matterhorn-wrapped-in-cloud',
       'r004-011': 'riffelsee-reflection',
     };
     expect(Object.fromEntries(ids.map((id) => [id, editorial[id].slug]))).toEqual(approved);

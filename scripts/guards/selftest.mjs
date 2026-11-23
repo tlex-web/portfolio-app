@@ -960,10 +960,14 @@ function plateSourceFiles() {
 const repoPlateIds = () => JSON.parse(fs.readFileSync(path.join(repoRoot, 'data/terrain/plates.json'), 'utf-8')).plates.map((p) => p.id);
 /**
  * Every input build-photo-data.mjs reads (sidecar, corrections, photo map, region
- * and plate registries, DEM source, the Home list) and the outputs --check compares.
- * The three registries joined in 15-06; without them the control case fails
- * (15-RESEARCH Pitfall 5). The Home list and the Home output joined in 16-05: a
- * copy holds the real Home list and its four real photos, so the Home-id check passes.
+ * and plate registries, the Home list) and the outputs --check compares, except
+ * the plate DEM sources: those follow data/terrain/plates.json through
+ * plateSourceFiles(), because photos:build loads the source of every plate a photo
+ * is sampled on (16-14: the Saalfelden stills need the saalfelden source, and a
+ * plate 16-16 registers is copied with no edit here). The three registries joined
+ * in 15-06; without them the control case fails (15-RESEARCH Pitfall 5). The Home
+ * list and the Home output joined in 16-05: a copy holds the real Home list and
+ * its four real photos, so the Home-id check passes.
  */
 const PHOTO_DATA_INPUTS = [
   'data/photos/exif-sidecar.json',
@@ -971,8 +975,6 @@ const PHOTO_DATA_INPUTS = [
   'data/photos/photo-map.json',
   'data/regions/regions.json',
   'data/terrain/plates.json',
-  'data/terrain/source/source.json',
-  'data/terrain/source/dem-10m.png',
   'data/home-waypoints.ts',
   'data/generated/photos.ts',
   'data/generated/home-photos.ts',
@@ -987,7 +989,7 @@ const PHOTO_DATA_INPUTS = [
 function tempPhotoDataRoot(edit) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
   const root = path.join(dir, 'root');
-  for (const rel of PHOTO_DATA_INPUTS) {
+  for (const rel of [...PHOTO_DATA_INPUTS, ...plateSourceFiles()]) {
     fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
     fs.copyFileSync(path.join(repoRoot, rel), path.join(root, rel));
   }
@@ -1040,6 +1042,11 @@ function addMapRecord(photoMap, id, record) {
   entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
   photoMap.photos = Object.fromEntries(entries);
 }
+/**
+ * A fixture region's country and facts: Region requires both since 16-14, and no
+ * selftest case is about them, so every fixture region carries the same valid pair.
+ */
+const FIXTURE_REGION = { country: 'CH', facts: [{ text: 'A selftest fixture region.', source: 'Tim' }] };
 /** Inserts a region at its sorted position, for the same reason. */
 function addRegion(regions, region) {
   if (regions.regions.some((r) => r.id === region.id)) throw new Error(`selftest: region ${region.id} already exists`);
@@ -1602,8 +1609,8 @@ async function tempPrivacyRoot({ records, corrections = {}, laeaPlate = false })
   const json = (value) => `${JSON.stringify(value, null, 2)}\n`;
   for (const rel of ['data/terrain/source/source.json', 'data/terrain/source/dem-10m.png']) put(rel, fs.readFileSync(path.join(repoRoot, rel)));
   const regions = JSON.parse(fs.readFileSync(path.join(repoRoot, 'data/regions/regions.json'), 'utf-8'));
-  addRegion(regions, { id: 'fixture', name: 'Fixture', plate: 'fixture' });
-  if (laeaPlate) addRegion(regions, { id: 'fixture-laea', name: 'Fixture LAEA', plate: PRIVACY_LAEA_PLATE.id });
+  addRegion(regions, { id: 'fixture', name: 'Fixture', ...FIXTURE_REGION, plate: 'fixture' });
+  if (laeaPlate) addRegion(regions, { id: 'fixture-laea', name: 'Fixture LAEA', ...FIXTURE_REGION, plate: PRIVACY_LAEA_PLATE.id });
   put('data/regions/regions.json', json(regions));
   const plates = JSON.parse(fs.readFileSync(path.join(repoRoot, 'data/terrain/plates.json'), 'utf-8'));
   plates.plates.push(PRIVACY_PLATE);
@@ -3537,7 +3544,7 @@ const cases = [
     setup: () => {
       photoMapMovedRoot = tempPhotoDataRoot(({ photoMap, regions }) => {
         // Sorted before zermatt; same plate, so only the region in photos.ts changes.
-        addRegion(regions, { id: 'saas', name: 'Saas', plate: 'matterhorn' });
+        addRegion(regions, { id: 'saas', name: 'Saas', ...FIXTURE_REGION, plate: 'matterhorn' });
         mapRecord(photoMap, 'img-0662').region = 'saas';
       });
       return ['--root', photoMapMovedRoot];

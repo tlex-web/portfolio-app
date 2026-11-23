@@ -12,6 +12,10 @@
  *
  * Copy and slugs decided by Tim at the 08-10 copy review; see 08-10-SUMMARY.md
  * The slugs become public URLs when Phase 10 ships /photos/[slug] (D-07).
+ * The five photos added in Phase 16 (img-0680, img-0682, sam-20240910-143659 and
+ * the two dji- stills) carry the copy Tim approved in 16-08 (16-08-SUMMARY.md,
+ * "Approved copy"), verbatim, with no annotations; they stay off the light table
+ * and get pages in Phase 17 (D-15).
  */
 import type { Editorial } from '@/data/schemas/editorial';
 import type { photos } from '@/data/generated/photos';
@@ -25,6 +29,26 @@ const WIKI_ZERMATT = 'https://en.wikipedia.org/wiki/Zermatt';
 const WIKI_RIFFELSEE = 'https://en.wikipedia.org/wiki/Riffelsee';
 
 export const editorial: Record<PhotoId, Editorial> = {
+  'dji-20260919-162232': {
+    slug: 'castle-below-limestone-peaks',
+    title: 'Castle below limestone peaks',
+    alt: 'From the air, a white-walled castle with grey roofs stands on a wooded hillside, with pale limestone peaks and a blue sky behind',
+    location: 'Saalfelden, Austria',
+    story:
+      'I flew the drone near Saalfelden in September 2026. The late-afternoon sun lit the castle walls and the limestone peaks above them.',
+    subjectTags: ['landscape', 'aerial', 'castle'],
+    annotations: [],
+  },
+  'dji-20260919-163558': {
+    slug: 'saalfelden-valley-from-the-air',
+    title: 'Saalfelden valley from the air',
+    alt: 'An aerial view across green meadows, woods and the houses of a valley town towards rounded, forested mountains under a blue sky with white cloud',
+    location: 'Saalfelden, Austria',
+    story:
+      'A quarter of an hour later I turned the drone towards the valley. Meadows and woods run down to the town, with the mountains on the far side.',
+    subjectTags: ['landscape', 'aerial', 'valley'],
+    annotations: [],
+  },
   'img-0605': {
     slug: 'matterhorn-from-zermatt',
     title: 'Matterhorn from Zermatt',
@@ -141,6 +165,16 @@ export const editorial: Record<PhotoId, Editorial> = {
     subjectTags: ['landscape', 'reflection', 'snow'],
     annotations: [],
   },
+  'img-0682': {
+    slug: 'butterfly-on-a-thistle',
+    title: 'Butterfly on an alpine thistle',
+    alt: 'An orange and black butterfly resting on a pale yellow, spiny thistle head, with grey stones out of focus behind',
+    location: 'Zermatt, Switzerland',
+    story:
+      'On the same walk, a butterfly stopped on a thistle among the stones. I zoomed in all the way and let the background go soft.',
+    subjectTags: ['nature', 'butterfly', 'thistle'],
+    annotations: [],
+  },
   'r004-011': {
     slug: 'riffelsee-reflection',
     title: 'Matterhorn in the Riffelsee',
@@ -182,5 +216,15 @@ export const editorial: Record<PhotoId, Editorial> = {
         },
       },
     ],
+  },
+  'sam-20240910-143659': {
+    slug: 'matterhorn-wrapped-in-cloud',
+    title: 'Matterhorn in a wisp of cloud',
+    alt: "The Matterhorn's snow-dusted rock pyramid against a clear blue sky, with puffs of white cloud clinging to its left flank and lower slopes",
+    location: 'Zermatt, Switzerland',
+    story:
+      "I took this with my phone in September 2024, three years after my first visit. Small clouds were forming against the mountain's flanks while the sky around it stayed clear.",
+    subjectTags: ['landscape', 'matterhorn', 'clouds'],
+    annotations: [],
   },
 };
