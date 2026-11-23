@@ -634,17 +634,19 @@ const toGrid = (crs, { lat, lon }) => {
 | A7 | The two `.next` chunks carrying photo and plate data are the global-error / error boundaries | Pattern 5 | The fix target could differ; the measurement after the fix is what counts |
 | A8 | ±100 m / ±1 km `radiusM` and the reason strings per level | Pattern 1 | Copy only; shown as "±100 m (approx.)" |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Ortler has no photo (blocking).**
+Every question below is resolved: Tim answered Q1, Q2 and Q5's height system at plan-phase on 2026-11-22 (16-CONTEXT D-27 to D-29), and the plans carry the rest as blocking checkpoints that run before the work they gate. Each item keeps its original text and ends with its resolution.
+
+1. **Ortler has no photo (blocking).** **RESOLVED by D-27** (Tim: "I'll add Ortler originals"): option (b). Ortler stays in Phase 16 with the summit-centred default plate; 16-16 Task 1 is the `checkpoint:human-action` where Tim copies GPS-tagged Ortler exports, and 16-16 Task 2 runs the booleans-only footprint check. `20210912_193833.jpg` (no GPS) is in no series.
    - Known: none of the six GPS-bearing new files is near Ortler. `20210912_193833.jpg` (Samsung S20, Sept 2021) has no GPS and no place hint.
    - Unclear: whether that photo was taken in Ortler/Stelvio.
    - Recommendation: a `checkpoint:decision` before planning any Ortler work. (a) Tim confirms it is Ortler and supplies a hand-placed approximate position (a `corrections.json` entry, `approximate`, `radiusM`, reason, plus its precision). (b) Tim adds Ortler originals. (c) Ortler is deferred, which amends DATA-13 and success criterion 2. Under (a) the Ortler plate above is a reasonable default.
-2. **Saalfelden plate: Option A or B.** A (recommended) is hole-free, adds no new code path, and leaves the S25 photo out. B keeps all three but needs nodata support and is close to the served budget.
-3. **Precision and kind per photo** (D-02 checkpoint before the first new sidecar write): 5 photos under A, or 6 with the Ortler photo; both DJI stills are `aerial`.
-4. **Ids for the new files.** Suggested: `img-0680`, `img-0682`, `sam-20240910-143659`, `sam-20260916-125705`, `sam-20210912-193833`, `dji-20260919-162232`, `dji-20260919-163558`. Date-time ids can't collide across flights the way DJI counters can. The id appears in derivative URLs, but the capture date is shown anyway.
-5. **BEV height system and credit:** store `EVRF2000-AT` (EPSG:9274) as BEV declares, or keep D-09's GHA; plus the credit wording.
-6. **Mont Blanc's official figure** and the summit refs.
+2. **Saalfelden plate: Option A or B.** A (recommended) is hole-free, adds no new code path, and leaves the S25 photo out. B keeps all three but needs nodata support and is close to the served budget. **RESOLVED by D-28** (Tim: "A: 12 km, no gaps (Recommended)"): Option A, built in 16-12; no nodata path; the S25 photo is in no series.
+3. **Precision and kind per photo** (D-02 checkpoint before the first new sidecar write): 5 photos under A, or 6 with the Ortler photo; both DJI stills are `aerial`. **RESOLVED as planned checkpoints:** the 16-08 Task 2 `checkpoint:decision` (the five non-Ortler photos) and the 16-17 Task 2 `checkpoint:decision` (the Ortler photos), each before the first commit that writes a sidecar entry for those photos.
+4. **Ids for the new files.** Suggested: `img-0680`, `img-0682`, `sam-20240910-143659`, `sam-20260916-125705`, `sam-20210912-193833`, `dji-20260919-162232`, `dji-20260919-163558`. Date-time ids can't collide across flights the way DJI counters can. The id appears in derivative URLs, but the capture date is shown anyway. **RESOLVED as planned checkpoints:** Tim picks each id at the same 16-08 Task 2 and 16-17 Task 2 stops; 16-08 Task 3 widens the photo id pattern to a general lowercase slug, so any slug he picks is valid.
+5. **BEV height system and credit:** store `EVRF2000-AT` (EPSG:9274) as BEV declares, or keep D-09's GHA; plus the credit wording. **RESOLVED:** the height system by D-29 (Tim: "EVRF2000-AT (Recommended)"), stored as `heightSystem` with its EPSG code in the BEV source record (16-10, 16-11); the credit wording at the 16-11 Task 2 `checkpoint:decision` (D-09), before the fetcher and the plate record fix it.
+6. **Mont Blanc's official figure** and the summit refs. **RESOLVED as a planned checkpoint:** the 16-02 Task 2 `checkpoint:decision`, where Tim fixes Mont Blanc's figure, Triglav yes or no and every summit height and officialRef before 16-13 writes `data/terrain/overview.json`.
 
 ## Environment Availability
 

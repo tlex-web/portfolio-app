@@ -256,7 +256,50 @@ Plans:
   2. More Zermatt photos and two new regions, Ortler (Italy, inside the swissALTIRegio footprint) and Saalfelden (Austria, outside it), are in the committed photo data with EXIF facts, DEM heights and metadata-free hashed derivatives from the existing pipeline. The served-image guard and `data:check` pass, and each region's footprint check is recorded (amended 2026-11-15, 16-CONTEXT D-06 to D-09).
   3. Each new region has its own local plate (contours and hillshade) from exactly one source: swissALTIRegio for Ortler (and for a Zermatt region plate if one is needed), BEV ALS DTM for Saalfelden. `terrain:build --check` stays deterministic, and the Matterhorn plate's hashed files and Home stay unchanged.
   4. A build-time Alps overview is generated from Copernicus GLO-90 contours, with each region's plate extent drawn as a rectangle and 3-5 labelled reference summits, within a size budget that a spike measured before it was fixed.
-**Plans**: TBD
+**Plans**: 18 plans in 12 waves
+
+Plans:
+**Wave 1**
+- [ ] 16-01-PLAN.md — Location privacy rules: required precision and kind, extraction-time rounding, true-spot ground height, aerial and DJI rules; phase-base client JS; originals staged (phase tracer, DATA-14)
+- [ ] 16-02-PLAN.md — Overview spike: GLO-90 contour variants measured and previewed, summits looked up, Tim fixes projection, variant, hillshade and budget (DATA-12)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 16-03-PLAN.md — D-15 light-table pin: lightTableIds for the light table, photo pages, sitemap, proxy and catalog
+- [ ] 16-04-PLAN.md — Carried findings 15 IN-03, IN-04, IN-07, IN-08
+- [ ] 16-05-PLAN.md — Footer client chunk: Home-only photo module and the client-graph test
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 16-06-PLAN.md — Coarse and aerial display: coordinates at their own precision, ground-height label (DATA-14)
+- [ ] 16-07-PLAN.md — Footer client chunk: home-plate module and sheet-prop terrain components
+- [ ] 16-08-PLAN.md — General photo id slug; Tim's per-photo precision, kind, id, region and country and the copy approval (checkpoint)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 16-09-PLAN.md — proj4 2.22.0 behind a legitimacy checkpoint; EPSG:3035 in the photo CRS dispatch
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 16-10-PLAN.md — BEV / EPSG:3035 source and sheet unions in the plate model and builder; IN-01, IN-05, IN-06
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 16-11-PLAN.md — Fetchers: terrain:fetch --plate and terrain:fetch:bev; Tim's BEV credit (checkpoint)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 16-12-PLAN.md — Saalfelden plate from BEV ALS DTM
+- [ ] 16-13-PLAN.md — Overview source: GLO-90 fetcher, committed grid with the verbatim notice, overview.json (DATA-12)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 16-14-PLAN.md — Ingest three Zermatt photos and the Saalfelden region with two aerial DJI stills (DATA-13)
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [ ] 16-15-PLAN.md — Alps overview build: contours, region outlines, summits, optional hillshade, server-only module (DATA-12)
+
+**Wave 10** *(blocked on Wave 9 completion)*
+- [ ] 16-16-PLAN.md — Ortler intake (Tim copies GPS-tagged exports) and the Ortler plate from swissALTIRegio
+
+**Wave 11** *(blocked on Wave 10 completion)*
+- [ ] 16-17-PLAN.md — Ortler photos and region: dry run, Tim's choices and copy (checkpoint), ingest, third overview outline
+
+**Wave 12** *(blocked on Wave 11 completion)*
+- [ ] 16-18-PLAN.md — README (IN-02), write-backs, A-15-12 accepted, full local gate, coordinate scan, ci/16-18 with Visual Regression PASS
 **Research**: Needed during planning:
   - The footprint check of the chosen photos against their plates: Ortler against swissALTIRegio (about 4.5-12.0° E), Saalfelden against BEV ALS DTM tiles, and whether any new Zermatt photo needs a Zermatt region plate (the Monte Rosa side). Record inside/outside per photo id, never a position (16-CONTEXT D-12).
   - The BEV path for Saalfelden: COG range reads, an EPSG:3035 plate type with its height system and edition, proj4 (scripts only) and the BEV credit wording confirmed on data.bev.gv.at.
