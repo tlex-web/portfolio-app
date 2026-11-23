@@ -113,6 +113,7 @@
     "postcss": "^8.5.32",
     "prettier": "^3.9.10",
     "proj4": "2.22.0",
+    "schema-dts": "2.1.0",
     "sharp": "^0.35.5",
     "simplify-js": "1.2.4",
     "tailwindcss": "^4.3.4",
