@@ -141,7 +141,7 @@ The `/photos` light table stays at the four v2.0 photos (16 D-15). Region pages 
   - `photos:build` stamps every capture `Europe/Zurich` (16 deferred-items, 16-14 and 16-17). Phase 17 publishes their pages, so the zone becomes per country: CH `Europe/Zurich`, IT `Europe/Rome`, AT `Europe/Vienna`.
   - The offsets are already right.
   - The four CH photos must stay byte-identical in every generated output.
-- **D-27: Standing CI approval for `ci/17-*` (Tim, 2026-11-23: "Standing approval, ci/17-* (Recommended)").**
+- **D-27: Standing CI approval for the ci/17 branches.** Covers `ci/17-*` (Tim, 2026-11-23: "Standing approval, ci/17-* (Recommended)").
   - **Covered:** plain pushes of new `ci/17-*` branches, fast-forward fix pushes, and reading their CI runs.
   - **Excluded:** force pushes, the phase branch, `main`, and PNG commits.
   - **No visual-baselines dispatch:** Phase 17 expects zero diffs, so on any diff, stop and ask.

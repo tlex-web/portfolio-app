@@ -323,7 +323,42 @@ Plans:
   3. Each region page has its own title, description, canonical URL, Open Graph card and sitemap entry, and the sitemap lists exactly the canonical URLs.
   4. Pages carry JSON-LD that parses: Person and WebSite site-wide, ImageObject on photo pages, an image gallery on region pages and the projects on their case studies, each with creator, copyright notice and credit text, no `license` property and no coordinates finer than the page shows.
   5. The offline page's saved-pages list includes the region pages and new photo pages a visitor has opened.
-**Plans**: TBD
+**Plans**: 16 plans in 7 waves
+
+Plans:
+**Wave 1**
+- [ ] 17-01-PLAN.md — Tracer: `/photos/regions/<id>` end to end (regionHref, proxy-only id list, server-only region model, stand-in page, null `@modal` slot page, proxy branch, D-01 e2e); Tim's D-14 copy checkpoint; approved copy pinned, the D-06 hand-built path scan and the region 404 rows
+- [ ] 17-02-PLAN.md — E2E Tests as an engine matrix (D-25) and the audit sweep timeout scaled by its route list
+- [ ] 17-03-PLAN.md — schema-dts 2.1.0 behind Tim's package checkpoint (D-21); the escaping serializer and site-wide Person + WebSite JSON-LD
+- [ ] 17-04-PLAN.md — Per-country capture time zones with Swiss outputs byte-identical (D-26); 16 IN-04
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 17-05-PLAN.md — Every photo published at `/photos/<slug>` (D-07, PHOTO-05) with the v2.0 four measured identical to the phase base
+- [ ] 17-08-PLAN.md — 16 IN-02, IN-08, IN-09 in the terrain fetchers (D-23)
+- [ ] 17-16-PLAN.md — Region guards split from 17-01: the D-03 collision test, the registry kept out of client chunks (D-06) and the tracer's client JS measured
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 17-06-PLAN.md — New photo pages: no stepping, back link and Escape to the region (D-08, D-09)
+- [ ] 17-07-PLAN.md — Tim's cover checkpoint (D-13) and the region Open Graph card on its own plate (D-12)
+- [ ] 17-09-PLAN.md — 16 IN-03, IN-05, IN-06, IN-07 (D-23)
+- [ ] 17-11-PLAN.md — Saved-pages catalog with region and photo pages (D-22, EDGE-03)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 17-10-PLAN.md — Regions and every photo in the sitemap; sitemap = canonicals; the grown audit sweep (D-15)
+- [ ] 17-12-PLAN.md — One photo-path parser and one isEditable (D-24, 13 IN-03)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 17-13-PLAN.md — 16 IN-01 as the D-19 rounding source; ImageObject JSON-LD on photo pages
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 17-14-PLAN.md — ImageGallery on region pages, project JSON-LD on case studies, the rendered @type contract
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 17-15-PLAN.md — Phase close: local gate, v2.0 identity, client JS, 16 IN write-back, `ci/17-15` push with per-leg E2E durations (D-27, D-25)
+
+**Cross-cutting constraints:** <!-- gsd:generated -->
+- Client JS after the plan is at most 1,855,781 B
+
 **Research**: Needed: spike the region path next to the `/photos/<slug>` intercepting route (the static-sibling case, for example `/photos/regions/<region>`) under webpack (dev) and Turbopack (build) in Next 16.4.5; how the proxy's two-segment 404 regex and `dynamicParams` treat the new path; region cards on the shared OG template; JSON-LD typing (schema-dts as a type-only devDependency) with a parse, `<`-escaping and precision test.
 **UI-SPEC**: Not needed. The region page here is a plain server-rendered page in the existing shell (heading, facts, links to its photos) whose job is to fix the route, the metadata and the structured data; Phase 18 designs it. If phases merge to `main` one at a time, region pages stay unlinked from navigation until Phase 18.
 **UI hint**: no
