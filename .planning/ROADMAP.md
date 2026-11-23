@@ -323,13 +323,13 @@ Plans:
   3. Each region page has its own title, description, canonical URL, Open Graph card and sitemap entry, and the sitemap lists exactly the canonical URLs.
   4. Pages carry JSON-LD that parses: Person and WebSite site-wide, ImageObject on photo pages, an image gallery on region pages and the projects on their case studies, each with creator, copyright notice and credit text, no `license` property and no coordinates finer than the page shows.
   5. The offline page's saved-pages list includes the region pages and new photo pages a visitor has opened.
-**Plans**: 2/16 plans executed in 7 waves
+**Plans**: 3/16 plans executed in 7 waves
 
 Plans:
 **Wave 1**
 - [x] 17-01-PLAN.md — Tracer: `/photos/regions/<id>` end to end (regionHref, proxy-only id list, server-only region model, stand-in page, null `@modal` slot page, proxy branch, D-01 e2e); Tim's D-14 copy checkpoint; approved copy pinned, the D-06 hand-built path scan and the region 404 rows
 - [x] 17-02-PLAN.md — E2E Tests as an engine matrix (D-25) and the audit sweep timeout scaled by its route list
-- [ ] 17-03-PLAN.md — schema-dts 2.1.0 behind Tim's package checkpoint (D-21); the escaping serializer and site-wide Person + WebSite JSON-LD
+- [x] 17-03-PLAN.md — schema-dts 2.1.0 behind Tim's package checkpoint (D-21); the escaping serializer and site-wide Person + WebSite JSON-LD
 - [ ] 17-04-PLAN.md — Per-country capture time zones with Swiss outputs byte-identical (D-26); 16 IN-04
 
 **Wave 2** *(blocked on Wave 1 completion)*
@@ -427,6 +427,6 @@ Plans:
 | 14. UI Fixes & Terminal Controls | v2.1 | 8/8 | Complete    | 2026-11-14 |
 | 15. Region & Plate Data Model | v2.1 | 16/16 | Complete    | 2026-11-15 |
 | 16. New Regions & Alps Overview Data | v2.1 | 18/18 | Complete    | 2026-11-23 |
-| 17. Region Routes, SEO & Structured Data | v2.1 | 2/16 | In Progress | - |
+| 17. Region Routes, SEO & Structured Data | v2.1 | 3/16 | In Progress | - |
 | 18. Immersive Survey Layout | v2.1 | 0/TBD | Not started | - |
 | 19. Drone Loops | v2.1 | 0/TBD | Not started | - |

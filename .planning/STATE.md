@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 17
 current_phase_name: Region Routes, SEO & Structured Data
 status: executing
-stopped_at: Completed 17-01-PLAN.md
-last_updated: "2026-11-23T22:16:37.427Z"
+stopped_at: Completed 17-03-PLAN.md
+last_updated: "2026-11-23T22:27:11.082Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 17 execution started
-state_head: 98815cc468add6dbd32bd91802634852c8002336
+state_head: c25a35f6041e8f20ca0dfa45484a4ee56260a510
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 80
-  completed_plans: 66
+  completed_plans: 67
   percent: 57
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-23)
 ## Current Position
 
 Phase: 17 (Region Routes, SEO & Structured Data) — EXECUTING
-Plan: 3 of 16
+Plan: 4 of 16
 Status: Ready to execute
 Last activity: 2026-11-23 — Phase 17 execution started
 
@@ -123,6 +123,7 @@ Progress: [██████░░░░] 57%
 | Phase 16 P18 | 47min | 3 tasks | 3 files |
 | Phase 17 P02 | 5 min | 2 tasks | 2 files |
 | Phase 17 P01 | 35min (Task 3 continuation) | 3 tasks | 13 files |
+| Phase 17 P03 | 7min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -291,6 +292,8 @@ Recent decisions affecting current work:
 - [Phase 17]: 17-01 D-14: Tim approved the region copy (country as full name, no 'approx.' in ranges); region OG alt adds 'ground' when every photo is aerial (data-driven rule)
 - [Phase 17]: 17-01 D-14: case-study copyrightNotice is option (a), the footer line exactly '© {current year} Tim Lui. All rights reserved.' (17-14 applies it)
 - [Phase 17]: 17-01 D-14: aerial photo descriptions approved as drafted ('{title}: an aerial photograph by Tim Lui over Saalfelden, ground {m} approx., Sep 2026.'); 17-05 applies them
+- [Phase 17]: 17-03: the site-wide JSON-LD meets D-16 through its WebSite node (creator, copyrightNotice = footer rights line, creditText site.name); the Person node carries none of the three (schema.org defines them on CreativeWork only), pinned per node in lib/__tests__/json-ld.test.ts
+- [Phase 17]: 17-03: schema-dts 2.1.0 (+ schema-dts-lib 1.1.0) pinned exact as a type-only devDependency after Tim's literal 'verified (Recommended)'; jsonLdHtml in lib/json-ld.ts is the one '<'-escaping serializer every later block (17-13, 17-14) uses
 
 ### Pending Todos
 
@@ -350,6 +353,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-23T22:16:36.327Z
-Stopped at: Completed 17-01-PLAN.md
+Last session: 2026-11-23T22:27:09.956Z
+Stopped at: Completed 17-03-PLAN.md
 Resume file: None
