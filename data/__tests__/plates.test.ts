@@ -204,6 +204,27 @@ describe('plates.ts (the generated 2D sheets)', () => {
     expect(entry('saalfelden').source).toBe('data/terrain/plates/saalfelden');
   });
 
+  // 16 D-07, D-27: Ortler is a swissALTIRegio plate on LV95, 2D only. The summit-centred
+  // default moved 2 km east on the 1 km grid so it holds both of Tim's Ortler photos (16-16).
+  test('the ortler sheet is a compact EPSG:2056 swissALTIRegio plate', () => {
+    const s = plates.ortler;
+    expect(s).toMatchObject({ id: 'ortler', prefix: 'ortler-', home: false, threeD: false });
+    expect(s.crs).toBe('EPSG:2056');
+    const box = { west: 2834000, south: 1150000, east: 2846000, north: 1162000 };
+    expect(s.extent.lv95).toEqual(box);
+    expect(Object.hasOwn(s.extent, 'laea')).toBe(false);
+    expect(s.extent.widthM).toBe(s.extent.heightM);
+    expect(s.extent.widthM).toBe(box.east - box.west);
+    expect(s.extent.widthM).toBeLessThanOrEqual(20000);
+    expect(s.dem).toEqual({ product: 'swissALTIRegio', edition: '2026-05', cellM: 10 });
+    expect(Object.hasOwn(s.assets, 'heightmap')).toBe(false);
+    expect(Object.keys(s.assets.contours).sort()).toEqual(['hero', 'strip']);
+    expect(Object.hasOwn(s.contours, 'map')).toBe(false);
+    expect(Object.hasOwn(s.contours.strip, 'lv95')).toBe(true);
+    expect(entry('ortler').source).toBe('data/terrain/plates/ortler');
+    expect(entry('ortler').strip.centreN).toBe((box.south + box.north) / 2);
+  });
+
   test('plates.ts has no import and no path data', () => {
     const text = readText('data/generated/plates.ts');
     expect(text).not.toMatch(/^\s*import /m);
