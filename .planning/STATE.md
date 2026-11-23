@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 17
 current_phase_name: Region Routes, SEO & Structured Data
 status: executing
-stopped_at: Completed 17-03-PLAN.md
-last_updated: "2026-11-23T22:27:11.082Z"
+stopped_at: Completed 17-04-PLAN.md
+last_updated: "2026-11-23T22:40:54.315Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 17 execution started
-state_head: c25a35f6041e8f20ca0dfa45484a4ee56260a510
+state_head: 972b1ec58e153b3437c6f86b7d7fd6f367717071
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 80
-  completed_plans: 67
+  completed_plans: 68
   percent: 57
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-23)
 ## Current Position
 
 Phase: 17 (Region Routes, SEO & Structured Data) — EXECUTING
-Plan: 4 of 16
+Plan: 5 of 16
 Status: Ready to execute
 Last activity: 2026-11-23 — Phase 17 execution started
 
@@ -124,6 +124,7 @@ Progress: [██████░░░░] 57%
 | Phase 17 P02 | 5 min | 2 tasks | 2 files |
 | Phase 17 P01 | 35min (Task 3 continuation) | 3 tasks | 13 files |
 | Phase 17 P03 | 7min | 3 tasks | 5 files |
+| Phase 17 P04 | 10min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -294,6 +295,8 @@ Recent decisions affecting current work:
 - [Phase 17]: 17-01 D-14: aerial photo descriptions approved as drafted ('{title}: an aerial photograph by Tim Lui over Saalfelden, ground {m} approx., Sep 2026.'); 17-05 applies them
 - [Phase 17]: 17-03: the site-wide JSON-LD meets D-16 through its WebSite node (creator, copyrightNotice = footer rights line, creditText site.name); the Person node carries none of the three (schema.org defines them on CreativeWork only), pinned per node in lib/__tests__/json-ld.test.ts
 - [Phase 17]: 17-03: schema-dts 2.1.0 (+ schema-dts-lib 1.1.0) pinned exact as a type-only devDependency after Tim's literal 'verified (Recommended)'; jsonLdHtml in lib/json-ld.ts is the one '<'-escaping serializer every later block (17-13, 17-14) uses
+- [Phase 17]: 17-04: D-26 capture zones come from ZONE_BY_COUNTRY in data/schemas/photo.ts (closed map over all eight Country values), keyed by the photo-map record's country; PhotoFacts refuses a capture whose zone is not its country's. Saalfelden reads Europe/Vienna, Ortler Europe/Rome; every CH output byte-identical
+- [Phase 17]: 17-04: the 16 IN-04 fix (loadHomeWaypointIds names the import cause) is commit fed9a67, for the 17-15 16-REVIEW-DISPOSITION write-back
 
 ### Pending Todos
 
@@ -353,6 +356,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-23T22:27:09.956Z
-Stopped at: Completed 17-03-PLAN.md
+Last session: 2026-11-23T22:40:53.200Z
+Stopped at: Completed 17-04-PLAN.md
 Resume file: None
