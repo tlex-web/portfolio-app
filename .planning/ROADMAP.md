@@ -256,7 +256,7 @@ Plans:
   2. More Zermatt photos and two new regions, Ortler (Italy, inside the swissALTIRegio footprint) and Saalfelden (Austria, outside it), are in the committed photo data with EXIF facts, DEM heights and metadata-free hashed derivatives from the existing pipeline. The served-image guard and `data:check` pass, and each region's footprint check is recorded (amended 2026-11-15, 16-CONTEXT D-06 to D-09).
   3. Each new region has its own local plate (contours and hillshade) from exactly one source: swissALTIRegio for Ortler (and for a Zermatt region plate if one is needed), BEV ALS DTM for Saalfelden. `terrain:build --check` stays deterministic, and the Matterhorn plate's hashed files and Home stay unchanged.
   4. A build-time Alps overview is generated from Copernicus GLO-90 contours, with each region's plate extent drawn as a rectangle and 3-5 labelled reference summits, within a size budget that a spike measured before it was fixed.
-**Plans**: 17/18 plans executed in 12 waves
+**Plans**: 18/18 plans executed in 12 waves
 
 Plans:
 **Wave 1**
@@ -299,7 +299,7 @@ Plans:
 - [x] 16-17-PLAN.md — Ortler photos and region: dry run, Tim's choices and copy (checkpoint), ingest, third overview outline
 
 **Wave 12** *(blocked on Wave 11 completion)*
-- [ ] 16-18-PLAN.md — README (IN-02), write-backs, A-15-12 accepted, full local gate, coordinate scan, ci/16-18 with Visual Regression PASS
+- [x] 16-18-PLAN.md — README (IN-02), write-backs, A-15-12 accepted, full local gate, coordinate scan, ci/16-18 with Visual Regression PASS
 **Research**: Needed during planning:
   - The footprint check of the chosen photos against their plates: Ortler against swissALTIRegio (about 4.5-12.0° E), Saalfelden against BEV ALS DTM tiles, and whether any new Zermatt photo needs a Zermatt region plate (the Monte Rosa side). Record inside/outside per photo id, never a position (16-CONTEXT D-12).
   - The BEV path for Saalfelden: COG range reads, an EPSG:3035 plate type with its height system and edition, proj4 (scripts only) and the BEV credit wording confirmed on data.bev.gv.at.
@@ -390,7 +390,7 @@ Plans:
 | 13. Repo Safety & Test Debt | v2.1 | 22/22 | Complete    | 2026-11-14 |
 | 14. UI Fixes & Terminal Controls | v2.1 | 8/8 | Complete    | 2026-11-14 |
 | 15. Region & Plate Data Model | v2.1 | 16/16 | Complete    | 2026-11-15 |
-| 16. New Regions & Alps Overview Data | v2.1 | 17/18 | In Progress | - |
+| 16. New Regions & Alps Overview Data | v2.1 | 18/18 | In Progress | - |
 | 17. Region Routes, SEO & Structured Data | v2.1 | 0/TBD | Not started | - |
 | 18. Immersive Survey Layout | v2.1 | 0/TBD | Not started | - |
 | 19. Drone Loops | v2.1 | 0/TBD | Not started | - |

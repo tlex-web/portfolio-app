@@ -35,9 +35,9 @@ Requirements for milestone v2.1 Survey Expansion. Each maps to exactly one roadm
 - [x] **DATA-09**: Adding photos or regions never changes Home: the ascent keeps its four Matterhorn waypoints, the 1,617 m rail start and its footer ticks, read from an explicit Home waypoint list
 - [x] **DATA-10**: Every photo belongs to an explicit region and records its country, in typed, committed data that CI checks for staleness
 - [x] **DATA-11**: The terrain build produces a local plate (contours and hillshade) for every region from swissALTIRegio, or from BEV ALS DTM for an Austrian region outside its footprint (one source per plate; amended 2026-11-15, Phase 16 D-09), stays deterministic under `terrain:build --check`, and keeps the Matterhorn plate's hashed files byte-identical
-- [ ] **DATA-12**: A build-time Alps overview map is generated from Copernicus GLO-90 contours, with each region's plate extent drawn as a rectangle and 3–5 labelled reference summits, within a size budget measured before it is fixed
-- [ ] **DATA-13**: New photos are published: more Zermatt photos and two new regions, Ortler (Italy, inside the swissALTIRegio footprint) and Saalfelden (Austria, outside it, on BEV ALS DTM), each with EXIF facts, DEM heights and metadata-free hashed derivatives through the existing pipeline (amended 2026-11-15, Phase 16 D-06 to D-09)
-- [ ] **DATA-14**: A photo or clip can carry a coarser location than the 4-decimal default (for example near a home or a drone take-off point), and a coarse or approximate position is flagged wherever it is shown
+- [x] **DATA-12**: A build-time Alps overview map is generated from Copernicus GLO-90 contours, with each region's plate extent drawn as a rectangle and 3–5 labelled reference summits, within a size budget measured before it is fixed
+- [x] **DATA-13**: New photos are published: more Zermatt photos and two new regions, Ortler (Italy, inside the swissALTIRegio footprint) and Saalfelden (Austria, outside it, on BEV ALS DTM), each with EXIF facts, DEM heights and metadata-free hashed derivatives through the existing pipeline (amended 2026-11-15, Phase 16 D-06 to D-09)
+- [x] **DATA-14**: A photo or clip can carry a coarser location than the 4-decimal default (for example near a home or a drone take-off point), and a coarse or approximate position is flagged wherever it is shown
 - [x] **DATA-15**: The served-asset guard rejects drone sidecars and telemetry anywhere in the repo or the site (`.SRT`, `.LRF`, GPX, KML, and GPS or telemetry tracks inside MP4 files), proven by selftest fixtures
 
 ### Region Series
@@ -135,9 +135,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DATA-09 | Phase 15 | Complete |
 | DATA-10 | Phase 15 | Complete |
 | DATA-11 | Phase 15 | Complete |
-| DATA-12 | Phase 16 | Pending |
-| DATA-13 | Phase 16 | Pending |
-| DATA-14 | Phase 16 | Pending |
+| DATA-12 | Phase 16 | Complete |
+| DATA-13 | Phase 16 | Complete |
+| DATA-14 | Phase 16 | Complete |
 | DATA-15 | Phase 15 | Complete |
 | REGION-01 | Phase 18 | Pending |
 | REGION-02 | Phase 18 | Pending |

@@ -4,17 +4,17 @@ milestone: v2.1
 milestone_name: Survey Expansion
 current_phase: 16
 current_phase_name: New Regions & Alps Overview Data
-status: executing
-stopped_at: Completed 16-17-PLAN.md
-last_updated: "2026-11-23T13:41:25.089Z"
+status: verifying
+stopped_at: Completed 16-18-PLAN.md
+last_updated: "2026-11-23T18:09:28.270Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 16 execution started
-state_head: eb4bb1b8c48d09a7dc2e1efea1dcce691a9cd484
+state_head: e96f26675448e276e91ebbbbb643ba0121a5aea9
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 64
-  completed_plans: 63
+  completed_plans: 64
   percent: 43
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-11-15)
 
 Phase: 16 (New Regions & Alps Overview Data) — EXECUTING
 Plan: 18 of 18
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-11-23 — Phase 16 execution started
 
 Progress: [████░░░░░░] 43%
@@ -119,6 +119,7 @@ Progress: [████░░░░░░] 43%
 | Phase 16 P15 | 17min | 3 tasks | 8 files |
 | Phase 16 P16 | 9min | 2 tasks | 11 files |
 | Phase 16 P17 | 14min | 3 tasks | 28 files |
+| Phase 16 P18 | 47min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -281,6 +282,7 @@ Recent decisions affecting current work:
 - [Phase 16]: 16-16: Tim's Task 1 reply 'copied'; the Ortler files are 20160717_120906-Topaz-Sharpen-Strong-Denoise-2.jpg and 20160717_124904-Topaz-Sharpen-Auto-Denoise-2.jpg (samsung SM-G930F, GPS yes, GPS altitude no); the no-GPS original was replaced by the -2 re-export
 - [Phase 16]: 16-17 (Tim): both Ortler photos at 3dp, ground, IT, region ortler (sam-20160717-120906, sam-20160717-124904)
 - [Phase 16]: 16-17 (Tim): Ortler location 'Ortler Alps, Italy'; one region fact (highest mountain in South Tyrol, main peak of the Ortler Alps); copy approved as drafted
+- [Phase 16]: 16-18: ci/16-18 holds the Task 1 tip e96f266; the SUMMARY/STATE/ROADMAP/REQUIREMENTS commit after it stays on the local phase branch — D-24 covers a new ci/16-* branch and fast-forward fix pushes, not docs pushes; CI verified the last commit that changes anything outside .planning/ (scripts/README.md)
 
 ### Pending Todos
 
@@ -341,6 +343,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-23T13:41:24.516Z
-Stopped at: Completed 16-17-PLAN.md
+Last session: 2026-11-23T18:09:27.540Z
+Stopped at: Completed 16-18-PLAN.md
 Resume file: None
