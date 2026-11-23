@@ -1,5 +1,6 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
-import { regionById, regionHeading, regions, regionTitle } from '@/lib/regions';
+import { regionById, regionHeading, regionOfPhoto, regions, regionTitle } from '@/lib/regions';
+import { photoSlugs, publishedViews } from '@/lib/photos/view-model';
 
 /**
  * The region pages in a browser (REGION-07; D-01, D-02, D-11): the 17-01
@@ -24,6 +25,13 @@ import { regionById, regionHeading, regions, regionTitle } from '@/lib/regions';
  * click can navigate the document instead. Rows that go Back while the
  * lightbox's View Transition settles are @no-win-webkit, as in
  * photos-lightbox.spec.ts.
+ *
+ * The new photo pages (17 D-08, D-09; PHOTO-05): every published photo off the
+ * light table (publishedViews minus photoSlugs) has a page with no stepping
+ * controls and one visible back link, named after its region, to
+ * /photos/regions/<id>; Escape there lands on that region page; its lightbox,
+ * opened from the region page, has no stepping controls and no back link; and
+ * a touch swipe or the arrows on its page do nothing (Edge PHOTO-05/empty).
  */
 
 /*
@@ -175,5 +183,127 @@ test.describe('Region page navigation (D-01 soft navigation)', () => {
     await expect(h1(page)).toHaveText(regionHeading(ortler));
     await expect.poll(() => page.evaluate(() => document.documentElement.style.overflow)).toBe('');
     expect(await readMark(page)).toBe('kept');
+  });
+});
+
+/** The published photos off the light table, in canonical order, each with its region. */
+const NEW_PHOTOS = publishedViews
+  .filter((v) => !photoSlugs.includes(v.slug))
+  .map((view) => {
+    const id = regionOfPhoto(view.id);
+    if (!id) throw new Error(`photos-region.spec: photo ${view.id} has no region`);
+    return { view, region: region(id) };
+  });
+
+/** Ortler's first new photo, by data: the Escape, lightbox and swipe rows use it. */
+const ORTLER_PHOTO = (() => {
+  const found = NEW_PHOTOS.find((p) => p.region.id === 'ortler');
+  if (!found) throw new Error('photos-region.spec: no new photo in Ortler');
+  return found;
+})();
+
+/** The viewer's stepping group: both buttons and the counter. */
+async function expectNoStepping(scope: Page | Locator) {
+  await expect(
+    scope.getByRole('button', { name: 'Previous photo', exact: true, includeHidden: true })
+  ).toHaveCount(0);
+  await expect(
+    scope.getByRole('button', { name: 'Next photo', exact: true, includeHidden: true })
+  ).toHaveCount(0);
+  await expect(scope.locator('[data-photo-counter]')).toHaveCount(0);
+}
+
+test.describe('New photo pages (D-08, D-09, PHOTO-05)', () => {
+  test('there are seven photos off the light table', () => {
+    expect(NEW_PHOTOS).toHaveLength(7);
+  });
+
+  for (const { view, region: r } of NEW_PHOTOS) {
+    test(`/photos/${view.slug}: no stepping, one back link to ${r.name}`, async ({ page }) => {
+      const response = await page.goto(`/photos/${view.slug}`);
+      expect(response?.status()).toBe(200);
+      const main = page.getByRole('main');
+      await expect(h1(page)).toHaveText(view.title);
+      await expectNoStepping(main);
+      // Two links in the markup (the scroll-tier row and the chrome); CSS shows one per tier.
+      const back = main.getByRole('link', { name: r.name, exact: true, includeHidden: true });
+      await expect(back).toHaveCount(2);
+      for (const link of await back.all()) {
+        await expect(link).toHaveAttribute('href', `/photos/regions/${r.id}`);
+      }
+      await expect(main.getByRole('link', { name: r.name, exact: true })).toHaveCount(1);
+      await expect(main.getByRole('link', { name: r.name, exact: true })).toBeVisible();
+      await expect(
+        main.getByRole('link', { name: 'All photographs', exact: true, includeHidden: true })
+      ).toHaveCount(0);
+    });
+  }
+
+  test(`Escape on /photos/${ORTLER_PHOTO.view.slug} lands on the Ortler region page`, async ({
+    page,
+  }) => {
+    const { view, region: r } = ORTLER_PHOTO;
+    await page.goto(`/photos/${view.slug}`);
+    const back = page.getByRole('main').getByRole('link', { name: r.name, exact: true }).first();
+    await waitForHydration(back);
+    await page.keyboard.press('Escape');
+    await expect(page).toHaveURL(new RegExp(`/photos/regions/${r.id}$`));
+    await expect(h1(page)).toHaveText(regionHeading(r));
+  });
+
+  test('the lightbox from the Ortler region page has no stepping and no back link; Back closes it @prod-only @no-win-webkit', async ({
+    page,
+  }) => {
+    const { view, region: r } = ORTLER_PHOTO;
+    await page.goto(`/photos/regions/${r.id}`);
+    const link = page.locator(`[data-photo-id="${view.slug}"]`);
+    await waitForHydration(link);
+    await link.click();
+
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible({ timeout: 20000 });
+    await expect(page).toHaveURL(new RegExp(`/photos/${view.slug}$`));
+    await expect(dialog).toHaveAccessibleName(view.title);
+    await expectNoStepping(dialog);
+    await expect(dialog.getByRole('link', { name: r.name, exact: true })).toHaveCount(0);
+    await expect(dialog.getByRole('link', { name: 'All photographs', exact: true })).toHaveCount(0);
+
+    await page.goBack();
+    await expect(page).toHaveURL(new RegExp(`/photos/regions/${r.id}$`));
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(h1(page)).toHaveText(regionHeading(r));
+  });
+
+  test('Edge PHOTO-05/empty: a touch swipe and the arrows do nothing on a new photo page @chromium-only', async ({
+    page,
+  }) => {
+    const { view } = ORTLER_PHOTO;
+    await page.goto(`/photos/${view.slug}`);
+    const photoBox = page.getByRole('main').locator('[data-photo-box]');
+    await waitForHydration(photoBox);
+    const title = await page.title();
+    expect(title).toBe(`${view.title} · Tim Lui`);
+
+    const rect = (await photoBox.boundingBox())!;
+    const x = rect.x + rect.width / 2;
+    const y = rect.y + rect.height / 2;
+    const touch = { pointerId: 7, pointerType: 'touch', isPrimary: true, bubbles: true };
+    await photoBox.dispatchEvent('pointerdown', { ...touch, clientX: x, clientY: y, buttons: 1 });
+    await photoBox.dispatchEvent('pointermove', {
+      ...touch,
+      clientX: x - 60,
+      clientY: y + 5,
+      buttons: 1,
+    });
+    await photoBox.dispatchEvent('pointerup', { ...touch, clientX: x - 120, clientY: y + 10 });
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowLeft');
+
+    await expect(page).toHaveURL(new RegExp(`/photos/${view.slug}$`));
+    expect(await page.title()).toBe(title);
+    // The viewer's own polite status line (StagePhoto may hold others).
+    await expect(page.locator('[data-photo-viewer] > p[role="status"]')).not.toHaveText(
+      /Photo \d+ of/
+    );
   });
 });
