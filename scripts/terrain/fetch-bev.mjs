@@ -35,7 +35,7 @@
  *      from the full image (full width / overview width, about 8 m). A scale
  *      outside 7..9 m, or not square, fails before the read: the record's
  *      resampling text says "about 8 m".
- *   4. Fail on any value at or below -9000 (nodata) or outside -100..6000 m:
+ *   4. Fail on any value outside 0..6000 m (BEV's nodata, -9999, included):
  *      there is no nodata path (D-28), the window must be hole-free.
  *   5. Sample every 10 m cell centre bilinearly, store decimetres in a grey16
  *      PNG, prove the lossless round trip, hash it, parse the record with
@@ -102,9 +102,7 @@ const HEIGHT_SCALE = 0.1;
 const FILE = 'dem-10m.png';
 /** GeoTIFF GTRasterTypeGeoKey 1 = PixelIsArea: the origin is a pixel corner. */
 const PIXEL_IS_AREA = 1;
-/** BEV's nodata is -9999; anything at or below this is nodata (D-28: none allowed). */
-const NODATA_AT_OR_BELOW = -9000;
-const MIN_M = -100;
+/** No Austrian height reaches this; a value above it is a corrupt read. */
 const MAX_M = 6000;
 /** Bounded retry (RESEARCH Pitfall 3): attempts, and the backoff per attempt number. */
 const ATTEMPTS = 5;
@@ -404,9 +402,10 @@ async function main() {
   const readMs = Date.now() - started;
 
   // D-28: no nodata path. Any nodata or implausible height in the window fails the fetch.
+  // The BEV DTM never goes below 0 m in Austria, so a negative value (its -9999 included) is nodata.
   for (let i = 0; i < band.length; i++) {
     const m = band[i];
-    if (!Number.isFinite(m) || m <= NODATA_AT_OR_BELOW || m < MIN_M || m > MAX_M)
+    if (!Number.isFinite(m) || m < 0 || m > MAX_M)
       fail(
         `nodata or out-of-range height ${m} at overview window pixel ${i % winW}, ${Math.floor(i / winW)}`
       );
