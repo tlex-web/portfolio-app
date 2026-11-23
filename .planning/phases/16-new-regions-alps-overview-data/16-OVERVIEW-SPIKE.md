@@ -109,3 +109,52 @@ Liability sentence (to be added "in a licence or any legal warning or notice" co
 The trademark glyph was confirmed by eye on a 200 dpi render of page 20: the licence prints "WorldDEM" followed by a raised ™ and then "-90". The PDF's text layer carries the same character (U+2122), so the text above is copied, not retyped. On the page the adapted notice opens with a straight double quote and closes with a curly one (”) before the full stop; the liability sentence uses straight quotes. The quotes above mark the sentence boundaries and are not part of the notice. Article 6(d) also bars implying endorsement by the Provider, the Licensor or the programme.
 
 ## Decisions
+
+Tim answered the Task 2 checkpoint on 2026-11-23 with three AskUserQuestion selections. Each answer is quoted verbatim below, after the question it answered. The hillshade option was presented with the measured figures from the hillshade table (750 px poster: 44,436 B AVIF / 72,706 B WebP on plain heights, 25,515 B / 40,524 B on blurred heights), not with the ~34 KB / 53 KB that the plan's option text quoted.
+
+Question 1: "Which Alps overview variant should 16-13/16-15 build? (Budget stays contours ≤30,000 B brotli / ≤120,000 B raw, served ≤250,000 B unless you say otherwise.)"
+
+> C, no hillshade (Recommended)
+
+The option he selected read: "Plate carrée × cos 46.5°, blur, 1,000 m contours from 1,000 m, simplify 2 px, rings ≥ 8 px. 14,312 B brotli served. No relief shading." He did not change the budget numbers.
+
+Question 2: "Which height should the overview record for Mont Blanc?"
+
+> 4,806 m IGN (Recommended)
+
+That is the IGN map value (BD CARTO `cote` 4806), with the Géoportail permalink from `## Summits` as officialRef.
+
+Question 3: "Should Triglav (SI, 2,864 m) be the fifth reference summit? Its height couldn't be confirmed against GURS this session."
+
+> Yes, marked secondary (Recommended)
+
+Triglav is the fifth summit, with source status secondary and no officialRef until a national source confirms it.
+
+Not overridden by Tim, so the planner defaults stand: plate extents stored as four projected corners (D-17), and the other summit heights and officialRefs as confirmed in `## Summits`.
+
+Fixed parameter set (16-13 writes `data/terrain/overview.json` and `OVERVIEW_BUDGET` from these; 16-15 draws from them):
+
+- projection: plate carrée over 5-17° E by 43-49° N, x scaled by cos 46.5° (0.68835); u = (lon − 5) / 12, v = (49 − lat) / 6, so u and v run 0-1 across the grid; WGS84 degrees in, no other projection step
+- grid: 1,200 x 872 px (one cell about 766 m), resampled bilinearly at pixel centres from the GLO-90 level-2 mosaic, PixelIsPoint offset applied, negatives and the sea slot N43 E014 clamped to 0 m
+- interval_m: 1000
+- from_m: 1000
+- blur: 3 x 3 box blur, edge-clamped, applied to the heights before d3-contour
+- simplify_px: 2
+- ring_filter_px: 8 (drop a ring whose bounding box is under 8 px in both width and height)
+- hillshade: none
+- budget_contours_brotli_b: 30000
+- budget_contours_raw_b: 120000
+- budget_served_b: 250000
+- outlines: each region plate's four corners projected into overview UV, so Phase 18 may draw the quadrilateral or its bounding box; EPSG:3035 corners via proj4 in 16-13, not the spike's approximate inverse LAEA
+
+Measured at these parameters (variant C): 53,906 B raw, 14,312 B brotli, 19,131 B gzip, levels 1,000-3,000 m, index contour every 5th interval as on the plates.
+
+Final summit records:
+
+| Summit | Country | Official m | Position | officialRef | Source |
+|--------|---------|-----------:|----------|-------------|--------|
+| Dufourspitze | CH (IT border) | 4,634 | 45.9369 N, 7.8668 E | https://map.geo.admin.ch/?lang=en&E=2633206&N=1087350&zoom=10 | confirmed: swisstopo (verified in RESEARCH) |
+| Mont Blanc | FR / IT | 4,806 | 45.83267 N, 6.86463 E | https://www.geoportail.gouv.fr/carte?c=6.86463,45.83267&z=15&permalink=yes | confirmed: IGN map value, BD CARTO `cote` 4806 (Tim's choice over the 2026 and 2023 survey figures) |
+| Grossglockner | AT | 3,798 | 47.0745 N, 12.6939 E | https://data.bev.gv.at/geonetwork/srv/api/records/a6ea4096-8adc-4752-aac2-a4c115b8c12d | confirmed: BEV DLM Bergnamen (2020 edition, from ÖK50) |
+| Zugspitze | DE (AT border) | 2,962 | 47.4211 N, 10.9864 E | https://daten.gdz.bkg.bund.de/produkte/sonstige/gn250/aktuell/ | confirmed: BKG GN250 (not LDBV BayernAtlas, which needs a key) |
+| Triglav | SI | 2,864 | 46.3783 N, 13.8369 E | none | secondary: RESEARCH figure, not confirmed against GURS (Tim chose to include it marked secondary) |
