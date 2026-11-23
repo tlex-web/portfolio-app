@@ -6,8 +6,9 @@
  * app/(site)/photos/[slug]/opengraph-image.tsx and
  * app/(site)/projects/[slug]/opengraph-image.tsx.
  *
- * Every case runs over the data (photoSlugs, the projects array), never a literal
- * slug:
+ * Every case runs over the data (publishedSlugs and publishedViews, every
+ * published photo since 17-05 (D-07, PHOTO-05); the projects array), never a
+ * literal slug:
  * - generateImageMetadata gives each known slug exactly one 1200 x 630 PNG card
  *   whose alt is Tim's og.alt-photo / og.alt-project template filled from the
  *   data, never 'undefined' or 'NaN', and no entry for an unknown or mis-cased
@@ -35,7 +36,7 @@ import { projects } from '@/data/projects';
 import type { Project } from '@/data/types';
 import { site } from '@/data/site';
 import { OG_SIZE, type OgFrameProps } from '@/lib/og/template';
-import { photoSlugs, photoViews, type PhotoView } from '@/lib/photos/view-model';
+import { publishedSlugs, publishedViews, type PhotoView } from '@/lib/photos/view-model';
 import * as photoRoute from '@/app/(site)/photos/[slug]/opengraph-image';
 import * as projectRoute from '@/app/(site)/projects/[slug]/opengraph-image';
 
@@ -75,7 +76,7 @@ type OgCard = { route: typeof photoRoute | typeof projectRoute; slug: string };
 
 /** Every slug the data knows, with its route, for the shared cases. */
 const allCards: OgCard[] = [
-  ...photoSlugs.map((slug) => ({ route: photoRoute, slug })),
+  ...publishedSlugs.map((slug) => ({ route: photoRoute, slug })),
   ...projects.map((p) => ({ route: projectRoute, slug: p.slug })),
 ];
 
@@ -102,7 +103,7 @@ describe('generateImageMetadata', () => {
     }
   );
 
-  it.each<[string, PhotoView]>(photoViews.map((v) => [v.slug, v]))(
+  it.each<[string, PhotoView]>(publishedViews.map((v) => [v.slug, v]))(
     "%s's alt is Tim's og.alt-photo template filled from its view",
     (slug, view) => {
       expect(onlyCard(photoRoute, slug).alt).toBe(
@@ -112,7 +113,7 @@ describe('generateImageMetadata', () => {
   );
 
   it('the approximate photo position reads approx. in its alt', () => {
-    const approximate = photoViews.filter((v) => v.approximate);
+    const approximate = publishedViews.filter((v) => v.approximate);
     expect(approximate.length).toBeGreaterThan(0);
     for (const view of approximate) {
       expect(onlyCard(photoRoute, view.slug).alt).toMatch(/ approx\.$/);
@@ -143,7 +144,7 @@ describe('generateImageMetadata', () => {
 });
 
 describe('photo route: derivatives only (T-12-27)', () => {
-  it.each<[string, PhotoView]>(photoViews.map((v) => [v.slug, v]))(
+  it.each<[string, PhotoView]>(publishedViews.map((v) => [v.slug, v]))(
     "%s's manifest JPEG is a hashed derivative under public/, at most 2560 px",
     (_, view) => {
       const { jpeg } = manifest[view.id];
@@ -153,7 +154,7 @@ describe('photo route: derivatives only (T-12-27)', () => {
     }
   );
 
-  it.each<[string, PhotoView]>(photoViews.map((v) => [v.slug, v]))(
+  it.each<[string, PhotoView]>(publishedViews.map((v) => [v.slug, v]))(
     '%s renders the photo variant from its JPEG derivative and reads no other photo file',
     async (slug, view) => {
       const response = (await photoRoute.default({

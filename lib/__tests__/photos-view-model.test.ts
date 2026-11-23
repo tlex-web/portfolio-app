@@ -9,6 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { imageManifest } from '@/data/generated/image-manifest';
 import { photos } from '@/data/generated/photos';
+import { editorial } from '@/data/photos/editorial';
 import { buildWaypoints } from '@/lib/ascent/waypoints';
 import {
   buildPhotoViews,
@@ -18,8 +19,11 @@ import {
   photoMetadata,
   photoSlugs,
   photoViews,
+  publishedSlugs,
+  publishedViews,
   seriesInput,
   stripFields,
+  viewerPhotos,
   type PhotoViewInput,
 } from '@/lib/photos/view-model';
 import { SLUGS, viewBySlug } from '../../e2e/helpers/photo-fixtures';
@@ -161,6 +165,73 @@ describe('lookup and metadata (LBOX-01)', () => {
 
   it('returns nothing for an unknown slug', () => {
     expect(photoMetadata('no-such-slug')).toEqual({});
+  });
+});
+
+describe('the published set and the viewer set (17 D-07, D-08, PHOTO-05)', () => {
+  it('publishes every generated photo: unique slugs, one per photo, every light-table slug among them', () => {
+    expect(publishedSlugs).toHaveLength(photos.length);
+    expect(publishedSlugs).toHaveLength(11);
+    expect(new Set(publishedSlugs).size).toBe(publishedSlugs.length);
+    for (const slug of photoSlugs) expect(publishedSlugs).toContain(slug);
+  });
+
+  it("keeps buildWaypoints' order: DEM height ascending, ties by id", () => {
+    expect(publishedViews.map((v) => v.slug)).toEqual(
+      buildWaypoints({ photos, editorial, imageManifest }).map((w) => w.slug)
+    );
+    const heights = publishedViews.map((v) => v.altitudeM);
+    expect(heights).toEqual([...heights].sort((a, b) => a - b));
+  });
+
+  it('looks up each light-table photo as its light-table view', () => {
+    for (const view of photoViews) expect(photoBySlug(view.slug)).toEqual(view);
+  });
+
+  it('gives a light-table photo the four light-table views to step through', () => {
+    for (const view of photoViews) expect(viewerPhotos(view)).toBe(photoViews);
+  });
+
+  it('gives every other published photo a one-photo set with no neighbours', () => {
+    const others = publishedViews.filter((v) => !photoSlugs.includes(v.slug));
+    expect(others).toHaveLength(7);
+    for (const view of others) {
+      const set = viewerPhotos(view);
+      expect(set).toHaveLength(1);
+      expect(set[0]).toEqual({ ...view, prevSlug: null, nextSlug: null });
+    }
+  });
+});
+
+describe('aerial photo description (17 D-14, Tim approved as drafted)', () => {
+  const aerial = publishedViews.filter((v) => v.aerial);
+  const ground = publishedViews.filter((v) => !v.aerial);
+
+  it("fills Tim's approved aerial template for every aerial photo", () => {
+    expect(aerial.length).toBeGreaterThan(0);
+    for (const view of aerial) {
+      expect(photoMetadata(view.slug).description).toBe(
+        `${view.title}: an aerial photograph by Tim Lui over ${view.shortPlace}, ${view.altitudeLabel}, ${view.captureMonth}.`
+      );
+    }
+  });
+
+  it("ships Tim's two approved aerial descriptions verbatim (17-01-SUMMARY, D-14 copy)", () => {
+    expect(aerial.map((v) => photoMetadata(v.slug).description).sort()).toEqual(
+      [
+        `Castle below limestone peaks: an aerial photograph by Tim Lui over Saalfelden, ground${NBSP}880${NBSP}m approx., Sep 2026.`,
+        `Saalfelden valley from the air: an aerial photograph by Tim Lui over Saalfelden, ground${NBSP}820${NBSP}m approx., Sep 2026.`,
+      ].sort()
+    );
+  });
+
+  it("keeps every ground photo's description on the v2.0 template", () => {
+    expect(ground).toHaveLength(9);
+    for (const view of ground) {
+      expect(photoMetadata(view.slug).description).toBe(
+        `${view.title}: a photograph by Tim Lui from ${view.shortPlace} at ${view.altitudeLabel}, ${view.captureMonth}.`
+      );
+    }
   });
 });
 
