@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 16
 current_phase_name: New Regions & Alps Overview Data
 status: executing
-stopped_at: Completed 16-02-PLAN.md
-last_updated: "2026-11-23T01:05:39.791Z"
+stopped_at: Completed 16-03-PLAN.md
+last_updated: "2026-11-23T01:11:58.599Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 16 execution started
-state_head: 9faf62743c2450981e9b11fb75aefad4f105e7d7
+state_head: f574a3d202c99cb43a56b01d5e2711e62d77ccca
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 64
-  completed_plans: 48
+  completed_plans: 49
   percent: 43
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-15)
 ## Current Position
 
 Phase: 16 (New Regions & Alps Overview Data) — EXECUTING
-Plan: 3 of 18
+Plan: 4 of 18
 Status: Ready to execute
 Last activity: 2026-11-23 — Phase 16 execution started
 
@@ -104,6 +104,7 @@ Progress: [████░░░░░░] 43%
 | Phase 15 P16 | 39min | 3 tasks | 3 files |
 | Phase 16 P01 | 28 min | 2 tasks | 9 files |
 | Phase 16 P02 | 21min | 3 tasks | 1 files |
+| Phase 16 P03 | 4 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -235,6 +236,7 @@ Recent decisions affecting current work:
 - [Phase 16]: 16-02: Overview budget contours <= 30,000 B brotli and <= 120,000 B raw, served total <= 250,000 B (unchanged by Tim)
 - [Phase 16]: 16-02: Mont Blanc 4,806 m IGN (Tim: "4,806 m IGN (Recommended)"); Triglav fifth summit marked secondary (Tim: "Yes, marked secondary (Recommended)")
 - [Phase 16]: 16-02: Plate extents stored as four corners in overview UV (planner default, not overridden)
+- [Phase 16]: 16-03: light-table membership is the explicit lightTableIds list (data/light-table.ts); LIGHT_TABLE_REGION stays as a tested check and seriesInput is unchanged for Phases 17-18
 
 ### Pending Todos
 
@@ -294,6 +296,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-23T01:05:39.219Z
-Stopped at: Completed 16-02-PLAN.md
+Last session: 2026-11-23T01:11:58.011Z
+Stopped at: Completed 16-03-PLAN.md
 Resume file: None
