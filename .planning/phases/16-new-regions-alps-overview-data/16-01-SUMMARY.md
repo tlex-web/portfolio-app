@@ -48,13 +48,13 @@ key-files:
 key-decisions:
   - "Fixture DEM ramp rises 1 m per 5 m east (not per 4 m): pixel-centre heights are then whole decimetres, so the grey16 PNG stores them exactly and bilinear samples equal the formula"
   - "A coarse photo positioned by a hand-placed correction is sampled at that public position in stage 2; gps.groundM is required only for a coarse EXIF position"
-  - "D-25 gate: v2.0 planning files hold finer-than-published positions of the three published digital photos; the plan halts for Tim's call on history (no history rewrite attempted)"
+  - "D-25 gate: eight committed v2.0 planning files hold finer-than-published positions of the three published digital photos; Tim chose \"Keep history (Recommended)\" (AskUserQuestion, 2026-11-23): no history rewrite and no redaction of the current files, since the photos are already public at 4 decimals"
 
 patterns-established:
   - "D-25 scan: a scratchpad script reads originals in memory, git greps .planning/ (committed + working tree) and prints only per-file, per-kind booleans"
   - "Unrecorded originals are staged in assets/photos-original/incoming/ until their record exists; listOriginals reads only the top level"
 
-requirements-completed: []
+requirements-completed: [DATA-14]   # copied from the plan; REQUIREMENTS.md not ticked, shared-ID gate (16-06, 16-08, 16-14, 16-17 and 16-18 also declare DATA-14)
 
 coverage:
   - id: D1
@@ -124,30 +124,31 @@ coverage:
         status: pass
     human_judgment: false
   - id: D7
-    description: "D-25 coordinate scan run before the SUMMARY commit; matches in committed v2.0 planning files need Tim's decision"
+    description: "D-25 coordinate scan run before the SUMMARY commit; matches in committed v2.0 planning files decided by Tim"
     requirement: DATA-14
     verification:
       - kind: manual_procedural
-        ref: "scratchpad d25-scan.mjs over .planning/ (see D-25 scan)"
-        status: fail
+        ref: "scratchpad d25-scan.mjs over .planning/ (see D-25 scan), re-run before the close-out commit"
+        status: pass
     human_judgment: true
-    rationale: "The scan found finer-than-published positions of the three published photos in committed v2.0 planning files; whether to rewrite history is Tim's call (plan reporting rule)"
+    rationale: "The scan found finer-than-published positions of the three published photos in eight committed v2.0 planning files; Tim chose \"Keep history (Recommended)\" (AskUserQuestion, 2026-11-23), so the matches stay and nothing in a file this plan wrote matches"
 
 duration: 23min
 completed: 2026-11-23
-status: halted
+status: complete
 ---
 
 # Phase 16 Plan 01: Location Privacy Rules Summary
 
-**Per-photo location precision ('4dp' / '3dp' / '2dp') and kind ('ground' / 'aerial') enforced at extraction: rounding before the sidecar write, a rounded true-spot DEM height for coarse photos, no GPS altitude for coarse or aerial photos, a DJI safety net, and approximate precision-tagged positions in the generated facts, all pinned by seven generated-JPEG selftest cases. Halted at the D-25 gate: committed v2.0 planning files hold finer-than-published positions of the three published photos.**
+**Per-photo location precision ('4dp' / '3dp' / '2dp') and kind ('ground' / 'aerial') enforced at extraction: rounding before the sidecar write, a rounded true-spot DEM height for coarse photos, no GPS altitude for coarse or aerial photos, a DJI safety net, and approximate precision-tagged positions in the generated facts, all pinned by seven generated-JPEG selftest cases. The D-25 gate found finer-than-published positions of the three published photos in eight committed v2.0 planning files; Tim chose to keep history as it is.**
 
 ## Performance
 
 - **Duration:** 23 min
 - **Started:** 2026-11-23T00:15:52Z
 - **Completed:** 2026-11-23T00:39:03Z
-- **Tasks:** 2 of 2 (the D-25 reporting rule then stops the plan)
+- **Tasks:** 2 of 2 (the D-25 reporting rule then paused the plan for Tim's decision)
+- **Close-out:** about 5 min on 2026-11-23 after Tim's D-25 decision (this SUMMARY, STATE, ROADMAP); 28 min recorded in the STATE metrics
 - **Files modified:** 9
 
 ## Phase-base client JS
@@ -211,7 +212,7 @@ Moved unopened from the top level of `assets/photos-original/` into the gitignor
 
 - Fixture ramp slope 1 m per 5 m (see Deviations 1).
 - A coarse photo with a hand-placed correction is sampled in stage 2 at the hand-placed (public, precision-checked) position; `gps.groundM` is required only for a coarse EXIF position.
-- The plan halts at the D-25 gate for Tim (see D-25 scan); no planning file was edited and no history was rewritten.
+- D-25: Tim chose "Keep history (Recommended)" for the eight committed v2.0 planning files (see D-25 scan); no planning file was edited and no history was rewritten.
 
 ## Deviations from Plan
 
@@ -247,7 +248,7 @@ Moved unopened from the top level of `assets/photos-original/` into the gitignor
 
 ## Issues Encountered
 
-- The D-25 scan stops the plan (next section). Everything else passed first time after the fixes above.
+- The D-25 scan paused the plan for Tim's decision, now resolved (next section). Everything else passed first time after the fixes above.
 
 ## D-25 scan
 
@@ -274,7 +275,7 @@ Run after this SUMMARY was written and before it was committed, by a scratchpad 
 
 **Pre-existing, published-equal:** the 4-decimal positions of the three digital photos are public in `data/generated/photos.ts`, and their 0.1 m GPS altitudes are public in the committed `data/photos/exif-sidecar.json`. Many v2.0 planning files quote them; the 10 m LV95 match in `.planning/research/STACK.md` is converted from the shipped 4-decimal position and rounded to 10 m.
 
-**Stops the plan (committed files, finer than published; Tim's call):** these already committed v2.0 planning files hold positions of the published digital photos finer than the 4-decimal published value (5-decimal latitude/longitude strings, or LV95 eastings/northings at 1 m):
+**Reported to Tim (committed files, finer than published; his call):** these already committed v2.0 planning files hold positions of the published digital photos finer than the 4-decimal published value (5-decimal latitude/longitude strings, or LV95 eastings/northings at 1 m):
 
 - `.planning/milestones/v2.0-phases/08-data-terrain-pipeline/08-01-PLAN.md` (IMG_0605: 5-decimal lat/lon, LV95 1 m)
 - `.planning/milestones/v2.0-phases/08-data-terrain-pipeline/08-01-SUMMARY.md` (IMG_0605: 5-decimal lat)
@@ -287,6 +288,10 @@ Run after this SUMMARY was written and before it was committed, by a scratchpad 
 
 (The 5-decimal check is a supplementary pass beyond the plan's string kinds, run to separate finer-than-published values from published-equal ones.) Nothing in a file this plan wrote matched, so nothing was removed. No planning file was edited and no history was rewritten.
 
+**Tim's decision (resolved):** "Keep history (Recommended)", his selection in an AskUserQuestion on 2026-11-23 to the question about the eight files above. Meaning: no history rewrite and no redaction of the current files; the three photos are already public at 4 decimals in the same repository. The eight files stay as they are and are accepted matches for later D-25 runs.
+
+**Close-out re-run:** the scan ran again over the edited, uncommitted SUMMARY before the close-out commit. Its output is byte-identical to the original run's, so it holds only the matches reviewed above (the eight accepted v2.0 files, the published-equal quotes, the reviewed 2-decimal anchors, the whole-metre digit-run noise and the D-01 example); no Phase 16 file other than `16-CONTEXT.md` and `16-RESEARCH.md` (the D-01 example) is named, and this SUMMARY is named in no match.
+
 ## Known Stubs
 
 None.
@@ -297,15 +302,16 @@ None - no external service configuration required.
 
 ## Next Phase Readiness
 
-- Blocked on Tim: decide whether the eight v2.0 planning files above stay in history as they are (the photos are published at 4 decimals in the same repository) or need a history rewrite. When he decides, set `status: complete` here; 16-02 onward depend on this plan.
-- Ready for 16-02 once unblocked: the privacy rules, the plate-dem module, the incoming/ staging convention and the D-25 scan procedure are in place. New originals stay in `assets/photos-original/incoming/` until their record (with Tim's per-photo precision, 16-08) exists.
+- D-25 resolved: Tim chose "Keep history (Recommended)" on 2026-11-23, so the eight v2.0 planning files stay in history and in the tree as they are; this plan is complete and 16-02 onward can rely on it.
+- Ready for 16-02: the privacy rules, the plate-dem module, the incoming/ staging convention and the D-25 scan procedure are in place. New originals stay in `assets/photos-original/incoming/` until their record (with Tim's per-photo precision, 16-08) exists.
 
 ## Self-Check: PASSED
 
 - FOUND: scripts/photos/plate-dem.mjs, this SUMMARY
 - FOUND: 2deaa6c, 2657f77 (both ancestors of HEAD; evaluation-scope resolves both for 16-01)
 - Acceptance criteria rerun: all pass (Precision in the schema, 4 x `"precision": "4dp"`, the new photos.test.ts case, plate-dem in both stages, no tracked or unignored original, 8 files in incoming/, the phase-base total, type-check, 276/276 selftest with 7 privacy cases, guard:tests:scan)
-- Plan status `halted` only because of the D-25 reporting rule above
+- Plan status `complete`: the D-25 reporting rule was resolved by Tim's "Keep history (Recommended)" (2026-11-23)
+- Close-out: FOUND 2deaa6c, 2657f77, 716a324, 23989a3 in HEAD's history
 
 ---
 *Phase: 16-new-regions-alps-overview-data*
