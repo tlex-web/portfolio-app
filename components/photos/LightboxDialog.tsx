@@ -129,7 +129,7 @@ function navHeightPx(): number {
   document.body.appendChild(probe);
   const height = probe.getBoundingClientRect().height;
   probe.remove();
-  return height || 0;
+  return height;
 }
 
 /**
