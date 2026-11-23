@@ -1651,9 +1651,10 @@ const TERRAIN_INPUTS = [
   'data/generated/terrain.ts',
   'data/generated/precache.json',
   'data/generated/plates.ts',
+  'data/generated/home-plate.ts',
 ];
-/** The modules a fixture plate must leave byte-equal (D-14, D-15). */
-const TERRAIN_HOME_MODULES = ['data/generated/terrain.ts', 'data/generated/precache.json'];
+/** The modules a fixture plate must leave byte-equal (D-14, D-15): the home sheet module too (16-07). */
+const TERRAIN_HOME_MODULES = ['data/generated/terrain.ts', 'data/generated/precache.json', 'data/generated/home-plate.ts'];
 /** The synthetic second plate (D-13): a 2D plate with the declared output set (D-12). */
 const FIXTURE_PLATE = {
   id: 'fixture',

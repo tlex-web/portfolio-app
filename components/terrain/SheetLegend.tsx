@@ -1,5 +1,4 @@
-import type { PlateId } from '@/components/terrain/ContourField';
-import { plates } from '@/data/generated/plates';
+import type { homePlate } from '@/data/generated/home-plate';
 import { site } from '@/data/site';
 import {
   SCALE_TIERS,
@@ -25,6 +24,9 @@ const LABEL_TICKS = [0, 50, 100] as const;
 const DT = 'text-sm text-ink-muted';
 const DD_VALUE = 'mt-1 font-mono text-sm text-ink tabular-nums';
 
+/** A plate's 2D sheet as the legend reads it (a type only: the caller passes the data). */
+type LegendSheet = typeof homePlate;
+
 /**
  * A plate's sheet legend (D-15, D-18; 08-UI-SPEC "Footer Map-Sheet Margin
  * Contract"): the title paragraph and the scale, equidistance, extent, last
@@ -34,13 +36,14 @@ const DD_VALUE = 'mt-1 font-mono text-sm text-ink tabular-nums';
  * Returns a fragment, so the caller's markup is unchanged: no wrapper element and
  * no container-query context. The scale bar is `L / extentWidthM` of the nearest
  * @container width (the footer's), the same width the band shows the full extent
- * across, so it is true at every breakpoint without JS. The legend reads required
- * plate metadata, so missing data is a build failure, never a dash. The Source
+ * across, so it is true at every breakpoint without JS. The caller passes the
+ * plate's sheet (the footer passes homePlate, so no plate registry reaches its
+ * client chunk). The legend reads required sheet metadata, so missing data is a
+ * build failure, never a dash. The Source
  * line is the swissALTIRegio reference Tim chose (D-15), verbatim, with no
  * copyright sign; per-plate credits arrive in Phase 18.
  */
-export default function SheetLegend({ plate, title }: { plate: PlateId; title: string }) {
-  const sheet = plates[plate];
+export default function SheetLegend({ sheet, title }: { sheet: LegendSheet; title: string }) {
   const [extentSw, extentNe] = formatExtentLines(sheet.extent.lv95);
 
   return (

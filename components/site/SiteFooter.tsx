@@ -1,6 +1,7 @@
 import { EnvelopeSimple, GithubLogo, LinkedinLogo } from '@phosphor-icons/react/dist/ssr';
 import SheetBand from '@/components/terrain/SheetBand';
 import SheetLegend from '@/components/terrain/SheetLegend';
+import { homePlate } from '@/data/generated/home-plate';
 import { sheet } from '@/data/sheet';
 import { site } from '@/data/site';
 import { homePhotos } from '@/lib/ascent/home-photos';
@@ -57,7 +58,7 @@ export default function SiteFooter() {
           </ul>
         </div>
         <div className="mt-12 pt-6 border-t border-line">
-          <SheetLegend plate="matterhorn" title={sheet.title} />
+          <SheetLegend sheet={homePlate} title={sheet.title} />
         </div>
         <div className="mt-12 pt-6 border-t border-line">
           <p className="text-sm text-ink-muted tabular-nums">
