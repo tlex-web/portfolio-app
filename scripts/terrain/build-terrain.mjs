@@ -47,6 +47,10 @@
  * never another plate's candidate. A threeD: false plate builds only the contour
  * LODs and poster sizes it declares, never a heightmap or a map LOD (D-12). The
  * stale-file sweep and --check compare against the union of every plate's names.
+ * A plate's source is one TerrainSource variant (16 D-09): swissALTIRegio on LV95
+ * or BEV ALS DTM on LAEA Europe (EPSG:3035). Its sheet is the PlateSheet branch of
+ * that source's crs (extent.lv95 / extent.laea, GRID_KEYS); a plate never mixes
+ * two sources. The home plate's terrain.ts stays LV95-only (TerrainMeta).
  * Each plate is held to PLATE_BUDGET (data/schemas/terrain.ts): the bytes it
  * serves and one visit's fetch; a plate over budget fails write mode before
  * anything is written, and fails --check.
@@ -162,6 +166,19 @@ const HOME_PLATE_PATH = path.join(ROOT, HOME_PLATE_REL);
  */
 const MANAGED =
   /^(?:[a-z]+(?:-[a-z]+)*-)?(contours-[a-z0-9-]+\.[^.]+\.svg|heightmap-[0-9]+\.[^.]+\.png|hillshade-[0-9]+\.[^.]+\.(avif|webp))$/;
+
+/**
+ * The sheet key a plate's grid boxes (extent, strip) are stored under, per source
+ * crs (16 D-09, RESEARCH Pattern 3): LV95 sheets keep `lv95`, so Matterhorn's
+ * sheet is unchanged; a BEV ALS DTM plate's LAEA boxes are `laea`. The source's
+ * own crs picks the branch, so one plate never mixes two grids (D-09).
+ */
+const GRID_KEYS = { 'EPSG:2056': 'lv95', 'EPSG:3035': 'laea' };
+function gridKey(crs) {
+  const key = GRID_KEYS[crs];
+  if (!key) throw new Error(`no sheet branch for ${crs}; add it to GRID_KEYS and PlateSheet`);
+  return key;
+}
 
 /**
  * D-17: the official summit, beside the DEM-sampled height. A home-plate
@@ -556,6 +573,7 @@ async function buildPlate(plate, source, metres, { encode }) {
     ? lod('contours-map', contourText(grid512, GRIDS.desktop, GRIDS.desktop, MAP))
     : null;
   const strip = stripBbox(extent, plate.strip.centreN, STRIP.ratio);
+  const box = gridKey(source.crs);
   const sw = rowWindow(metres, source, strip);
   const stripUrl = lod('contours-strip', contourText(sw.grid, sw.W, sw.H, STRIP));
   const pngUrl = (size) => `/terrain/${pngs.find((p) => p.size === size).name}`;
@@ -571,8 +589,9 @@ async function buildPlate(plate, source, metres, { encode }) {
     home: plate.home,
     threeD: plate.threeD,
     crs: source.crs,
+    // The sheet branch of the source's crs: extent.lv95 / extent.laea (16 D-09).
     extent: {
-      lv95: extent,
+      [box]: extent,
       widthM: extent.east - extent.west,
       heightM: extent.north - extent.south,
     },
@@ -580,7 +599,7 @@ async function buildPlate(plate, source, metres, { encode }) {
     contours: {
       hero: HERO,
       ...(mapUrl ? { map: MAP } : {}),
-      strip: { intervalM: STRIP.intervalM, indexEvery: STRIP.indexEvery, lv95: strip },
+      strip: { intervalM: STRIP.intervalM, indexEvery: STRIP.indexEvery, [box]: strip },
     },
     assets: {
       ...(pngs.length > 0

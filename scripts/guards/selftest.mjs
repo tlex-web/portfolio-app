@@ -1683,15 +1683,60 @@ const FIXTURE_PLATE = {
   outputs: { contours: ['hero', 'strip'], hillshade: [1100, 640] },
   strip: { centreN: 1200500 },
 };
-/** The six files the fixture plate builds, flat in public/terrain/ (D-11). */
-const FIXTURE_FILES = [
-  /^fixture-contours-hero\.[0-9a-f]{10}\.svg$/,
-  /^fixture-contours-strip\.[0-9a-f]{10}\.svg$/,
-  /^fixture-hillshade-1100\.[0-9a-f]{10}\.avif$/,
-  /^fixture-hillshade-1100\.[0-9a-f]{10}\.webp$/,
-  /^fixture-hillshade-640\.[0-9a-f]{10}\.avif$/,
-  /^fixture-hillshade-640\.[0-9a-f]{10}\.webp$/,
+/** The six files a 2D fixture plate with `prefix` builds, flat in public/terrain/ (D-11). */
+const plateFileRes = (prefix) => [
+  new RegExp(`^${prefix}contours-hero\\.[0-9a-f]{10}\\.svg$`),
+  new RegExp(`^${prefix}contours-strip\\.[0-9a-f]{10}\\.svg$`),
+  new RegExp(`^${prefix}hillshade-1100\\.[0-9a-f]{10}\\.avif$`),
+  new RegExp(`^${prefix}hillshade-1100\\.[0-9a-f]{10}\\.webp$`),
+  new RegExp(`^${prefix}hillshade-640\\.[0-9a-f]{10}\\.avif$`),
+  new RegExp(`^${prefix}hillshade-640\\.[0-9a-f]{10}\\.webp$`),
 ];
+const FIXTURE_FILES = plateFileRes(FIXTURE_PLATE.prefix);
+/**
+ * The synthetic BEV ALS DTM plate (16 D-09): a 2D plate on LAEA Europe
+ * (EPSG:3035) over a synthetic extent, built from its own BEV-variant source.
+ */
+const LAEA_FIXTURE_PLATE = {
+  id: 'fixture-laea',
+  prefix: 'fixture-laea-',
+  source: 'data/terrain/plates/fixture-laea',
+  home: false,
+  threeD: false,
+  outputs: { contours: ['hero', 'strip'], hillshade: [1100, 640] },
+  strip: { centreN: 2000500 },
+};
+const LAEA_FIXTURE_FILES = plateFileRes(LAEA_FIXTURE_PLATE.prefix);
+/** The terrain fixture's synthetic EPSG:3035 extent: 100 x 100 cells of 10 m. */
+const LAEA_FIXTURE_EXTENT = { west: 4000000, south: 2000000, east: 4001000, north: 2001000 };
+/**
+ * A BEV-variant source.json for a synthetic EPSG:3035 window: example.invalid
+ * URLs, a selftest credit and the PNG's real sha256 (no real BEV record).
+ */
+function bevFixtureSource({ extent, width, height, png }) {
+  return {
+    product: 'BEV ALS DTM',
+    tiles: [{ url: 'https://example.invalid/fixture-laea/tile.tif', contentLength: 1024, lastModified: 'Mon, 15 Sep 2025 00:00:00 GMT' }],
+    doi: '10.0000/selftest-fixture',
+    metadataUrl: 'https://example.invalid/fixture-laea/metadata',
+    edition: '2025-09',
+    editionSource: 'https://example.invalid/fixture-laea/metadata',
+    crs: 'EPSG:3035',
+    heightSystem: 'EVRF2000-AT',
+    heightSystemEpsg: 'EPSG:9274',
+    resampling: 'bilinear from overview level 3 (about 8 m) to 10 m cell centres',
+    credit: 'selftest fixture',
+    licence: 'CC BY 4.0',
+    licenceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    extent,
+    cellM: 10,
+    width,
+    height,
+    heightScale: 0.1,
+    file: 'dem-10m.png',
+    sha256: crypto.createHash('sha256').update(png).digest('hex'),
+  };
+}
 /**
  * The fixture DEM: 100 x 100 grey16 PNG bytes, a cosine hill from 1,500 m at the
  * corners to about 2,500 m at the centre, stored in decimetres (heightScale 0.1),
@@ -1715,10 +1760,13 @@ async function fixtureDem() {
  * temp root. With `fixture`, writes the synthetic plate (its DEM and source.json
  * under data/terrain/plates/fixture/) and lists it in the copy's registry, before
  * matterhorn when `fixtureFirst` (registry order must change no Matterhorn byte).
+ * With `bevFixture`, also writes the EPSG:3035 plate LAEA_FIXTURE_PLATE (the same
+ * hill DEM, a BEV-variant source.json) and lists it last. `fixtureCentreN`
+ * overrides the 2D fixture's strip.centreN (the IN-05 case).
  * Async because sharp makes the DEM; nested one level down so the cleanup loop's
  * path.dirname removes the mkdtemp directory.
  */
-async function tempTerrainRoot({ fixture = false, fixtureFirst = false } = {}) {
+async function tempTerrainRoot({ fixture = false, fixtureFirst = false, bevFixture = false, fixtureCentreN = null } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
   const root = path.join(dir, 'root');
   const put = (rel, bytes) => {
@@ -1753,8 +1801,18 @@ async function tempTerrainRoot({ fixture = false, fixtureFirst = false } = {}) {
       sha256: crypto.createHash('sha256').update(png).digest('hex'),
     };
     put(`${FIXTURE_PLATE.source}/source.json`, `${JSON.stringify(source, null, 2)}\n`);
+    const plate = fixtureCentreN === null ? FIXTURE_PLATE : { ...FIXTURE_PLATE, strip: { centreN: fixtureCentreN } };
     const registry = JSON.parse(fs.readFileSync(path.join(root, 'data/terrain/plates.json'), 'utf-8'));
-    registry.plates = fixtureFirst ? [FIXTURE_PLATE, ...registry.plates] : [...registry.plates, FIXTURE_PLATE];
+    registry.plates = fixtureFirst ? [plate, ...registry.plates] : [...registry.plates, plate];
+    put('data/terrain/plates.json', `${JSON.stringify(registry, null, 2)}\n`);
+  }
+  if (bevFixture) {
+    const png = await fixtureDem();
+    put(`${LAEA_FIXTURE_PLATE.source}/dem-10m.png`, png);
+    const source = bevFixtureSource({ extent: LAEA_FIXTURE_EXTENT, width: 100, height: 100, png });
+    put(`${LAEA_FIXTURE_PLATE.source}/source.json`, `${JSON.stringify(source, null, 2)}\n`);
+    const registry = JSON.parse(fs.readFileSync(path.join(root, 'data/terrain/plates.json'), 'utf-8'));
+    registry.plates.push(LAEA_FIXTURE_PLATE);
     put('data/terrain/plates.json', `${JSON.stringify(registry, null, 2)}\n`);
   }
   return root;
@@ -1787,28 +1845,36 @@ const matterhornFiles = () => terrainListing(repoRoot).map((f) => `${TERRAIN_PUB
  * The fixture case's assertions after a write run: Matterhorn files and the home
  * modules byte-equal, exactly the six prefixed files new, plates.ts lists both.
  */
-function fixturePlateProblems(root, writeError) {
+function fixturePlateProblems(root, writeError, { plate = FIXTURE_PLATE, files = FIXTURE_FILES } = {}) {
   if (writeError) return writeError;
   const problems = [];
   const same = terrainBytesEqual(root, [...matterhornFiles(), ...TERRAIN_HOME_MODULES]);
   if (same) problems.push(same);
   const repoNames = new Set(terrainListing(repoRoot));
   const added = terrainListing(root).filter((f) => !repoNames.has(f));
-  const unmatched = added.filter((f) => !FIXTURE_FILES.some((re) => re.test(f)));
+  const unmatched = added.filter((f) => !files.some((re) => re.test(f)));
   if (unmatched.length) problems.push(`unexpected new files: ${unmatched.join(', ')}`);
-  for (const re of FIXTURE_FILES) {
+  for (const re of files) {
     const n = added.filter((f) => re.test(f)).length;
     if (n !== 1) problems.push(`${n} files match ${re.source}, expected 1`);
   }
-  if (added.some((f) => f.startsWith('fixture-heightmap-') || f.startsWith('fixture-contours-map-')))
+  if (added.some((f) => f.startsWith(`${plate.prefix}heightmap-`) || f.startsWith(`${plate.prefix}contours-map-`)))
     problems.push('a 2D plate got a heightmap or a map LOD (D-12)');
   const ids = terrainPlateIds(root);
-  if (JSON.stringify([...ids].sort()) !== JSON.stringify(['fixture', 'matterhorn']))
-    problems.push(`plates.ts lists ${ids.join(', ') || 'nothing'}, expected fixture and matterhorn`);
+  if (JSON.stringify([...ids].sort()) !== JSON.stringify([plate.id, 'matterhorn'].sort()))
+    problems.push(`plates.ts lists ${ids.join(', ') || 'nothing'}, expected ${plate.id} and matterhorn`);
   return problems.length ? problems.join('; ') : null;
 }
 const terrainFixtureRoot = await tempTerrainRoot({ fixture: true, fixtureFirst: true });
 let terrainFixtureWrite = null;
+/** 16 D-09: a BEV ALS DTM plate on EPSG:3035 builds through the same builder. */
+const terrainLaeaRoot = await tempTerrainRoot({ bevFixture: true });
+let terrainLaeaWrite = null;
+/** The `id` sheet of `root`'s generated plates.ts, or null. */
+function terrainSheet(root, id) {
+  const m = /export const plates = ([\s\S]*) as const;\s*$/.exec(fs.readFileSync(path.join(root, 'data/generated/plates.ts'), 'utf-8'));
+  return m ? JSON.parse(m[1])[id] ?? null : null;
+}
 /** Pitfall 4: a deleted prefixed file must be named by --check. */
 const terrainMissingRoot = await tempTerrainRoot({ fixture: true });
 let terrainMissingWrite = null;
@@ -3584,6 +3650,33 @@ const cases = [
     check: () => fixturePlateProblems(terrainFixtureRoot, terrainFixtureWrite),
   },
   {
+    // 16 D-09: the --check run after the write must print terrain: OK on the same root.
+    name: 'terrain: an EPSG:3035 fixture plate gets its own prefixed files and a laea sheet',
+    guard: TERRAIN_BUILD,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--check'],
+    setup: () => {
+      terrainLaeaWrite = terrainWrite(terrainLaeaRoot);
+      return ['--root', terrainLaeaRoot];
+    },
+    expectExit: 0,
+    expectOutput: ['terrain: OK'],
+    check: () => {
+      const problems = fixturePlateProblems(terrainLaeaRoot, terrainLaeaWrite, { plate: LAEA_FIXTURE_PLATE, files: LAEA_FIXTURE_FILES });
+      if (problems) return problems;
+      const sheet = terrainSheet(terrainLaeaRoot, LAEA_FIXTURE_PLATE.id);
+      if (!sheet) return 'plates.ts has no fixture-laea sheet';
+      return firstDifference([
+        ['sheet crs', sheet.crs, 'EPSG:3035'],
+        ['sheet dem.product', sheet.dem?.product, 'BEV ALS DTM'],
+        ['sheet extent.laea', JSON.stringify(sheet.extent?.laea), JSON.stringify(LAEA_FIXTURE_EXTENT)],
+        ['sheet extent has no lv95', Object.hasOwn(sheet.extent ?? {}, 'lv95'), false],
+        ['sheet strip has laea', Object.hasOwn(sheet.contours?.strip ?? {}, 'laea'), true],
+        ['sheet strip has no lv95', Object.hasOwn(sheet.contours?.strip ?? {}, 'lv95'), false],
+      ]);
+    },
+  },
+  {
     name: 'terrain: --check sees a missing prefixed plate file',
     guard: TERRAIN_BUILD,
     nodeArgs: PHOTO_NODE_ARGS,
@@ -3777,7 +3870,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, exifMappedRoot, exifUnmappedRoot, exifDuplicateRoot, terrainFixtureRoot, terrainMissingRoot, terrainRemoveRoot, terrainDropCheckRoot, terrainDropWriteRoot, ...ciGateTempRoots, ...telemetryTempRoots, ...privacyTempRoots]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, exifMappedRoot, exifUnmappedRoot, exifDuplicateRoot, terrainFixtureRoot, terrainLaeaRoot, terrainMissingRoot, terrainRemoveRoot, terrainDropCheckRoot, terrainDropWriteRoot, ...ciGateTempRoots, ...telemetryTempRoots, ...privacyTempRoots]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 
