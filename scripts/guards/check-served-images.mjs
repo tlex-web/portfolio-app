@@ -51,7 +51,7 @@
  *                    not the first 10 of sha256 over its bytes
  *   - orphan:        a file in those directories that no generated manifest
  *                    lists (data/generated/image-manifest.ts, terrain.ts,
- *                    media-manifest.ts, plates.ts)
+ *                    media-manifest.ts, plates.ts, overview.ts)
  *   - missing:       a manifest URL whose file is not in the scanned set (URLs
  *                    are read from quoted strings only, so a header comment that
  *                    names a directory is not an entry)
@@ -107,6 +107,8 @@ const MANIFESTS = [
   { file: 'data/generated/terrain.ts', regex: /(?<=['"])\/terrain\/[^'"]+(?=['"])/g },
   { file: 'data/generated/media-manifest.ts', regex: /(?<=['"])\/media\/[^'"]+(?=['"])/g },
   { file: 'data/generated/plates.ts', regex: /(?<=['"])\/terrain\/[^'"]+(?=['"])/g },
+  // The Alps overview (16-15): a server-only module, but its contour file is served from public/terrain/.
+  { file: 'data/generated/overview.ts', regex: /(?<=['"])\/terrain\/[^'"]+(?=['"])/g },
 ];
 const METADATA_CALL = /\.\s*(withMetadata|keepMetadata|keepExif|withExif|withExifMerge|keepXmp|withXmp)\s*\(/g;
 const METADATA_MARKERS = [

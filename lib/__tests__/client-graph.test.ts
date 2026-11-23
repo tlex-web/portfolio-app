@@ -27,11 +27,17 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-/** Modules that must never reach the global-error client graph (repo-relative). */
+/**
+ * Modules that must never reach the global-error client graph (repo-relative).
+ * The Alps overview module (16-15, T-16-36) is server-only: Phase 18's /photos
+ * reads it on the server, and its contours, outlines and notice stay out of every
+ * client chunk.
+ */
 export const FORBIDDEN_IN_CLIENT_GRAPH = [
   'data/generated/photos.ts',
   'data/generated/image-manifest.ts',
   'data/generated/plates.ts',
+  'data/generated/overview.ts',
 ] as const;
 
 const ROOT = process.cwd();

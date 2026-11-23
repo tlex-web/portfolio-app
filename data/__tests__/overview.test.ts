@@ -371,3 +371,19 @@ describe('overview outlines and summits (16-15, D-17, D-18)', () => {
     expect(zermatt && dufour).toBeTruthy();
   });
 });
+
+describe('overview hillshade and served total (16-15, D-19, D-20)', () => {
+  it("builds no overview poster: Tim chose no hillshade in 16-02", () => {
+    expect(config.hillshade).toBe(false);
+    expect(overview.hillshade).toBe(false);
+    expect(terrainListing().filter((f) => f.startsWith('overview-hillshade-'))).toEqual([]);
+    expect(readText('data/generated/overview.ts')).not.toContain('hillshade-');
+  });
+
+  it("every file overview.ts references is served within OVERVIEW_BUDGET's served cap (T-16-35)", () => {
+    const urls = [...readText('data/generated/overview.ts').matchAll(/"(\/terrain\/[^"]+)"/g)].map((m) => m[1]);
+    expect(urls).toEqual([overview.contours.url]);
+    const served = urls.reduce((sum, url) => sum + servedFile(url).length, 0);
+    expect(served).toBeLessThanOrEqual(OVERVIEW_BUDGET.servedMax);
+  });
+});
