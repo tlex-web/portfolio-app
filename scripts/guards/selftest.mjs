@@ -30,6 +30,7 @@ import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import crypto from 'crypto';
 import { createRequire } from 'module';
+import proj4 from 'proj4';
 import sharp from 'sharp';
 import { evaluate, pickRun } from '../ci/check-visual-run.mjs';
 import { evaluateSnapshotChanges, snapshotDiffArgs } from '../ci/check-snapshot-commit.mjs';
@@ -1376,6 +1377,8 @@ function plateGridBatch(fn, crs, args) {
 }
 /** Euclidean distance in metres between two grid points { e, n }. */
 const gridDistance = (a, b) => Math.hypot(a.e - b.e, a.n - b.n);
+/** The Ortler default plate, LV95 (EPSG:2056). */
+const ORTLER_LV95 = { west: 2832000, south: 1150000, east: 2844000, north: 1162000 };
 /** The Saalfelden default plate (RESEARCH Option A), EPSG:3035. */
 const SAALFELDEN_LAEA = { west: 4529000, south: 2701000, east: 4541000, north: 2713000 };
 /** Half-up rounding to `d` decimals, the extraction contract (16 D-01). */
@@ -3669,6 +3672,29 @@ const cases = [
       if (same) return same;
       const r = spawnSync(process.execPath, [...PHOTO_NODE_ARGS, TERRAIN_BUILD, '--check', '--root', terrainDropWriteRoot], { encoding: 'utf-8' });
       return r.status === 0 ? null : `--check after the sweep exited ${r.status}: ${`${r.stdout ?? ''}${r.stderr ?? ''}`.trim()}`;
+    },
+  },
+  {
+    name: 'geo: lib/geo.ts agrees with proj4 within 1 m over the Ortler plate',
+    fn: () => {
+      // EPSG:2056 CH1903+ / LV95 as published in the EPSG registry (epsg.io/2056.proj4).
+      const lv95 =
+        '+proj=somerc +lat_0=46.9524055555556 +lon_0=7.43958333333333 +k_0=1 +x_0=2600000 +y_0=1200000 +ellps=bessel +towgs84=674.374,15.056,405.346,0,0,0,0 +units=m +no_defs +type=crs';
+      const x = ORTLER_LV95;
+      const points = [];
+      for (let i = 0; i <= 12; i++) {
+        for (let j = 0; j <= 12; j++) {
+          points.push({ e: x.west + ((x.east - x.west) * i) / 12, n: x.south + ((x.north - x.south) * j) / 12 });
+        }
+      }
+      // proj4 takes and returns [x, y]: easting/northing in, longitude/latitude out.
+      const wgs = points.map(({ e, n }) => {
+        const [lon, lat] = proj4(lv95, 'EPSG:4326', [e, n]);
+        return { lat, lon };
+      });
+      const back = geoBatch('wgs84ToLv95', wgs);
+      const worst = Math.max(...points.map((pt, i) => gridDistance(pt, back[i])));
+      return worst <= 1 ? null : `lib/geo.ts is up to ${worst.toFixed(3)} m from proj4 over the Ortler plate (limit 1 m)`;
     },
   },
   {
