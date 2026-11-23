@@ -38,6 +38,109 @@ export const overview = {
     "url": "/terrain/overview-contours-alps.3cdc771b90.svg"
   },
   "hillshade": false,
+  "outlines": [
+    {
+      "region": "saalfelden",
+      "plate": "saalfelden",
+      "corners": [
+        {
+          "u": 0.6461,
+          "v": 0.2687
+        },
+        {
+          "u": 0.6594,
+          "v": 0.2694
+        },
+        {
+          "u": 0.6599,
+          "v": 0.2514
+        },
+        {
+          "u": 0.6466,
+          "v": 0.2507
+        }
+      ]
+    },
+    {
+      "region": "zermatt",
+      "plate": "matterhorn",
+      "corners": [
+        {
+          "u": 0.2204,
+          "v": 0.5094
+        },
+        {
+          "u": 0.2322,
+          "v": 0.5095
+        },
+        {
+          "u": 0.2323,
+          "v": 0.493
+        },
+        {
+          "u": 0.2204,
+          "v": 0.4929
+        }
+      ]
+    }
+  ],
+  "summits": [
+    {
+      "name": "Dufourspitze",
+      "country": "CH",
+      "officialM": 4634,
+      "status": "confirmed",
+      "officialRef": "https://map.geo.admin.ch/?lang=en&E=2633206&N=1087350&zoom=10",
+      "uv": {
+        "u": 0.2389,
+        "v": 0.5105
+      }
+    },
+    {
+      "name": "Mont Blanc",
+      "country": "FR",
+      "officialM": 4806,
+      "status": "confirmed",
+      "officialRef": "https://www.geoportail.gouv.fr/carte?c=6.86463,45.83267&z=15&permalink=yes",
+      "uv": {
+        "u": 0.1554,
+        "v": 0.5279
+      }
+    },
+    {
+      "name": "Grossglockner",
+      "country": "AT",
+      "officialM": 3798,
+      "status": "confirmed",
+      "officialRef": "https://data.bev.gv.at/geonetwork/srv/api/records/a6ea4096-8adc-4752-aac2-a4c115b8c12d",
+      "uv": {
+        "u": 0.6412,
+        "v": 0.3209
+      }
+    },
+    {
+      "name": "Zugspitze",
+      "country": "DE",
+      "officialM": 2962,
+      "status": "confirmed",
+      "officialRef": "https://daten.gdz.bkg.bund.de/produkte/sonstige/gn250/aktuell/",
+      "uv": {
+        "u": 0.4989,
+        "v": 0.2631
+      }
+    },
+    {
+      "name": "Triglav",
+      "country": "SI",
+      "officialM": 2864,
+      "status": "secondary",
+      "officialRef": null,
+      "uv": {
+        "u": 0.7364,
+        "v": 0.4369
+      }
+    }
+  ],
   "notice": "produced using Copernicus WorldDEM™-90 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved",
   "liability": "The organisations in charge of the Copernicus programme by law or by delegation do not incur any liability for any use of the Copernicus WorldDEM™-90"
 } as const;

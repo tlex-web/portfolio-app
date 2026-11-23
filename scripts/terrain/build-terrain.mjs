@@ -61,7 +61,11 @@
  * every intervalM, d3-contour, a ring filter, ringPaths at simplifyPx, then
  * public/terrain/overview-contours-alps.<hash>.svg within OVERVIEW_BUDGET.
  * data/generated/overview.ts (SERVER-ONLY) carries its URL, the projection and
- * grid, the verbatim GLO-90 notice and liability sentence. Its names join the
+ * grid, one outline per region of data/regions/regions.json (its plate's four
+ * extent corners in overview UV, D-17), the reference summits (D-18) and the
+ * verbatim GLO-90 notice and liability sentence (D-21). The build reads
+ * regions.json, so editing it leaves --check stale until terrain:build runs
+ * again. A region whose plate is not registered fails. Its names join the
  * expected-name union, so the sweep keeps them and --check names a missing or
  * extra overview file (RESEARCH Pitfall 4: a separate script's files would be
  * swept). Nothing overview-related reaches terrain.ts, precache.json, plates.ts or
@@ -460,12 +464,89 @@ function overviewBytes(text) {
 }
 
 /**
+ * The region registry, parsed, with every region's plate in the plate registry
+ * (16 D-17: each region is drawn as its plate's outline, so a region whose plate
+ * has no source fails the build, naming regions.json). Checked before any plate
+ * is built.
+ */
+function loadRegions(plates) {
+  const regions = parseNamed(Regions, REGIONS_REL);
+  for (const r of regions.regions) {
+    if (!plates.some((p) => p.id === r.plate))
+      throw new Error(
+        `${REGIONS_REL}: region ${r.id}: plate ${r.plate} is not in ${PLATES_REL}, so the overview has no extent to outline`
+      );
+  }
+  return regions;
+}
+
+/**
+ * WGS84 -> overview UV (16-02 Decisions): u = (lon − west) / (east − west),
+ * v = (north − lat) / (north − south) over the source's window, rounded to 4
+ * decimals. The cos 46.5° x scale is the grid's aspect, not a step here.
+ */
+function overviewUv(source, { lat, lon }) {
+  const [west, east] = source.lon;
+  const [south, north] = source.lat;
+  return { u: round4((lon - west) / (east - west)), v: round4((north - lat) / (north - south)) };
+}
+const inUnitSquare = ({ u, v }) => u >= 0 && u <= 1 && v >= 0 && v <= 1;
+
+/**
+ * One outline per region, in regions.json order (D-17): its plate's extent corners
+ * SW, SE, NE, NW, from the plate's own grid to WGS84 through fromGrid (lib/geo.ts
+ * for EPSG:2056, proj4 for EPSG:3035), then to overview UV. Corners are stored as
+ * four points, not a box: grid convergence turns an LAEA or eastern LV95 plate by
+ * about 2° (16-02). A corner outside [0, 1] fails, naming the region.
+ */
+function overviewOutlines(source, regions, sources) {
+  return regions.regions.map((r) => {
+    const plate = sources.get(r.plate);
+    const { west, south, east, north } = plate.extent;
+    const corners = [
+      [west, south],
+      [east, south],
+      [east, north],
+      [west, north],
+    ].map(([e, n]) => overviewUv(source, fromGrid(plate.crs, { e, n })));
+    if (!corners.every(inUnitSquare))
+      throw new Error(
+        `region ${r.id}: plate ${r.plate}'s extent leaves the overview window (${source.lon.join('-')}° E, ${source.lat.join('-')}° N)`
+      );
+    return { region: r.id, plate: r.plate, corners };
+  });
+}
+
+/**
+ * The reference summits in overview.json order (D-18), each with its official
+ * height, status, officialRef and UV. Kept as their own records: a summit inside
+ * or touching an outline (Dufourspitze beside the Matterhorn plate) merges with
+ * nothing.
+ */
+function overviewSummits(source, config) {
+  return config.summits.map((s) => {
+    const uv = overviewUv(source, s);
+    if (!inUnitSquare(uv))
+      throw new Error(`${OVERVIEW_CONFIG_REL}: summit ${s.name} lies outside the overview window`);
+    return {
+      name: s.name,
+      country: s.country,
+      officialM: s.officialM,
+      status: s.status,
+      officialRef: s.officialRef,
+      uv,
+    };
+  });
+}
+
+/**
  * The Alps overview in memory (DATA-12): the contour file and the overview.ts
  * text. Built in the same run as every plate, so its file is in the expected-name
  * union and the stale-file sweep keeps it (RESEARCH Pitfall 4). The sheet stays
- * the whole arc (D-16): nothing here crops it per region.
+ * the whole arc (D-16): nothing here crops it per region. `sources` maps each
+ * plate id to its parsed source record (crs and extent).
  */
-function buildOverview({ source, config, metres }) {
+function buildOverview({ source, config, metres }, regions, sources) {
   const { width: W, height: H } = source;
   const { text, levels } = overviewContours(metres, W, H, config.contours);
   const name = hashedName(OVERVIEW_CONTOURS, 'svg', text);
@@ -475,6 +556,8 @@ function buildOverview({ source, config, metres }) {
     grid: { width: W, height: H },
     contours: { ...config.contours, levels, url: `/terrain/${name}` },
     hillshade: config.hillshade,
+    outlines: overviewOutlines(source, regions, sources),
+    summits: overviewSummits(source, config),
     notice: source.notice,
     liability: source.liability,
   };
@@ -911,10 +994,17 @@ async function buildPlates(plates, { encode }) {
   for (const plate of plates) {
     const loaded = await loadSource(plate);
     if (loaded.error) throw new Error(`${loaded.error}; re-run npm run terrain:fetch`);
-    built.push({ plate, ...(await buildPlate(plate, loaded.source, loaded.metres, { encode })) });
+    built.push({
+      plate,
+      source: loaded.source,
+      ...(await buildPlate(plate, loaded.source, loaded.metres, { encode })),
+    });
   }
   return built;
 }
+
+/** Each built plate's parsed source record keyed by plate id (the overview outlines read crs and extent). */
+const sourcesOf = (built) => new Map(built.map((b) => [b.plate.id, b.source]));
 
 /** The home plate's build (Plates guarantees exactly one). */
 const homeOf = (built) => built.find((b) => b.plate.home);
@@ -976,11 +1066,13 @@ async function write() {
   // plate's lossy posters, so refuse before anything is built or written.
   if (fs.existsSync(META_PATH) && committedMeta() === null)
     throw new Error(`cannot read ${META_REL}; refusing to re-encode posters`);
+  const { plates: registry } = loadRegistry();
+  const regions = loadRegions(registry);
   const overviewLoaded = await loadOverview();
   if (overviewLoaded.error)
     throw new Error(`${overviewLoaded.error}; re-run npm run terrain:fetch:overview`);
-  const built = await buildPlates(loadRegistry().plates, { encode: true });
-  const ov = buildOverview(overviewLoaded);
+  const built = await buildPlates(registry, { encode: true });
+  const ov = buildOverview(overviewLoaded, regions, sourcesOf(built));
   // Every plate and the overview within budget before a single file is written.
   const over = [...built.flatMap(budgetProblems), ...overviewBudgetProblems(ov)];
   if (over.length > 0) {
@@ -1071,6 +1163,7 @@ function moduleLine(rel, full, text, lines) {
 async function check() {
   const lines = [];
   const { plates } = loadRegistry();
+  const regions = loadRegions(plates);
   const loadedAll = [];
   for (const plate of plates) {
     const loaded = await loadSource(plate);
@@ -1096,8 +1189,8 @@ async function check() {
   }
   const built = [];
   for (const { plate, source, metres } of loadedAll)
-    built.push({ plate, ...(await buildPlate(plate, source, metres, { encode: false })) });
-  const ov = buildOverview(overviewLoaded);
+    built.push({ plate, source, ...(await buildPlate(plate, source, metres, { encode: false })) });
+  const ov = buildOverview(overviewLoaded, regions, sourcesOf(built));
 
   // The overview's names are in the union, so a missing or extra overview file is named.
   const expected = new Set([...built.flatMap(namesOf), ov.svg.name]);

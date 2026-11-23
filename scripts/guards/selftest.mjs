@@ -1738,11 +1738,15 @@ async function coarseCase({ id, point, precision, d, step, radiusM, reasonPart }
 // scripts/terrain/: the plate registry through --root (DATA-11, 15-05 D-13)
 const TERRAIN_BUILD = path.join(repoRoot, 'scripts', 'terrain', 'build-terrain.mjs');
 const TERRAIN_PUBLIC = 'public/terrain';
-/** The Alps overview's inputs (16-13 source and parameters), read by every terrain build since 16-15. */
+/**
+ * The Alps overview's inputs, read by every terrain build since 16-15: the 16-13
+ * source and parameters, and the region registry (one outline per region).
+ */
 const TERRAIN_OVERVIEW_INPUTS = [
   'data/terrain/overview/source.json',
   'data/terrain/overview/dem.png',
   'data/terrain/overview.json',
+  'data/regions/regions.json',
 ];
 /** The overview's outputs: its server-only module and its contour file in public/terrain/. */
 const OVERVIEW_MODULE = 'data/generated/overview.ts';
@@ -2017,6 +2021,31 @@ const terrainOverviewRoot = await tempTerrainRoot();
 let terrainOverviewWrite = null;
 /** The overview contour files in `root`'s public/terrain/. */
 const overviewContourFiles = (root) => terrainListing(root).filter((f) => OVERVIEW_CONTOURS_RE.test(f));
+/** Rewrites the JSON file `rel` under `root` through `edit` (which mutates the parsed value). */
+function editRootJson(root, rel, edit) {
+  const p = path.join(root, rel);
+  const value = JSON.parse(fs.readFileSync(p, 'utf-8'));
+  edit(value);
+  fs.writeFileSync(p, `${JSON.stringify(value, null, 2)}\n`);
+}
+/** `root`'s generated overview as data, or null when unreadable. */
+function overviewMeta(root) {
+  const m = /export const overview = ([\s\S]*) as const;\s*$/.exec(fs.readFileSync(path.join(root, OVERVIEW_MODULE), 'utf-8'));
+  return m ? JSON.parse(m[1]) : null;
+}
+/** DATA-12 edge "empty": an overview.json with two summits must fail before anything is written. */
+const terrainTwoSummitsRoot = await tempTerrainRoot();
+editRootJson(terrainTwoSummitsRoot, 'data/terrain/overview.json', (c) => {
+  c.summits = c.summits.slice(0, 2);
+});
+/** D-17: a region whose plate is not registered has no extent to outline. */
+const terrainNoPlateRoot = await tempTerrainRoot();
+editRootJson(terrainNoPlateRoot, 'data/regions/regions.json', (r) => {
+  r.regions[r.regions.length - 1].plate = 'unregistered';
+});
+/** DATA-12 edge "one region": a registry of one region still gets its one outline. */
+const terrainOneRegionRoot = await tempTerrainRoot();
+let terrainOneRegionWrite = null;
 
 // scripts/terrain/fetch-*.mjs (16 D-09, D-28): only the argument refusals run here, offline.
 // The fetchers are manual and networked (T-08-09); every case below exits during argument parsing.
@@ -4064,6 +4093,53 @@ const cases = [
         return `public/terrain/ lists ${terrainListing(terrainOverviewRoot).join(', ')}, not the repo's files`;
       // Every repo file in public/terrain/ (Matterhorn's nine, the plates', the overview's) and the four home modules.
       return terrainBytesEqual(terrainOverviewRoot, [...matterhornFiles(), ...TERRAIN_HOME_MODULES, 'data/generated/plates.ts', OVERVIEW_MODULE]);
+    },
+  },
+  {
+    // DATA-12 edge "empty": OverviewConfig holds 3 to 5 summits; the failure names the file and writes nothing.
+    name: 'terrain: an overview.json with two summits fails, naming the file, and writes nothing',
+    guard: TERRAIN_BUILD,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--root', terrainTwoSummitsRoot],
+    expectExit: 1,
+    expectOutput: ['terrain: data/terrain/overview.json: summits: '],
+    check: () =>
+      terrainBytesEqual(terrainTwoSummitsRoot, [...matterhornFiles(), ...TERRAIN_HOME_MODULES, 'data/generated/plates.ts', OVERVIEW_MODULE]),
+  },
+  {
+    // D-17: each region is drawn as its plate's extent, so a region on an unregistered plate fails (write and --check alike).
+    name: 'terrain: a region whose plate is not registered fails, naming regions.json',
+    guard: TERRAIN_BUILD,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--check', '--root', terrainNoPlateRoot],
+    expectExit: 1,
+    expectOutput: ['terrain: data/regions/regions.json: region ', 'plate unregistered is not in data/terrain/plates.json'],
+  },
+  {
+    // DATA-12 edge "one region": the overview still writes that region's one outline, and the plates are untouched.
+    name: 'terrain: with one region the overview holds one outline',
+    guard: TERRAIN_BUILD,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--check'],
+    setup: () => {
+      editRootJson(terrainOneRegionRoot, 'data/regions/regions.json', (r) => {
+        r.regions = r.regions.slice(0, 1);
+      });
+      terrainOneRegionWrite = terrainWrite(terrainOneRegionRoot);
+      return ['--root', terrainOneRegionRoot];
+    },
+    expectExit: 0,
+    expectOutput: ['terrain: OK'],
+    check: () => {
+      if (terrainOneRegionWrite) return terrainOneRegionWrite;
+      const meta = overviewMeta(terrainOneRegionRoot);
+      if (!meta) return `${OVERVIEW_MODULE} is unreadable after the write`;
+      const first = JSON.parse(fs.readFileSync(path.join(repoRoot, 'data/regions/regions.json'), 'utf-8')).regions[0];
+      const outlines = meta.outlines.map((o) => `${o.region}/${o.plate}`);
+      if (JSON.stringify(outlines) !== JSON.stringify([`${first.id}/${first.plate}`]))
+        return `outlines are ${outlines.join(', ') || 'none'}, expected ${first.id}/${first.plate}`;
+      if (meta.outlines[0].corners.length !== 4) return `the outline has ${meta.outlines[0].corners.length} corners, expected 4`;
+      return terrainBytesEqual(terrainOneRegionRoot, [...matterhornFiles(), ...TERRAIN_HOME_MODULES, 'data/generated/plates.ts']);
     },
   },
   {

@@ -32,6 +32,9 @@ import {
   type OverviewSummit,
 } from '@/data/schemas/overview';
 import { Country } from '@/data/schemas/photo';
+import { Regions } from '@/data/schemas/region';
+import { Plates, TerrainSource } from '@/data/schemas/terrain';
+import { lv95ToWgs84 } from '@/lib/geo';
 
 const ROOT = process.cwd();
 const DIR = 'data/terrain/overview';
@@ -277,5 +280,94 @@ describe('overview build (16-15, DATA-12)', () => {
       expect(text).not.toContain('overview');
       expect(text).not.toContain('WorldDEM');
     }
+  });
+});
+
+describe('overview outlines and summits (16-15, D-17, D-18)', () => {
+  const regions = Regions.parse(JSON.parse(readText('data/regions/regions.json')));
+  const plates = Plates.parse(JSON.parse(readText('data/terrain/plates.json')));
+  const inUnit = ({ u, v }: { u: number; v: number }) => u >= 0 && u <= 1 && v >= 0 && v <= 1;
+  const has4dp = (x: number) => Math.round(x * 1e4) / 1e4 === x;
+  /** The 16-02 projection: u = (lon − 5) / 12, v = (49 − lat) / 6 over the source window. */
+  const toUv = ({ lat, lon }: { lat: number; lon: number }) => ({
+    u: (lon - source.lon[0]) / (source.lon[1] - source.lon[0]),
+    v: (source.lat[1] - lat) / (source.lat[1] - source.lat[0]),
+  });
+
+  it("holds one outline per region, in regions.json order, with the region's plate", () => {
+    expect(overview.outlines.map((o) => [o.region, o.plate])).toEqual(
+      regions.regions.map((r) => [r.id, r.plate])
+    );
+    for (const o of overview.outlines) {
+      expect(plates.plates.map((p) => p.id)).toContain(o.plate);
+      expect(o.corners).toHaveLength(4);
+      for (const c of o.corners) {
+        expect(inUnit(c)).toBe(true);
+        expect(has4dp(c.u) && has4dp(c.v)).toBe(true);
+      }
+    }
+  });
+
+  it("the zermatt outline is the Matterhorn extent's corners projected, within one grid pixel", () => {
+    const home = plates.plates.find((p) => p.home);
+    if (!home) throw new Error('plates.json has no home plate');
+    const record = TerrainSource.parse(JSON.parse(readText(`${home.source}/source.json`)));
+    expect(record.crs).toBe('EPSG:2056');
+    const { west, south, east, north } = record.extent;
+    const expected = [
+      [west, south],
+      [east, south],
+      [east, north],
+      [west, north],
+    ].map(([e, n]) => toUv(lv95ToWgs84({ e, n })));
+    const zermatt = overview.outlines.find((o) => o.region === 'zermatt');
+    if (!zermatt) throw new Error('overview.ts has no zermatt outline');
+    expect(zermatt.plate).toBe(home.id);
+    zermatt.corners.forEach((c, i) => {
+      expect(Math.abs(c.u - expected[i].u)).toBeLessThanOrEqual(1 / source.width);
+      expect(Math.abs(c.v - expected[i].v)).toBeLessThanOrEqual(1 / source.height);
+    });
+    // SW, SE, NE, NW: south below north (v grows southward), west left of east.
+    const [sw, se, ne, nw] = zermatt.corners;
+    expect(sw.v).toBeGreaterThan(nw.v);
+    expect(se.u).toBeGreaterThan(sw.u);
+    expect(ne.v).toBeLessThan(se.v);
+  });
+
+  it('every outline spans a plate-sized quadrilateral, about 14 to 17 grid px (16-02 measured)', () => {
+    for (const o of overview.outlines) {
+      const us = o.corners.map((c) => c.u * source.width);
+      const vs = o.corners.map((c) => c.v * source.height);
+      for (const span of [Math.max(...us) - Math.min(...us), Math.max(...vs) - Math.min(...vs)]) {
+        expect(span).toBeGreaterThan(12);
+        expect(span).toBeLessThan(19);
+      }
+    }
+  });
+
+  it('holds the 3 to 5 summits of overview.json, in its order, with official data and UV', () => {
+    expect(overview.summits.length).toBeGreaterThanOrEqual(3);
+    expect(overview.summits.length).toBeLessThanOrEqual(5);
+    expect(new Set(overview.summits.map((s) => s.name)).size).toBe(overview.summits.length);
+    expect(overview.summits.map((s) => [s.name, s.country, s.officialM, s.status, s.officialRef])).toEqual(
+      config.summits.map((s) => [s.name, s.country, s.officialM, s.status, s.officialRef])
+    );
+    overview.summits.forEach((s, i) => {
+      expect(inUnit(s.uv)).toBe(true);
+      const want = toUv(config.summits[i]);
+      expect(s.uv.u).toBeCloseTo(want.u, 4);
+      expect(s.uv.v).toBeCloseTo(want.v, 4);
+    });
+  });
+
+  it('outlines and summits stay separate records: a summit beside an outline removes neither', () => {
+    expect(overview.outlines).toHaveLength(regions.regions.length);
+    expect(overview.summits).toHaveLength(config.summits.length);
+    const outlineKeys = new Set(Object.keys(overview.outlines[0]));
+    for (const s of overview.summits) for (const k of Object.keys(s)) expect(outlineKeys.has(k)).toBe(false);
+    // Dufourspitze sits beside the Matterhorn plate (16-02: the dots touch at 375 px); both are kept.
+    const zermatt = overview.outlines.find((o) => o.region === 'zermatt');
+    const dufour = overview.summits.find((s) => s.name === 'Dufourspitze');
+    expect(zermatt && dufour).toBeTruthy();
   });
 });
