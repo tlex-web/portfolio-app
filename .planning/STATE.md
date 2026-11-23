@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 16
 current_phase_name: New Regions & Alps Overview Data
 status: executing
-stopped_at: Completed 16-08-PLAN.md
-last_updated: "2026-11-23T09:59:48.832Z"
+stopped_at: Completed 16-07-PLAN.md
+last_updated: "2026-11-23T10:12:31.414Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 16 execution started
-state_head: 5c7ec6b01464d0837c3fe12f722b109d2b70999c
+state_head: 52e908d956ecd87fb2f5474238bba94f9514d790
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 64
-  completed_plans: 53
+  completed_plans: 54
   percent: 43
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-15)
 ## Current Position
 
 Phase: 16 (New Regions & Alps Overview Data) — EXECUTING
-Plan: 8 of 18
+Plan: 9 of 18
 Status: Ready to execute
 Last activity: 2026-11-23 — Phase 16 execution started
 
@@ -109,6 +109,7 @@ Progress: [████░░░░░░] 43%
 | Phase 16 P05 | 8min | 2 tasks | 8 files |
 | Phase 16 P06 | 9min | 2 tasks | 10 files |
 | Phase 16 P08 | 12min | 3 tasks | 3 files |
+| Phase 16 P07 | 10min | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -249,6 +250,8 @@ Recent decisions affecting current work:
 - [Phase 16]: 16-06: formatAltitude joins 'ground' to the height with U+00A0; StripSource.aerial is optional (absent = ground); Home keeps inline labels and is guarded to ground photos by data/__tests__/home.test.ts
 - [Phase 16]: 16-08 (Tim, D-02): 'Proposed (Recommended)' — img-0680, img-0682, sam-20240910-143659 at 4dp ground (all CH, 'All three CH (Recommended)'); dji-20260919-162232 and dji-20260919-163558 at 3dp aerial, AT; valley still kept ('Keep it (Recommended)'); copy approved with the Zermatt car-rule and Saalfelden district facts corrected ('Approve, fixes applied (Recommended)'); S20 and S25 files out of every series. 16-14 applies the 16-08-SUMMARY rows.
 - [Phase 16]: 16-08: one general photo id slug (lowercase letters and digits in hyphen-joined groups, max 40 chars) in ExifSidecarEntry.id, PhotoId, the ImageManifest key and the HASHED test pattern
+- [Phase 16]: 16-07: terrain:build writes data/generated/home-plate.ts (homePlate, the home sheet only) from the same PlatesMeta parse as plates.ts; ContourField, SheetBand and SheetLegend take the sheet as a prop, so no component imports plates.ts
+- [Phase 16]: 16-07: the global-error client graph forbids data/generated/plates.ts; client JS 1,851,685 B (16-01 base +113 B)
 
 ### Pending Todos
 
@@ -308,6 +311,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-23T09:59:47.952Z
-Stopped at: Completed 16-08-PLAN.md
+Last session: 2026-11-23T10:12:30.502Z
+Stopped at: Completed 16-07-PLAN.md
 Resume file: None
