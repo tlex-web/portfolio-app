@@ -25,8 +25,11 @@ import { buildPhotoViews, seriesInput, type PhotoView } from '@/lib/photos/view-
  * lib/photos/routes.ts (D-06); proxy.ts reads its id list from
  * lib/photos/region-ids.ts, never from here.
  *
- * D-14: the heading, title and description text below is the draft brought to
- * Tim's copy checkpoint (17-01 Task 2). Approved text replaces it verbatim.
+ * D-14: the heading, title, description and OG alt templates below are Tim's
+ * approved copy (17-01 Task 2, his reply recorded verbatim in 17-01-SUMMARY.md):
+ * the country as its full name, height ranges without 'approx.', and 'ground'
+ * before the range in the description and the OG alt when every photo of the
+ * region is aerial. lib/__tests__/regions.test.ts pins the rendered strings.
  */
 
 /** The parsed registry (a schema violation throws at module load). */
@@ -92,14 +95,14 @@ export const COUNTRY_NAME: Readonly<Record<Region['country'], string>> = {
   SI: 'Slovenia',
 };
 
-/** The region page's h1: '{name}, {country name}' (D-14 draft). */
+/** The region page's h1: '{name}, {country name}' (D-14, approved). */
 export function regionHeading(region: Pick<Region, 'name' | 'country'>): string {
   return `${region.name}, ${COUNTRY_NAME[region.country]}`;
 }
 
 /**
  * The page title, rendered through the root template as '{title} · Tim Lui'
- * (D-14 draft: the heading). An unknown id throws: callers check regionById first.
+ * (D-14, approved: the heading). An unknown id throws: callers check regionById first.
  */
 export function regionTitle(id: string): string {
   const region = regionById(id);
@@ -110,31 +113,66 @@ export function regionTitle(id: string): string {
 /** U+00A0, so 'ground' stays on its number, as formatAltitude prints it. */
 const NBSP = String.fromCharCode(0xa0);
 
-/**
- * The region's meta description (D-14 draft), pure so a one-photo input is
- * testable: '{n} photographs by Tim Lui from {name}, {country name}, at
- * {lo–hi m}, {years}.', with '1 photograph' for one photo and the height
- * printed once when the ends are equal (formatMetreRange). When every photo
- * is aerial (16 D-04) the heights are the ground under the drone: '{n} aerial
- * photographs by Tim Lui over {name}, {country name}, ground {range}, {years}.'
- *
- * @throws RangeError for an empty view list (formatYearRange).
- */
-export function regionDescription(input: {
+/** What the description and the OG alt need from a region's photos. */
+type RegionCopyInput = {
   name: string;
   country: Region['country'];
   views: readonly Pick<PhotoView, 'altitudeM' | 'aerial' | 'years'>[];
-}): string {
-  const { name, country, views } = input;
+};
+
+/**
+ * The figures both copy strings print: the photo count with its noun, the
+ * height range (printed once when the ends are equal, formatMetreRange), the
+ * year span, and whether every photo is aerial (16 D-04), so the heights are
+ * the ground under the drone. A region with mixed photos reads as a ground
+ * region, as in the description.
+ *
+ * @throws RangeError for an empty view list (formatYearRange).
+ */
+function copyFigures(views: RegionCopyInput['views']) {
   const n = views.length;
-  const noun = n === 1 ? 'photograph' : 'photographs';
   const heights = views.map((v) => v.altitudeM);
-  const range = formatMetreRange(Math.min(...heights), Math.max(...heights));
-  const years = formatYearRange(views.map((v) => v.years));
+  return {
+    n,
+    noun: n === 1 ? 'photograph' : 'photographs',
+    range: formatMetreRange(Math.min(...heights), Math.max(...heights)),
+    years: formatYearRange(views.map((v) => v.years)),
+    aerial: views.every((v) => v.aerial),
+  };
+}
+
+/**
+ * The region's meta description (D-14, approved), pure so a one-photo input is
+ * testable: '{n} photographs by Tim Lui from {name}, {country name}, at
+ * {lo–hi m}, {years}.', with '1 photograph' for one photo. When every photo is
+ * aerial: '{n} aerial photographs by Tim Lui over {name}, {country name},
+ * ground {range}, {years}.'
+ *
+ * @throws RangeError for an empty view list (formatYearRange).
+ */
+export function regionDescription(input: RegionCopyInput): string {
+  const { name, country, views } = input;
+  const { n, noun, range, years, aerial } = copyFigures(views);
   const place = `${name}, ${COUNTRY_NAME[country]}`;
-  return views.every((v) => v.aerial)
+  return aerial
     ? `${n} aerial ${noun} by ${site.name} over ${place}, ground${NBSP}${range}, ${years}.`
     : `${n} ${noun} by ${site.name} from ${place}, at ${range}, ${years}.`;
+}
+
+/**
+ * The region OG card's alt text (D-14, approved; 17-07 reads it), mirroring
+ * the 12-01 photo template '{title}, a photograph by Tim Lui. {short place},
+ * {altitude}': '{name}, {n} photographs by Tim Lui. {country name}, {lo–hi m}'.
+ * When every photo is aerial the range reads 'ground {range}', the same rule as
+ * the description (Tim's reply: add "ground"), so it follows the data rather
+ * than naming a region. An unknown id throws: callers check regionById first.
+ */
+export function regionOgAlt(id: string): string {
+  const region = regionById(id);
+  if (!region) throw new RangeError(`regionOgAlt: ${id} is not a registry region`);
+  const { n, noun, range, aerial } = copyFigures(regionPhotoViews(id));
+  const height = aerial ? `ground${NBSP}${range}` : range;
+  return `${region.name}, ${n} ${noun} by ${site.name}. ${COUNTRY_NAME[region.country]}, ${height}`;
 }
 
 /**
