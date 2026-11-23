@@ -323,7 +323,7 @@ Plans:
   3. Each region page has its own title, description, canonical URL, Open Graph card and sitemap entry, and the sitemap lists exactly the canonical URLs.
   4. Pages carry JSON-LD that parses: Person and WebSite site-wide, ImageObject on photo pages, an image gallery on region pages and the projects on their case studies, each with creator, copyright notice and credit text, no `license` property and no coordinates finer than the page shows.
   5. The offline page's saved-pages list includes the region pages and new photo pages a visitor has opened.
-**Plans**: 5/16 plans executed in 7 waves
+**Plans**: 6/16 plans executed in 7 waves
 
 Plans:
 **Wave 1**
@@ -335,7 +335,7 @@ Plans:
 **Wave 2** *(blocked on Wave 1 completion)*
 - [x] 17-05-PLAN.md — Every photo published at `/photos/<slug>` (D-07, PHOTO-05) with the v2.0 four measured identical to the phase base
 - [ ] 17-08-PLAN.md — 16 IN-02, IN-08, IN-09 in the terrain fetchers (D-23)
-- [ ] 17-16-PLAN.md — Region guards split from 17-01: the D-03 collision test, the registry kept out of client chunks (D-06) and the tracer's client JS measured
+- [x] 17-16-PLAN.md — Region guards split from 17-01: the D-03 collision test, the registry kept out of client chunks (D-06) and the tracer's client JS measured
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 17-06-PLAN.md — New photo pages: no stepping, back link and Escape to the region (D-08, D-09)
@@ -427,6 +427,6 @@ Plans:
 | 14. UI Fixes & Terminal Controls | v2.1 | 8/8 | Complete    | 2026-11-14 |
 | 15. Region & Plate Data Model | v2.1 | 16/16 | Complete    | 2026-11-15 |
 | 16. New Regions & Alps Overview Data | v2.1 | 18/18 | Complete    | 2026-11-23 |
-| 17. Region Routes, SEO & Structured Data | v2.1 | 5/16 | In Progress | - |
+| 17. Region Routes, SEO & Structured Data | v2.1 | 6/16 | In Progress | - |
 | 18. Immersive Survey Layout | v2.1 | 0/TBD | Not started | - |
 | 19. Drone Loops | v2.1 | 0/TBD | Not started | - |

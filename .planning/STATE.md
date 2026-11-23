@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 17
 current_phase_name: Region Routes, SEO & Structured Data
 status: executing
-stopped_at: Completed 17-05-PLAN.md
-last_updated: "2026-11-23T23:19:17.831Z"
+stopped_at: Completed 17-16-PLAN.md
+last_updated: "2026-11-23T23:26:42.385Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 17 execution started
-state_head: 34d5d09a5525d6b83cab7a491453328040824e40
+state_head: fd85f97526c7a5eed28292914246771b8541843d
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 80
-  completed_plans: 69
+  completed_plans: 70
   percent: 57
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-23)
 ## Current Position
 
 Phase: 17 (Region Routes, SEO & Structured Data) — EXECUTING
-Plan: 6 of 16
+Plan: 7 of 16
 Status: Ready to execute
 Last activity: 2026-11-23 — Phase 17 execution started
 
@@ -126,6 +126,7 @@ Progress: [██████░░░░] 57%
 | Phase 17 P03 | 7min | 3 tasks | 5 files |
 | Phase 17 P04 | 10min | 2 tasks | 6 files |
 | Phase 17 P05 | 14min | 2 tasks | 8 files |
+| Phase 17 P16 | 5min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -301,6 +302,8 @@ Recent decisions affecting current work:
 - [Phase 17]: 17-05 D-07: the photo route set (static params, proxy KNOWN slugs, per-photo OG card) is the eleven published photos (publishedSlugs); photoViews/photoSlugs stay the four-photo light table and stepping set until Phase 18
 - [Phase 17]: 17-05 D-14: the aerial meta description ships as Tim approved it, '{title}: an aerial photograph by Tim Lui over {short place}, {altitudeLabel}, {captureMonth}.'; ground photos keep the v2.0 template
 - [Phase 17]: 17-05: the v2.0 identity script's stripped-HTML hash also replaces nonce="..." values (Next puts the per-request CSP nonce on link elements); later re-checks recreate the script and base JSON from 17-05-SUMMARY (base=51b7f4d9b291)
+- [Phase 17]: 17-16 D-03: region ids, every editorial photo slug and the reserved set ('regions', NEUTRAL_SLUG, 'opengraph-image', plus every static directory under app/(site)/photos, read with fs at test time) are pairwise disjoint in lib/__tests__/regions.test.ts
+- [Phase 17]: 17-16 D-06: data/regions/regions.json is in SERVER_ONLY_MODULES; client JS after the tracer is 1,851,685 B in 24 files (= phase base, cap 1,855,781 B), no 'Steinernen' in any client chunk
 
 ### Pending Todos
 
@@ -360,6 +363,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-23T23:19:16.797Z
-Stopped at: Completed 17-05-PLAN.md
+Last session: 2026-11-23T23:26:41.359Z
+Stopped at: Completed 17-16-PLAN.md
 Resume file: None
