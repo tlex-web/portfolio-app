@@ -104,7 +104,7 @@ describe('photoBySlug: light table first, then the published set (D-07)', () => 
   });
 
   it("returns every other published photo's published view", () => {
-    const others = (publishedViews ?? []).filter((v) => !photoSlugs.includes(v.slug));
+    const others = publishedViews.filter((v) => !photoSlugs.includes(v.slug));
     expect(others).toHaveLength(7);
     for (const view of others) expect(photoBySlug(view.slug)).toBe(view);
   });
