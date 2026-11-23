@@ -507,15 +507,20 @@ export function viewerPhotos(view: PhotoView): readonly PhotoView[] {
  * meta.photo-slug): "{title}: a photograph by Tim Lui from {short place} at
  * {altitude}[ approx.], {Mon YYYY | YYYY}." altitudeLabel already carries
  * ' approx.' for a hand-placed position and captureMonth is the year alone for
- * a year-precision scan, so neither is re-derived here. The canonical is
- * relative and resolves against metadataBase (site.url, D-13).
+ * a year-precision scan, so neither is re-derived here. An aerial photo (16
+ * D-04) reads "{title}: an aerial photograph by Tim Lui over {short place},
+ * {altitude}, {Mon YYYY | YYYY}.", Tim's 17-01 D-14 copy as drafted; its
+ * altitudeLabel already reads 'ground …'. The canonical is relative and
+ * resolves against metadataBase (site.url, D-13).
  */
 export function photoMetadata(slug: string): Metadata {
   const view = photoBySlug(slug);
   if (!view) return {};
   return {
     title: view.title,
-    description: `${view.title}: a photograph by ${site.name} from ${view.shortPlace} at ${view.altitudeLabel}, ${view.captureMonth}.`,
+    description: view.aerial
+      ? `${view.title}: an aerial photograph by ${site.name} over ${view.shortPlace}, ${view.altitudeLabel}, ${view.captureMonth}.`
+      : `${view.title}: a photograph by ${site.name} from ${view.shortPlace} at ${view.altitudeLabel}, ${view.captureMonth}.`,
     alternates: { canonical: photoHref(view.slug) },
   };
 }
