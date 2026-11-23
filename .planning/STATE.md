@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 16
 current_phase_name: New Regions & Alps Overview Data
 status: executing
-stopped_at: Completed 16-01-PLAN.md
-last_updated: "2026-11-23T01:01:11.757Z"
+stopped_at: Completed 16-02-PLAN.md
+last_updated: "2026-11-23T01:05:39.791Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 16 execution started
-state_head: 62246ded482f10c66f86a30fc21fe6ecf47fbb30
+state_head: 9faf62743c2450981e9b11fb75aefad4f105e7d7
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 64
-  completed_plans: 47
+  completed_plans: 48
   percent: 43
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-15)
 ## Current Position
 
 Phase: 16 (New Regions & Alps Overview Data) — EXECUTING
-Plan: 2 of 18
+Plan: 3 of 18
 Status: Ready to execute
 Last activity: 2026-11-23 — Phase 16 execution started
 
@@ -103,6 +103,7 @@ Progress: [████░░░░░░] 43%
 | Phase 15 P15 | 9 min | 3 tasks | 12 files |
 | Phase 15 P16 | 39min | 3 tasks | 3 files |
 | Phase 16 P01 | 28 min | 2 tasks | 9 files |
+| Phase 16 P02 | 21min | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -230,6 +231,10 @@ Recent decisions affecting current work:
 - [Phase 15]: 15-16: ci/15-16 holds the Task 1 tip 0b06608; later docs-only SUMMARY/STATE commits are not pushed (D-31 covers new ci/15-* branches and fast-forward fix pushes only)
 - [Phase 16]: 16-01: fixture DEM ramp rises 1 m per 5 m east so grey16 decimetre pixels are exact; a coarse photo with a hand-placed correction is sampled at that position (gps.groundM required only for coarse EXIF positions)
 - [Phase 16]: 16-01 D-25: Tim chose "Keep history (Recommended)" (AskUserQuestion, 2026-11-23) for the eight committed v2.0 planning files holding finer-than-published positions of the three published photos (08-01-PLAN, 08-01-SUMMARY, 08-02-PLAN, 08-02-SUMMARY, 08-04-SUMMARY, 08-08-SUMMARY, 08-RESEARCH, v2.0-research/STACK.md): no history rewrite, no redaction; later D-25 runs treat them as accepted matches — The photos are already public at 4 decimals in the same repository
+- [Phase 16]: 16-02: Overview variant C, no hillshade (Tim: "C, no hillshade (Recommended)"): plate carree x cos 46.5 deg, 1,200 x 872, 3x3 blur, 1,000 m contours from 1,000 m, simplify 2 px, rings >= 8 px; 14,312 B brotli
+- [Phase 16]: 16-02: Overview budget contours <= 30,000 B brotli and <= 120,000 B raw, served total <= 250,000 B (unchanged by Tim)
+- [Phase 16]: 16-02: Mont Blanc 4,806 m IGN (Tim: "4,806 m IGN (Recommended)"); Triglav fifth summit marked secondary (Tim: "Yes, marked secondary (Recommended)")
+- [Phase 16]: 16-02: Plate extents stored as four corners in overview UV (planner default, not overridden)
 
 ### Pending Todos
 
@@ -289,6 +294,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-23T01:01:11.209Z
-Stopped at: Completed 16-01-PLAN.md
+Last session: 2026-11-23T01:05:39.219Z
+Stopped at: Completed 16-02-PLAN.md
 Resume file: None
