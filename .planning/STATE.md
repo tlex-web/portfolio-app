@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 17
 current_phase_name: Region Routes, SEO & Structured Data
 status: executing
-stopped_at: Completed 17-08-PLAN.md
-last_updated: "2026-11-23T23:42:19.849Z"
+stopped_at: Completed 17-06-PLAN.md
+last_updated: "2026-11-23T23:56:56.758Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 17 execution started
-state_head: 0ef5d8ca7ddeaa1b55420a1d54a2da3cb495f5a1
+state_head: 817c1fc33925de887c236cd0b21ead9f543bbdeb
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 80
-  completed_plans: 71
+  completed_plans: 72
   percent: 57
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-23)
 ## Current Position
 
 Phase: 17 (Region Routes, SEO & Structured Data) — EXECUTING
-Plan: 8 of 16
+Plan: 9 of 16
 Status: Ready to execute
 Last activity: 2026-11-23 — Phase 17 execution started
 
@@ -128,6 +128,7 @@ Progress: [██████░░░░] 57%
 | Phase 17 P05 | 14min | 2 tasks | 8 files |
 | Phase 17 P16 | 5min | 2 tasks | 2 files |
 | Phase 17 P08 | 14min | 2 tasks | 6 files |
+| Phase 17 P06 | 11min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -306,6 +307,7 @@ Recent decisions affecting current work:
 - [Phase 17]: 17-16 D-03: region ids, every editorial photo slug and the reserved set ('regions', NEUTRAL_SLUG, 'opengraph-image', plus every static directory under app/(site)/photos, read with fs at test time) are pairwise disjoint in lib/__tests__/regions.test.ts
 - [Phase 17]: 17-16 D-06: data/regions/regions.json is in SERVER_ONLY_MODULES; client JS after the tracer is 1,851,685 B in 24 files (= phase base, cap 1,855,781 B), no 'Steinernen' in any client chunk
 - [Phase 17]: 17-08: 16 IN-02 (93c5588) one BEV value rule, m < 0 or m > 6000 is nodata; IN-09 (a050c7e) GLO-90 fails below OVERVIEW_FLOOR_M -500 m; IN-08 (1d15fd8) plate-args.mjs and fetch-retry.mjs shared by the three fetchers, refusals byte-identical
+- [Phase 17]: 17-06 D-08/D-09: PhotoViewer renders Previous/counter/Next only for photos.length > 1; a photo off the light table gets back = { href: regionHref(region.id), label: region.name } from the server page (passed only when defined, build fails if a published photo has no region); both page back links and the page Escape use it; the lightbox has no back link; the v2.0 four identical 36/36 (head e359db4); client JS 1,851,749 B
 
 ### Pending Todos
 
@@ -365,6 +367,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-23T23:42:18.817Z
-Stopped at: Completed 17-08-PLAN.md
+Last session: 2026-11-23T23:56:55.717Z
+Stopped at: Completed 17-06-PLAN.md
 Resume file: None
