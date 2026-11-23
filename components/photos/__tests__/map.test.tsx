@@ -11,9 +11,8 @@
 import { render, screen, within } from '@testing-library/react';
 import MapSheet from '@/components/photos/MapSheet';
 import { imageManifest } from '@/data/generated/image-manifest';
-import { photos } from '@/data/generated/photos';
 import { editorial } from '@/data/photos/editorial';
-import { buildPhotoViews, photoViews } from '@/lib/photos/view-model';
+import { buildPhotoViews, lightTableInput, photoViews } from '@/lib/photos/view-model';
 import { SLUGS, viewBySlug } from '../../../e2e/helpers/photo-fixtures';
 
 const NBSP = String.fromCharCode(0xa0);
@@ -87,7 +86,9 @@ describe('MapSheet (PHOTO-01, PHOTO-03, D-01..D-04)', () => {
   });
 
   it("draws a synthetic coarse photo's dot dashed and names it approx. (16 D-01)", () => {
-    // img-0605's facts with a synthetic 3dp position (no photo's position is used).
+    // img-0605's facts with a synthetic 3dp position (no photo's position is used), on
+    // the light table's four photos (D-15): the sheet lays out the light table, and a
+    // photo added in Phase 16 is data only (16-14 rewrite in place, GUARD-03).
     const position = {
       lat: 12.345,
       lon: 5.678,
@@ -98,7 +99,7 @@ describe('MapSheet (PHOTO-01, PHOTO-03, D-01..D-04)', () => {
       radiusM: 100,
     };
     const views = buildPhotoViews({
-      photos: photos.map((p) => (p.id === 'img-0605' ? { ...p, position } : p)),
+      photos: lightTableInput().photos.map((p) => (p.id === 'img-0605' ? { ...p, position } : p)),
       editorial,
       imageManifest,
     });

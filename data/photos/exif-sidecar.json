@@ -77,6 +77,31 @@
       }
     },
     {
+      "id": "img-0680",
+      "file": "_MG_0680.jpg",
+      "sha256": "50cabce66ec768ae846cdd81c59513bba3e7f6cc79562f3efa691f787295fe6c",
+      "width": 6240,
+      "height": 4160,
+      "orientation": null,
+      "space": "srgb",
+      "iccDescription": "sRGB IEC61966-2.1",
+      "make": "Canon",
+      "model": "Canon EOS 6D Mark II",
+      "lens": "EF24-105mm f/4L IS II USM",
+      "focalLengthMm": 32,
+      "fNumber": 22,
+      "exposureTimeS": 0.01,
+      "iso": 400,
+      "dateTimeOriginal": "2021-09-07T13:32:18",
+      "offsetTimeOriginal": null,
+      "gps": {
+        "lat": 45.9748,
+        "lon": 7.698,
+        "altM": 2885,
+        "utc": "2021-09-07T11:32:16.988Z"
+      }
+    },
+    {
       "id": "r004-011",
       "file": "R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC).jpg",
       "sha256": "c89db1dab9d96caed67bf57f0e4e9ab92663564235da04998f295f03a0c7f0f1",

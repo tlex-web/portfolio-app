@@ -131,6 +131,16 @@ export const editorial: Record<PhotoId, Editorial> = {
       },
     ],
   },
+  'img-0680': {
+    slug: 'mirrored-snow-peaks',
+    title: 'Snow peaks mirrored in a pool',
+    alt: 'A row of snow-covered peaks under streaked white cloud and patches of blue sky, mirrored in a still, shallow pool beyond a stretch of brown, stony ground',
+    location: 'Zermatt, Switzerland',
+    story:
+      'I took this above Zermatt in September 2021. A shallow pool on the stony ground was still enough to hold the snow peaks and the cloud above them.',
+    subjectTags: ['landscape', 'reflection', 'snow'],
+    annotations: [],
+  },
   'r004-011': {
     slug: 'riffelsee-reflection',
     title: 'Matterhorn in the Riffelsee',

@@ -60,12 +60,17 @@ describe('editorial copy (DATA-03, D-05, D-07)', () => {
   it('gives every photo a unique descriptive slug', () => {
     const slugs = ids.map((id) => editorial[id].slug);
     expect(new Set(slugs).size).toBe(slugs.length);
-    expect(slugs).toEqual([
-      'matterhorn-from-zermatt',
-      'gornerschlucht-waterfall',
-      'matterhorn-glacier-trail',
-      'riffelsee-reflection',
-    ]);
+    // 16-14 rewrite in place (GUARD-03): the slugs are pinned per id, so a new photo
+    // adds its approved slug (Tim, 08-10 for the v2.0 four, 16-08 for the rest)
+    // instead of breaking a four-entry list.
+    const approved: Record<string, string> = {
+      'img-0605': 'matterhorn-from-zermatt',
+      'img-0629': 'gornerschlucht-waterfall',
+      'img-0662': 'matterhorn-glacier-trail',
+      'img-0680': 'mirrored-snow-peaks',
+      'r004-011': 'riffelsee-reflection',
+    };
+    expect(Object.fromEntries(ids.map((id) => [id, editorial[id].slug]))).toEqual(approved);
   });
 
   it('keeps stories short: at most three sentences each', () => {

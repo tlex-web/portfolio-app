@@ -110,12 +110,15 @@ describe('served images (DATA-05, D-11)', () => {
     expect(hits).toEqual([]);
   });
 
-  test('the eight full-resolution copies and optimization-manifest.json are gone from public/images/optimized/', () => {
+  test('the full-resolution copies of every original (the eight v2.0 ones included) and optimization-manifest.json are gone from public/images/optimized/', () => {
     const fullRes = sidecar.photos.flatMap((p) => {
       const base = p.file.replace(/\.jpe?g$/i, '');
       return [`${base}.jpg`, `${base}.webp`];
     });
-    expect(fullRes).toHaveLength(8);
+    // 16-14 rewrite in place (GUARD-03): two names per sidecar entry, so the count
+    // follows the originals; the four v2.0 originals' eight copies stay covered.
+    expect(fullRes.length).toBeGreaterThanOrEqual(8);
+    expect(fullRes).toHaveLength(2 * sidecar.photos.length);
     const present = [...fullRes, 'optimization-manifest.json'].filter((f) =>
       fs.existsSync(path.join(ROOT, 'public/images/optimized', f))
     );

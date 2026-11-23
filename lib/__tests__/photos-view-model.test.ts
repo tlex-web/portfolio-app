@@ -9,11 +9,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { imageManifest } from '@/data/generated/image-manifest';
 import { photos } from '@/data/generated/photos';
-import { editorial } from '@/data/photos/editorial';
 import { buildWaypoints } from '@/lib/ascent/waypoints';
 import {
   buildPhotoViews,
   elevationMetres,
+  lightTableInput,
   photoBySlug,
   photoMetadata,
   photoSlugs,
@@ -30,11 +30,22 @@ import { SLUGS, viewBySlug } from '../../e2e/helpers/photo-fixtures';
 /** A content-hashed manifest derivative: /images/photos/<name>.<10 hex>.<avif|webp>. */
 const DERIVATIVE = /^\/images\/photos\/[a-z0-9-]+\.[0-9a-f]{10}\.(avif|webp)$/;
 
-const committed: PhotoViewInput = { photos, editorial, imageManifest };
+/**
+ * The v2.0 light table's photos (lightTableIds, D-15) with the committed copy and
+ * manifest. 16-14 rewrite in place (GUARD-03): the order and patch cases below are
+ * about the light table, so they read its four photos, not every generated photo
+ * (new region photos are data only until Phase 18).
+ */
+const committed: PhotoViewInput = lightTableInput();
 
 describe('buildPhotoViews order (PHOTO-03)', () => {
   it('returns the Zermatt series in DEM order, ties by id (PHOTO-03)', () => {
-    expect(photoViews.map((v) => v.slug)).toEqual(buildWaypoints(seriesInput('zermatt')).map((w) => w.slug));
+    // The light table is the Zermatt series' light-table photos, in the series order.
+    expect(photoViews.map((v) => v.slug)).toEqual(
+      buildWaypoints(seriesInput('zermatt'))
+        .map((w) => w.slug)
+        .filter((slug) => photoSlugs.includes(slug))
+    );
     expect(photoSlugs).toEqual([
       'matterhorn-from-zermatt',
       'gornerschlucht-waterfall',
@@ -46,7 +57,7 @@ describe('buildPhotoViews order (PHOTO-03)', () => {
   });
 
   it('breaks a tie in DEM height by id', () => {
-    const tied = photos.map((p) =>
+    const tied = committed.photos.map((p) =>
       p.id === 'img-0662' || p.id === 'img-0605'
         ? { ...p, elevation: { ...p.elevation, m: 3000 } }
         : p
@@ -176,7 +187,7 @@ const photoOf = (slug: string) => {
 const withPhoto = (id: string, patch: Record<string, unknown>) =>
   buildPhotoViews({
     ...committed,
-    photos: photos.map((p) => (p.id === id ? { ...p, ...patch } : p)),
+    photos: committed.photos.map((p) => (p.id === id ? { ...p, ...patch } : p)),
   });
 
 describe('strip fields (D-07, LBOX-04)', () => {
@@ -300,15 +311,23 @@ describe('aerial and coarse heights (16 D-04, D-03)', () => {
     expect(codePoints(view.altitudeLabel)).toEqual(codePoints(`ground${NBSP}1,617${NBSP}m`));
     expect(altitudeRow(view.strip)).toBe(view.altitudeLabel);
     // The position row of a 4dp photo is untouched.
-    expect(view.strip.positionRows[1].value).toBe(viewOf(photoViews, 'img-0605').strip.positionRows[1].value);
+    expect(view.strip.positionRows[1].value).toBe(
+      viewOf(photoViews, 'img-0605').strip.positionRows[1].value
+    );
   });
 
   it('labels a coarse aerial photo ground and approx. in the label and the strip Altitude row alike', () => {
     const view = viewOf(
-      withPhoto('img-0662', { kind: 'aerial', position: coarse2dp, elevation: { source: 'dem', m: 2450 } }),
+      withPhoto('img-0662', {
+        kind: 'aerial',
+        position: coarse2dp,
+        elevation: { source: 'dem', m: 2450 },
+      }),
       'img-0662'
     );
-    expect(codePoints(view.altitudeLabel)).toEqual(codePoints(`ground${NBSP}2,450${NBSP}m approx.`));
+    expect(codePoints(view.altitudeLabel)).toEqual(
+      codePoints(`ground${NBSP}2,450${NBSP}m approx.`)
+    );
     expect(altitudeRow(view.strip)).toBe(view.altitudeLabel);
     expect(view.strip.positionRows[1].value).toBe(`≈ 12.34${NBSP}N 5.67${NBSP}E`);
     expect(view.strip.approxNote).toBe(`±1,000${NBSP}m (approx.)`);

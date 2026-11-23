@@ -52,8 +52,15 @@ describe('photo facts: schema and order', () => {
     for (const p of photos) expect(() => PhotoFacts.parse(p)).not.toThrow();
   });
 
-  test('holds the four photos sorted by id', () => {
-    expect(photos.map((p) => p.id)).toEqual(['img-0605', 'img-0629', 'img-0662', 'r004-011']);
+  test('holds every photo-map record, sorted by id', () => {
+    // 16-14 rewrite in place (GUARD-03): the photo set grows with each photo-map
+    // record, so the expected ids follow the map; the four v2.0 photos stay in it.
+    const photoMap = JSON.parse(read('data/photos/photo-map.json')) as {
+      photos: Record<string, unknown>;
+    };
+    const ids = photos.map((p) => p.id);
+    expect(ids).toEqual(Object.keys(photoMap.photos).sort());
+    expect(ids).toEqual(expect.arrayContaining(['img-0605', 'img-0629', 'img-0662', 'r004-011']));
   });
 
   test("16 D-02, D-04: every position's precision and every fact's kind equal its photo-map record's", () => {
@@ -252,7 +259,10 @@ describe('coordinates (DATA-06, DATA-01)', () => {
         c.position ? [c.position.lat, c.position.lon] : []
       ),
     ];
-    expect(coords.length).toBe(10);
+    // Every photo has a position (the film scan's from corrections.json), plus that
+    // correction's own pair, so the count follows the record count (16-14, GUARD-03).
+    expect(photos.every((p) => p.position !== null)).toBe(true);
+    expect(coords.length).toBe(2 * photos.length + 2);
     for (const c of coords) expect(Coord4.safeParse(c).success).toBe(true);
   });
 

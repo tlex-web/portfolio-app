@@ -132,6 +132,48 @@ export const photos = [
     "locationOverride": null
   },
   {
+    "id": "img-0680",
+    "region": "zermatt",
+    "country": "CH",
+    "kind": "ground",
+    "medium": "digital",
+    "capture": {
+      "precision": "second",
+      "local": "2021-09-07T13:32:18",
+      "timeZone": "Europe/Zurich",
+      "offset": "+02:00",
+      "source": "exif"
+    },
+    "position": {
+      "lat": 45.9748,
+      "lon": 7.698,
+      "precision": "4dp",
+      "source": "exif",
+      "approximate": false
+    },
+    "uv": {
+      "u": 0.3729,
+      "v": 0.6815
+    },
+    "elevation": {
+      "source": "dem",
+      "m": 2879
+    },
+    "exif": {
+      "camera": "Canon EOS 6D Mark II",
+      "lens": "EF24-105mm f/4L IS II USM",
+      "focalLengthMm": 32,
+      "fNumber": 22,
+      "exposureTimeS": 0.01,
+      "iso": 400
+    },
+    "tags": {
+      "year": "2021",
+      "season": "autumn"
+    },
+    "locationOverride": null
+  },
+  {
     "id": "r004-011",
     "region": "zermatt",
     "country": "CH",

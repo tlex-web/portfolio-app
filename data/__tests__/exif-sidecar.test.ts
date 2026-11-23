@@ -27,18 +27,21 @@ describe('exif sidecar: schema and shape', () => {
   });
 
   test('holds one entry per original, sorted by id', () => {
-    expect(sidecar.photos.map((p) => p.id)).toEqual([
-      'img-0605',
-      'img-0629',
-      'img-0662',
-      'r004-011',
-    ]);
+    // 16-14 rewrite in place (GUARD-03): one entry per photo-map record, so the
+    // expected ids follow the map; the four v2.0 photos stay in it.
+    const photoMap = JSON.parse(
+      fs.readFileSync(path.join(process.cwd(), 'data/photos/photo-map.json'), 'utf8')
+    ) as { photos: Record<string, unknown> };
+    const ids = sidecar.photos.map((p) => p.id);
+    expect(ids).toEqual(Object.keys(photoMap.photos).sort());
+    expect(ids).toEqual(expect.arrayContaining(['img-0605', 'img-0629', 'img-0662', 'r004-011']));
   });
 
-  test('every sha256 is 64 lowercase hex characters and the four are distinct', () => {
+  test('every sha256 is 64 lowercase hex characters and every entry has its own', () => {
     const hashes = sidecar.photos.map((p) => p.sha256);
     for (const h of hashes) expect(h).toMatch(/^[0-9a-f]{64}$/);
-    expect(new Set(hashes).size).toBe(4);
+    expect(hashes.length).toBeGreaterThanOrEqual(4);
+    expect(new Set(hashes).size).toBe(hashes.length);
   });
 });
 
@@ -69,8 +72,11 @@ describe('exif sidecar: D-03 film scan', () => {
 
 describe('exif sidecar: DATA-06 rounding', () => {
   test('no lat or lon in the raw JSON text has more than 4 decimals', () => {
-    // Guard against a vacuous pass: the pattern must see the three digital photos' coordinates.
-    expect(raw.match(/"(lat|lon)": -?\d+(\.\d+)?/g)).toHaveLength(6);
+    // Guard against a vacuous pass: the pattern must see every GPS entry's coordinates,
+    // at least the three digital v2.0 photos' (16-14: the count follows the entries).
+    const withGps = sidecar.photos.filter((p) => p.gps !== null).length;
+    expect(withGps).toBeGreaterThanOrEqual(3);
+    expect(raw.match(/"(lat|lon)": -?\d+(\.\d+)?/g)).toHaveLength(2 * withGps);
     expect(raw).not.toMatch(/"(lat|lon)": -?\d+\.\d{5,}/);
   });
 

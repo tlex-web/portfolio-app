@@ -109,6 +109,58 @@ describe('photo map and region registry: committed data', () => {
     }
   });
 
+  /**
+   * Tim's 16-08 decisions (16-08-SUMMARY "Decisions (Tim, verbatim)"), one row per
+   * photo: file, region, country, precision and kind. 16 D-02 is one-way, so a
+   * record that differs from his reply fails here (16-14).
+   */
+  const TIM_16_08: Record<
+    string,
+    { file: string; region: string; country: string; precision: string; kind: string }
+  > = {
+    'img-0680': {
+      file: '_MG_0680.jpg',
+      region: 'zermatt',
+      country: 'CH',
+      precision: '4dp',
+      kind: 'ground',
+    },
+    'img-0682': {
+      file: 'IMG_0682.jpg',
+      region: 'zermatt',
+      country: 'CH',
+      precision: '4dp',
+      kind: 'ground',
+    },
+    'sam-20240910-143659': {
+      file: '20240910_143659.jpg',
+      region: 'zermatt',
+      country: 'CH',
+      precision: '4dp',
+      kind: 'ground',
+    },
+    'dji-20260919-162232': {
+      file: 'dji_fly_20260919_162232_0153_1789843115521_photo.jpg',
+      region: 'saalfelden',
+      country: 'AT',
+      precision: '3dp',
+      kind: 'aerial',
+    },
+    'dji-20260919-163558': {
+      file: 'dji_fly_20260919_163558_0163_1789843047771_photo.jpg',
+      region: 'saalfelden',
+      country: 'AT',
+      precision: '3dp',
+      kind: 'aerial',
+    },
+  };
+
+  test("D-02: every 16-08 photo's record is exactly Tim's recorded file, region, country, precision and kind", () => {
+    const present = Object.keys(TIM_16_08).filter((id) => id in photoMap.photos);
+    expect(present.length).toBeGreaterThan(0);
+    for (const id of present) expect(record(id)).toEqual(TIM_16_08[id]);
+  });
+
   test("D-05: each generated photo's region and country equal its record's", () => {
     expect(photos.map((p) => p.id)).toEqual(Object.keys(photoMap.photos));
     for (const id of Object.keys(photoMap.photos)) {

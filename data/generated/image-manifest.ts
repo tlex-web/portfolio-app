@@ -124,6 +124,47 @@ export const imageManifest = {
       "src": "/images/photos/img-0662-1200.f5d9c77044.jpg"
     }
   },
+  "img-0680": {
+    "sourceSha256": "50cabce66ec768ae846cdd81c59513bba3e7f6cc79562f3efa691f787295fe6c",
+    "width": 6240,
+    "height": 4160,
+    "variants": [
+      {
+        "longEdge": 640,
+        "width": 640,
+        "height": 427,
+        "avif": "/images/photos/img-0680-640.b7a6ffeb74.avif",
+        "webp": "/images/photos/img-0680-640.92491c28dc.webp"
+      },
+      {
+        "longEdge": 1024,
+        "width": 1024,
+        "height": 683,
+        "avif": "/images/photos/img-0680-1024.9c9911bc7b.avif",
+        "webp": "/images/photos/img-0680-1024.8c8557ed56.webp"
+      },
+      {
+        "longEdge": 1600,
+        "width": 1600,
+        "height": 1067,
+        "avif": "/images/photos/img-0680-1600.1ff64f53c9.avif",
+        "webp": "/images/photos/img-0680-1600.a61fe2a869.webp"
+      },
+      {
+        "longEdge": 2560,
+        "width": 2560,
+        "height": 1707,
+        "avif": "/images/photos/img-0680-2560.68b7654b81.avif",
+        "webp": "/images/photos/img-0680-2560.ccd15904e2.webp"
+      }
+    ],
+    "jpeg": {
+      "longEdge": 1200,
+      "width": 1200,
+      "height": 800,
+      "src": "/images/photos/img-0680-1200.1752281cf9.jpg"
+    }
+  },
   "r004-011": {
     "sourceSha256": "c89db1dab9d96caed67bf57f0e4e9ab92663564235da04998f295f03a0c7f0f1",
     "width": 4712,
