@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 16
 current_phase_name: New Regions & Alps Overview Data
 status: executing
-stopped_at: Completed 16-12-PLAN.md
-last_updated: "2026-11-23T11:15:23.860Z"
+stopped_at: Completed 16-13-PLAN.md
+last_updated: "2026-11-23T11:26:24.980Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 16 execution started
-state_head: b4e765515324b831042d09f18547b5c50310c1b4
+state_head: 3dc617c0795bafe2a6d3c22087495a7d57dfb108
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 64
-  completed_plans: 58
+  completed_plans: 59
   percent: 43
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-15)
 ## Current Position
 
 Phase: 16 (New Regions & Alps Overview Data) — EXECUTING
-Plan: 13 of 18
+Plan: 14 of 18
 Status: Ready to execute
 Last activity: 2026-11-23 — Phase 16 execution started
 
@@ -114,6 +114,7 @@ Progress: [████░░░░░░] 43%
 | Phase 16 P10 | 15min | 3 tasks | 5 files |
 | Phase 16 P11 | 13min | 3 tasks | 4 files |
 | Phase 16 P12 | 10min | 2 tasks | 13 files |
+| Phase 16 P13 | 8min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -264,6 +265,8 @@ Recent decisions affecting current work:
 - [Phase 16]: 16-11: terrain:fetch needs --plate (matterhorn also --force-home); terrain:fetch:bev retries through geotiff fromCustomClient (5 attempts, 500 ms x attempt), no global fetch patch
 - [Phase 16]: 16-12: Saalfelden strip.centreN is the extent's centre northing (2,707,000) until Phase 18 designs the region strip
 - [Phase 16]: 16-12: selftest terrain roots copy every registered plate's source via plateSourceFiles(); plates.test pins matterhorn as first and only home plate, not a one-plate list
+- [Phase 16]: 16-13: OverviewSummit.officialRef is nullable with status confirmed|secondary (Triglav secondary, no officialRef, per Tim's 16-02 answer)
+- [Phase 16]: 16-13: GLO-90 overview source committed from one terrain:fetch:overview run (71 tiles, sea N43 E014, 0 retries); notice and liability are zod literals; OVERVIEW_BUDGET 30,000 B brotli / 120,000 B raw / 250,000 B served
 
 ### Pending Todos
 
@@ -323,6 +326,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-23T11:15:23.221Z
-Stopped at: Completed 16-12-PLAN.md
+Last session: 2026-11-23T11:26:24.364Z
+Stopped at: Completed 16-13-PLAN.md
 Resume file: None
