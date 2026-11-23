@@ -2,7 +2,8 @@
  * @jest-environment node
  */
 /**
- * The footer's client graph (16-05; 16-RESEARCH Pattern 5, Pitfall 5; T-16-11).
+ * The footer's client graph (16-05, 16-07; 16-RESEARCH Pattern 5, Pitfall 5;
+ * T-16-11, T-16-13).
  *
  * app/global-error.tsx is an error boundary, so it is a Client Component, and
  * every module it reaches through static value imports ships to the browser.
@@ -10,7 +11,10 @@
  * lib/ascent/home-photos. That module reads data/generated/home-photos.ts (the
  * four Home photos only); if it, or anything else on the graph, imported the
  * full photo set or the image manifest again, every new photo would grow the
- * client JS of pages that never show it.
+ * client JS of pages that never show it. The same holds for plates: the footer's
+ * contour band and legend draw data/generated/home-plate.ts (the home sheet
+ * only), so the plate registry data/generated/plates.ts must not be reached
+ * either, or every new plate would grow the footer chunk.
  *
  * The walk starts at app/global-error.tsx and follows `import … from`,
  * `export … from` and side-effect `import '…'` statements, resolving `@/` to the
@@ -27,6 +31,7 @@ import path from 'node:path';
 export const FORBIDDEN_IN_CLIENT_GRAPH = [
   'data/generated/photos.ts',
   'data/generated/image-manifest.ts',
+  'data/generated/plates.ts',
 ] as const;
 
 const ROOT = process.cwd();
@@ -117,11 +122,13 @@ describe('the import parser the walk relies on', () => {
 });
 
 describe('the global-error client graph (16-05, T-16-11)', () => {
-  it('reaches the footer and the Home photo module, so the walk is not vacuous', () => {
+  it('reaches the footer, the Home photo module and the home sheet, so the walk is not vacuous', () => {
     expect(graph.has('components/site/SiteChrome.tsx')).toBe(true);
     expect(graph.has('components/site/SiteFooter.tsx')).toBe(true);
     expect(graph.has('lib/ascent/home-photos.ts')).toBe(true);
     expect(graph.has('data/generated/home-photos.ts')).toBe(true);
+    expect(graph.has('components/terrain/ContourField.tsx')).toBe(true);
+    expect(graph.has('data/generated/home-plate.ts')).toBe(true);
   });
 
   it('the global-error client graph imports no forbidden data module', () => {
