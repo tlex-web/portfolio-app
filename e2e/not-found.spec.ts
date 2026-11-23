@@ -40,6 +40,9 @@ const token = `nf-${crypto.randomUUID().slice(0, 8)}`;
  */
 const withoutScripts = (html: string) => html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
 
+/** Server HTML with the flight payload's escaped quotes (\") unescaped, so its segment arrays read as JSON. */
+const unescapeQuotes = (html: string) => html.replaceAll('\\"', '"');
+
 /** The locked 404 h1 (D-10). */
 const H1 = "You've left the marked trail";
 /** The h1 in server HTML: React escapes the apostrophe as &#x27;; accept the literal form too. */
@@ -51,6 +54,13 @@ const TITLE = 'Page not found · Tim Lui';
 const MISSES = [
   { path: `/photos/${token}`, link: 'All photographs', href: '/photos', generic: 'Photographs' },
   { path: `/projects/${token}`, link: 'All routes', href: '/projects', generic: 'Engineering' },
+  // An unknown region (17 D-04, D-05): proxy.ts answers it with the photos 404.
+  {
+    path: `/photos/regions/${token}`,
+    link: 'All photographs',
+    href: '/photos',
+    generic: 'Photographs',
+  },
 ] as const;
 
 /**
@@ -114,6 +124,30 @@ test.describe('Unknown detail slugs: server-rendered 404 (EDGE-01)', () => {
       expect(await page.title()).not.toContain(token);
     });
   }
+
+  // 17 D-04, D-05: the bare /photos/regions is a photo-slug miss on 'regions',
+  // and region ids match case-sensitively, so /photos/regions/Zermatt is a
+  // region miss. Both get the photos 404, rendered under the neutral slug, so
+  // the flight payload names neither typed path. The payload sits in script
+  // strings with escaped quotes (\"photos\",\"regions\"), so the body is
+  // unescaped first; the positive control proves a real region page carries
+  // the segment in that form, so the negative checks cannot pass vacuously.
+  test('/photos/regions and /photos/regions/Zermatt: HTTP 404 with "All photographs", no path echo', async ({
+    request,
+  }) => {
+    const hit = unescapeQuotes(await (await request.get('/photos/regions/zermatt')).text());
+    expect(hit).toContain('"photos","regions","zermatt"');
+
+    for (const path of ['/photos/regions', '/photos/regions/Zermatt']) {
+      const { body, main } = await expectServerRendered404(await request.get(path));
+      const flight = unescapeQuotes(body);
+
+      expect(main).toMatch(H1_HTML);
+      expect(main).toContain('>All photographs<');
+      expect(flight).not.toContain('"photos","regions"');
+      expect(flight).not.toContain('"regions","Zermatt"');
+    }
+  });
 
   test('a known photo slug passes through the proxy with HTTP 200', async ({ request }) => {
     const response = await request.get(`/photos/${photoSlugs[0]}`);

@@ -17,6 +17,11 @@
  *   plus proxy.ts and reads raw text, so a file a later plan adds is held to
  *   the rule without editing this test. The good and bad snippet arrays prove
  *   the patterns still catch what they must and nothing else.
+ * - No source file outside lib/photos/routes.ts builds a region path
+ *   (/photos/regions/<id>) by hand either (17 D-06): REGION_HAND_BUILT runs
+ *   over the same SOURCES with the same exemption, so region URLs come from
+ *   regionHref(id). proxy.ts's REGION_PATH regex and lib/photos/region-ids.ts
+ *   pass the scan.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -161,6 +166,61 @@ describe('no hand-built photo path outside lib/photos/routes.ts (D-18)', () => {
         .readFileSync(path.join(ROOT, file), 'utf8')
         .split(/\r?\n/)
         .flatMap((line, i) => (matchesAny(line) ? [`${file}:${i + 1}: ${line.trim()}`] : []))
+    );
+    expect(hits).toEqual([]);
+  });
+});
+
+/** Hand-built region paths (17-RESEARCH "Code Examples", D-06). */
+const REGION_HAND_BUILT = [
+  /(?<![\w-])\/photos\/regions\/\$\{/, // `/photos/regions/${…}` in a template
+  /['"`]\/photos\/regions\/['"`]\s*\+/, // '/photos/regions/' + …
+  /href=["']\/photos\/regions\/[^"'?#]/, // a hard-coded region id in a JSX attribute
+];
+
+const matchesRegion = (text: string) => REGION_HAND_BUILT.some((re) => re.test(text));
+
+describe('the hand-built region path patterns (D-06 self-test)', () => {
+  const BAD = [
+    'href={`/photos/regions/${id}`}',
+    'url: `${site.url}/photos/regions/${region.id}`',
+    "const href = '/photos/regions/' + id;",
+    'const href = "/photos/regions/" + region.id;',
+    '<a href="/photos/regions/zermatt">',
+    "<Link href='/photos/regions/ortler'>",
+  ];
+  const GOOD = [
+    String.raw`const REGION_PATH = /^\/photos\/regions\/([^/]+)$/;`,
+    "router.push('/photos')",
+    'href={regionHref(region.id)}',
+    'url: site.url + regionHref(id)',
+    '// a region page at /photos/regions/<id> lists its photos',
+    ' * proxy.ts decides an unknown /photos/regions/<id> before render, so it needs',
+    'export const regionRouteIds: readonly string[] = registry.regions.map((r) => r.id);',
+  ];
+
+  it.each(BAD.map((s) => [s]))('catches %s', (snippet) => {
+    expect(matchesRegion(snippet)).toBe(true);
+  });
+
+  it.each(GOOD.map((s) => [s]))('allows %s', (snippet) => {
+    expect(matchesRegion(snippet)).toBe(false);
+  });
+});
+
+describe('no hand-built region path outside lib/photos/routes.ts (D-06)', () => {
+  it('scans proxy.ts and the proxy-only id list', () => {
+    expect(SOURCES).toContain('proxy.ts');
+    expect(SOURCES).toContain('lib/photos/region-ids.ts');
+    expect(SOURCES).toContain('lib/regions.ts');
+  });
+
+  it('finds no region URL built by hand; use regionHref(id) from @/lib/photos/routes', () => {
+    const hits = SOURCES.flatMap((file) =>
+      fs
+        .readFileSync(path.join(ROOT, file), 'utf8')
+        .split(/\r?\n/)
+        .flatMap((line, i) => (matchesRegion(line) ? [`${file}:${i + 1}: ${line.trim()}`] : []))
     );
     expect(hits).toEqual([]);
   });
