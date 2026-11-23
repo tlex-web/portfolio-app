@@ -1,6 +1,14 @@
 import { notFound } from 'next/navigation';
 import PhotoViewer from '@/components/photos/PhotoViewer';
-import { photoBySlug, photoMetadata, publishedSlugs, viewerPhotos } from '@/lib/photos/view-model';
+import { regionById, regionOfPhoto } from '@/lib/regions';
+import { regionHref } from '@/lib/photos/routes';
+import {
+  photoBySlug,
+  photoMetadata,
+  photoSlugs,
+  publishedSlugs,
+  viewerPhotos,
+} from '@/lib/photos/view-model';
 
 /**
  * The full photo page (LBOX-01 direct load; D-08; 10-UI-SPEC "Photo Viewer",
@@ -15,6 +23,12 @@ import { photoBySlug, photoMetadata, publishedSlugs, viewerPhotos } from '@/lib/
  * before it matches a known view. The viewer steps through viewerPhotos(view):
  * the four light-table photos for a v2.0 photo, the photo alone otherwise
  * (17 D-08).
+ *
+ * The way back (17 D-09): a photo off the light table gets `back`, its
+ * region's name and regionHref(region.id), built here on the server from the
+ * registry (regionOfPhoto), never from the URL (T-17-14); the viewer's back
+ * links and the page Escape lead there. The v2.0 four get no `back` and keep
+ * "All photographs" to /photos, so their markup is unchanged (D-10).
  *
  * generateMetadata reads photoMetadata(slug), the function the intercepted
  * lightbox route exports too, so both surfaces carry '{title} · Tim Lui'.
@@ -34,10 +48,30 @@ export async function generateMetadata({ params }: PageProps) {
   return photoMetadata(slug);
 }
 
+/**
+ * The page's way back for a photo off the light table: its region page, by
+ * name. The four get undefined.
+ *
+ * @throws Error when a published photo has no registry region (a data fault the build must not hide).
+ */
+function backFor(view: { id: string; slug: string }): { href: string; label: string } | undefined {
+  if (photoSlugs.includes(view.slug)) return undefined;
+  const regionId = regionOfPhoto(view.id);
+  const region = regionId === undefined ? undefined : regionById(regionId);
+  if (!region) throw new Error(`PhotoPage: photo ${view.id} has no registry region`);
+  return { href: regionHref(region.id), label: region.name };
+}
+
 export default async function PhotoPage({ params }: PageProps) {
   const { slug } = await params;
   const view = photoBySlug(slug);
   if (!view) notFound();
+  const back = backFor(view);
 
-  return <PhotoViewer variant="page" photos={viewerPhotos(view)} initialSlug={view.slug} />;
+  // The four get no back prop at all (not back={undefined}), so their props are unchanged.
+  return back ? (
+    <PhotoViewer variant="page" photos={viewerPhotos(view)} initialSlug={view.slug} back={back} />
+  ) : (
+    <PhotoViewer variant="page" photos={viewerPhotos(view)} initialSlug={view.slug} />
+  );
 }

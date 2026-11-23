@@ -77,7 +77,8 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * .registerEscape, closing last. On the page a document keydown listener does
  * the same job: a layer that consumes Escape calls preventDefault, and when
  * none has, Escape navigates to /photos, never a blind browser Back, because
- * a directly loaded page may have no gallery behind it. On the page every
+ * a directly loaded page may have no gallery behind it (17 D-09: or to the
+ * `back` page, below). On the page every
  * viewer key (Escape, ← →, Z, H, the zoomed pan) skips a press that belongs
  * to the site chrome (keyBelongsToChrome: the open mobile menu, or focus in
  * the nav, skip link or footer); the open menu also takes Escape first and
@@ -104,6 +105,20 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * a polite status line inside the viewer ('Photo 2 of 4: {title}') and the
  * document title. Once the current photo's large derivative loads, the
  * neighbours' stage derivatives are fetched at low priority, once per slug.
+ *
+ * One-photo sets and the way back (17 D-08, D-09; PHOTO-05): until Phase 18
+ * brings per-region stepping, a photo off the light table steps through itself
+ * only (viewerPhotos gives a one-photo set). With fewer than two photos the
+ * left group renders no Previous, counter or Next, so the viewer offers no
+ * control that does nothing; the arrows and the swipe already do nothing there
+ * (stepIndex returns null). The page surface takes an optional `back`
+ * ({ href, label }), built on the server from the region registry
+ * (regionHref and the region's name) and passed only for such a photo: both
+ * back links and the page Escape then lead to its region page, the page that
+ * lists it. Without `back` they read "All photographs" and go to /photos, so
+ * the v2.0 four render as before. The lightbox shows no back link (D-09 is
+ * page-only). This file imports no region data; the region reaches the client
+ * only through the serialisable prop.
  *
  * Open morph (LBOX-06; UI-SPEC "Open and close motion"): the photo box is
  * the lightbox half of the photo-{slug} pair (the morph share class, default none;
@@ -191,15 +206,20 @@ export default function PhotoViewer({
   variant,
   photos,
   initialSlug,
+  back,
 }: {
   variant: 'page' | 'modal';
   photos: readonly PhotoView[];
   initialSlug: string;
+  /** The page surface's way back (17 D-09), built on the server; absent: "All photographs" to /photos. */
+  back?: { href: string; label: string };
 }) {
   if (!photos.some((p) => p.slug === initialSlug)) {
     throw new RangeError(`PhotoViewer: no photo with slug ${initialSlug}`);
   }
   const isPage = variant === 'page';
+  const backHref = back?.href ?? '/photos';
+  const backLabel = back?.label ?? 'All photographs';
   const lightbox = useLightbox();
   const router = useRouter();
   const pathname = usePathname();
@@ -269,7 +289,8 @@ export default function PhotoViewer({
     return () => observer.disconnect();
   }, [current.title, current.slug]);
 
-  // Page surface only: Escape is the last layer and goes to the gallery (D-08).
+  // Page surface only: Escape is the last layer and goes to the gallery (D-08),
+  // or to the `back` page for a photo off the light table (17 D-09).
   // The zoom layer runs first (ZoomStage, capture phase): while zoomed it
   // prevents the press and leaves zoom, and this handler skips it.
   useEffect(() => {
@@ -278,11 +299,11 @@ export default function PhotoViewer({
       if (event.key !== 'Escape' || event.defaultPrevented) return;
       if (keyBelongsToChrome(event)) return;
       event.preventDefault();
-      router.push('/photos');
+      router.push(backHref);
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [isPage, router]);
+  }, [isPage, router, backHref]);
 
   // ← and → step on both surfaces (the page behind a modal dialog is inert, so
   // only the lightbox's viewer is reachable then). A layer that uses the
@@ -494,9 +515,9 @@ export default function PhotoViewer({
     >
       {isPage && (
         <div data-viewer-back="" className="px-4 pt-2 lb-key:hidden lb-gutter:hidden">
-          <Link href="/photos" className={`inline-flex ${BACK_LINK}`}>
+          <Link href={backHref} className={`inline-flex ${BACK_LINK}`}>
             <ArrowLeftIcon size={20} aria-hidden="true" />
-            All photographs
+            {backLabel}
           </Link>
         </div>
       )}
@@ -511,38 +532,42 @@ export default function PhotoViewer({
         <div data-chrome-left="" className="flex items-center gap-2">
           {isPage && (
             <Link
-              href="/photos"
+              href={backHref}
               className={`hidden lb-key:inline-flex lb-gutter:inline-flex ${BACK_LINK}`}
             >
               <ArrowLeftIcon size={20} aria-hidden="true" />
-              All photographs
+              {backLabel}
             </Link>
           )}
-          <button
-            type="button"
-            aria-label="Previous photo"
-            aria-disabled={prevSlug ? undefined : 'true'}
-            className={STEP_BUTTON}
-            onClick={() => step(-1)}
-          >
-            <CaretLeftIcon size={24} aria-hidden="true" />
-          </button>
-          <span
-            data-photo-counter=""
-            aria-hidden="true"
-            className="font-mono text-sm text-ink-muted tabular-nums"
-          >
-            {index + 1} / {photos.length}
-          </span>
-          <button
-            type="button"
-            aria-label="Next photo"
-            aria-disabled={nextSlug ? undefined : 'true'}
-            className={STEP_BUTTON}
-            onClick={() => step(1)}
-          >
-            <CaretRightIcon size={24} aria-hidden="true" />
-          </button>
+          {photos.length > 1 && (
+            <>
+              <button
+                type="button"
+                aria-label="Previous photo"
+                aria-disabled={prevSlug ? undefined : 'true'}
+                className={STEP_BUTTON}
+                onClick={() => step(-1)}
+              >
+                <CaretLeftIcon size={24} aria-hidden="true" />
+              </button>
+              <span
+                data-photo-counter=""
+                aria-hidden="true"
+                className="font-mono text-sm text-ink-muted tabular-nums"
+              >
+                {index + 1} / {photos.length}
+              </span>
+              <button
+                type="button"
+                aria-label="Next photo"
+                aria-disabled={nextSlug ? undefined : 'true'}
+                className={STEP_BUTTON}
+                onClick={() => step(1)}
+              >
+                <CaretRightIcon size={24} aria-hidden="true" />
+              </button>
+            </>
+          )}
         </div>
         <div data-chrome-right="" className="flex items-center gap-2">
           <button
