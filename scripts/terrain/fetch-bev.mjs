@@ -39,8 +39,8 @@
  *      there is no nodata path (D-28), the window must be hole-free.
  *   5. Sample every 10 m cell centre bilinearly, store decimetres in a grey16
  *      PNG, prove the lossless round trip, hash it, parse the record with
- *      TerrainSource (the BEV ALS DTM variant) and only then write
- *      <target>/dem-10m.png and source.json.
+ *      BevAlsDtmSource (its TerrainSource variant, as fetch-dem parses its
+ *      own) and only then write <target>/dem-10m.png and source.json.
  *
  * Record facts (16-RESEARCH § Data sources, D-29): crs EPSG:3035, height system
  * EVRF2000-AT with its code EPSG:9274 (what BEV's record declares), edition
@@ -59,7 +59,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BaseClient, BaseResponse, fromCustomClient } from 'geotiff';
 import sharp from 'sharp';
-import { PlateId, TerrainSource } from '../../data/schemas/terrain.ts';
+import { BevAlsDtmSource, PlateId, TerrainSource } from '../../data/schemas/terrain.ts';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const PLATES_DIR = path.join(ROOT, 'data', 'terrain', 'plates');
@@ -459,7 +459,7 @@ async function main() {
   }
 
   const sha256 = crypto.createHash('sha256').update(png).digest('hex');
-  const source = TerrainSource.parse({
+  const source = BevAlsDtmSource.parse({
     product: 'BEV ALS DTM',
     tiles: [head],
     doi: DOI,
@@ -481,7 +481,6 @@ async function main() {
     file: FILE,
     sha256,
   });
-  if (source.product !== 'BEV ALS DTM') fail('the record did not parse as the BEV ALS DTM variant');
 
   fs.mkdirSync(target.dir, { recursive: true });
   fs.writeFileSync(path.join(target.dir, FILE), png);
