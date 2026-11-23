@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 16
 current_phase_name: New Regions & Alps Overview Data
 status: executing
-stopped_at: Completed 16-11-PLAN.md
-last_updated: "2026-11-23T11:03:13.984Z"
+stopped_at: Completed 16-12-PLAN.md
+last_updated: "2026-11-23T11:15:23.860Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 16 execution started
-state_head: 86549a7e5c7a3a321ef918812cacdc0d26044927
+state_head: b4e765515324b831042d09f18547b5c50310c1b4
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 64
-  completed_plans: 57
+  completed_plans: 58
   percent: 43
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-15)
 ## Current Position
 
 Phase: 16 (New Regions & Alps Overview Data) — EXECUTING
-Plan: 12 of 18
+Plan: 13 of 18
 Status: Ready to execute
 Last activity: 2026-11-23 — Phase 16 execution started
 
@@ -113,6 +113,7 @@ Progress: [████░░░░░░] 43%
 | Phase 16 P09 | 11min | 3 tasks | 5 files |
 | Phase 16 P10 | 15min | 3 tasks | 5 files |
 | Phase 16 P11 | 13min | 3 tasks | 4 files |
+| Phase 16 P12 | 10min | 2 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -261,6 +262,8 @@ Recent decisions affecting current work:
 - [Phase 16]: 16-10: 'overview' is a reserved plate stem; the D-15 test excludes plate prefixes and overview- from its unprefixed-name check (IN-01), with IN-05 and IN-06 in 6ac809e
 - [Phase 16]: 16-11: BEV credit is Tim's research-line wording verbatim ('Terrain: ALS DTM, © BEV – Bundesamt für Eich- und Vermessungswesen, CC BY 4.0, modified (doi:10.48677/1d2d42c2-10dc-4be6-9917-8784d1cfe37c)'), in fetch-bev.mjs CREDIT
 - [Phase 16]: 16-11: terrain:fetch needs --plate (matterhorn also --force-home); terrain:fetch:bev retries through geotiff fromCustomClient (5 attempts, 500 ms x attempt), no global fetch patch
+- [Phase 16]: 16-12: Saalfelden strip.centreN is the extent's centre northing (2,707,000) until Phase 18 designs the region strip
+- [Phase 16]: 16-12: selftest terrain roots copy every registered plate's source via plateSourceFiles(); plates.test pins matterhorn as first and only home plate, not a one-plate list
 
 ### Pending Todos
 
@@ -320,6 +323,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-23T11:03:13.191Z
-Stopped at: Completed 16-11-PLAN.md
+Last session: 2026-11-23T11:15:23.221Z
+Stopped at: Completed 16-12-PLAN.md
 Resume file: None
