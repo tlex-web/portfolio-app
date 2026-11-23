@@ -48,6 +48,12 @@ export type Coord4 = z.infer<typeof Coord4>;
 export const Precision = z.enum(['4dp', '3dp', '2dp']);
 export type Precision = z.infer<typeof Precision>;
 
+/** Decimals per precision level (16 D-01). */
+const PRECISION_DECIMALS = { '4dp': 4, '3dp': 3, '2dp': 2 } as const;
+/** True when `v` has at most `d` decimals (the Coord4 tolerance, at d decimals). */
+const atMostDecimals = (v: number, d: number) =>
+  Math.abs(v * 10 ** d - Math.round(v * 10 ** d)) < 1e-6;
+
 /**
  * Whether a photo was taken on the ground or from the air (16 D-04). An aerial
  * photo never keeps its GPS altitude; its height is the DEM ground height.
@@ -267,8 +273,11 @@ const handPlacedIsApproximate = (p: PositionShape) => p.source === 'exif' || p.a
  * Where a photo was taken, at most 4 decimals (DATA-06), tagged with its
  * record's precision (16 D-01). A position without GPS is hand-placed and must
  * say so: `approximate: true` with a reason and a radius, which every consumer
- * can show (DATA-04). A coarse ('3dp' or '2dp') EXIF position is approximate too
- * (DATA-14).
+ * can show (DATA-04). A coarse ('3dp' or '2dp') position is approximate too
+ * (DATA-14), and no position carries more decimals than its precision (16 D-01).
+ * The schema enforces both (16-REVIEW WR-03): the view-model draws the dashed pin
+ * and the "≈" from `approximate` alone, and every decimal here ships in the
+ * generated module.
  */
 export const Position = z
   .strictObject({
@@ -278,7 +287,14 @@ export const Position = z
     ...positionFields,
   })
   .refine(approximateHasReason, 'approximate positions need reason + radiusM (DATA-04)')
-  .refine(handPlacedIsApproximate, 'hand-placed positions are approximate (DATA-04)');
+  .refine(handPlacedIsApproximate, 'hand-placed positions are approximate (DATA-04)')
+  .refine((p) => p.precision === '4dp' || p.approximate, 'a coarse position is approximate (DATA-14)')
+  .refine(
+    (p) =>
+      atMostDecimals(p.lat, PRECISION_DECIMALS[p.precision]) &&
+      atMostDecimals(p.lon, PRECISION_DECIMALS[p.precision]),
+    "a position has at most its precision's decimals (16 D-01)"
+  );
 export type Position = z.infer<typeof Position>;
 
 /**

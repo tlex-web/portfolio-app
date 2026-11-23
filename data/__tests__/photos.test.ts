@@ -175,6 +175,42 @@ describe('positions (DATA-04, D-02)', () => {
     film.position = { ...film.position, precision: '4dp' };
     expect(Corrections.safeParse(committed).success).toBe(false);
   });
+
+  // 16-REVIEW WR-03: the coarse invariants live in the schema, not only in stage 2.
+  // Synthetic coordinates only.
+  const coarseExif = {
+    lat: 46.5,
+    lon: 10.25,
+    precision: '3dp',
+    source: 'exif',
+    approximate: true,
+    reason: 'x',
+    radiusM: 100,
+  };
+
+  test('Position accepts a coarse EXIF position that is approximate and at its precision', () => {
+    expect(Position.safeParse(coarseExif).success).toBe(true);
+    expect(
+      Position.safeParse({ ...coarseExif, lat: 46.12, lon: 10.34, precision: '2dp' }).success
+    ).toBe(true);
+  });
+
+  test('Position rejects a coarse position that claims to be exact (DATA-14)', () => {
+    const exact = { lat: 46.5, lon: 10.25, precision: '3dp', source: 'exif' };
+    expect(Position.safeParse({ ...exact, approximate: false }).success).toBe(false);
+    expect(
+      Position.safeParse({ ...exact, approximate: false, precision: '2dp', lat: 46.5, lon: 10.2 })
+        .success
+    ).toBe(false);
+  });
+
+  test('Position rejects more decimals than its precision (16 D-01)', () => {
+    expect(Position.safeParse({ ...coarseExif, lat: 46.5001 }).success).toBe(false);
+    expect(Position.safeParse({ ...coarseExif, lon: 10.2501 }).success).toBe(false);
+    expect(
+      Position.safeParse({ ...coarseExif, precision: '2dp', lat: 46.501, radiusM: 1000 }).success
+    ).toBe(false);
+  });
 });
 
 describe('location overrides (D-01, D-02)', () => {
