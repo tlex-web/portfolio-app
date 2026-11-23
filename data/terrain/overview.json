@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "contours": {
+    "intervalM": 1000,
+    "fromM": 1000,
+    "indexEvery": 5,
+    "blurPx": 3,
+    "simplifyPx": 2,
+    "ringFilterPx": 8
+  },
+  "hillshade": false,
+  "summits": [
+    {
+      "name": "Dufourspitze",
+      "country": "CH",
+      "borders": ["IT"],
+      "lat": 45.9369,
+      "lon": 7.8668,
+      "officialM": 4634,
+      "status": "confirmed",
+      "officialRef": "https://map.geo.admin.ch/?lang=en&E=2633206&N=1087350&zoom=10",
+      "source": "swisstopo SearchServer gazetteer point and height service (4,634.1 m), verified in 16-RESEARCH"
+    },
+    {
+      "name": "Mont Blanc",
+      "country": "FR",
+      "borders": ["IT"],
+      "lat": 45.83267,
+      "lon": 6.86463,
+      "officialM": 4806,
+      "status": "confirmed",
+      "officialRef": "https://www.geoportail.gouv.fr/carte?c=6.86463,45.83267&z=15&permalink=yes",
+      "source": "IGN map value, BD CARTO V5 detail_orographique cote 4806 (Tim's choice in 16-02 over the 2026 and 2023 survey figures)"
+    },
+    {
+      "name": "Grossglockner",
+      "country": "AT",
+      "borders": [],
+      "lat": 47.0745,
+      "lon": 12.6939,
+      "officialM": 3798,
+      "status": "confirmed",
+      "officialRef": "https://data.bev.gv.at/geonetwork/srv/api/records/a6ea4096-8adc-4752-aac2-a4c115b8c12d",
+      "source": "BEV DLM Bergnamen, edition 2020-12-18, OBJECTID 14342, HOEHE_MEER 3798 from the ÖK50"
+    },
+    {
+      "name": "Zugspitze",
+      "country": "DE",
+      "borders": ["AT"],
+      "lat": 47.4211,
+      "lon": 10.9864,
+      "officialM": 2962,
+      "status": "confirmed",
+      "officialRef": "https://daten.gdz.bkg.bund.de/produkte/sonstige/gn250/aktuell/",
+      "source": "BKG GN250 names register, NNID DEBKGGND00002I7K, edition 31.12.2024 (not LDBV BayernAtlas, which needs a key)"
+    },
+    {
+      "name": "Triglav",
+      "country": "SI",
+      "borders": [],
+      "lat": 46.3783,
+      "lon": 13.8369,
+      "officialM": 2864,
+      "status": "secondary",
+      "officialRef": null,
+      "source": "secondary: the 16-RESEARCH figure, not confirmed against GURS (Tim chose to include it marked secondary in 16-02)"
+    }
+  ]
+}

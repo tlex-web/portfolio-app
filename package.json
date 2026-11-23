@@ -32,6 +32,7 @@
     "photos:build": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/photos/build-photo-data.mjs",
     "terrain:fetch": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/terrain/fetch-dem.mjs",
     "terrain:fetch:bev": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/terrain/fetch-bev.mjs",
+    "terrain:fetch:overview": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/terrain/fetch-overview.mjs",
     "terrain:build": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/terrain/build-terrain.mjs",
     "trails:fetch": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/terrain/fetch-trails.mjs",
     "trails:build": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/terrain/build-trails.mjs",
