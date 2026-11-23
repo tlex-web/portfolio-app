@@ -35,6 +35,16 @@ const CLS_BUDGET = 0.1;
 const WIDTHS = [375, 768, 1440] as const;
 const HEIGHT = 900;
 
+/**
+ * Time budget per AUDIT_SWEEP page (17 RESEARCH Pitfall 3). The sweep's fixed
+ * 180 s for its four pages was 60 s of setup plus 30 s per page, so
+ * `60_000 + AUDIT_SWEEP.length * AUDIT_SWEEP_PAGE_MS` keeps that value for
+ * those four and grows by 30 s with every page the sitemap adds. Assumption A3
+ * puts a page at about 10-15 s in CI Chromium, so the margin stays at least
+ * double.
+ */
+const AUDIT_SWEEP_PAGE_MS = 30_000;
+
 /** The designed 404 (an unmatched URL). */
 const NOT_FOUND = '/__no-such-page__';
 
@@ -170,10 +180,12 @@ test.describe('Audit: every route at 375, 768 and 1440 (D-20)', () => {
 
 /**
  * Every sitemap page that is not a ROUTES template entry (VERIFY-05): today
- * /projects/coin-flip and photo slugs 2-4, later every region page. Each is the
+ * /projects/coin-flip and photo slugs 2-4; the region pages and the new photo
+ * pages join through the sitemap (REGION-07), with no edit here. Each is the
  * same template as a ROUTES entry, which runs in three engines at three widths,
  * so these run once, in Chromium at 1440. One test for the whole list, so the
  * test-count ratchet does not grow with every photo; a finding names its path.
+ * Its timeout scales with the list (AUDIT_SWEEP_PAGE_MS).
  */
 test.describe('Audit: every sitemap page (VERIFY-05)', () => {
   test('every sitemap page once in Chromium @chromium-only', async ({
@@ -181,7 +193,7 @@ test.describe('Audit: every sitemap page (VERIFY-05)', () => {
     request,
     browserName,
   }) => {
-    test.setTimeout(180000);
+    test.setTimeout(60_000 + AUDIT_SWEEP.length * AUDIT_SWEEP_PAGE_MS);
     await installAuditProbes(page);
     const failures = collectFailures(page);
     const findings: string[] = [];
