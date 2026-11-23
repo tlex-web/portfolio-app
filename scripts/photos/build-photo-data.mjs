@@ -30,6 +30,9 @@
  *              camera recorded an OffsetTimeOriginal, it must equal that offset,
  *              or the build fails (08-REVIEW WR-03).
  *   kind       the photo-map record's ('ground' or 'aerial', 16 D-04), verbatim.
+ *              A coarse or aerial record whose sidecar entry keeps a GPS altitude
+ *              fails, and so does a DJI still on a record that is not 'aerial'
+ *              (16 D-03, D-04): the stage 1 rules, re-checked where CI runs.
  *   position   corrections (hand-placed only, WR-08), else the sidecar GPS as
  *              exif, else null (DATA-04). Every position carries its record's
  *              precision (16 D-01): a '4dp' EXIF position is not approximate; a
@@ -393,8 +396,26 @@ async function build() {
       );
     }
     const capture = buildCapture(entry, fix);
-    const position = buildPosition(entry, fix, record);
     const coarse = record.precision !== '4dp';
+    // 16 D-03, D-04 (16-REVIEW WR-01): stage 1 enforces these with the originals
+    // present; stage 2 holds the sidecar entry and the record together, so CI
+    // catches a hand-merged sidecar or a record changed after extraction. The
+    // messages name the photo and the rule, never the value.
+    if ((coarse || record.kind === 'aerial') && entry.gps && entry.gps.altM !== null) {
+      throw new Error(
+        `${entry.id}: a ${record.precision} ${record.kind} photo carries gps.altM; run npm run photos:exif with its original (16 D-03, D-04)`
+      );
+    }
+    if (
+      entry.make !== null &&
+      entry.make.trim().toLowerCase() === 'dji' &&
+      record.kind !== 'aerial'
+    ) {
+      throw new Error(
+        `${entry.id}: a DJI still must be kind 'aerial' in ${PHOTO_MAP_REL} (16 D-04)`
+      );
+    }
+    const position = buildPosition(entry, fix, record);
     const groundM = entry.gps?.groundM;
     // 16 D-03: a coarse photo's height was sampled at its true spot in stage 1; a
     // 4dp photo is sampled here, so it must not carry one.

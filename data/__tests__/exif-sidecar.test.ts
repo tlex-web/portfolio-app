@@ -88,6 +88,43 @@ describe('exif sidecar: DATA-06 rounding', () => {
   });
 });
 
+describe('exif sidecar with the photo map: 16 D-03, D-04 (16-REVIEW WR-01)', () => {
+  type MapRecord = { precision: '4dp' | '3dp' | '2dp'; kind: 'ground' | 'aerial' };
+  const records = (
+    JSON.parse(
+      fs.readFileSync(path.join(process.cwd(), 'data/photos/photo-map.json'), 'utf8')
+    ) as { photos: Record<string, MapRecord> }
+  ).photos;
+  const recordOf = (id: string) => {
+    const r = records[id];
+    if (!r) throw new Error(`photo map has no record ${id}`);
+    return r;
+  };
+
+  test('the walk is not vacuous: the map holds a coarse, an aerial and a DJI photo', () => {
+    const entries = sidecar.photos.filter((p) => p.gps !== null);
+    expect(entries.some((p) => recordOf(p.id).precision !== '4dp')).toBe(true);
+    expect(entries.some((p) => recordOf(p.id).kind === 'aerial')).toBe(true);
+    expect(sidecar.photos.some((p) => p.make?.trim().toLowerCase() === 'dji')).toBe(true);
+  });
+
+  test('a coarse or aerial photo keeps no GPS altitude', () => {
+    // Ids only in the failure output, never the altitude (D-12).
+    const offenders = sidecar.photos
+      .filter((p) => p.gps !== null && p.gps.altM !== null)
+      .filter((p) => recordOf(p.id).precision !== '4dp' || recordOf(p.id).kind === 'aerial')
+      .map((p) => p.id);
+    expect(offenders).toEqual([]);
+  });
+
+  test("every DJI still is kind 'aerial'", () => {
+    const offenders = sidecar.photos
+      .filter((p) => p.make?.trim().toLowerCase() === 'dji' && recordOf(p.id).kind !== 'aerial')
+      .map((p) => p.id);
+    expect(offenders).toEqual([]);
+  });
+});
+
 describe('photo schema boundaries', () => {
   test.each([46.015, 7.7414])('Coord4 accepts %s (at most 4 decimals)', (v) => {
     expect(Coord4.safeParse(v).success).toBe(true);

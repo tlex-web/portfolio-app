@@ -1060,6 +1060,8 @@ let photoDataControlRoot = null;
 let photoDataOffsetRoot = null;
 let photoDataGpsRoot = null;
 let photoDataOffPlateRoot = null;
+let photoDataAerialAltRoot = null;
+let photoDataDjiGroundRoot = null;
 let photoMapMissingRoot = null;
 let photoMapOrphanRoot = null;
 let photoMapDuplicateRoot = null;
@@ -3493,6 +3495,46 @@ const cases = [
     // 16 D-12: the message names the photo and the plate, never a uv or a position.
     check: (output) => (/uv|46\.2333|7\.36/.test(output) ? 'the off-plate message prints a uv or the position' : null),
   },
+  // 16-REVIEW WR-01: the D-03/D-04 sidecar rules, re-checked by stage 2 where CI runs.
+  {
+    name: 'G5 photos:build --check: an aerial record whose sidecar keeps a GPS altitude fails (16 D-04)',
+    guard: PHOTO_DATA,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--check'],
+    setup: () => {
+      photoDataAerialAltRoot = tempPhotoDataRoot(({ sidecar, photoMap }) => {
+        if (sidecarEntry(sidecar, 'img-0605').gps?.altM == null) throw new Error('selftest: img-0605 has no GPS altitude');
+        const record = mapRecord(photoMap, 'img-0605');
+        if (record.kind !== 'ground') throw new Error('selftest: img-0605 is no longer a ground record');
+        record.kind = 'aerial';
+      });
+      return ['--root', photoDataAerialAltRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['img-0605: a 4dp aerial photo carries gps.altM; run npm run photos:exif with its original (16 D-03, D-04)', 'photos:build: stale'],
+    // 16 D-12: the message names the photo, never the altitude.
+    check: (output) => {
+      const alt = JSON.parse(fs.readFileSync(path.join(repoRoot, 'data/photos/exif-sidecar.json'), 'utf-8')).photos.find((p) => p.id === 'img-0605')?.gps?.altM;
+      return alt != null && output.includes(String(alt)) ? 'the message prints the GPS altitude' : null;
+    },
+  },
+  {
+    name: 'G5 photos:build --check: a DJI still on a ground record fails (16 D-04)',
+    guard: PHOTO_DATA,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--check'],
+    setup: () => {
+      photoDataDjiGroundRoot = tempPhotoDataRoot(({ sidecar, photoMap }) => {
+        if (sidecarEntry(sidecar, 'dji-20260919-162232').make?.toLowerCase() !== 'dji') throw new Error('selftest: dji-20260919-162232 is no longer a DJI still');
+        const record = mapRecord(photoMap, 'dji-20260919-162232');
+        if (record.kind !== 'aerial') throw new Error('selftest: dji-20260919-162232 is no longer an aerial record');
+        record.kind = 'ground';
+      });
+      return ['--root', photoDataDjiGroundRoot];
+    },
+    expectExit: 1,
+    expectOutput: ["dji-20260919-162232: a DJI still must be kind 'aerial' in data/photos/photo-map.json (16 D-04)", 'photos:build: stale'],
+  },
   // 15-06 (DATA-10, D-01 to D-05): the photo map and the region registry. Write mode
   // (no --check) except the stale case: a failing build writes nothing.
   {
@@ -4245,7 +4287,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, exifMappedRoot, exifUnmappedRoot, exifDuplicateRoot, terrainFixtureRoot, terrainLaeaRoot, terrainStripRoot, terrainUnreadableRoot, terrainMissingRoot, terrainRemoveRoot, terrainDropCheckRoot, terrainDropWriteRoot, fetchOutRoot, ...ciGateTempRoots, ...telemetryTempRoots, ...privacyTempRoots]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDataAerialAltRoot, photoDataDjiGroundRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, exifMappedRoot, exifUnmappedRoot, exifDuplicateRoot, terrainFixtureRoot, terrainLaeaRoot, terrainStripRoot, terrainUnreadableRoot, terrainMissingRoot, terrainRemoveRoot, terrainDropCheckRoot, terrainDropWriteRoot, fetchOutRoot, ...ciGateTempRoots, ...telemetryTempRoots, ...privacyTempRoots]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 
