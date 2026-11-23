@@ -1738,6 +1738,15 @@ async function coarseCase({ id, point, precision, d, step, radiusM, reasonPart }
 // scripts/terrain/: the plate registry through --root (DATA-11, 15-05 D-13)
 const TERRAIN_BUILD = path.join(repoRoot, 'scripts', 'terrain', 'build-terrain.mjs');
 const TERRAIN_PUBLIC = 'public/terrain';
+/** The Alps overview's inputs (16-13 source and parameters), read by every terrain build since 16-15. */
+const TERRAIN_OVERVIEW_INPUTS = [
+  'data/terrain/overview/source.json',
+  'data/terrain/overview/dem.png',
+  'data/terrain/overview.json',
+];
+/** The overview's outputs: its server-only module and its contour file in public/terrain/. */
+const OVERVIEW_MODULE = 'data/generated/overview.ts';
+const OVERVIEW_CONTOURS_RE = /^overview-contours-alps\.[0-9a-f]{10}\.svg$/;
 /**
  * Every file a terrain build reads or compares, besides public/terrain/ (copied
  * whole) and the plate sources: those follow data/terrain/plates.json through
@@ -1749,6 +1758,10 @@ const TERRAIN_INPUTS = [
   'data/generated/precache.json',
   'data/generated/plates.ts',
   'data/generated/home-plate.ts',
+  // The Alps overview (16-15): built in the same run from its committed grid,
+  // parameters and the region registry (one outline per region).
+  ...TERRAIN_OVERVIEW_INPUTS,
+  OVERVIEW_MODULE,
 ];
 /** The modules a fixture plate must leave byte-equal (D-14, D-15): the home sheet module too (16-07). */
 const TERRAIN_HOME_MODULES = ['data/generated/terrain.ts', 'data/generated/precache.json', 'data/generated/home-plate.ts'];
@@ -1995,6 +2008,15 @@ const terrainDropCheckRoot = await tempTerrainRoot({ fixture: true });
 let terrainDropCheck = { writeError: null, dropped: [] };
 const terrainDropWriteRoot = await tempTerrainRoot({ fixture: true });
 let terrainDropWrite = { writeError: null, dropped: [] };
+/**
+ * 16-15 (DATA-12, RESEARCH Pitfall 4): a copy of the repo whose overview outputs
+ * are deleted before a write, so the write must rebuild them in the same run as
+ * the plates, and the sweep must keep them.
+ */
+const terrainOverviewRoot = await tempTerrainRoot();
+let terrainOverviewWrite = null;
+/** The overview contour files in `root`'s public/terrain/. */
+const overviewContourFiles = (root) => terrainListing(root).filter((f) => OVERVIEW_CONTOURS_RE.test(f));
 
 // scripts/terrain/fetch-*.mjs (16 D-09, D-28): only the argument refusals run here, offline.
 // The fetchers are manual and networked (T-08-09); every case below exits during argument parsing.
@@ -4016,6 +4038,32 @@ const cases = [
       if (same) return same;
       const r = spawnSync(process.execPath, [...PHOTO_NODE_ARGS, TERRAIN_BUILD, '--check', '--root', terrainDropWriteRoot], { encoding: 'utf-8' });
       return r.status === 0 ? null : `--check after the sweep exited ${r.status}: ${`${r.stdout ?? ''}${r.stderr ?? ''}`.trim()}`;
+    },
+  },
+  {
+    // 16-15 (DATA-12, T-16-37): the overview is built by the same write as every plate, so its
+    // files survive the sweep, and the --check that follows prints terrain: OK on the same root.
+    name: 'terrain: the overview builds in the same run and Matterhorn stays byte-equal',
+    guard: TERRAIN_BUILD,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--check'],
+    setup: () => {
+      for (const f of overviewContourFiles(terrainOverviewRoot)) fs.unlinkSync(path.join(terrainOverviewRoot, TERRAIN_PUBLIC, f));
+      fs.rmSync(path.join(terrainOverviewRoot, OVERVIEW_MODULE), { force: true });
+      terrainOverviewWrite = terrainWrite(terrainOverviewRoot);
+      return ['--root', terrainOverviewRoot];
+    },
+    expectExit: 0,
+    expectOutput: ['terrain: OK'],
+    check: () => {
+      if (terrainOverviewWrite) return terrainOverviewWrite;
+      const built = overviewContourFiles(terrainOverviewRoot);
+      if (built.length !== 1) return `${built.length} overview-contours-alps files after the write, expected 1`;
+      if (!fs.existsSync(path.join(terrainOverviewRoot, OVERVIEW_MODULE))) return `the write did not rebuild ${OVERVIEW_MODULE}`;
+      if (JSON.stringify(terrainListing(terrainOverviewRoot)) !== JSON.stringify(terrainListing(repoRoot)))
+        return `public/terrain/ lists ${terrainListing(terrainOverviewRoot).join(', ')}, not the repo's files`;
+      // Every repo file in public/terrain/ (Matterhorn's nine, the plates', the overview's) and the four home modules.
+      return terrainBytesEqual(terrainOverviewRoot, [...matterhornFiles(), ...TERRAIN_HOME_MODULES, 'data/generated/plates.ts', OVERVIEW_MODULE]);
     },
   },
   {

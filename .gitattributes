@@ -11,6 +11,8 @@ data/generated/precache.json text eol=lf
 data/terrain/plates.json text eol=lf
 data/generated/plates.ts text eol=lf
 data/generated/home-plate.ts text eol=lf
+# The Alps overview module (16-15): build-terrain --check byte-compares it too.
+data/generated/overview.ts text eol=lf
 public/terrain/*.svg text eol=lf
 # 16-bit PNGs: never touch the bytes (source sha256 and hashed file names).
 data/terrain/source/*.png binary

@@ -11,10 +11,17 @@
  * integrity (sha256, PNG header), the verbatim GLO-90 notice, the 72-slot tile
  * accounting (sea only by tileList.txt membership, T-16-29), and the parameters,
  * budget and summits exactly as 16-02 recorded them.
+ *
+ * 16-15 adds the built overview: data/generated/overview.ts (server-only) and
+ * public/terrain/overview-contours-alps.<hash>.svg, written by terrain:build in
+ * the same run as every plate. Its budget is counted here with zlib (raw bytes
+ * and brotli at quality 11), against OVERVIEW_BUDGET.
  */
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import zlib from 'node:zlib';
+import { overview } from '@/data/generated/overview';
 import {
   GLO90_LIABILITY,
   GLO90_NOTICE,
@@ -209,5 +216,66 @@ describe('overview config (D-18, D-20)', () => {
     const noRef = clone(rawConfig);
     noRef.summits[0].officialRef = null;
     expect(OverviewConfig.safeParse(noRef).success).toBe(false);
+  });
+});
+
+/** The overview's served files in public/terrain/, by name. */
+const terrainListing = () => fs.readdirSync(path.join(ROOT, 'public/terrain')).sort();
+const servedFile = (url: string) => fs.readFileSync(path.join(ROOT, 'public', url));
+
+describe('overview build (16-15, DATA-12)', () => {
+  const contours = servedFile(overview.contours.url);
+
+  it('the contour URL is the one overview-contours-alps file, named by its own sha256', () => {
+    const name = path.posix.basename(overview.contours.url);
+    expect(overview.contours.url).toBe(`/terrain/${name}`);
+    expect(terrainListing().filter((f) => f.startsWith('overview-contours-alps.'))).toEqual([name]);
+    const hash = crypto.createHash('sha256').update(contours).digest('hex').slice(0, 10);
+    expect(name).toBe(`overview-contours-alps.${hash}.svg`);
+  });
+
+  it("is within OVERVIEW_BUDGET: raw bytes and brotli quality 11 bytes (T-16-35)", () => {
+    const brotli = zlib.brotliCompressSync(contours, {
+      params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 11 },
+    }).length;
+    expect(contours.length).toBeLessThanOrEqual(OVERVIEW_BUDGET.contoursRawMax);
+    expect(brotli).toBeLessThanOrEqual(OVERVIEW_BUDGET.contoursBrotliMax);
+  });
+
+  it("records Tim's 16-02 parameters, the projection and the grid from the committed source", () => {
+    const { levels, url, ...params } = overview.contours;
+    expect(params).toEqual(config.contours);
+    expect(url).toMatch(/^\/terrain\/overview-contours-alps\.[0-9a-f]{10}\.svg$/);
+    // The 3 x 3 blur keeps the highest massifs under 4,000 m: three levels, as the spike measured.
+    expect(levels).toEqual([1000, 2000, 3000]);
+    expect(overview.projection).toEqual({ ...source.projection, lon: source.lon, lat: source.lat });
+    expect(overview.grid).toEqual({ width: source.width, height: source.height });
+    expect(overview.source.sha256).toBe(source.sha256);
+  });
+
+  it('the contour SVG draws the whole 1,200 x 872 grid with strokes only', () => {
+    const text = contours.toString('utf8');
+    expect(text.startsWith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 872">')).toBe(true);
+    expect(text).not.toMatch(/<(?!\/?(?:svg|g|path)\b)/);
+  });
+
+  it('carries the GLO-90 notice and liability sentence verbatim from the record (D-21)', () => {
+    expect(overview.notice).toBe(source.notice);
+    expect(overview.notice).toBe(GLO90_NOTICE);
+    expect(overview.liability).toBe(source.liability);
+    expect(overview.liability).toBe(GLO90_LIABILITY);
+  });
+
+  it('adds nothing to the client-safe terrain modules (Phase 15 D-15)', () => {
+    for (const rel of [
+      'data/generated/terrain.ts',
+      'data/generated/precache.json',
+      'data/generated/plates.ts',
+      'data/generated/home-plate.ts',
+    ]) {
+      const text = readText(rel);
+      expect(text).not.toContain('overview');
+      expect(text).not.toContain('WorldDEM');
+    }
   });
 });

@@ -55,6 +55,18 @@
  * serves and one visit's fetch; a plate over budget fails write mode before
  * anything is written, and fails --check.
  *
+ * Alps overview (DATA-12, 16 D-16 to D-21): the same run builds the overview from
+ * the committed GLO-90 grid (data/terrain/overview/, sha256 verified) with Tim's
+ * 16-02 parameters (data/terrain/overview.json): a box blur, levels from fromM
+ * every intervalM, d3-contour, a ring filter, ringPaths at simplifyPx, then
+ * public/terrain/overview-contours-alps.<hash>.svg within OVERVIEW_BUDGET.
+ * data/generated/overview.ts (SERVER-ONLY) carries its URL, the projection and
+ * grid, the verbatim GLO-90 notice and liability sentence. Its names join the
+ * expected-name union, so the sweep keeps them and --check names a missing or
+ * extra overview file (RESEARCH Pitfall 4: a separate script's files would be
+ * swept). Nothing overview-related reaches terrain.ts, precache.json, plates.ts or
+ * home-plate.ts, which reach the client.
+ *
  * --check by artifact type (RESEARCH Pattern 3):
  *   SVG, terrain.ts and  regenerated in memory and compared byte for byte.
  *   precache.json
@@ -90,6 +102,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import zlib from 'node:zlib';
 import { contours } from 'd3-contour';
 import simplify from 'simplify-js';
 import sharp from 'sharp';
@@ -97,6 +110,8 @@ import { lv95ToUv, round4, stripBbox } from '../../lib/geo.ts';
 import { contourSvg, isIndexLevel, openRuns, runToPath } from '../../lib/terrain/contour-paths.ts';
 import { resampleBilinear, sampleAtLv95 } from '../../lib/terrain/dem-sample.ts';
 import { blendShades, hillshade, toGrey8 } from '../../lib/terrain/hillshade.ts';
+import { OVERVIEW_BUDGET, OverviewConfig, OverviewSource } from '../../data/schemas/overview.ts';
+import { Regions } from '../../data/schemas/region.ts';
 import {
   PLATE_BUDGET,
   Plates,
@@ -104,6 +119,7 @@ import {
   TerrainMeta,
   TerrainSource,
 } from '../../data/schemas/terrain.ts';
+import { fromGrid } from '../photos/plate-dem.mjs';
 
 const NAME = 'terrain';
 
@@ -159,6 +175,20 @@ const PLATES_META_PATH = path.join(ROOT, PLATES_META_REL);
 /** The home plate's 2D sheet alone: what the footer and the Home callers import. */
 const HOME_PLATE_REL = 'data/generated/home-plate.ts';
 const HOME_PLATE_PATH = path.join(ROOT, HOME_PLATE_REL);
+/** The region registry: one overview outline per region, on its plate (16 D-17). */
+const REGIONS_REL = 'data/regions/regions.json';
+/** The overview's committed GLO-90 grid and its record (16-13, D-16). */
+const OVERVIEW_SOURCE_REL = 'data/terrain/overview';
+/** Tim's 16-02 overview parameters and reference summits (D-18, D-20). */
+const OVERVIEW_CONFIG_REL = 'data/terrain/overview.json';
+/** The overview module: server-only, never imported by a client component. */
+const OVERVIEW_META_REL = 'data/generated/overview.ts';
+const OVERVIEW_META_PATH = path.join(ROOT, OVERVIEW_META_REL);
+/**
+ * The overview contour file's stem in public/terrain/. `overview` is a reserved
+ * asset stem (ASSET_STEMS in data/schemas/terrain.ts), so no plate owns it.
+ */
+const OVERVIEW_CONTOURS = 'overview-contours-alps';
 
 /**
  * Files this script owns in public/terrain/, with or without a plate prefix
@@ -271,14 +301,18 @@ function levelsFor(grid, intervalM) {
   return levels;
 }
 
-/** Simplified, half-pixel-rounded open runs of one ring; no segment lies on the border. */
-function ringPaths(ring, W, H) {
+/**
+ * Simplified, half-pixel-rounded open runs of one ring; no segment lies on the
+ * border. `tolerancePx` is the simplify-js tolerance: 1 px for every plate, the
+ * overview's simplifyPx for the overview.
+ */
+function ringPaths(ring, W, H, tolerancePx = 1) {
   const { runs, closed } = openRuns(ring, W, H);
   let d = '';
   for (const run of runs) {
     const pts = simplify(
       run.map(([x, y]) => ({ x, y })),
-      1,
+      tolerancePx,
       true
     ).map((p) => [Math.round(p.x * 2) / 2, Math.round(p.y * 2) / 2]);
     // Drop repeated points that rounding produced.
@@ -305,6 +339,165 @@ function contourText(grid, W, H, { intervalM, indexEvery }) {
     if (d) paths.push({ d, index: isIndexLevel(mp.value, intervalM, indexEvery) });
   }
   return contourSvg({ width: W, height: H, paths });
+}
+
+/**
+ * A JSON file under ROOT parsed with `schema`; any failure names the file, so an
+ * overview.json with two summits fails as `data/terrain/overview.json: summits: …`.
+ */
+function parseNamed(schema, rel) {
+  let raw;
+  try {
+    raw = JSON.parse(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
+  } catch (e) {
+    throw new Error(`cannot read ${rel}: ${e && e.message ? e.message : String(e)}`);
+  }
+  const r = schema.safeParse(raw);
+  if (!r.success)
+    throw new Error(
+      `${rel}: ${r.error.issues.map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`).join('; ')}`
+    );
+  return r.data;
+}
+
+/**
+ * The overview's record, parameters and grid (DATA-12, 16 D-16): source.json and
+ * overview.json parsed, the PNG's sha256 verified, grey16 decoded to metres.
+ * A sha256 mismatch is returned as `error` (like loadSource), so --check reports
+ * it as a line. Tim chose no hillshade in 16-02; a config asking for one fails
+ * rather than being ignored, because this builder builds no overview poster.
+ */
+async function loadOverview() {
+  const source = parseNamed(OverviewSource, `${OVERVIEW_SOURCE_REL}/source.json`);
+  const config = parseNamed(OverviewConfig, OVERVIEW_CONFIG_REL);
+  if (config.hillshade !== false)
+    throw new Error(
+      `${OVERVIEW_CONFIG_REL} asks for an overview hillshade; 16-02 recorded none and this builder builds no overview poster`
+    );
+  const png = fs.readFileSync(path.join(ROOT, OVERVIEW_SOURCE_REL, source.file));
+  const actual = sha256(png);
+  if (actual !== source.sha256) {
+    return {
+      source,
+      config,
+      error: `stale ${OVERVIEW_SOURCE_REL}/${source.file} (sha256 ${actual.slice(0, 10)} != source.json ${source.sha256.slice(0, 10)})`,
+    };
+  }
+  const u16 = await decodeGrey16(png, source.width, source.height);
+  if (!u16)
+    throw new Error(
+      `${OVERVIEW_SOURCE_REL}/${source.file} is not ${source.width} x ${source.height} grey16`
+    );
+  const metres = Float64Array.from(u16, (v) => v * source.heightScale);
+  return { source, config, metres };
+}
+
+/** An edge-clamped `size` x `size` box blur (size 0 or 1 returns the grid as is). */
+function boxBlur(grid, W, H, size) {
+  if (size <= 1) return grid;
+  const r = (size - 1) / 2;
+  const out = new Float64Array(W * H);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      let sum = 0;
+      for (let dy = -r; dy <= r; dy++) {
+        const row = Math.min(H - 1, Math.max(0, y + dy)) * W;
+        for (let dx = -r; dx <= r; dx++) sum += grid[row + Math.min(W - 1, Math.max(0, x + dx))];
+      }
+      out[y * W + x] = sum / (size * size);
+    }
+  }
+  return out;
+}
+
+/** True when a ring's bounding box is under `px` in both width and height (the ring filter). */
+function smallRing(ring, px) {
+  let x0 = Infinity;
+  let y0 = Infinity;
+  let x1 = -Infinity;
+  let y1 = -Infinity;
+  for (const [x, y] of ring) {
+    if (x < x0) x0 = x;
+    if (x > x1) x1 = x;
+    if (y < y0) y0 = y;
+    if (y > y1) y1 = y;
+  }
+  return x1 - x0 < px && y1 - y0 < px;
+}
+
+/**
+ * The overview contours with Tim's 16-02 parameters (variant C): the blur, then
+ * levels every intervalM from fromM up to the blurred maximum, d3-contour, rings
+ * under ringFilterPx dropped, the plates' ringPaths at simplifyPx, contourSvg.
+ * Returns the SVG text and the levels that drew a ring.
+ */
+function overviewContours(metres, W, H, c) {
+  const grid = boxBlur(metres, W, H, c.blurPx);
+  let max = -Infinity;
+  for (const v of grid) if (v > max) max = v;
+  const thresholds = [];
+  for (let z = c.fromM; z <= max; z += c.intervalM) thresholds.push(z);
+  const paths = [];
+  const levels = [];
+  for (const mp of contours().size([W, H]).thresholds(thresholds)(grid)) {
+    let d = '';
+    for (const poly of mp.coordinates)
+      for (const ring of poly) if (!smallRing(ring, c.ringFilterPx)) d += ringPaths(ring, W, H, c.simplifyPx);
+    if (!d) continue;
+    paths.push({ d, index: isIndexLevel(mp.value, c.intervalM, c.indexEvery) });
+    levels.push(mp.value);
+  }
+  return { text: contourSvg({ width: W, height: H, paths }), levels };
+}
+
+/** Raw and brotli (quality 11) bytes of a text, as the overview budget counts them. */
+function overviewBytes(text) {
+  const raw = Buffer.byteLength(text);
+  const brotli = zlib.brotliCompressSync(Buffer.from(text, 'utf8'), {
+    params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 11 },
+  }).length;
+  return { raw, brotli };
+}
+
+/**
+ * The Alps overview in memory (DATA-12): the contour file and the overview.ts
+ * text. Built in the same run as every plate, so its file is in the expected-name
+ * union and the stale-file sweep keeps it (RESEARCH Pitfall 4). The sheet stays
+ * the whole arc (D-16): nothing here crops it per region.
+ */
+function buildOverview({ source, config, metres }) {
+  const { width: W, height: H } = source;
+  const { text, levels } = overviewContours(metres, W, H, config.contours);
+  const name = hashedName(OVERVIEW_CONTOURS, 'svg', text);
+  const meta = {
+    source: { product: source.product, release: source.release, sha256: source.sha256 },
+    projection: { ...source.projection, lon: source.lon, lat: source.lat },
+    grid: { width: W, height: H },
+    contours: { ...config.contours, levels, url: `/terrain/${name}` },
+    hillshade: config.hillshade,
+    notice: source.notice,
+    liability: source.liability,
+  };
+  const metaText =
+    '// AUTO-GENERATED by scripts/terrain/build-terrain.mjs from data/terrain/overview/, data/terrain/overview.json and data/regions/regions.json. Do not edit.\n' +
+    '// SERVER-ONLY (DATA-12): the Alps overview. Never import this from a client component;\n' +
+    '// lib/__tests__/client-graph.test.ts forbids it on the client graph.\n' +
+    `export const overview = ${JSON.stringify(meta, null, 2)} as const;\n`;
+  return { svg: { name, text }, metaText, bytes: overviewBytes(text) };
+}
+
+/** OVERVIEW_BUDGET for the overview contour file, as messages (empty when within it). */
+function overviewBudgetProblems(ov) {
+  const { raw, brotli } = ov.bytes;
+  const fix = '(OVERVIEW_BUDGET in data/schemas/overview.ts); change data/terrain/overview.json';
+  const out = [];
+  if (raw > OVERVIEW_BUDGET.contoursRawMax)
+    out.push(`overview contours are ${raw} B raw, over the ${OVERVIEW_BUDGET.contoursRawMax} B budget ${fix}`);
+  if (brotli > OVERVIEW_BUDGET.contoursBrotliMax)
+    out.push(`overview contours are ${brotli} B brotli, over the ${OVERVIEW_BUDGET.contoursBrotliMax} B budget ${fix}`);
+  if (raw > OVERVIEW_BUDGET.servedMax)
+    out.push(`overview serves ${raw} B, over the ${OVERVIEW_BUDGET.servedMax} B budget ${fix}`);
+  return out;
 }
 
 /** Rows of the native grid covering `bbox` (full width). */
@@ -783,9 +976,13 @@ async function write() {
   // plate's lossy posters, so refuse before anything is built or written.
   if (fs.existsSync(META_PATH) && committedMeta() === null)
     throw new Error(`cannot read ${META_REL}; refusing to re-encode posters`);
+  const overviewLoaded = await loadOverview();
+  if (overviewLoaded.error)
+    throw new Error(`${overviewLoaded.error}; re-run npm run terrain:fetch:overview`);
   const built = await buildPlates(loadRegistry().plates, { encode: true });
-  // Every plate within its budget before a single file is written.
-  const over = built.flatMap(budgetProblems);
+  const ov = buildOverview(overviewLoaded);
+  // Every plate and the overview within budget before a single file is written.
+  const over = [...built.flatMap(budgetProblems), ...overviewBudgetProblems(ov)];
   if (over.length > 0) {
     for (const m of over) console.log(`${NAME}: ${m}`);
     console.log(`${NAME}: ${over.length} over budget`);
@@ -813,7 +1010,12 @@ async function write() {
       for (const f of posterFiles(posters.urls))
         console.log(`${NAME}: kept ${PUBLIC_REL}/${f} (poster checks pass)`);
   }
-  const keep = new Set(built.flatMap(namesOf));
+  fs.writeFileSync(path.join(PUBLIC_DIR, ov.svg.name), ov.svg.text, 'utf8');
+  console.log(
+    `${NAME}: wrote ${PUBLIC_REL}/${ov.svg.name} (${ov.bytes.raw} bytes, ${ov.bytes.brotli} brotli)`
+  );
+  // The overview's names join the plates' union, so the sweep keeps them (Pitfall 4).
+  const keep = new Set([...built.flatMap(namesOf), ov.svg.name]);
   for (const f of managedFiles()) {
     if (!keep.has(f)) {
       fs.unlinkSync(path.join(PUBLIC_DIR, f));
@@ -832,6 +1034,8 @@ async function write() {
   const homePlate = homePlateText(built);
   fs.writeFileSync(HOME_PLATE_PATH, homePlate, 'utf8');
   console.log(`${NAME}: wrote ${HOME_PLATE_REL} (${Buffer.byteLength(homePlate)} bytes)`);
+  fs.writeFileSync(OVERVIEW_META_PATH, ov.metaText, 'utf8');
+  console.log(`${NAME}: wrote ${OVERVIEW_META_REL} (${Buffer.byteLength(ov.metaText)} bytes)`);
   console.log(`${NAME}: OK`);
 }
 
@@ -883,6 +1087,8 @@ async function check() {
         );
     }
   }
+  const overviewLoaded = await loadOverview();
+  if (overviewLoaded.error) lines.push(`${NAME}: ${overviewLoaded.error}`);
   if (lines.length > 0) {
     for (const l of lines) console.log(l);
     console.log(`${NAME}: ${lines.length} stale`);
@@ -891,11 +1097,15 @@ async function check() {
   const built = [];
   for (const { plate, source, metres } of loadedAll)
     built.push({ plate, ...(await buildPlate(plate, source, metres, { encode: false })) });
+  const ov = buildOverview(overviewLoaded);
 
-  const expected = new Set(built.flatMap(namesOf));
+  // The overview's names are in the union, so a missing or extra overview file is named.
+  const expected = new Set([...built.flatMap(namesOf), ov.svg.name]);
   const reported = new Set();
   for (const b of built) plateLines(b, lines, reported);
+  plateLines({ svgs: [ov.svg], pngs: [], posters: { problems: [] } }, lines, reported);
   for (const b of built) for (const m of budgetProblems(b)) lines.push(`${NAME}: ${m}`);
+  for (const m of overviewBudgetProblems(ov)) lines.push(`${NAME}: ${m}`);
   for (const f of managedFiles()) {
     if (!expected.has(f) && !reported.has(f)) lines.push(`${NAME}: extra ${PUBLIC_REL}/${f}`);
   }
@@ -905,6 +1115,7 @@ async function check() {
   if (precacheText !== null) moduleLine(PRECACHE_REL, PRECACHE_PATH, precacheText, lines);
   moduleLine(PLATES_META_REL, PLATES_META_PATH, platesText(built), lines);
   moduleLine(HOME_PLATE_REL, HOME_PLATE_PATH, homePlateText(built), lines);
+  moduleLine(OVERVIEW_META_REL, OVERVIEW_META_PATH, ov.metaText, lines);
 
   for (const l of lines) console.log(l);
   console.log(lines.length === 0 ? `${NAME}: OK` : `${NAME}: ${lines.length} stale`);
