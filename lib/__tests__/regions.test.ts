@@ -13,8 +13,13 @@
  * - Everything else is derived from the data: the rights line from the
  *   region's capture years, the one-photo description, the photo order.
  *
- * 17-16 adds the D-03 collision rows to this file.
+ * - D-03 (17-16): region ids, photo slugs and the reserved segments under
+ *   /photos never collide; see the describe at the end of the file.
  */
+import fs from 'node:fs';
+import path from 'node:path';
+import { NEUTRAL_SLUG } from '../../proxy';
+import { editorial } from '@/data/photos/editorial';
 import { formatYearRange } from '@/lib/home-format';
 import { seriesInput } from '@/lib/photos/view-model';
 import {
@@ -46,8 +51,7 @@ const APPROVED = {
   },
   zermatt: {
     title: 'Zermatt, Switzerland',
-    description:
-      '7 photographs by Tim Lui from Zermatt, Switzerland, at 1,617–2,928 m, 2019–2024.',
+    description: '7 photographs by Tim Lui from Zermatt, Switzerland, at 1,617–2,928 m, 2019–2024.',
     ogAlt: 'Zermatt, 7 photographs by Tim Lui. Switzerland, 1,617–2,928 m',
     rights: '© 2019–2024 Tim Lui, all rights reserved',
   },
@@ -132,5 +136,83 @@ describe('region photo order (PHOTO-05 ordering, region half)', () => {
   it('matches region ids exactly and case-sensitively', () => {
     expect(regionById('zermatt')?.id).toBe('zermatt');
     expect(regionById('Zermatt')).toBeUndefined();
+  });
+});
+
+/**
+ * D-03: a region id never collides with a photo slug or a reserved segment.
+ *
+ * A region id is a public URL segment (/photos/regions/<id>) beside the photo
+ * slugs (/photos/<slug>) and the static segments under /photos. Once indexed,
+ * the choice is one-way: renaming an id or a slug changes a public URL, so a
+ * collision must fail here before any plan publishes it.
+ *
+ * The reserved set is 'regions', the proxy's NEUTRAL_SLUG (the slug a 404 is
+ * rendered under), 'opengraph-image' (the per-photo OG card segment), and the
+ * name of every directory under app/(site)/photos that adds a static URL
+ * segment. That last part is read from the file system at test time, never
+ * typed: a new static directory joins the set with no edit here. Directories
+ * whose names start with '[' (dynamic segments), '@' (parallel-route slots) or
+ * '(' (route groups) add no static segment and are skipped.
+ *
+ * Photo slugs are every editorial slug (one per generated photo), the published
+ * set, independent of which photos the light table shows.
+ */
+describe('D-03: region ids never collide with a photo slug or a reserved segment', () => {
+  const PHOTOS_DIR = path.join(process.cwd(), 'app', '(site)', 'photos');
+
+  /** Directory names under app/(site)/photos that are static URL segments. */
+  const staticSegments = fs
+    .readdirSync(PHOTOS_DIR, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !/^[[@(]/.test(entry.name))
+    .map((entry) => entry.name);
+
+  const reserved = [...new Set(['regions', NEUTRAL_SLUG, 'opengraph-image', ...staticSegments])];
+  const photoSlugs = Object.values(editorial).map((e) => e.slug);
+
+  /**
+   * Every value that appears in more than one of the named lists, with the
+   * names of the lists it appears in (in the order given), sorted by value.
+   */
+  function collisions(lists: Record<string, readonly string[]>): { value: string; in: string[] }[] {
+    const seen = new Map<string, string[]>();
+    for (const [name, values] of Object.entries(lists)) {
+      for (const value of new Set(values)) {
+        seen.set(value, [...(seen.get(value) ?? []), name]);
+      }
+    }
+    return [...seen]
+      .filter(([, names]) => names.length > 1)
+      .map(([value, names]) => ({ value, in: names }))
+      .sort((a, b) => (a.value < b.value ? -1 : a.value > b.value ? 1 : 0));
+  }
+
+  it('reads the static segments from the file system (it sees the regions directory)', () => {
+    expect(staticSegments).toContain('regions');
+    expect(reserved).toEqual(expect.arrayContaining(['regions', NEUTRAL_SLUG, 'opengraph-image']));
+  });
+
+  it('has no duplicate region id and no duplicate photo slug', () => {
+    expect(new Set(regionIds).size).toBe(regionIds.length);
+    expect(new Set(photoSlugs).size).toBe(photoSlugs.length);
+  });
+
+  it('keeps region ids, photo slugs and reserved segments pairwise disjoint', () => {
+    expect(collisions({ 'region ids': regionIds, 'photo slugs': photoSlugs, reserved })).toEqual(
+      []
+    );
+  });
+
+  it('reports a region id equal to a photo slug (the check can fail)', () => {
+    const slug = photoSlugs[0];
+    expect(collisions({ 'region ids': [...regionIds, slug], 'photo slugs': photoSlugs })).toEqual([
+      { value: slug, in: ['region ids', 'photo slugs'] },
+    ]);
+  });
+
+  it('reports a photo slug equal to a reserved segment', () => {
+    expect(collisions({ 'photo slugs': [...photoSlugs, NEUTRAL_SLUG], reserved })).toEqual([
+      { value: NEUTRAL_SLUG, in: ['photo slugs', 'reserved'] },
+    ]);
   });
 });
