@@ -14,7 +14,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { terrain } from '@/data/generated/terrain';
-import { TerrainMeta, TerrainSource } from '@/data/schemas/terrain';
+import { Plates, TerrainMeta, TerrainSource } from '@/data/schemas/terrain';
 import { lv95ToUv, round4, stripBbox } from '@/lib/geo';
 
 const ROOT = process.cwd();
@@ -251,8 +251,39 @@ describe('D-15: Matterhorn names and hashes', () => {
     'hillshade-640.b019a3335a.avif',
   ].sort();
 
-  test('public/terrain/ and terrain.assets hold exactly the nine D-15 names', () => {
-    expect(fs.readdirSync(path.join(ROOT, 'public/terrain')).sort()).toEqual(D15);
+  /**
+   * 16 D-22 IN-01: other files share public/terrain/ with Matterhorn's nine. A
+   * plate's files carry its '<id>-' prefix (from plates.json), and the Alps
+   * overview's carry OVERVIEW_PREFIX: 16-15 writes `overview-contours-alps.<hash>.svg`
+   * (and an `overview-hillshade-*` poster if 16-02 recorded one), which the
+   * builder's MANAGED pattern accepts as a prefixed managed name. `overview` is a
+   * reserved stem (ASSET_STEMS in data/schemas/terrain.ts), so no plate can own
+   * this prefix and excluding it cannot hide a plate file.
+   */
+  const OVERVIEW_PREFIX = 'overview-';
+  const platePrefixes = Plates.parse(JSON.parse(read('data/terrain/plates.json').toString()))
+    .plates.filter((p) => !p.home)
+    .map((p) => p.prefix);
+  /** The builder's own MANAGED pattern, read from the script so the two cannot drift. */
+  const managedMatch = /const MANAGED =\s*\/(.+)\/;/.exec(
+    read('scripts/terrain/build-terrain.mjs').toString('utf8')
+  );
+  if (!managedMatch) throw new Error('build-terrain.mjs has no MANAGED pattern');
+  const MANAGED = new RegExp(managedMatch[1]);
+
+  test('public/terrain/ holds the nine D-15 names and they are its only unprefixed managed names', () => {
+    const listing = fs.readdirSync(path.join(ROOT, 'public/terrain')).sort();
+    expect(listing).toEqual(expect.arrayContaining(D15));
+    const unprefixed = listing.filter(
+      (f) =>
+        MANAGED.test(f) &&
+        !f.startsWith(OVERVIEW_PREFIX) &&
+        !platePrefixes.some((prefix) => f.startsWith(prefix))
+    );
+    expect(unprefixed).toEqual(D15);
+  });
+
+  test('terrain.assets holds exactly the nine D-15 names', () => {
     expect(urls.map((u) => path.posix.basename(u)).sort()).toEqual(D15);
   });
 });

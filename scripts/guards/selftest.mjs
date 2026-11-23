@@ -1875,6 +1875,17 @@ function terrainSheet(root, id) {
   const m = /export const plates = ([\s\S]*) as const;\s*$/.exec(fs.readFileSync(path.join(root, 'data/generated/plates.ts'), 'utf-8'));
   return m ? JSON.parse(m[1])[id] ?? null : null;
 }
+/** 16 D-22 IN-05: the 2D fixture's strip centre 1 km south of its extent. */
+const terrainStripRoot = await tempTerrainRoot({ fixture: true, fixtureCentreN: 1199000 });
+let terrainStripBefore = null;
+/** 16 D-22 IN-06: a root whose terrain.ts is cut in half (unreadable to committedMeta). */
+const terrainUnreadableRoot = await tempTerrainRoot();
+{
+  const meta = path.join(terrainUnreadableRoot, 'data/generated/terrain.ts');
+  const text = fs.readFileSync(meta, 'utf-8');
+  fs.writeFileSync(meta, text.slice(0, Math.floor(text.length / 2)));
+}
+let terrainUnreadableBefore = null;
 /** Pitfall 4: a deleted prefixed file must be named by --check. */
 const terrainMissingRoot = await tempTerrainRoot({ fixture: true });
 let terrainMissingWrite = null;
@@ -3677,6 +3688,32 @@ const cases = [
     },
   },
   {
+    name: 'terrain: a strip centre outside its plate fails',
+    guard: TERRAIN_BUILD,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: [],
+    setup: () => {
+      terrainStripBefore = snapshotTree(terrainStripRoot);
+      return ['--root', terrainStripRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['terrain: plate fixture: strip.centreN 1199000 is outside its extent (1200000..1201000); fix data/terrain/plates.json'],
+    check: () => treeUnchanged(terrainStripRoot, terrainStripBefore),
+  },
+  {
+    name: 'terrain: an unreadable terrain.ts refuses to re-encode posters',
+    guard: TERRAIN_BUILD,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: [],
+    setup: () => {
+      terrainUnreadableBefore = snapshotTree(terrainUnreadableRoot);
+      return ['--root', terrainUnreadableRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['terrain: cannot read data/generated/terrain.ts; refusing to re-encode posters'],
+    check: (output) => (output.includes('wrote ') ? 'the run wrote a file' : treeUnchanged(terrainUnreadableRoot, terrainUnreadableBefore)),
+  },
+  {
     name: 'terrain: --check sees a missing prefixed plate file',
     guard: TERRAIN_BUILD,
     nodeArgs: PHOTO_NODE_ARGS,
@@ -3870,7 +3907,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, exifMappedRoot, exifUnmappedRoot, exifDuplicateRoot, terrainFixtureRoot, terrainLaeaRoot, terrainMissingRoot, terrainRemoveRoot, terrainDropCheckRoot, terrainDropWriteRoot, ...ciGateTempRoots, ...telemetryTempRoots, ...privacyTempRoots]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, exifMappedRoot, exifUnmappedRoot, exifDuplicateRoot, terrainFixtureRoot, terrainLaeaRoot, terrainStripRoot, terrainUnreadableRoot, terrainMissingRoot, terrainRemoveRoot, terrainDropCheckRoot, terrainDropWriteRoot, ...ciGateTempRoots, ...telemetryTempRoots, ...privacyTempRoots]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 

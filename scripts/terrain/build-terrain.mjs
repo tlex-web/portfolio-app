@@ -572,7 +572,14 @@ async function buildPlate(plate, source, metres, { encode }) {
   const mapUrl = outputs.contours.includes('map')
     ? lod('contours-map', contourText(grid512, GRIDS.desktop, GRIDS.desktop, MAP))
     : null;
-  const strip = stripBbox(extent, plate.strip.centreN, STRIP.ratio);
+  // 16 D-22 IN-05: stripBbox clamps a centre outside the extent into it, which would
+  // silently draw another band; a misplaced centre fails instead.
+  const { centreN } = plate.strip;
+  if (!(extent.south < centreN && centreN < extent.north))
+    throw new Error(
+      `plate ${plate.id}: strip.centreN ${centreN} is outside its extent (${extent.south}..${extent.north}); fix ${PLATES_REL}`
+    );
+  const strip = stripBbox(extent, centreN, STRIP.ratio);
   const box = gridKey(source.crs);
   const sw = rowWindow(metres, source, strip);
   const stripUrl = lod('contours-strip', contourText(sw.grid, sw.W, sw.H, STRIP));
@@ -771,6 +778,11 @@ function budgetProblems(b) {
 }
 
 async function write() {
+  // 16 D-22 IN-06: the recorded HILLSHADE parameters live in terrain.ts. An
+  // unreadable terrain.ts would read as "parameters changed" and re-encode every
+  // plate's lossy posters, so refuse before anything is built or written.
+  if (fs.existsSync(META_PATH) && committedMeta() === null)
+    throw new Error(`cannot read ${META_REL}; refusing to re-encode posters`);
   const built = await buildPlates(loadRegistry().plates, { encode: true });
   // Every plate within its budget before a single file is written.
   const over = built.flatMap(budgetProblems);
