@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 16
 current_phase_name: New Regions & Alps Overview Data
 status: executing
-stopped_at: Completed 16-16-PLAN.md
-last_updated: "2026-11-23T13:21:35.611Z"
+stopped_at: Completed 16-17-PLAN.md
+last_updated: "2026-11-23T13:41:25.089Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 16 execution started
-state_head: 00676be0d8842fb6f9f77c0d104f38ab13564d89
+state_head: eb4bb1b8c48d09a7dc2e1efea1dcce691a9cd484
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 64
-  completed_plans: 62
+  completed_plans: 63
   percent: 43
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-15)
 ## Current Position
 
 Phase: 16 (New Regions & Alps Overview Data) — EXECUTING
-Plan: 17 of 18
+Plan: 18 of 18
 Status: Ready to execute
 Last activity: 2026-11-23 — Phase 16 execution started
 
@@ -118,6 +118,7 @@ Progress: [████░░░░░░] 43%
 | Phase 16 P14 | 25min | 3 tasks | 16 files |
 | Phase 16 P15 | 17min | 3 tasks | 8 files |
 | Phase 16 P16 | 9min | 2 tasks | 11 files |
+| Phase 16 P17 | 14min | 3 tasks | 28 files |
 
 ## Accumulated Context
 
@@ -278,6 +279,8 @@ Recent decisions affecting current work:
 - [Phase 16]: 16-15: no overview poster (hillshade false); a config asking for one fails the build; OVERVIEW_BUDGET is enforced by the builder and by Jest
 - [Phase 16]: 16-16: Ortler plate extent W 2,834,000 S 1,150,000 E 2,846,000 N 1,162,000 (12 km, swissALTIRegio 2026-05): the summit-centred default moved 2 km east on the 1 km grid because one of Tim's two Ortler files (20160717_124904-Topaz-Sharpen-Auto-Denoise-2.jpg) is outside it; booleans only, both files fit at 4dp/3dp/2dp with 1 km margin; the search starts at the default 12 km side (D-10, D-27)
 - [Phase 16]: 16-16: Tim's Task 1 reply 'copied'; the Ortler files are 20160717_120906-Topaz-Sharpen-Strong-Denoise-2.jpg and 20160717_124904-Topaz-Sharpen-Auto-Denoise-2.jpg (samsung SM-G930F, GPS yes, GPS altitude no); the no-GPS original was replaced by the -2 re-export
+- [Phase 16]: 16-17 (Tim): both Ortler photos at 3dp, ground, IT, region ortler (sam-20160717-120906, sam-20160717-124904)
+- [Phase 16]: 16-17 (Tim): Ortler location 'Ortler Alps, Italy'; one region fact (highest mountain in South Tyrol, main peak of the Ortler Alps); copy approved as drafted
 
 ### Pending Todos
 
@@ -338,6 +341,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-23T13:21:35.039Z
-Stopped at: Completed 16-16-PLAN.md
+Last session: 2026-11-23T13:41:24.516Z
+Stopped at: Completed 16-17-PLAN.md
 Resume file: None
