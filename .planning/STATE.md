@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 17
 current_phase_name: Region Routes, SEO & Structured Data
 status: executing
-stopped_at: Completed 17-02-PLAN.md
-last_updated: "2026-11-23T22:06:27.131Z"
+stopped_at: Completed 17-01-PLAN.md
+last_updated: "2026-11-23T22:16:37.427Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 17 execution started
-state_head: dafe5ea3e6004138782cad7fc314b60d188e9b2f
+state_head: 98815cc468add6dbd32bd91802634852c8002336
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 80
-  completed_plans: 65
+  completed_plans: 66
   percent: 57
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-23)
 ## Current Position
 
 Phase: 17 (Region Routes, SEO & Structured Data) — EXECUTING
-Plan: 2 of 16
+Plan: 3 of 16
 Status: Ready to execute
 Last activity: 2026-11-23 — Phase 17 execution started
 
@@ -122,6 +122,7 @@ Progress: [██████░░░░] 57%
 | Phase 16 P17 | 14min | 3 tasks | 28 files |
 | Phase 16 P18 | 47min | 3 tasks | 3 files |
 | Phase 17 P02 | 5 min | 2 tasks | 2 files |
+| Phase 17 P01 | 35min (Task 3 continuation) | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -287,6 +288,9 @@ Recent decisions affecting current work:
 - [Phase 16]: 16-18: ci/16-18 holds the Task 1 tip e96f266; the SUMMARY/STATE/ROADMAP/REQUIREMENTS commit after it stays on the local phase branch — D-24 covers a new ci/16-* branch and fast-forward fix pushes, not docs pushes; CI verified the last commit that changes anything outside .planning/ (scripts/README.md)
 - [Phase 17]: 17-02: E2E Tests runs as an engine matrix (chromium, firefox, webkit; fail-fast false) under the unchanged e2e-tests id and literal name; needs.e2e-tests.result aggregates every leg, so ci-ok.jq is unchanged (D-25)
 - [Phase 17]: 17-02: audit sweep timeout = 60 s + 30 s per AUDIT_SWEEP page (AUDIT_SWEEP_PAGE_MS), equal to the old 180 s for four pages
+- [Phase 17]: 17-01 D-14: Tim approved the region copy (country as full name, no 'approx.' in ranges); region OG alt adds 'ground' when every photo is aerial (data-driven rule)
+- [Phase 17]: 17-01 D-14: case-study copyrightNotice is option (a), the footer line exactly '© {current year} Tim Lui. All rights reserved.' (17-14 applies it)
+- [Phase 17]: 17-01 D-14: aerial photo descriptions approved as drafted ('{title}: an aerial photograph by Tim Lui over Saalfelden, ground {m} approx., Sep 2026.'); 17-05 applies them
 
 ### Pending Todos
 
@@ -346,6 +350,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-23T22:06:26.053Z
-Stopped at: Completed 17-02-PLAN.md
+Last session: 2026-11-23T22:16:36.327Z
+Stopped at: Completed 17-01-PLAN.md
 Resume file: None
