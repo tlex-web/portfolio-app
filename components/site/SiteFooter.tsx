@@ -17,7 +17,8 @@ const LINK =
  *
  * The sheet margin is composed from the Matterhorn plate's SheetBand (the
  * full-bleed contour band, kept as the footer's first child) and SheetLegend
- * (inside the content column, after the links). Waypoint ticks (D-20, DATA-04)
+ * (inside the content column, after the links); both draw homePlate, the home
+ * sheet alone, never the plate registry. Waypoint ticks (D-20, DATA-04)
  * are the positioned Home waypoints, read through lib/ascent/home-photos
  * (DATA-09, D-09), a module kept light because global-error ships this footer in
  * a client chunk. The footer is the one @container: the legend's scale bar
@@ -39,7 +40,7 @@ export default function SiteFooter() {
 
   return (
     <footer className="@container bg-surface-raised border-t border-line">
-      <SheetBand plate="matterhorn" ticks={ticks} />
+      <SheetBand sheet={homePlate} ticks={ticks} />
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid gap-8 md:grid-cols-2">
           <div>

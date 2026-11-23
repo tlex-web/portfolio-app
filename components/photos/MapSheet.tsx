@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { SummitMark } from '@/components/home/PinMark';
 import ContourField from '@/components/terrain/ContourField';
+import { homePlate } from '@/data/generated/home-plate';
 import { terrain } from '@/data/generated/terrain';
 import { sheet } from '@/data/sheet';
 import { formatMetres } from '@/lib/photo-format';
@@ -112,7 +113,7 @@ export default function MapSheet({ photos }: { photos: readonly PhotoView[] }) {
             className="absolute inset-0 block h-full w-full opacity-(--relief-opacity)"
           />
         </picture>
-        <ContourField plate="matterhorn" lod="hero" className="absolute inset-0" />
+        <ContourField sheet={homePlate} lod="hero" className="absolute inset-0" />
         <div aria-hidden="true">
           <SummitMark style={summitAt} />
           <div

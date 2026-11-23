@@ -1,5 +1,6 @@
 import PinMark, { SummitMark } from '@/components/home/PinMark';
 import ContourField from '@/components/terrain/ContourField';
+import { homePlate } from '@/data/generated/home-plate';
 import { terrain } from '@/data/generated/terrain';
 import { POSTER_X_BIAS } from '@/lib/ascent/poster-frame';
 import { buildWaypoints } from '@/lib/ascent/waypoints';
@@ -75,7 +76,7 @@ export default function PosterSheet() {
           className="block h-full w-full opacity-(--relief-opacity)"
         />
       </picture>
-      <ContourField plate="matterhorn" lod="hero" className="absolute inset-0" />
+      <ContourField sheet={homePlate} lod="hero" className="absolute inset-0" />
       <div
         data-pin-layer="poster"
         className="pointer-events-none absolute inset-0 z-10 group-data-[ascent-mode=3d]/stage:invisible"

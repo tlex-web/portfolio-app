@@ -1,4 +1,5 @@
 import ContourField from '@/components/terrain/ContourField';
+import { homePlate } from '@/data/generated/home-plate';
 import { EDGE_DOT, EDGE_TRAIL, trailPath } from '@/lib/edge-art';
 
 const TRAIL_D = trailPath(EDGE_TRAIL);
@@ -21,7 +22,7 @@ export default function EdgeArt() {
       aria-hidden="true"
       className="relative aspect-square w-full max-w-md overflow-hidden rounded-lg border border-line bg-surface-raised"
     >
-      <ContourField plate="matterhorn" lod="hero" className="absolute inset-0" />
+      <ContourField sheet={homePlate} lod="hero" className="absolute inset-0" />
       <svg
         className="absolute inset-0 size-full"
         viewBox="0 0 512 512"
