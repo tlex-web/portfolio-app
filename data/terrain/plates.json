@@ -15,6 +15,18 @@
       "strip": { "centreN": 1091673 }
     },
     {
+      "id": "ortler",
+      "prefix": "ortler-",
+      "source": "data/terrain/plates/ortler",
+      "home": false,
+      "threeD": false,
+      "outputs": {
+        "contours": ["hero", "strip"],
+        "hillshade": [1100, 640]
+      },
+      "strip": { "centreN": 1156000 }
+    },
+    {
       "id": "saalfelden",
       "prefix": "saalfelden-",
       "source": "data/terrain/plates/saalfelden",

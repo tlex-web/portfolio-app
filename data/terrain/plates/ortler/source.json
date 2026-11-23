@@ -1,0 +1,24 @@
+{
+  "product": "swissALTIRegio",
+  "stacItemUrl": "https://data.geo.admin.ch/api/stac/v1/collections/ch.swisstopo.swissaltiregio/items/swissaltiregio",
+  "cogUrl": "https://data.geo.admin.ch/ch.swisstopo.swissaltiregio/swissaltiregio/swissaltiregio_2056_5728.tif",
+  "stacDatetime": "2026-05-28T00:00:00Z",
+  "stacUpdated": "2026-06-01T12:32:29.328072Z",
+  "checksum": "1220E1CADE929D3007D74BE67E5D107E517E40B13E0597A114097744B032FC6527E5",
+  "edition": "2026-05",
+  "editionSource": "stac:datetime",
+  "crs": "EPSG:2056",
+  "heightSystem": "LN02",
+  "extent": {
+    "west": 2834000,
+    "south": 1150000,
+    "east": 2846000,
+    "north": 1162000
+  },
+  "cellM": 10,
+  "width": 1200,
+  "height": 1200,
+  "heightScale": 0.1,
+  "file": "dem-10m.png",
+  "sha256": "ece77fb2b768b2821ecd9a91a64a026853e584445b177446e790fab1f4501e5a"
+}

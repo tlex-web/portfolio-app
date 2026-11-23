@@ -65,6 +65,61 @@ export const plates = {
       }
     }
   },
+  "ortler": {
+    "id": "ortler",
+    "prefix": "ortler-",
+    "home": false,
+    "threeD": false,
+    "crs": "EPSG:2056",
+    "extent": {
+      "lv95": {
+        "west": 2834000,
+        "south": 1150000,
+        "east": 2846000,
+        "north": 1162000
+      },
+      "widthM": 12000,
+      "heightM": 12000
+    },
+    "dem": {
+      "product": "swissALTIRegio",
+      "edition": "2026-05",
+      "cellM": 10
+    },
+    "contours": {
+      "hero": {
+        "intervalM": 100,
+        "indexEvery": 5
+      },
+      "strip": {
+        "intervalM": 100,
+        "indexEvery": 5,
+        "lv95": {
+          "west": 2834000,
+          "south": 1154800,
+          "east": 2846000,
+          "north": 1157200
+        }
+      }
+    },
+    "assets": {
+      "contours": {
+        "hero": "/terrain/ortler-contours-hero.126ad63294.svg",
+        "strip": "/terrain/ortler-contours-strip.6f4fcf30ca.svg"
+      },
+      "hillshade": {
+        "avif": {
+          "640": "/terrain/ortler-hillshade-640.6d0f445c9e.avif",
+          "1100": "/terrain/ortler-hillshade-1100.1718df8edc.avif"
+        },
+        "webp": {
+          "640": "/terrain/ortler-hillshade-640.4b688084d8.webp",
+          "1100": "/terrain/ortler-hillshade-1100.6eba7241a2.webp"
+        },
+        "sourceSha256": "ece77fb2b768b2821ecd9a91a64a026853e584445b177446e790fab1f4501e5a"
+      }
+    }
+  },
   "saalfelden": {
     "id": "saalfelden",
     "prefix": "saalfelden-",
