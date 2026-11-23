@@ -16,9 +16,9 @@ import path from 'node:path';
 import { photos } from '@/data/generated/photos';
 import { plates as plates2d } from '@/data/generated/plates';
 import { Country, ExifSidecar, PhotoMap } from '@/data/schemas/photo';
-import { type Bbox, lv95ToUv, round4, wgs84ToLv95 } from '@/lib/geo';
+import { lv95ToUv, round4, wgs84ToLv95 } from '@/lib/geo';
 import { Regions } from '@/data/schemas/region';
-import { Plates } from '@/data/schemas/terrain';
+import { Plates, PlatesMeta } from '@/data/schemas/terrain';
 
 const readJson = (rel: string): unknown =>
   JSON.parse(fs.readFileSync(path.join(process.cwd(), rel), 'utf8'));
@@ -81,7 +81,8 @@ describe('photo map and region registry: committed data', () => {
   });
 
   test('every photo on an EPSG:2056 plate has the uv of its position on that plate (EPSG:3035 plates are checked by photos:build and the guard selftest)', () => {
-    const sheets = plates2d as Record<string, { crs: string; extent: { lv95: Bbox } }>;
+    // PlatesMeta is a union on crs (16 D-09), so the EPSG:2056 check below narrows extent to lv95.
+    const sheets = PlatesMeta.parse(plates2d);
     let checked = 0;
     for (const p of photos) {
       if (!p.position) continue;

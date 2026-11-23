@@ -65,7 +65,9 @@ const fixtureWith = (patch: Record<string, unknown>) => ({ ...fixture, ...patch 
 
 describe('plate registry (D-10, D-11, D-12)', () => {
   test('the committed registry parses with Plates and lists matterhorn as the home plate', () => {
-    expect(registry.plates.map((p) => p.id)).toEqual(['matterhorn']);
+    // Matterhorn stays first and the only home plate as regional plates join (16-12 saalfelden).
+    expect(registry.plates[0]?.id).toBe('matterhorn');
+    expect(registry.plates.filter((p) => p.home).map((p) => p.id)).toEqual(['matterhorn']);
     expect(home).toMatchObject({ prefix: '', home: true, threeD: true });
     expect(home.outputs).toEqual({
       heightmaps: [512, 256],
@@ -178,6 +180,28 @@ describe('plates.ts (the generated 2D sheets)', () => {
 
   test("the registry's matterhorn strip.centreN is terrain's summit northing", () => {
     expect(entry('matterhorn').strip.centreN).toBe(terrain.summit.lv95.n);
+  });
+
+  // 16 D-09, D-28: Saalfelden is a 12 km BEV ALS DTM plate on LAEA Europe, 2D only.
+  test('the saalfelden sheet is a 12 km EPSG:3035 BEV plate', () => {
+    const s = plates.saalfelden;
+    expect(s).toMatchObject({
+      id: 'saalfelden',
+      prefix: 'saalfelden-',
+      home: false,
+      threeD: false,
+    });
+    expect(s.crs).toBe('EPSG:3035');
+    expect(s.extent.laea).toEqual({ west: 4529000, south: 2701000, east: 4541000, north: 2713000 });
+    expect(Object.hasOwn(s.extent, 'lv95')).toBe(false);
+    expect(s.extent.widthM).toBe(12000);
+    expect(s.extent.heightM).toBe(12000);
+    expect(s.dem).toEqual({ product: 'BEV ALS DTM', edition: '2025-09', cellM: 10 });
+    expect(Object.hasOwn(s.assets, 'heightmap')).toBe(false);
+    expect(Object.keys(s.assets.contours).sort()).toEqual(['hero', 'strip']);
+    expect(Object.hasOwn(s.contours, 'map')).toBe(false);
+    expect(Object.hasOwn(s.contours.strip, 'laea')).toBe(true);
+    expect(entry('saalfelden').source).toBe('data/terrain/plates/saalfelden');
   });
 
   test('plates.ts has no import and no path data', () => {
