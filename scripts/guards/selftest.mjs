@@ -1059,6 +1059,7 @@ const noSortRefine = (output) =>
 let photoDataControlRoot = null;
 let photoDataOffsetRoot = null;
 let photoDataRomeRoot = null;
+let photoDataHomeCauseRoot = null;
 let photoDataGpsRoot = null;
 let photoDataOffPlateRoot = null;
 let photoDataAerialAltRoot = null;
@@ -3482,6 +3483,20 @@ const cases = [
     expectExit: 1,
     expectOutput: ['sam-20160717-120906: EXIF OffsetTimeOriginal +01:00 is not the Europe/Rome offset +02:00', 'photos:build: stale'],
   },
+  // 16 IN-04: a Home list that fails to load reports its own cause, not a bare "cannot read".
+  {
+    name: 'photos:build: an unreadable data/home-waypoints.ts names its cause (16 IN-04)',
+    guard: PHOTO_DATA,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--check'],
+    setup: () => {
+      photoDataHomeCauseRoot = tempPhotoDataRoot();
+      fs.writeFileSync(path.join(photoDataHomeCauseRoot, 'data/home-waypoints.ts'), "throw new Error('selftest-in04-cause');\n");
+      return ['--root', photoDataHomeCauseRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['cannot read data/home-waypoints.ts (', 'selftest-in04-cause'],
+  },
   {
     name: 'G5 photos:build --check: a GPS UTC time one hour off the capture time fails (D-04)',
     guard: PHOTO_DATA,
@@ -4330,7 +4345,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataRomeRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDataAerialAltRoot, photoDataDjiGroundRoot, photoDataGroundSourceRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, exifMappedRoot, exifUnmappedRoot, exifDuplicateRoot, terrainFixtureRoot, terrainLaeaRoot, terrainStripRoot, terrainUnreadableRoot, terrainMissingRoot, terrainRemoveRoot, terrainDropCheckRoot, terrainDropWriteRoot, fetchOutRoot, ...ciGateTempRoots, ...telemetryTempRoots, ...privacyTempRoots]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataRomeRoot, photoDataHomeCauseRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDataAerialAltRoot, photoDataDjiGroundRoot, photoDataGroundSourceRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, exifMappedRoot, exifUnmappedRoot, exifDuplicateRoot, terrainFixtureRoot, terrainLaeaRoot, terrainStripRoot, terrainUnreadableRoot, terrainMissingRoot, terrainRemoveRoot, terrainDropCheckRoot, terrainDropWriteRoot, fetchOutRoot, ...ciGateTempRoots, ...telemetryTempRoots, ...privacyTempRoots]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 

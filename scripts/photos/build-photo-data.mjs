@@ -355,15 +355,19 @@ function resolveMembership(sidecar, photoMap, regions, plates) {
 /**
  * homeWaypointIds from <root>/data/home-waypoints.ts (DATA-09). A dynamic import
  * through a file URL, not a static import beside the script, so the Home list
- * follows --root like every other input and a Windows path loads.
+ * follows --root like every other input and a Windows path loads. A failed import
+ * (a missing file, syntax Node cannot strip, a throw at load) names its cause
+ * (16 IN-04).
  */
 async function loadHomeWaypointIds() {
   const file = path.join(ROOT, HOME_WAYPOINTS_REL);
   let ids;
   try {
     ({ homeWaypointIds: ids } = await import(pathToFileURL(file).href));
-  } catch {
-    throw new Error(`cannot read ${HOME_WAYPOINTS_REL}; every photos:build root needs a Home list`);
+  } catch (e) {
+    throw new Error(
+      `cannot read ${HOME_WAYPOINTS_REL} (${e?.message ?? e}); every photos:build root needs a Home list`
+    );
   }
   if (!Array.isArray(ids) || !ids.every((id) => typeof id === 'string')) {
     throw new Error(`${HOME_WAYPOINTS_REL} must export homeWaypointIds, an array of photo ids`);
