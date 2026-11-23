@@ -256,7 +256,7 @@ Plans:
   2. More Zermatt photos and two new regions, Ortler (Italy, inside the swissALTIRegio footprint) and Saalfelden (Austria, outside it), are in the committed photo data with EXIF facts, DEM heights and metadata-free hashed derivatives from the existing pipeline. The served-image guard and `data:check` pass, and each region's footprint check is recorded (amended 2026-11-15, 16-CONTEXT D-06 to D-09).
   3. Each new region has its own local plate (contours and hillshade) from exactly one source: swissALTIRegio for Ortler (and for a Zermatt region plate if one is needed), BEV ALS DTM for Saalfelden. `terrain:build --check` stays deterministic, and the Matterhorn plate's hashed files and Home stay unchanged.
   4. A build-time Alps overview is generated from Copernicus GLO-90 contours, with each region's plate extent drawn as a rectangle and 3-5 labelled reference summits, within a size budget that a spike measured before it was fixed.
-**Plans**: 13/18 plans executed in 12 waves
+**Plans**: 14/18 plans executed in 12 waves
 
 Plans:
 **Wave 1**
@@ -287,7 +287,7 @@ Plans:
 - [x] 16-13-PLAN.md — Overview source: GLO-90 fetcher, committed grid with the verbatim notice, overview.json (DATA-12)
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 16-14-PLAN.md — Ingest three Zermatt photos and the Saalfelden region with two aerial DJI stills (DATA-13)
+- [x] 16-14-PLAN.md — Ingest three Zermatt photos and the Saalfelden region with two aerial DJI stills (DATA-13)
 
 **Wave 9** *(blocked on Wave 8 completion)*
 - [ ] 16-15-PLAN.md — Alps overview build: contours, region outlines, summits, optional hillshade, server-only module (DATA-12)
@@ -390,7 +390,7 @@ Plans:
 | 13. Repo Safety & Test Debt | v2.1 | 22/22 | Complete    | 2026-11-14 |
 | 14. UI Fixes & Terminal Controls | v2.1 | 8/8 | Complete    | 2026-11-14 |
 | 15. Region & Plate Data Model | v2.1 | 16/16 | Complete    | 2026-11-15 |
-| 16. New Regions & Alps Overview Data | v2.1 | 13/18 | In Progress | - |
+| 16. New Regions & Alps Overview Data | v2.1 | 14/18 | In Progress | - |
 | 17. Region Routes, SEO & Structured Data | v2.1 | 0/TBD | Not started | - |
 | 18. Immersive Survey Layout | v2.1 | 0/TBD | Not started | - |
 | 19. Drone Loops | v2.1 | 0/TBD | Not started | - |

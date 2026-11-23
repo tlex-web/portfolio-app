@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 16
 current_phase_name: New Regions & Alps Overview Data
 status: executing
-stopped_at: Completed 16-13-PLAN.md
-last_updated: "2026-11-23T11:26:24.980Z"
+stopped_at: Completed 16-14-PLAN.md
+last_updated: "2026-11-23T11:48:48.095Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 16 execution started
-state_head: 3dc617c0795bafe2a6d3c22087495a7d57dfb108
+state_head: 2ff070e7a18681b0bd9b5ae5d898bc068e4c2446
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 64
-  completed_plans: 59
+  completed_plans: 60
   percent: 43
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-15)
 ## Current Position
 
 Phase: 16 (New Regions & Alps Overview Data) — EXECUTING
-Plan: 14 of 18
+Plan: 15 of 18
 Status: Ready to execute
 Last activity: 2026-11-23 — Phase 16 execution started
 
@@ -115,6 +115,7 @@ Progress: [████░░░░░░] 43%
 | Phase 16 P11 | 13min | 3 tasks | 4 files |
 | Phase 16 P12 | 10min | 2 tasks | 13 files |
 | Phase 16 P13 | 8min | 2 tasks | 7 files |
+| Phase 16 P14 | 25min | 3 tasks | 16 files |
 
 ## Accumulated Context
 
@@ -267,6 +268,9 @@ Recent decisions affecting current work:
 - [Phase 16]: 16-12: selftest terrain roots copy every registered plate's source via plateSourceFiles(); plates.test pins matterhorn as first and only home plate, not a one-plate list
 - [Phase 16]: 16-13: OverviewSummit.officialRef is nullable with status confirmed|secondary (Triglav secondary, no officialRef, per Tim's 16-02 answer)
 - [Phase 16]: 16-13: GLO-90 overview source committed from one terrain:fetch:overview run (71 tiles, sea N43 E014, 0 retries); notice and liability are zod literals; OVERVIEW_BUDGET 30,000 B brotli / 120,000 B raw / 250,000 B served
+- [Phase 16]: Tim's 16-08 values applied exactly to the five non-Ortler photos (img-0680, img-0682, sam-20240910-143659 zermatt/CH/4dp/ground; both dji-20260919 stills saalfelden/AT/3dp/aerial)
+- [Phase 16]: Light-table order and layout tests read lightTableInput() (the four D-15 photos), so photos added before Phase 18 stay data only
+- [Phase 16]: Region record gains required country (closed list) and one to three sourced facts, the editorial Fact shape duplicated in region.ts
 
 ### Pending Todos
 
@@ -284,6 +288,7 @@ None carried from v2.0.
 - [Phase 15] Assumption A-15-12 awaits Tim's review: the telemetry guard has no originals-folder exception (a force-added sidecar under `assets/photos-original/` or `assets/clips-original/` fails).
 - [Phase 16] Needs Tim's inputs before planning can finish: the launch regions (inside the footprint, at least one in Italy or Austria), the new originals and the coarse-location choice per photo.
 - [Phase 19] Needs a graded drone clip from Tim before any byte budget is fixed.
+- 16-14: move 20210912_193833.jpg and 20260916_125705.jpg from assets/photos-original/incoming/ to assets/photos-original/not-in-series/ (gitignored; the auto-mode classifier denied the move; Tim action)
 
 ### Quick Tasks Completed
 
@@ -326,6 +331,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-23T11:26:24.364Z
-Stopped at: Completed 16-13-PLAN.md
+Last session: 2026-11-23T11:48:47.325Z
+Stopped at: Completed 16-14-PLAN.md
 Resume file: None
