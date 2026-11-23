@@ -39,7 +39,7 @@ const newPhoto: PhotoView = (() => {
 })();
 const onePhotoSet = viewerPhotos(newPhoto);
 
-let replaceState: jest.SpyInstance;
+let replaceState: jest.Spied<typeof window.history.replaceState>;
 
 beforeEach(() => {
   mockRouter.back.mockClear();
@@ -52,7 +52,9 @@ afterEach(() => {
 });
 
 function renderPage(photos: readonly PhotoView[], initialSlug: string, back?: typeof BACK) {
-  return render(<PhotoViewer variant="page" photos={photos} initialSlug={initialSlug} back={back} />);
+  return render(
+    <PhotoViewer variant="page" photos={photos} initialSlug={initialSlug} back={back} />
+  );
 }
 
 function renderModal(photos: readonly PhotoView[], initialSlug: string) {
@@ -145,14 +147,17 @@ describe('Edge PHOTO-05/empty: the arrows do nothing on a one-photo set', () => 
   it.each([
     ['page', () => renderPage(onePhotoSet, newPhoto.slug, BACK)],
     ['modal', () => renderModal(onePhotoSet, newPhoto.slug)],
-  ] as const)('the %s variant: ArrowLeft then ArrowRight write no URL and announce nothing', (_v, renderIt) => {
-    renderIt();
-    fireEvent.keyDown(document, { key: 'ArrowLeft' });
-    fireEvent.keyDown(document, { key: 'ArrowRight' });
-    expect(replaceState).not.toHaveBeenCalled();
-    expect(mockRouter.push).not.toHaveBeenCalled();
-    expect(status()).not.toHaveTextContent(/Photo \d+ of \d+/);
-  });
+  ] as const)(
+    'the %s variant: ArrowLeft then ArrowRight write no URL and announce nothing',
+    (_v, renderIt) => {
+      renderIt();
+      fireEvent.keyDown(document, { key: 'ArrowLeft' });
+      fireEvent.keyDown(document, { key: 'ArrowRight' });
+      expect(replaceState).not.toHaveBeenCalled();
+      expect(mockRouter.push).not.toHaveBeenCalled();
+      expect(status()).not.toHaveTextContent(/Photo \d+ of \d+/);
+    }
+  );
 
   it('the control: the same presses on the four (second photo shown) step twice', () => {
     renderPage(photoViews, photoViews[1].slug);
