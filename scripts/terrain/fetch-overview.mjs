@@ -21,8 +21,10 @@
  *      inside a bounded retry (5 attempts, 500 ms x attempt). The final failure
  *      names the tile and nothing is written. An absent slot is filled with 0 m.
  *   3. Check each tile: GTRasterTypeGeoKey 2 (PixelIsPoint), origin on the whole
- *      degree (lon, lat + 1), 1200 x 1200 full size, single band, no NaN.
- *   4. Mosaic the tiles (3,600 x 1,800), clamping negative heights to 0 m.
+ *      degree (lon, lat + 1), 1200 x 1200 full size, single band, no NaN, and
+ *      every height inside OVERVIEW_FLOOR_M..MAX_M (-500..9000 m).
+ *   4. Mosaic the tiles (3,600 x 1,800), clamping the heights from the floor up
+ *      to 0 m (sea and coast) to 0 m.
  *   5. Resample bilinearly at every grid pixel centre to the 16-02 projection:
  *      plate carrée over 5-17° E by 43-49° N with x scaled by cos 46.5°,
  *      1,200 x 872 px. PixelIsPoint: a full-resolution pixel k has its centre at
@@ -94,6 +96,12 @@ const BACKOFF_MS = 500;
 const PARALLEL = 6;
 /** No Alpine height reaches this; a value above it is a corrupt read. */
 const MAX_M = 9000;
+/**
+ * The deepest plausible land or coast value in the Alps window (16-REVIEW IN-09).
+ * Anything lower is a void or nodata sentinel and fails the read, as a value above
+ * MAX_M does, instead of becoming 0 m sea.
+ */
+const OVERVIEW_FLOOR_M = -500;
 
 function fail(msg) {
   throw new Error(msg);
@@ -207,7 +215,7 @@ async function readTile(slot) {
     if (!band || band.length !== TILE_PX * TILE_PX)
       throw new Error(`${slot.name}: read ${band ? band.length : 0} values`);
     for (let i = 0; i < band.length; i++) {
-      if (!Number.isFinite(band[i]) || band[i] > MAX_M)
+      if (!Number.isFinite(band[i]) || band[i] < OVERVIEW_FLOOR_M || band[i] > MAX_M)
         throw finalError(`${slot.name}: implausible height ${band[i]} at overview pixel ${i}`);
     }
     return band;
@@ -247,7 +255,9 @@ async function main() {
       for (let y = 0; y < TILE_PX; y++)
         for (let x = 0; x < TILE_PX; x++) {
           const m = band[y * TILE_PX + x];
-          mosaic[(oy + y) * MW + ox + x] = m > 0 ? m : 0; // negatives clamp to 0 m
+          // readTile refused anything below OVERVIEW_FLOOR_M, so only values from the
+          // floor up to 0 m (sea and coast) clamp to 0 m here.
+          mosaic[(oy + y) * MW + ox + x] = m > 0 ? m : 0;
         }
     }
   }
