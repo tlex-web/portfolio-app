@@ -73,6 +73,7 @@ The `/photos` light table stays at the four v2.0 photos (16 D-15). Region pages 
     - the per-slug OG card.
   - `lightTableIds` in `data/light-table.ts` stays the four and drives only the `/photos` light table until Phase 18 (16 D-15).
   - The v2.0 four's pages and OG cards answer byte-for-byte as before (success criterion 1).
+  - **Amended 2026-11-23 (plan-phase, Tim: "Identical except JSON-LD (Recommended)"):** SEO-04 adds `<script type="application/ld+json">` blocks to those four pages, so "byte-for-byte" means everything except the JSON-LD: status, title, head meta, the `og:image` URL with its `?hash`, the OG PNG bytes, the `<main>` markup and the pixels. Tests compare the HTML with the ld+json scripts stripped.
 - **D-08: New photo pages have no Previous/Next yet.**
   - **New pages:** a new photo's page, and its lightbox when opened from a region page, hides the stepping controls and the counter.
   - **v2.0 pages:** the four keep stepping among themselves (`n / 4`), unchanged.
