@@ -9,8 +9,11 @@
  *   tests keep their literal /photos/ paths, so the URL contract (PHOTO-05) is
  *   checked independently of the helper.
  * - The proxy admits exactly the slugs that have a static photo page (F5,
- *   T-15-14): a slug the proxy lets through without a page renders Next's
- *   empty error shell (12-RESEARCH Pitfall 1).
+ *   T-15-14, T-17-11): a slug the proxy lets through without a page renders
+ *   Next's empty error shell (12-RESEARCH Pitfall 1). Since 17-05 (D-07,
+ *   PHOTO-05) both are the published set, every photo with editorial copy;
+ *   the light table (photoSlugs) is one curated view inside it, so a return
+ *   to the four-photo route set fails here at once.
  * - The sitemap lists every photo page at its absolute /photos/<slug> URL.
  * - No source file outside lib/photos/routes.ts builds a photo path by hand
  *   (D-18). The scan walks app/, components/ and lib/ (skipping __tests__)
@@ -26,11 +29,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import sitemap from '@/app/sitemap';
-import { lightTableIds } from '@/data/light-table';
 import { editorial } from '@/data/photos/editorial';
 import { site } from '@/data/site';
 import { photoHref, photoRouteSlugs } from '@/lib/photos/routes';
-import { photoSlugs } from '@/lib/photos/view-model';
+import {
+  photoBySlug,
+  photoSlugs,
+  photoViews,
+  publishedSlugs,
+  publishedViews,
+} from '@/lib/photos/view-model';
 
 describe('photoHref (D-17)', () => {
   it('has at least one photo slug to pin', () => {
@@ -43,24 +51,34 @@ describe('photoHref (D-17)', () => {
 });
 
 describe('proxy slugs and static photo pages (F5)', () => {
-  it('admits exactly the slugs generateStaticParams renders', () => {
+  it('admits exactly the slugs generateStaticParams renders (publishedSlugs, T-17-11)', () => {
     const admitted = new Set(photoRouteSlugs);
-    const pages = new Set(photoSlugs);
+    const pages = new Set(publishedSlugs);
     const withoutPage = [...admitted].filter((s) => !pages.has(s));
     const notAdmitted = [...pages].filter((s) => !admitted.has(s));
     if (withoutPage.length > 0 || notAdmitted.length > 0) {
       throw new Error(
-        'Every slug the proxy admits (photoRouteSlugs) needs a static photo page (photoSlugs), ' +
-          'and every photo page must be admitted (Phase 17, PHOTO-05). ' +
+        'Every slug the proxy admits (photoRouteSlugs) needs a static photo page (publishedSlugs), ' +
+          'and every photo page must be admitted (D-07, PHOTO-05). ' +
           `Admitted without a page: [${withoutPage.join(', ')}]. Page not admitted: [${notAdmitted.join(', ')}].`
       );
     }
     expect(admitted).toEqual(pages);
   });
 
-  it('is the light-table list: the editorial slugs of lightTableIds, in order, four of them (D-15)', () => {
-    expect(photoRouteSlugs).toEqual(lightTableIds.map((id) => editorial[id].slug));
-    expect(photoRouteSlugs).toHaveLength(4);
+  it('is the published set: every editorial slug, eleven of them (D-07, PHOTO-05)', () => {
+    expect(new Set(photoRouteSlugs)).toEqual(new Set(Object.values(editorial).map((e) => e.slug)));
+    expect(photoRouteSlugs).toHaveLength(11);
+  });
+
+  it('holds every light-table slug, so the four v2.0 URLs keep their pages (D-07)', () => {
+    expect(photoSlugs).toHaveLength(4);
+    for (const slug of photoSlugs) expect(photoRouteSlugs).toContain(slug);
+  });
+
+  it("names no reserved path segment (the proxy's neutral slug '_', the 'regions' segment)", () => {
+    expect(photoRouteSlugs).not.toContain('_');
+    expect(photoRouteSlugs).not.toContain('regions');
   });
 
   it('has no duplicate slugs', () => {
@@ -70,6 +88,30 @@ describe('proxy slugs and static photo pages (F5)', () => {
   it('marks the slug list pure, so client chunks that import photoHref carry no editorial copy', () => {
     const src = fs.readFileSync(path.join(process.cwd(), 'lib', 'photos', 'routes.ts'), 'utf8');
     expect(src).toMatch(/export const photoRouteSlugs\b[^=]*=\s*\/\*\s*@__PURE__\s*\*\//);
+  });
+});
+
+describe('photoBySlug: light table first, then the published set (D-07)', () => {
+  it("returns each light-table photo's light-table view (k, n, prevSlug, nextSlug among the four)", () => {
+    for (const view of photoViews) {
+      const found = photoBySlug(view.slug);
+      expect(found).toBe(view);
+      expect(found?.n).toBe(4);
+      for (const neighbour of [found?.prevSlug, found?.nextSlug]) {
+        if (neighbour !== null) expect(photoSlugs).toContain(neighbour);
+      }
+    }
+  });
+
+  it("returns every other published photo's published view", () => {
+    const others = (publishedViews ?? []).filter((v) => !photoSlugs.includes(v.slug));
+    expect(others).toHaveLength(7);
+    for (const view of others) expect(photoBySlug(view.slug)).toBe(view);
+  });
+
+  it('returns undefined for an unknown or wrong-case slug (the routes then 404)', () => {
+    expect(photoBySlug('no-such-photo')).toBeUndefined();
+    expect(photoBySlug(photoSlugs[0].toUpperCase())).toBeUndefined();
   });
 });
 
