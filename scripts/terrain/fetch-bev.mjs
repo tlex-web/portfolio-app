@@ -32,7 +32,9 @@
  *      Pitfall 3). The final failure names the tile and nothing is written.
  *   3. Image 0 (1 m, PixelIsArea, EPSG:3035) gives the origin and size; image 3,
  *      an overview without its own geotransform, is read with the scale taken
- *      from the full image (full width / overview width, about 8 m).
+ *      from the full image (full width / overview width, about 8 m). A scale
+ *      outside 7..9 m, or not square, fails before the read: the record's
+ *      resampling text says "about 8 m".
  *   4. Fail on any value at or below -9000 (nodata) or outside -100..6000 m:
  *      there is no nodata path (D-28), the window must be hole-free.
  *   5. Sample every 10 m cell centre bilinearly, store decimetres in a grey16
@@ -85,6 +87,12 @@ const LICENCE_URL = 'https://creativecommons.org/licenses/by/4.0/';
 const RESAMPLING = 'bilinear from overview level 3 (about 8 m) to 10 m cell centres';
 /** Overview level read (about 8 m; the full 1 m image would be hundreds of MB of ranges). */
 const OVERVIEW_LEVEL = 3;
+/**
+ * The overview scale RESAMPLING's "about 8 m" allows, in metres (16-REVIEW WR-05):
+ * finer than the 10 m output cell, and failing on a 4 m or 16 m level.
+ */
+const OVERVIEW_MIN_M = 7;
+const OVERVIEW_MAX_M = 9;
 /** The swissALTIRegio home plate: terrain:fetch owns it. */
 const HOME_PLATE = 'matterhorn';
 const MAX_SIDE_M = 20000;
@@ -379,7 +387,15 @@ async function main() {
 
   const width = (extent.east - extent.west) / CELL_M;
   const height = (extent.north - extent.south) / CELL_M;
-  const { win, sx, u, v } = overviewWindow(extent, full, ov);
+  const { win, sx, sy, u, v } = overviewWindow(extent, full, ov);
+  // 16-REVIEW WR-05: RESAMPLING (a schema literal) says "about 8 m". Refuse a
+  // re-tiled pyramid before reading, so the record never misstates the heights.
+  // The 2025 tiles read 8.0002 m (16-11); 0.01 m allows a one-pixel-off size.
+  if (!(sx >= OVERVIEW_MIN_M && sx <= OVERVIEW_MAX_M && Math.abs(sx - sy) < 0.01))
+    fail(
+      `overview level ${OVERVIEW_LEVEL} is ${sx.toFixed(2)} x ${sy.toFixed(2)} m, not about 8 m ` +
+        `(${OVERVIEW_MIN_M}..${OVERVIEW_MAX_M} m, square); update OVERVIEW_LEVEL, RESAMPLING and the schema literal`
+    );
   const [band] = await ov.readRasters({ window: win, samples: [0] });
   const winW = win[2] - win[0];
   const winH = win[3] - win[1];
