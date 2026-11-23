@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { projects } from '@/data/projects';
 import { site } from '@/data/site';
 import { EDGE_SECTION_HEADER, type EdgeSection } from '@/lib/edge-section';
+import { regionRouteIds } from '@/lib/photos/region-ids';
 import { photoRouteSlugs } from '@/lib/photos/routes';
 
 /**
@@ -23,6 +24,22 @@ const MISSING_PATH = '/__missing';
 
 /** Exactly two segments; /photos/<x>/opengraph-image and deeper paths pass through. */
 const DETAIL_PATH = /^\/(photos|projects)\/([^/]+)$/;
+
+/**
+ * A region page, exactly three segments (REGION-07, D-04, D-05): its OG card
+ * (/photos/regions/<id>/opengraph-image-<x>/card) and deeper paths pass
+ * through. The bare /photos/regions is two segments, a DETAIL_PATH miss on the
+ * slug 'regions'.
+ */
+const REGION_PATH = /^\/photos\/regions\/([^/]+)$/;
+
+/**
+ * The registry's region ids (T-17-01), matched by exact, case-sensitive
+ * equality on the raw path segment: /photos/regions/Zermatt is a miss. Read
+ * from the proxy-only lib/photos/region-ids.ts, never lib/photos/routes.ts,
+ * so the registry never reaches a client chunk (T-17-02).
+ */
+const KNOWN_REGIONS: ReadonlySet<string> = new Set(regionRouteIds);
 
 /**
  * The slug a 404 is rendered under (T-12-03). Next writes the URL it renders
@@ -185,13 +202,31 @@ export function buildCsp(nonce: string, url: URL, isDev: boolean): string {
   return `${directives.join('; ')};`;
 }
 
-export async function proxy(request: NextRequest): Promise<Response> {
-  const match = DETAIL_PATH.exec(request.nextUrl.pathname);
-  const section = match?.[1] as EdgeSection | undefined;
-  const miss = section !== undefined && match !== null && !KNOWN[section].has(match[2]);
+/**
+ * The section a path misses, and whether to fetch the neutral 404, or
+ * undefined for a path the proxy lets through (EDGE-01, D-04, D-05).
+ *
+ * An unknown region is a photos miss and always fetches the neutral 404: that
+ * fetch is /photos/_, a two-segment miss on NEUTRAL_SLUG, which is rewritten
+ * without another fetch, so there is no recursion. An unknown detail slug
+ * fetches it unless the slug is NEUTRAL_SLUG itself.
+ */
+function missedSection(pathname: string): { section: EdgeSection; neutral: boolean } | undefined {
+  const region = REGION_PATH.exec(pathname);
+  if (region) {
+    return KNOWN_REGIONS.has(region[1]) ? undefined : { section: 'photos', neutral: true };
+  }
+  const match = DETAIL_PATH.exec(pathname);
+  if (!match) return undefined;
+  const section = match[1] as EdgeSection;
+  return KNOWN[section].has(match[2]) ? undefined : { section, neutral: match[2] !== NEUTRAL_SLUG };
+}
 
-  if (miss && match[2] !== NEUTRAL_SLUG && canFetchNeutral(new URL(request.url).hostname)) {
-    const neutral = await neutral404(request, section);
+export async function proxy(request: NextRequest): Promise<Response> {
+  const missed = missedSection(request.nextUrl.pathname);
+
+  if (missed?.neutral && canFetchNeutral(new URL(request.url).hostname)) {
+    const neutral = await neutral404(request, missed.section);
     if (neutral) return neutral;
   }
 
@@ -210,8 +245,8 @@ export async function proxy(request: NextRequest): Promise<Response> {
   requestHeaders.set('Content-Security-Policy', csp);
 
   let response: NextResponse;
-  if (miss) {
-    requestHeaders.set(EDGE_SECTION_HEADER, section);
+  if (missed) {
+    requestHeaders.set(EDGE_SECTION_HEADER, missed.section);
     response = NextResponse.rewrite(new URL(MISSING_PATH, request.url), {
       request: { headers: requestHeaders },
     });

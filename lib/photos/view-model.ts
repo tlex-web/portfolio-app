@@ -289,7 +289,7 @@ export function stripFields(source: StripSource): StripFields {
 }
 
 /** What a fact's source prints as: a 'Wikipedia' link, another site's host, or 'Source: …' text. */
-function factSource(source: Fact['source']): HotspotView['facts'][number]['source'] {
+export function factSource(source: Fact['source']): HotspotView['facts'][number]['source'] {
   switch (source) {
     case 'Tim':
       return { kind: 'text', label: 'Source: Tim' };

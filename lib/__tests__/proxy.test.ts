@@ -35,6 +35,7 @@ import {
 } from '../../proxy';
 import { projects } from '@/data/projects';
 import { site } from '@/data/site';
+import { regionRouteIds } from '@/lib/photos/region-ids';
 import { photoSlugs } from '@/lib/photos/view-model';
 
 const NONCE = 'bm9uY2U=';
@@ -520,4 +521,70 @@ describe('proxy(): the canonical host self-fetches with no Vercel variable set (
       expect(forwarded(response).get('x-edge-section')).toBe('photos');
     }
   );
+});
+
+describe('proxy(): region pages (D-04, D-05)', () => {
+  // A region miss is a photos miss (T-17-01): the neutral 404 is fetched as
+  // /photos/_ on an allowed host, and anything else gets the plain rewrite.
+  const HTML = '<!DOCTYPE html><html><body><main><h1>Page not found</h1></main></body></html>';
+  const neutralAnswer = () =>
+    new Response(HTML, { status: 404, headers: { 'content-type': 'text/html; charset=utf-8' } });
+
+  it('serves the neutral /photos/_ 404 for an unknown region on a loopback host', async () => {
+    fetchMock.mockResolvedValue(neutralAnswer());
+    const response = await run('http://localhost:3000/photos/regions/nf-token', {
+      'sec-fetch-dest': 'document',
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0][0])).toBe(`http://localhost:3000/photos/${NEUTRAL_SLUG}`);
+    expect(response.status).toBe(404);
+    expect(await response.text()).toBe(HTML);
+    expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+  });
+
+  it('rewrites an unknown region to /__missing with x-edge-section=photos where the fetch is refused', async () => {
+    expect(canFetchNeutral(PROD_HOST)).toBe(false);
+    const response = await run(`https://${PROD_HOST}/photos/regions/nf-token`);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(response.headers.get('x-middleware-rewrite')).toMatch(/\/__missing$/);
+    expect(forwarded(response).get('x-edge-section')).toBe('photos');
+  });
+
+  it('knows the three registry regions', () => {
+    expect(regionRouteIds).toEqual(['ortler', 'saalfelden', 'zermatt']);
+  });
+
+  it.each(regionRouteIds)('passes the region page /photos/regions/%s through', async (id) => {
+    const response = await run(`https://${PROD_HOST}/photos/regions/${id}`);
+
+    expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('treats the bare /photos/regions as a photo-slug miss', async () => {
+    const response = await run(`https://${PROD_HOST}/photos/regions`);
+
+    expect(response.headers.get('x-middleware-rewrite')).toMatch(/\/__missing$/);
+    expect(forwarded(response).get('x-edge-section')).toBe('photos');
+  });
+
+  it("passes a region's OG card path (four segments) through untouched", async () => {
+    const response = await run(
+      `https://${PROD_HOST}/photos/regions/zermatt/opengraph-image-abc/card`
+    );
+
+    expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('matches a region id case-sensitively: /photos/regions/Zermatt is a miss', async () => {
+    const response = await run(`https://${PROD_HOST}/photos/regions/Zermatt`);
+
+    expect(response.headers.get('x-middleware-rewrite')).toMatch(/\/__missing$/);
+    expect(forwarded(response).get('x-edge-section')).toBe('photos');
+  });
 });
