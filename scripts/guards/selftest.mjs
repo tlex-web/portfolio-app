@@ -1968,6 +1968,21 @@ let terrainDropCheck = { writeError: null, dropped: [] };
 const terrainDropWriteRoot = await tempTerrainRoot({ fixture: true });
 let terrainDropWrite = { writeError: null, dropped: [] };
 
+// scripts/terrain/fetch-*.mjs (16 D-09, D-28): only the argument refusals run here, offline.
+// The fetchers are manual and networked (T-08-09); every case below exits during argument parsing.
+const FETCH_DEM = path.join(repoRoot, 'scripts', 'terrain', 'fetch-dem.mjs');
+/** The repository's data/terrain tree, which a refused fetch must leave byte-equal. */
+const REPO_TERRAIN = path.join(repoRoot, 'data', 'terrain');
+let fetchRepoBefore = null;
+/** An empty --out directory a refused fetch must leave empty. */
+const fetchOutRoot = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-')), 'out');
+fs.mkdirSync(fetchOutRoot);
+/** Null when the empty --out directory is still empty. */
+const fetchOutEmpty = () => {
+  const left = fs.readdirSync(fetchOutRoot);
+  return left.length ? `--out directory is not empty: ${left.join(', ')}` : null;
+};
+
 // tsconfig.jest.json type-checks every file Jest runs (GUARD-10, 15 WR-03): probe files in a temp copy of the configs.
 const TSC = createRequire(import.meta.url).resolve('typescript/bin/tsc');
 /** The jest.config.js testMatch the probes model; changing it means updating tsconfig.jest.json's include too. */
@@ -3832,6 +3847,43 @@ const cases = [
     check: (output) => (output.includes('wrote ') ? 'the run wrote a file' : treeUnchanged(terrainUnreadableRoot, terrainUnreadableBefore)),
   },
   {
+    // RESEARCH anti-pattern: a no-flag terrain:fetch used to rewrite the Matterhorn source (T-16-26).
+    name: 'fetch: terrain:fetch without --plate refuses and writes nothing',
+    guard: FETCH_DEM,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: [],
+    setup: () => {
+      fetchRepoBefore = snapshotTree(REPO_TERRAIN);
+      return [];
+    },
+    expectExit: 1,
+    expectOutput: ['terrain:fetch: needs --plate <id>', '--plate matterhorn --force-home', 'terrain:fetch: nothing written'],
+    check: () => treeUnchanged(REPO_TERRAIN, fetchRepoBefore),
+  },
+  {
+    name: 'fetch: --plate matterhorn needs --force-home',
+    guard: FETCH_DEM,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--plate', 'matterhorn'],
+    setup: () => {
+      fetchRepoBefore = snapshotTree(REPO_TERRAIN);
+      return [];
+    },
+    expectExit: 1,
+    expectOutput: ['terrain:fetch: --plate matterhorn needs --force-home', 'terrain:fetch: nothing written'],
+    check: () => treeUnchanged(REPO_TERRAIN, fetchRepoBefore),
+  },
+  {
+    // RESEARCH Pitfall 10: 12 x 10 km is refused before the STAC request.
+    name: 'fetch: a non-square extent is refused before any request',
+    guard: FETCH_DEM,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--plate', 'probe', '--extent', '2832000,1150000,2844000,1160000', '--out', fetchOutRoot],
+    expectExit: 1,
+    expectOutput: ['terrain:fetch: --extent must be square (got 12000 x 10000 m', 'terrain:fetch: nothing written'],
+    check: (output) => (output.includes('STAC') ? 'the run reached the STAC request' : fetchOutEmpty()),
+  },
+  {
     name: 'terrain: --check sees a missing prefixed plate file',
     guard: TERRAIN_BUILD,
     nodeArgs: PHOTO_NODE_ARGS,
@@ -4025,7 +4077,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, exifMappedRoot, exifUnmappedRoot, exifDuplicateRoot, terrainFixtureRoot, terrainLaeaRoot, terrainStripRoot, terrainUnreadableRoot, terrainMissingRoot, terrainRemoveRoot, terrainDropCheckRoot, terrainDropWriteRoot, ...ciGateTempRoots, ...telemetryTempRoots, ...privacyTempRoots]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, exifMappedRoot, exifUnmappedRoot, exifDuplicateRoot, terrainFixtureRoot, terrainLaeaRoot, terrainStripRoot, terrainUnreadableRoot, terrainMissingRoot, terrainRemoveRoot, terrainDropCheckRoot, terrainDropWriteRoot, fetchOutRoot, ...ciGateTempRoots, ...telemetryTempRoots, ...privacyTempRoots]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 
