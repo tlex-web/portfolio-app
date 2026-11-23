@@ -1971,6 +1971,7 @@ let terrainDropWrite = { writeError: null, dropped: [] };
 // scripts/terrain/fetch-*.mjs (16 D-09, D-28): only the argument refusals run here, offline.
 // The fetchers are manual and networked (T-08-09); every case below exits during argument parsing.
 const FETCH_DEM = path.join(repoRoot, 'scripts', 'terrain', 'fetch-dem.mjs');
+const FETCH_BEV = path.join(repoRoot, 'scripts', 'terrain', 'fetch-bev.mjs');
 /** The repository's data/terrain tree, which a refused fetch must leave byte-equal. */
 const REPO_TERRAIN = path.join(repoRoot, 'data', 'terrain');
 let fetchRepoBefore = null;
@@ -3882,6 +3883,21 @@ const cases = [
     expectExit: 1,
     expectOutput: ['terrain:fetch: --extent must be square (got 12000 x 10000 m', 'terrain:fetch: nothing written'],
     check: (output) => (output.includes('STAC') ? 'the run reached the STAC request' : fetchOutEmpty()),
+  },
+  {
+    // D-28: one tile, no multi-tile path. A 12 km square across the E 4,550,000 tile edge needs two.
+    name: 'fetch: terrain:fetch:bev refuses an extent outside one BEV tile',
+    guard: FETCH_BEV,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--plate', 'probe', '--extent', '4545000,2701000,4557000,2713000', '--out', fetchOutRoot],
+    expectExit: 1,
+    expectOutput: [
+      'terrain:fetch:bev: extent 4545000,2701000,4557000,2713000 needs 2 BEV tiles',
+      'ALS_DTM_CRS3035RES50000mN2700000E4500000.tif',
+      'ALS_DTM_CRS3035RES50000mN2700000E4550000.tif',
+      'terrain:fetch:bev: nothing written',
+    ],
+    check: (output) => (output.includes('https://') ? 'the run reached a BEV request' : fetchOutEmpty()),
   },
   {
     name: 'terrain: --check sees a missing prefixed plate file',
