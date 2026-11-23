@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 17
 current_phase_name: Region Routes, SEO & Structured Data
 status: executing
-stopped_at: Completed 17-16-PLAN.md
-last_updated: "2026-11-23T23:26:42.385Z"
+stopped_at: Completed 17-08-PLAN.md
+last_updated: "2026-11-23T23:42:19.849Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 17 execution started
-state_head: fd85f97526c7a5eed28292914246771b8541843d
+state_head: 0ef5d8ca7ddeaa1b55420a1d54a2da3cb495f5a1
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 80
-  completed_plans: 70
+  completed_plans: 71
   percent: 57
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-23)
 ## Current Position
 
 Phase: 17 (Region Routes, SEO & Structured Data) — EXECUTING
-Plan: 7 of 16
+Plan: 8 of 16
 Status: Ready to execute
 Last activity: 2026-11-23 — Phase 17 execution started
 
@@ -127,6 +127,7 @@ Progress: [██████░░░░] 57%
 | Phase 17 P04 | 10min | 2 tasks | 6 files |
 | Phase 17 P05 | 14min | 2 tasks | 8 files |
 | Phase 17 P16 | 5min | 2 tasks | 2 files |
+| Phase 17 P08 | 14min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -304,6 +305,7 @@ Recent decisions affecting current work:
 - [Phase 17]: 17-05: the v2.0 identity script's stripped-HTML hash also replaces nonce="..." values (Next puts the per-request CSP nonce on link elements); later re-checks recreate the script and base JSON from 17-05-SUMMARY (base=51b7f4d9b291)
 - [Phase 17]: 17-16 D-03: region ids, every editorial photo slug and the reserved set ('regions', NEUTRAL_SLUG, 'opengraph-image', plus every static directory under app/(site)/photos, read with fs at test time) are pairwise disjoint in lib/__tests__/regions.test.ts
 - [Phase 17]: 17-16 D-06: data/regions/regions.json is in SERVER_ONLY_MODULES; client JS after the tracer is 1,851,685 B in 24 files (= phase base, cap 1,855,781 B), no 'Steinernen' in any client chunk
+- [Phase 17]: 17-08: 16 IN-02 (93c5588) one BEV value rule, m < 0 or m > 6000 is nodata; IN-09 (a050c7e) GLO-90 fails below OVERVIEW_FLOOR_M -500 m; IN-08 (1d15fd8) plate-args.mjs and fetch-retry.mjs shared by the three fetchers, refusals byte-identical
 
 ### Pending Todos
 
@@ -363,6 +365,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-23T23:26:41.359Z
-Stopped at: Completed 17-16-PLAN.md
+Last session: 2026-11-23T23:42:18.817Z
+Stopped at: Completed 17-08-PLAN.md
 Resume file: None
