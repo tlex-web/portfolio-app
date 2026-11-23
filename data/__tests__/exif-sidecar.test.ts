@@ -117,6 +117,35 @@ describe('exif sidecar with the photo map: 16 D-03, D-04 (16-REVIEW WR-01)', () 
     expect(offenders).toEqual([]);
   });
 
+  test("a coarse photo's groundM names its region plate's current source (16-REVIEW WR-02)", () => {
+    const read = (rel: string) => JSON.parse(fs.readFileSync(path.join(process.cwd(), rel), 'utf8'));
+    const { regions } = read('data/regions/regions.json') as {
+      regions: { id: string; plate: string }[];
+    };
+    const { plates } = read('data/terrain/plates.json') as {
+      plates: { id: string; source: string }[];
+    };
+    const plateSha = (region: string) => {
+      const plateId = regions.find((r) => r.id === region)?.plate;
+      const source = plates.find((p) => p.id === plateId)?.source;
+      if (!source) throw new Error(`region ${region} has no registered plate`);
+      return (read(`${source.replace(/\/+$/, '')}/source.json`) as { sha256: string }).sha256;
+    };
+    const mapRegions = (
+      JSON.parse(
+        fs.readFileSync(path.join(process.cwd(), 'data/photos/photo-map.json'), 'utf8')
+      ) as { photos: Record<string, { region: string }> }
+    ).photos;
+    const coarse = sidecar.photos.filter(
+      (p) => p.gps !== null && recordOf(p.id).precision !== '4dp'
+    );
+    expect(coarse.length).toBeGreaterThan(0);
+    const stale = coarse
+      .filter((p) => p.gps?.groundSourceSha256 !== plateSha(mapRegions[p.id].region))
+      .map((p) => p.id);
+    expect(stale).toEqual([]);
+  });
+
   test("every DJI still is kind 'aerial'", () => {
     const offenders = sidecar.photos
       .filter((p) => p.make?.trim().toLowerCase() === 'dji' && recordOf(p.id).kind !== 'aerial')

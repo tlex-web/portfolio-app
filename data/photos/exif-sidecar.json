@@ -24,7 +24,8 @@
         "lon": 12.859,
         "altM": null,
         "utc": null,
-        "groundM": 880
+        "groundM": 880,
+        "groundSourceSha256": "67d390edede54366296fe3a615f6dfa90edb59ff5ed672eda43422ab373595b2"
       }
     },
     {
@@ -50,7 +51,8 @@
         "lon": 12.858,
         "altM": null,
         "utc": null,
-        "groundM": 820
+        "groundM": 820,
+        "groundSourceSha256": "67d390edede54366296fe3a615f6dfa90edb59ff5ed672eda43422ab373595b2"
       }
     },
     {
@@ -221,7 +223,8 @@
         "lon": 10.605,
         "altM": null,
         "utc": null,
-        "groundM": 2190
+        "groundM": 2190,
+        "groundSourceSha256": "ece77fb2b768b2821ecd9a91a64a026853e584445b177446e790fab1f4501e5a"
       }
     },
     {
@@ -247,7 +250,8 @@
         "lon": 10.621,
         "altM": null,
         "utc": null,
-        "groundM": 2520
+        "groundM": 2520,
+        "groundSourceSha256": "ece77fb2b768b2821ecd9a91a64a026853e584445b177446e790fab1f4501e5a"
       }
     },
     {

@@ -69,14 +69,27 @@ const Alt1 = z
  * aerial record (16 D-03, D-04).
  * `groundM` exists only for a coarse ('3dp' or '2dp') record: the plate DEM height
  * at the true position, sampled in memory and rounded to 10 m or 50 m (16 D-03).
+ * `groundSourceSha256` is the sha256 of the plate source it was sampled on (the
+ * `sha256` of that plate's source.json), present exactly when `groundM` is, so
+ * stage 2 can refuse a height sampled on another source (16-REVIEW WR-02). It
+ * says nothing about the position.
  */
-const Gps = z.strictObject({
-  lat: Coord4,
-  lon: Coord4,
-  altM: Alt1.nullable(),
-  utc: z.string().nullable(),
-  groundM: z.number().int().optional(),
-});
+const Gps = z
+  .strictObject({
+    lat: Coord4,
+    lon: Coord4,
+    altM: Alt1.nullable(),
+    utc: z.string().nullable(),
+    groundM: z.number().int().optional(),
+    groundSourceSha256: z
+      .string()
+      .regex(/^[0-9a-f]{64}$/)
+      .optional(),
+  })
+  .refine(
+    (g) => (g.groundM === undefined) === (g.groundSourceSha256 === undefined),
+    'gps.groundM and gps.groundSourceSha256 come together (16 D-03)'
+  );
 
 /**
  * The general photo id slug (16-08): lowercase letters and digits in groups

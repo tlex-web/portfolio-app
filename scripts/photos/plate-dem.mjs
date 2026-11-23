@@ -53,8 +53,9 @@ const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex'
 
 /**
  * A plate's <source>/source.json + PNG under `root` -> { crs, extent, width,
- * height, metres }, sha256 verified (T-08-24). `sourceRel` is the plate's
- * `source` from plates.json.
+ * height, metres, sha256 }, sha256 verified (T-08-24). `sourceRel` is the plate's
+ * `source` from plates.json; `sha256` is the verified source raster's, which a
+ * coarse photo's sidecar records beside its groundM (16-REVIEW WR-02).
  */
 export async function loadPlateDem(root, sourceRel) {
   const source = TerrainSource.parse(
@@ -82,6 +83,7 @@ export async function loadPlateDem(root, sourceRel) {
     width: source.width,
     height: source.height,
     metres,
+    sha256: source.sha256,
   };
 }
 

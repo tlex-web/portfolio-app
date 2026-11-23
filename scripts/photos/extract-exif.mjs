@@ -20,7 +20,10 @@
  *              position in memory, rounded half-up to 10 m ('3dp') or 50 m
  *              ('2dp') (16 D-03). Read through scripts/photos/plate-dem.mjs from
  *              data/regions/regions.json, data/terrain/plates.json and the plate
- *              source; a true position off the plate fails.
+ *              source; a true position off the plate fails. Beside it,
+ *              groundSourceSha256: the sha256 of the plate source sampled, which
+ *              photos:build compares with the plate's current source
+ *              (16-REVIEW WR-02).
  *   DJI net    a still whose EXIF Make is DJI (any case) on a record that is not
  *              kind 'aerial' fails and nothing is written (16 D-04).
  * XMP is never read and no camera serial is extracted (16 D-04).
@@ -182,9 +185,11 @@ function recordFor(file, map) {
 /**
  * Lazy plate DEM access for coarse records (16 D-03): the registries are read
  * and each plate is loaded at most once, and only when a coarse photo needs it.
- * `groundAt(record, file)` resolves to an async (lat, lon) -> metres sampler
- * at the true position. Nothing here prints a position (D-12): an off-plate
- * true position fails naming the file and the plate only.
+ * `groundAt(record, file)` resolves to { sample, sha256 }: a (lat, lon) ->
+ * metres sampler at the true position, and the sha256 of the plate source it
+ * samples (recorded beside groundM, 16-REVIEW WR-02). Nothing here prints a
+ * position (D-12): an off-plate true position fails naming the file and the
+ * plate only.
  */
 function plateGround() {
   let registries = null;
@@ -198,7 +203,7 @@ function plateGround() {
     const plate = plateFor(record, registries.regions, registries.plates);
     if (!dems.has(plate.id)) dems.set(plate.id, await loadPlateDem(ROOT, plate.source));
     const dem = dems.get(plate.id);
-    return (lat, lon) => {
+    const sample = (lat, lon) => {
       const grid = toGrid(dem.crs, { lat, lon });
       const uv = gridToUv(grid, dem.extent);
       if (uv.u < 0 || uv.u > 1 || uv.v < 0 || uv.v > 1) {
@@ -208,6 +213,7 @@ function plateGround() {
       }
       return sampleAtGrid(dem, grid);
     };
+    return { sample, sha256: dem.sha256 };
   };
 }
 const groundAt = plateGround();
@@ -288,8 +294,11 @@ async function gpsOf(g, record, file, ground) {
   };
   if (coarse) {
     const step = HEIGHT_STEP[record.precision];
-    const sample = await ground(record, file);
+    const { sample, sha256 } = await ground(record, file);
     gps.groundM = Math.round(sample(lat, lon) / step) * step;
+    // 16-REVIEW WR-02: which plate source the height came from, so stage 2 can
+    // refuse it once that source changes. Reveals nothing about the position.
+    gps.groundSourceSha256 = sha256;
   }
   return gps;
 }

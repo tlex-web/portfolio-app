@@ -1062,6 +1062,7 @@ let photoDataGpsRoot = null;
 let photoDataOffPlateRoot = null;
 let photoDataAerialAltRoot = null;
 let photoDataDjiGroundRoot = null;
+let photoDataGroundSourceRoot = null;
 let photoMapMissingRoot = null;
 let photoMapOrphanRoot = null;
 let photoMapDuplicateRoot = null;
@@ -1729,6 +1730,8 @@ async function coarseCase({ id, point, precision, d, step, radiusM, reasonPart }
     ['sidecar lon', entry.gps.lon, rounded.lon],
     ['sidecar altM', entry.gps.altM, null],
     ['sidecar groundM', entry.gps.groundM, roundStep(ground, step)],
+    // 16-REVIEW WR-02: the height names the plate source it was sampled on.
+    ['sidecar groundSourceSha256', entry.gps.groundSourceSha256, JSON.parse(fs.readFileSync(path.join(root, PRIVACY_PLATE.source, 'source.json'), 'utf-8')).sha256],
     ['position.approximate', fact.position.approximate, true],
     ['position.radiusM', fact.position.radiusM, radiusM],
     ['position.precision', fact.position.precision, precision],
@@ -3535,6 +3538,26 @@ const cases = [
     expectExit: 1,
     expectOutput: ["dji-20260919-162232: a DJI still must be kind 'aerial' in data/photos/photo-map.json (16 D-04)", 'photos:build: stale'],
   },
+  // 16-REVIEW WR-02: a coarse photo's groundM sampled on another plate source.
+  {
+    name: 'G5 photos:build --check: a coarse groundM sampled on another plate source fails (16 D-03)',
+    guard: PHOTO_DATA,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--check'],
+    setup: () => {
+      photoDataGroundSourceRoot = tempPhotoDataRoot(({ sidecar }) => {
+        const gps = sidecarEntry(sidecar, 'sam-20160717-120906').gps;
+        if (gps?.groundSourceSha256 === undefined) throw new Error('selftest: sam-20160717-120906 has no groundSourceSha256');
+        // A real but different source: the Saalfelden plate's, as after a region change.
+        const other = JSON.parse(fs.readFileSync(path.join(repoRoot, 'data/terrain/plates/saalfelden/source.json'), 'utf-8')).sha256;
+        if (other === gps.groundSourceSha256) throw new Error('selftest: the two plate sources share a sha256');
+        gps.groundSourceSha256 = other;
+      });
+      return ['--root', photoDataGroundSourceRoot];
+    },
+    expectExit: 1,
+    expectOutput: ["sam-20160717-120906: gps.groundM was sampled on another source than plate ortler's; run npm run photos:exif with its original", 'photos:build: stale'],
+  },
   // 15-06 (DATA-10, D-01 to D-05): the photo map and the region registry. Write mode
   // (no --check) except the stale case: a failing build writes nothing.
   {
@@ -4287,7 +4310,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDataAerialAltRoot, photoDataDjiGroundRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, exifMappedRoot, exifUnmappedRoot, exifDuplicateRoot, terrainFixtureRoot, terrainLaeaRoot, terrainStripRoot, terrainUnreadableRoot, terrainMissingRoot, terrainRemoveRoot, terrainDropCheckRoot, terrainDropWriteRoot, fetchOutRoot, ...ciGateTempRoots, ...telemetryTempRoots, ...privacyTempRoots]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDataAerialAltRoot, photoDataDjiGroundRoot, photoDataGroundSourceRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, exifMappedRoot, exifUnmappedRoot, exifDuplicateRoot, terrainFixtureRoot, terrainLaeaRoot, terrainStripRoot, terrainUnreadableRoot, terrainMissingRoot, terrainRemoveRoot, terrainDropCheckRoot, terrainDropWriteRoot, fetchOutRoot, ...ciGateTempRoots, ...telemetryTempRoots, ...privacyTempRoots]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 

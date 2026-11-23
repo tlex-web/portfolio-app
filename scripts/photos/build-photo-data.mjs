@@ -43,7 +43,10 @@
  *              source raster at the position, rounded to whole metres (D-17,
  *              Pitfall 2). A coarse EXIF photo: the sidecar's gps.groundM,
  *              sampled at the true spot in stage 1 (16 D-03); missing fails, and
- *              so does a groundM on a '4dp' photo.
+ *              so does a groundM on a '4dp' photo, or one whose
+ *              gps.groundSourceSha256 is not the sha256 of the plate source
+ *              loaded now (a refetched or moved plate, or a changed region;
+ *              16-REVIEW WR-02).
  *   uv         round4 of gridToUv(toGrid(source.crs, position)) in the extent of
  *              the photo's region's plate (DATA-01, DATA-06, 15 D-04), through
  *              scripts/photos/plate-dem.mjs. A position whose raw uv is outside
@@ -439,6 +442,13 @@ async function build() {
         if (groundM === undefined) {
           throw new Error(
             `${entry.id}: a ${record.precision} photo needs gps.groundM; run npm run photos:exif with its original`
+          );
+        }
+        // 16-REVIEW WR-02: the height is only as fresh as the plate source it was
+        // sampled on. A refetched or moved plate, or a new region, changes the sha256.
+        if (entry.gps.groundSourceSha256 !== dem.sha256) {
+          throw new Error(
+            `${entry.id}: gps.groundM was sampled on another source than plate ${plate.id}'s; run npm run photos:exif with its original`
           );
         }
         elevation = { source: 'dem', m: groundM };
