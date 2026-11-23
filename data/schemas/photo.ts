@@ -78,9 +78,20 @@ const Gps = z.strictObject({
   groundM: z.number().int().optional(),
 });
 
+/**
+ * The general photo id slug (16-08): lowercase letters and digits in groups
+ * joined by single hyphens, at most 40 characters. Ids come from photo-map.json,
+ * so the pattern no longer encodes a camera; `img-0605`, `r004-011`,
+ * `sam-20240910-143659` and `dji-20260919-162232` all fit. The same rule is
+ * repeated in data/schemas/image-manifest.ts and the image-manifest test.
+ */
+const PHOTO_ID_SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+const PHOTO_ID_RULE =
+  'photo id: lowercase letters and digits joined by single hyphens, at most 40 characters';
+
 /** One original's EXIF facts plus the sha256 of its raw bytes (D-10). */
 export const ExifSidecarEntry = z.strictObject({
-  id: z.string().regex(/^(img-\d{4}|r\d{3}-\d{3})$/),
+  id: z.string().max(40, PHOTO_ID_RULE).regex(PHOTO_ID_SLUG, PHOTO_ID_RULE),
   file: z.string().min(1),
   sha256: z.string().regex(/^[0-9a-f]{64}$/),
   width: z.number().int().positive(),
@@ -118,7 +129,7 @@ export type ExifSidecar = z.infer<typeof ExifSidecar>;
 // ---------------------------------------------------------------------------
 
 /** Internal photo key shared by the sidecar, the corrections, the photo map and the derivatives. */
-export const PhotoId = z.string().regex(/^(img-\d{4}|r\d{3}-\d{3})$/);
+export const PhotoId = z.string().max(40, PHOTO_ID_RULE).regex(PHOTO_ID_SLUG, PHOTO_ID_RULE);
 export type PhotoId = z.infer<typeof PhotoId>;
 
 /**

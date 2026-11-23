@@ -12,7 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { imageManifest } from '@/data/generated/image-manifest';
 import { ImageManifest, MAX_LONG_EDGE } from '@/data/schemas/image-manifest';
-import type { ExifSidecar } from '@/data/schemas/photo';
+import { ExifSidecarEntry, PhotoId, type ExifSidecar } from '@/data/schemas/photo';
 
 const ROOT = process.cwd();
 const sidecar = JSON.parse(
@@ -21,7 +21,7 @@ const sidecar = JSON.parse(
 const entries = Object.entries(imageManifest);
 const publicFile = (url: string) => path.join(ROOT, 'public', url);
 const HASHED =
-  /^\/images\/photos\/(img-\d{4}|r\d{3}-\d{3})-(640|1024|1200|1600|2560)\.[0-9a-f]{10}\.(avif|webp|jpg)$/;
+  /^\/images\/photos\/([a-z0-9]+(?:-[a-z0-9]+)*)-(640|1024|1200|1600|2560)\.[0-9a-f]{10}\.(avif|webp|jpg)$/;
 
 /** Every .ts/.tsx file under `dir`, recursively. */
 function sources(dir: string): string[] {
@@ -31,6 +31,44 @@ function sources(dir: string): string[] {
 }
 
 describe('image manifest (DATA-08)', () => {
+  test('photo ids are lowercase hyphen-joined slugs of at most 40 characters', () => {
+    // The four current ids' shapes plus every id Tim chose in 16-08 (Task 2).
+    const valid = [
+      'img-0605',
+      'r004-011',
+      'img-0680',
+      'img-0682',
+      'sam-20240910-143659',
+      'dji-20260919-162232',
+      'dji-20260919-163558',
+      'a'.repeat(40),
+    ];
+    const invalid = [
+      'IMG_0680',
+      'img 0680',
+      'img-0680-',
+      '',
+      '-img-0680',
+      'img--0680',
+      'a'.repeat(41),
+    ];
+    const sidecarId = ExifSidecarEntry.shape.id;
+    const manifestKey = (id: string) =>
+      ImageManifest.safeParse({ [id]: Object.values(imageManifest)[0] }).success;
+    for (const id of valid) {
+      expect(PhotoId.safeParse(id).success).toBe(true);
+      expect(sidecarId.safeParse(id).success).toBe(true);
+      expect(manifestKey(id)).toBe(true);
+    }
+    for (const id of invalid) {
+      expect(PhotoId.safeParse(id).success).toBe(false);
+      expect(sidecarId.safeParse(id).success).toBe(false);
+      expect(manifestKey(id)).toBe(false);
+    }
+    expect('/images/photos/dji-20260919-162232-1024.0123456789.avif').toMatch(HASHED);
+    expect('/images/photos/IMG_0680-1024.0123456789.avif').not.toMatch(HASHED);
+  });
+
   test('parses with ImageManifest and holds exactly the sidecar ids', () => {
     expect(() => ImageManifest.parse(imageManifest)).not.toThrow();
     expect(Object.keys(imageManifest).sort()).toEqual(sidecar.photos.map((p) => p.id).sort());

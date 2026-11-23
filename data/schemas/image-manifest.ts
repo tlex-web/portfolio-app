@@ -90,8 +90,18 @@ export const ImageManifestEntry = z.strictObject({
 });
 export type ImageManifestEntry = z.infer<typeof ImageManifestEntry>;
 
-/** The manifest: photo id (as in the sidecar) -> entry, at least one photo. */
+/**
+ * The manifest: photo id (as in the sidecar) -> entry, at least one photo. The key
+ * is the general photo id slug of data/schemas/photo.ts (16-08): lowercase letters
+ * and digits joined by single hyphens, at most 40 characters.
+ */
 export const ImageManifest = z
-  .record(z.string().regex(/^(img-\d{4}|r\d{3}-\d{3})$/), ImageManifestEntry)
+  .record(
+    z
+      .string()
+      .max(40)
+      .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/),
+    ImageManifestEntry
+  )
   .refine((m) => Object.keys(m).length > 0, 'the manifest holds no photos');
 export type ImageManifest = z.infer<typeof ImageManifest>;
