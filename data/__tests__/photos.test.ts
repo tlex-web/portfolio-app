@@ -6,7 +6,8 @@
  * scripts/photos/build-photo-data.mjs from the committed sidecar, Tim's
  * corrections and the DEM source (its --check runs in `npm run lint`). These
  * tests pin the output to every CONTEXT decision: EXIF capture times with the
- * Europe/Zurich offset, the film scan's year-only capture and approximate
+ * offset of the photo's country zone (Europe/Zurich for CH, 17 D-26), the film
+ * scan's year-only capture and approximate
  * Riffelsee pin, the Gornerschlucht override, DEM heights, derived tags and the
  * 4-decimal coordinate rule.
  *
@@ -24,9 +25,11 @@ import {
   Capture,
   Coord4,
   Corrections,
+  Country,
   ExifSidecarEntry,
   PhotoFacts,
   Position,
+  ZONE_BY_COUNTRY,
 } from '@/data/schemas/photo';
 import { homeLowestDemM } from '@/lib/ascent/waypoints';
 import { lv95ToUv, round4, wgs84ToLv95 } from '@/lib/geo';
@@ -72,6 +75,56 @@ describe('photo facts: schema and order', () => {
       if (!rec) throw new Error(`photo-map.json has no record ${p.id}`);
       expect(p.kind).toBe(rec.kind);
       if (p.position) expect(p.position.precision).toBe(rec.precision);
+    }
+  });
+});
+
+describe("17 D-26: each EXIF capture's time zone is its photo's country zone", () => {
+  const seconds = photos.filter((p) => p.capture.precision === 'second');
+  const zoneOf = (p: Fact) => (p.capture.precision === 'second' ? p.capture.timeZone : null);
+
+  test("ZONE_BY_COUNTRY has exactly one zone per Country value", () => {
+    expect(Object.keys(ZONE_BY_COUNTRY ?? {}).sort()).toEqual([...Country.options].sort());
+  });
+
+  test.each([...Country.options])('the %s zone is a valid IANA zone in Node ICU (RESEARCH A4)', (c) => {
+    const zone = (ZONE_BY_COUNTRY as Record<string, string> | undefined)?.[c];
+    expect(typeof zone).toBe('string');
+    expect(() => new Intl.DateTimeFormat('en', { timeZone: zone })).not.toThrow();
+  });
+
+  test('the six second-precision CH captures keep Europe/Zurich', () => {
+    const ch = seconds.filter((p) => p.country === 'CH');
+    expect(ch).toHaveLength(6);
+    for (const p of ch) expect(zoneOf(p)).toBe('Europe/Zurich');
+  });
+
+  test.each([
+    ['dji-20260919-', 'Europe/Vienna'],
+    ['sam-20160717-', 'Europe/Rome'],
+  ])('both %s* captures are %s at +02:00', (prefix, zone) => {
+    const set = photos.filter((p) => p.id.startsWith(prefix));
+    expect(set).toHaveLength(2);
+    for (const p of set) {
+      expect(p.capture).toMatchObject({ precision: 'second', timeZone: zone, offset: '+02:00' });
+    }
+  });
+
+  test("every second-precision capture's timeZone is ZONE_BY_COUNTRY[country]", () => {
+    expect(seconds.length).toBeGreaterThan(0);
+    for (const p of seconds) {
+      expect(zoneOf(p)).toBe((ZONE_BY_COUNTRY as Record<string, string> | undefined)?.[p.country]);
+    }
+  });
+
+  test("PhotoFacts refuses a capture whose zone is not its country's, naming timeZone", () => {
+    const it = seconds.find((p) => p.country === 'IT');
+    if (!it || it.capture.precision !== 'second') throw new Error('photos.ts has no IT capture');
+    const wrong = { ...it, capture: { ...it.capture, timeZone: 'Europe/Zurich' } };
+    const r = PhotoFacts.safeParse(wrong);
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      expect(r.error.issues.some((i) => i.path.join('.') === 'capture.timeZone')).toBe(true);
     }
   });
 });
