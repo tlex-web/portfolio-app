@@ -132,6 +132,45 @@ describe('formatCoordinates (viewer strip position, D-07)', () => {
     [{ lat: 45.9837, lon: 7.7623 }, `45.9837${NBSP}N 7.7623${NBSP}E`],
   ])('prints the waypoint position %o unchanged', (position, expected) => {
     expect(codePoints(formatCoordinates(position))).toEqual(codePoints(expected));
+    // The default is the 4dp precision: passing 4 prints the same string (16 D-01).
+    expect(formatCoordinates(position, 4)).toBe(formatCoordinates(position));
+  });
+});
+
+/**
+ * 16 D-01 / DATA-14 (T-16-12): a coarse position prints at its own precision,
+ * never padded to four decimals and never finer than it holds. Synthetic
+ * values only; no photo's position appears here.
+ */
+describe('formatCoordinates at a position precision (16 D-01)', () => {
+  /** Exactly `d` decimals per half, the letter after U+00A0, one ASCII space between. */
+  const shape = (d: number) =>
+    new RegExp(`^\\d+\\.\\d{${d}}${NBSP}[NS] \\d+\\.\\d{${d}}${NBSP}[EW]$`);
+
+  it('formats a 3dp and a 2dp position at their own precision', () => {
+    const three = formatCoordinates({ lat: 12.345, lon: 6.789 }, 3);
+    expect(codePoints(three)).toEqual(codePoints(`12.345${NBSP}N 6.789${NBSP}E`));
+    expect(three).toMatch(shape(3));
+    expect(three).not.toMatch(shape(4));
+
+    const two = formatCoordinates({ lat: -12.34, lon: -6.78 }, 2);
+    expect(codePoints(two)).toEqual(codePoints(`12.34${NBSP}S 6.78${NBSP}W`));
+    expect(two).toMatch(shape(2));
+    expect(two).not.toMatch(shape(3));
+  });
+
+  it('pads only up to the precision itself: a 3dp value with a zero third decimal keeps three', () => {
+    expect(formatCoordinates({ lat: 12.3, lon: 6.78 }, 3)).toBe(`12.300${NBSP}N 6.780${NBSP}E`);
+    expect(formatCoordinates({ lat: 12, lon: 6 }, 2)).toBe(`12.00${NBSP}N 6.00${NBSP}E`);
+  });
+
+  it('rounds half up at a half step for 3 and 2 decimals, like the 4dp rule (09 IN-04)', () => {
+    // 1.0015 * 1e3 and 1.005 * 1e2 are doubles just below their half, so
+    // multiplying first would round the written half down.
+    expect(formatCoordinates({ lat: 1.0015, lon: -1.0025 }, 3)).toBe(
+      `1.002${NBSP}N 1.003${NBSP}W`
+    );
+    expect(formatCoordinates({ lat: -1.005, lon: 2.345 }, 2)).toBe(`1.01${NBSP}S 2.35${NBSP}E`);
   });
 });
 

@@ -10,6 +10,7 @@ import ExifStrip from '../ExifStrip';
 import { imageManifest } from '@/data/generated/image-manifest';
 import { photos } from '@/data/generated/photos';
 import { editorial } from '@/data/photos/editorial';
+import { lv95ToWgs84 } from '@/lib/geo';
 import { formatCaptureLabel } from '@/lib/photo-format';
 import { buildPhotoViews, photoViews, type PhotoView } from '@/lib/photos/view-model';
 
@@ -153,6 +154,42 @@ describe('ExifStrip lists (LBOX-04)', () => {
       'Canon EOS 6D Mark II',
       `105${NBSP}mm · f/5.6 · 1/500${NBSP}s · ISO 100`,
     ]);
+  });
+});
+
+/**
+ * 16 D-01 / DATA-14 (T-16-12): a coarse position reads through the existing
+ * approximate treatment (the '≈' sign and the radius note, no new markup) at
+ * its own precision. The photo is synthetic: img-0605's facts with a '3dp'
+ * position at the WGS84 of a synthetic LV95 point (the LV95 origin), rounded to
+ * three decimals as extraction would store it; no photo's position is used.
+ */
+describe('ExifStrip for a coarse position (16 D-01)', () => {
+  const round3 = (v: number) => Math.round(v * 1e3) / 1e3;
+  const origin = lv95ToWgs84({ e: 2_600_000, n: 1_200_000 });
+  const synthetic = {
+    lat: round3(origin.lat),
+    lon: round3(origin.lon),
+    precision: '3dp' as const,
+    source: 'exif' as const,
+    approximate: true,
+    reason: 'Synthetic coarse test position',
+    radiusM: 100,
+  };
+
+  it('prints a 3dp position with the approximate sign, three decimals per half and the 100 m note', () => {
+    const fixture = photos.map((p) => (p.id === 'img-0605' ? { ...p, position: synthetic } : p));
+    const view = viewOf('img-0605', buildPhotoViews({ photos: fixture, editorial, imageManifest }));
+    const position = renderStrip(view).querySelector('[data-strip-position]')!;
+    const coordinates = `${synthetic.lat.toFixed(3)}${NBSP}N ${synthetic.lon.toFixed(3)}${NBSP}E`;
+
+    expect(visibleText(position)).toBe(
+      `1,617${NBSP}m · ≈ ${coordinates} · ±100${NBSP}m (approx.)`
+    );
+    const value = view.strip.positionRows.find((r) => r.term === 'Position')!.value;
+    expect(value.startsWith('≈ ')).toBe(true);
+    expect(value).toMatch(new RegExp(`^≈ \\d+\\.\\d{3}${NBSP}N \\d+\\.\\d{3}${NBSP}E$`));
+    expect(view.strip.approxNote).toBe(`±100${NBSP}m (approx.)`);
   });
 });
 

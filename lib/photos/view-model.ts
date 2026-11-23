@@ -55,7 +55,7 @@ export type StripFields = {
   exifRows: readonly { line: 1 | 2; term: string; value: string }[];
   /** Field 5 for a film scan: 'Film scan · 2019' in place of the EXIF rows; null for a digital photo. */
   filmLine: string | null;
-  /** Field 6: the DEM altitude and the 4-dp position ('≈ '-prefixed when approximate). */
+  /** Field 6: the DEM altitude and the position at its own precision ('≈ '-prefixed when approximate). */
   positionRows: readonly { term: 'Altitude' | 'Position'; value: string }[];
   /** '±100 m (approx.)' for an approximate position with a radius, '(approx.)' without one, else null. */
   approxNote: string | null;
@@ -122,7 +122,24 @@ type ExifInput = {
   iso?: number | null;
 };
 
-type PositionInput = { lat: number; lon: number; approximate: boolean; radiusM?: number | null };
+/**
+ * A photo position as the strip reads it. `precision` is required with no
+ * fallback (16 D-01, D-02): a position without one does not compile, so no
+ * path can pad a coarse coordinate to four decimals.
+ */
+type PositionInput = {
+  lat: number;
+  lon: number;
+  precision: '4dp' | '3dp' | '2dp';
+  approximate: boolean;
+  radiusM?: number | null;
+};
+
+/** The decimals a position prints at: its own precision, never finer (16 D-01). */
+const DECIMALS = { '4dp': 4, '3dp': 3, '2dp': 2 } as const satisfies Record<
+  PositionInput['precision'],
+  2 | 3 | 4
+>;
 
 /**
  * The photo fields buildPhotoViews reads beyond buildWaypoints' own
@@ -200,9 +217,10 @@ const text = (v: string | null | undefined): v is string =>
 /**
  * The strip fields of one photo (D-07). Each EXIF unit is kept only when its
  * value is present and valid (an exposure only above 0, WR-04); a film scan
- * shows 'Film scan · {year}' instead of EXIF; the position is printed at 4 dp,
- * marked '≈' with its radius and '(approx.)' when hand-placed (LBOX-04,
- * T-10-02); a view without coordinates has no Position row.
+ * shows 'Film scan · {year}' instead of EXIF; the position is printed at its
+ * own precision (4, 3 or 2 dp, 16 D-01), marked '≈' with its radius and
+ * '(approx.)' when hand-placed or coarse (LBOX-04, T-10-02, T-16-12); a view
+ * without coordinates has no Position row.
  */
 export function stripFields(source: StripSource): StripFields {
   const { medium, exif, position, place, captureLabel, altitudeM } = source;
@@ -236,7 +254,7 @@ export function stripFields(source: StripSource): StripFields {
   const located =
     position !== null && Number.isFinite(position.lat) && Number.isFinite(position.lon);
   if (located) {
-    const coordinates = formatCoordinates(position);
+    const coordinates = formatCoordinates(position, DECIMALS[position.precision]);
     positionRows.push({
       term: 'Position',
       value: position.approximate ? `≈ ${coordinates}` : coordinates,

@@ -41,15 +41,10 @@ const MONTHS_SHORT = [
  * and rounds a written half down. Shifting the exponent of the decimal string
  * instead parses '1.00185e+4' to exactly 10018.5 (09 IN-04).
  */
-function fixedDecimals(v: number, d: number): string {
+function fixedDecimals(v: number, d: 2 | 3 | 4): string {
   const [mantissa, exponent] = Math.abs(v).toExponential().split('e');
   const scaled = Math.round(Number(`${mantissa}e${Number(exponent) + d}`));
   return (scaled / 10 ** d).toFixed(d);
-}
-
-/** Absolute value at four decimals, rounded half up: 1.00185 -> '1.0019'. */
-function fourDecimals(v: number): string {
-  return fixedDecimals(v, 4);
 }
 
 /**
@@ -69,12 +64,19 @@ export function formatLatLon(
 
 /**
  * WGS84 coordinates as the viewer strip prints them (D-07; 10-UI-SPEC Strip
- * field 6): the same four decimals and round-half-up rule as formatLatLon, the
- * hemisphere letter after U+00A0, and one plain space between the halves:
+ * field 6): the same round-half-up rule as formatLatLon, the hemisphere letter
+ * after U+00A0, and one plain space between the halves:
  * { lat: 46.015, lon: 7.7414 } -> '46.0150 N 7.7414 E'.
+ *
+ * `decimals` is the position's own precision (16 D-01: '4dp' 4, '3dp' 3,
+ * '2dp' 2), used for both halves, so a coarse position is never padded to
+ * four decimals: ({ lat: 46.016, lon: 7.742 }, 3) -> '46.016 N 7.742 E'.
  */
-export function formatCoordinates({ lat, lon }: { lat: number; lon: number }): string {
-  return `${fourDecimals(lat)}${NBSP}${lat < 0 ? 'S' : 'N'} ${fourDecimals(lon)}${NBSP}${lon < 0 ? 'W' : 'E'}`;
+export function formatCoordinates(
+  { lat, lon }: { lat: number; lon: number },
+  decimals: 2 | 3 | 4 = 4,
+): string {
+  return `${fixedDecimals(lat, decimals)}${NBSP}${lat < 0 ? 'S' : 'N'} ${fixedDecimals(lon, decimals)}${NBSP}${lon < 0 ? 'W' : 'E'}`;
 }
 
 /**
