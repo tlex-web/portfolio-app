@@ -34,6 +34,8 @@ export type Waypoint = {
   shortPlace: string;
   altitudeM: number;
   approximate: boolean;
+  /** An aerial photo (16 D-04): `altitudeM` is the ground height under it, and the view-model labels it 'ground'. */
+  aerial: boolean;
   uv: { u: number; v: number };
   position: { lat: number; lon: number };
   /** The capture month ('Sep 2021'), or the year alone for a year-precision scan ('2019'). */
@@ -47,6 +49,8 @@ export type Waypoint = {
 /** The photo fields buildWaypoints reads (a structural view of data/generated/photos.ts). */
 type PhotoInput = {
   id: string;
+  /** 16 D-04: an aerial photo's elevation is the DEM ground height at its position. */
+  kind: 'ground' | 'aerial';
   capture: CaptureLike;
   position: { lat: number; lon: number; approximate: boolean } | null;
   uv: { u: number; v: number } | null;
@@ -147,6 +151,7 @@ export function buildWaypoints(
       shortPlace: shortPlace(copy.location, photo.locationOverride?.name),
       altitudeM,
       approximate: position.approximate,
+      aerial: photo.kind === 'aerial',
       uv: { u: uv.u, v: uv.v },
       position: { lat: position.lat, lon: position.lon },
       captureMonth,

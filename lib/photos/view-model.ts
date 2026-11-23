@@ -9,6 +9,7 @@ import { site } from '@/data/site';
 import { buildWaypoints, type Waypoint, type WaypointInput } from '@/lib/ascent/waypoints';
 import { formatCoordinates } from '@/lib/home-format';
 import {
+  formatAltitude,
   formatAperture,
   formatCaptureLabel,
   formatExposureTime,
@@ -90,7 +91,7 @@ export type HotspotView = {
 export type PhotoView = Waypoint & {
   /** The capture as the strip prints it: '6 September 2021, 10:48', or '2019' for the film scan. */
   captureLabel: string;
-  /** '1,617 m', or '2,760 m approx.' for an approximate position. */
+  /** '1,617 m', '2,760 m approx.' for an approximate position, 'ground 2,410 m' for an aerial photo (16 D-04). */
   altitudeLabel: string;
   /** The photo's ratio, from the 2560 px variant. */
   aspect: { w: number; h: number };
@@ -161,6 +162,8 @@ export type StripSource = {
   place: string;
   captureLabel: string;
   altitudeM: number;
+  /** An aerial photo (16 D-04): the Altitude row reads 'ground …'. Absent means a ground photo. */
+  aerial?: boolean;
 };
 
 /** The editorial fields buildPhotoViews reads beyond buildWaypoints' own: the annotations. */
@@ -223,7 +226,7 @@ const text = (v: string | null | undefined): v is string =>
  * without coordinates has no Position row.
  */
 export function stripFields(source: StripSource): StripFields {
-  const { medium, exif, position, place, captureLabel, altitudeM } = source;
+  const { medium, exif, position, place, captureLabel, altitudeM, aerial = false } = source;
   const exifRows: { line: 1 | 2; term: string; value: string }[] = [];
   if (medium === 'digital' && exif) {
     if (text(exif.camera)) exifRows.push({ line: 1, term: 'Camera', value: exif.camera });
@@ -249,10 +252,19 @@ export function stripFields(source: StripSource): StripFields {
   }
 
   const positionRows: { term: 'Altitude' | 'Position'; value: string }[] = [];
-  if (Number.isFinite(altitudeM))
-    positionRows.push({ term: 'Altitude', value: formatMetres(altitudeM) });
   const located =
     position !== null && Number.isFinite(position.lat) && Number.isFinite(position.lon);
+  // A coarse position's height was itself rounded at extraction (10 m or 50 m,
+  // 16 D-03), so the Altitude row says ' approx.' like the altitude label. A
+  // hand-placed 4dp position keeps its approximation on the Position line only,
+  // exactly as before (D-25).
+  const coarse = located && position.precision !== '4dp';
+  if (Number.isFinite(altitudeM)) {
+    positionRows.push({
+      term: 'Altitude',
+      value: formatAltitude({ m: altitudeM, approximate: coarse, aerial }),
+    });
+  }
   if (located) {
     const coordinates = formatCoordinates(position, DECIMALS[position.precision]);
     positionRows.push({
@@ -401,7 +413,11 @@ export function buildPhotoViews(input: PhotoViewInput = lightTableInput()): read
       input.imageManifest[w.id]?.variants ?? fail(w.id, 'has no image-manifest entry');
     const largest = variant(w.id, variants, 2560);
     const captureLabel = formatCaptureLabel(photo.capture);
-    const altitudeLabel = `${formatMetres(w.altitudeM)}${w.approximate ? ' approx.' : ''}`;
+    const altitudeLabel = formatAltitude({
+      m: w.altitudeM,
+      approximate: w.approximate,
+      aerial: w.aerial,
+    });
 
     return {
       ...w,
@@ -421,6 +437,7 @@ export function buildPhotoViews(input: PhotoViewInput = lightTableInput()): read
         place: w.place,
         captureLabel,
         altitudeM: w.altitudeM,
+        aerial: w.aerial,
       }),
       hotspots: hotspotViews(input.editorial[w.id]?.annotations ?? [], w.altitudeM, altitudeLabel),
     };

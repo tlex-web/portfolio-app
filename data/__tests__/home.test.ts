@@ -55,6 +55,13 @@ describe('homeWaypointIds is strict (DATA-09, D-07)', () => {
     expect(region('zermatt').plate).toBe('matterhorn');
     for (const id of homeWaypointIds) expect(region(photo(id).region).plate).toBe('matterhorn');
   });
+
+  // 16 D-04: Home's own altitude labels (cards, kicker, pins, plaque) have no
+  // 'ground' wording, so an aerial photo must never reach the ascent.
+  it('every Home waypoint is a ground photo (16 D-04)', () => {
+    for (const id of homeWaypointIds) expect(photo(id).kind).toBe('ground');
+    expect(buildWaypoints().every((w) => w.aerial === false)).toBe(true);
+  });
 });
 
 describe('Home list edges (DATA-09, D-06)', () => {

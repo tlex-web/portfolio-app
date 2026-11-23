@@ -110,8 +110,10 @@ describe('buildWaypoints on the committed data (HOME-05, D-01)', () => {
   });
 });
 
-/** A minimal valid input with the given photo ids and elevations. */
-function synthetic(entries: ReadonlyArray<readonly [id: string, m: number]>): WaypointInput {
+/** A minimal valid input with the given photo ids, elevations and kinds (ground unless given). */
+function synthetic(
+  entries: ReadonlyArray<readonly [id: string, m: number, kind?: 'ground' | 'aerial']>,
+): WaypointInput {
   const variants = [640, 1024].map((edge) => ({
     longEdge: edge,
     width: edge,
@@ -120,8 +122,9 @@ function synthetic(entries: ReadonlyArray<readonly [id: string, m: number]>): Wa
     webp: `/images/photos/x-${edge}.0123456789.webp`,
   }));
   return {
-    photos: entries.map(([id, m]) => ({
+    photos: entries.map(([id, m, kind = 'ground']) => ({
       id,
+      kind,
       capture: { precision: 'year', year: 2020 },
       position: { lat: 46, lon: 7.7, approximate: false },
       uv: { u: 0.5, v: 0.5 },
@@ -154,6 +157,21 @@ describe('buildWaypoints on synthetic data (D-01 generalised)', () => {
 
   it('throws on an empty photo set', () => {
     expect(() => buildWaypoints(synthetic([]))).toThrow(RangeError);
+  });
+
+  it("carries aerial from the photo's kind and sorts an aerial photo by its ground height (16 D-04)", () => {
+    const waypoints = buildWaypoints(
+      synthetic([['high', 2400], ['drone', 2410, 'aerial'], ['low', 1500, 'aerial'], ['mid', 2000]]),
+    );
+    expect(waypoints.map((w) => [w.id, w.aerial])).toEqual([
+      ['low', true],
+      ['mid', false],
+      ['high', false],
+      ['drone', true],
+    ]);
+    // A tie keeps the id order whatever the kind.
+    const tie = buildWaypoints(synthetic([['b', 2000], ['a', 2000, 'aerial']]));
+    expect(tie.map((w) => w.id)).toEqual(['a', 'b']);
   });
 
   it('throws, naming the photo, when its editorial entry is missing', () => {

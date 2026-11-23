@@ -5,11 +5,15 @@
  * scan is marked approximate by shape and in its name; the summit is an
  * aria-hidden landmark, not a link; the label positions arrive as a
  * server-rendered style element. Server component rendered from real data;
- * nothing is mocked.
+ * nothing is mocked (the 16 D-01 case passes a synthetic coarse position
+ * through buildPhotoViews).
  */
 import { render, screen, within } from '@testing-library/react';
 import MapSheet from '@/components/photos/MapSheet';
-import { photoViews } from '@/lib/photos/view-model';
+import { imageManifest } from '@/data/generated/image-manifest';
+import { photos } from '@/data/generated/photos';
+import { editorial } from '@/data/photos/editorial';
+import { buildPhotoViews, photoViews } from '@/lib/photos/view-model';
 import { SLUGS, viewBySlug } from '../../../e2e/helpers/photo-fixtures';
 
 const NBSP = String.fromCharCode(0xa0);
@@ -80,6 +84,37 @@ describe('MapSheet (PHOTO-01, PHOTO-03, D-01..D-04)', () => {
       }
     });
     expect(photoViews.filter((v) => v.approximate)).toHaveLength(1);
+  });
+
+  it("draws a synthetic coarse photo's dot dashed and names it approx. (16 D-01)", () => {
+    // img-0605's facts with a synthetic 3dp position (no photo's position is used).
+    const position = {
+      lat: 12.345,
+      lon: 5.678,
+      precision: '3dp' as const,
+      source: 'exif' as const,
+      approximate: true,
+      reason: 'Synthetic coarse test position',
+      radiusM: 100,
+    };
+    const views = buildPhotoViews({
+      photos: photos.map((p) => (p.id === 'img-0605' ? { ...p, position } : p)),
+      editorial,
+      imageManifest,
+    });
+    const coarse = views.find((v) => v.id === 'img-0605')!;
+    expect(coarse.approximate).toBe(true);
+
+    render(<MapSheet photos={views} />);
+    const list = screen.getByRole('list', { name: 'Photo locations, lowest first' });
+    const link = within(list)
+      .getAllByRole('link')
+      .find((a) => a.getAttribute('data-map-mark') === coarse.slug)!;
+    const dot = link.querySelector('[data-map-dot]') as HTMLElement;
+    expect(dot).toHaveClass('bg-surface', 'border-2', 'border-dashed', 'border-ink');
+    expect(dot).not.toHaveClass('bg-ink');
+    expect(link).toHaveAccessibleName(`${coarse.title}, ${coarse.altitudeLabel}`);
+    expect(link.getAttribute('aria-label')).toMatch(new RegExp(`, 1,617${NBSP}m approx\\.$`));
   });
 
   it('draws the summit as an aria-hidden plate that is not a link', () => {

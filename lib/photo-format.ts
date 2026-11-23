@@ -110,3 +110,24 @@ export function formatMetres(m: number): string {
   const sign = whole < 0 ? '-' : '';
   return `${sign}${groupThousands(String(Math.abs(whole)))}${NBSP}m`;
 }
+
+/**
+ * A photo's height as every view-model surface prints it (16 D-04, D-03):
+ * formatMetres, prefixed 'ground' for an aerial photo (the DEM height under
+ * it, never the aircraft's) and suffixed ' approx.' when approximate:
+ * { m: 2410, approximate: false, aerial: true } -> 'ground 2,410 m';
+ * { m: 1617, approximate: true, aerial: false } -> '1,617 m approx.'. A ground
+ * photo's text is exactly the pre-16 label. 'ground' takes U+00A0 so it never
+ * wraps away from its height.
+ */
+export function formatAltitude({
+  m,
+  approximate,
+  aerial,
+}: {
+  m: number;
+  approximate: boolean;
+  aerial: boolean;
+}): string {
+  return `${aerial ? `ground${NBSP}` : ''}${formatMetres(m)}${approximate ? ' approx.' : ''}`;
+}

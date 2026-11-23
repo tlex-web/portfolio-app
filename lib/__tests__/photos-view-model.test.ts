@@ -274,6 +274,64 @@ describe('strip fields (D-07, LBOX-04)', () => {
 });
 
 /**
+ * 16 D-04 / D-03 (DATA-14): an aerial photo's height is the ground under it,
+ * labelled 'ground', and a coarse height reads 'approx.' in the altitude label
+ * and the strip's Altitude row alike; the photo still sorts by that height.
+ * Synthetic photos only: committed facts with kind, position and elevation
+ * replaced by synthetic values (no photo's own position is used).
+ */
+describe('aerial and coarse heights (16 D-04, D-03)', () => {
+  /** A synthetic 2dp position, approximate with the 1 km radius extraction gives it. */
+  const coarse2dp = {
+    lat: 12.34,
+    lon: 5.67,
+    precision: '2dp' as const,
+    source: 'exif' as const,
+    approximate: true,
+    reason: 'Synthetic coarse test position',
+    radiusM: 1000,
+  };
+  const altitudeRow = (strip: { positionRows: readonly { term: string; value: string }[] }) =>
+    strip.positionRows.find((r) => r.term === 'Altitude')!.value;
+
+  it("labels an aerial photo's height as ground", () => {
+    const view = viewOf(withPhoto('img-0605', { kind: 'aerial' }), 'img-0605');
+    expect(view.aerial).toBe(true);
+    expect(codePoints(view.altitudeLabel)).toEqual(codePoints(`ground${NBSP}1,617${NBSP}m`));
+    expect(altitudeRow(view.strip)).toBe(view.altitudeLabel);
+    // The position row of a 4dp photo is untouched.
+    expect(view.strip.positionRows[1].value).toBe(viewOf(photoViews, 'img-0605').strip.positionRows[1].value);
+  });
+
+  it('labels a coarse aerial photo ground and approx. in the label and the strip Altitude row alike', () => {
+    const view = viewOf(
+      withPhoto('img-0662', { kind: 'aerial', position: coarse2dp, elevation: { source: 'dem', m: 2450 } }),
+      'img-0662'
+    );
+    expect(codePoints(view.altitudeLabel)).toEqual(codePoints(`ground${NBSP}2,450${NBSP}m approx.`));
+    expect(altitudeRow(view.strip)).toBe(view.altitudeLabel);
+    expect(view.strip.positionRows[1].value).toBe(`≈ 12.34${NBSP}N 5.67${NBSP}E`);
+    expect(view.strip.approxNote).toBe(`±1,000${NBSP}m (approx.)`);
+  });
+
+  it('sorts an aerial photo by its ground height like any other photo', () => {
+    const views = withPhoto('img-0662', { kind: 'aerial', elevation: { source: 'dem', m: 1600 } });
+    expect(views.map((v) => v.id)).toEqual(['img-0662', 'img-0605', 'img-0629', 'r004-011']);
+    expect(views[0].altitudeLabel).toBe(`ground${NBSP}1,600${NBSP}m`);
+  });
+
+  it("keeps every current photo's altitude label and Altitude row text (D-25)", () => {
+    expect(photoViews.map((v) => [v.id, v.altitudeLabel, altitudeRow(v.strip)])).toEqual([
+      ['img-0605', `1,617${NBSP}m`, `1,617${NBSP}m`],
+      ['img-0629', `1,668${NBSP}m`, `1,668${NBSP}m`],
+      ['img-0662', `2,585${NBSP}m`, `2,585${NBSP}m`],
+      ['r004-011', `2,760${NBSP}m approx.`, `2,760${NBSP}m`],
+    ]);
+    expect(photoViews.every((v) => v.aerial === false)).toBe(true);
+  });
+});
+
+/**
  * No image consumer is left on the legacy variants (LBOX-04, T-10-21): with the
  * v1 photo UI and its bridge deleted in 10-09, nothing under app, components or
  * lib may read an image-manifest legacy entry (the -large/-thumb files that

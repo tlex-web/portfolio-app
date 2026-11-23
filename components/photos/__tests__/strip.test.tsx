@@ -183,8 +183,9 @@ describe('ExifStrip for a coarse position (16 D-01)', () => {
     const position = renderStrip(view).querySelector('[data-strip-position]')!;
     const coordinates = `${synthetic.lat.toFixed(3)}${NBSP}N ${synthetic.lon.toFixed(3)}${NBSP}E`;
 
+    // A coarse height was rounded at extraction (16 D-03), so it reads approx. too.
     expect(visibleText(position)).toBe(
-      `1,617${NBSP}m · ≈ ${coordinates} · ±100${NBSP}m (approx.)`
+      `1,617${NBSP}m approx. · ≈ ${coordinates} · ±100${NBSP}m (approx.)`
     );
     const value = view.strip.positionRows.find((r) => r.term === 'Position')!.value;
     expect(value.startsWith('≈ ')).toBe(true);
