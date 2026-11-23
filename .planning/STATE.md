@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 16
 current_phase_name: New Regions & Alps Overview Data
 status: executing
-stopped_at: Completed 16-09-PLAN.md
-last_updated: "2026-11-23T10:27:23.466Z"
+stopped_at: Completed 16-10-PLAN.md
+last_updated: "2026-11-23T10:46:15.707Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 16 execution started
-state_head: 5f034900201be9e95abb95bcd5f0fceab540d321
+state_head: fd368cd7930875617451d9017c5ec413b502605e
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 64
-  completed_plans: 55
+  completed_plans: 56
   percent: 43
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-15)
 ## Current Position
 
 Phase: 16 (New Regions & Alps Overview Data) — EXECUTING
-Plan: 10 of 18
+Plan: 11 of 18
 Status: Ready to execute
 Last activity: 2026-11-23 — Phase 16 execution started
 
@@ -111,6 +111,7 @@ Progress: [████░░░░░░] 43%
 | Phase 16 P08 | 12min | 3 tasks | 3 files |
 | Phase 16 P07 | 10min | 3 tasks | 13 files |
 | Phase 16 P09 | 11min | 3 tasks | 5 files |
+| Phase 16 P10 | 15min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -255,6 +256,8 @@ Recent decisions affecting current work:
 - [Phase 16]: 16-07: the global-error client graph forbids data/generated/plates.ts; client JS 1,851,685 B (16-01 base +113 B)
 - [Phase 16]: 16-09: proj4 2.22.0 (exact devDep, wkt-parser overridden to 1.5.6) is installed after Tim's 'verified (Recommended)'. It handles EPSG:3035 in the plate-dem toGrid/fromGrid dispatch and is banned outside scripts/**/*.mjs
 - [Phase 16]: 16-09: LV95 plates keep lib/geo.ts. The selftest measured 0.5652 m max against proj4 EPSG:2056 over the 13 x 13 Ortler grid (1 m limit)
+- [Phase 16]: 16-10: TerrainSource is a union on product (swissALTIRegio, BEV ALS DTM / EPSG:3035 with EVRF2000-AT, EPSG:9274) and PlateSheet a union on crs (extent.lv95 / extent.laea); Matterhorn's generated files stay byte-identical
+- [Phase 16]: 16-10: 'overview' is a reserved plate stem; the D-15 test excludes plate prefixes and overview- from its unprefixed-name check (IN-01), with IN-05 and IN-06 in 6ac809e
 
 ### Pending Todos
 
@@ -314,6 +317,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-23T10:27:22.555Z
-Stopped at: Completed 16-09-PLAN.md
+Last session: 2026-11-23T10:46:14.934Z
+Stopped at: Completed 16-10-PLAN.md
 Resume file: None
