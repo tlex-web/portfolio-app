@@ -83,15 +83,18 @@ describe("17 D-26: each EXIF capture's time zone is its photo's country zone", (
   const seconds = photos.filter((p) => p.capture.precision === 'second');
   const zoneOf = (p: Fact) => (p.capture.precision === 'second' ? p.capture.timeZone : null);
 
-  test("ZONE_BY_COUNTRY has exactly one zone per Country value", () => {
-    expect(Object.keys(ZONE_BY_COUNTRY ?? {}).sort()).toEqual([...Country.options].sort());
+  test('ZONE_BY_COUNTRY has exactly one zone per Country value', () => {
+    expect(Object.keys(ZONE_BY_COUNTRY).sort()).toEqual([...Country.options].sort());
   });
 
-  test.each([...Country.options])('the %s zone is a valid IANA zone in Node ICU (RESEARCH A4)', (c) => {
-    const zone = (ZONE_BY_COUNTRY as Record<string, string> | undefined)?.[c];
-    expect(typeof zone).toBe('string');
-    expect(() => new Intl.DateTimeFormat('en', { timeZone: zone })).not.toThrow();
-  });
+  test.each([...Country.options])(
+    'the %s zone is a valid IANA zone in Node ICU (RESEARCH A4)',
+    (c) => {
+      const zone = ZONE_BY_COUNTRY[c];
+      expect(typeof zone).toBe('string');
+      expect(() => new Intl.DateTimeFormat('en', { timeZone: zone })).not.toThrow();
+    }
+  );
 
   test('the six second-precision CH captures keep Europe/Zurich', () => {
     const ch = seconds.filter((p) => p.country === 'CH');
@@ -113,14 +116,15 @@ describe("17 D-26: each EXIF capture's time zone is its photo's country zone", (
   test("every second-precision capture's timeZone is ZONE_BY_COUNTRY[country]", () => {
     expect(seconds.length).toBeGreaterThan(0);
     for (const p of seconds) {
-      expect(zoneOf(p)).toBe((ZONE_BY_COUNTRY as Record<string, string> | undefined)?.[p.country]);
+      expect(zoneOf(p)).toBe(ZONE_BY_COUNTRY[p.country]);
     }
   });
 
   test("PhotoFacts refuses a capture whose zone is not its country's, naming timeZone", () => {
-    const it = seconds.find((p) => p.country === 'IT');
-    if (!it || it.capture.precision !== 'second') throw new Error('photos.ts has no IT capture');
-    const wrong = { ...it, capture: { ...it.capture, timeZone: 'Europe/Zurich' } };
+    const ortler = seconds.find((p) => p.country === 'IT');
+    if (!ortler || ortler.capture.precision !== 'second')
+      throw new Error('photos.ts has no IT capture');
+    const wrong = { ...ortler, capture: { ...ortler.capture, timeZone: 'Europe/Zurich' } };
     const r = PhotoFacts.safeParse(wrong);
     expect(r.success).toBe(false);
     if (!r.success) {
