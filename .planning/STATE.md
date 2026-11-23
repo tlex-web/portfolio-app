@@ -5,11 +5,11 @@ milestone_name: Survey Expansion
 current_phase: 16
 current_phase_name: New Regions & Alps Overview Data
 status: executing
-stopped_at: 16-01 halted at D-25 gate (code complete, SUMMARY committed)
-last_updated: "2026-11-23T00:43:09.746Z"
+stopped_at: Completed 16-01-PLAN.md
+last_updated: "2026-11-23T01:01:11.757Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 16 execution started
-state_head: 716a3246e664ade11498d093410cd797646dc7c9
+state_head: 62246ded482f10c66f86a30fc21fe6ecf47fbb30
 progress:
   total_phases: 7
   completed_phases: 3
@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-11-15)
 ## Current Position
 
 Phase: 16 (New Regions & Alps Overview Data) — EXECUTING
-Plan: 1 of 18
-Status: Executing Phase 16
+Plan: 2 of 18
+Status: Ready to execute
 Last activity: 2026-11-23 — Phase 16 execution started
 
 Progress: [████░░░░░░] 43%
@@ -102,7 +102,7 @@ Progress: [████░░░░░░] 43%
 | Phase 15 P14 | 10min | 3 tasks | 5 files |
 | Phase 15 P15 | 9 min | 3 tasks | 12 files |
 | Phase 15 P16 | 39min | 3 tasks | 3 files |
-| Phase 16 P01 | 23 min | 2 tasks | 9 files |
+| Phase 16 P01 | 28 min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -229,6 +229,7 @@ Recent decisions affecting current work:
 - [Phase 15]: 15-15: a lookup that follows a positional action (first tile, first map target, one Next) stays positional even when it reads the photo's title or slug
 - [Phase 15]: 15-16: ci/15-16 holds the Task 1 tip 0b06608; later docs-only SUMMARY/STATE commits are not pushed (D-31 covers new ci/15-* branches and fast-forward fix pushes only)
 - [Phase 16]: 16-01: fixture DEM ramp rises 1 m per 5 m east so grey16 decimetre pixels are exact; a coarse photo with a hand-placed correction is sampled at that position (gps.groundM required only for coarse EXIF positions)
+- [Phase 16]: 16-01 D-25: Tim chose "Keep history (Recommended)" (AskUserQuestion, 2026-11-23) for the eight committed v2.0 planning files holding finer-than-published positions of the three published photos (08-01-PLAN, 08-01-SUMMARY, 08-02-PLAN, 08-02-SUMMARY, 08-04-SUMMARY, 08-08-SUMMARY, 08-RESEARCH, v2.0-research/STACK.md): no history rewrite, no redaction; later D-25 runs treat them as accepted matches — The photos are already public at 4 decimals in the same repository
 
 ### Pending Todos
 
@@ -246,7 +247,6 @@ None carried from v2.0.
 - [Phase 15] Assumption A-15-12 awaits Tim's review: the telemetry guard has no originals-folder exception (a force-added sidecar under `assets/photos-original/` or `assets/clips-original/` fails).
 - [Phase 16] Needs Tim's inputs before planning can finish: the launch regions (inside the footprint, at least one in Italy or Austria), the new originals and the coarse-location choice per photo.
 - [Phase 19] Needs a graded drone clip from Tim before any byte budget is fixed.
-- 16-01 halted at the D-25 gate: eight committed v2.0 planning files (08-01-PLAN, 08-01-SUMMARY, 08-02-PLAN, 08-02-SUMMARY, 08-04-SUMMARY, 08-08-SUMMARY, 08-RESEARCH in milestones/v2.0-phases/08-data-terrain-pipeline, and milestones/v2.0-research/STACK.md) hold finer-than-published positions of the three published digital photos; Tim decides whether history stays, then 16-01-SUMMARY goes to status complete
 
 ### Quick Tasks Completed
 
@@ -289,6 +289,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-23T00:43:09.006Z
-Stopped at: 16-01 halted at D-25 gate (code complete, SUMMARY committed)
-Resume file: .planning/phases/16-new-regions-alps-overview-data/16-01-SUMMARY.md
+Last session: 2026-11-23T01:01:11.209Z
+Stopped at: Completed 16-01-PLAN.md
+Resume file: None
