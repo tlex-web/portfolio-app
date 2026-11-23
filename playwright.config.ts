@@ -57,8 +57,11 @@ const reuse = !process.env.CI && !!process.env.PW_REUSE;
  * today's filters. The tag's second reason is a test that breaks under
  * dev-server on-demand compiles: e2e/design-system.spec.ts G3, whose intercepted
  * modal route compiles mid-click on `next dev`.
+ * @not-chromium drops a cross-engine row from Chromium in both modes when a
+ * @chromium-only row already runs the same scenario there (15 IN-03: the
+ * lightbox browser-Back close).
  */
-const CHROMIUM_INVERT = prod ? undefined : /@prod-only/;
+const CHROMIUM_INVERT = prod ? /@not-chromium/ : /@prod-only|@not-chromium/;
 const OTHER_ENGINE_INVERT = prod ? /@chromium-only/ : /@chromium-only|@prod-only/;
 
 /**
