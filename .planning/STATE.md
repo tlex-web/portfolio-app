@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v2.1
 milestone_name: Survey Expansion
-current_phase: 16
-current_phase_name: New Regions & Alps Overview Data
-status: verifying
-stopped_at: Completed 16-18-PLAN.md
-last_updated: "2026-11-23T18:09:28.270Z"
+current_phase: 17
+current_phase_name: Region Routes, SEO & Structured Data
+status: planning
+stopped_at: Phase 16 complete, ready to plan Phase 17
+last_updated: "2026-11-23T18:51:10.598Z"
 last_activity: 2026-11-23
-last_activity_desc: Phase 16 execution started
-state_head: e96f26675448e276e91ebbbbb643ba0121a5aea9
+last_activity_desc: Phase 16 complete, transitioned to Phase 17
+state_head: 55a9234daaae9c346da2de903c89c200ea3d7b6b
 progress:
   total_phases: 7
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 64
   completed_plans: 64
-  percent: 43
+  percent: 57
 ---
 
 # Project State
@@ -29,17 +29,17 @@ See: .planning/PROJECT.md (updated 2026-11-15)
 
 ## Current Position
 
-Phase: 16 (New Regions & Alps Overview Data) — EXECUTING
-Plan: 18 of 18
-Status: Phase complete — ready for verification
-Last activity: 2026-11-23 — Phase 16 execution started
+Phase: 17 — Region Routes, SEO & Structured Data
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-11-23 — Phase 16 complete, transitioned to Phase 17
 
-Progress: [████░░░░░░] 43%
+Progress: [██████░░░░] 57%
 
 ## Performance Metrics
 
 **Velocity (v2.1):**
-- Total plans completed: 46
+- Total plans completed: 64
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -50,6 +50,7 @@ Progress: [████░░░░░░] 43%
 | 13 | 22 | - | - |
 | 14 | 8 | - | - |
 | 15 | 16 | - | - |
+| 16 | 18 | - | - |
 
 *Updated after each plan completion. v2.0: 128 plans in 6 phases, about 70 hours of plan execution; the per-plan table is in `.planning/milestones/v2.0-STATE.md`.*
 **Per-Plan Metrics:**
@@ -344,5 +345,5 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 ## Session Continuity
 
 Last session: 2026-11-23T18:09:27.540Z
-Stopped at: Completed 16-18-PLAN.md
+Stopped at: Phase 16 complete, ready to plan Phase 17
 Resume file: None

@@ -50,7 +50,7 @@ Full details: [milestones/v2.0-ROADMAP.md](milestones/v2.0-ROADMAP.md)
 - [x] **Phase 13: Repo Safety & Test Debt** - Required checks on `main`, a verified fail-closed rate limiter, Playwright 1.65 re-baselined alone, a wider audit gate, the G5/G6 tests, ledger triage and dead-code removal (completed 2026-11-14)
 - [x] **Phase 14: UI Fixes & Terminal Controls** - The carried v2.0 bugs in the mobile menu, Home at 375 px, the rail labels and lightbox focus fixed, plus terminal step buttons and a transcript (completed 2026-11-14)
 - [x] **Phase 15: Region & Plate Data Model** - An explicit Home waypoint list, a region and country on every photo, an N-plate terrain build, a telemetry ban and one photo URL helper, with no visible change (completed 2026-11-15)
-- [ ] **Phase 16: New Regions & Alps Overview Data** - Coarse-location overrides, new Zermatt photos, Ortler and Saalfelden (BEV) with their plates, and a Copernicus GLO-90 overview map
+- [x] **Phase 16: New Regions & Alps Overview Data** - Coarse-location overrides, new Zermatt photos, Ortler and Saalfelden (BEV) with their plates, and a Copernicus GLO-90 overview map (completed 2026-11-23)
 - [ ] **Phase 17: Region Routes, SEO & Structured Data** - Region pages on their own path, the photo URL contract held, region metadata, JSON-LD and the saved-pages catalog
 - [ ] **Phase 18: Immersive Survey Layout** - The Alps overview on `/photos`, immersive region pages with map collar and altimeter rail, a region-scoped lightbox, Share, LV95 and data credits
 - [ ] **Phase 19: Drone Loops** - One silent, same-origin drone loop near a region page header, within a measured byte budget
@@ -256,7 +256,7 @@ Plans:
   2. More Zermatt photos and two new regions, Ortler (Italy, inside the swissALTIRegio footprint) and Saalfelden (Austria, outside it), are in the committed photo data with EXIF facts, DEM heights and metadata-free hashed derivatives from the existing pipeline. The served-image guard and `data:check` pass, and each region's footprint check is recorded (amended 2026-11-15, 16-CONTEXT D-06 to D-09).
   3. Each new region has its own local plate (contours and hillshade) from exactly one source: swissALTIRegio for Ortler (and for a Zermatt region plate if one is needed), BEV ALS DTM for Saalfelden. `terrain:build --check` stays deterministic, and the Matterhorn plate's hashed files and Home stay unchanged.
   4. A build-time Alps overview is generated from Copernicus GLO-90 contours, with each region's plate extent drawn as a rectangle and 3-5 labelled reference summits, within a size budget that a spike measured before it was fixed.
-**Plans**: 18/18 plans executed in 12 waves
+**Plans**: 18/18 plans complete in 12 waves
 
 Plans:
 **Wave 1**
@@ -390,7 +390,7 @@ Plans:
 | 13. Repo Safety & Test Debt | v2.1 | 22/22 | Complete    | 2026-11-14 |
 | 14. UI Fixes & Terminal Controls | v2.1 | 8/8 | Complete    | 2026-11-14 |
 | 15. Region & Plate Data Model | v2.1 | 16/16 | Complete    | 2026-11-15 |
-| 16. New Regions & Alps Overview Data | v2.1 | 18/18 | In Progress | - |
+| 16. New Regions & Alps Overview Data | v2.1 | 18/18 | Complete    | 2026-11-23 |
 | 17. Region Routes, SEO & Structured Data | v2.1 | 0/TBD | Not started | - |
 | 18. Immersive Survey Layout | v2.1 | 0/TBD | Not started | - |
 | 19. Drone Loops | v2.1 | 0/TBD | Not started | - |
