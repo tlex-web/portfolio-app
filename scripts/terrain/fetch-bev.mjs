@@ -60,6 +60,16 @@ import { fileURLToPath } from 'node:url';
 import { BaseClient, BaseResponse, fromCustomClient } from 'geotiff';
 import sharp from 'sharp';
 import { BevAlsDtmSource, PlateId, TerrainSource } from '../../data/schemas/terrain.ts';
+import { finalError, withRetry } from './fetch-retry.mjs';
+import {
+  CELL_M,
+  extentProblem,
+  extentText,
+  parseArgs,
+  parseExtent,
+  sameExtent,
+  shown,
+} from './plate-args.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const PLATES_DIR = path.join(ROOT, 'data', 'terrain', 'plates');
@@ -95,8 +105,6 @@ const OVERVIEW_MIN_M = 7;
 const OVERVIEW_MAX_M = 9;
 /** The swissALTIRegio home plate: terrain:fetch owns it. */
 const HOME_PLATE = 'matterhorn';
-const MAX_SIDE_M = 20000;
-const CELL_M = 10;
 /** Decimetres: stored value = Math.round(m / HEIGHT_SCALE). */
 const HEIGHT_SCALE = 0.1;
 const FILE = 'dem-10m.png';
@@ -113,53 +121,9 @@ function fail(msg) {
 }
 
 const USAGE = 'usage: terrain:fetch:bev --plate <id> [--extent W,S,E,N] [--out <dir>]';
+/** `--plate`, `--extent`, `--out`; anything else fails (plate-args.mjs). */
+const ARGS = { values: ['plate', 'extent', 'out'], usage: USAGE };
 
-/** `--plate`, `--extent`, `--out`; anything else fails. */
-function parseArgs(argv) {
-  const opts = { plate: null, extent: null, out: null };
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
-    if (arg === '--plate' || arg === '--extent' || arg === '--out') {
-      const value = argv[i + 1];
-      if (value === undefined || value.startsWith('--')) fail(`${arg} needs a value (${USAGE})`);
-      const key = arg.slice(2);
-      if (opts[key] !== null) fail(`${arg} given twice`);
-      opts[key] = value;
-      i++;
-    } else {
-      fail(`unknown argument ${arg} (${USAGE})`);
-    }
-  }
-  return opts;
-}
-
-/** Null when `e` is a square plate extent on the 10 m grid, at most MAX_SIDE_M a side; else the rule it breaks. */
-function extentProblem(e) {
-  if (!(e.west < e.east && e.south < e.north)) return 'needs west < east and south < north';
-  const w = e.east - e.west;
-  const h = e.north - e.south;
-  if (w !== h) return `must be square (got ${w} x ${h} m; RESEARCH Pitfall 10)`;
-  if (w > MAX_SIDE_M) return `side ${w} m is over the ${MAX_SIDE_M} m limit`;
-  if ([e.west, e.south, e.east, e.north].some((v) => v % CELL_M !== 0))
-    return `edges must lie on the ${CELL_M} m grid (whole ${CELL_M} m cells)`;
-  return null;
-}
-
-/** `W,S,E,N` as four integers, checked by extentProblem. */
-function parseExtent(text) {
-  const parts = text.split(',');
-  if (parts.length !== 4 || !parts.every((p) => /^-?\d+$/.test(p)))
-    fail(`--extent must be four integers W,S,E,N (got ${text})`);
-  const [west, south, east, north] = parts.map(Number);
-  const extent = { west, south, east, north };
-  const problem = extentProblem(extent);
-  if (problem) fail(`--extent ${problem}`);
-  return extent;
-}
-
-const sameExtent = (a, b) =>
-  a.west === b.west && a.south === b.south && a.east === b.east && a.north === b.north;
-const extentText = (e) => `${e.west},${e.south},${e.east},${e.north}`;
 const tileName = (e, n) => `ALS_DTM_CRS3035RES50000mN${n}E${e}.tif`;
 
 /** Every BEV tile the extent touches (a tile covers [corner, corner + 50 km] on both axes). */
@@ -181,7 +145,7 @@ function tilesFor(extent) {
  * before the network.
  */
 function resolveTarget(argv) {
-  const opts = parseArgs(argv);
+  const opts = parseArgs(argv, ARGS);
   if (opts.plate === null) fail(`needs --plate <id> (${USAGE})`);
   const parsed = PlateId.safeParse(opts.plate);
   if (!parsed.success) fail(`--plate ${opts.plate}: ${parsed.error.issues[0].message}`);
@@ -221,47 +185,23 @@ function resolveTarget(argv) {
   return { id, extent, tile: tiles[0], dir: out ?? path.join(PLATES_DIR, id) };
 }
 
-/** `dir` relative to the repository when inside it, else absolute; forward slashes. */
-function shown(dir) {
-  const rel = path.relative(ROOT, dir);
-  const inside = rel && !rel.startsWith('..') && !path.isAbsolute(rel);
-  return (inside ? rel : dir).split(path.sep).join('/');
-}
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-/** An error's message with its cause (undici reports `fetch failed` and puts the socket error in `cause`). */
-const reasonOf = (e) => {
-  const msg = e && e.message ? e.message : String(e);
-  return e && e.cause && e.cause.message ? `${msg} (${e.cause.message})` : msg;
-};
-
 /** Retries across the whole run, for the report. */
 let retries = 0;
+/** fetch-retry.mjs's bounded retry: ATTEMPTS tries, BACKOFF_MS x the attempt number between them. */
+const RETRY = {
+  attempts: ATTEMPTS,
+  backoffMs: BACKOFF_MS,
+  onRetry: () => {
+    retries++;
+  },
+};
 
 /**
- * `attempt()` up to ATTEMPTS times, waiting BACKOFF_MS x the attempt number in
- * between. A thrown network error or an HTTP 5xx is retried; any other HTTP
- * status is final. The last failure names the tile.
+ * `attempt()` for one tile under RETRY. A thrown network error or an HTTP 5xx
+ * is retried; any other HTTP status is final (finalError). The last failure
+ * names the tile: "BEV tile <name> failed after 5 attempts: <reason>".
  */
-async function withRetry(tile, attempt) {
-  for (let n = 1; ; n++) {
-    try {
-      return await attempt();
-    } catch (e) {
-      if (e && e.final) throw e;
-      if (n >= ATTEMPTS) fail(`BEV tile ${tile} failed after ${ATTEMPTS} attempts: ${reasonOf(e)}`);
-      retries++;
-      await sleep(BACKOFF_MS * n);
-    }
-  }
-}
-
-/** A failure that a retry cannot fix (a 4xx status, a missing header, an ignored range). */
-function finalError(msg) {
-  const e = new Error(msg);
-  e.final = true;
-  return e;
-}
+const retryTile = (tile, attempt) => withRetry(`BEV tile ${tile}`, attempt, RETRY);
 
 /** A response whose body was read inside the retry, so a socket dropped mid-body is retried too. */
 class ReadResponse extends BaseResponse {
@@ -282,14 +222,14 @@ class ReadResponse extends BaseResponse {
   }
 }
 
-/** geotiff's client for one tile: every range request goes through withRetry (no global fetch patch). */
+/** geotiff's client for one tile: every range request goes through retryTile (no global fetch patch). */
 class RetryClient extends BaseClient {
   constructor(url, tile) {
     super(url);
     this.tile = tile;
   }
   async request({ headers, signal } = {}) {
-    return withRetry(this.tile, async () => {
+    return retryTile(this.tile, async () => {
       const res = await fetch(this.url, { headers, signal });
       if (res.status >= 500) {
         await res.body?.cancel();
@@ -313,7 +253,7 @@ class RetryClient extends BaseClient {
 /** The tile's URL, Content-Length and Last-Modified, as the server reports them. */
 async function headTile(tile) {
   const url = BEV_BASE_URL + tile.name;
-  return withRetry(tile.name, async () => {
+  return retryTile(tile.name, async () => {
     const res = await fetch(url, { method: 'HEAD' });
     if (res.status >= 500) throw new Error(`HTTP ${res.status}`);
     if (!res.ok) throw finalError(`BEV tile ${tile.name} returned HTTP ${res.status}`);
@@ -354,7 +294,7 @@ async function main() {
   const target = resolveTarget(process.argv.slice(2));
   const { extent, tile } = target;
   console.log(
-    `${NAME}: plate ${target.id}, extent ${extentText(extent)}, tile ${tile.name} -> ${shown(target.dir)}`
+    `${NAME}: plate ${target.id}, extent ${extentText(extent)}, tile ${tile.name} -> ${shown(ROOT, target.dir)}`
   );
 
   const head = await headTile(tile);
@@ -493,7 +433,7 @@ async function main() {
       `${retries} ${retries === 1 ? 'retry' : 'retries'}`
   );
   console.log(
-    `${NAME}: wrote ${shown(target.dir)}/${FILE} (${width} x ${height}, ${png.length} bytes, ` +
+    `${NAME}: wrote ${shown(ROOT, target.dir)}/${FILE} (${width} x ${height}, ${png.length} bytes, ` +
       `${min.toFixed(1)}..${max.toFixed(1)} m) and source.json (edition ${source.edition})`
   );
   console.log(`${NAME}: OK`);

@@ -57,6 +57,15 @@ import { fileURLToPath } from 'node:url';
 import { fromUrl } from 'geotiff';
 import sharp from 'sharp';
 import { PlateId, SwissAltiRegioSource, TerrainSource } from '../../data/schemas/terrain.ts';
+import {
+  CELL_M,
+  extentProblem,
+  extentText,
+  parseArgs,
+  parseExtent,
+  sameExtent,
+  shown,
+} from './plate-args.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SOURCE_DIR = path.join(ROOT, 'data', 'terrain', 'source');
@@ -69,9 +78,6 @@ const STAC_ITEM_URL =
 const HOME_PLATE = 'matterhorn';
 /** D-14 extent, confirmed by Tim at 08-04 Task 1 ("defaults"). Costly to change. */
 const HOME_EXTENT = { west: 2616000, south: 1088000, east: 2627000, north: 1099000 };
-/** The largest plate side (16 plate budgets). */
-const MAX_SIDE_M = 20000;
-const CELL_M = 10;
 /** Decimetres (Task 1 item 2): stored value = Math.round(m / HEIGHT_SCALE). */
 const HEIGHT_SCALE = 0.1;
 const FILE = 'dem-10m.png';
@@ -84,62 +90,15 @@ function fail(msg) {
 
 const USAGE =
   'usage: terrain:fetch --plate <id> [--extent W,S,E,N] [--out <dir>], or --plate matterhorn --force-home';
-
-/** `--plate`, `--extent`, `--force-home`, `--out`; anything else fails. */
-function parseArgs(argv) {
-  const opts = { plate: null, extent: null, out: null, forceHome: false };
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
-    if (arg === '--force-home') {
-      opts.forceHome = true;
-    } else if (arg === '--plate' || arg === '--extent' || arg === '--out') {
-      const value = argv[i + 1];
-      if (value === undefined || value.startsWith('--')) fail(`${arg} needs a value (${USAGE})`);
-      const key = arg.slice(2);
-      if (opts[key] !== null) fail(`${arg} given twice`);
-      opts[key] = value;
-      i++;
-    } else {
-      fail(`unknown argument ${arg} (${USAGE})`);
-    }
-  }
-  return opts;
-}
-
-/** Null when `e` is a square plate extent on the 10 m grid, at most MAX_SIDE_M a side; else the rule it breaks. */
-function extentProblem(e) {
-  if (!(e.west < e.east && e.south < e.north)) return 'needs west < east and south < north';
-  const w = e.east - e.west;
-  const h = e.north - e.south;
-  if (w !== h) return `must be square (got ${w} x ${h} m; RESEARCH Pitfall 10)`;
-  if (w > MAX_SIDE_M) return `side ${w} m is over the ${MAX_SIDE_M} m limit`;
-  if ([e.west, e.south, e.east, e.north].some((v) => v % CELL_M !== 0))
-    return `edges must lie on the ${CELL_M} m grid (whole ${CELL_M} m cells)`;
-  return null;
-}
-
-/** `W,S,E,N` as four integers, checked by extentProblem. */
-function parseExtent(text) {
-  const parts = text.split(',');
-  if (parts.length !== 4 || !parts.every((p) => /^-?\d+$/.test(p)))
-    fail(`--extent must be four integers W,S,E,N (got ${text})`);
-  const [west, south, east, north] = parts.map(Number);
-  const extent = { west, south, east, north };
-  const problem = extentProblem(extent);
-  if (problem) fail(`--extent ${problem}`);
-  return extent;
-}
-
-const sameExtent = (a, b) =>
-  a.west === b.west && a.south === b.south && a.east === b.east && a.north === b.north;
-const extentText = (e) => `${e.west},${e.south},${e.east},${e.north}`;
+/** `--plate`, `--extent`, `--out` and the `--force-home` flag; anything else fails (plate-args.mjs). */
+const ARGS = { values: ['plate', 'extent', 'out'], flags: ['force-home'], usage: USAGE };
 
 /**
  * The plate, its extent and the directory to write, from the arguments alone
  * (plus a recorded source.json): every refusal happens here, before the network.
  */
 function resolveTarget(argv) {
-  const opts = parseArgs(argv);
+  const opts = parseArgs(argv, ARGS);
   if (opts.plate === null)
     fail(
       'needs --plate <id> (the Matterhorn source is pinned by Phase 15 D-15; use --plate matterhorn --force-home to refetch it)'
@@ -178,13 +137,6 @@ function resolveTarget(argv) {
       `--extent ${extentText(given)} differs from plate ${id}'s recorded extent ${extentText(recorded.extent)}`
     );
   return { id, extent: recorded.extent, dir: out ?? path.join(PLATES_DIR, id) };
-}
-
-/** `dir` relative to the repository when inside it, else absolute; forward slashes. */
-function shown(dir) {
-  const rel = path.relative(ROOT, dir);
-  const inside = rel && !rel.startsWith('..') && !path.isAbsolute(rel);
-  return (inside ? rel : dir).split(path.sep).join('/');
 }
 
 async function stacItem() {
@@ -234,7 +186,7 @@ async function main() {
   // Every argument error is thrown here, before the first request.
   const target = resolveTarget(process.argv.slice(2));
   console.log(
-    `${NAME}: plate ${target.id}, extent ${extentText(target.extent)} -> ${shown(target.dir)}`
+    `${NAME}: plate ${target.id}, extent ${extentText(target.extent)} -> ${shown(ROOT, target.dir)}`
   );
 
   const item = await stacItem();
@@ -316,7 +268,7 @@ async function main() {
     'utf8'
   );
   console.log(
-    `${NAME}: wrote ${shown(target.dir)}/${FILE} (${width} x ${height}, ${png.length} bytes, ` +
+    `${NAME}: wrote ${shown(ROOT, target.dir)}/${FILE} (${width} x ${height}, ${png.length} bytes, ` +
       `${min.toFixed(1)}..${max.toFixed(1)} m) and source.json (edition ${source.edition})`
   );
   console.log(`${NAME}: OK`);

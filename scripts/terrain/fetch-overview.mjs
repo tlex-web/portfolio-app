@@ -54,6 +54,8 @@ import {
   OverviewSource,
   glo90TileName,
 } from '../../data/schemas/overview.ts';
+import { finalError, withRetry } from './fetch-retry.mjs';
+import { parseArgs, shown } from './plate-args.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const OUT_DIR = path.join(ROOT, 'data', 'terrain', 'overview');
@@ -109,74 +111,40 @@ function fail(msg) {
 
 const USAGE = 'usage: terrain:fetch:overview [--out <dir>]';
 
-/** `--out`; anything else fails. */
-function parseArgs(argv) {
-  let out = null;
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
-    if (arg === '--out') {
-      const value = argv[i + 1];
-      if (value === undefined || value.startsWith('--')) fail(`--out needs a value (${USAGE})`);
-      if (out !== null) fail('--out given twice');
-      out = value;
-      i++;
-    } else {
-      fail(`unknown argument ${arg} (${USAGE})`);
-    }
-  }
-  return { dir: out === null ? OUT_DIR : path.resolve(out) };
+/** `--out`; anything else fails (plate-args.mjs). */
+function resolveDir(argv) {
+  const { out } = parseArgs(argv, { values: ['out'], usage: USAGE });
+  return out === null ? OUT_DIR : path.resolve(out);
 }
-
-/** `dir` relative to the repository when inside it, else absolute; forward slashes. */
-function shown(dir) {
-  const rel = path.relative(ROOT, dir);
-  const inside = rel && !rel.startsWith('..') && !path.isAbsolute(rel);
-  return (inside ? rel : dir).split(path.sep).join('/');
-}
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-/** An error's message with its cause (undici reports `fetch failed` and puts the socket error in `cause`). */
-const reasonOf = (e) => {
-  const msg = e && e.message ? e.message : String(e);
-  return e && e.cause && e.cause.message ? `${msg} (${e.cause.message})` : msg;
-};
 
 /** Retries across the whole run, for the report. */
 let retries = 0;
-
 /**
- * `attempt()` up to ATTEMPTS times, waiting BACKOFF_MS x the attempt number in
- * between. A failure marked `final` (a tile that answers but is not the shape
- * this fetcher expects) is not retried. The last failure names `what`.
+ * fetch-retry.mjs's bounded retry: ATTEMPTS tries, BACKOFF_MS x the attempt
+ * number between them. A failure made by finalError (a tile that answers but is
+ * not the shape this fetcher expects) is not retried; the last failure names
+ * what was read: "<what> failed after 5 attempts: <reason>".
  */
-async function withRetry(what, attempt) {
-  for (let n = 1; ; n++) {
-    try {
-      return await attempt();
-    } catch (e) {
-      if (e && e.final) throw e;
-      if (n >= ATTEMPTS) fail(`${what} failed after ${ATTEMPTS} attempts: ${reasonOf(e)}`);
-      retries++;
-      await sleep(BACKOFF_MS * n);
-    }
-  }
-}
-
-/** A failure that a retry cannot fix. */
-function finalError(msg) {
-  const e = new Error(msg);
-  e.final = true;
-  return e;
-}
+const RETRY = {
+  attempts: ATTEMPTS,
+  backoffMs: BACKOFF_MS,
+  onRetry: () => {
+    retries++;
+  },
+};
 
 /** tileList.txt as text and the set of names it lists. */
 async function fetchTileList() {
-  const text = await withRetry('tileList.txt', async () => {
-    const res = await fetch(TILE_LIST_URL);
-    if (res.status >= 500) throw new Error(`HTTP ${res.status}`);
-    if (!res.ok) throw finalError(`tileList.txt returned HTTP ${res.status}`);
-    return res.text();
-  });
+  const text = await withRetry(
+    'tileList.txt',
+    async () => {
+      const res = await fetch(TILE_LIST_URL);
+      if (res.status >= 500) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw finalError(`tileList.txt returned HTTP ${res.status}`);
+      return res.text();
+    },
+    RETRY
+  );
   const names = new Set(
     text
       .split(/\r?\n/)
@@ -191,41 +159,45 @@ async function fetchTileList() {
 /** One listed tile's level-2 overview as metres, after the shape checks of step 3. */
 async function readTile(slot) {
   const url = `${BUCKET}${slot.name}/${slot.name}.tif`;
-  return withRetry(`GLO-90 tile ${slot.name}`, async () => {
-    const tiff = await fromUrl(url);
-    const full = await tiff.getImage(0);
-    if (full.getSamplesPerPixel() !== 1) throw finalError(`${slot.name} is not single-band`);
-    if (full.getWidth() !== FULL_PX || full.getHeight() !== FULL_PX)
-      throw finalError(
-        `${slot.name} is ${full.getWidth()} x ${full.getHeight()}, expected ${FULL_PX} x ${FULL_PX}`
-      );
-    if (full.getGeoKeys().GTRasterTypeGeoKey !== PIXEL_IS_POINT)
-      throw finalError(`${slot.name} is not PixelIsPoint`);
-    const [ox, oy] = full.getOrigin();
-    if (ox !== slot.lon || oy !== slot.lat + 1)
-      throw finalError(
-        `${slot.name} origin is ${ox}, ${oy}, expected ${slot.lon}, ${slot.lat + 1}`
-      );
-    if ((await tiff.getImageCount()) <= OVERVIEW_LEVEL)
-      throw finalError(`${slot.name} has no overview level ${OVERVIEW_LEVEL}`);
-    const ov = await tiff.getImage(OVERVIEW_LEVEL);
-    if (ov.getWidth() !== TILE_PX || ov.getHeight() !== TILE_PX)
-      throw finalError(`${slot.name} overview ${OVERVIEW_LEVEL} is not ${TILE_PX} x ${TILE_PX}`);
-    const [band] = await ov.readRasters({ samples: [0] });
-    if (!band || band.length !== TILE_PX * TILE_PX)
-      throw new Error(`${slot.name}: read ${band ? band.length : 0} values`);
-    for (let i = 0; i < band.length; i++) {
-      if (!Number.isFinite(band[i]) || band[i] < OVERVIEW_FLOOR_M || band[i] > MAX_M)
-        throw finalError(`${slot.name}: implausible height ${band[i]} at overview pixel ${i}`);
-    }
-    return band;
-  });
+  return withRetry(
+    `GLO-90 tile ${slot.name}`,
+    async () => {
+      const tiff = await fromUrl(url);
+      const full = await tiff.getImage(0);
+      if (full.getSamplesPerPixel() !== 1) throw finalError(`${slot.name} is not single-band`);
+      if (full.getWidth() !== FULL_PX || full.getHeight() !== FULL_PX)
+        throw finalError(
+          `${slot.name} is ${full.getWidth()} x ${full.getHeight()}, expected ${FULL_PX} x ${FULL_PX}`
+        );
+      if (full.getGeoKeys().GTRasterTypeGeoKey !== PIXEL_IS_POINT)
+        throw finalError(`${slot.name} is not PixelIsPoint`);
+      const [ox, oy] = full.getOrigin();
+      if (ox !== slot.lon || oy !== slot.lat + 1)
+        throw finalError(
+          `${slot.name} origin is ${ox}, ${oy}, expected ${slot.lon}, ${slot.lat + 1}`
+        );
+      if ((await tiff.getImageCount()) <= OVERVIEW_LEVEL)
+        throw finalError(`${slot.name} has no overview level ${OVERVIEW_LEVEL}`);
+      const ov = await tiff.getImage(OVERVIEW_LEVEL);
+      if (ov.getWidth() !== TILE_PX || ov.getHeight() !== TILE_PX)
+        throw finalError(`${slot.name} overview ${OVERVIEW_LEVEL} is not ${TILE_PX} x ${TILE_PX}`);
+      const [band] = await ov.readRasters({ samples: [0] });
+      if (!band || band.length !== TILE_PX * TILE_PX)
+        throw new Error(`${slot.name}: read ${band ? band.length : 0} values`);
+      for (let i = 0; i < band.length; i++) {
+        if (!Number.isFinite(band[i]) || band[i] < OVERVIEW_FLOOR_M || band[i] > MAX_M)
+          throw finalError(`${slot.name}: implausible height ${band[i]} at overview pixel ${i}`);
+      }
+      return band;
+    },
+    RETRY
+  );
 }
 
 async function main() {
   // Every argument error is thrown here, before the first request.
-  const { dir } = parseArgs(process.argv.slice(2));
-  console.log(`${NAME}: GLO-90 level ${OVERVIEW_LEVEL} -> ${shown(dir)}`);
+  const dir = resolveDir(process.argv.slice(2));
+  console.log(`${NAME}: GLO-90 level ${OVERVIEW_LEVEL} -> ${shown(ROOT, dir)}`);
 
   const started = Date.now();
   const list = await fetchTileList();
@@ -345,7 +317,7 @@ async function main() {
       `${retries} ${retries === 1 ? 'retry' : 'retries'}`
   );
   console.log(
-    `${NAME}: wrote ${shown(dir)}/${FILE} (${WIDTH} x ${HEIGHT}, ${png.length} bytes, ` +
+    `${NAME}: wrote ${shown(ROOT, dir)}/${FILE} (${WIDTH} x ${HEIGHT}, ${png.length} bytes, ` +
       `0..${max} m) and source.json`
   );
   console.log(`${NAME}: OK`);

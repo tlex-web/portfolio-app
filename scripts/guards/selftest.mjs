@@ -38,6 +38,8 @@ import { DOCS_ONLY_FILES, classify } from '../ci/classify-changes.mjs';
 import { boxes, checkMp4 } from './lib/mp4-boxes.mjs';
 import { extractRunBlock, runStep } from './lib/workflow-shell.mjs';
 import { LEGACY_DEAD_FILES, assertNoImporters, isLegacyDeadFile } from './lib/legacy-dead-files.mjs';
+import { extentProblem, extentText, parseArgs as parsePlateArgs } from '../terrain/plate-args.mjs';
+import { finalError, reasonOf, withRetry } from '../terrain/fetch-retry.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '..', '..');
@@ -4077,6 +4079,106 @@ const cases = [
       'terrain:fetch:bev: nothing written',
     ],
     check: (output) => (output.includes('https://') ? 'the run reached a BEV request' : fetchOutEmpty()),
+  },
+  {
+    // 16 IN-08: the plate extent rules live once in scripts/terrain/plate-args.mjs, for fetch-dem and fetch-bev.
+    name: 'fetch: plate-args rejects a non-square, an oversized and an off-grid extent',
+    fn: () => {
+      const refused = [
+        [{ west: 2832000, south: 1150000, east: 2844000, north: 1160000 }, 'must be square'],
+        [{ west: 0, south: 0, east: 25000, north: 25000 }, 'over the 20000 m limit'],
+        [{ west: 2832005, south: 1150005, east: 2844005, north: 1162005 }, '10 m grid'],
+      ];
+      for (const [extent, rule] of refused) {
+        const got = extentProblem(extent);
+        if (typeof got !== 'string' || !got.includes(rule))
+          return `extentProblem(${extentText(extent)}) gave ${got}, expected the '${rule}' rule`;
+      }
+      const valid = { west: 2832000, south: 1150000, east: 2844000, north: 1162000 };
+      const got = extentProblem(valid);
+      return got === null ? null : `a valid 12 km square on the 10 m grid gave ${got}`;
+    },
+  },
+  {
+    // 16 IN-08: one argument parser for the three fetchers, each refusal carrying the caller's usage line.
+    name: "fetch: parseArgs refuses a missing value, a repeated option and an unknown argument with the caller's usage",
+    fn: () => {
+      const spec = { values: ['plate', 'out'], flags: ['force-home'], usage: 'usage: probe' };
+      const refusals = [
+        [['--plate'], '--plate needs a value (usage: probe)'],
+        [['--plate', '--out', 'x'], '--plate needs a value (usage: probe)'],
+        [['--out', 'a', '--out', 'b'], '--out given twice'],
+        [['--bogus'], 'unknown argument --bogus (usage: probe)'],
+      ];
+      for (const [argv, msg] of refusals) {
+        let got = null;
+        try {
+          parsePlateArgs(argv, spec);
+        } catch (err) {
+          got = err.message;
+        }
+        if (got !== msg) return `parseArgs(${argv.join(' ')}) threw ${got}, expected ${msg}`;
+      }
+      const opts = JSON.stringify(parsePlateArgs(['--force-home', '--force-home', '--plate', 'probe'], spec));
+      const want = JSON.stringify({ plate: 'probe', out: null, forceHome: true });
+      return opts === want ? null : `parsed ${opts}, expected ${want}`;
+    },
+  },
+  {
+    // 16 IN-08: one bounded retry for fetch-bev and fetch-overview (RESEARCH Pitfall 3).
+    name: 'fetch: fetch-retry retries a network error and stops on a final error',
+    fn: async () => {
+      const cause = new Error('ECONNRESET');
+      let calls = 0;
+      const retried = [];
+      let thrown = null;
+      try {
+        await withRetry(
+          'probe tile',
+          async () => {
+            calls++;
+            throw new Error('fetch failed', { cause });
+          },
+          { attempts: 3, backoffMs: 0, onRetry: (n) => retried.push(n) }
+        );
+      } catch (err) {
+        thrown = err;
+      }
+      if (calls !== 3) return `a failing attempt ran ${calls} times, expected 3`;
+      if (retried.join(',') !== '1,2') return `onRetry saw attempts ${retried.join(',')}, expected 1,2`;
+      const wantText = 'probe tile failed after 3 attempts: fetch failed (ECONNRESET)';
+      if (!thrown || thrown.message !== wantText) return `the last failure said ${thrown && thrown.message}, expected ${wantText}`;
+
+      const final = finalError('probe tile returned HTTP 404');
+      calls = 0;
+      thrown = null;
+      try {
+        await withRetry(
+          'probe tile',
+          async () => {
+            calls++;
+            throw final;
+          },
+          { attempts: 3, backoffMs: 0 }
+        );
+      } catch (err) {
+        thrown = err;
+      }
+      if (thrown !== final || calls !== 1) return `a finalError ran ${calls} attempts and threw ${thrown && thrown.message}`;
+
+      calls = 0;
+      const value = await withRetry(
+        'probe tile',
+        async () => {
+          if (++calls < 2) throw new Error('HTTP 503');
+          return 'ok';
+        },
+        { attempts: 3, backoffMs: 0 }
+      );
+      if (value !== 'ok' || calls !== 2) return `a second attempt that succeeds returned ${value} after ${calls} calls`;
+      const reason = reasonOf(new Error('fetch failed', { cause }));
+      return reason === 'fetch failed (ECONNRESET)' ? null : `reasonOf gave ${reason}, without the cause message`;
+    },
   },
   {
     name: 'terrain: --check sees a missing prefixed plate file',
