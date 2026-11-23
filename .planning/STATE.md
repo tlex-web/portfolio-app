@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 16
 current_phase_name: New Regions & Alps Overview Data
 status: executing
-stopped_at: Completed 16-03-PLAN.md
-last_updated: "2026-11-23T01:11:58.599Z"
+stopped_at: Completed 16-04-PLAN.md
+last_updated: "2026-11-23T01:19:47.561Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 16 execution started
-state_head: f574a3d202c99cb43a56b01d5e2711e62d77ccca
+state_head: 5c5298b8656f3e0589f1a91feca3050e8a39840b
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 64
-  completed_plans: 49
+  completed_plans: 50
   percent: 43
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-15)
 ## Current Position
 
 Phase: 16 (New Regions & Alps Overview Data) — EXECUTING
-Plan: 4 of 18
+Plan: 5 of 18
 Status: Ready to execute
 Last activity: 2026-11-23 — Phase 16 execution started
 
@@ -105,6 +105,7 @@ Progress: [████░░░░░░] 43%
 | Phase 16 P01 | 28 min | 2 tasks | 9 files |
 | Phase 16 P02 | 21min | 3 tasks | 1 files |
 | Phase 16 P03 | 4 min | 2 tasks | 5 files |
+| Phase 16 P04 | 6min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -237,6 +238,8 @@ Recent decisions affecting current work:
 - [Phase 16]: 16-02: Mont Blanc 4,806 m IGN (Tim: "4,806 m IGN (Recommended)"); Triglav fifth summit marked secondary (Tim: "Yes, marked secondary (Recommended)")
 - [Phase 16]: 16-02: Plate extents stored as four corners in overview UV (planner default, not overridden)
 - [Phase 16]: 16-03: light-table membership is the explicit lightTableIds list (data/light-table.ts); LIGHT_TABLE_REGION stays as a tested check and seriesInput is unchanged for Phases 17-18
+- [Phase 16]: 16-04: each carried 15 info finding has its own commit (IN-04 7d5acb8, IN-03 6874684, IN-08 0a4274c, IN-07 1197c8d) for 16-18's disposition write-back
+- [Phase 16]: 16-04: @not-chromium drops a cross-engine e2e row from the chromium project in both modes when a @chromium-only row already covers it
 
 ### Pending Todos
 
@@ -296,6 +299,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-23T01:11:58.011Z
-Stopped at: Completed 16-03-PLAN.md
+Last session: 2026-11-23T01:19:46.970Z
+Stopped at: Completed 16-04-PLAN.md
 Resume file: None
