@@ -2,6 +2,18 @@
   "schemaVersion": 1,
   "regions": [
     {
+      "id": "ortler",
+      "name": "Ortler",
+      "country": "IT",
+      "plate": "ortler",
+      "facts": [
+        {
+          "text": "The Ortler is the highest mountain in South Tyrol and the main peak of the Ortler Alps.",
+          "source": "https://en.wikipedia.org/wiki/Ortler"
+        }
+      ]
+    },
+    {
       "id": "saalfelden",
       "name": "Saalfelden",
       "country": "AT",

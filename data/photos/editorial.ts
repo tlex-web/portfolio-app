@@ -14,8 +14,10 @@
  * The slugs become public URLs when Phase 10 ships /photos/[slug] (D-07).
  * The five photos added in Phase 16 (img-0680, img-0682, sam-20240910-143659 and
  * the two dji- stills) carry the copy Tim approved in 16-08 (16-08-SUMMARY.md,
- * "Approved copy"), verbatim, with no annotations; they stay off the light table
- * and get pages in Phase 17 (D-15).
+ * "Approved copy"), verbatim, with no annotations. The two Ortler photos
+ * (sam-20160717-120906, sam-20160717-124904) carry the copy Tim approved in 16-17
+ * (16-17-SUMMARY.md, "Tim's reply"), verbatim, with no annotations. All seven stay
+ * off the light table and get pages in Phase 17 (D-15).
  */
 import type { Editorial } from '@/data/schemas/editorial';
 import type { photos } from '@/data/generated/photos';
@@ -216,6 +218,26 @@ export const editorial: Record<PhotoId, Editorial> = {
         },
       },
     ],
+  },
+  'sam-20160717-120906': {
+    slug: 'meadow-stream-below-the-peaks',
+    title: 'Meadow stream below the peaks',
+    alt: 'A small stream runs through long, sunlit grass towards a dark conifer forest, with a snow-streaked rock massif and white cloud above under a deep blue-green sky',
+    location: 'Ortler Alps, Italy',
+    story:
+      'I took this with my phone in July 2016, on a summer walk in the Ortler Alps. I crouched low by a small stream so it would lead up through the meadow to the peaks.',
+    subjectTags: ['landscape', 'stream', 'mountains'],
+    annotations: [],
+  },
+  'sam-20160717-124904': {
+    slug: 'forested-valley-below-the-peaks',
+    title: 'Forested valley below the peaks',
+    alt: 'A long rock massif streaked with snow and pale scree rises above dark larch and pine forest, with green meadows and a small village in the valley below a blue sky with white cloud',
+    location: 'Ortler Alps, Italy',
+    story:
+      'Forty minutes later the view opened up across the whole valley. The forest ran up to the pale scree and the snow-streaked rock above it.',
+    subjectTags: ['landscape', 'valley', 'forest'],
+    annotations: [],
   },
   'sam-20240910-143659': {
     slug: 'matterhorn-wrapped-in-cloud',

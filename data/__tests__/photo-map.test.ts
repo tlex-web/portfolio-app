@@ -55,10 +55,23 @@ describe('photo map and region registry: committed data', () => {
     expect(Regions.safeParse(readJson('data/regions/regions.json')).success).toBe(true);
   });
 
-  test('D-03, 16 D-08 / D-13: the registry holds saalfelden and zermatt, each with its country, plate and approved facts', () => {
+  test('D-03, 16 D-08 / D-13: the registry holds ortler, saalfelden and zermatt, each with its country, plate and approved facts', () => {
     // 16-14 rewrite in place (GUARD-03): the registry grew from zermatt alone to the
     // two regions Tim approved in 16-08; zermatt keeps plate matterhorn (D-14).
-    expect(regions.regions.map((r) => r.id)).toEqual(['saalfelden', 'zermatt']);
+    // 16-17 adds ortler with the one fact Tim kept (16-17-SUMMARY, "Tim's reply").
+    expect(regions.regions.map((r) => r.id)).toEqual(['ortler', 'saalfelden', 'zermatt']);
+    expect(region('ortler')).toEqual({
+      id: 'ortler',
+      name: 'Ortler',
+      country: 'IT',
+      plate: 'ortler',
+      facts: [
+        {
+          text: 'The Ortler is the highest mountain in South Tyrol and the main peak of the Ortler Alps.',
+          source: 'https://en.wikipedia.org/wiki/Ortler',
+        },
+      ],
+    });
     expect(region('zermatt')).toEqual({
       id: 'zermatt',
       name: 'Zermatt',
@@ -196,6 +209,34 @@ describe('photo map and region registry: committed data', () => {
 
   test("D-02: every 16-08 photo's record is exactly Tim's recorded file, region, country, precision and kind", () => {
     for (const id of Object.keys(TIM_16_08)) expect(record(id)).toEqual(TIM_16_08[id]);
+  });
+
+  /**
+   * Tim's 16-17 decisions (16-17-SUMMARY "Tim's reply"): both Ortler photos at 3dp,
+   * ground, IT, region ortler. 16 D-02 is one-way, so a differing record fails here.
+   */
+  const TIM_16_17: Record<
+    string,
+    { file: string; region: string; country: string; precision: string; kind: string }
+  > = {
+    'sam-20160717-120906': {
+      file: '20160717_120906-Topaz-Sharpen-Strong-Denoise-2.jpg',
+      region: 'ortler',
+      country: 'IT',
+      precision: '3dp',
+      kind: 'ground',
+    },
+    'sam-20160717-124904': {
+      file: '20160717_124904-Topaz-Sharpen-Auto-Denoise-2.jpg',
+      region: 'ortler',
+      country: 'IT',
+      precision: '3dp',
+      kind: 'ground',
+    },
+  };
+
+  test("D-02: every 16-17 Ortler photo's record is exactly Tim's recorded file, region, country, precision and kind", () => {
+    for (const id of Object.keys(TIM_16_17)) expect(record(id)).toEqual(TIM_16_17[id]);
   });
 
   test("D-05: each generated photo's region and country equal its record's", () => {

@@ -40,6 +40,28 @@ export const overview = {
   "hillshade": false,
   "outlines": [
     {
+      "region": "ortler",
+      "plate": "ortler",
+      "corners": [
+        {
+          "u": 0.4571,
+          "v": 0.4233
+        },
+        {
+          "u": 0.4701,
+          "v": 0.424
+        },
+        {
+          "u": 0.4707,
+          "v": 0.406
+        },
+        {
+          "u": 0.4576,
+          "v": 0.4053
+        }
+      ]
+    },
+    {
       "region": "saalfelden",
       "plate": "saalfelden",
       "corners": [

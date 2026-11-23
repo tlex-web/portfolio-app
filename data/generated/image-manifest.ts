@@ -329,6 +329,88 @@ export const imageManifest = {
       "src": "/images/photos/r004-011-1200.a4109053fa.jpg"
     }
   },
+  "sam-20160717-120906": {
+    "sourceSha256": "037684c3c8fec2deed26303ef5ee732e2ca1e8e6162bef5904d0383d713a944f",
+    "width": 6048,
+    "height": 8064,
+    "variants": [
+      {
+        "longEdge": 640,
+        "width": 480,
+        "height": 640,
+        "avif": "/images/photos/sam-20160717-120906-640.13968b6ab4.avif",
+        "webp": "/images/photos/sam-20160717-120906-640.781886802f.webp"
+      },
+      {
+        "longEdge": 1024,
+        "width": 768,
+        "height": 1024,
+        "avif": "/images/photos/sam-20160717-120906-1024.5d2f2aa7b0.avif",
+        "webp": "/images/photos/sam-20160717-120906-1024.10405215a7.webp"
+      },
+      {
+        "longEdge": 1600,
+        "width": 1200,
+        "height": 1600,
+        "avif": "/images/photos/sam-20160717-120906-1600.5dc0661c03.avif",
+        "webp": "/images/photos/sam-20160717-120906-1600.7516ba1c34.webp"
+      },
+      {
+        "longEdge": 2560,
+        "width": 1920,
+        "height": 2560,
+        "avif": "/images/photos/sam-20160717-120906-2560.f8a4c3b66b.avif",
+        "webp": "/images/photos/sam-20160717-120906-2560.55089e4ed0.webp"
+      }
+    ],
+    "jpeg": {
+      "longEdge": 1200,
+      "width": 900,
+      "height": 1200,
+      "src": "/images/photos/sam-20160717-120906-1200.bc6857d551.jpg"
+    }
+  },
+  "sam-20160717-124904": {
+    "sourceSha256": "ddd6e2bb27f83e4d8d761be3fbe5886f59fbe6c24254169bc0aa9ea844c3d00b",
+    "width": 4032,
+    "height": 3024,
+    "variants": [
+      {
+        "longEdge": 640,
+        "width": 640,
+        "height": 480,
+        "avif": "/images/photos/sam-20160717-124904-640.9d5bba185a.avif",
+        "webp": "/images/photos/sam-20160717-124904-640.2a12bd67a5.webp"
+      },
+      {
+        "longEdge": 1024,
+        "width": 1024,
+        "height": 768,
+        "avif": "/images/photos/sam-20160717-124904-1024.d669552553.avif",
+        "webp": "/images/photos/sam-20160717-124904-1024.4f34067db9.webp"
+      },
+      {
+        "longEdge": 1600,
+        "width": 1600,
+        "height": 1200,
+        "avif": "/images/photos/sam-20160717-124904-1600.418f670835.avif",
+        "webp": "/images/photos/sam-20160717-124904-1600.f8e3cce884.webp"
+      },
+      {
+        "longEdge": 2560,
+        "width": 2560,
+        "height": 1920,
+        "avif": "/images/photos/sam-20160717-124904-2560.c7fba222e5.avif",
+        "webp": "/images/photos/sam-20160717-124904-2560.d2866279e4.webp"
+      }
+    ],
+    "jpeg": {
+      "longEdge": 1200,
+      "width": 1200,
+      "height": 900,
+      "src": "/images/photos/sam-20160717-124904-1200.4155138ed5.jpg"
+    }
+  },
   "sam-20240910-143659": {
     "sourceSha256": "17819a169996051ed36fb83bf9004e56f386e3f3277e229e42c051e4f01e1148",
     "width": 16320,

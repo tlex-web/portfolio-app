@@ -343,6 +343,94 @@ export const photos = [
     }
   },
   {
+    "id": "sam-20160717-120906",
+    "region": "ortler",
+    "country": "IT",
+    "kind": "ground",
+    "medium": "digital",
+    "capture": {
+      "precision": "second",
+      "local": "2016-07-17T12:09:06",
+      "timeZone": "Europe/Zurich",
+      "offset": "+02:00",
+      "source": "exif"
+    },
+    "position": {
+      "lat": 46.534,
+      "lon": 10.605,
+      "precision": "3dp",
+      "source": "exif",
+      "approximate": true,
+      "reason": "Position rounded to about 100 m (3 decimals) for privacy",
+      "radiusM": 100
+    },
+    "uv": {
+      "u": 0.7374,
+      "v": 0.2887
+    },
+    "elevation": {
+      "source": "dem",
+      "m": 2190
+    },
+    "exif": {
+      "camera": "SM-G930F",
+      "lens": "Samsung Galaxy S7 Rear Camera",
+      "focalLengthMm": 4.2,
+      "fNumber": 1.7,
+      "exposureTimeS": 0.00045454545454545455,
+      "iso": 40
+    },
+    "tags": {
+      "year": "2016",
+      "season": "summer"
+    },
+    "locationOverride": null
+  },
+  {
+    "id": "sam-20160717-124904",
+    "region": "ortler",
+    "country": "IT",
+    "kind": "ground",
+    "medium": "digital",
+    "capture": {
+      "precision": "second",
+      "local": "2016-07-17T12:49:04",
+      "timeZone": "Europe/Zurich",
+      "offset": "+02:00",
+      "source": "exif"
+    },
+    "position": {
+      "lat": 46.514,
+      "lon": 10.621,
+      "precision": "3dp",
+      "source": "exif",
+      "approximate": true,
+      "reason": "Position rounded to about 100 m (3 decimals) for privacy",
+      "radiusM": 100
+    },
+    "uv": {
+      "u": 0.8471,
+      "v": 0.4697
+    },
+    "elevation": {
+      "source": "dem",
+      "m": 2520
+    },
+    "exif": {
+      "camera": "SM-G930F",
+      "lens": "Samsung Galaxy S7 Rear Camera",
+      "focalLengthMm": 4.2,
+      "fNumber": 1.7,
+      "exposureTimeS": 0.0004166666666666667,
+      "iso": 40
+    },
+    "tags": {
+      "year": "2016",
+      "season": "summer"
+    },
+    "locationOverride": null
+  },
+  {
     "id": "sam-20240910-143659",
     "region": "zermatt",
     "country": "CH",

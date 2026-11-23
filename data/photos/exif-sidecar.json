@@ -199,6 +199,58 @@
       "gps": null
     },
     {
+      "id": "sam-20160717-120906",
+      "file": "20160717_120906-Topaz-Sharpen-Strong-Denoise-2.jpg",
+      "sha256": "037684c3c8fec2deed26303ef5ee732e2ca1e8e6162bef5904d0383d713a944f",
+      "width": 6048,
+      "height": 8064,
+      "orientation": null,
+      "space": "srgb",
+      "iccDescription": "sRGB IEC61966-2.1",
+      "make": "samsung",
+      "model": "SM-G930F",
+      "lens": "Samsung Galaxy S7 Rear Camera",
+      "focalLengthMm": 4.2,
+      "fNumber": 1.7,
+      "exposureTimeS": 0.00045454545454545455,
+      "iso": 40,
+      "dateTimeOriginal": "2016-07-17T12:09:06",
+      "offsetTimeOriginal": null,
+      "gps": {
+        "lat": 46.534,
+        "lon": 10.605,
+        "altM": null,
+        "utc": null,
+        "groundM": 2190
+      }
+    },
+    {
+      "id": "sam-20160717-124904",
+      "file": "20160717_124904-Topaz-Sharpen-Auto-Denoise-2.jpg",
+      "sha256": "ddd6e2bb27f83e4d8d761be3fbe5886f59fbe6c24254169bc0aa9ea844c3d00b",
+      "width": 4032,
+      "height": 3024,
+      "orientation": null,
+      "space": "srgb",
+      "iccDescription": "sRGB IEC61966-2.1",
+      "make": "samsung",
+      "model": "SM-G930F",
+      "lens": "Samsung Galaxy S7 Rear Camera",
+      "focalLengthMm": 4.2,
+      "fNumber": 1.7,
+      "exposureTimeS": 0.0004166666666666667,
+      "iso": 40,
+      "dateTimeOriginal": "2016-07-17T12:49:04",
+      "offsetTimeOriginal": null,
+      "gps": {
+        "lat": 46.514,
+        "lon": 10.621,
+        "altM": null,
+        "utc": null,
+        "groundM": 2520
+      }
+    },
+    {
       "id": "sam-20240910-143659",
       "file": "20240910_143659.jpg",
       "sha256": "17819a169996051ed36fb83bf9004e56f386e3f3277e229e42c051e4f01e1148",

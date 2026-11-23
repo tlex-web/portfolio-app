@@ -61,7 +61,7 @@ describe('editorial copy (DATA-03, D-05, D-07)', () => {
     const slugs = ids.map((id) => editorial[id].slug);
     expect(new Set(slugs).size).toBe(slugs.length);
     // 16-14 rewrite in place (GUARD-03): the slugs are pinned per id, so a new photo
-    // adds its approved slug (Tim, 08-10 for the v2.0 four, 16-08 for the rest)
+    // adds its approved slug (Tim, 08-10 for the v2.0 four, 16-08 for the next five, 16-17 for Ortler)
     // instead of breaking a four-entry list.
     const approved: Record<string, string> = {
       'img-0605': 'matterhorn-from-zermatt',
@@ -71,6 +71,8 @@ describe('editorial copy (DATA-03, D-05, D-07)', () => {
       'dji-20260919-163558': 'saalfelden-valley-from-the-air',
       'img-0680': 'mirrored-snow-peaks',
       'img-0682': 'butterfly-on-a-thistle',
+      'sam-20160717-120906': 'meadow-stream-below-the-peaks',
+      'sam-20160717-124904': 'forested-valley-below-the-peaks',
       'sam-20240910-143659': 'matterhorn-wrapped-in-cloud',
       'r004-011': 'riffelsee-reflection',
     };

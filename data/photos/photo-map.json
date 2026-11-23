@@ -57,6 +57,20 @@
       "precision": "4dp",
       "kind": "ground"
     },
+    "sam-20160717-120906": {
+      "file": "20160717_120906-Topaz-Sharpen-Strong-Denoise-2.jpg",
+      "region": "ortler",
+      "country": "IT",
+      "precision": "3dp",
+      "kind": "ground"
+    },
+    "sam-20160717-124904": {
+      "file": "20160717_124904-Topaz-Sharpen-Auto-Denoise-2.jpg",
+      "region": "ortler",
+      "country": "IT",
+      "precision": "3dp",
+      "kind": "ground"
+    },
     "sam-20240910-143659": {
       "file": "20240910_143659.jpg",
       "region": "zermatt",
