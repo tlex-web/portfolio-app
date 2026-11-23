@@ -59,14 +59,14 @@ recorded: 2026-11-15T00:33:13.527Z
 | WR-01 | warning | fixed | 15-REVIEW-FIX.md |
 | WR-02 | warning | fixed | 15-REVIEW-FIX.md |
 | WR-03 | warning | fixed | 15-REVIEW-FIX.md |
-| IN-01 | info | deferred | Phase 16: Tim chose "Fix all 3 warnings now (Recommended)" on 2026-11-15 (warnings only; info deferred) |
-| IN-02 | info | deferred | Phase 16: Tim chose "Fix all 3 warnings now (Recommended)" on 2026-11-15 (warnings only; info deferred) |
-| IN-03 | info | deferred | Phase 16: Tim chose "Fix all 3 warnings now (Recommended)" on 2026-11-15 (warnings only; info deferred) |
-| IN-04 | info | deferred | Phase 16: Tim chose "Fix all 3 warnings now (Recommended)" on 2026-11-15 (warnings only; info deferred) |
-| IN-05 | info | deferred | Phase 16: Tim chose "Fix all 3 warnings now (Recommended)" on 2026-11-15 (warnings only; info deferred) |
-| IN-06 | info | deferred | Phase 16: Tim chose "Fix all 3 warnings now (Recommended)" on 2026-11-15 (warnings only; info deferred) |
-| IN-07 | info | deferred | Phase 16: Tim chose "Fix all 3 warnings now (Recommended)" on 2026-11-15 (warnings only; info deferred) |
-| IN-08 | info | deferred | Phase 16: Tim chose "Fix all 3 warnings now (Recommended)" on 2026-11-15 (warnings only; info deferred) |
+| IN-01 | info | deferred | Phase 16: Tim chose "Fix all 3 warnings now (Recommended)" on 2026-11-15 (warnings only; info deferred); fixed in Phase 16: 16-10 `6ac809e` |
+| IN-02 | info | deferred | Phase 16: Tim chose "Fix all 3 warnings now (Recommended)" on 2026-11-15 (warnings only; info deferred); fixed in Phase 16: 16-18 `1232553` |
+| IN-03 | info | deferred | Phase 16: Tim chose "Fix all 3 warnings now (Recommended)" on 2026-11-15 (warnings only; info deferred); fixed in Phase 16: 16-04 `6874684` |
+| IN-04 | info | deferred | Phase 16: Tim chose "Fix all 3 warnings now (Recommended)" on 2026-11-15 (warnings only; info deferred); fixed in Phase 16: 16-04 `7d5acb8` |
+| IN-05 | info | deferred | Phase 16: Tim chose "Fix all 3 warnings now (Recommended)" on 2026-11-15 (warnings only; info deferred); fixed in Phase 16: 16-10 `6ac809e` |
+| IN-06 | info | deferred | Phase 16: Tim chose "Fix all 3 warnings now (Recommended)" on 2026-11-15 (warnings only; info deferred); fixed in Phase 16: 16-10 `6ac809e` |
+| IN-07 | info | deferred | Phase 16: Tim chose "Fix all 3 warnings now (Recommended)" on 2026-11-15 (warnings only; info deferred); fixed in Phase 16: 16-04 `1197c8d` |
+| IN-08 | info | deferred | Phase 16: Tim chose "Fix all 3 warnings now (Recommended)" on 2026-11-15 (warnings only; info deferred); fixed in Phase 16: 16-04 `0a4274c` |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
