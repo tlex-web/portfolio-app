@@ -46,11 +46,18 @@ export const FORBIDDEN_IN_CLIENT_GRAPH = [
 ] as const;
 
 /**
- * Modules that no client entry may reach (repo-relative), whatever its page: the
- * Alps overview's outlines, summits and GLO-90 notice (16-15, T-16-36). The
- * generated header of data/generated/overview.ts points here.
+ * Modules that no client entry may reach (repo-relative), whatever its page:
+ *
+ * - data/generated/overview.ts: the Alps overview's outlines, summits and GLO-90
+ *   notice (16-15, T-16-36). Its generated header points here.
+ * - data/regions/regions.json: the region registry, names and sourced facts
+ *   (17 D-06, T-17-34). The 17-RESEARCH spike measured +2,200 B of client JS, with
+ *   the registry facts in two client chunks, when lib/photos/routes.ts imported
+ *   it (the pure annotation does not drop a JSON module). Only lib/regions.ts,
+ *   lib/photos/region-ids.ts (for proxy.ts), server pages and server routes may
+ *   import it. The walk resolves the exact .json path as a leaf.
  */
-export const SERVER_ONLY_MODULES = ['data/generated/overview.ts'] as const;
+export const SERVER_ONLY_MODULES = ['data/generated/overview.ts', 'data/regions/regions.json'] as const;
 
 const ROOT = process.cwd();
 const ENTRY = 'app/global-error.tsx';
