@@ -1058,6 +1058,7 @@ const noSortRefine = (output) =>
   /sorted ascending/.test(output) ? 'the output names a sorted-order refine; the fixture edit broke the order' : null;
 let photoDataControlRoot = null;
 let photoDataOffsetRoot = null;
+let photoDataRomeRoot = null;
 let photoDataGpsRoot = null;
 let photoDataOffPlateRoot = null;
 let photoDataAerialAltRoot = null;
@@ -3462,6 +3463,25 @@ const cases = [
     expectExit: 1,
     expectOutput: ['img-0605: EXIF OffsetTimeOriginal +01:00 is not the Europe/Zurich offset +02:00', 'photos:build: stale'],
   },
+  // 17 D-26: a capture's offset is derived in its photo's country zone, so an Ortler
+  // (IT) photo is checked against Europe/Rome, not Europe/Zurich.
+  {
+    name: "G5 photos:build --check: an Ortler (IT) photo's EXIF offset is checked against Europe/Rome (D-26)",
+    guard: PHOTO_DATA,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: ['--check'],
+    setup: () => {
+      photoDataRomeRoot = tempPhotoDataRoot(({ sidecar, photoMap }) => {
+        const entry = sidecarEntry(sidecar, 'sam-20160717-120906');
+        if (mapRecord(photoMap, 'sam-20160717-120906').country !== 'IT') throw new Error('selftest: sam-20160717-120906 is no longer an IT photo');
+        if (!entry.dateTimeOriginal?.startsWith('2016-07-')) throw new Error('selftest: sam-20160717-120906 is no longer a July capture');
+        entry.offsetTimeOriginal = '+01:00';
+      });
+      return ['--root', photoDataRomeRoot];
+    },
+    expectExit: 1,
+    expectOutput: ['sam-20160717-120906: EXIF OffsetTimeOriginal +01:00 is not the Europe/Rome offset +02:00', 'photos:build: stale'],
+  },
   {
     name: 'G5 photos:build --check: a GPS UTC time one hour off the capture time fails (D-04)',
     guard: PHOTO_DATA,
@@ -4310,7 +4330,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDataAerialAltRoot, photoDataDjiGroundRoot, photoDataGroundSourceRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, exifMappedRoot, exifUnmappedRoot, exifDuplicateRoot, terrainFixtureRoot, terrainLaeaRoot, terrainStripRoot, terrainUnreadableRoot, terrainMissingRoot, terrainRemoveRoot, terrainDropCheckRoot, terrainDropWriteRoot, fetchOutRoot, ...ciGateTempRoots, ...telemetryTempRoots, ...privacyTempRoots]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataRomeRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDataAerialAltRoot, photoDataDjiGroundRoot, photoDataGroundSourceRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, exifMappedRoot, exifUnmappedRoot, exifDuplicateRoot, terrainFixtureRoot, terrainLaeaRoot, terrainStripRoot, terrainUnreadableRoot, terrainMissingRoot, terrainRemoveRoot, terrainDropCheckRoot, terrainDropWriteRoot, fetchOutRoot, ...ciGateTempRoots, ...telemetryTempRoots, ...privacyTempRoots]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 

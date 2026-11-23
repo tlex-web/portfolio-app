@@ -9,8 +9,9 @@
  * malformed or over-precise value never reaches a commit.
  *
  * - D-04: capture times are the camera's naive local wall time
- *   (`DateTimeOriginal`, no offset). The Europe/Zurich offset is derived in
- *   stage 2 (08-08), never stored here.
+ *   (`DateTimeOriginal`, no offset). The offset of the photo's country zone
+ *   (Europe/Zurich for CH, 17 D-26) is derived in stage 2 (08-08), never stored
+ *   here.
  * - D-03: the film scan's `dateTimeOriginal` is its scan date; the sidecar keeps
  *   the raw value and stage 2 must never treat it as a capture date.
  * - DATA-06: GPS is rounded at extraction (`Coord4` rejects more than 4
@@ -162,6 +163,36 @@ export type PhotoId = z.infer<typeof PhotoId>;
 export const Country = z.enum(['AT', 'CH', 'DE', 'FR', 'IT', 'LI', 'MC', 'SI']);
 export type Country = z.infer<typeof Country>;
 
+/**
+ * The IANA time zone of each country (17 D-26), one closed map over the whole
+ * Country list, so a new country cannot fall through to another's zone. An EXIF
+ * capture is labelled with its photo's country zone; every zone here is CET/CEST,
+ * so the offset is always +01:00 or +02:00. photos:build imports it.
+ */
+export const ZONE_BY_COUNTRY = {
+  AT: 'Europe/Vienna',
+  CH: 'Europe/Zurich',
+  DE: 'Europe/Berlin',
+  FR: 'Europe/Paris',
+  IT: 'Europe/Rome',
+  LI: 'Europe/Vaduz',
+  MC: 'Europe/Monaco',
+  SI: 'Europe/Ljubljana',
+} as const satisfies Record<Country, string>;
+
+/** A capture's time zone: one of the country zones (17 D-26). */
+export const TimeZone = z.enum([
+  'Europe/Vienna',
+  'Europe/Zurich',
+  'Europe/Berlin',
+  'Europe/Paris',
+  'Europe/Rome',
+  'Europe/Vaduz',
+  'Europe/Monaco',
+  'Europe/Ljubljana',
+]);
+export type TimeZone = z.infer<typeof TimeZone>;
+
 /** A region id slug; whether it is in data/regions/regions.json is checked by photos:build. */
 const RegionSlug = z
   .string()
@@ -229,8 +260,9 @@ export type PhotoMap = z.infer<typeof PhotoMap>;
 /**
  * When a photo was taken (D-03, D-04).
  *
- * - `second`: the camera's naive local wall time from EXIF, with the
- *   Europe/Zurich offset computed at build time, so runtime code never needs
+ * - `second`: the camera's naive local wall time from EXIF, labelled with the
+ *   photo's country zone (17 D-26; PhotoFacts holds the two equal) and that
+ *   zone's offset computed at build time, so runtime code never needs
  *   time-zone data.
  * - `year`: a year Tim supplied (the film scan). Strict, so no month or day can
  *   ride along (RESEARCH Pitfall 5): a year-only capture never invents a date.
@@ -239,7 +271,7 @@ export const Capture = z.discriminatedUnion('precision', [
   z.strictObject({
     precision: z.literal('second'),
     local: NaiveLocal,
-    timeZone: z.literal('Europe/Zurich'),
+    timeZone: TimeZone,
     offset: z.enum(['+01:00', '+02:00']),
     source: z.literal('exif'),
   }),
@@ -374,25 +406,35 @@ export type Corrections = z.infer<typeof Corrections>;
  * season. `uv` is the terrain UV (DATA-01) of `position`, rounded to 4 decimals,
  * and bounded to [0, 1]: a photo off the DEM sheet has no pin or tick to place
  * (08-REVIEW WR-01; the build fails before it samples a clamped edge height).
+ * A second-precision capture's `timeZone` is its `country`'s zone (17 D-26).
  */
-export const PhotoFacts = z.strictObject({
-  id: PhotoId,
-  /** The photo's region (D-05), from its photo-map record. */
-  region: RegionSlug,
-  /** The photo's country (D-02, D-05), from its photo-map record; never derived. */
-  country: Country,
-  /** Ground or aerial (16 D-04), from its photo-map record; never derived. */
-  kind: PhotoKind,
-  medium: z.enum(['digital', 'film-scan']),
-  capture: Capture,
-  position: Position.nullable(),
-  uv: z.strictObject({ u: z.number().min(0).max(1), v: z.number().min(0).max(1) }).nullable(),
-  elevation: Elevation.nullable(),
-  exif: Exposure.nullable(),
-  tags: z.strictObject({
-    year: z.string().regex(/^\d{4}$/),
-    season: z.enum(['winter', 'spring', 'summer', 'autumn']).nullable(),
-  }),
-  locationOverride: LocationOverride.nullable(),
-});
+export const PhotoFacts = z
+  .strictObject({
+    id: PhotoId,
+    /** The photo's region (D-05), from its photo-map record. */
+    region: RegionSlug,
+    /** The photo's country (D-02, D-05), from its photo-map record; never derived. */
+    country: Country,
+    /** Ground or aerial (16 D-04), from its photo-map record; never derived. */
+    kind: PhotoKind,
+    medium: z.enum(['digital', 'film-scan']),
+    capture: Capture,
+    position: Position.nullable(),
+    uv: z.strictObject({ u: z.number().min(0).max(1), v: z.number().min(0).max(1) }).nullable(),
+    elevation: Elevation.nullable(),
+    exif: Exposure.nullable(),
+    tags: z.strictObject({
+      year: z.string().regex(/^\d{4}$/),
+      season: z.enum(['winter', 'spring', 'summer', 'autumn']).nullable(),
+    }),
+    locationOverride: LocationOverride.nullable(),
+  })
+  .refine(
+    (p) =>
+      p.capture.precision !== 'second' || p.capture.timeZone === ZONE_BY_COUNTRY[p.country],
+    {
+      message: "a capture's timeZone is its photo's country zone (17 D-26)",
+      path: ['capture', 'timeZone'],
+    }
+  );
 export type PhotoFacts = z.infer<typeof PhotoFacts>;

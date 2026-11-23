@@ -10,7 +10,7 @@ export const photos = [
     "capture": {
       "precision": "second",
       "local": "2026-09-19T16:22:30",
-      "timeZone": "Europe/Zurich",
+      "timeZone": "Europe/Vienna",
       "offset": "+02:00",
       "source": "exif"
     },
@@ -54,7 +54,7 @@ export const photos = [
     "capture": {
       "precision": "second",
       "local": "2026-09-19T16:35:55",
-      "timeZone": "Europe/Zurich",
+      "timeZone": "Europe/Vienna",
       "offset": "+02:00",
       "source": "exif"
     },
@@ -351,7 +351,7 @@ export const photos = [
     "capture": {
       "precision": "second",
       "local": "2016-07-17T12:09:06",
-      "timeZone": "Europe/Zurich",
+      "timeZone": "Europe/Rome",
       "offset": "+02:00",
       "source": "exif"
     },
@@ -395,7 +395,7 @@ export const photos = [
     "capture": {
       "precision": "second",
       "local": "2016-07-17T12:49:04",
-      "timeZone": "Europe/Zurich",
+      "timeZone": "Europe/Rome",
       "offset": "+02:00",
       "source": "exif"
     },

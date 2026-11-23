@@ -23,7 +23,9 @@
  *   medium     corrections, else 'digital'. A film scan must carry a year
  *              captureOverride, because its EXIF date is the scan date (D-03).
  *   capture    the year override, else the EXIF naive local time with timeZone
- *              Europe/Zurich and the offset Node's ICU gives for that wall time
+ *              ZONE_BY_COUNTRY[country], the photo's country zone (17 D-26:
+ *              Europe/Zurich for CH), and the offset Node's ICU gives for that
+ *              wall time in that zone
  *              (build-time Intl only; shipped code never uses it). When the
  *              sidecar has a GPS UTC time, |(local - utc) - offset| must be under
  *              60 s, or the build fails (D-04, RESEARCH Pitfall 4). When the
@@ -86,7 +88,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { Corrections, ExifSidecar, PhotoFacts, PhotoMap } from '../../data/schemas/photo.ts';
+import {
+  Corrections,
+  ExifSidecar,
+  PhotoFacts,
+  PhotoMap,
+  ZONE_BY_COUNTRY,
+} from '../../data/schemas/photo.ts';
 import { Regions } from '../../data/schemas/region.ts';
 import { Plates } from '../../data/schemas/terrain.ts';
 import { round4 } from '../../lib/geo.ts';
@@ -142,7 +150,6 @@ const OUT_REL = 'data/generated/photos.ts';
 const OUT_PATH = path.join(ROOT, OUT_REL);
 const HOME_OUT_REL = 'data/generated/home-photos.ts';
 const HOME_OUT_PATH = path.join(ROOT, HOME_OUT_REL);
-const TIME_ZONE = 'Europe/Zurich';
 const MAX_GPS_DRIFT_S = 60;
 
 const readJson = (rel) => JSON.parse(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
@@ -160,20 +167,29 @@ const COARSE = {
 /** True when `v` has more decimals than `d` (the Coord4 tolerance, at d decimals). */
 const finerThan = (v, d) => Math.abs(v * 10 ** d - Math.round(v * 10 ** d)) >= 1e-6;
 
-/** Wall time of instant `ms` in TIME_ZONE as 'YYYY-MM-DDTHH:MM:SS' (Node ICU, build time only). */
-const wallFormat = new Intl.DateTimeFormat('en-CA', {
-  timeZone: TIME_ZONE,
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  second: '2-digit',
-  hourCycle: 'h23',
-});
-function wallTime(ms) {
+/** One wall-time formatter per zone, built on first use (Node ICU, build time only). */
+const wallFormats = new Map();
+function wallFormat(zone) {
+  let f = wallFormats.get(zone);
+  if (!f) {
+    f = new Intl.DateTimeFormat('en-CA', {
+      timeZone: zone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hourCycle: 'h23',
+    });
+    wallFormats.set(zone, f);
+  }
+  return f;
+}
+/** Wall time of instant `ms` in `zone` as 'YYYY-MM-DDTHH:MM:SS'. */
+function wallTime(ms, zone) {
   const p = Object.fromEntries(
-    wallFormat.formatToParts(new Date(ms)).map((x) => [x.type, x.value])
+    wallFormat(zone).formatToParts(new Date(ms)).map((x) => [x.type, x.value])
   );
   return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}:${p.second}`;
 }
@@ -182,30 +198,31 @@ function wallTime(ms) {
 const naiveMs = (local) => Date.parse(`${local}Z`);
 
 /**
- * The Europe/Zurich offset of a naive local wall time: the one candidate whose
- * instant formats back to the same wall time. A repeated (fall-back) wall time
- * has two candidates; the GPS UTC time, when present, keeps the one within
- * MAX_GPS_DRIFT_S of it (08 IN-03). A skipped (spring-forward) wall time, or a
- * repeated one with no GPS time, fails.
+ * The offset in `zone` (the photo's country zone, 17 D-26) of a naive local wall
+ * time: the one candidate whose instant formats back to the same wall time. Every
+ * zone in ZONE_BY_COUNTRY is CET/CEST, so +01:00 and +02:00 are the candidates.
+ * A repeated (fall-back) wall time has two candidates; the GPS UTC time, when
+ * present, keeps the one within MAX_GPS_DRIFT_S of it (08 IN-03). A skipped
+ * (spring-forward) wall time, or a repeated one with no GPS time, fails.
  */
-function zurichOffset(id, local, gpsUtc) {
+function zoneOffset(id, local, gpsUtc, zone) {
   let candidates = [
     { offset: '+01:00', s: 3600 },
     { offset: '+02:00', s: 7200 },
-  ].filter((c) => wallTime(naiveMs(local) - c.s * 1000) === local);
+  ].filter((c) => wallTime(naiveMs(local) - c.s * 1000, zone) === local);
   if (candidates.length === 2 && gpsUtc) {
     const deltaS = (naiveMs(local) - Date.parse(gpsUtc)) / 1000;
     candidates = candidates.filter((c) => Math.abs(deltaS - c.s) < MAX_GPS_DRIFT_S);
   }
   if (candidates.length !== 1) {
     throw new Error(
-      `${id}: ${local} is not a unique ${TIME_ZONE} wall time (${candidates.length} offsets)`
+      `${id}: ${local} is not a unique ${zone} wall time (${candidates.length} offsets)`
     );
   }
   return candidates[0];
 }
 
-function buildCapture(entry, fix) {
+function buildCapture(entry, fix, zone) {
   if (fix?.captureOverride) {
     const { precision, year, source } = fix.captureOverride;
     return { precision, year, source };
@@ -213,11 +230,11 @@ function buildCapture(entry, fix) {
   if (!entry.dateTimeOriginal)
     throw new Error(`${entry.id}: no DateTimeOriginal and no captureOverride`);
   const local = entry.dateTimeOriginal;
-  const { offset, s } = zurichOffset(entry.id, local, entry.gps?.utc);
-  // WR-03: a camera-recorded offset must agree with the derived Zurich one.
+  const { offset, s } = zoneOffset(entry.id, local, entry.gps?.utc, zone);
+  // WR-03: a camera-recorded offset must agree with the one derived in the photo's zone.
   if (entry.offsetTimeOriginal != null && entry.offsetTimeOriginal !== offset) {
     throw new Error(
-      `${entry.id}: EXIF OffsetTimeOriginal ${entry.offsetTimeOriginal} is not the Europe/Zurich offset ${offset}`
+      `${entry.id}: EXIF OffsetTimeOriginal ${entry.offsetTimeOriginal} is not the ${zone} offset ${offset}`
     );
   }
   if (entry.gps?.utc) {
@@ -228,7 +245,7 @@ function buildCapture(entry, fix) {
       );
     }
   }
-  return { precision: 'second', local, timeZone: TIME_ZONE, offset, source: 'exif' };
+  return { precision: 'second', local, timeZone: zone, offset, source: 'exif' };
 }
 
 /**
@@ -398,7 +415,7 @@ async function build() {
         `${entry.id}: a film scan needs a year captureOverride (its EXIF date is the scan date, D-03)`
       );
     }
-    const capture = buildCapture(entry, fix);
+    const capture = buildCapture(entry, fix, ZONE_BY_COUNTRY[record.country]);
     const coarse = record.precision !== '4dp';
     // 16 D-03, D-04 (16-REVIEW WR-01): stage 1 enforces these with the originals
     // present; stage 2 holds the sidecar entry and the record together, so CI
