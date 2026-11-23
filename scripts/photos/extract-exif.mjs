@@ -1,13 +1,29 @@
 #!/usr/bin/env node
 
 /**
- * Photo data stage 1 (D-10, DATA-02, DATA-06): originals -> committed EXIF sidecar
+ * Photo data stage 1 (D-10, DATA-02, DATA-06, DATA-14): originals -> committed EXIF sidecar
  *
  * Reads the gitignored originals in assets/photos-original/ (D-09: local only,
- * outside public/, never committed) and writes data/photos/exif-sidecar.json:
- * one entry per original, sorted by id, with the sha256 of the raw file bytes,
- * the camera facts and GPS rounded to 4 decimals (altitude to 1 decimal) AT
- * EXTRACTION, so a full-precision position is never written anywhere.
+ * outside public/, never committed; only the top level, so files staged in
+ * incoming/ are not read) and writes data/photos/exif-sidecar.json: one entry
+ * per original, sorted by id, with the sha256 of the raw file bytes, the camera
+ * facts and GPS rounded AT EXTRACTION to the level its photo-map record states,
+ * so a finer position is never written or printed anywhere (16 D-01, D-12):
+ *
+ *   precision  every record states '4dp', '3dp' or '2dp' and a kind, 'ground' or
+ *              'aerial', with no default (16 D-02); a record missing either fails
+ *              naming the file. Latitude and longitude are rounded half-up with
+ *              Math.round(v * 10^d) / 10^d, d = 4, 3 or 2.
+ *   altM       the GPS altitude to 1 decimal for a 4dp ground photo; null for a
+ *              coarse or an aerial record (16 D-03, D-04).
+ *   groundM    coarse records only: the region's plate DEM sampled at the TRUE
+ *              position in memory, rounded half-up to 10 m ('3dp') or 50 m
+ *              ('2dp') (16 D-03). Read through scripts/photos/plate-dem.mjs from
+ *              data/regions/regions.json, data/terrain/plates.json and the plate
+ *              source; a true position off the plate fails.
+ *   DJI net    a still whose EXIF Make is DJI (any case) on a record that is not
+ *              kind 'aerial' fails and nothing is written (16 D-04).
+ * XMP is never read and no camera serial is extracted (16 D-04).
  *
  * Equality is defined on bytes: sha256 over the raw original; EXIF ASCII strings
  * trimmed of trailing NUL and whitespace; output is JSON.stringify(value, null, 2)
@@ -50,6 +66,9 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import exifReader from 'exif-reader';
 import { ExifSidecar, PhotoMap } from '../../data/schemas/photo.ts';
+import { Regions } from '../../data/schemas/region.ts';
+import { Plates } from '../../data/schemas/terrain.ts';
+import { gridToUv, loadPlateDem, plateFor, sampleAtGrid, toGrid } from './plate-dem.mjs';
 
 const NAME = 'photos:exif';
 
@@ -93,6 +112,8 @@ const ROOT = ARGS.root;
 const ORIGINALS_REL = 'assets/photos-original/';
 const SIDECAR_REL = 'data/photos/exif-sidecar.json';
 const PHOTO_MAP_REL = 'data/photos/photo-map.json';
+const REGIONS_REL = 'data/regions/regions.json';
+const PLATES_REL = 'data/terrain/plates.json';
 const ORIGINALS_DIR = path.join(ROOT, ORIGINALS_REL);
 const SIDECAR_PATH = path.join(ROOT, SIDECAR_REL);
 const PHOTO_MAP_PATH = path.join(ROOT, PHOTO_MAP_REL);
@@ -109,6 +130,22 @@ function loadPhotoMap() {
     raw = JSON.parse(fs.readFileSync(PHOTO_MAP_PATH, 'utf8'));
   } catch (e) {
     throw new Error(`${PHOTO_MAP_REL} is not valid JSON (${e.message})`);
+  }
+  // 16 D-02: no default precision or kind. Named per file before the schema
+  // runs, so the message says which original and what to add.
+  const records = raw && typeof raw.photos === 'object' && raw.photos !== null ? raw.photos : {};
+  for (const record of Object.values(records)) {
+    if (!record || typeof record !== 'object') continue;
+    if (!Object.hasOwn(record, 'precision')) {
+      throw new Error(
+        `add a precision ('4dp', '3dp' or '2dp') to the record for ${record.file} in ${PHOTO_MAP_REL}`
+      );
+    }
+    if (!Object.hasOwn(record, 'kind')) {
+      throw new Error(
+        `add a kind ('ground' or 'aerial') to the record for ${record.file} in ${PHOTO_MAP_REL}`
+      );
+    }
   }
   const parsed = PhotoMap.safeParse(raw);
   if (!parsed.success) {
@@ -133,14 +170,47 @@ function listOriginals() {
 }
 
 /**
- * The id of the photo-map record whose `file` is `file` (15 D-01). The name is
- * never parsed: an original with no record fails, whatever its name.
+ * The id and record of the photo-map record whose `file` is `file` (15 D-01).
+ * The name is never parsed: an original with no record fails, whatever its name.
  */
-function idFor(file, map) {
+function recordFor(file, map) {
   const hit = Object.entries(map.photos).find(([, entry]) => entry.file === file);
   if (!hit) throw new Error(`add a record for ${file} to ${PHOTO_MAP_REL}`);
-  return hit[0];
+  return { id: hit[0], record: hit[1] };
 }
+
+/**
+ * Lazy plate DEM access for coarse records (16 D-03): the registries are read
+ * and each plate is loaded at most once, and only when a coarse photo needs it.
+ * `groundAt(record, file)` resolves to an async (lat, lon) -> metres sampler
+ * at the true position. Nothing here prints a position (D-12): an off-plate
+ * true position fails naming the file and the plate only.
+ */
+function plateGround() {
+  let registries = null;
+  const dems = new Map();
+  const readJson = (rel) => JSON.parse(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
+  return async (record, file) => {
+    registries ??= {
+      regions: Regions.parse(readJson(REGIONS_REL)),
+      plates: Plates.parse(readJson(PLATES_REL)),
+    };
+    const plate = plateFor(record, registries.regions, registries.plates);
+    if (!dems.has(plate.id)) dems.set(plate.id, await loadPlateDem(ROOT, plate.source));
+    const dem = dems.get(plate.id);
+    return (lat, lon) => {
+      const grid = toGrid(dem.crs, { lat, lon });
+      const uv = gridToUv(grid, dem.extent);
+      if (uv.u < 0 || uv.u > 1 || uv.v < 0 || uv.v > 1) {
+        throw new Error(
+          `${file} lies outside plate ${plate.id}; curate it out of ${PHOTO_MAP_REL} or widen the plate`
+        );
+      }
+      return sampleAtGrid(dem, grid);
+    };
+  };
+}
+const groundAt = plateGround();
 
 /** Trim trailing NUL and whitespace from an EXIF ASCII value; empty -> null. */
 function str(v) {
@@ -151,7 +221,11 @@ function str(v) {
 
 const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 const int = (v) => (Number.isInteger(v) ? v : null);
-const round4 = (v) => Math.round(v * 1e4) / 1e4;
+/** Decimals per precision level (16 D-01). '4dp' is the v2.0 round4, bit for bit. */
+const DECIMALS = { '4dp': 4, '3dp': 3, '2dp': 2 };
+/** Ground-height rounding step for a coarse record, in metres (16 D-03). */
+const HEIGHT_STEP = { '3dp': 10, '2dp': 50 };
+const roundTo = (v, d) => Math.round(v * 10 ** d) / 10 ** d;
 const round1 = (v) => Math.round(v * 10) / 10;
 const pad2 = (n) => String(n).padStart(2, '0');
 
@@ -187,7 +261,13 @@ function gpsUtc(dateStamp, timeStamp) {
   return `${date.replaceAll(':', '-')}T${pad2(h)}:${pad2(m)}:${pad2(whole)}${frac}Z`;
 }
 
-function gpsOf(g) {
+/**
+ * The sidecar GPS of one original, rounded to its record's precision (16 D-01).
+ * `ground` is a lazy async (record, file) -> sampler; it runs only for a coarse
+ * record, at the true position, in memory (16 D-03). The true position never
+ * leaves this function: only the rounded values are returned.
+ */
+async function gpsOf(g, record, file, ground) {
   if (!g) return null;
   const lat = dmsToDecimal(g.GPSLatitude, str(g.GPSLatitudeRef));
   const lon = dmsToDecimal(g.GPSLongitude, str(g.GPSLongitudeRef));
@@ -196,12 +276,22 @@ function gpsOf(g) {
   // either: it is null, and the latitude and longitude are kept (08-REVIEW WR-02;
   // heights come from the DEM, D-17).
   if (lat === null || lon === null) return null;
-  return {
-    lat: round4(lat),
-    lon: round4(lon),
-    altM: alt === null ? null : round1(g.GPSAltitudeRef === 1 ? -alt : alt),
+  const d = DECIMALS[record.precision];
+  const coarse = record.precision !== '4dp';
+  // 16 D-03, D-04: a coarse or aerial photo keeps no GPS altitude.
+  const keepAlt = !coarse && record.kind !== 'aerial' && alt !== null;
+  const gps = {
+    lat: roundTo(lat, d),
+    lon: roundTo(lon, d),
+    altM: keepAlt ? round1(g.GPSAltitudeRef === 1 ? -alt : alt) : null,
     utc: gpsUtc(g.GPSDateStamp, g.GPSTimeStamp),
   };
+  if (coarse) {
+    const step = HEIGHT_STEP[record.precision];
+    const sample = await ground(record, file);
+    gps.groundM = Math.round(sample(lat, lon) / step) * step;
+  }
+  return gps;
 }
 
 /** ICC profile description from the 'desc' tag (v2 'desc' or v4 'mluc'), or null. */
@@ -238,8 +328,14 @@ async function extractEntry(file, map) {
   const ex = md.exif ? exifReader(md.exif) : {};
   const img = ex.Image ?? {};
   const photo = ex.Photo ?? {};
+  const { id, record } = recordFor(file, map);
+  const make = str(img.Make);
+  // 16 D-04 safety net: a drone still is aerial; its GPS altitude must not be kept.
+  if (make !== null && make.trim().toLowerCase() === 'dji' && record.kind !== 'aerial') {
+    throw new Error(`${file} is a DJI still; set "kind": "aerial" on its record in ${PHOTO_MAP_REL}`);
+  }
   return {
-    id: idFor(file, map),
+    id,
     file,
     sha256,
     width: md.width,
@@ -247,7 +343,7 @@ async function extractEntry(file, map) {
     orientation: int(md.orientation),
     space: md.space,
     iccDescription: iccDescription(md.icc),
-    make: str(img.Make),
+    make,
     model: str(img.Model),
     lens: str(photo.LensModel),
     focalLengthMm: num(photo.FocalLength),
@@ -256,7 +352,7 @@ async function extractEntry(file, map) {
     iso: int(photo.ISOSpeedRatings ?? photo.PhotographicSensitivity),
     dateTimeOriginal: naiveLocal(photo.DateTimeOriginal),
     offsetTimeOriginal: str(photo.OffsetTimeOriginal),
-    gps: gpsOf(ex.GPSInfo),
+    gps: await gpsOf(ex.GPSInfo, record, file, groundAt),
   };
 }
 

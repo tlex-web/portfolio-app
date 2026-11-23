@@ -13,8 +13,13 @@
  *   stage 2 (08-08), never stored here.
  * - D-03: the film scan's `dateTimeOriginal` is its scan date; the sidecar keeps
  *   the raw value and stage 2 must never treat it as a capture date.
- * - DATA-06: GPS is rounded to 4 decimals at extraction (`Coord4` rejects more),
- *   so full-precision coordinates are never committed.
+ * - DATA-06: GPS is rounded at extraction (`Coord4` rejects more than 4
+ *   decimals), so full-precision coordinates are never committed.
+ * - 16 D-01 to D-04 (DATA-14): each photo-map record states its `precision`
+ *   ('4dp', '3dp' or '2dp') and `kind` ('ground' or 'aerial'), with no default.
+ *   Extraction rounds to that level; a coarse record gets a rounded true-spot
+ *   ground height (`gps.groundM`) and no GPS altitude, and an aerial record
+ *   never keeps its GPS altitude.
  *
  * Imports only 'zod' on purpose (RESEARCH Pattern 1): Node 24 type-strips this
  * file when a scripts/*.mjs generator imports it, and Node cannot resolve `@/`
@@ -35,22 +40,42 @@ export const Coord4 = z
   .refine((v) => Math.abs(v * 1e4 - Math.round(v * 1e4)) < 1e-6, 'max 4 decimals (DATA-06)');
 export type Coord4 = z.infer<typeof Coord4>;
 
+/**
+ * A photo's location precision (16 D-01): 4 decimals (about 10 m, the v2.0
+ * default), 3 (about 100 m) or 2 (about 1 km). Stated on every photo-map record
+ * (D-02): never defaulted, never derived from coordinates, camera or file name.
+ */
+export const Precision = z.enum(['4dp', '3dp', '2dp']);
+export type Precision = z.infer<typeof Precision>;
+
+/**
+ * Whether a photo was taken on the ground or from the air (16 D-04). An aerial
+ * photo never keeps its GPS altitude; its height is the DEM ground height.
+ */
+export const PhotoKind = z.enum(['ground', 'aerial']);
+export type PhotoKind = z.infer<typeof PhotoKind>;
+
 /** Altitude in metres with at most 1 decimal. */
 const Alt1 = z
   .number()
   .refine((v) => Math.abs(v * 10 - Math.round(v * 10)) < 1e-6, 'max 1 decimal');
 
 /**
- * GPS as extracted, already rounded (D-10 stage 1, DATA-06). `utc` is GPSDateStamp + GPSTimeStamp.
+ * GPS as extracted, already rounded to the record's precision (D-10 stage 1,
+ * DATA-06, 16 D-01). `utc` is GPSDateStamp + GPSTimeStamp.
  * `altM` is null when the camera or geotagger wrote no GPSAltitude: a latitude and
  * longitude are still a position (08-REVIEW WR-02), and no consumer reads altM,
- * because heights come from the DEM (D-17).
+ * because heights come from the DEM (D-17). It is also null for a coarse or an
+ * aerial record (16 D-03, D-04).
+ * `groundM` exists only for a coarse ('3dp' or '2dp') record: the plate DEM height
+ * at the true position, sampled in memory and rounded to 10 m or 50 m (16 D-03).
  */
 const Gps = z.strictObject({
   lat: Coord4,
   lon: Coord4,
   altM: Alt1.nullable(),
   utc: z.string().nullable(),
+  groundM: z.number().int().optional(),
 });
 
 /** One original's EXIF facts plus the sha256 of its raw bytes (D-10). */
@@ -114,8 +139,8 @@ const RegionSlug = z
 
 /**
  * One photo's record in data/photos/photo-map.json (D-01, D-02): the original's
- * file name (equal to the sidecar's `file`; a bare name, no directory), its region
- * and its country.
+ * file name (equal to the sidecar's `file`; a bare name, no directory), its region,
+ * its country, and its location precision and kind (16 D-02, D-04), both required.
  */
 export const PhotoMapEntry = z.strictObject({
   file: z
@@ -124,6 +149,8 @@ export const PhotoMapEntry = z.strictObject({
     .refine((f) => !f.includes('/') && !f.includes('\\'), 'file is a bare file name (no / or \\)'),
   region: RegionSlug,
   country: Country,
+  precision: Precision,
+  kind: PhotoKind,
 });
 export type PhotoMapEntry = z.infer<typeof PhotoMapEntry>;
 
@@ -195,27 +222,39 @@ export const Capture = z.discriminatedUnion('precision', [
 export type Capture = z.infer<typeof Capture>;
 
 /**
- * Where a photo was taken, at most 4 decimals (DATA-06). A position without GPS
- * is hand-placed and must say so: `approximate: true` with a reason and a
- * radius, which every consumer can show (DATA-04).
+ * The position fields shared by a generated `Position` and a corrections
+ * position, unrefined so both schemas are built from them. (zod 4.6 refuses
+ * `.omit()` / `.pick()` on a refined object, so neither derives from the other.)
+ */
+const positionFields = {
+  source: z.enum(['exif', 'hand-placed']),
+  approximate: z.boolean(),
+  reason: z.string().min(1).optional(),
+  radiusM: z.number().positive().optional(),
+};
+type PositionShape = { source: string; approximate: boolean; reason?: string; radiusM?: number };
+/** DATA-04: an approximate position says why and how far. */
+const approximateHasReason = (p: PositionShape) =>
+  !p.approximate || (p.reason !== undefined && p.radiusM !== undefined);
+/** DATA-04: a hand-placed position is approximate. */
+const handPlacedIsApproximate = (p: PositionShape) => p.source === 'exif' || p.approximate;
+
+/**
+ * Where a photo was taken, at most 4 decimals (DATA-06), tagged with its
+ * record's precision (16 D-01). A position without GPS is hand-placed and must
+ * say so: `approximate: true` with a reason and a radius, which every consumer
+ * can show (DATA-04). A coarse ('3dp' or '2dp') EXIF position is approximate too
+ * (DATA-14).
  */
 export const Position = z
   .strictObject({
     lat: Coord4,
     lon: Coord4,
-    source: z.enum(['exif', 'hand-placed']),
-    approximate: z.boolean(),
-    reason: z.string().min(1).optional(),
-    radiusM: z.number().positive().optional(),
+    precision: Precision,
+    ...positionFields,
   })
-  .refine(
-    (p) => !p.approximate || (p.reason !== undefined && p.radiusM !== undefined),
-    'approximate positions need reason + radiusM (DATA-04)'
-  )
-  .refine(
-    (p) => p.source === 'exif' || p.approximate,
-    'hand-placed positions are approximate (DATA-04)'
-  );
+  .refine(approximateHasReason, 'approximate positions need reason + radiusM (DATA-04)')
+  .refine(handPlacedIsApproximate, 'hand-placed positions are approximate (DATA-04)');
 export type Position = z.infer<typeof Position>;
 
 /**
@@ -251,12 +290,21 @@ export type LocationOverride = z.infer<typeof LocationOverride>;
  * A position in corrections.json is typed by hand, so it can only be hand-placed
  * (and therefore approximate, with a reason and a radius). An exact `exif`
  * position comes from the sidecar GPS, never from a correction (08-REVIEW WR-08,
- * DATA-04).
+ * DATA-04). It carries no `precision` (strict, so a `precision` key fails): stage
+ * 2 gives it its record's precision and refuses one with more decimals (16 D-02).
  */
-const CorrectionPosition = Position.refine(
-  (p) => p.source === 'hand-placed',
-  "a corrections position is source 'hand-placed'; exif positions come from the sidecar (WR-08, DATA-04)"
-);
+const CorrectionPosition = z
+  .strictObject({
+    lat: Coord4,
+    lon: Coord4,
+    ...positionFields,
+  })
+  .refine(approximateHasReason, 'approximate positions need reason + radiusM (DATA-04)')
+  .refine(handPlacedIsApproximate, 'hand-placed positions are approximate (DATA-04)')
+  .refine(
+    (p) => p.source === 'hand-placed',
+    "a corrections position is source 'hand-placed'; exif positions come from the sidecar (WR-08, DATA-04)"
+  );
 
 /** data/photos/corrections.json: Tim's reasoned overrides, keyed by photo id. */
 export const Corrections = z.strictObject({
@@ -293,6 +341,8 @@ export const PhotoFacts = z.strictObject({
   region: RegionSlug,
   /** The photo's country (D-02, D-05), from its photo-map record; never derived. */
   country: Country,
+  /** Ground or aerial (16 D-04), from its photo-map record; never derived. */
+  kind: PhotoKind,
   medium: z.enum(['digital', 'film-scan']),
   capture: Capture,
   position: Position.nullable(),

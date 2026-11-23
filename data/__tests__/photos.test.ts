@@ -111,7 +111,13 @@ describe('positions (DATA-04, D-02)', () => {
   });
 
   test('Position rejects an approximate position without a reason or a radius', () => {
-    const base = { lat: 45.9837, lon: 7.7623, source: 'hand-placed', approximate: true };
+    const base = {
+      lat: 45.9837,
+      lon: 7.7623,
+      precision: '4dp',
+      source: 'hand-placed',
+      approximate: true,
+    };
     expect(Position.safeParse({ ...base, reason: 'x', radiusM: 100 }).success).toBe(true);
     expect(Position.safeParse({ ...base, radiusM: 100 }).success).toBe(false);
     expect(Position.safeParse({ ...base, reason: 'x' }).success).toBe(false);
@@ -122,12 +128,33 @@ describe('positions (DATA-04, D-02)', () => {
       Position.safeParse({
         lat: 45.9837,
         lon: 7.7623,
+        precision: '4dp',
         source: 'hand-placed',
         approximate: false,
         reason: 'x',
         radiusM: 100,
       }).success
     ).toBe(false);
+  });
+
+  test('Position requires a precision; a corrections position carries none', () => {
+    const handPlaced = {
+      lat: 45.9837,
+      lon: 7.7623,
+      source: 'hand-placed',
+      approximate: true,
+      reason: 'x',
+      radiusM: 100,
+    };
+    expect(Position.safeParse(handPlaced).success).toBe(false);
+    expect(Position.safeParse({ ...handPlaced, precision: '4dp' }).success).toBe(true);
+    const committed = JSON.parse(correctionsText) as {
+      photos: Record<string, { position?: Record<string, unknown> }>;
+    };
+    const film = committed.photos['r004-011'];
+    if (!film?.position) throw new Error('corrections.json has no r004-011 position');
+    film.position = { ...film.position, precision: '4dp' };
+    expect(Corrections.safeParse(committed).success).toBe(false);
   });
 });
 

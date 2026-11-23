@@ -27,7 +27,7 @@ import { spawnSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import crypto from 'crypto';
 import { createRequire } from 'module';
 import sharp from 'sharp';
@@ -1311,8 +1311,8 @@ async function tempExifRoot({ mapEdit } = {}) {
   const map = {
     schemaVersion: 1,
     photos: {
-      'img-9001': { file: 'DJI_0001.JPG', region: 'zermatt', country: 'CH' },
-      'img-9002': { file: 'IMG_0605.jpg', region: 'zermatt', country: 'CH' },
+      'img-9001': { file: 'DJI_0001.JPG', region: 'zermatt', country: 'CH', precision: '4dp', kind: 'ground' },
+      'img-9002': { file: 'IMG_0605.jpg', region: 'zermatt', country: 'CH', precision: '4dp', kind: 'ground' },
     },
   };
   if (mapEdit) mapEdit(map);
@@ -1342,6 +1342,294 @@ function exifSidecarIds(root, expected) {
 /** A failed extraction writes no sidecar. */
 const noExifSidecar = (root) => () =>
   fs.existsSync(path.join(root, EXIF_SIDECAR_REL)) ? `${EXIF_SIDECAR_REL} was written by a failing run` : null;
+
+// 16-01 (DATA-14, D-01 to D-04): location privacy through both photo stages on
+// generated JPEGs with hand-assembled EXIF GPS (15 D-23: generated data only).
+const GEO_URL = pathToFileURL(path.join(repoRoot, 'lib', 'geo.ts')).href;
+/**
+ * `fn` of lib/geo.ts applied to each of `args`, in a child node with the photo
+ * scripts' flag (importing a .ts module here would print a module-type warning
+ * into every selftest run). JSON round-trips a double exactly.
+ */
+function geoBatch(fn, args) {
+  const code = `const m = await import(${JSON.stringify(GEO_URL)}); process.stdout.write(JSON.stringify(${JSON.stringify(args)}.map((a) => m[${JSON.stringify(fn)}](a))));`;
+  const r = spawnSync(process.execPath, [...PHOTO_NODE_ARGS, '--input-type=module', '-e', code], { encoding: 'utf-8' });
+  if (r.status !== 0) throw new Error(`selftest: lib/geo.ts ${fn} failed: ${r.stderr}`);
+  return JSON.parse(r.stdout);
+}
+const geo = (fn, arg) => geoBatch(fn, [arg])[0];
+/** Half-up rounding to `d` decimals, the extraction contract (16 D-01). */
+const roundDp = (v, d) => Math.round(v * 10 ** d) / 10 ** d;
+/** Half-up rounding to a multiple of `step` metres (16 D-03). */
+const roundStep = (v, step) => Math.round(v / step) * step;
+/** The privacy fixture plate's LV95 extent: 400 x 400 cells of 10 m. */
+const PRIVACY_EXTENT = { west: 2600000, south: 1200000, east: 2604000, north: 1204000 };
+/**
+ * The fixture DEM's height in metres at easting `e`: a linear ramp rising 1 m per
+ * 5 m east. Its value at every pixel centre (e = west + 10 x + 5) is a whole
+ * number of decimetres (10,010 + 20 x), so the grey16 PNG stores it exactly and
+ * a bilinear sample between the outermost centres equals this formula.
+ */
+const rampM = (e) => 1000 + (e - PRIVACY_EXTENT.west) / 5;
+const insideExtent = ({ e, n }, x = PRIVACY_EXTENT) => e >= x.west && e <= x.east && n >= x.south && n <= x.north;
+/** Throws when `v` lies within 0.01 m of a rounding boundary of `step` (a fixture choice must be unambiguous). */
+function clearOfBoundary(v, step, what) {
+  const r = ((v % step) + step) % step;
+  if (Math.abs(r - step / 2) < 0.01) throw new Error(`selftest: ${what} lies on a ${step} m rounding boundary; pick another point`);
+}
+/**
+ * Unsigned decimal degrees -> EXIF degrees, minutes and seconds (seconds in
+ * millionths), plus the value extract-exif.mjs decodes from them, computed with
+ * the same expression, so the "true" position a case asserts against is the
+ * extraction's own input bit for bit.
+ */
+function toDms(v) {
+  const a = Math.abs(v);
+  let deg = Math.floor(a);
+  let min = Math.floor((a - deg) * 60);
+  let secM = Math.round(((a - deg) * 60 - min) * 60 * 1e6);
+  if (secM >= 60e6) {
+    secM -= 60e6;
+    min += 1;
+  }
+  if (min >= 60) {
+    min -= 60;
+    deg += 1;
+  }
+  const decoded = deg / 1 + min / 1 / 60 + secM / 1000000 / 3600;
+  return { rationals: [[deg, 1], [min, 1], [secM, 1000000]], decoded: v < 0 ? -decoded : decoded };
+}
+/**
+ * A 16 x 12 sharp JPEG with a hand-assembled EXIF APP1 segment spliced after SOI:
+ * little-endian TIFF, IFD0 with Make (when given) and a GPSInfo pointer (when
+ * `lat` is given), and a GPS IFD with LatitudeRef/Latitude/LongitudeRef/Longitude
+ * as rational degrees-minutes-seconds and AltitudeRef/Altitude (when `altM` is
+ * given). Resolves to { bytes, lat, lon }, the decoded true position.
+ */
+async function gpsJpeg({ make = null, lat = null, lon = null, altM = null } = {}) {
+  const base = await sharp({ create: { width: 16, height: 12, channels: 3, background: { r: 90, g: 120, b: 150 } } }).jpeg().toBuffer();
+  const ifd0 = [];
+  const gpsEntries = [];
+  let decoded = { lat: null, lon: null };
+  if (make !== null) ifd0.push({ tag: 0x010f, type: 2, data: Buffer.from(`${make}\0`, 'latin1') });
+  if (lat !== null) {
+    const la = toDms(lat);
+    const lo = toDms(lon);
+    decoded = { lat: la.decoded, lon: lo.decoded };
+    const rational = (pairs) => {
+      const b = Buffer.alloc(pairs.length * 8);
+      pairs.forEach(([num, den], i) => {
+        b.writeUInt32LE(num, i * 8);
+        b.writeUInt32LE(den, i * 8 + 4);
+      });
+      return b;
+    };
+    gpsEntries.push({ tag: 0x0001, type: 2, data: Buffer.from(lat < 0 ? 'S\0' : 'N\0', 'latin1') });
+    gpsEntries.push({ tag: 0x0002, type: 5, count: 3, data: rational(la.rationals) });
+    gpsEntries.push({ tag: 0x0003, type: 2, data: Buffer.from(lon < 0 ? 'W\0' : 'E\0', 'latin1') });
+    gpsEntries.push({ tag: 0x0004, type: 5, count: 3, data: rational(lo.rationals) });
+    if (altM !== null) {
+      gpsEntries.push({ tag: 0x0005, type: 1, data: Buffer.from([altM < 0 ? 1 : 0]) });
+      gpsEntries.push({ tag: 0x0006, type: 5, count: 1, data: rational([[Math.round(Math.abs(altM) * 10), 10]]) });
+    }
+    ifd0.push({ tag: 0x8825, type: 4, gpsPointer: true });
+  }
+  // Lay out IFD0, then its out-of-line values, then the GPS IFD and its values.
+  const ifdSize = (n) => 2 + n * 12 + 4;
+  const chunks = [];
+  let at = 8;
+  const place = (bytes) => {
+    const offset = at;
+    chunks.push(bytes);
+    at += bytes.length + (bytes.length % 2);
+    if (bytes.length % 2) chunks.push(Buffer.alloc(1));
+    return offset;
+  };
+  const writeIfd = (entries) => {
+    const ifd = Buffer.alloc(ifdSize(entries.length));
+    const ifdOffset = place(ifd);
+    ifd.writeUInt16LE(entries.length, 0);
+    entries.forEach((entry, i) => {
+      const p = 2 + i * 12;
+      ifd.writeUInt16LE(entry.tag, p);
+      ifd.writeUInt16LE(entry.type, p + 2);
+      if (entry.gpsPointer) {
+        ifd.writeUInt32LE(1, p + 4);
+        entry.patch = (value) => ifd.writeUInt32LE(value, p + 8);
+        return;
+      }
+      ifd.writeUInt32LE(entry.count ?? entry.data.length, p + 4);
+      if (entry.data.length <= 4) entry.data.copy(ifd, p + 8);
+      else ifd.writeUInt32LE(place(entry.data), p + 8);
+    });
+    ifd.writeUInt32LE(0, 2 + entries.length * 12);
+    return ifdOffset;
+  };
+  writeIfd(ifd0);
+  if (gpsEntries.length) {
+    const gpsOffset = writeIfd(gpsEntries);
+    ifd0.find((e) => e.gpsPointer).patch(gpsOffset);
+  }
+  const header = Buffer.from([0x49, 0x49, 0x2a, 0x00, 0x08, 0x00, 0x00, 0x00]);
+  const tiff = Buffer.concat([header, ...chunks]);
+  const payload = Buffer.concat([Buffer.from('Exif\0\0', 'latin1'), tiff]);
+  const app1 = Buffer.alloc(4);
+  app1.writeUInt16BE(0xffe1, 0);
+  app1.writeUInt16BE(payload.length + 2, 2);
+  return { bytes: Buffer.concat([base.subarray(0, 2), app1, payload, base.subarray(2)]), ...decoded };
+}
+/** The privacy fixture plate (2D, like the terrain fixture) and its region. */
+const PRIVACY_PLATE = {
+  id: 'fixture',
+  prefix: 'fixture-',
+  source: 'data/terrain/plates/fixture',
+  home: false,
+  threeD: false,
+  outputs: { contours: ['hero', 'strip'], hillshade: [1100, 640] },
+  strip: { centreN: 1202000 },
+};
+/** The 400 x 400 grey16 ramp DEM in decimetres (see rampM), built from a Uint16Array. */
+async function privacyDem() {
+  const n = 400;
+  const u16 = new Uint16Array(n * n);
+  for (let y = 0; y < n; y++) {
+    for (let x = 0; x < n; x++) u16[y * n + x] = Math.round(rampM(PRIVACY_EXTENT.west + 10 * x + 5) * 10);
+  }
+  // Pass the Uint16Array itself: a Buffer with raw depth 'ushort' corrupts silently (build-terrain.mjs encodeGrey16).
+  return sharp(u16, { raw: { width: n, height: n, channels: 1 } }).toColourspace('grey16').png().toBuffer();
+}
+const privacyTempRoots = [];
+/**
+ * A temp root for both photo stages: the real region and plate registries and
+ * the Matterhorn source (the plate registry needs its home plate), plus a region
+ * `fixture` on the plate `fixture` with the ramp DEM; the synthetic originals;
+ * a photo map of only the synthetic records; and corrections giving each
+ * synthetic id a film-scan medium and a year capture (so no camera EXIF is
+ * needed), merged with `corrections[id]`. `records` maps an id to its photo-map
+ * record plus `bytes`, the original. Nested one level down so the cleanup
+ * loop's path.dirname removes the mkdtemp directory.
+ */
+async function tempPrivacyRoot({ records, corrections = {} }) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-selftest-'));
+  const root = path.join(dir, 'root');
+  privacyTempRoots.push(root);
+  const put = (rel, bytes) => {
+    fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
+    fs.writeFileSync(path.join(root, rel), bytes);
+  };
+  const json = (value) => `${JSON.stringify(value, null, 2)}\n`;
+  for (const rel of ['data/terrain/source/source.json', 'data/terrain/source/dem-10m.png']) put(rel, fs.readFileSync(path.join(repoRoot, rel)));
+  const regions = JSON.parse(fs.readFileSync(path.join(repoRoot, 'data/regions/regions.json'), 'utf-8'));
+  addRegion(regions, { id: 'fixture', name: 'Fixture', plate: 'fixture' });
+  put('data/regions/regions.json', json(regions));
+  const plates = JSON.parse(fs.readFileSync(path.join(repoRoot, 'data/terrain/plates.json'), 'utf-8'));
+  plates.plates.push(PRIVACY_PLATE);
+  put('data/terrain/plates.json', json(plates));
+  const png = await privacyDem();
+  put(`${PRIVACY_PLATE.source}/dem-10m.png`, png);
+  put(`${PRIVACY_PLATE.source}/source.json`, json({
+    product: 'swissALTIRegio',
+    stacItemUrl: 'https://example.invalid/fixture/stac-item',
+    cogUrl: 'https://example.invalid/fixture/dem.tif',
+    stacDatetime: '2026-05-28T00:00:00Z',
+    stacUpdated: '2026-05-28T00:00:00Z',
+    checksum: `1220${'0'.repeat(64)}`,
+    edition: '2026-05',
+    editionSource: 'stac:datetime',
+    crs: 'EPSG:2056',
+    heightSystem: 'LN02',
+    extent: PRIVACY_EXTENT,
+    cellM: 10,
+    width: 400,
+    height: 400,
+    heightScale: 0.1,
+    file: 'dem-10m.png',
+    sha256: crypto.createHash('sha256').update(png).digest('hex'),
+  }));
+  const ids = Object.keys(records).sort();
+  const map = { schemaVersion: 1, photos: {} };
+  const fixes = { schemaVersion: 1, photos: {} };
+  for (const id of ids) {
+    const { bytes, ...record } = records[id];
+    put(`assets/photos-original/${record.file}`, bytes);
+    map.photos[id] = record;
+    fixes.photos[id] = {
+      medium: 'film-scan',
+      captureOverride: { precision: 'year', year: 2020, source: 'Tim', reason: 'selftest: a generated JPEG has no camera date' },
+      ...(corrections[id] ?? {}),
+    };
+  }
+  put('data/photos/photo-map.json', json(map));
+  put('data/photos/corrections.json', json(fixes));
+  return root;
+}
+/**
+ * Runs photos:exif, then (when it passed) photos:build, in write mode on `root`.
+ * Returns both results, their combined output, and the written sidecar entry and
+ * generated fact of `id` (null when absent).
+ */
+function privacyRun(root, id) {
+  const run = (script) => spawnSync(process.execPath, [...PHOTO_NODE_ARGS, script, '--root', root], { encoding: 'utf-8' });
+  const exif = run(PHOTO_EXIF);
+  const build = exif.status === 0 ? run(PHOTO_DATA) : null;
+  const text = (r) => (r ? `${r.stdout ?? ''}${r.stderr ?? ''}` : '');
+  const sidecarPath = path.join(root, EXIF_SIDECAR_REL);
+  const entry = fs.existsSync(sidecarPath) ? JSON.parse(fs.readFileSync(sidecarPath, 'utf-8')).photos.find((p) => p.id === id) ?? null : null;
+  const factsPath = path.join(root, 'data/generated/photos.ts');
+  let fact = null;
+  if (fs.existsSync(factsPath)) {
+    const m = /export const photos = ([\s\S]*) as const;\s*$/.exec(fs.readFileSync(factsPath, 'utf-8'));
+    fact = m ? JSON.parse(m[1]).find((p) => p.id === id) ?? null : null;
+  }
+  return { exif, build, output: `${text(exif)}${text(build)}`, entry, fact };
+}
+/** Null when every [label, actual, expected] pair is equal (Object.is); else the first difference. */
+function firstDifference(pairs) {
+  for (const [label, actual, expected] of pairs) {
+    if (!Object.is(actual, expected)) return `${label}: got ${JSON.stringify(actual)}, expected ${JSON.stringify(expected)}`;
+  }
+  return null;
+}
+/** A run that must pass both stages; null when it did, else the tail of its output. */
+const bothPassed = ({ exif, build, output }) =>
+  exif.status === 0 && build?.status === 0 ? null : `a stage failed (exif ${exif.status}, build ${build?.status ?? 'not run'}): ${output.trim().split('\n').slice(-3).join(' | ')}`;
+/** The true position's fixed-decimal strings that must never appear in any output (D-12). */
+const leaks = (output, values) => values.filter((s) => output.includes(s));
+/**
+ * The coarse-photo case shared by the 3dp tracer and the 2dp case: one synthetic
+ * photo at LV95 `point` through both stages; asserts the sidecar is rounded before
+ * the write with no GPS altitude and the true-spot ramp height rounded to `step`,
+ * and the generated position is approximate and precision-tagged.
+ */
+async function coarseCase({ id, point, precision, d, step, radiusM, reasonPart }) {
+  const truth = geo('lv95ToWgs84', point);
+  const file = `${id.toUpperCase()}.jpg`;
+  const jpeg = await gpsJpeg({ make: 'SELFTEST', lat: truth.lat, lon: truth.lon, altM: 1234.5 });
+  const trueGrid = geo('wgs84ToLv95', { lat: jpeg.lat, lon: jpeg.lon });
+  const ground = rampM(trueGrid.e);
+  clearOfBoundary(ground, step, 'the true-spot ramp height');
+  const rounded = { lat: roundDp(jpeg.lat, d), lon: roundDp(jpeg.lon, d) };
+  if (!insideExtent(geo('wgs84ToLv95', rounded))) throw new Error('selftest: the rounded position leaves the fixture plate; pick another point');
+  const root = await tempPrivacyRoot({ records: { [id]: { file, region: 'fixture', country: 'CH', precision, kind: 'ground', bytes: jpeg.bytes } } });
+  const result = privacyRun(root, id);
+  const failed = bothPassed(result);
+  if (failed) return failed;
+  const { entry, fact, output } = result;
+  if (!entry?.gps || !fact?.position) return 'no sidecar GPS or no generated position was written';
+  const leaked = leaks(output, [jpeg.lat.toFixed(5), jpeg.lon.toFixed(5)]);
+  if (leaked.length) return `an output line holds the true position at 5 decimals (${leaked.length} strings)`;
+  return firstDifference([
+    ['sidecar lat', entry.gps.lat, rounded.lat],
+    ['sidecar lon', entry.gps.lon, rounded.lon],
+    ['sidecar altM', entry.gps.altM, null],
+    ['sidecar groundM', entry.gps.groundM, roundStep(ground, step)],
+    ['position.approximate', fact.position.approximate, true],
+    ['position.radiusM', fact.position.radiusM, radiusM],
+    ['position.precision', fact.position.precision, precision],
+    ['position.reason names the rounding', fact.position.reason?.includes(reasonPart), true],
+    ['elevation.m', fact.elevation?.m, entry.gps.groundM],
+  ]);
+}
 
 // scripts/terrain/: the plate registry through --root (DATA-11, 15-05 D-13)
 const TERRAIN_BUILD = path.join(repoRoot, 'scripts', 'terrain', 'build-terrain.mjs');
@@ -2948,7 +3236,9 @@ const cases = [
       return ['--root', photoDataOffPlateRoot];
     },
     expectExit: 1,
-    expectOutput: ['r004-011: position lies outside the DEM extent', 'photos:build: stale'],
+    expectOutput: ['r004-011: position lies outside the DEM extent; plate matterhorn', 'photos:build: stale'],
+    // 16 D-12: the message names the photo and the plate, never a uv or a position.
+    check: (output) => (/uv|46\.2333|7\.36/.test(output) ? 'the off-plate message prints a uv or the position' : null),
   },
   // 15-06 (DATA-10, D-01 to D-05): the photo map and the region registry. Write mode
   // (no --check) except the stale case: a failing build writes nothing.
@@ -2976,7 +3266,7 @@ const cases = [
     setup: () => {
       photoMapOrphanRoot = tempPhotoDataRoot(({ photoMap }) => {
         // Sorted between img-0662 and r004-011.
-        addMapRecord(photoMap, 'img-9999', { file: 'IMG_9999.jpg', region: 'zermatt', country: 'CH' });
+        addMapRecord(photoMap, 'img-9999', { file: 'IMG_9999.jpg', region: 'zermatt', country: 'CH', precision: '4dp', kind: 'ground' });
       });
       return ['--root', photoMapOrphanRoot];
     },
@@ -3089,6 +3379,22 @@ const cases = [
     expectExit: 1,
     expectOutput: ['DJI_0001.JPG is named by both img-9001 and img-9002; one original has one record', 'photos:exif: data/photos/photo-map.json: 1 schema violations'],
     check: noExifSidecar(exifDuplicateRoot),
+  },
+  // 16-01 (DATA-14, D-01 to D-04): location privacy through both stages on generated
+  // JPEGs with EXIF GPS (gpsJpeg, tempPrivacyRoot). Every true position is computed
+  // here, inside the synthetic fixture plate; no real photo data is read.
+  {
+    name: 'privacy: a 3dp photo is rounded before the write, gets a 10 m ground height and an approximate position',
+    fn: () =>
+      coarseCase({
+        id: 'img-9101',
+        point: { e: 2601234.567, n: 1201789.123 },
+        precision: '3dp',
+        d: 3,
+        step: 10,
+        radiusM: 100,
+        reasonPart: 'about 100 m',
+      }),
   },
   {
     name: 'G6 photos:derive: an undecodable source after a valid one exits 1 and leaves every file in place (WR-05)',
@@ -3265,7 +3571,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, exifMappedRoot, exifUnmappedRoot, exifDuplicateRoot, terrainFixtureRoot, terrainMissingRoot, terrainRemoveRoot, terrainDropCheckRoot, terrainDropWriteRoot, ...ciGateTempRoots, ...telemetryTempRoots]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, exifMappedRoot, exifUnmappedRoot, exifDuplicateRoot, terrainFixtureRoot, terrainMissingRoot, terrainRemoveRoot, terrainDropCheckRoot, terrainDropWriteRoot, ...ciGateTempRoots, ...telemetryTempRoots, ...privacyTempRoots]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 

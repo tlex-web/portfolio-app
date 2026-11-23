@@ -27,14 +27,23 @@
  *              60 s, or the build fails (D-04, RESEARCH Pitfall 4). When the
  *              camera recorded an OffsetTimeOriginal, it must equal that offset,
  *              or the build fails (08-REVIEW WR-03).
+ *   kind       the photo-map record's ('ground' or 'aerial', 16 D-04), verbatim.
  *   position   corrections (hand-placed only, WR-08), else the sidecar GPS as
- *              exif / not approximate, else null (DATA-04).
- *   elevation  bilinear at pixel centres of the native source raster at the
- *              4-decimal coordinates, rounded to whole metres (D-17, Pitfall 2).
- *   uv         round4 of lv95ToUv in the extent of the photo's region's plate
- *              (DATA-01, DATA-06, 15 D-04). A position whose raw uv is outside
+ *              exif, else null (DATA-04). Every position carries its record's
+ *              precision (16 D-01): a '4dp' EXIF position is not approximate; a
+ *              '3dp' or '2dp' one is approximate with a reason naming the
+ *              rounding and radiusM 100 or 1000 (DATA-14). A sidecar or
+ *              corrections position with more decimals than that fails.
+ *   elevation  '4dp' (and hand-placed): bilinear at pixel centres of the native
+ *              source raster at the position, rounded to whole metres (D-17,
+ *              Pitfall 2). A coarse EXIF photo: the sidecar's gps.groundM,
+ *              sampled at the true spot in stage 1 (16 D-03); missing fails, and
+ *              so does a groundM on a '4dp' photo.
+ *   uv         round4 of gridToUv(toGrid(source.crs, position)) in the extent of
+ *              the photo's region's plate (DATA-01, DATA-06, 15 D-04), through
+ *              scripts/photos/plate-dem.mjs. A position whose raw uv is outside
  *              [0, 1] fails the build before a (clamped) DEM height is sampled
- *              (08-REVIEW WR-01).
+ *              (08-REVIEW WR-01); the message names no position and no uv.
  *   exif       null for a film scan, else the six sidecar exposure fields.
  *   tags       year and meteorological season from the capture (D-08).
  * Every entry is parsed with PhotoFacts. The altimeter rail start is not emitted
@@ -56,17 +65,15 @@
  *   npm run photos:build -- --check   (also `npm run data:check`, part of `npm run lint`)
  */
 
-import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import sharp from 'sharp';
 import { Corrections, ExifSidecar, PhotoFacts, PhotoMap } from '../../data/schemas/photo.ts';
 import { Regions } from '../../data/schemas/region.ts';
-import { Plates, TerrainSource } from '../../data/schemas/terrain.ts';
-import { lv95ToUv, round4, wgs84ToLv95 } from '../../lib/geo.ts';
-import { sampleAtLv95 } from '../../lib/terrain/dem-sample.ts';
+import { Plates } from '../../data/schemas/terrain.ts';
+import { round4 } from '../../lib/geo.ts';
 import { seasonOf, yearTag } from '../../lib/photo-format.ts';
+import { gridToUv, loadPlateDem, plateFor, sampleAtGrid, toGrid } from './plate-dem.mjs';
 
 const NAME = 'photos:build';
 
@@ -118,32 +125,19 @@ const TIME_ZONE = 'Europe/Zurich';
 const MAX_GPS_DRIFT_S = 60;
 
 const readJson = (rel) => JSON.parse(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
-const sha256 = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex');
 
+/** Decimals per precision level (16 D-01). */
+const DECIMALS = { '4dp': 4, '3dp': 3, '2dp': 2 };
 /**
- * A plate's <source>/source.json + PNG -> { extent, width, height, metres },
- * sha256 verified (T-08-24). `sourceRel` is the plate's `source` from plates.json.
+ * A coarse EXIF position is approximate (DATA-14): the radius bounds the
+ * rounding cell (a 3dp cell at 46 N is 111 x 77 m, a 2dp cell 1.1 x 0.77 km).
  */
-async function loadDem(sourceRel) {
-  const source = TerrainSource.parse(readJson(`${sourceRel}/source.json`));
-  const png = fs.readFileSync(path.join(ROOT, sourceRel, source.file));
-  const actual = sha256(png);
-  if (actual !== source.sha256) {
-    throw new Error(
-      `${sourceRel}/${source.file} sha256 ${actual.slice(0, 10)} != source.json ${source.sha256.slice(0, 10)}`
-    );
-  }
-  const { data, info } = await sharp(png)
-    .toColourspace('grey16')
-    .raw({ depth: 'ushort' })
-    .toBuffer({ resolveWithObject: true });
-  if (info.width !== source.width || info.height !== source.height || info.channels !== 1) {
-    throw new Error(`${sourceRel}/${source.file} is not ${source.width} x ${source.height} grey16`);
-  }
-  const u16 = new Uint16Array(data.buffer.slice(data.byteOffset, data.byteOffset + data.length));
-  const metres = Float64Array.from(u16, (v) => v * source.heightScale);
-  return { extent: source.extent, width: source.width, height: source.height, metres };
-}
+const COARSE = {
+  '3dp': { reason: 'Position rounded to about 100 m (3 decimals) for privacy', radiusM: 100 },
+  '2dp': { reason: 'Position rounded to about 1 km (2 decimals) for privacy', radiusM: 1000 },
+};
+/** True when `v` has more decimals than `d` (the Coord4 tolerance, at d decimals). */
+const finerThan = (v, d) => Math.abs(v * 10 ** d - Math.round(v * 10 ** d)) >= 1e-6;
 
 /** Wall time of instant `ms` in TIME_ZONE as 'YYYY-MM-DDTHH:MM:SS' (Node ICU, build time only). */
 const wallFormat = new Intl.DateTimeFormat('en-CA', {
@@ -216,8 +210,23 @@ function buildCapture(entry, fix) {
   return { precision: 'second', local, timeZone: TIME_ZONE, offset, source: 'exif' };
 }
 
-/** Canonical key order, so the output never depends on the order in corrections.json. */
-function buildPosition(entry, fix) {
+/**
+ * The photo's position, tagged with its record's precision (16 D-01, D-02), in
+ * canonical key order, so the output never depends on the order in
+ * corrections.json. A position with more decimals than its precision fails
+ * (a correction can never undo a coarse choice); the message names the photo,
+ * never the coordinates (D-12).
+ */
+function buildPosition(entry, fix, record) {
+  const precision = record.precision;
+  const d = DECIMALS[precision];
+  const checked = (lat, lon) => {
+    if (finerThan(lat, d) || finerThan(lon, d)) {
+      throw new Error(
+        `${entry.id}: position has more decimals than its precision ${precision}; round it or change the precision in ${PHOTO_MAP_REL}`
+      );
+    }
+  };
   const p = fix?.position;
   if (p) {
     // WR-08: a typed-in position is never an exact EXIF fix (the schema rejects it too).
@@ -226,17 +235,23 @@ function buildPosition(entry, fix) {
         `${entry.id}: ${CORRECTIONS_REL} position has source '${p.source}'; a correction is 'hand-placed' (DATA-04)`
       );
     }
+    checked(p.lat, p.lon);
     return {
       lat: p.lat,
       lon: p.lon,
+      precision,
       source: p.source,
       approximate: p.approximate,
       ...(p.reason !== undefined ? { reason: p.reason } : {}),
       ...(p.radiusM !== undefined ? { radiusM: p.radiusM } : {}),
     };
   }
-  if (entry.gps)
-    return { lat: entry.gps.lat, lon: entry.gps.lon, source: 'exif', approximate: false };
+  if (entry.gps) {
+    checked(entry.gps.lat, entry.gps.lon);
+    const base = { lat: entry.gps.lat, lon: entry.gps.lon, precision, source: 'exif' };
+    if (precision === '4dp') return { ...base, approximate: false };
+    return { ...base, approximate: true, ...COARSE[precision] };
+  }
   return null;
 }
 
@@ -279,21 +294,22 @@ function resolveMembership(sidecar, photoMap, regions, plates) {
       );
     }
   }
-  const regionById = new Map(regions.regions.map((r) => [r.id, r]));
-  const plateById = new Map(plates.plates.map((p) => [p.id, p]));
+  const plateIds = new Set(plates.plates.map((p) => p.id));
   for (const region of regions.regions) {
-    if (!plateById.has(region.plate)) {
+    if (!plateIds.has(region.plate)) {
       throw new Error(`region ${region.id}: plate ${region.plate} is not in ${PLATES_REL}`);
     }
   }
   const membership = new Map();
   for (const entry of sidecar.photos) {
     const record = records[entry.id];
-    const region = regionById.get(record.region);
-    if (!region) {
-      throw new Error(`${entry.id}: region ${record.region} is not in ${REGIONS_REL}`);
+    let plate;
+    try {
+      plate = plateFor(record, regions, plates);
+    } catch (e) {
+      throw new Error(`${entry.id}: ${e.message}`);
     }
-    membership.set(entry.id, { record, plate: plateById.get(region.plate) });
+    membership.set(entry.id, { record, plate });
   }
   return membership;
 }
@@ -316,7 +332,7 @@ async function build() {
   // One DEM load per plate (15 D-04): each photo is sampled on its own region's plate.
   const dems = new Map();
   for (const { plate } of membership.values()) {
-    if (!dems.has(plate.id)) dems.set(plate.id, await loadDem(plate.source));
+    if (!dems.has(plate.id)) dems.set(plate.id, await loadPlateDem(ROOT, plate.source));
   }
 
   const photos = sidecar.photos.map((entry) => {
@@ -330,26 +346,43 @@ async function build() {
       );
     }
     const capture = buildCapture(entry, fix);
-    const position = buildPosition(entry, fix);
+    const position = buildPosition(entry, fix, record);
+    const coarse = record.precision !== '4dp';
+    const groundM = entry.gps?.groundM;
+    // 16 D-03: a coarse photo's height was sampled at its true spot in stage 1; a
+    // 4dp photo is sampled here, so it must not carry one.
+    if (!coarse && groundM !== undefined) {
+      throw new Error(
+        `${entry.id}: a 4dp photo carries gps.groundM; run npm run photos:exif with its original`
+      );
+    }
     let uv = null;
     let elevation = null;
     if (position) {
-      const lv95 = wgs84ToLv95(position);
-      const raw = lv95ToUv(lv95, dem.extent);
+      const grid = toGrid(dem.crs, position);
+      const raw = gridToUv(grid, dem.extent);
       // WR-01: off the sheet there is no pin to place and only a clamped edge height to sample.
+      // No uv or position in the message: CI logs are public (16 D-12).
       if (raw.u < 0 || raw.u > 1 || raw.v < 0 || raw.v > 1) {
-        throw new Error(
-          `${entry.id}: position lies outside the DEM extent (uv ${raw.u.toFixed(3)}, ${raw.v.toFixed(3)}); plate ${plate.id}`
-        );
+        throw new Error(`${entry.id}: position lies outside the DEM extent; plate ${plate.id}`);
       }
       uv = { u: round4(raw.u), v: round4(raw.v) };
-      const m = sampleAtLv95(dem.metres, dem.width, dem.height, dem.extent, lv95);
-      elevation = { source: 'dem', m: Math.round(m) };
+      if (coarse && position.source === 'exif') {
+        if (groundM === undefined) {
+          throw new Error(
+            `${entry.id}: a ${record.precision} photo needs gps.groundM; run npm run photos:exif with its original`
+          );
+        }
+        elevation = { source: 'dem', m: groundM };
+      } else {
+        elevation = { source: 'dem', m: Math.round(sampleAtGrid(dem, grid)) };
+      }
     }
     return PhotoFacts.parse({
       id: entry.id,
       region: record.region,
       country: record.country,
+      kind: record.kind,
       medium,
       capture,
       position,

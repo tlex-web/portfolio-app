@@ -5,6 +5,7 @@ export const photos = [
     "id": "img-0605",
     "region": "zermatt",
     "country": "CH",
+    "kind": "ground",
     "medium": "digital",
     "capture": {
       "precision": "second",
@@ -16,6 +17,7 @@ export const photos = [
     "position": {
       "lat": 46.015,
       "lon": 7.7414,
+      "precision": "4dp",
       "source": "exif",
       "approximate": false
     },
@@ -45,6 +47,7 @@ export const photos = [
     "id": "img-0629",
     "region": "zermatt",
     "country": "CH",
+    "kind": "ground",
     "medium": "digital",
     "capture": {
       "precision": "second",
@@ -56,6 +59,7 @@ export const photos = [
     "position": {
       "lat": 46.0081,
       "lon": 7.7385,
+      "precision": "4dp",
       "source": "exif",
       "approximate": false
     },
@@ -89,6 +93,7 @@ export const photos = [
     "id": "img-0662",
     "region": "zermatt",
     "country": "CH",
+    "kind": "ground",
     "medium": "digital",
     "capture": {
       "precision": "second",
@@ -100,6 +105,7 @@ export const photos = [
     "position": {
       "lat": 45.9908,
       "lon": 7.7103,
+      "precision": "4dp",
       "source": "exif",
       "approximate": false
     },
@@ -129,6 +135,7 @@ export const photos = [
     "id": "r004-011",
     "region": "zermatt",
     "country": "CH",
+    "kind": "ground",
     "medium": "film-scan",
     "capture": {
       "precision": "year",
@@ -138,6 +145,7 @@ export const photos = [
     "position": {
       "lat": 45.9837,
       "lon": 7.7623,
+      "precision": "4dp",
       "source": "hand-placed",
       "approximate": true,
       "reason": "Film scan without GPS; Riffelsee identified by Tim; pin hand-placed on the north shore",

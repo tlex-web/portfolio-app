@@ -4,22 +4,30 @@
     "img-0605": {
       "file": "IMG_0605-Enhanced (2022_02_01 09_47_03 UTC).jpg",
       "region": "zermatt",
-      "country": "CH"
+      "country": "CH",
+      "precision": "4dp",
+      "kind": "ground"
     },
     "img-0629": {
       "file": "IMG_0629-Enhanced (2022_07_29 07_19_54 UTC).jpg",
       "region": "zermatt",
-      "country": "CH"
+      "country": "CH",
+      "precision": "4dp",
+      "kind": "ground"
     },
     "img-0662": {
       "file": "IMG_0662-Enhanced (2022_07_29 07_19_54 UTC).jpg",
       "region": "zermatt",
-      "country": "CH"
+      "country": "CH",
+      "precision": "4dp",
+      "kind": "ground"
     },
     "r004-011": {
       "file": "R004-011-Edit-Enhanced (2021_11_13 16_58_47 UTC).jpg",
       "region": "zermatt",
-      "country": "CH"
+      "country": "CH",
+      "precision": "4dp",
+      "kind": "ground"
     }
   }
 }
