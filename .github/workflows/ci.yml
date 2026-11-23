@@ -156,6 +156,16 @@ jobs:
           name: codecov-umbrella
           fail_ci_if_error: false
 
+  # One leg per Playwright engine since Phase 17 (D-25): the single job running
+  # all three engines took 27-40 minutes, and the region and photo routes would
+  # push it past 45. The legs run in parallel, so the wall-clock time is the
+  # slowest leg. The job name stays literal (check-ci-gate.mjs rule 18 forbids
+  # an expression in a job name); GitHub appends the matrix value itself, so
+  # the checks read "E2E Tests (chromium)", "E2E Tests (firefox)" and
+  # "E2E Tests (webkit)". fail-fast is off so a red leg does not cancel the
+  # others and one run shows every engine. needs.e2e-tests.result is the
+  # aggregate of every leg (any failed leg makes it "failure"), so ci-ok.needs
+  # and the IN(...) list in scripts/ci/ci-ok.jq keep the one id unchanged.
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
@@ -164,6 +174,10 @@ jobs:
     timeout-minutes: 60
     permissions:
       contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox, webkit]
     # The image carries the browsers and their system packages, so nothing comes from
     # the Ubuntu mirrors: 'playwright install --with-deps' once spent 55 of this job's
     # 60 minutes on them (run 42223932292). The tag must equal the lockfile
@@ -188,8 +202,11 @@ jobs:
         run: npm ls --depth=0
 
       - name: Run Playwright tests
-        run: npx playwright test --project=chromium --project=firefox --project=webkit --fail-on-flaky-tests
+        run: npx playwright test --project="$PW_PROJECT" --fail-on-flaky-tests
         env:
+          # The matrix value reaches the shell through env only, never as an
+          # expression inside the run block (substituted before the shell runs).
+          PW_PROJECT: ${{ matrix.project }}
           # The container runs as root and Actions points HOME at a directory the runner
           # user owns; Firefox refuses to start as root with a HOME it does not own.
           HOME: /root
@@ -201,7 +218,9 @@ jobs:
         uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: playwright-report
+          # One artifact per leg: upload-artifact rejects a second artifact
+          # with the same name in one run.
+          name: playwright-report-${{ matrix.project }}
           path: playwright-report/
           retention-days: 30
 
