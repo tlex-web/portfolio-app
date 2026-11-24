@@ -62,20 +62,47 @@ export function formatLatLon(
   return `${ns} ${MIDDOT} ${ew}`;
 }
 
+/** A position's precision as data/generated/photos.ts stores it (16 D-01). */
+export type CoordinatePrecision = '4dp' | '3dp' | '2dp';
+
+/** The decimals each precision prints at: its own, never finer and never padded (16 D-01). */
+const PRECISION_DECIMALS = { '4dp': 4, '3dp': 3, '2dp': 2 } as const satisfies Record<
+  CoordinatePrecision,
+  2 | 3 | 4
+>;
+
+/**
+ * One coordinate as a signed decimal string at the position's own precision,
+ * rounded half up exactly as the strip rounds it: (46.015, '4dp') -> '46.0150',
+ * (-1.23456, '4dp') -> '-1.2346', (46.016, '2dp') -> '46.02'. A string, not a
+ * number, so a trailing zero survives: this is the text 17-13's JSON-LD
+ * GeoCoordinates carry, digit for digit the strip's Position row (17 D-19).
+ */
+export function roundedCoordinate(v: number, precision: CoordinatePrecision): string {
+  return `${v < 0 ? '-' : ''}${fixedDecimals(v, PRECISION_DECIMALS[precision])}`;
+}
+
 /**
  * WGS84 coordinates as the viewer strip prints them (D-07; 10-UI-SPEC Strip
  * field 6): the same round-half-up rule as formatLatLon, the hemisphere letter
  * after U+00A0, and one plain space between the halves:
- * { lat: 46.015, lon: 7.7414 } -> '46.0150 N 7.7414 E'.
+ * { lat: 46.015, lon: 7.7414, precision: '4dp' } -> '46.0150 N 7.7414 E'.
  *
- * `decimals` is the position's own precision (16 D-01: '4dp' 4, '3dp' 3,
- * '2dp' 2), used for both halves, so a coarse position is never padded to
- * four decimals: ({ lat: 46.016, lon: 7.742 }, 3) -> '46.016 N 7.742 E'.
+ * `precision` is the position's own (16 D-01: '4dp' 4, '3dp' 3, '2dp' 2
+ * decimals), used for both halves, and has no default, so a coarse position can
+ * never be padded to four decimals (16 IN-01):
+ * { lat: 46.016, lon: 7.742, precision: '3dp' } -> '46.016 N 7.742 E'.
  */
-export function formatCoordinates(
-  { lat, lon }: { lat: number; lon: number },
-  decimals: 2 | 3 | 4 = 4,
-): string {
+export function formatCoordinates({
+  lat,
+  lon,
+  precision,
+}: {
+  lat: number;
+  lon: number;
+  precision: CoordinatePrecision;
+}): string {
+  const decimals = PRECISION_DECIMALS[precision];
   return `${fixedDecimals(lat, decimals)}${NBSP}${lat < 0 ? 'S' : 'N'} ${fixedDecimals(lon, decimals)}${NBSP}${lon < 0 ? 'W' : 'E'}`;
 }
 

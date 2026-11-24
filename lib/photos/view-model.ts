@@ -7,7 +7,7 @@ import { editorial } from '@/data/photos/editorial';
 import type { EditorialAnnotation, ElevationRef, Fact } from '@/data/schemas/editorial';
 import { site } from '@/data/site';
 import { buildWaypoints, type Waypoint, type WaypointInput } from '@/lib/ascent/waypoints';
-import { formatCoordinates } from '@/lib/home-format';
+import { formatCoordinates, type CoordinatePrecision } from '@/lib/home-format';
 import {
   formatAltitude,
   formatAperture,
@@ -131,16 +131,10 @@ type ExifInput = {
 type PositionInput = {
   lat: number;
   lon: number;
-  precision: '4dp' | '3dp' | '2dp';
+  precision: CoordinatePrecision;
   approximate: boolean;
   radiusM?: number | null;
 };
-
-/** The decimals a position prints at: its own precision, never finer (16 D-01). */
-const DECIMALS = { '4dp': 4, '3dp': 3, '2dp': 2 } as const satisfies Record<
-  PositionInput['precision'],
-  2 | 3 | 4
->;
 
 /**
  * The photo fields buildPhotoViews reads beyond buildWaypoints' own
@@ -266,7 +260,8 @@ export function stripFields(source: StripSource): StripFields {
     });
   }
   if (located) {
-    const coordinates = formatCoordinates(position, DECIMALS[position.precision]);
+    // The position carries its own precision; formatCoordinates has no default (16 IN-01).
+    const coordinates = formatCoordinates(position);
     positionRows.push({
       term: 'Position',
       value: position.approximate ? `≈ ${coordinates}` : coordinates,
