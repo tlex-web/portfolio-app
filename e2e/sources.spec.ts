@@ -1,7 +1,7 @@
+import { createHash } from 'node:crypto';
 import { test, expect, type Page } from '@playwright/test';
 import bev from '@/data/terrain/plates/saalfelden/source.json';
 import { GLO90_LIABILITY, GLO90_NOTICE } from '@/data/schemas/overview';
-import { site } from '@/data/site';
 import { SOURCE_IDS } from '@/data/source-credits';
 
 /**
@@ -10,15 +10,17 @@ import { SOURCE_IDS } from '@/data/source-credits';
  * h1 "Data sources" and no current nav item (the page is not under /photos).
  * Each source's section sits at its stable anchor; its Credit prints the data
  * source's own string, compared by exact textContent so one changed code point
- * fails; its licence link opens a new tab with rel="noopener noreferrer"
- * (T-18-05). The path is literal, so the URL contract is checked independently
- * of SOURCES_PAGE.
+ * fails (swissALTIRegio's, which has no data file since 18-03 D-16, by the
+ * sha256 and length of its v2.0 text); its licence link opens a new tab with
+ * rel="noopener noreferrer" (T-18-05). The path is literal, so the URL
+ * contract is checked independently of SOURCES_PAGE.
  *
  * The sections render in SOURCE_IDS order, one each; the expected credits come
- * from the data files (site.ts, the Saalfelden plate's source.json, the GLO-90
- * constants), never from data/sources.ts, so the page is checked against its
- * sources. /sources#bev-als-dtm lands its h2 below the fixed nav, and at
- * 375 px nothing widens the page (verbatim credits and URLs wrap anywhere).
+ * from the data files (the Saalfelden plate's source.json, the GLO-90
+ * constants) or the swissALTIRegio hash pin, never from data/sources.ts, so
+ * the page is checked against its sources. /sources#bev-als-dtm lands its h2
+ * below the fixed nav, and at 375 px nothing widens the page (verbatim credits
+ * and URLs wrap anywhere).
  */
 
 /*
@@ -29,6 +31,20 @@ import { SOURCE_IDS } from '@/data/source-credits';
 test.describe.configure({ mode: 'default' });
 
 const primaryNav = (page: Page) => page.getByRole('navigation', { name: 'Primary' });
+
+/**
+ * The swissALTIRegio reference's v2.0 text (08 D-15): its sha256 and length,
+ * the same pin as data/__tests__/sources.test.ts.
+ */
+const SWISSALTIREGIO_SHA256 = 'bb9aae2fda067c1337d3dde7cd31223ea425286b4c81eaeadf8c1a8d158f19ea';
+const SWISSALTIREGIO_LENGTH = 631;
+
+/** Asserts one paragraph equal, code point for code point, to the pinned swissALTIRegio reference. */
+function expectSwissAltiRegio(texts: string[]) {
+  expect(texts).toHaveLength(1);
+  expect(texts[0]).toHaveLength(SWISSALTIREGIO_LENGTH);
+  expect(createHash('sha256').update(texts[0], 'utf8').digest('hex')).toBe(SWISSALTIREGIO_SHA256);
+}
 
 /** The exact text of each Credit paragraph in one section. */
 async function creditTexts(page: Page, id: string): Promise<string[]> {
@@ -50,13 +66,13 @@ test.describe('/sources (REGION-06, D-20)', () => {
     await expect(page.getByRole('contentinfo')).toHaveCount(1);
   });
 
-  test('the swissALTIRegio section prints site.attribution.terrain exactly', async ({ page }) => {
+  test('the swissALTIRegio section prints its v2.0 reference exactly (sha256 pin)', async ({ page }) => {
     await page.goto('/sources');
 
     const section = page.locator('section#swissaltiregio');
     await expect(section).toHaveCount(1);
     await expect(section.getByRole('heading', { level: 2 })).toHaveText('swissALTIRegio');
-    expect(await creditTexts(page, 'swissaltiregio')).toEqual([site.attribution.terrain]);
+    expectSwissAltiRegio(await creditTexts(page, 'swissaltiregio'));
   });
 
   test('lists one section per source in SOURCE_IDS order, each credit exactly its data', async ({
@@ -69,7 +85,7 @@ test.describe('/sources (REGION-06, D-20)', () => {
       .evaluateAll((sections) => sections.map((s) => s.id));
     expect(ids).toEqual([...SOURCE_IDS]);
 
-    expect(await creditTexts(page, 'swissaltiregio')).toEqual([site.attribution.terrain]);
+    expectSwissAltiRegio(await creditTexts(page, 'swissaltiregio'));
     expect(await creditTexts(page, 'bev-als-dtm')).toEqual([bev.credit]);
     expect(await creditTexts(page, 'copernicus-glo-90')).toEqual([GLO90_NOTICE, GLO90_LIABILITY]);
 

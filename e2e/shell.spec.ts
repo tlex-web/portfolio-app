@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { site } from '@/data/site';
+import { SHORT_CREDIT, SOURCES_PAGE, sourceHref } from '@/data/source-credits';
 import { terrain } from '@/data/generated/terrain';
 import { homePhotos } from '@/lib/ascent/home-photos';
 import { ROUTES, type Label } from './routes';
@@ -547,8 +548,10 @@ test.describe('Shell reduced motion', () => {
  * SHELL-04 footer map legend (08-UI-SPEC "Footer Map-Sheet Margin Contract";
  * UI Considerations E1 and E4 backstops): the band keeps its aspect ratio, the
  * one visible scale bar is true to the extent width, the ticks follow the photo
- * data, the footer still has exactly three tab stops, and every route credits
- * the swissALTIRegio source with the site.attribution.terrain constant.
+ * data, the footer has exactly five tab stops (GitHub, LinkedIn, Email and the
+ * two Source links, 18 D-16), and every route credits the swissALTIRegio source
+ * with a short credit linked to its /sources entry plus an All data sources
+ * link, never the long reference itself (it lives on /sources).
  */
 const LEGEND_VIEWPORTS = [
   // [width, height, band aspect, scale length in metres]
@@ -566,7 +569,7 @@ const positionedPhotos = homeList.filter((p) => p.position !== null);
 
 test.describe('Footer map legend (SHELL-04)', () => {
   for (const [width, height, aspect, lengthM] of LEGEND_VIEWPORTS) {
-    test(`@${width}: band ${aspect}:1, true ${lengthM} m scale bar, ticks, 3 tab stops`, async ({ page }) => {
+    test(`@${width}: band ${aspect}:1, true ${lengthM} m scale bar, ticks, 5 tab stops`, async ({ page }) => {
       await page.setViewportSize({ width, height });
       await page.goto('/');
 
@@ -597,8 +600,8 @@ test.describe('Footer map legend (SHELL-04)', () => {
       );
       await expect(footer.locator('[data-tick="approximate"]')).toHaveCount(1);
 
-      // The margin adds no tab stop: GitHub, LinkedIn and Email only.
-      expect(await footer.evaluate((el, sel) => el.querySelectorAll(sel).length, FOOTER_FOCUSABLE)).toBe(3);
+      // GitHub, LinkedIn and Email, then the Source row's two links (18 D-16); nothing else.
+      expect(await footer.evaluate((el, sel) => el.querySelectorAll(sel).length, FOOTER_FOCUSABLE)).toBe(5);
 
       if (width === 375) {
         // E3/E5: nothing in the footer (Extent lines, attribution, scale labels) runs
@@ -626,7 +629,9 @@ test.describe('Footer map legend (SHELL-04)', () => {
     expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
   });
 
-  test('every route credits the source with site.attribution.terrain', async ({ page }) => {
+  test('every route credits the source with a link to its /sources entry and an All data sources link', async ({
+    page,
+  }) => {
     // Eight full page loads in one test. A cold dev server compiles each route
     // on its first visit, which overran the 30 s budget (12-22 reproduced five
     // timeouts at /offline); the slow marker triples it. CI's production run
@@ -634,7 +639,18 @@ test.describe('Footer map legend (SHELL-04)', () => {
     test.slow();
     for (const [path] of ROUTES) {
       await page.goto(path);
-      await expect(page.getByRole('contentinfo')).toContainText(site.attribution.terrain);
+      const footer = page.getByRole('contentinfo');
+      await expect(footer).toContainText(`Contours derived from ${SHORT_CREDIT.swissaltiregio}.`);
+      await expect(footer.getByRole('link', { name: SHORT_CREDIT.swissaltiregio, exact: true })).toHaveAttribute(
+        'href',
+        sourceHref('swissaltiregio'),
+      );
+      await expect(footer.getByRole('link', { name: 'All data sources', exact: true })).toHaveAttribute(
+        'href',
+        SOURCES_PAGE.href,
+      );
+      // The 631-character reference moved to /sources (D-16): none of it in the footer.
+      await expect(footer).not.toContainText('Tarquini');
     }
   });
 });

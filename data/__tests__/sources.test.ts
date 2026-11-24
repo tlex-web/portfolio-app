@@ -11,16 +11,18 @@
  *   WorldDEM™, the U+2019 apostrophes in the swisstopo reference, the U+2013
  *   dash in the BEV credit). The data files are read from disk here, not
  *   through the modules data/sources.ts imports, so the check is independent
- *   of the import path.
+ *   of the import path. swissALTIRegio's reference has no data file: it
+ *   lives in data/sources.ts itself (18 D-16), so it is pinned to the sha256
+ *   and length of its v2.0 text (08 D-15) and can never change by a move.
  * - Licences link to their official text over https; "Used on" links only to
  *   /photos or a registry region page, region pages west to east (D-01).
  */
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { GLO90_LIABILITY, GLO90_NOTICE } from '@/data/schemas/overview';
-import { site } from '@/data/site';
 import { SHORT_CREDIT, SOURCE_IDS, SOURCES_PAGE, sourceHref } from '@/data/source-credits';
-import { SOURCES, SOURCES_INTRO, type SourceEntry } from '@/data/sources';
+import { SOURCES, SOURCES_INTRO, SWISSALTIREGIO_CREDIT, type SourceEntry } from '@/data/sources';
 import { regionHref } from '@/lib/photos/routes';
 import { regionIds } from '@/lib/regions';
 
@@ -65,9 +67,13 @@ describe('order and anchors (REGION-06 ordering)', () => {
 });
 
 describe('verbatim credits (16 D-21, T-18-06; REGION-06 encoding)', () => {
-  it('swissALTIRegio prints site.attribution.terrain, the same string', () => {
-    expect(entry('swissaltiregio').credit).toStrictEqual([site.attribution.terrain]);
-    expect(site.attribution.terrain).toContain('Institut National de l’information');
+  it('swissALTIRegio prints SWISSALTIREGIO_CREDIT, byte-identical to its v2.0 text (08 D-15, 18 D-16)', () => {
+    expect(entry('swissaltiregio').credit).toStrictEqual([SWISSALTIREGIO_CREDIT]);
+    expect(SWISSALTIREGIO_CREDIT).toHaveLength(631);
+    expect(createHash('sha256').update(SWISSALTIREGIO_CREDIT, 'utf8').digest('hex')).toBe(
+      'bb9aae2fda067c1337d3dde7cd31223ea425286b4c81eaeadf8c1a8d158f19ea'
+    );
+    expect(SWISSALTIREGIO_CREDIT).toContain('Institut National de l’information');
   });
 
   it("BEV ALS DTM prints the Saalfelden plate's source.json credit", () => {

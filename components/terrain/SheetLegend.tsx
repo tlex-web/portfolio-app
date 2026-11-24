@@ -1,5 +1,5 @@
 import type { homePlate } from '@/data/generated/home-plate';
-import { site } from '@/data/site';
+import { SHORT_CREDIT, SOURCES_PAGE, sourceHref } from '@/data/source-credits';
 import {
   SCALE_TIERS,
   formatEquidistance,
@@ -39,9 +39,16 @@ type LegendSheet = typeof homePlate;
  * across, so it is true at every breakpoint without JS. The caller passes the
  * plate's sheet (the footer passes homePlate, so no plate registry reaches its
  * client chunk). The legend reads required sheet metadata, so missing data is a
- * build failure, never a dash. The Source
- * line is the swissALTIRegio reference Tim chose (D-15), verbatim, with no
- * copyright sign; per-plate credits arrive in Phase 18.
+ * build failure, never a dash.
+ *
+ * The Source row (18 D-16; 18-UI-SPEC Contract 7 "Footer Source row") is the
+ * short swissALTIRegio credit linked to its /sources entry, then on its own line
+ * an "All data sources" link: every source's verbatim credit, licence and
+ * changes now stand on /sources. The legend imports only the client-safe
+ * data/source-credits.ts, never data/sources.ts: the footer is rendered inside
+ * app/global-error.tsx's client chunk (lib/__tests__/client-graph.test.ts).
+ * Its links are plain anchors, like the footer's own: the global-error fallback
+ * must not use the router link (components/__tests__/global-error.test.tsx).
  */
 export default function SheetLegend({ sheet, title }: { sheet: LegendSheet; title: string }) {
   const [extentSw, extentNe] = formatExtentLines(sheet.extent.lv95);
@@ -100,7 +107,16 @@ export default function SheetLegend({ sheet, title }: { sheet: LegendSheet; titl
         <div className="col-span-2 lg:col-span-4">
           <dt className={DT}>Source</dt>
           <dd className="mt-1 text-sm text-ink-muted max-w-prose wrap-anywhere">
-            Contours derived from swissALTIRegio. {site.attribution.terrain}
+            Contours derived from{' '}
+            <a href={sourceHref('swissaltiregio')} className="prose-link">
+              {SHORT_CREDIT.swissaltiregio}
+            </a>
+            .
+            <span className="mt-1 block">
+              <a href={SOURCES_PAGE.href} className="prose-link inline-flex min-h-11 items-center">
+                All data sources
+              </a>
+            </span>
           </dd>
         </div>
       </dl>

@@ -9,7 +9,8 @@ import { render, screen, within } from '@testing-library/react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import SiteFooter from '../SiteFooter';
 import { terrain } from '@/data/generated/terrain';
-import { site } from '@/data/site';
+import { SHORT_CREDIT, SOURCES_PAGE, sourceHref } from '@/data/source-credits';
+import { SWISSALTIREGIO_CREDIT } from '@/data/sources';
 import { homePhotos } from '@/lib/ascent/home-photos';
 import { SCALE_TIERS, formatEquidistance, formatExtentLines, formatMonthYear, scaleFraction, tickLeft } from '@/lib/footer-format';
 
@@ -113,13 +114,33 @@ describe('SiteFooter sheet margin (D-15, D-18)', () => {
     }
   });
 
-  it('credits the source with the full attribution constant and no copyright sign', () => {
+  it('credits the source with a short credit linked to /sources#swissaltiregio and an All data sources link (18 D-16)', () => {
     const { footer } = renderFooter();
     const source = dd(footer, 'Source');
-    expect(typeof site.attribution.terrain).toBe('string');
-    expect(site.attribution.terrain.length).toBeGreaterThan(0);
-    expect(source.textContent).toBe(`Contours derived from swissALTIRegio. ${site.attribution.terrain}`);
     expect(source).toHaveClass('text-sm', 'text-ink-muted', 'max-w-prose', 'wrap-anywhere');
+
+    const [credit, all] = within(source).getAllByRole('link');
+    expect(within(source).getAllByRole('link')).toHaveLength(2);
+    expect(credit).toHaveTextContent(SHORT_CREDIT.swissaltiregio);
+    expect(credit).toHaveAttribute('href', '/sources#swissaltiregio');
+    expect(credit).toHaveAttribute('href', sourceHref('swissaltiregio'));
+    expect(credit).toHaveClass('prose-link');
+    expect(all).toHaveTextContent('All data sources');
+    expect(all).toHaveAttribute('href', '/sources');
+    expect(all).toHaveAttribute('href', SOURCES_PAGE.href);
+    // A standalone link meets 44 px on its own line (18-UI-SPEC Contract 7).
+    expect(all).toHaveClass('prose-link', 'inline-flex', 'min-h-11', 'items-center');
+    expect(all.parentElement).toHaveClass('mt-1', 'block');
+    expect(source.textContent).toBe(`Contours derived from ${SHORT_CREDIT.swissaltiregio}.All data sources`);
+
+    // The long reference stays on /sources: nothing past its first word is in the footer.
+    const [first, ...rest] = SWISSALTIREGIO_CREDIT.split(' ');
+    expect(first).toBe('Bundesamt');
+    for (const word of rest.filter((w) => w.length > 3)) {
+      expect(footer.textContent).not.toContain(word);
+    }
+    expect(footer.textContent).not.toContain('Tarquini');
+    expect(source.textContent).not.toContain('©');
   });
 
   it('renders three scale variants, one per tier, each true to the extent width', () => {
@@ -155,10 +176,17 @@ describe('SiteFooter sheet margin (D-15, D-18)', () => {
   });
 });
 
-describe('SiteFooter focus and landmarks (unchanged 07 contract)', () => {
-  it('keeps exactly three focusable elements and no navigation', () => {
+describe('SiteFooter focus and landmarks (07 contract; 18 D-16 Source links)', () => {
+  it('keeps the three Elsewhere links, adds only the two Source links (18 D-16) and no navigation', () => {
     const { footer } = renderFooter();
-    expect(footer.querySelectorAll(FOCUSABLE)).toHaveLength(3);
+    const focusable = Array.from(footer.querySelectorAll(FOCUSABLE));
+    expect(focusable.map((el) => el.textContent?.trim())).toEqual([
+      'GitHub',
+      'LinkedIn',
+      'Email',
+      SHORT_CREDIT.swissaltiregio,
+      'All data sources',
+    ]);
     expect(within(footer).queryByRole('navigation')).not.toBeInTheDocument();
   });
 });

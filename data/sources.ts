@@ -1,6 +1,5 @@
 import { plates } from '@/data/generated/plates';
 import { GLO90_LIABILITY, GLO90_NOTICE } from '@/data/schemas/overview';
-import { site } from '@/data/site';
 import type { SourceId } from '@/data/source-credits';
 import bev from '@/data/terrain/plates/saalfelden/source.json';
 import { regionHref } from '@/lib/photos/routes';
@@ -16,10 +15,12 @@ import { regionHeading, regionsWestToEast } from '@/lib/regions';
  * (lib/__tests__/client-graph.test.ts SERVER_ONLY_MODULES, T-18-04). The footer
  * and the map margins link here through data/source-credits.ts.
  *
- * Credits are never typed here (16 D-21): each is read from its data source,
- * the same string, so the page cannot drift from the data: swissALTIRegio's
- * from site.attribution.terrain, BEV's from the Saalfelden plate's source.json
- * (its licence and licence URL too), and GLO-90's notice and liability
+ * Credits are never retyped (16 D-21): each is its data source's own string,
+ * so the page cannot drift from the data. swissALTIRegio's is
+ * SWISSALTIREGIO_CREDIT below (moved here byte for byte from data/site.ts in
+ * 18-03, D-16, and pinned to its v2.0 sha256), BEV's is read from the
+ * Saalfelden plate's source.json (its licence and licence URL too), and
+ * GLO-90's notice and liability
  * sentence from data/schemas/overview.ts, which the overview source.json schema
  * pins to the licence text. A credit is worded by its licensor; no sentence
  * here may imply endorsement by swisstopo, BEV, the Copernicus programme, ESA
@@ -48,6 +49,19 @@ export type SourceEntry = {
   usedOn: readonly UsedOn[];
 };
 
+/**
+ * The swissALTIRegio source reference (08 D-15; 18 D-16): the "For the 2025
+ * and all subsequent versions:" string, copied character for character from
+ * https://www.swisstopo.admin.ch/en/height-model-swissaltiregio (fetched
+ * 2026-10-24). Tim chose the full string (Option A) with no copyright sign at
+ * the 08-04 sheet checkpoint; the source’s own typo and stray closing quote are
+ * kept verbatim. Moved here from site.attribution.terrain in 18-03 (D-16) so it
+ * never reaches a client chunk: the footer links to /sources#swissaltiregio
+ * instead. data/__tests__/sources.test.ts pins it to its v2.0 sha256 and length.
+ */
+export const SWISSALTIREGIO_CREDIT =
+  'Bundesamt für Landestopografie swisstopo; Tarquini S., I. Isola, M. Favalli, A. Battistini, G. Dotta (2023). TINITALY, a digital elevation model of Italy with a 10 meters cell size (Version 1.1). Istituto Nazionale di Geofisica e Vulcanologia (INGV). https://doi.org/10.13127/tinitaly/1.1; DGM Österreich, geoland.at; DGM1, Bayerische Vermessungsverwaltung – www.geodaten.bayern.de; DGM1, Baden-Württemberg: LGL, www.lgl-bw.de, dl-de/by-2-0”; RGEAlti, Institut National de l’information géographique et forestière, données originales tétéchargées sur https://geoservices.ign.fr/rgealti#telechargement5m, mise à jour du juillet 2023';
+
 /** The intro under the h1 (DRAFT, D-20). */
 export const SOURCES_INTRO =
   'The maps on this site are drawn from three elevation models. Each entry gives the credit exactly as its licence asks, the licence itself, what was done to the data and the maps that use it.';
@@ -70,7 +84,7 @@ export const SOURCES: readonly SourceEntry[] = [
   {
     id: 'swissaltiregio',
     name: 'swissALTIRegio',
-    credit: [site.attribution.terrain],
+    credit: [SWISSALTIREGIO_CREDIT],
     licence: {
       name: 'swisstopo terms of use for free geodata',
       href: 'https://www.swisstopo.admin.ch/en/conditions-geodata',
