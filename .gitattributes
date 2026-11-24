@@ -59,3 +59,8 @@ public/media/* binary
 # their OFL texts keep their exact bytes on every checkout.
 lib/og/fonts/*.ttf binary
 lib/og/fonts/*.txt text eol=lf
+
+# Open Graph card routes (18-01): Turbopack hashes each card file's bytes into the
+# og:image query (?<16 hex>), so a CRLF checkout under core.autocrlf=true would give
+# Windows builds a different query than CI and production. Keep LF everywhere.
+app/**/opengraph-image.tsx text eol=lf
