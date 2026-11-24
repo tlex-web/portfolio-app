@@ -17,7 +17,8 @@ import { buildPhotoViews, seriesInput, type PhotoView } from '@/lib/photos/view-
  * fails the build instead of rendering. Each region's photos are built once,
  * with buildPhotoViews(seriesInput(id)): a registry region with no photo throws
  * seriesInput's RangeError at load, and the order is buildWaypoints' (DEM
- * height ascending, ties broken by id); nothing here re-sorts.
+ * height ascending, ties broken by id); nothing here re-sorts. Each region's
+ * cover (D-13) must be one of those views, checked at load (regionCover).
  *
  * Server-only: this module holds the registry's names and sourced facts, so no
  * 'use client' file may import it, directly or through another module (the
@@ -61,6 +62,38 @@ export function regionPhotoViews(id: string): readonly PhotoView[] {
   const views = VIEWS.get(id);
   if (!views) throw new RangeError(`regionPhotoViews: ${id} is not a registry region`);
   return views;
+}
+
+/**
+ * Each region's cover view (D-13), resolved once at module load. The schema
+ * checks only the cover id's shape; a cover that is not one of the region's own
+ * photos throws here, naming the region and the registry file, so a bad pick
+ * fails the build instead of putting another region's photo on the card.
+ */
+const COVERS: ReadonlyMap<string, PhotoView> = new Map(
+  regions.map((r) => {
+    const cover = regionPhotoViews(r.id).find((v) => v.id === r.cover);
+    if (!cover) {
+      throw new Error(
+        `lib/regions: region ${r.id} names cover ${r.cover} in data/regions/regions.json, ` +
+          'which is not one of its photos (data/photos/photo-map.json)'
+      );
+    }
+    return [r.id, cover];
+  })
+);
+
+/**
+ * The region's cover photo as a view (D-13: Tim's pick, the subject of the
+ * region's Open Graph card): the view in regionPhotoViews(id) whose id is the
+ * registry's cover.
+ *
+ * @throws RangeError for an id that is not in the registry.
+ */
+export function regionCover(id: string): PhotoView {
+  const cover = COVERS.get(id);
+  if (!cover) throw new RangeError(`regionCover: ${id} is not a registry region`);
+  return cover;
 }
 
 /** The region of a generated photo, by photo id, or undefined for an unknown id. */

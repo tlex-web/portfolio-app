@@ -191,6 +191,9 @@ describe("each region's cover (D-13)", () => {
         await import('@/lib/regions');
       } catch (e) {
         error = e;
+      } finally {
+        // doMock outlives isolateModulesAsync; the next row loads the committed registry.
+        jest.dontMock('@/data/regions/regions.json');
       }
       expect(error).toBeInstanceOf(Error);
       expect((error as Error).message).toMatch(/saalfelden/);

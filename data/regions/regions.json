@@ -6,6 +6,7 @@
       "name": "Ortler",
       "country": "IT",
       "plate": "ortler",
+      "cover": "sam-20160717-120906",
       "facts": [
         {
           "text": "The Ortler is the highest mountain in South Tyrol and the main peak of the Ortler Alps.",
@@ -18,6 +19,7 @@
       "name": "Saalfelden",
       "country": "AT",
       "plate": "saalfelden",
+      "cover": "dji-20260919-162232",
       "facts": [
         {
           "text": "Saalfelden am Steinernen Meer is a town in the Zell am See district of the Austrian state of Salzburg, in the historic Pinzgau region.",
@@ -34,6 +36,7 @@
       "name": "Zermatt",
       "country": "CH",
       "plate": "matterhorn",
+      "cover": "img-0605",
       "facts": [
         {
           "text": "Zermatt lies at the head of the Matter Valley in the Swiss canton of Valais.",

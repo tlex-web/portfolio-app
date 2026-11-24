@@ -1045,10 +1045,17 @@ function addMapRecord(photoMap, id, record) {
   photoMap.photos = Object.fromEntries(entries);
 }
 /**
- * A fixture region's country and facts: Region requires both since 16-14, and no
- * selftest case is about them, so every fixture region carries the same valid pair.
+ * A fixture region's country, cover and facts: Region requires the country and
+ * facts since 16-14 and the cover since 17-07 (17 D-13), and no selftest case is
+ * about them, so every fixture region carries the same valid set. The generators
+ * check only the cover's shape (the schema); whether it is one of the region's
+ * photos is checked by data/__tests__/photo-map.test.ts and lib/regions.ts.
  */
-const FIXTURE_REGION = { country: 'CH', facts: [{ text: 'A selftest fixture region.', source: 'Tim' }] };
+const FIXTURE_REGION = {
+  country: 'CH',
+  cover: 'fixture-cover',
+  facts: [{ text: 'A selftest fixture region.', source: 'Tim' }],
+};
 /** Inserts a region at its sorted position, for the same reason. */
 function addRegion(regions, region) {
   if (regions.regions.some((r) => r.id === region.id)) throw new Error(`selftest: region ${region.id} already exists`);
