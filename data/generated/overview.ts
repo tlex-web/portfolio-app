@@ -113,6 +113,10 @@ export const overview = {
       "officialM": 4634,
       "status": "confirmed",
       "officialRef": "https://map.geo.admin.ch/?lang=en&E=2633206&N=1087350&zoom=10",
+      "source": "swisstopo SearchServer gazetteer point and height service (4,634.1 m), verified in 16-RESEARCH",
+      "borders": [
+        "IT"
+      ],
       "uv": {
         "u": 0.2389,
         "v": 0.5105
@@ -124,6 +128,10 @@ export const overview = {
       "officialM": 4806,
       "status": "confirmed",
       "officialRef": "https://www.geoportail.gouv.fr/carte?c=6.86463,45.83267&z=15&permalink=yes",
+      "source": "IGN map value, BD CARTO V5 detail_orographique cote 4806 (Tim's choice in 16-02 over the 2026 and 2023 survey figures)",
+      "borders": [
+        "IT"
+      ],
       "uv": {
         "u": 0.1554,
         "v": 0.5279
@@ -135,6 +143,8 @@ export const overview = {
       "officialM": 3798,
       "status": "confirmed",
       "officialRef": "https://data.bev.gv.at/geonetwork/srv/api/records/a6ea4096-8adc-4752-aac2-a4c115b8c12d",
+      "source": "BEV DLM Bergnamen, edition 2020-12-18, OBJECTID 14342, HOEHE_MEER 3798 from the ÖK50",
+      "borders": [],
       "uv": {
         "u": 0.6412,
         "v": 0.3209
@@ -146,6 +156,10 @@ export const overview = {
       "officialM": 2962,
       "status": "confirmed",
       "officialRef": "https://daten.gdz.bkg.bund.de/produkte/sonstige/gn250/aktuell/",
+      "source": "BKG GN250 names register, NNID DEBKGGND00002I7K, edition 31.12.2024 (not LDBV BayernAtlas, which needs a key)",
+      "borders": [
+        "AT"
+      ],
       "uv": {
         "u": 0.4989,
         "v": 0.2631
@@ -157,6 +171,8 @@ export const overview = {
       "officialM": 2864,
       "status": "secondary",
       "officialRef": null,
+      "source": "secondary: the 16-RESEARCH figure, not confirmed against GURS (Tim chose to include it marked secondary in 16-02)",
+      "borders": [],
       "uv": {
         "u": 0.7364,
         "v": 0.4369

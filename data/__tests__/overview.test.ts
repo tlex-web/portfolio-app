@@ -360,6 +360,19 @@ describe('overview outlines and summits (16-15, D-17, D-18)', () => {
     });
   });
 
+  it("every summit keeps overview.json's height source and borders; Triglav keeps an attribution (16 IN-05)", () => {
+    for (const s of overview.summits) {
+      const want = config.summits.find((c) => c.name === s.name);
+      if (!want) throw new Error(`overview.json has no summit ${s.name}`);
+      expect(s.source).toBe(want.source);
+      expect(s.borders).toEqual(want.borders);
+    }
+    const triglav = overview.summits.find((s) => s.name === 'Triglav');
+    if (!triglav) throw new Error('overview.ts has no Triglav');
+    expect(triglav.officialRef).toBeNull();
+    expect(triglav.source.trim()).not.toBe('');
+  });
+
   it('outlines and summits stay separate records: a summit beside an outline removes neither', () => {
     expect(overview.outlines).toHaveLength(regions.regions.length);
     expect(overview.summits).toHaveLength(config.summits.length);

@@ -519,7 +519,9 @@ function overviewOutlines(source, regions, sources) {
 
 /**
  * The reference summits in overview.json order (D-18), each with its official
- * height, status, officialRef and UV. Kept as their own records: a summit inside
+ * height, status, officialRef, height source, borders and UV. The source travels
+ * with every record (16 IN-05), so a secondary summit with no officialRef
+ * (Triglav) still carries its attribution. Kept as their own records: a summit inside
  * or touching an outline (Dufourspitze beside the Matterhorn plate) merges with
  * nothing.
  */
@@ -534,6 +536,8 @@ function overviewSummits(source, config) {
       officialM: s.officialM,
       status: s.status,
       officialRef: s.officialRef,
+      source: s.source,
+      borders: s.borders,
       uv,
     };
   });
