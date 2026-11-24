@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
-stopped_at: Completed 18-01-PLAN.md
-last_updated: "2026-11-24T23:24:05.629Z"
+stopped_at: Completed 18-02-PLAN.md
+last_updated: "2026-11-24T23:39:30.816Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: f93a8889e3a53f205c54ff73aa6b548cc0352ee9
+state_head: 64eb72471e4abeb2e5b04f552b17a6c865755442
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 109
-  completed_plans: 81
+  completed_plans: 82
   percent: 71
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-24)
 ## Current Position
 
 Phase: 18 (Immersive Survey Layout) — EXECUTING
-Plan: 2 of 29
+Plan: 3 of 29
 Status: Ready to execute
 Last activity: 2026-11-24 — Phase 18 execution started
 
@@ -139,6 +139,7 @@ Progress: [███████░░░] 71%
 | Phase 17 P14 | 9 min | 2 tasks | 5 files |
 | Phase 17 P15 | 25min | 3 tasks | 2 files |
 | Phase 18 P01 | 30min | 3 tasks | 3 files |
+| Phase 18 P02 | 11min | 2 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -343,6 +344,9 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-01 Assumption A1 refuted: the og card query hashes the card file's bytes, not its imports
 - [Phase 18]: 18-01 GUARD-03 floor raised to 3,024 (jest 2,385 + e2e 639) at the phase start
 - [Phase 18]: 18-01 B8 WebKit timeout classified as a flake (failed 45445770986, passed 45506802759)
+- [Phase 18]: 18-02: /sources usedOn region lists come from each plate's dem.product, west to east (regionsWestToEast), so a new region on a product joins its entry with no edit
+- [Phase 18]: 18-02: SavedPageSource.pages is required; /sources sits after the projects, unlabelled, mirroring the sitemap
+- [Phase 18]: 18-02: REGION-01 and REGION-06 stay Pending; 18-02 builds only the /sources target and the D-01 order
 
 ### Pending Todos
 
@@ -404,6 +408,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-24T23:24:04.774Z
-Stopped at: Completed 18-01-PLAN.md
+Last session: 2026-11-24T23:39:30.281Z
+Stopped at: Completed 18-02-PLAN.md
 Resume file: None
