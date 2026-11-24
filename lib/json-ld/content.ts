@@ -1,4 +1,6 @@
 import type {
+  GeoCircle,
+  GeoCoordinates,
   ImageGallery,
   ImageObject,
   Place,
@@ -35,9 +37,12 @@ import {
  *   image, creator, rights, place and date with text equal to what the page
  *   prints. Coordinates go through roundedCoordinate, the strip's own rounding,
  *   at the position's own precision and as strings (a JSON number would drop a
- *   trailing zero), so the block is never finer than the page. No elevation, no
- *   capture seconds. It reads the server-only generated photo facts and image
- *   manifest; no client file imports this module.
+ *   trailing zero), so the block is never finer than the page. An approximate
+ *   position that the strip qualifies with a radius ('≈', '±100 m (approx.)') is
+ *   a GeoCircle around those coordinates with that radius in metres (17-REVIEW
+ *   IN-02, Tim's choice 2026-11-24), so the block qualifies it as the page does.
+ *   No elevation, no capture seconds. It reads the server-only generated photo
+ *   facts and image manifest; no client file imports this module.
  * - 17-14 region pages: regionGalleryLd states the region page as an
  *   ImageGallery whose texts are the page's own (the heading, the approved
  *   description, the printed region rights line) and whose hasPart names each
@@ -62,7 +67,13 @@ export function photoImageId(slug: string): string {
 export type PhotoLdFacts = {
   capture:
     { precision: 'second'; local: string; offset: string } | { precision: 'year'; year: number };
-  position: { lat: number; lon: number; precision: CoordinatePrecision } | null;
+  position: {
+    lat: number;
+    lon: number;
+    precision: CoordinatePrecision;
+    approximate: boolean;
+    radiusM?: number;
+  } | null;
 };
 
 type ManifestVariant = { longEdge: number; width: number; height: number; webp: string };
@@ -81,6 +92,17 @@ export function photoLdFacts(id: string): PhotoLdFacts {
   return { capture: photo.capture, position: photo.position };
 }
 
+/**
+ * An approximate position's radius in whole metres, as the strip's approx note
+ * prints it ('±100 m (approx.)': formatMetres rounds to the metre), or null when
+ * the strip prints no radius (a missing, zero or non-finite radiusM).
+ */
+function approxRadiusM(radiusM: number | undefined): number | null {
+  return typeof radiusM === 'number' && Number.isFinite(radiusM) && radiusM > 0
+    ? Math.round(radiusM)
+    : null;
+}
+
 /** A pixel length as schema.org writes it: a QuantitativeValue in UN/CEFACT E37 (pixel). */
 const pixels = (value: number) =>
   ({ '@type': 'QuantitativeValue', value, unitCode: 'E37' }) as const;
@@ -91,7 +113,10 @@ const pixels = (value: number) =>
  * line the viewer prints (D-17), creditText site.name (D-18), contentLocation
  * the printed place. The geo, present only when the photo has a position, holds
  * the strip's Position digits as strings at the position's own precision
- * (D-19). dateCreated is the capture to the minute with its offset, or the year
+ * (D-19): a GeoCoordinates for an exact position, or for an approximate one
+ * whose strip prints no radius; a GeoCircle (geoMidpoint those GeoCoordinates,
+ * geoRadius the strip's radius in whole metres) for an approximate position
+ * with a radius (17-REVIEW IN-02). dateCreated is the capture to the minute with its offset, or the year
  * alone for a year-only capture: never finer than the capture label. No
  * elevation, license or acquireLicensePage. contentUrl is the 2560 px WebP
  * manifest derivative (rotated, metadata-free).
@@ -106,16 +131,21 @@ export function photoImageLd(
   const largest = manifest[view.id]?.variants.find((v) => v.longEdge === 2560);
   if (!largest) throw new RangeError(`photoImageLd: photo ${view.id} has no 2560 px variant`);
   const { capture, position } = facts;
-  const contentLocation: Place = position
-    ? {
-        '@type': 'Place',
-        name: view.place,
-        geo: {
-          '@type': 'GeoCoordinates',
-          latitude: roundedCoordinate(position.lat, position.precision),
-          longitude: roundedCoordinate(position.lon, position.precision),
-        },
-      }
+  let geo: GeoCoordinates | GeoCircle | undefined;
+  if (position) {
+    const coordinates: GeoCoordinates = {
+      '@type': 'GeoCoordinates',
+      latitude: roundedCoordinate(position.lat, position.precision),
+      longitude: roundedCoordinate(position.lon, position.precision),
+    };
+    const radiusM = position.approximate ? approxRadiusM(position.radiusM) : null;
+    geo =
+      radiusM === null
+        ? coordinates
+        : { '@type': 'GeoCircle', geoMidpoint: coordinates, geoRadius: radiusM };
+  }
+  const contentLocation: Place = geo
+    ? { '@type': 'Place', name: view.place, geo }
     : { '@type': 'Place', name: view.place };
 
   return {

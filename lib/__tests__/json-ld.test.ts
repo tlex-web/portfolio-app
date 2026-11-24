@@ -32,6 +32,9 @@
  *   rights, place, the strip's Position digits), whose coordinates are strings
  *   at exactly the position's own precision, and whose dateCreated is no finer
  *   than the capture label. Expected values come from the data, never typed in.
+ *   An approximate position with a radius is a GeoCircle (geoMidpoint the same
+ *   coordinates, geoRadius the strip's radius); an exact one, or an approximate
+ *   one with no radius, is plain GeoCoordinates (17-REVIEW IN-02).
  *
  * - regionGalleryLd (17-14; SEO-04, D-16, D-17): every region page carries one
  *   ImageGallery at its own URL, named by the printed heading, described by the
@@ -59,6 +62,7 @@ import {
   photoLdFacts,
   projectLd,
   regionGalleryLd,
+  type PhotoLdFacts,
 } from '@/lib/json-ld/content';
 import {
   PERSON_ID,
@@ -348,9 +352,12 @@ type ImageBlock = {
   contentLocation: {
     '@type': string;
     name: string;
-    geo?: { '@type': string; latitude: string; longitude: string };
+    geo?: Coordinates | { '@type': string; geoMidpoint: Coordinates; geoRadius: unknown };
   };
 };
+
+/** A GeoCoordinates node as JSON.parse returns it. */
+type Coordinates = { '@type': string; latitude: string; longitude: string };
 
 type ManifestVariant = { longEdge: number; width: number; height: number; webp: string };
 
@@ -380,6 +387,15 @@ function stripPosition(view: PhotoView): string {
   const row = view.strip.positionRows.find((r) => r.term === 'Position');
   if (!row) throw new Error(`${view.slug} has no Position row`);
   return row.value.replace(/^≈ /, '').replace(/ /g, '');
+}
+
+/**
+ * The radius the strip's approx note prints ('±1,200 m (approx.)'), in metres,
+ * or null when it prints none (an exact position, or '(approx.)' alone).
+ */
+function stripRadiusM(view: PhotoView): number | null {
+  const match = /^±([\d,]+) m \(approx\.\)$/.exec(view.strip.approxNote ?? '');
+  return match ? Number(match[1].replace(/,/g, '')) : null;
 }
 
 /** A JSON-LD coordinate pair joined as the strip prints it, hemisphere letters by sign. */
@@ -468,18 +484,43 @@ describe('photoImageLd location: never finer than the page (D-19, T-17-25)', () 
 
       const geo = contentLocation.geo;
       if (!geo) throw new Error(`${view.slug} has no geo`);
-      expect(Object.keys(geo).sort()).toEqual(['@type', 'latitude', 'longitude']);
-      expect(geo['@type']).toBe('GeoCoordinates');
-      expect(typeof geo.latitude).toBe('string');
-      expect(typeof geo.longitude).toBe('string');
+      const radiusM = stripRadiusM(view);
+      let coordinates: Coordinates;
+      if (radiusM === null) {
+        coordinates = geo as Coordinates;
+      } else {
+        // An approximate position the strip qualifies with a radius (17-REVIEW IN-02).
+        expect(position.approximate).toBe(true);
+        expect(Object.keys(geo).sort()).toEqual(['@type', 'geoMidpoint', 'geoRadius']);
+        expect(geo['@type']).toBe('GeoCircle');
+        expect('geoRadius' in geo && geo.geoRadius).toBe(radiusM);
+        coordinates = (geo as { geoMidpoint: Coordinates }).geoMidpoint;
+      }
+      expect(Object.keys(coordinates).sort()).toEqual(['@type', 'latitude', 'longitude']);
+      expect(coordinates['@type']).toBe('GeoCoordinates');
+      expect(typeof coordinates.latitude).toBe('string');
+      expect(typeof coordinates.longitude).toBe('string');
 
       const decimals = PRECISION_DECIMALS[position.precision];
       const shape = new RegExp(`^-?\\d+\\.\\d{${decimals}}$`);
-      expect(geo.latitude).toMatch(shape);
-      expect(geo.longitude).toMatch(shape);
-      expect(joinedGeo(geo.latitude, geo.longitude)).toBe(stripPosition(view));
+      expect(coordinates.latitude).toMatch(shape);
+      expect(coordinates.longitude).toMatch(shape);
+      expect(joinedGeo(coordinates.latitude, coordinates.longitude)).toBe(stripPosition(view));
     }
   );
+
+  it('the published set has both an exact position and an approximate one with a radius', () => {
+    const kinds = new Set(
+      located.map((view) => (stripRadiusM(view) === null ? 'GeoCoordinates' : 'GeoCircle'))
+    );
+    expect(kinds).toEqual(new Set(['GeoCoordinates', 'GeoCircle']));
+    for (const view of located) {
+      const geoType = blockOf(view).contentLocation.geo?.['@type'];
+      expect(geoType).toBe(
+        generated(view.id).position?.approximate ? 'GeoCircle' : 'GeoCoordinates'
+      );
+    }
+  });
 
   it.each(locatedRows)(
     '%s never serializes a stored coordinate finer than its precision',
@@ -525,6 +566,42 @@ describe('photoImageLd edges: empty facts and editorial text (SEO-04)', () => {
     expect(block.contentLocation).toEqual({ '@type': 'Place', name: sample.place });
     const keys = keysDeep(block);
     for (const key of ['geo', 'latitude', 'longitude']) expect(keys).not.toContain(key);
+  });
+
+  describe('approximate positions (17-REVIEW IN-02: GeoCircle with radius, Tim 2026-11-24)', () => {
+    // Synthetic coordinates, never a real photo's (Phase 16 D-25).
+    const at = { lat: 10.5, lon: -20.25, precision: '2dp' } as const;
+    const geoOf = (position: NonNullable<PhotoLdFacts['position']>) =>
+      parseBlock(jsonLdHtml(photoImageLd(sample, { ...photoLdFacts(sample.id), position })))
+        .contentLocation.geo;
+    const coordinates = { '@type': 'GeoCoordinates', latitude: '10.50', longitude: '-20.25' };
+
+    it('an exact position is plain GeoCoordinates', () => {
+      expect(geoOf({ ...at, approximate: false })).toEqual(coordinates);
+      expect(geoOf({ ...at, approximate: false, radiusM: 500 })).toEqual(coordinates);
+    });
+
+    it('an approximate position with a radius is a GeoCircle of the same rounded coordinates', () => {
+      expect(geoOf({ ...at, approximate: true, radiusM: 250 })).toEqual({
+        '@type': 'GeoCircle',
+        geoMidpoint: coordinates,
+        geoRadius: 250,
+      });
+    });
+
+    it('the radius is whole metres, as the strip prints it', () => {
+      expect(geoOf({ ...at, approximate: true, radiusM: 99.6 })).toMatchObject({
+        geoRadius: 100,
+      });
+    });
+
+    it.each([
+      ['no radius', undefined],
+      ['a zero radius', 0],
+      ['a non-finite radius', Number.NaN],
+    ])('an approximate position with %s stays plain GeoCoordinates', (_label, radiusM) => {
+      expect(geoOf({ ...at, approximate: true, radiusM })).toEqual(coordinates);
+    });
   });
 
   it('a capture without an EXIF time gives the year form', () => {
