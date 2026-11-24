@@ -23,7 +23,8 @@ export const PHOTO_PATH = /^\/photos\/([^/?#]+)$/;
 
 /**
  * Static segments under /photos that are never photo slugs (17 D-24, 13 IN-03):
- * the region index and region pages live at /photos/regions(/<id>) since 17-01.
+ * region pages live at /photos/regions/<id> since 17-01. There is no region
+ * index: the bare /photos/regions is a photos 404 (proxy.ts, e2e/not-found.spec.ts).
  * Matched exactly and case-sensitively against the decoded segment. 17-16's
  * D-03 test (lib/__tests__/regions.test.ts) keeps every region id and photo
  * slug out of it, so no published photo is ever read as null here.
