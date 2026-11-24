@@ -4,6 +4,7 @@ import { useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import { useLightbox } from '@/components/photos/LightboxDialog';
 import { keyBelongsToChrome } from '@/components/site/SiteNav';
+import { isEditable } from '@/lib/dom/editable';
 import {
   centreScroll,
   exceedsDragThreshold,
@@ -92,14 +93,6 @@ function largest(srcSet: string): string {
     }
   }
   return best;
-}
-
-/** True when a key press belongs to a text field, where the arrows move the caret. */
-function isEditable(target: EventTarget | null): boolean {
-  return (
-    target instanceof HTMLElement &&
-    (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))
-  );
 }
 
 type Press = {

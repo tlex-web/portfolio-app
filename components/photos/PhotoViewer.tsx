@@ -28,6 +28,7 @@ import StagePhoto from '@/components/photos/StagePhoto';
 import ZoomStage from '@/components/photos/ZoomStage';
 import { keyBelongsToChrome } from '@/components/site/SiteNav';
 import { site } from '@/data/site';
+import { isEditable } from '@/lib/dom/editable';
 import { cssEscape } from '@/lib/photos/css-escape';
 import { useLabelsOn } from '@/lib/photos/hotspot-pref';
 import { photoHref } from '@/lib/photos/routes';
@@ -181,14 +182,6 @@ const STEP_BUTTON =
   'inline-flex min-h-11 min-w-11 cursor-pointer touch-manipulation items-center justify-center rounded-sm border border-line-strong text-ink hover:border-ink-muted aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:border-line-strong';
 
 const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
-
-/** True when a key press belongs to a text field, where the arrows move the caret. */
-function isEditable(target: EventTarget | null): boolean {
-  return (
-    target instanceof HTMLElement &&
-    (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))
-  );
-}
 
 /** Fetch a photo's stage derivative at low priority, so a step finds it in the cache. */
 function preloadStage(view: PhotoView): void {
