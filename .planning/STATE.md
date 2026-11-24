@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 17
 current_phase_name: Region Routes, SEO & Structured Data
 status: executing
-stopped_at: Completed 17-09-PLAN.md
-last_updated: "2026-11-24T00:26:40.612Z"
+stopped_at: Completed 17-11-PLAN.md
+last_updated: "2026-11-24T00:34:28.968Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 17 execution started
-state_head: 7acc3569a5d212b85e844259babbbd7c07d6a178
+state_head: fca48199e397ad18ae0412c7b41e6107bdac8c7b
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 80
-  completed_plans: 74
+  completed_plans: 75
   percent: 57
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-23)
 ## Current Position
 
 Phase: 17 (Region Routes, SEO & Structured Data) — EXECUTING
-Plan: 11 of 16
+Plan: 12 of 16
 Status: Ready to execute
 Last activity: 2026-11-23 — Phase 17 execution started
 
@@ -131,6 +131,7 @@ Progress: [██████░░░░] 57%
 | Phase 17 P06 | 11min | 2 tasks | 4 files |
 | Phase 17 P07 | 15min | 3 tasks | 10 files |
 | Phase 17 P09 | 10min | 3 tasks | 7 files |
+| Phase 17 P11 | 5 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -316,6 +317,7 @@ Recent decisions affecting current work:
 - [Phase 17]: 16 IN-06 (909677f): build-terrain fails a strip band that leaves its extent, mirroring stripBbox's clamp condition with STRIP_SNAP_M = 100
 - [Phase 17]: 16 IN-07 (14dd850): plate and overview source PNGs binary and source.json eol=lf by attribute; renormalize changed nothing
 - [Phase 17]: 16 IN-03 (72e38e6): homePhotos' error names data/generated/home-photos.ts, npm run photos:build and data/home-waypoints.ts
+- [Phase 17]: 17-11: SavedPageSource.regions is required; /offline builds the catalog on the server (regions, then every published photo by region, the sitemap order); region names reach the island only as catalog props
 
 ### Pending Todos
 
@@ -375,6 +377,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-24T00:26:39.544Z
-Stopped at: Completed 17-09-PLAN.md
+Last session: 2026-11-24T00:34:27.590Z
+Stopped at: Completed 17-11-PLAN.md
 Resume file: None
