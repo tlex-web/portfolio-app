@@ -48,11 +48,11 @@ Requirements for milestone v2.1 Survey Expansion. Each maps to exactly one roadm
 - [ ] **REGION-04**: Each photo in the sequence sits in a map collar, a neatline with coordinate ticks drawn outside the image and never over it
 - [ ] **REGION-05**: The region sequence has an altimeter rail that reads it as an ascent and marks the current photo
 - [ ] **REGION-06**: Every map (the overview and each local plate) shows its extent, "last surveyed" date and short source credit in its own sheet margin, and the footer links to a sources page with the full credit and licence text of every data source
-- [ ] **REGION-07**: Each region page has its own title, description, canonical URL, Open Graph card and sitemap entry
+- [x] **REGION-07**: Each region page has its own title, description, canonical URL, Open Graph card and sitemap entry
 
 ### Photos & Lightbox
 
-- [ ] **PHOTO-05**: Existing `/photos/<slug>` URLs and their Open Graph cards keep working unchanged, and every new photo gets the same deep-linkable page
+- [x] **PHOTO-05**: Existing `/photos/<slug>` URLs and their Open Graph cards keep working unchanged, and every new photo gets the same deep-linkable page
 - [ ] **PHOTO-06**: The v2.0 view switch (Map, Grid, Carousel) is replaced by the overview and the region pages: old `?view=` URLs land on the matching new page, and the view tests are rewritten, never deleted
 - [ ] **PHOTO-07**: Visitors can share a photo or a region with the Web Share API where it exists, or copy its link elsewhere; the button's label says which it does (PHOTO-F2)
 - [ ] **PHOTO-08**: Swiss photos show LV95 coordinates, rounded to 10 m, next to WGS84; photos outside Switzerland show WGS84 only (PHOTO-F4)
@@ -67,8 +67,8 @@ Requirements for milestone v2.1 Survey Expansion. Each maps to exactly one roadm
 ### Engineering & Platform
 
 - [x] **ENG-06**: The terminal demo has previous and next step buttons and a static transcript in a disclosure that is open by default under reduced motion (ENG-F1)
-- [ ] **SEO-04**: Pages carry JSON-LD structured data (Person and WebSite site-wide, ImageObject on photo pages, an image gallery on region pages, the projects on their case studies) with creator, copyright notice and credit text, no `license` property, and no coordinates finer than the precision shown on the page (PLAT-F1)
-- [ ] **EDGE-03**: The offline page's list of saved pages includes region pages and the new photo pages (PLAT-F2 shipped in v2.0 as `SavedPages`; this extends its catalog)
+- [x] **SEO-04**: Pages carry JSON-LD structured data (Person and WebSite site-wide, ImageObject on photo pages, an image gallery on region pages, the projects on their case studies) with creator, copyright notice and credit text, no `license` property, and no coordinates finer than the precision shown on the page (PLAT-F1)
+- [x] **EDGE-03**: The offline page's list of saved pages includes region pages and the new photo pages (PLAT-F2 shipped in v2.0 as `SavedPages`; this extends its catalog)
 
 ## Future Requirements
 
@@ -145,8 +145,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REGION-04 | Phase 18 | Pending |
 | REGION-05 | Phase 18 | Pending |
 | REGION-06 | Phase 18 | Pending |
-| REGION-07 | Phase 17 | Pending |
-| PHOTO-05 | Phase 17 | Pending |
+| REGION-07 | Phase 17 | Complete |
+| PHOTO-05 | Phase 17 | Complete |
 | PHOTO-06 | Phase 18 | Pending |
 | PHOTO-07 | Phase 18 | Pending |
 | PHOTO-08 | Phase 18 | Pending |
@@ -155,8 +155,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VIDEO-02 | Phase 19 | Pending |
 | VIDEO-03 | Phase 19 | Pending |
 | ENG-06 | Phase 14 | Complete |
-| SEO-04 | Phase 17 | Pending |
-| EDGE-03 | Phase 17 | Pending |
+| SEO-04 | Phase 17 | Complete |
+| EDGE-03 | Phase 17 | Complete |
 
 **Coverage:**
 - v2.1 requirements: 39 total

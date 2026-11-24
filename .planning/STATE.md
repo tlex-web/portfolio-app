@@ -4,17 +4,17 @@ milestone: v2.1
 milestone_name: Survey Expansion
 current_phase: 17
 current_phase_name: Region Routes, SEO & Structured Data
-status: executing
-stopped_at: Completed 17-14-PLAN.md
-last_updated: "2026-11-24T01:28:04.533Z"
-last_activity: 2026-11-23
-last_activity_desc: Phase 17 execution started
-state_head: aefb306d7c89bc2a0823c9ba73a69c418ee8b39f
+status: verifying
+stopped_at: Completed 17-15-PLAN.md
+last_updated: "2026-11-24T01:56:43.645Z"
+last_activity: 2026-11-24
+last_activity_desc: 17-15 phase close complete; ready for /gsd-verify-work 17
+state_head: e127b0322f0c0d524a38520a54e8c83853609430
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 80
-  completed_plans: 79
+  completed_plans: 80
   percent: 57
 ---
 
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-11-23)
 
 ## Current Position
 
-Phase: 17 (Region Routes, SEO & Structured Data) — EXECUTING
-Plan: 16 of 16
-Status: Ready to execute
-Last activity: 2026-11-23 — Phase 17 execution started
+Phase: 17 (Region Routes, SEO & Structured Data) — VERIFYING
+Plan: 15 of 16 (17-15, the phase-close plan, finished last; 17-16 ran before it, so all 16 plans are complete)
+Status: Phase complete — ready for verification
+Last activity: 2026-11-24 — 17-15 closed the phase: local gate green, D-23 write-back, ci/17-15 green (run 45306356650)
 
 Progress: [██████░░░░] 57%
 
@@ -136,6 +136,7 @@ Progress: [██████░░░░] 57%
 | Phase 17 P10 | 7min | 2 tasks | 4 files |
 | Phase 17 P13 | 13min | 2 tasks | 6 files |
 | Phase 17 P14 | 9 min | 2 tasks | 5 files |
+| Phase 17 P15 | 25min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -331,6 +332,8 @@ Recent decisions affecting current work:
 - [Phase 17]: 17-13 D-19: JSON-LD geo is roundedCoordinate strings at the position precision (equal to the strip digits); dateCreated is minute + offset or the year; the @modal page carries no JSON-LD
 - [Phase 17]: 17-14: case-study copyrightNotice ships option (a), Tim's 17-01 reply "(a) Footer line (Recommended)": caseStudyRights(slug) = siteRights(), the footer line
 - [Phase 17]: 17-14: region ImageGallery contentLocation is a Place named region.name with PostalAddress.addressCountry, no geo (the stand-in prints no coordinates); no BreadcrumbList until Phase 18's visible breadcrumb
+- [Phase 17]: 17-15 D-25: E2E matrix legs ran 12.2 (firefox), 14.4 (webkit), 15.4 (chromium) min on ci/17-15 vs the 27-40 min single job of Phases 13-16; far under 45 min, no further sharding needed for Phase 18
+- [Phase 17]: 17-15 Pitfall 6: the 038a4cb Vercel preview is protected (302 to sso-api), so the deployed region-card check passes to /gsd-verify-work's live-DOM step; local production build serves all three region cards 200 image/png
 
 ### Pending Todos
 
@@ -390,6 +393,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-24T01:28:03.353Z
-Stopped at: Completed 17-14-PLAN.md
+Last session: 2026-11-24T01:56:42.793Z
+Stopped at: Completed 17-15-PLAN.md
 Resume file: None
