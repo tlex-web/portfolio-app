@@ -29,7 +29,7 @@ export function homePhotos(ids: readonly string[] = homeWaypointIds): readonly H
   for (const id of ids) {
     if (!homePhotoFacts.some((photo) => photo.id === id)) {
       throw new RangeError(
-        `homePhotos: Home waypoint ${id} has no photo in data/generated/photos.ts; fix homeWaypointIds in data/home.ts`,
+        `homePhotos: Home waypoint ${id} has no photo in data/generated/home-photos.ts; run npm run photos:build, or fix homeWaypointIds in data/home-waypoints.ts`,
       );
     }
   }
