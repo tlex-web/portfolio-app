@@ -209,6 +209,19 @@ export function regionOgAlt(id: string): string {
 }
 
 /**
+ * What the region OG card's plate prints (17 D-12), from the same figures as
+ * regionOgAlt, so the card and its alt never disagree: the count with its noun
+ * ('7 photographs', '1 photograph'), the height range ('ground {range}' when
+ * every photo is aerial, Tim's 17-01 rule) and the capture-year span. An
+ * unknown id throws: callers check regionById first.
+ */
+export function regionCardFacts(id: string): { count: string; range: string; years: string } {
+  if (!regionById(id)) throw new RangeError(`regionCardFacts: ${id} is not a registry region`);
+  const { n, noun, range, years, aerial } = copyFigures(regionPhotoViews(id));
+  return { count: `${n} ${noun}`, range: aerial ? `ground${NBSP}${range}` : range, years };
+}
+
+/**
  * The region page's own head fields (SEO-01, D-15 canonical half): the title,
  * the description and the canonical regionHref(id), which Next resolves
  * against metadataBase (site.url) into the absolute URL. An unknown id gets {}:

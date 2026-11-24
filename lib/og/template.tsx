@@ -416,6 +416,18 @@ export type OgFrameProps =
       variant: 'project';
       contour: string;
       project: Project;
+    }
+  | {
+      variant: 'region';
+      /** contourDataUrl(plate hero): the region plate's own contour field. */
+      contour: string;
+      /** ogPhotoImage(cover id): the cover's manifest JPEG and its size. */
+      photo: OgPhoto;
+      name: string;
+      /** The country's full name (COUNTRY_NAME). */
+      country: string;
+      /** '7 photographs', '1,617–2,928 m' (or 'ground …' when all aerial), '2019–2024'. */
+      facts: { count: string; range: string; years: string };
     };
 
 /**
@@ -432,8 +444,35 @@ export type OgFrameProps =
  *   Mono, mist300), the name (72) and the pitch (32 Inter, mist300, 640 px); the
  *   plate draws the trail profile, its caption and waymark, with 'Tim Lui' at
  *   the bottom.
+ * - region (17 D-12): the photo variant's frame and type scale; only the subject
+ *   and the contour field change. The subject is the region's cover (Tim's pick,
+ *   D-13) as its contain-fitted JPEG, and the plate's contour field is the
+ *   region's own plate. The plate prints the name (32 Schibsted), the country
+ *   (24 Inter, mist300), the photo count and the height range (24 Mono, 8 px
+ *   apart) and '© {years} Tim Lui' at the bottom.
  */
 export function OgFrame(props: OgFrameProps): ReactElement {
+  if (props.variant === 'region') {
+    const { facts } = props;
+    return frame(
+      photoSlot(props.photo),
+      plate(
+        props.contour,
+        column(
+          maybeText('display', 'title', 'primary', props.name),
+          maybeText('body', 'label', 'secondary', props.country, { marginTop: 16 }),
+          maybeText('mono', 'label', 'primary', facts.count, { marginTop: 8 }),
+          maybeText('mono', 'label', 'primary', facts.range, { marginTop: 8 })
+        ),
+        column(
+          present(facts.years)
+            ? text('body', 'label', 'secondary', `© ${facts.years} ${site.name}`)
+            : null
+        )
+      )
+    );
+  }
+
   if (props.variant === 'photo') {
     const { view } = props;
     return frame(
@@ -519,14 +558,19 @@ export async function ogFonts() {
 }
 
 /**
- * The hero contour SVG named in `terrain.assets.contours.hero`, read from public/,
- * its group stroke swapped for firn50 and the group wrapped at the index-line alpha
- * (0.14; the minor lines keep their own stroke-opacity 0.6, so they land at 0.084,
- * the 09 shader convention), returned as a base64 `data:image/svg+xml` URL.
+ * A plate's hero contour SVG, read from public/ (by default the home plate's,
+ * `terrain.assets.contours.hero`, so the default, photo and project cards keep
+ * their bytes; the region card passes its own plate's, 17 D-12), its group stroke
+ * swapped for firn50 and the group wrapped at the index-line alpha (0.14; the
+ * minor lines keep their own stroke-opacity 0.6, so they land at 0.084, the 09
+ * shader convention), returned as a base64 `data:image/svg+xml` URL.
  * Throws when the SVG no longer has the one stroked group this expects.
+ *
+ * @param src a public/-rooted contour URL from the generated terrain or plates
+ *   module, never from a request.
  */
-export async function contourDataUrl(): Promise<string> {
-  const svg = await readFile(join(process.cwd(), 'public', terrain.assets.contours.hero), 'utf8');
+export async function contourDataUrl(src: string = terrain.assets.contours.hero): Promise<string> {
+  const svg = await readFile(join(process.cwd(), 'public', src), 'utf8');
   const group = /<g\b([^>]*?)\sstroke="[^"]*"/;
   if (!group.test(svg)) throw new Error('og: the hero contour SVG has no stroked <g>');
   const tinted = svg.replace(
