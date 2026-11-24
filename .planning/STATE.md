@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 17
 current_phase_name: Region Routes, SEO & Structured Data
 status: executing
-stopped_at: Completed 17-11-PLAN.md
-last_updated: "2026-11-24T00:34:28.968Z"
+stopped_at: Completed 17-12-PLAN.md
+last_updated: "2026-11-24T00:48:22.680Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 17 execution started
-state_head: fca48199e397ad18ae0412c7b41e6107bdac8c7b
+state_head: 339c8f62e836bc60e73f30ff6276a3a36e0460c8
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 80
-  completed_plans: 75
+  completed_plans: 76
   percent: 57
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-23)
 ## Current Position
 
 Phase: 17 (Region Routes, SEO & Structured Data) — EXECUTING
-Plan: 12 of 16
+Plan: 13 of 16
 Status: Ready to execute
 Last activity: 2026-11-23 — Phase 17 execution started
 
@@ -132,6 +132,7 @@ Progress: [██████░░░░] 57%
 | Phase 17 P07 | 15min | 3 tasks | 10 files |
 | Phase 17 P09 | 10min | 3 tasks | 7 files |
 | Phase 17 P11 | 5 min | 2 tasks | 5 files |
+| Phase 17 P12 | 12min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -318,6 +319,8 @@ Recent decisions affecting current work:
 - [Phase 17]: 16 IN-07 (14dd850): plate and overview source PNGs binary and source.json eol=lf by attribute; renormalize changed nothing
 - [Phase 17]: 16 IN-03 (72e38e6): homePhotos' error names data/generated/home-photos.ts, npm run photos:build and data/home-waypoints.ts
 - [Phase 17]: 17-11: SavedPageSource.regions is required; /offline builds the catalog on the server (regions, then every published photo by region, the sitemap order); region names reach the island only as catalog props
+- [Phase 17]: 17-12 D-24: slugFromPath is the only client photo-path parser; RESERVED_PHOTO_SEGMENTS ('regions') is checked after one guarded decode, exact and case-sensitive, so /photos/regions and /photos/%72egions are null
+- [Phase 17]: 17-12 D-24: isEditable lives once in lib/dom/editable.ts (PhotoViewer, ZoomStage); a source scan in photos-stepping.test.ts pins one photo-path regex definition
 
 ### Pending Todos
 
@@ -377,6 +380,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-24T00:34:27.590Z
-Stopped at: Completed 17-11-PLAN.md
+Last session: 2026-11-24T00:48:21.239Z
+Stopped at: Completed 17-12-PLAN.md
 Resume file: None
