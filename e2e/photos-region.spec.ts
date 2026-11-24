@@ -274,16 +274,16 @@ test.describe('New photo pages (D-08, D-09, PHOTO-05)', () => {
     await expect(h1(page)).toHaveText(regionHeading(r));
   });
 
-  test('Edge PHOTO-05/empty: a touch swipe and the arrows do nothing on a new photo page @chromium-only', async ({
-    page,
-  }) => {
-    const { view } = ORTLER_PHOTO;
-    await page.goto(`/photos/${view.slug}`);
+  /**
+   * A left touch swipe over the page's photo, then → and ←, then two animation
+   * frames. A web-first assertion passes at its first poll when nothing has
+   * changed yet, so the negative row below reads its state only after this
+   * settle point: a step that lands after a frame or a View Transition commit
+   * has landed by then (17-REVIEW WR-02).
+   */
+  async function swipeAndArrows(page: Page) {
     const photoBox = page.getByRole('main').locator('[data-photo-box]');
     await waitForHydration(photoBox);
-    const title = await page.title();
-    expect(title).toBe(`${view.title} · Tim Lui`);
-
     const rect = (await photoBox.boundingBox())!;
     const x = rect.x + rect.width / 2;
     const y = rect.y + rect.height / 2;
@@ -298,12 +298,49 @@ test.describe('New photo pages (D-08, D-09, PHOTO-05)', () => {
     await photoBox.dispatchEvent('pointerup', { ...touch, clientX: x - 120, clientY: y + 10 });
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('ArrowLeft');
+    await page.evaluate(
+      () =>
+        new Promise<void>((done) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => done()))
+        )
+    );
+  }
 
+  /** The viewer's own polite status line (StagePhoto may hold others). */
+  const viewerStatus = (page: Page) => page.locator('[data-photo-viewer] > p[role="status"]');
+
+  /** What a step would change: the history length, the URL, the title and the status line. */
+  const pageState = (page: Page) =>
+    page.evaluate(() => ({
+      length: history.length,
+      url: location.href,
+      title: document.title,
+      status: document.querySelector('[data-photo-viewer] > p[role="status"]')?.textContent ?? '',
+    }));
+
+  test('Edge PHOTO-05/empty: a touch swipe and the arrows do nothing on a new photo page @chromium-only', async ({
+    page,
+  }) => {
+    const { view } = ORTLER_PHOTO;
+    await page.goto(`/photos/${view.slug}`);
+    await waitForHydration(page.getByRole('main').locator('[data-photo-box]'));
+    const title = await page.title();
+    expect(title).toBe(`${view.title} · Tim Lui`);
+    const before = await pageState(page);
+
+    await swipeAndArrows(page);
+
+    expect(await pageState(page)).toEqual(before);
     await expect(page).toHaveURL(new RegExp(`/photos/${view.slug}$`));
     expect(await page.title()).toBe(title);
-    // The viewer's own polite status line (StagePhoto may hold others).
-    await expect(page.locator('[data-photo-viewer] > p[role="status"]')).not.toHaveText(
-      /Photo \d+ of/
-    );
+    await expect(viewerStatus(page)).not.toHaveText(/Photo \d+ of/);
+
+    // Positive control: the same gestures on a light-table photo page step
+    // (swipe to the 2nd, → to the 3rd, ← back to the 2nd), so they reach a viewer.
+    expect(photoSlugs.length).toBeGreaterThanOrEqual(3);
+    await page.goto(`/photos/${photoSlugs[0]}`);
+    await swipeAndArrows(page);
+    await expect(page).toHaveURL(new RegExp(`/photos/${photoSlugs[1]}$`));
+    await expect(viewerStatus(page)).toHaveText(new RegExp(`^Photo 2 of ${photoSlugs.length}:`));
   });
 });
