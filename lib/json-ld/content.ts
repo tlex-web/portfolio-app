@@ -51,7 +51,7 @@ import {
  * - 17-14 case studies: projectLd states the project, box as SoftwareSourceCode
  *   with its public repository, coin-flip as SoftwareApplication with no
  *   repository at all (private, 11 D-23). Its copyrightNotice is
- *   caseStudyRights(slug): Tim's 17-01 option (a), the footer line.
+ *   siteRights(): Tim's 17-01 option (a), the footer line.
  * - No breadcrumb markup of any kind: it waits for Phase 18's visible
  *   breadcrumb, so no block names links the page does not show.
  * - lib/regions is server-only too (17-16 client-graph guard), which holds as
@@ -205,22 +205,16 @@ export function regionGalleryLd(id: string): WithContext<ImageGallery> {
 }
 
 /**
- * A case study's copyrightNotice (D-17). Tim's 17-01 choice, option (a) "Footer
- * line (Recommended)" (his reply recorded verbatim in 17-01-SUMMARY.md): the
- * footer line exactly, siteRights(), the only rights text a case study prints.
- * The slug stays in the signature so the contract reads per project; under
- * option (a) every project carries the same line.
- */
-export function caseStudyRights(_slug: Project['slug']): string {
-  return siteRights();
-}
-
-/**
  * The project on its case study (SEO-04; D-16, D-17, D-18). A project with a
  * public repository link (box) is SoftwareSourceCode with codeRepository; one
  * without (coin-flip, private, 11 D-23) is SoftwareApplication and has no
  * repository key at all. description is the approved pitch, the page's meta
- * description, and is left out when a project has none.
+ * description, and is left out when a project has none. copyrightNotice is
+ * Tim's 17-01 choice, option (a) "Footer line (Recommended)" (his reply
+ * recorded verbatim in 17-01-SUMMARY.md): the footer line exactly, siteRights(),
+ * the only rights text a case study prints, the same for every project. A
+ * per-project rights function waits for a project with its own rights text
+ * (17-REVIEW IN-05).
  */
 export function projectLd(
   project: Project
@@ -231,7 +225,7 @@ export function projectLd(
     url: `${site.url}/projects/${project.slug}`,
     creator: personRef(),
     creditText: site.name,
-    copyrightNotice: caseStudyRights(project.slug),
+    copyrightNotice: siteRights(),
   };
   return 'links' in project
     ? {

@@ -42,8 +42,8 @@
  *   order, and holding the printed region rights line as its copyrightNotice.
  * - projectLd (17-14): box is SoftwareSourceCode with its public repository;
  *   coin-flip is SoftwareApplication with no codeRepository key at all (its
- *   repository is private, 11 D-23, T-17-29). Both carry caseStudyRights(slug),
- *   which is Tim's 17-01 option (a): the footer line, siteRights().
+ *   repository is private, 11 D-23, T-17-29). Both carry siteRights(), Tim's
+ *   17-01 option (a): the footer line.
  * - No block built here holds BreadcrumbList (it waits for Phase 18's visible
  *   breadcrumb), license or acquireLicensePage.
  *
@@ -56,7 +56,6 @@ import { photos } from '@/data/generated/photos';
 import { projects } from '@/data/projects';
 import { site } from '@/data/site';
 import {
-  caseStudyRights,
   photoImageId,
   photoImageLd,
   photoLdFacts,
@@ -765,23 +764,23 @@ describe('projectLd: the project on every case study (SEO-04; D-16, D-17, 11 D-2
     expect(jsonLdHtml(projectLd(coinFlip))).not.toContain('github.com');
   });
 
-  it.each(projectRows)(
-    '%s credits the Person and carries caseStudyRights(slug)',
-    (_slug, project) => {
-      const block = parsed(projectLd(project));
-      expect(block.creator).toEqual(personRef());
-      expect(block.creditText).toBe(site.name);
-      expect(block.copyrightNotice).toBe(caseStudyRights(project.slug));
-    }
-  );
+  it.each(projectRows)('%s credits the Person and carries siteRights()', (_slug, project) => {
+    const block = parsed(projectLd(project));
+    expect(block.creator).toEqual(personRef());
+    expect(block.creditText).toBe(site.name);
+    expect(block.copyrightNotice).toBe(siteRights());
+  });
 });
 
-describe("caseStudyRights: Tim's 17-01 option (a), the footer line (D-17)", () => {
-  it.each(projectRows)('%s is the footer line, siteRights(), with the current year', (slug) => {
-    const footerLine = '© ' + new Date().getFullYear() + ' ' + site.name + '. All rights reserved.';
-    expect(caseStudyRights(slug)).toBe(siteRights());
-    expect(caseStudyRights(slug)).toBe(footerLine);
-  });
+describe("a case study's rights: Tim's 17-01 option (a), the footer line (D-17)", () => {
+  it.each(projectRows)(
+    '%s carries the footer line, siteRights(), with the current year',
+    (_slug, project) => {
+      const footerLine =
+        '© ' + new Date().getFullYear() + ' ' + site.name + '. All rights reserved.';
+      expect(parsed(projectLd(project)).copyrightNotice).toBe(footerLine);
+    }
+  );
 });
 
 describe('17-14 blocks: per-node rule and disclosure (D-16, Person exemption)', () => {
