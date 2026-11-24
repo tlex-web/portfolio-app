@@ -32,14 +32,15 @@ const description = (page: Page) => page.locator('meta[name="description"]');
  * The URL list the sitemap must give, in order, computed from the same data the
  * route reads (D-15): nav, then each region in registry order, then each
  * published photo grouped by region in registry order and altitude ascending
- * within, then the projects. The paths are literal, so the URL contract is
- * checked independently of regionHref and photoHref.
+ * within, then the projects, then /sources (18 D-20). The paths are literal,
+ * so the URL contract is checked independently of regionHref and photoHref.
  */
 const expectedSitemap = [
   ...site.nav.map((n) => (n.href === '/' ? site.url : `${site.url}${n.href}`)),
   ...regions.map((r) => `${site.url}/photos/regions/${r.id}`),
   ...regions.flatMap((r) => regionPhotoViews(r.id)).map((v) => `${site.url}/photos/${v.slug}`),
   ...projects.map((p) => `${site.url}/projects/${p.slug}`),
+  `${site.url}/sources`,
 ];
 
 test.describe('Roadmap head (SEO-01, D-13)', () => {
@@ -172,7 +173,7 @@ test.describe('Kept out of the index (SEO-01, SEO-03)', () => {
 });
 
 test.describe('sitemap.xml and robots.txt (SEO-03)', () => {
-  test('the sitemap lists exactly the nav, region, photo and project URLs, each once, /contact included and no /offline', async ({
+  test('the sitemap lists exactly the nav, region, photo and project URLs and /sources, each once, /contact included and no /offline', async ({
     request,
   }) => {
     const response = await request.get('/sitemap.xml');

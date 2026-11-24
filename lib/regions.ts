@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { overview } from '@/data/generated/overview';
 import { photos } from '@/data/generated/photos';
 import { plates } from '@/data/generated/plates';
 import registry from '@/data/regions/regions.json';
@@ -44,6 +45,54 @@ export const regions: readonly Region[] = parsed.regions;
 
 /** The region ids in registry order; generateStaticParams reads these. */
 export const regionIds: readonly string[] = regions.map((r) => r.id);
+
+/** What the west-to-east order needs from an entry: its id and its overview outline corners, if any. */
+export type WestToEastEntry = {
+  id: string;
+  /** The overview outline's corners in grid uv (plate carrée), or undefined for no outline. */
+  corners: readonly { u: number }[] | undefined;
+};
+
+/**
+ * Entries sorted west to east (D-01), pure so a test can pass a fixture list:
+ * by the mean u of their overview outline corners (the overview grid is plate
+ * carrée, so u grows with longitude), ties broken by id ascending so the order
+ * is stable. A new array; the input is not touched.
+ *
+ * @throws RangeError naming the first entry with no outline (undefined or no
+ *   corners), so no region renders without a place in the order.
+ */
+export function regionsWestToEastIn<T extends WestToEastEntry>(list: readonly T[]): readonly T[] {
+  const keyed = list.map((entry) => {
+    const corners = entry.corners;
+    if (!corners || corners.length === 0) {
+      throw new RangeError(`regionsWestToEast: ${entry.id} has no overview outline`);
+    }
+    return { entry, u: corners.reduce((sum, c) => sum + c.u, 0) / corners.length };
+  });
+  return keyed
+    .sort((a, b) => a.u - b.u || (a.entry.id < b.entry.id ? -1 : a.entry.id > b.entry.id ? 1 : 0))
+    .map(({ entry }) => entry);
+}
+
+/**
+ * Every registry region, west to east by its overview outline (D-01): the
+ * order /sources lists a source's region pages in. The registry export
+ * `regions` keeps registry order (the sitemap and the saved-pages catalog pin
+ * it); this is a separate, sorted copy.
+ *
+ * @throws RangeError for a registry region with no outline in
+ *   data/generated/overview.ts (npm run terrain:build regenerates it).
+ */
+export function regionsWestToEast(): readonly Region[] {
+  return regionsWestToEastIn(
+    regions.map((region) => ({
+      id: region.id,
+      corners: overview.outlines.find((o) => o.region === region.id)?.corners,
+      region,
+    }))
+  ).map(({ region }) => region);
+}
 
 /** The region for an exact, case-sensitive id, or undefined. */
 export function regionById(id: string): Region | undefined {

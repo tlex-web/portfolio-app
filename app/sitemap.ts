@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { projects } from '@/data/projects';
+import { SOURCES_PAGE } from '@/data/source-credits';
 import { site } from '@/data/site';
 import { photoHref, regionHref } from '@/lib/photos/routes';
 import { regionPhotoViews, regions } from '@/lib/regions';
@@ -16,7 +17,9 @@ import { regionPhotoViews, regions } from '@/lib/regions';
  * 3. every published photo page (photoHref), grouped by region in registry
  *    order and, within a region, by altitude ascending with ties broken by id
  *    (regionPhotoViews, buildWaypoints' order);
- * 4. every project page, in data order.
+ * 4. every project page, in data order;
+ * 5. the site pages outside the nav, after the projects: /sources (18 D-20,
+ *    REGION-06), the data sources page every map links to.
  *
  * Deterministic: the order comes only from the committed data, so two builds
  * emit identical XML, and there is no lastModified (a build-time new Date()
@@ -33,5 +36,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       .flatMap((r) => regionPhotoViews(r.id))
       .map((v) => ({ url: `${site.url}${photoHref(v.slug)}` })),
     ...projects.map((p) => ({ url: `${site.url}/projects/${p.slug}` })),
+    { url: `${site.url}${SOURCES_PAGE.href}` },
   ];
 }

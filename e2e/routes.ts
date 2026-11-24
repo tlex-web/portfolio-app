@@ -1,4 +1,5 @@
 import sitemap from '@/app/sitemap';
+import { SOURCES_PAGE } from '@/data/source-credits';
 import { site } from '@/data/site';
 import { photoBySlug } from '@/lib/photos/view-model';
 import { regionById } from '@/lib/regions';
@@ -49,6 +50,10 @@ export const ROUTES: ReadonlyArray<readonly [path: string, current: Label | null
   ['/projects/box', 'Engineering'],
   ['/roadmap', 'Roadmap'],
   ['/contact', 'Contact'],
+  // The data sources page (REGION-06, 18 D-20): not a nav destination and not
+  // under /photos, so no link is current. Its sitemap path is filtered out of
+  // AUDIT_SWEEP below, so this entry audits it in three engines at three widths.
+  [SOURCES_PAGE.href, null],
   // Not a nav destination: no link is current.
   ['/offline', null],
 ];
