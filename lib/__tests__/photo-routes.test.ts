@@ -14,7 +14,11 @@
  *   PHOTO-05) both are the published set, every photo with editorial copy;
  *   the light table (photoSlugs) is one curated view inside it, so a return
  *   to the four-photo route set fails here at once.
- * - The sitemap lists every photo page at its absolute /photos/<slug> URL.
+ * - The sitemap lists every published photo page at its absolute
+ *   /photos/<slug> URL and every region page at /photos/regions/<id> (D-15,
+ *   REGION-07), regions in registry order and photos by region, then altitude
+ *   ascending, ties by id; the order is recomputed here from the generated
+ *   photos, not read from the module the sitemap uses.
  * - No source file outside lib/photos/routes.ts builds a photo path by hand
  *   (D-18). The scan walks app/, components/ and lib/ (skipping __tests__)
  *   plus proxy.ts and reads raw text, so a file a later plan adds is held to
@@ -29,8 +33,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import sitemap from '@/app/sitemap';
+import { photos } from '@/data/generated/photos';
 import { editorial } from '@/data/photos/editorial';
 import { site } from '@/data/site';
+import { regionIds } from '@/lib/regions';
 import { photoHref, photoRouteSlugs } from '@/lib/photos/routes';
 import {
   photoBySlug,
@@ -115,12 +121,59 @@ describe('photoBySlug: light table first, then the published set (D-07)', () => 
   });
 });
 
-describe('sitemap photo URLs', () => {
-  it('lists every photo page at site.url + /photos/<slug>', () => {
-    const urls = sitemap().map((entry) => entry.url);
-    for (const slug of photoSlugs) {
-      expect(urls).toContain(site.url + '/photos/' + slug);
-    }
+describe('sitemap photo and region URLs (D-15, REGION-07, PHOTO-05)', () => {
+  const urls = sitemap().map((entry) => entry.url);
+
+  /** The sitemap's photo pages: under /photos/ but not /photos/regions/ (literal prefixes). */
+  const photoUrls = urls.filter(
+    (u) => u.startsWith(site.url + '/photos/') && !u.startsWith(site.url + '/photos/regions/')
+  );
+
+  it('lists every published photo page at site.url + /photos/<slug>, each once', () => {
+    expect(publishedSlugs).toHaveLength(11);
+    expect([...photoUrls].sort()).toEqual(
+      publishedSlugs.map((slug) => site.url + '/photos/' + slug).sort()
+    );
+  });
+
+  it('lists every region page at site.url + /photos/regions/<id>, in registry order', () => {
+    expect(regionIds.length).toBeGreaterThan(0);
+    expect(urls.filter((u) => u.startsWith(site.url + '/photos/regions/'))).toEqual(
+      regionIds.map((id) => site.url + '/photos/regions/' + id)
+    );
+  });
+
+  it('orders the photo pages by region (registry order), then altitude ascending, ties by id', () => {
+    // Computed here from the generated photos, not from regionPhotoViews, so the
+    // order is checked independently of the module the sitemap reads.
+    const regionOf = new Map<string, string>(photos.map((p) => [p.id, p.region]));
+    const rank = (id: string) => regionIds.indexOf(regionOf.get(id) ?? '');
+    const expected = [...publishedViews]
+      .sort(
+        (a, b) =>
+          rank(a.id) - rank(b.id) ||
+          a.altitudeM - b.altitudeM ||
+          (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+      )
+      .map((v) => site.url + '/photos/' + v.slug);
+    expect(publishedViews.every((v) => rank(v.id) >= 0)).toBe(true);
+    expect(photoUrls).toEqual(expected);
+  });
+
+  it('puts the regions after the nav and before the photos, and the photos before the projects', () => {
+    const firstRegion = urls.findIndex((u) => u.startsWith(site.url + '/photos/regions/'));
+    const lastRegion = urls.findLastIndex((u) => u.startsWith(site.url + '/photos/regions/'));
+    const firstPhoto = urls.indexOf(photoUrls[0]);
+    const lastPhoto = urls.indexOf(photoUrls[photoUrls.length - 1]);
+    const firstProject = urls.findIndex((u) => u.startsWith(site.url + '/projects/'));
+    expect(firstRegion).toBe(site.nav.length);
+    expect(lastRegion).toBeLessThan(firstPhoto);
+    expect(lastPhoto).toBeLessThan(firstProject);
+  });
+
+  it('is deterministic: two calls give the same list, with no lastModified on any entry', () => {
+    expect(sitemap()).toEqual(sitemap());
+    expect(sitemap().filter((entry) => 'lastModified' in entry)).toEqual([]);
   });
 });
 

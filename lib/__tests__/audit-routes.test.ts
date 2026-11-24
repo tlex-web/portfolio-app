@@ -6,14 +6,19 @@
  * 4 and Pitfall 1). Every page template under app/(site) has a ROUTES
  * representative, audited in three engines at three widths; every page the
  * sitemap lists is either such an entry or in AUDIT_SWEEP, audited once in
- * Chromium. A new template (a region page, say) fails here until ROUTES names
- * it, and a new photo or region page joins the sweep through the sitemap.
+ * Chromium. A new template fails here until ROUTES names it, and a new photo
+ * or region page joins the sweep through the sitemap (D-15, REGION-07): every
+ * region page and every published photo page must be audited, and the
+ * sitemap's page floor is counted from the data (nav, regions, published
+ * photos, projects).
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import sitemap from '@/app/sitemap';
 import { projects } from '@/data/projects';
-import { photoSlugs } from '@/lib/photos/view-model';
+import { site } from '@/data/site';
+import { publishedSlugs } from '@/lib/photos/view-model';
+import { regionIds } from '@/lib/regions';
 import { AUDIT_SWEEP, ROUTES, SITEMAP_PATHS } from '../../e2e/routes';
 
 const SITE_DIR = path.join(process.cwd(), 'app', '(site)');
@@ -61,8 +66,9 @@ describe('every page template has a ROUTES entry (VERIFY-05)', () => {
 });
 
 describe('every sitemap page is audited (VERIFY-05)', () => {
-  it('lists at least the nine pages the site has today', () => {
-    expect(sitemap().length).toBeGreaterThanOrEqual(9);
+  it('lists at least the nav, region, published photo and project pages (a floor from the data)', () => {
+    const floor = site.nav.length + regionIds.length + publishedSlugs.length + projects.length;
+    expect(sitemap().length).toBeGreaterThanOrEqual(floor);
     expect(SITEMAP_PATHS.length).toBe(sitemap().length);
   });
 
@@ -75,18 +81,28 @@ describe('every sitemap page is audited (VERIFY-05)', () => {
     expect(AUDIT_SWEEP.filter((p) => routePaths.includes(p))).toEqual([]);
   });
 
-  it('covers /projects/coin-flip and every photo slug', () => {
+  it('covers /projects/coin-flip, every region page and every published photo page', () => {
     const audited = new Set([...routePaths, ...AUDIT_SWEEP]);
+    // Literal path prefixes, so the URL contract is checked independently of
+    // regionHref and photoHref (REGION-07, PHOTO-05).
     const wanted = [
       '/projects/coin-flip',
-      ...projects.map((p) => `/projects/${p.slug}`),
-      ...photoSlugs.map((slug) => `/photos/${slug}`),
+      ...projects.map((p) => '/projects/' + p.slug),
+      ...regionIds.map((id) => '/photos/regions/' + id),
+      ...publishedSlugs.map((slug) => '/photos/' + slug),
     ];
     expect(wanted.filter((p) => !audited.has(p))).toEqual([]);
   });
 
+  it('audits the region template in ROUTES and the other regions in the sweep (SC2)', () => {
+    expect(routePaths).toContain('/photos/regions/zermatt');
+    const others = regionIds.filter((id) => id !== 'zermatt').map((id) => '/photos/regions/' + id);
+    expect(others.length).toBeGreaterThan(0);
+    expect(others.filter((p) => !AUDIT_SWEEP.includes(p))).toEqual([]);
+  });
+
   it('has a non-empty sweep while there is more than one photo', () => {
-    expect(photoSlugs.length).toBeGreaterThan(1);
+    expect(publishedSlugs.length).toBeGreaterThan(1);
     expect(AUDIT_SWEEP.length).toBeGreaterThan(0);
   });
 

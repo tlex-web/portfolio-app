@@ -2,7 +2,7 @@ import { test, expect, type APIRequestContext, type Page } from '@playwright/tes
 import { projects } from '@/data/projects';
 import { site } from '@/data/site';
 import { SITE_DESCRIPTION } from '@/lib/metadata';
-import { photoSlugs } from '@/lib/photos/view-model';
+import { regionPhotoViews, regions } from '@/lib/regions';
 import { ROUTES } from './routes';
 
 /**
@@ -14,18 +14,26 @@ import { ROUTES } from './routes';
  * share a title or a description, and only Home uses the root description.
  * SEO-02: every route names an og:image whose path answers a 1200 x 630 PNG,
  * and twitter:card summary_large_image. /offline and an unknown URL's 404 are
- * noindex. SEO-03: /sitemap.xml lists exactly the nav destinations, the photo
- * pages and the project pages on site.url (Contact included, /offline never),
- * and /robots.txt points at it.
+ * noindex. SEO-03 and D-15 (REGION-07): /sitemap.xml lists exactly the nav
+ * destinations, the region pages (registry order), every published photo page
+ * (by region, then altitude ascending) and the project pages on site.url
+ * (Contact included, /offline never), and /robots.txt points at it.
  */
 
 const canonical = (page: Page) => page.locator('link[rel="canonical"]');
 const description = (page: Page) => page.locator('meta[name="description"]');
 
-/** The URL set the sitemap must list, computed from the same data the route reads. */
+/**
+ * The URL list the sitemap must give, in order, computed from the same data the
+ * route reads (D-15): nav, then each region in registry order, then each
+ * published photo grouped by region in registry order and altitude ascending
+ * within, then the projects. The paths are literal, so the URL contract is
+ * checked independently of regionHref and photoHref.
+ */
 const expectedSitemap = [
   ...site.nav.map((n) => (n.href === '/' ? site.url : `${site.url}${n.href}`)),
-  ...photoSlugs.map((slug) => `${site.url}/photos/${slug}`),
+  ...regions.map((r) => `${site.url}/photos/regions/${r.id}`),
+  ...regions.flatMap((r) => regionPhotoViews(r.id)).map((v) => `${site.url}/photos/${v.slug}`),
   ...projects.map((p) => `${site.url}/projects/${p.slug}`),
 ];
 
@@ -159,7 +167,7 @@ test.describe('Kept out of the index (SEO-01, SEO-03)', () => {
 });
 
 test.describe('sitemap.xml and robots.txt (SEO-03)', () => {
-  test('the sitemap lists exactly the nav, photo and project URLs, each once, /contact included and no /offline', async ({
+  test('the sitemap lists exactly the nav, region, photo and project URLs, each once, /contact included and no /offline', async ({
     request,
   }) => {
     const response = await request.get('/sitemap.xml');
