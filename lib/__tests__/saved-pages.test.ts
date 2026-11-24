@@ -5,14 +5,16 @@ import { site } from '@/data/site';
 import { publishedSlugs } from '@/lib/photos/view-model';
 import { regions, regionPhotoViews } from '@/lib/regions';
 import { projects } from '@/data/projects';
+import { SOURCES_PAGE } from '@/data/source-credits';
 import { SLUGS } from '../../e2e/helpers/photo-fixtures';
 
 /**
  * The offline saved-pages mapper (D-12; 12-UI-SPEC E11; 17 D-22, EDGE-03).
  * Data-driven: every href and title comes from site.nav, the region registry
- * (lib/regions.ts), the published photo views and the projects. The catalog is
- * built exactly as app/(site)/offline/page.tsx builds it: region ids and names
- * only, and every published photo grouped by region in registry order.
+ * (lib/regions.ts), the published photo views, the projects and the site pages
+ * outside the nav (/sources, 18 D-20). The catalog is built exactly as
+ * app/(site)/offline/page.tsx builds it: region ids and names only, every
+ * published photo grouped by region in registry order, then SOURCES_PAGE.
  */
 
 const ORIGIN = 'https://x';
@@ -23,6 +25,7 @@ const catalog = savedPageCatalog({
   regions: regionSource,
   photos: photoSource,
   projects,
+  pages: [SOURCES_PAGE],
 });
 const seededPhoto = photoSource.find((view) => view.slug === SLUGS.matterhornFromZermatt)!;
 const firstRegion = regions[0];
@@ -32,7 +35,7 @@ const roadmap = site.nav.find((item) => item.href === '/roadmap');
 const url = (p: string) => `${ORIGIN}${p}`;
 
 describe('savedPageCatalog (D-12, D-22)', () => {
-  it('lists the nav pages, then every region, then the photos by region, then every project, titled from data', () => {
+  it('lists the nav pages, then every region, then the photos by region, then every project, then /sources, titled from data', () => {
     expect(catalog.map((row) => row.href)).toEqual([
       ...site.nav.map((item) => item.href),
       ...regions.map((region) => `/photos/regions/${region.id}`),
@@ -40,12 +43,14 @@ describe('savedPageCatalog (D-12, D-22)', () => {
         regionPhotoViews(region.id).map((view) => `/photos/${view.slug}`)
       ),
       ...projects.map((project) => `/projects/${project.slug}`),
+      '/sources',
     ]);
     expect(catalog.map((row) => row.title)).toEqual([
       ...site.nav.map((item) => item.label),
       ...regions.map((region) => region.name),
       ...regions.flatMap((region) => regionPhotoViews(region.id).map((view) => view.title)),
       ...projects.map((project) => project.name),
+      'Data sources',
     ]);
   });
 
@@ -74,11 +79,30 @@ describe('savedPageCatalog (D-12, D-22)', () => {
   });
 
   it('a catalog built with no regions has no region row and keeps the rest', () => {
-    const bare = savedPageCatalog({ nav: site.nav, regions: [], photos: photoSource, projects });
+    const bare = savedPageCatalog({
+      nav: site.nav,
+      regions: [],
+      photos: photoSource,
+      projects,
+      pages: [SOURCES_PAGE],
+    });
     expect(
       bare.some((row) => row.href.startsWith('/photos/regions/') || row.label === 'Region')
     ).toBe(false);
     expect(bare).toEqual(catalog.filter((row) => row.label !== 'Region'));
+  });
+
+  it('puts the site pages outside the nav after the projects, unlabelled, and only those given', () => {
+    expect(catalog.at(-1)).toEqual({ href: '/sources', title: 'Data sources' });
+    const noPages = savedPageCatalog({
+      nav: site.nav,
+      regions: regionSource,
+      photos: photoSource,
+      projects,
+      pages: [],
+    });
+    expect(noPages).toEqual(catalog.slice(0, -1));
+    expect(noPages.some((row) => row.href === '/sources')).toBe(false);
   });
 
   it('never includes /offline', () => {
@@ -117,6 +141,14 @@ describe('savedPageRows (D-12, UI-SPEC E11)', () => {
     const p = `/projects/${firstProject.slug}`;
     const rows = savedPageRows([url(p), url(p), url(`${p}/`)], catalog);
     expect(rows).toEqual([{ href: p, title: firstProject.name, label: 'Project' }]);
+  });
+
+  it('keeps /sources only when its exact path is cached', () => {
+    const sources: SavedPageRow = { href: '/sources', title: 'Data sources' };
+    expect(savedPageRows([url('/sources')], catalog)).toEqual([sources]);
+    expect(savedPageRows([url('/sources/')], catalog)).toEqual([sources]);
+    expect(savedPageRows([url('/sources?_rsc=abc')], catalog)).toEqual([]);
+    expect(savedPageRows([url('/sources/extra'), url('/source')], catalog)).toEqual([]);
   });
 
   it("maps '/' to 'Home'", () => {

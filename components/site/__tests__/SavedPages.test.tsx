@@ -4,6 +4,7 @@ import { savedPageCatalog } from '@/lib/saved-pages';
 import { site } from '@/data/site';
 import { regionById, regionOfPhoto, regionPhotoViews, regions } from '@/lib/regions';
 import { projects } from '@/data/projects';
+import { SOURCES_PAGE } from '@/data/source-credits';
 import { SLUGS } from '../../../e2e/helpers/photo-fixtures';
 
 /**
@@ -12,13 +13,14 @@ import { SLUGS } from '../../../e2e/helpers/photo-fixtures';
  * slugs or titles beyond the approved copy.
  */
 
-// Built as app/(site)/offline/page.tsx builds it (17 D-22): region ids and names, every published photo.
+// Built as app/(site)/offline/page.tsx builds it (17 D-22): region ids and names, every published photo, then /sources.
 const photoSource = regions.flatMap((r) => regionPhotoViews(r.id));
 const catalog = savedPageCatalog({
   nav: site.nav,
   regions: regions.map(({ id, name }) => ({ id, name })),
   photos: photoSource,
   projects,
+  pages: [SOURCES_PAGE],
 });
 const seededPhoto = photoSource.find((view) => view.slug === SLUGS.matterhornFromZermatt)!;
 const seededRegion = regionById(regionOfPhoto(seededPhoto.id)!)!;

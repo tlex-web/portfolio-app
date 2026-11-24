@@ -35,6 +35,9 @@ import {
   regionRights,
   regionTitle,
   regionYears,
+  regions,
+  regionsWestToEast,
+  regionsWestToEastIn,
 } from '@/lib/regions';
 
 /** Tim's approved copy per region (D-14), verbatim. */
@@ -339,5 +342,43 @@ describe('D-03: region ids never collide with a photo slug or a reserved segment
     expect(collisions({ 'photo slugs': [...photoSlugs, NEUTRAL_SLUG], reserved })).toEqual([
       { value: NEUTRAL_SLUG, in: ['photo slugs', 'reserved'] },
     ]);
+  });
+});
+
+describe('regions west to east (D-01; REGION-01 ordering and empty)', () => {
+  it('orders every registry region by the centre u of its overview outline', () => {
+    expect(regionsWestToEast().map((r) => r.id)).toEqual(['zermatt', 'ortler', 'saalfelden']);
+    expect([...regionsWestToEast().map((r) => r.id)].sort()).toEqual([...regionIds].sort());
+  });
+
+  it('leaves the registry export in registry order', () => {
+    regionsWestToEast();
+    expect(regions.map((r) => r.id)).toEqual(['ortler', 'saalfelden', 'zermatt']);
+  });
+
+  it('breaks a tie in centre u by id ascending, whatever the input order', () => {
+    const square = (u: number) => [{ u: u - 0.01 }, { u: u + 0.01 }, { u: u + 0.01 }, { u: u - 0.01 }];
+    const list = [
+      { id: 'c', corners: square(0.5) },
+      { id: 'a', corners: square(0.5) },
+      { id: 'w', corners: square(0.1) },
+      { id: 'b', corners: [{ u: 0.5 }] },
+    ];
+    expect(regionsWestToEastIn(list).map((e) => e.id)).toEqual(['w', 'a', 'b', 'c']);
+    expect(regionsWestToEastIn([...list].reverse()).map((e) => e.id)).toEqual(['w', 'a', 'b', 'c']);
+    expect(list.map((e) => e.id)).toEqual(['c', 'a', 'w', 'b']);
+  });
+
+  it('throws a RangeError naming an entry with no outline (missing or empty)', () => {
+    const ok = { id: 'zermatt', corners: [{ u: 0.2 }] };
+    expect(() => regionsWestToEastIn([ok, { id: 'nowhere', corners: undefined }])).toThrow(
+      new RangeError('regionsWestToEast: nowhere has no overview outline')
+    );
+    expect(() => regionsWestToEastIn([{ id: 'hollow', corners: [] }, ok])).toThrow(RangeError);
+    expect(() => regionsWestToEastIn([{ id: 'hollow', corners: [] }])).toThrow(/hollow/);
+  });
+
+  it('returns an empty list for an empty input', () => {
+    expect(regionsWestToEastIn([])).toEqual([]);
   });
 });
