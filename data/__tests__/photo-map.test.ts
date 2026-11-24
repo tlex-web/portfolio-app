@@ -361,4 +361,18 @@ describe('photo map and region registry: schema boundaries', () => {
     expect(Regions.safeParse(one({ ...rest, cover: '../img-0605' })).success).toBe(false);
     expect(Regions.safeParse(one({ ...rest, cover: 'a'.repeat(41) })).success).toBe(false);
   });
+
+  test('17-REVIEW IN-09: Regions rejects a region whose fact texts repeat (the page keys rows by text)', () => {
+    const base = region('zermatt');
+    const one = (entry: unknown) => ({ schemaVersion: 1, regions: [entry] });
+    const [first] = base.facts;
+    const other = { text: `${first.text} Again.`, source: first.source };
+    expect(Regions.safeParse(one({ ...base, facts: [first, other] })).success).toBe(true);
+    const twice = [first, { ...first, source: 'Tim' }];
+    const repeated = Regions.safeParse(one({ ...base, facts: twice }));
+    expect(repeated.success).toBe(false);
+    expect(repeated.error?.issues.map((i) => i.message)).toContain(
+      "a region's fact texts must be unique"
+    );
+  });
 });

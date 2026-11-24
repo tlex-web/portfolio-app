@@ -76,10 +76,15 @@ export const Region = z.strictObject({
   country: RegionCountry,
   plate: PlateSlug,
   cover: CoverPhotoId,
+  // The region page keys each fact's row by its text (17-REVIEW IN-09), so the texts are unique.
   facts: z
     .array(RegionFact)
     .min(1, 'a region needs at least one fact')
-    .max(3, 'a region holds at most three facts'),
+    .max(3, 'a region holds at most three facts')
+    .refine(
+      (facts) => new Set(facts.map((f) => f.text)).size === facts.length,
+      "a region's fact texts must be unique"
+    ),
 });
 export type Region = z.infer<typeof Region>;
 
