@@ -1,5 +1,6 @@
 import type { Graph, Person, Thing, WebSite, WithContext } from 'schema-dts';
 import { site } from '@/data/site';
+import { siteRights } from '@/lib/site-rights';
 
 /**
  * The site-wide JSON-LD (SEO-04): the pieces the (site) layout renders on every
@@ -52,13 +53,11 @@ export function jsonLdHtml(data: Graph | WithContext<Thing>): string {
 }
 
 /**
- * The footer's printed rights line (D-17): the same wording and the same
- * new Date().getFullYear() expression as SiteFooter. Both run in the same static
+ * The footer's printed rights line (D-17), from the one definition SiteFooter
+ * prints too (lib/site-rights.ts, 17-REVIEW IN-04). Both run in the same static
  * render, so the markup and the printed line agree.
  */
-export function siteRights(): string {
-  return `© ${new Date().getFullYear()} ${site.name}. All rights reserved.`;
-}
+export { siteRights };
 
 /** The site-wide graph in the (site) layout: one Person and one WebSite (D-16, D-20). */
 export function siteGraph(): Graph {

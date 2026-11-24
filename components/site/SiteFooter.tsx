@@ -5,6 +5,7 @@ import { homePlate } from '@/data/generated/home-plate';
 import { sheet } from '@/data/sheet';
 import { site } from '@/data/site';
 import { homePhotos } from '@/lib/ascent/home-photos';
+import { siteRightsParts } from '@/lib/site-rights';
 
 const LINK =
   'min-h-11 inline-flex items-center gap-2 text-ink-muted hover:text-ink transition-colors duration-(--duration-fast) ease-erosion';
@@ -25,8 +26,6 @@ const LINK =
  * widths resolve against it, the same width the band shows the full extent across.
  */
 export default function SiteFooter() {
-  const year = new Date().getFullYear();
-
   const links = [
     { label: 'GitHub', href: site.links.github, Icon: GithubLogo },
     { label: 'LinkedIn', href: site.links.linkedin, Icon: LinkedinLogo },
@@ -62,9 +61,8 @@ export default function SiteFooter() {
           <SheetLegend sheet={homePlate} title={sheet.title} />
         </div>
         <div className="mt-12 pt-6 border-t border-line">
-          <p className="text-sm text-ink-muted tabular-nums">
-            © {year} {site.name}. All rights reserved.
-          </p>
+          {/* lib/site-rights.ts (17-REVIEW IN-04): five parts keep the HTML unchanged. */}
+          <p className="text-sm text-ink-muted tabular-nums">{siteRightsParts()}</p>
         </div>
       </div>
     </footer>

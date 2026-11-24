@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import { usePathname } from 'next/navigation';
 import SiteChrome from '../SiteChrome';
 import { site } from '@/data/site';
+import { siteRights, siteRightsParts } from '@/lib/site-rights';
 
 jest.mock('next/navigation', () => ({
   usePathname: jest.fn(),
@@ -76,6 +77,16 @@ describe('SiteChrome', () => {
     expect(
       within(footer).getByText(`© ${new Date().getFullYear()} Tim Lui. All rights reserved.`)
     ).toBeInTheDocument();
+  });
+
+  it('prints the one rights line the JSON-LD carries (17-REVIEW IN-04)', () => {
+    renderChrome();
+
+    const footer = screen.getByRole('contentinfo');
+    const line = within(footer).getByText(siteRights());
+    expect(line.tagName).toBe('P');
+    expect(line.textContent).toBe(siteRights());
+    expect(siteRights()).toBe(siteRightsParts().join(''));
   });
 
   it('marks only Engineering as current on a project detail page', () => {

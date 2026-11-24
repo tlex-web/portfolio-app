@@ -73,6 +73,7 @@ import {
   siteRights,
 } from '@/lib/json-ld/site';
 import { photoHref, regionHref } from '@/lib/photos/routes';
+import { siteRights as footerRights } from '@/lib/site-rights';
 import { publishedViews, type PhotoView } from '@/lib/photos/view-model';
 import {
   regionById,
@@ -235,6 +236,14 @@ describe('siteGraph: the site-wide Person and WebSite (D-16, D-18, D-20)', () =>
     const footerLine = '© ' + new Date().getFullYear() + ' ' + site.name + '. All rights reserved.';
     expect(siteRights()).toBe(footerLine);
     expect(nodeOfType('WebSite').copyrightNotice).toBe(footerLine);
+  });
+
+  it('takes the rights line from the one definition the footer prints (17-REVIEW IN-04)', () => {
+    expect(siteRights).toBe(footerRights);
+    const footer = read('components', 'site', 'SiteFooter.tsx');
+    expect(footer).toContain("from '@/lib/site-rights';");
+    expect(footer).toContain('{siteRightsParts()}');
+    expect(footer).not.toContain('All rights reserved');
   });
 });
 
