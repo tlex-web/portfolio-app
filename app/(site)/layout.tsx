@@ -1,5 +1,5 @@
 import SiteChrome from '@/components/site/SiteChrome';
-import { jsonLdHtml, siteGraph } from '@/lib/json-ld';
+import { jsonLdHtml, siteGraph } from '@/lib/json-ld/site';
 
 /**
  * Route-group layout for every content route (SHELL-01; UI-SPEC "Shell Contract").
@@ -9,7 +9,7 @@ import { jsonLdHtml, siteGraph } from '@/lib/json-ld';
  * wrap the layout of its own segment).
  *
  * It also renders the site-wide JSON-LD (SEO-04, 17 D-16): one Person and WebSite
- * graph from lib/json-ld.ts, serialized by jsonLdHtml. It lives here, not in the
+ * graph from lib/json-ld/site.ts, serialized by jsonLdHtml. It lives here, not in the
  * root layout, so it reaches every content page and nothing else: the root
  * not-found and global-error render SiteChrome themselves outside this group, so
  * a 404 or a crash page carries no identity markup. The script is a native

@@ -20,9 +20,12 @@
  * - No JSON-LD object at any depth carries license or acquireLicensePage (the
  *   2026-11-12 decision), email, address or homeLocation; the serialized text holds
  *   neither site.email nor site.location.name.
- * - Source assertions: lib/json-ld.ts imports schema-dts through `import type`
- *   only (D-21, 0 runtime bytes), and the (site) layout renders a native data
- *   block with no nonce attribute and no next/script (D-16, T-17-08).
+ * - Source assertions: both JSON-LD modules (lib/json-ld/site.ts and
+ *   lib/json-ld/content.ts) import schema-dts through `import type` only (D-21,
+ *   0 runtime bytes), and the (site) layout renders a native data block with no
+ *   nonce attribute and no next/script (D-16, T-17-08). The site module, the
+ *   only one the (site) layout imports, reaches no region or photo model through
+ *   any chain of value imports (17-REVIEW WR-01).
  *
  * - photoImageLd (17-13; SEO-04, D-16..D-19): every published photo page carries
  *   one ImageObject whose every text equals what the page prints (title, alt,
@@ -50,19 +53,21 @@ import { photos } from '@/data/generated/photos';
 import { projects } from '@/data/projects';
 import { site } from '@/data/site';
 import {
-  PERSON_ID,
-  WEBSITE_ID,
   caseStudyRights,
-  jsonLdHtml,
-  personRef,
   photoImageId,
   photoImageLd,
   photoLdFacts,
   projectLd,
   regionGalleryLd,
+} from '@/lib/json-ld/content';
+import {
+  PERSON_ID,
+  WEBSITE_ID,
+  jsonLdHtml,
+  personRef,
   siteGraph,
   siteRights,
-} from '@/lib/json-ld';
+} from '@/lib/json-ld/site';
 import { photoHref, regionHref } from '@/lib/photos/routes';
 import { publishedViews, type PhotoView } from '@/lib/photos/view-model';
 import {
@@ -108,6 +113,55 @@ function nodeOfType(type: string): Node {
 
 const read = (...segments: string[]) =>
   fs.readFileSync(path.join(process.cwd(), ...segments), 'utf8');
+
+/** Every JSON-LD source module, repo-relative (17-REVIEW WR-01 split them in two). */
+const JSON_LD_SOURCES = ['lib/json-ld/site.ts', 'lib/json-ld/content.ts'] as const;
+const sourceRows = JSON_LD_SOURCES.map((file) => [file] as const);
+
+/**
+ * The repo files a module reaches through value imports and re-exports, itself
+ * included, walked breadth first. `import type` statements and lists whose every
+ * specifier is `type` are skipped; `@/` and relative specifiers resolve as
+ * .ts, .tsx, an exact file (.json) or /index.ts; package imports are leaves. An
+ * unresolvable local import throws, so a broken walk cannot pass vacuously.
+ */
+function valueImportGraph(entry: string): string[] {
+  const exists = (rel: string) => {
+    const abs = path.join(process.cwd(), rel);
+    return fs.existsSync(abs) && fs.statSync(abs).isFile();
+  };
+  const seen = new Set<string>([entry]);
+  const queue = [entry];
+  while (queue.length > 0) {
+    const file = queue.shift() as string;
+    if (!/\.tsx?$/.test(file)) continue;
+    const text = read(file)
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^[ \t]*\/\/.*$/gm, '');
+    // `import … from`, `export … from` and side-effect `import '…'`.
+    for (const [, typeOnly, clause, spec] of text.matchAll(
+      /^(?:import|export)\s+(type\s+)?(?:([^;'"]*?)\s*from\s*)?'([^']+)';/gm
+    )) {
+      if (typeOnly) continue;
+      const names = /^\{([^}]*)\}$/
+        .exec(clause?.trim() ?? '')?.[1]
+        .split(',')
+        .map((n) => n.trim());
+      if (names && names.filter(Boolean).every((n) => /^type\s/.test(n))) continue;
+      let base: string;
+      if (spec.startsWith('@/')) base = spec.slice(2);
+      else if (spec.startsWith('.')) base = path.posix.join(path.posix.dirname(file), spec);
+      else continue;
+      const target = [`${base}.ts`, `${base}.tsx`, base, `${base}/index.ts`].find(exists);
+      if (!target) throw new Error(`${file} imports '${spec}', which resolves to no file`);
+      if (!seen.has(target)) {
+        seen.add(target);
+        queue.push(target);
+      }
+    }
+  }
+  return [...seen].sort();
+}
 
 describe('jsonLdHtml, the one serializer (D-16, T-17-06)', () => {
   it.each([
@@ -222,9 +276,9 @@ describe('disclosure: no license, no email, no location (D-20, the 2026-11-12 de
 });
 
 describe('source rules (D-16, D-21)', () => {
-  it('imports schema-dts through import type only', () => {
+  it.each(sourceRows)('%s imports schema-dts through import type only', (file) => {
     // Whole import statements, so a list prettier wraps over several lines still counts.
-    const source = read('lib', 'json-ld.ts');
+    const source = read(file);
     const statements = source.match(/^import\b[^;]*;/gm) ?? [];
     const fromSchema = statements.filter((s) => /from 'schema-dts';$/.test(s));
     expect(fromSchema.length).toBeGreaterThan(0);
@@ -232,6 +286,38 @@ describe('source rules (D-16, D-21)', () => {
     expect(source.split('\n').filter((line) => /^import (?!type).*schema-dts/.test(line))).toEqual(
       []
     );
+  });
+
+  it('the (site) layout imports the site module alone, which reaches no region or photo model (17-REVIEW WR-01)', () => {
+    const layout = read('app', '(site)', 'layout.tsx');
+    expect(layout).toContain("from '@/lib/json-ld/site';");
+    expect(layout).not.toMatch(/from '@\/lib\/(?:json-ld\/content|regions)'/);
+
+    const reached = valueImportGraph('lib/json-ld/site.ts');
+    expect(reached).toContain('data/site.ts');
+    const model = reached.filter(
+      (f) =>
+        f === 'lib/regions.ts' ||
+        f === 'lib/json-ld/content.ts' ||
+        f.startsWith('lib/photos/') ||
+        f.startsWith('data/generated/') ||
+        f.startsWith('data/regions/')
+    );
+    expect(model).toEqual([]);
+  });
+
+  it('the same walk reaches the region and photo model from the content module (not vacuous)', () => {
+    const reached = valueImportGraph('lib/json-ld/content.ts');
+    for (const file of [
+      'lib/json-ld/site.ts',
+      'lib/regions.ts',
+      'lib/photos/view-model.ts',
+      'data/generated/photos.ts',
+      'data/generated/image-manifest.ts',
+      'data/regions/regions.json',
+    ]) {
+      expect(reached).toContain(file);
+    }
   });
 
   it('renders the site graph in the (site) layout as a native data block with no nonce and no next/script', () => {
@@ -650,8 +736,8 @@ describe('17-14 blocks: per-node rule and disclosure (D-16, Person exemption)', 
     }
   );
 
-  it('lib/json-ld.ts never builds a BreadcrumbList (it waits for Phase 18)', () => {
-    expect(read('lib', 'json-ld.ts')).not.toContain('BreadcrumbList');
+  it.each(sourceRows)('%s never builds a BreadcrumbList (it waits for Phase 18)', (file) => {
+    expect(read(file)).not.toContain('BreadcrumbList');
   });
 });
 

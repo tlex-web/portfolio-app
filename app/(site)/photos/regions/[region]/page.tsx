@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowSquareOutIcon } from '@phosphor-icons/react/dist/ssr';
 import type { RegionFact } from '@/data/schemas/region';
-import { jsonLdHtml, regionGalleryLd } from '@/lib/json-ld';
+import { regionGalleryLd } from '@/lib/json-ld/content';
+import { jsonLdHtml } from '@/lib/json-ld/site';
 import {
   regionById,
   regionHeading,

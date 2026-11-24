@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import PhotoViewer from '@/components/photos/PhotoViewer';
-import { jsonLdHtml, photoImageLd } from '@/lib/json-ld';
+import { photoImageLd } from '@/lib/json-ld/content';
+import { jsonLdHtml } from '@/lib/json-ld/site';
 import { regionById, regionOfPhoto } from '@/lib/regions';
 import { regionHref } from '@/lib/photos/routes';
 import {

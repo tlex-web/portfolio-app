@@ -5,7 +5,8 @@ import EndBlock from '@/components/projects/EndBlock';
 import RouteIndex from '@/components/projects/RouteIndex';
 import Trailhead from '@/components/projects/Trailhead';
 import { projects } from '@/data/projects';
-import { jsonLdHtml, projectLd } from '@/lib/json-ld';
+import { projectLd } from '@/lib/json-ld/content';
+import { jsonLdHtml } from '@/lib/json-ld/site';
 
 /**
  * The case-study route (ENG-02 route contract, ENG-05; 11 D-01, D-22). A
