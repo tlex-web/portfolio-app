@@ -29,39 +29,39 @@ findings:
     title: "Impossible-state guard — the product check after `TerrainSource.parse` in fetch-bev"
   - id: IN-01
     severity: info
-    disposition: skipped
+    disposition: fixed
     title: "Coarse coordinates can still be padded through `formatCoordinates`' default"
   - id: IN-02
     severity: info
-    disposition: skipped
+    disposition: fixed
     title: "Impossible-state guard — the redundant nodata comparisons in the BEV value check"
   - id: IN-03
     severity: info
-    disposition: skipped
+    disposition: fixed
     title: "`homePhotos` names the wrong generated file in its error"
   - id: IN-04
     severity: info
-    disposition: skipped
+    disposition: fixed
     title: "`loadHomeWaypointIds` hides the real import error"
   - id: IN-05
     severity: info
-    disposition: skipped
+    disposition: fixed
     title: "Overview summits drop the height source D-18 asks each record to carry"
   - id: IN-06
     severity: info
-    disposition: skipped
+    disposition: fixed
     title: "IN-05's strip fix still clamps a centre near the edge"
   - id: IN-07
     severity: info
-    disposition: skipped
+    disposition: fixed
     title: "The new 16-bit sources rely on git's binary autodetection"
   - id: IN-08
     severity: info
-    disposition: skipped
+    disposition: fixed
     title: "The two plate fetchers duplicate their argument and extent code"
   - id: IN-09
     severity: info
-    disposition: skipped
+    disposition: fixed
     title: "The GLO-90 mosaic clamps every negative value to 0 m with no lower sanity bound"
 open: 0
 total: 15
@@ -78,15 +78,15 @@ recorded: 2026-11-23T18:43:35.303Z
 | WR-04 | warning | fixed | 16-REVIEW-FIX.md |
 | WR-05 | warning | fixed | 16-REVIEW-FIX.md |
 | WR-06 | warning | fixed | 16-REVIEW-FIX.md |
-| IN-01 | info | skipped | 16-REVIEW-FIX.md |
-| IN-02 | info | skipped | 16-REVIEW-FIX.md |
-| IN-03 | info | skipped | 16-REVIEW-FIX.md |
-| IN-04 | info | skipped | 16-REVIEW-FIX.md |
-| IN-05 | info | skipped | 16-REVIEW-FIX.md |
-| IN-06 | info | skipped | 16-REVIEW-FIX.md |
-| IN-07 | info | skipped | 16-REVIEW-FIX.md |
-| IN-08 | info | skipped | 16-REVIEW-FIX.md |
-| IN-09 | info | skipped | 16-REVIEW-FIX.md |
+| IN-01 | info | fixed | fixed in Phase 17: 17-13 a56529c (D-23; deferred by Tim 2026-11-23) |
+| IN-02 | info | fixed | fixed in Phase 17: 17-08 93c5588 (D-23; deferred by Tim 2026-11-23) |
+| IN-03 | info | fixed | fixed in Phase 17: 17-09 72e38e6 (D-23; deferred by Tim 2026-11-23) |
+| IN-04 | info | fixed | fixed in Phase 17: 17-04 fed9a67 (D-23; deferred by Tim 2026-11-23) |
+| IN-05 | info | fixed | fixed in Phase 17: 17-09 0744dfe (D-23; deferred by Tim 2026-11-23) |
+| IN-06 | info | fixed | fixed in Phase 17: 17-09 909677f (D-23; deferred by Tim 2026-11-23) |
+| IN-07 | info | fixed | fixed in Phase 17: 17-09 14dd850 (D-23; deferred by Tim 2026-11-23) |
+| IN-08 | info | fixed | fixed in Phase 17: 17-08 1d15fd8 (D-23; deferred by Tim 2026-11-23) |
+| IN-09 | info | fixed | fixed in Phase 17: 17-08 a050c7e (D-23; deferred by Tim 2026-11-23) |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
