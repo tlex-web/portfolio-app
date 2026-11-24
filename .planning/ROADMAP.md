@@ -51,7 +51,7 @@ Full details: [milestones/v2.0-ROADMAP.md](milestones/v2.0-ROADMAP.md)
 - [x] **Phase 14: UI Fixes & Terminal Controls** - The carried v2.0 bugs in the mobile menu, Home at 375 px, the rail labels and lightbox focus fixed, plus terminal step buttons and a transcript (completed 2026-11-14)
 - [x] **Phase 15: Region & Plate Data Model** - An explicit Home waypoint list, a region and country on every photo, an N-plate terrain build, a telemetry ban and one photo URL helper, with no visible change (completed 2026-11-15)
 - [x] **Phase 16: New Regions & Alps Overview Data** - Coarse-location overrides, new Zermatt photos, Ortler and Saalfelden (BEV) with their plates, and a Copernicus GLO-90 overview map (completed 2026-11-23)
-- [ ] **Phase 17: Region Routes, SEO & Structured Data** - Region pages on their own path, the photo URL contract held, region metadata, JSON-LD and the saved-pages catalog
+- [x] **Phase 17: Region Routes, SEO & Structured Data** - Region pages on their own path, the photo URL contract held, region metadata, JSON-LD and the saved-pages catalog (completed 2026-11-24)
 - [ ] **Phase 18: Immersive Survey Layout** - The Alps overview on `/photos`, immersive region pages with map collar and altimeter rail, a region-scoped lightbox, Share, LV95 and data credits
 - [ ] **Phase 19: Drone Loops** - One silent, same-origin drone loop near a region page header, within a measured byte budget
 
@@ -323,7 +323,7 @@ Plans:
   3. Each region page has its own title, description, canonical URL, Open Graph card and sitemap entry, and the sitemap lists exactly the canonical URLs.
   4. Pages carry JSON-LD that parses: Person and WebSite site-wide, ImageObject on photo pages, an image gallery on region pages and the projects on their case studies, each with creator, copyright notice and credit text, no `license` property and no coordinates finer than the page shows.
   5. The offline page's saved-pages list includes the region pages and new photo pages a visitor has opened.
-**Plans**: 16/16 plans executed in 7 waves
+**Plans**: 16/16 plans complete in 7 waves
 
 Plans:
 **Wave 1**
@@ -427,6 +427,6 @@ Plans:
 | 14. UI Fixes & Terminal Controls | v2.1 | 8/8 | Complete    | 2026-11-14 |
 | 15. Region & Plate Data Model | v2.1 | 16/16 | Complete    | 2026-11-15 |
 | 16. New Regions & Alps Overview Data | v2.1 | 18/18 | Complete    | 2026-11-23 |
-| 17. Region Routes, SEO & Structured Data | v2.1 | 16/16 | In Progress | - |
+| 17. Region Routes, SEO & Structured Data | v2.1 | 16/16 | Complete    | 2026-11-24 |
 | 18. Immersive Survey Layout | v2.1 | 0/TBD | Not started | - |
 | 19. Drone Loops | v2.1 | 0/TBD | Not started | - |

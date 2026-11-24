@@ -2,44 +2,44 @@
 gsd_state_version: "1.0"
 milestone: v2.1
 milestone_name: Survey Expansion
-current_phase: 17
-current_phase_name: Region Routes, SEO & Structured Data
-status: verifying
-stopped_at: Completed 17-15-PLAN.md
-last_updated: "2026-11-24T01:56:43.645Z"
+current_phase: 18
+current_phase_name: Immersive Survey Layout
+status: planning
+stopped_at: Phase 17 complete, ready to plan Phase 18
+last_updated: "2026-11-24T17:21:29.154Z"
 last_activity: 2026-11-24
-last_activity_desc: 17-15 phase close complete; ready for /gsd-verify-work 17
-state_head: e127b0322f0c0d524a38520a54e8c83853609430
+last_activity_desc: Phase 17 complete, transitioned to Phase 18
+state_head: b17d4b41d6e17eac4d7117cf442d56f05ffeadc7
 progress:
   total_phases: 7
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 80
   completed_plans: 80
-  percent: 57
+  percent: 71
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-11-23)
+See: .planning/PROJECT.md (updated 2026-11-24)
 
 **Core value:** A portfolio that is visually memorable and distinctive (not another generic Tailwind site) while being stable and well-maintained under the hood.
-**Current focus:** Phase 17 — Region Routes, SEO & Structured Data
+**Current focus:** Phase 18 — Immersive Survey Layout
 
 ## Current Position
 
-Phase: 17 (Region Routes, SEO & Structured Data) — VERIFYING
-Plan: 15 of 16 (17-15, the phase-close plan, finished last; 17-16 ran before it, so all 16 plans are complete)
-Status: Phase complete — ready for verification
-Last activity: 2026-11-24 — 17-15 closed the phase: local gate green, D-23 write-back, ci/17-15 green (run 45306356650)
+Phase: 18 — Immersive Survey Layout
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-11-24 — Phase 17 complete, transitioned to Phase 18
 
-Progress: [██████░░░░] 57%
+Progress: [███████░░░] 71%
 
 ## Performance Metrics
 
 **Velocity (v2.1):**
-- Total plans completed: 64
+- Total plans completed: 80
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -51,6 +51,7 @@ Progress: [██████░░░░] 57%
 | 14 | 8 | - | - |
 | 15 | 16 | - | - |
 | 16 | 18 | - | - |
+| 17 | 16 | - | - |
 
 *Updated after each plan completion. v2.0: 128 plans in 6 phases, about 70 hours of plan execution; the per-plan table is in `.planning/milestones/v2.0-STATE.md`.*
 **Per-Plan Metrics:**
@@ -334,6 +335,8 @@ Recent decisions affecting current work:
 - [Phase 17]: 17-14: region ImageGallery contentLocation is a Place named region.name with PostalAddress.addressCountry, no geo (the stand-in prints no coordinates); no BreadcrumbList until Phase 18's visible breadcrumb
 - [Phase 17]: 17-15 D-25: E2E matrix legs ran 12.2 (firefox), 14.4 (webkit), 15.4 (chromium) min on ci/17-15 vs the 27-40 min single job of Phases 13-16; far under 45 min, no further sharding needed for Phase 18
 - [Phase 17]: 17-15 Pitfall 6: the 038a4cb Vercel preview is protected (302 to sso-api), so the deployed region-card check passes to /gsd-verify-work's live-DOM step; local production build serves all three region cards 200 image/png
+- [Phase 17]: 17-UAT passed 2026-11-24 (1/1): Tim checked the deployed region OG card on the Vercel preview of 4d79f22 (Claude's Chrome was not signed in to Vercel, so the live-DOM step could not look); VERIFICATION canonicalized human_needed → passed and the phase transitioned to 18
+- [Phase 17]: 17-UI-REVIEW (advisory, code-only, no screenshots) 17/24, no blocker: the text-only region page is the declared D-11 interim; the empty facts/photos finding is closed by the region schema (1-3 facts) and the cover-membership test
 
 ### Pending Todos
 
@@ -348,8 +351,10 @@ None carried from v2.0.
 - [Phase 15] The phase branch `gsd/phase-15-region-plate-data-model` is local only and stacked on the Phase 14 tip; `ci/15-16` holds the plan tip `0b06608`. Its commits reach `main` only through `/gsd-ship 15` after Phase 14 ships, which needs Tim's ask.
 - [Phase 15] On this stacked branch, 13-VERIFICATION.md and 14-VERIFICATION.md read `stale` because Phase 15 edited files they cover (13: `package.json`, `check-ci-gate.mjs`, `selftest.mjs`; 14: `LightboxDialog.tsx`, `PhotoViewer.tsx`, `SiteNav.tsx`, two e2e specs and one more file). Both passed; this is expected here and does not apply on their own branches.
 - [Phase 16] The phase branch `gsd/phase-16-new-regions-alps-overview-data` is local only and stacked on the Phase 15 tip. `ci/16-18` holds `e96f266`, which was green with Visual Regression PASS. The six code-review fix commits after it (`b754d73`..`61451dd`) have passed the local gate but have not run in CI. The branch reaches `main` only through `/gsd-ship 16` after Phases 14 and 15 ship, which needs Tim's ask.
-- [Phase 16] Deferred to Phase 17: the code-review info findings IN-01..09 (`16-REVIEW-DISPOSITION.md`). Deferred to Phase 17/18: the time-zone label for the Austrian stills (`deferred-items.md`). WR-05's BEV scale assertion has not run against a live tile yet; it runs on the next `terrain:fetch:bev`.
+- [Phase 16] WR-05's BEV scale assertion has not run against a live tile yet; it runs on the next `terrain:fetch:bev`. (The IN-01..09 info findings were fixed in Phase 17 and written back by 17-15; the Austrian time-zone label was fixed by 17-04, D-26.)
 - [Phase 16] The live-DOM step was not dispatched (`16-DOM-VERIFY.md`). Only one Chrome browser is connected now, so a pass is possible once a production build is served.
+- [Phase 17] The phase branch `gsd/phase-17-region-routes-seo-structured-data` is local only and stacked on the Phase 16 tip. `ci/17-15` holds `038a4cb` (green, Visual Regression PASS); `ci/17-review-fixes` holds `4d79f22` with the code-review fixes, and its CI run 45445770986 was still in progress at transition. The UAT, UI review and transition commits after it are local. The branch reaches `main` only through `/gsd-ship 17` after Phases 14 to 16 ship, which needs Tim's ask.
+- [Phase 17] Handed to Phase 18 from 17-UI-REVIEW: give the region page a visual anchor (D-11), check `text-ink-muted` small text at 4.5:1 in both themes, check 375 px source-link overflow, and confirm only one PhotoViewer back link is exposed per breakpoint. Claude's Chrome has no Vercel sign-in, so live-DOM checks on protected previews need Tim to sign in first.
 - [Phase 19] Needs a graded drone clip from Tim before any byte budget is fixed.
 
 ### Quick Tasks Completed
@@ -393,6 +398,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-24T01:56:42.793Z
-Stopped at: Completed 17-15-PLAN.md
+Last session: 2026-11-24T17:22:25Z
+Stopped at: Phase 17 complete, ready to plan Phase 18
 Resume file: None
