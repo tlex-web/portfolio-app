@@ -30,26 +30,49 @@
  *   at exactly the position's own precision, and whose dateCreated is no finer
  *   than the capture label. Expected values come from the data, never typed in.
  *
+ * - regionGalleryLd (17-14; SEO-04, D-16, D-17): every region page carries one
+ *   ImageGallery at its own URL, named by the printed heading, described by the
+ *   approved description, listing the photos' #image @ids in the page's link
+ *   order, and holding the printed region rights line as its copyrightNotice.
+ * - projectLd (17-14): box is SoftwareSourceCode with its public repository;
+ *   coin-flip is SoftwareApplication with no codeRepository key at all (its
+ *   repository is private, 11 D-23, T-17-29). Both carry caseStudyRights(slug),
+ *   which is Tim's 17-01 option (a): the footer line, siteRights().
+ * - No block built here holds BreadcrumbList (it waits for Phase 18's visible
+ *   breadcrumb), license or acquireLicensePage.
+ *
  * keysDeep and blocksOf are the helpers 17-13 and 17-14 reuse in this file.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { imageManifest } from '@/data/generated/image-manifest';
 import { photos } from '@/data/generated/photos';
+import { projects } from '@/data/projects';
 import { site } from '@/data/site';
 import {
   PERSON_ID,
   WEBSITE_ID,
+  caseStudyRights,
   jsonLdHtml,
   personRef,
   photoImageId,
   photoImageLd,
   photoLdFacts,
+  projectLd,
+  regionGalleryLd,
   siteGraph,
   siteRights,
 } from '@/lib/json-ld';
-import { photoHref } from '@/lib/photos/routes';
+import { photoHref, regionHref } from '@/lib/photos/routes';
 import { publishedViews, type PhotoView } from '@/lib/photos/view-model';
+import {
+  regionById,
+  regionDescription,
+  regionHeading,
+  regionIds,
+  regionPhotoViews,
+  regionRights,
+} from '@/lib/regions';
 
 type Node = Record<string, unknown>;
 
@@ -449,5 +472,198 @@ describe('photo page source rules (D-16, anti-pattern 9)', () => {
     const modal = read('app', '(site)', 'photos', '@modal', '(.)[slug]', 'page.tsx');
     expect(modal).not.toContain('ld+json');
     expect(modal).not.toContain('photoImageLd');
+  });
+});
+
+/** A region or project block as JSON.parse returns it from jsonLdHtml. */
+const parsed = (data: Parameters<typeof jsonLdHtml>[0]) => JSON.parse(jsonLdHtml(data)) as Node;
+
+const regionRows = regionIds.map((id) => [id] as const);
+const projectRows = projects.map((p) => [p.slug, p] as const);
+const RIGHTS = ['creator', 'copyrightNotice', 'creditText'] as const;
+
+describe('regionGalleryLd: the ImageGallery on every region page (SEO-04; D-16, D-17, D-18)', () => {
+  it('runs over every registry region', () => {
+    expect(regionIds.length).toBeGreaterThan(0);
+  });
+
+  it.each(regionRows)('%s round-trips through jsonLdHtml with no raw "<"', (id) => {
+    const ld = regionGalleryLd(id);
+    const html = jsonLdHtml(ld);
+    expect(html).not.toContain('<');
+    expect(JSON.parse(html)).toEqual(ld);
+  });
+
+  it.each(regionRows)('%s is an ImageGallery at the region page URL', (id) => {
+    const block = parsed(regionGalleryLd(id));
+    const pageUrl = site.url + '/photos/regions/' + id;
+    expect(regionHref(id)).toBe('/photos/regions/' + id);
+    expect(block['@context']).toBe('https://schema.org');
+    expect(block['@type']).toBe('ImageGallery');
+    expect(block['@id']).toBe(pageUrl);
+    expect(block.url).toBe(pageUrl);
+  });
+
+  it.each(regionRows)('%s names the printed heading and the approved description', (id) => {
+    const region = regionById(id);
+    if (!region) throw new Error(`no region ${id}`);
+    const block = parsed(regionGalleryLd(id));
+    expect(block.name).toBe(regionHeading(region));
+    expect(block.description).toBe(
+      regionDescription({ name: region.name, country: region.country, views: regionPhotoViews(id) })
+    );
+  });
+
+  it.each(regionRows)('%s places the gallery in the region and its country, no geo', (id) => {
+    const region = regionById(id);
+    if (!region) throw new Error(`no region ${id}`);
+    const block = parsed(regionGalleryLd(id));
+    expect(block.contentLocation).toEqual({
+      '@type': 'Place',
+      name: region.name,
+      address: { '@type': 'PostalAddress', addressCountry: region.country },
+    });
+    const keys = keysDeep(block);
+    for (const key of ['geo', 'latitude', 'longitude']) expect(keys).not.toContain(key);
+  });
+
+  it.each(regionRows)("%s lists the photos' #image @ids in the page's link order", (id) => {
+    const block = parsed(regionGalleryLd(id));
+    const views = regionPhotoViews(id);
+    expect(views.length).toBeGreaterThan(0);
+    expect(block.hasPart).toEqual(views.map((v) => ({ '@id': photoImageId(v.slug) })));
+  });
+
+  it.each(regionRows)('%s credits the Person and carries the printed region rights line', (id) => {
+    const block = parsed(regionGalleryLd(id));
+    expect(block.creator).toEqual(personRef());
+    expect(block.creditText).toBe(site.name);
+    expect(block.copyrightNotice).toBe(regionRights(id));
+  });
+
+  it('throws for an id that is not a registry region rather than inventing a gallery', () => {
+    expect(() => regionGalleryLd('no-such-region')).toThrow(RangeError);
+  });
+});
+
+describe('projectLd: the project on every case study (SEO-04; D-16, D-17, 11 D-23)', () => {
+  it('runs over both projects', () => {
+    expect(projects.map((p) => p.slug)).toEqual(['box', 'coin-flip']);
+  });
+
+  it.each(projectRows)('%s round-trips through jsonLdHtml with no raw "<"', (_slug, project) => {
+    const ld = projectLd(project);
+    const html = jsonLdHtml(ld);
+    expect(html).not.toContain('<');
+    expect(JSON.parse(html)).toEqual(ld);
+  });
+
+  it.each(projectRows)(
+    '%s names the project, its pitch and its case-study URL',
+    (_slug, project) => {
+      const block = parsed(projectLd(project));
+      expect(block['@context']).toBe('https://schema.org');
+      expect(block.name).toBe(project.name);
+      expect(project.pitch).toBeTruthy();
+      expect(block.description).toBe(project.pitch);
+      expect(block.url).toBe(site.url + '/projects/' + project.slug);
+    }
+  );
+
+  it('box is SoftwareSourceCode with its public repository link', () => {
+    const box = projects.find((p) => p.slug === 'box');
+    if (!box || !('links' in box)) throw new Error('box has no links');
+    const block = parsed(projectLd(box));
+    expect(block['@type']).toBe('SoftwareSourceCode');
+    expect(block.codeRepository).toBe(box.links.github);
+  });
+
+  it('coin-flip is SoftwareApplication with no codeRepository key (private repository, T-17-29)', () => {
+    const coinFlip = projects.find((p) => p.slug === 'coin-flip');
+    if (!coinFlip) throw new Error('no coin-flip');
+    const block = parsed(projectLd(coinFlip));
+    expect(block['@type']).toBe('SoftwareApplication');
+    expect(keysDeep(block)).not.toContain('codeRepository');
+    expect(jsonLdHtml(projectLd(coinFlip))).not.toContain('github.com');
+  });
+
+  it.each(projectRows)(
+    '%s credits the Person and carries caseStudyRights(slug)',
+    (_slug, project) => {
+      const block = parsed(projectLd(project));
+      expect(block.creator).toEqual(personRef());
+      expect(block.creditText).toBe(site.name);
+      expect(block.copyrightNotice).toBe(caseStudyRights(project.slug));
+    }
+  );
+});
+
+describe("caseStudyRights: Tim's 17-01 option (a), the footer line (D-17)", () => {
+  it.each(projectRows)('%s is the footer line, siteRights(), with the current year', (slug) => {
+    const footerLine = '© ' + new Date().getFullYear() + ' ' + site.name + '. All rights reserved.';
+    expect(caseStudyRights(slug)).toBe(siteRights());
+    expect(caseStudyRights(slug)).toBe(footerLine);
+  });
+});
+
+describe('17-14 blocks: per-node rule and disclosure (D-16, Person exemption)', () => {
+  // Built lazily inside each row, so a missing builder fails the row, not the suite.
+  const blockRows: ReadonlyArray<readonly [string, () => Node]> = [
+    ...regionIds.map((id) => ['region ' + id, () => parsed(regionGalleryLd(id))] as const),
+    ...projects.map((p) => ['project ' + p.slug, () => parsed(projectLd(p))] as const),
+  ];
+
+  it.each(blockRows)('%s has a non-empty creator, copyrightNotice and creditText', (_l, build) => {
+    const block = build();
+    for (const key of RIGHTS) {
+      const value = block[key];
+      expect(value).toBeTruthy();
+      if (typeof value === 'string') expect(value.trim()).not.toBe('');
+    }
+  });
+
+  it('every top-level node of every block in this file lacking one of the three is a Person', () => {
+    const nodes: Node[] = [
+      ...graphNodes(),
+      ...publishedViews.map((view) => blockOf(view) as unknown as Node),
+      ...blockRows.map(([, build]) => build()),
+    ];
+    const lacking = nodes.filter((node) => RIGHTS.some((key) => !node[key]));
+    expect(lacking.map((node) => node['@type'])).toEqual(['Person']);
+  });
+
+  it.each(blockRows)(
+    '%s holds no license, acquireLicensePage, email or BreadcrumbList',
+    (_l, build) => {
+      const block = build();
+      const keys = keysDeep(block);
+      for (const key of ['license', 'acquireLicensePage', 'email']) {
+        expect(keys).not.toContain(key);
+      }
+      expect(JSON.stringify(block)).not.toContain('BreadcrumbList');
+    }
+  );
+
+  it('lib/json-ld.ts never builds a BreadcrumbList (it waits for Phase 18)', () => {
+    expect(read('lib', 'json-ld.ts')).not.toContain('BreadcrumbList');
+  });
+});
+
+describe('region and case-study page source rules (D-16, D-10)', () => {
+  it.each([
+    ['the region page', ['photos', 'regions', '[region]'], 'jsonLdHtml(regionGalleryLd(region.id))'],
+    ['the case-study page', ['projects', '[slug]'], 'jsonLdHtml(projectLd(project))'],
+  ])('%s renders its block as a native data block with no nonce', (_label, dirs, call) => {
+    const page = read('app', '(site)', ...dirs, 'page.tsx');
+    expect(page).toContain('type="application/ld+json"');
+    expect(page).toContain(call);
+    expect(page).not.toMatch(/\bnonce\s*=/);
+    expect(page).not.toMatch(/from ['"]next\/script['"]/);
+    expect(page).not.toContain('BreadcrumbList');
+  });
+
+  it('keeps the intercepted @modal region page free of JSON-LD', () => {
+    const modal = read('app', '(site)', 'photos', '@modal', 'regions', '[region]', 'page.tsx');
+    expect(modal).not.toContain('ld+json');
   });
 });
