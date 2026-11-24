@@ -6,9 +6,12 @@
  * Storage carries only the small catalog the server page hands it:
  *
  * 1. `savedPageCatalog` builds every page the list may ever show, titled from
- *    data: the `site.nav` labels for the top routes, photo titles and project
- *    names, in that order, with a 'Photograph' or 'Project' label on detail
- *    pages. `/offline` is not a destination, so it never appears.
+ *    data: the `site.nav` labels for the top routes, then the region names
+ *    (17 D-22, labelled 'Region', the word the URL uses), then the photo
+ *    titles, then the project names, with a 'Region', 'Photograph' or
+ *    'Project' label on detail pages. This mirrors the sitemap's order. The
+ *    server page hands in the region ids and names and every published photo;
+ *    `/offline` is not a destination, so it never appears.
  * 2. `savedPageRows` keeps the catalog rows whose exact path is among the
  *    cached request URLs. Matching is by path, so assets, API and unknown paths
  *    drop and nothing outside the catalog can reach the screen: a cached URL is
@@ -16,12 +19,18 @@
  *    row on its own. The service worker answers an offline navigation with an
  *    exact-URL cache match, so `/photos?view=grid` cached alone would not open
  *    `/photos`; when the bare path is cached too, the variant simply collapses
- *    into that one row. RSC (`_rsc`) entries drop the same way.
+ *    into that one row. RSC (`_rsc`) entries drop the same way. A region page
+ *    behaves like any other: `/photos/regions/<id>/` collapses into its row,
+ *    while `/photos/regions` and an unknown id are not in the catalog.
  *
- * The one import is photoHref (15 D-16). Its module reads the editorial copy
- * only for a pure slug list, which the bundler drops from the client island.
+ * The one import is photoHref and regionHref (15 D-16, 17 D-06). Their module
+ * reads the editorial copy only for a pure slug list, which the bundler drops
+ * from the client island, and holds no region data. Never import
+ * lib/regions.ts or the registry here: the SavedPages island imports this
+ * module, so the registry would ship to the client (17-16's client-graph
+ * guard). Region names reach the island only through the catalog prop.
  */
-import { photoHref } from '@/lib/photos/routes';
+import { photoHref, regionHref } from '@/lib/photos/routes';
 
 export type SavedPageRow = {
   /** Same-origin path of the page, no query string. */
@@ -29,21 +38,41 @@ export type SavedPageRow = {
   /** Title from data, never from the cached URL. */
   title: string;
   /** Section label for detail pages; nav pages have none. */
-  label?: 'Photograph' | 'Project';
+  label?: 'Region' | 'Photograph' | 'Project';
 };
 
 export type SavedPageSource = {
   nav: readonly { label: string; href: string }[];
+  /** Region ids and names only, in registry order (D-22); never the registry's facts. */
+  regions: readonly { id: string; name: string }[];
   photos: readonly { slug: string; title: string }[];
   projects: readonly { slug: string; name: string }[];
 };
 
-/** Every listable page in display order: nav, then photos in data order, then projects. */
-export function savedPageCatalog({ nav, photos, projects }: SavedPageSource): readonly SavedPageRow[] {
+/** Every listable page in display order: nav, then regions, then photos, each in data order, then projects. */
+export function savedPageCatalog({
+  nav,
+  regions,
+  photos,
+  projects,
+}: SavedPageSource): readonly SavedPageRow[] {
   return [
     ...nav.map(({ label, href }) => ({ href, title: label })),
-    ...photos.map(({ slug, title }) => ({ href: photoHref(slug), title, label: 'Photograph' as const })),
-    ...projects.map(({ slug, name }) => ({ href: `/projects/${slug}`, title: name, label: 'Project' as const })),
+    ...regions.map(({ id, name }) => ({
+      href: regionHref(id),
+      title: name,
+      label: 'Region' as const,
+    })),
+    ...photos.map(({ slug, title }) => ({
+      href: photoHref(slug),
+      title,
+      label: 'Photograph' as const,
+    })),
+    ...projects.map(({ slug, name }) => ({
+      href: `/projects/${slug}`,
+      title: name,
+      label: 'Project' as const,
+    })),
   ];
 }
 
@@ -64,7 +93,10 @@ function cachedPath(raw: string): string | null {
  * The catalog rows this device has cached, in catalog order, each once.
  * `urls` are the absolute request URLs from every cache's `keys()`.
  */
-export function savedPageRows(urls: readonly string[], catalog: readonly SavedPageRow[]): SavedPageRow[] {
+export function savedPageRows(
+  urls: readonly string[],
+  catalog: readonly SavedPageRow[]
+): SavedPageRow[] {
   const cached = new Set<string>();
   for (const raw of urls) {
     const path = cachedPath(raw);

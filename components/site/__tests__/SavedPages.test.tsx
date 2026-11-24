@@ -2,9 +2,9 @@ import { render, screen, within } from '@testing-library/react';
 import SavedPages from '../SavedPages';
 import { savedPageCatalog } from '@/lib/saved-pages';
 import { site } from '@/data/site';
-import { photoViews } from '@/lib/photos/view-model';
+import { regionPhotoViews, regions } from '@/lib/regions';
 import { projects } from '@/data/projects';
-import { SLUGS, viewBySlug } from '../../../e2e/helpers/photo-fixtures';
+import { SLUGS } from '../../../e2e/helpers/photo-fixtures';
 
 /**
  * The offline saved-pages island (D-12; 12-UI-SPEC E11): checking, populated,
@@ -12,8 +12,15 @@ import { SLUGS, viewBySlug } from '../../../e2e/helpers/photo-fixtures';
  * slugs or titles beyond the approved copy.
  */
 
-const catalog = savedPageCatalog({ nav: site.nav, photos: photoViews, projects });
-const seededPhoto = viewBySlug(SLUGS.matterhornFromZermatt);
+// Built as app/(site)/offline/page.tsx builds it (17 D-22): region ids and names, every published photo.
+const photoSource = regions.flatMap((r) => regionPhotoViews(r.id));
+const catalog = savedPageCatalog({
+  nav: site.nav,
+  regions: regions.map(({ id, name }) => ({ id, name })),
+  photos: photoSource,
+  projects,
+});
+const seededPhoto = photoSource.find((view) => view.slug === SLUGS.matterhornFromZermatt)!;
 const roadmap = site.nav.find((item) => item.href === '/roadmap')!;
 const ORIGIN = window.location.origin;
 

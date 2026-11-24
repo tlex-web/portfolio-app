@@ -4,7 +4,7 @@ import OfflineRetry from '@/components/site/OfflineRetry';
 import SavedPages from '@/components/site/SavedPages';
 import { site } from '@/data/site';
 import { projects } from '@/data/projects';
-import { photoViews } from '@/lib/photos/view-model';
+import { regionPhotoViews, regions } from '@/lib/regions';
 import { savedPageCatalog } from '@/lib/saved-pages';
 
 /**
@@ -16,7 +16,10 @@ import { savedPageCatalog } from '@/lib/saved-pages';
  * text block with Tim's h1 and sentence, a primary Try again (OfflineRetry,
  * which also reloads once when the connection returns), and the saved-pages
  * list in the extra slot. The catalog of listable pages is built here from
- * data, so the client island ships only titles and paths. No focus move.
+ * data, so the client island ships only titles and paths: the region ids and
+ * names from the server-only registry (17 D-22), and every published photo,
+ * grouped by region in registry order and by ascending height within one, the
+ * sitemap's order. No focus move.
  * Noindex, and kept out of the sitemap (12-09).
  */
 export const metadata: Metadata = {
@@ -25,7 +28,12 @@ export const metadata: Metadata = {
 };
 
 export default function OfflinePage() {
-  const catalog = savedPageCatalog({ nav: site.nav, photos: photoViews, projects });
+  const catalog = savedPageCatalog({
+    nav: site.nav,
+    regions: regions.map(({ id, name }) => ({ id, name })),
+    photos: regions.flatMap((r) => regionPhotoViews(r.id)),
+    projects,
+  });
 
   return (
     <EdgeLayout
