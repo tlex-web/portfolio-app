@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 17
 current_phase_name: Region Routes, SEO & Structured Data
 status: executing
-stopped_at: Completed 17-06-PLAN.md
-last_updated: "2026-11-23T23:56:56.758Z"
+stopped_at: Completed 17-07-PLAN.md
+last_updated: "2026-11-24T00:14:31.023Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 17 execution started
-state_head: 817c1fc33925de887c236cd0b21ead9f543bbdeb
+state_head: 5dcd2ae47efb344e6c6a752e5fdeb56152207ae9
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 80
-  completed_plans: 72
+  completed_plans: 73
   percent: 57
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-23)
 ## Current Position
 
 Phase: 17 (Region Routes, SEO & Structured Data) — EXECUTING
-Plan: 9 of 16
+Plan: 10 of 16
 Status: Ready to execute
 Last activity: 2026-11-23 — Phase 17 execution started
 
@@ -129,6 +129,7 @@ Progress: [██████░░░░] 57%
 | Phase 17 P16 | 5min | 2 tasks | 2 files |
 | Phase 17 P08 | 14min | 2 tasks | 6 files |
 | Phase 17 P06 | 11min | 2 tasks | 4 files |
+| Phase 17 P07 | 15min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -308,6 +309,8 @@ Recent decisions affecting current work:
 - [Phase 17]: 17-16 D-06: data/regions/regions.json is in SERVER_ONLY_MODULES; client JS after the tracer is 1,851,685 B in 24 files (= phase base, cap 1,855,781 B), no 'Steinernen' in any client chunk
 - [Phase 17]: 17-08: 16 IN-02 (93c5588) one BEV value rule, m < 0 or m > 6000 is nodata; IN-09 (a050c7e) GLO-90 fails below OVERVIEW_FLOOR_M -500 m; IN-08 (1d15fd8) plate-args.mjs and fetch-retry.mjs shared by the three fetchers, refusals byte-identical
 - [Phase 17]: 17-06 D-08/D-09: PhotoViewer renders Previous/counter/Next only for photos.length > 1; a photo off the light table gets back = { href: regionHref(region.id), label: region.name } from the server page (passed only when defined, build fails if a published photo has no region); both page back links and the page Escape use it; the lightbox has no back link; the v2.0 four identical 36/36 (head e359db4); client JS 1,851,749 B
+- [Phase 17]: 17-07 D-13: region covers are Tim's picks verbatim: zermatt img-0605 (matterhorn-from-zermatt), ortler sam-20160717-120906 (meadow-stream-below-the-peaks), saalfelden dji-20260919-162232 (castle-below-limestone-peaks); Region.cover is required and membership is checked by photo-map.test and at lib/regions.ts load
+- [Phase 17]: 17-07 D-12: the region OG card is the photo variant's frame and type with the cover's 1200 px JPEG derivative over the region plate's own hero contours; regionCardFacts shares copyFigures with regionOgAlt (aerial range reads 'ground {range}')
 
 ### Pending Todos
 
@@ -367,6 +370,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-23T23:56:55.717Z
-Stopped at: Completed 17-06-PLAN.md
+Last session: 2026-11-24T00:14:29.973Z
+Stopped at: Completed 17-07-PLAN.md
 Resume file: None
