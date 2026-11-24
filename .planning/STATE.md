@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
-stopped_at: Phase 18 UI-SPEC approved
-last_updated: "2026-11-24T22:52:01.805Z"
+stopped_at: Completed 18-01-PLAN.md
+last_updated: "2026-11-24T23:24:05.629Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: 22310a276bbbd51387b6e91a9fce10cd49900e70
+state_head: f93a8889e3a53f205c54ff73aa6b548cc0352ee9
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 109
-  completed_plans: 80
+  completed_plans: 81
   percent: 71
 ---
 
@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-11-24)
 ## Current Position
 
 Phase: 18 (Immersive Survey Layout) — EXECUTING
-Plan: 1 of 29
-Status: Executing Phase 18
+Plan: 2 of 29
+Status: Ready to execute
 Last activity: 2026-11-24 — Phase 18 execution started
 
 Progress: [███████░░░] 71%
@@ -138,6 +138,7 @@ Progress: [███████░░░] 71%
 | Phase 17 P13 | 13min | 2 tasks | 6 files |
 | Phase 17 P14 | 9 min | 2 tasks | 5 files |
 | Phase 17 P15 | 25min | 3 tasks | 2 files |
+| Phase 18 P01 | 30min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -337,6 +338,11 @@ Recent decisions affecting current work:
 - [Phase 17]: 17-15 Pitfall 6: the 038a4cb Vercel preview is protected (302 to sso-api), so the deployed region-card check passes to /gsd-verify-work's live-DOM step; local production build serves all three region cards 200 image/png
 - [Phase 17]: 17-UAT passed 2026-11-24 (1/1): Tim checked the deployed region OG card on the Vercel preview of 4d79f22 (Claude's Chrome was not signed in to Vercel, so the live-DOM step could not look); VERIFICATION canonicalized human_needed → passed and the phase transitioned to 18
 - [Phase 17]: 17-UI-REVIEW (advisory, code-only, no screenshots) 17/24, no blocker: the text-only region page is the declared D-11 interim; the empty facts/photos finding is closed by the region schema (1-3 facts) and the cover-membership test
+- [Phase 18]: 18-01 og pin: option A + .gitattributes (Tim) - v2.0 photo cards pin ?f8a1b67515ad261d, app/**/opengraph-image.tsx kept LF; later re-pins get their own commit, 18-29 re-checks
+- [Phase 18]: 18-01 UI-SPEC P1-P7 confirmed as drafted (Tim: Defaults (Recommended))
+- [Phase 18]: 18-01 Assumption A1 refuted: the og card query hashes the card file's bytes, not its imports
+- [Phase 18]: 18-01 GUARD-03 floor raised to 3,024 (jest 2,385 + e2e 639) at the phase start
+- [Phase 18]: 18-01 B8 WebKit timeout classified as a flake (failed 45445770986, passed 45506802759)
 
 ### Pending Todos
 
@@ -398,6 +404,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-24T18:27:08.228Z
-Stopped at: Phase 18 UI-SPEC approved
-Resume file: .planning/phases/18-immersive-survey-layout/18-UI-SPEC.md
+Last session: 2026-11-24T23:24:04.774Z
+Stopped at: Completed 18-01-PLAN.md
+Resume file: None
