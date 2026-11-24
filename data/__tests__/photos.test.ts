@@ -29,6 +29,7 @@ import {
   ExifSidecarEntry,
   PhotoFacts,
   Position,
+  TimeZone,
   ZONE_BY_COUNTRY,
 } from '@/data/schemas/photo';
 import { homeLowestDemM } from '@/lib/ascent/waypoints';
@@ -85,6 +86,14 @@ describe("17 D-26: each EXIF capture's time zone is its photo's country zone", (
 
   test('ZONE_BY_COUNTRY has exactly one zone per Country value', () => {
     expect(Object.keys(ZONE_BY_COUNTRY).sort()).toEqual([...Country.options].sort());
+  });
+
+  test('TimeZone is read from ZONE_BY_COUNTRY: its options are the map values (17-REVIEW IN-07)', () => {
+    expect([...TimeZone.options]).toEqual(Object.values(ZONE_BY_COUNTRY));
+    for (const zone of Object.values(ZONE_BY_COUNTRY)) {
+      expect(TimeZone.safeParse(zone).success).toBe(true);
+    }
+    expect(TimeZone.safeParse('Europe/London').success).toBe(false);
   });
 
   test.each([...Country.options])(

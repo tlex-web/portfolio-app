@@ -180,17 +180,15 @@ export const ZONE_BY_COUNTRY = {
   SI: 'Europe/Ljubljana',
 } as const satisfies Record<Country, string>;
 
-/** A capture's time zone: one of the country zones (17 D-26). */
-export const TimeZone = z.enum([
-  'Europe/Vienna',
-  'Europe/Zurich',
-  'Europe/Berlin',
-  'Europe/Paris',
-  'Europe/Rome',
-  'Europe/Vaduz',
-  'Europe/Monaco',
-  'Europe/Ljubljana',
-]);
+/** One of the country zones, as a type (ZONE_BY_COUNTRY's values). */
+type CountryZone = (typeof ZONE_BY_COUNTRY)[Country];
+
+/**
+ * A capture's time zone: one of the country zones (17 D-26), read from
+ * ZONE_BY_COUNTRY so a country added to the map with a new zone is a valid
+ * capture zone at once (17-REVIEW IN-07). Erasable TypeScript only (the cast).
+ */
+export const TimeZone = z.enum(Object.values(ZONE_BY_COUNTRY) as [CountryZone, ...CountryZone[]]);
 export type TimeZone = z.infer<typeof TimeZone>;
 
 /** A region id slug; whether it is in data/regions/regions.json is checked by photos:build. */
