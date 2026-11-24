@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
 import { cssEscape } from '@/lib/photos/css-escape';
+import { slugFromPath } from '@/lib/photos/stepping';
 
 /**
  * The lightbox shell (LBOX-01, LBOX-03; 10-UI-SPEC "Photo Viewer", Surfaces
@@ -42,6 +43,9 @@ import { cssEscape } from '@/lib/photos/css-escape';
  *   with the slug shown, so a view whose front photo follows the lightbox
  *   (the carousel, 10-07) can show that photo before focus returns, even
  *   when usePathname has not caught up with the last replaceState step.
+ * - Photo paths are read with slugFromPath (lib/photos/stepping.ts), the one
+ *   photo-path parser (17 D-24): a region path or a malformed escape is not a
+ *   photo, so on /photos/regions/<id> the dialog never treats the URL as one.
  * - The slug shown: the pathname's on mount, then whatever the viewer reports
  *   through setShown() on every step, never usePathname, which can lag a
  *   replaceState step. A close that does not go through close() (browser
@@ -78,9 +82,6 @@ export function useLightbox(): LightboxApi | null {
   return useContext(LightboxContext);
 }
 
-/** A photo URL: /photos/{slug}, the only paths the lightbox ever shows. */
-const PHOTO_PATH = /^\/photos\/([^/]+)$/;
-
 const TABBABLE = [
   'a[href]',
   'button:not([disabled])',
@@ -89,11 +90,6 @@ const TABBABLE = [
   'textarea:not([disabled])',
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
-
-function slugOf(pathname: string | null): string | null {
-  const match = pathname ? PHOTO_PATH.exec(pathname) : null;
-  return match ? decodeURIComponent(match[1]) : null;
-}
 
 /**
  * The dialog's tabbable controls in DOM order, skipping hidden ones: display: none per tier
@@ -217,7 +213,7 @@ export default function LightboxDialog({
   const closing = useRef(false);
   const opener = useRef<Element | null>(null);
   // The slug shown: the route's on mount, then each step's (setShown).
-  const shownSlug = useRef<string | null>(slugOf(pathname));
+  const shownSlug = useRef<string | null>(slugFromPath(pathname));
 
   const api = useMemo<LightboxApi>(
     () => ({
@@ -226,7 +222,7 @@ export default function LightboxDialog({
         closing.current = true;
         // The URL is the latest truth: usePathname can lag a replaceState step
         // that ran while a view transition held React's commits back.
-        const slug = slugOf(window.location.pathname);
+        const slug = slugFromPath(window.location.pathname);
         if (slug) {
           shownSlug.current = slug;
           document.dispatchEvent(new CustomEvent<string>(LIGHTBOX_CLOSE_EVENT, { detail: slug }));
@@ -314,7 +310,7 @@ export default function LightboxDialog({
       className="m-0 h-dvh max-h-none w-full max-w-none bg-gallery p-0 text-ink backdrop:bg-gallery"
       onCancel={(event) => event.preventDefault()}
       onClose={() => {
-        if (PHOTO_PATH.test(window.location.pathname)) api.close();
+        if (slugFromPath(window.location.pathname) !== null) api.close();
       }}
     >
       <LightboxContext.Provider value={api}>{children}</LightboxContext.Provider>
