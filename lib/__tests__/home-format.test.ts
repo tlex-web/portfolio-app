@@ -19,6 +19,7 @@ import {
   formatLatLon,
   formatMetreRange,
   formatYearRange,
+  roundedCoordinate,
   shortPlace,
 } from '@/lib/home-format';
 import { lv95ToWgs84 } from '@/lib/geo';
@@ -95,32 +96,32 @@ describe('formatCount (the 12-26 character counter and the too-long error)', () 
 
 describe('formatCoordinates (viewer strip position, D-07)', () => {
   it('prints 4 dp with trailing zeros, U+00A0 before each letter and one ASCII space between the halves', () => {
-    expect(codePoints(formatCoordinates({ lat: 46.015, lon: 7.7414 }))).toEqual(
+    expect(codePoints(formatCoordinates({ lat: 46.015, lon: 7.7414, precision: '4dp' }))).toEqual(
       codePoints(`46.0150${NBSP}N 7.7414${NBSP}E`)
     );
   });
 
   it('uses S and W for negative values', () => {
-    expect(codePoints(formatCoordinates({ lat: -1.23456, lon: -7.5 }))).toEqual(
+    expect(codePoints(formatCoordinates({ lat: -1.23456, lon: -7.5, precision: '4dp' }))).toEqual(
       codePoints(`1.2346${NBSP}S 7.5000${NBSP}W`)
     );
   });
 
   it('rounds half up at the fourth decimal, like formatLatLon', () => {
-    expect(formatCoordinates({ lat: 0.00005, lon: 1.23455 })).toBe(`0.0001${NBSP}N 1.2346${NBSP}E`);
+    expect(formatCoordinates({ lat: 0.00005, lon: 1.23455, precision: '4dp' })).toBe(`0.0001${NBSP}N 1.2346${NBSP}E`);
   });
 
   it('rounds a half at the fifth decimal away from zero for positive and negative values (09 IN-04)', () => {
     // Each value's double sits just below its half (1.00185 * 1e4 is
     // 10018.499999999998), so multiplying first and then rounding printed the lower value.
-    expect(formatCoordinates({ lat: 1.00185, lon: -1.00995 })).toBe(`1.0019${NBSP}N 1.0100${NBSP}W`);
-    expect(formatCoordinates({ lat: -45.90145, lon: 45.00075 })).toBe(
+    expect(formatCoordinates({ lat: 1.00185, lon: -1.00995, precision: '4dp' })).toBe(`1.0019${NBSP}N 1.0100${NBSP}W`);
+    expect(formatCoordinates({ lat: -45.90145, lon: 45.00075, precision: '4dp' })).toBe(
       `45.9015${NBSP}S 45.0008${NBSP}E`
     );
   });
 
   it('prints values too small for plain decimal notation as zero', () => {
-    expect(formatCoordinates({ lat: 5e-7, lon: -1e-9 })).toBe(`0.0000${NBSP}N 0.0000${NBSP}W`);
+    expect(formatCoordinates({ lat: 5e-7, lon: -1e-9, precision: '4dp' })).toBe(`0.0000${NBSP}N 0.0000${NBSP}W`);
   });
 
   // The four waypoint positions in data/generated/photos.ts (2026-11-13) and the
@@ -131,9 +132,15 @@ describe('formatCoordinates (viewer strip position, D-07)', () => {
     [{ lat: 45.9908, lon: 7.7103 }, `45.9908${NBSP}N 7.7103${NBSP}E`],
     [{ lat: 45.9837, lon: 7.7623 }, `45.9837${NBSP}N 7.7623${NBSP}E`],
   ])('prints the waypoint position %o unchanged', (position, expected) => {
-    expect(codePoints(formatCoordinates(position))).toEqual(codePoints(expected));
-    // The default is the 4dp precision: passing 4 prints the same string (16 D-01).
-    expect(formatCoordinates(position, 4)).toBe(formatCoordinates(position));
+    expect(codePoints(formatCoordinates({ ...position, precision: '4dp' }))).toEqual(
+      codePoints(expected)
+    );
+  });
+
+  it('has no default precision: a call without one does not compile (16 IN-01)', () => {
+    // @ts-expect-error precision is required, so a coarse position can never be padded to 4dp
+    const call = () => formatCoordinates({ lat: 12.345, lon: 6.789 });
+    expect(typeof call).toBe('function');
   });
 });
 
@@ -148,29 +155,72 @@ describe('formatCoordinates at a position precision (16 D-01)', () => {
     new RegExp(`^\\d+\\.\\d{${d}}${NBSP}[NS] \\d+\\.\\d{${d}}${NBSP}[EW]$`);
 
   it('formats a 3dp and a 2dp position at their own precision', () => {
-    const three = formatCoordinates({ lat: 12.345, lon: 6.789 }, 3);
+    const three = formatCoordinates({ lat: 12.345, lon: 6.789, precision: '3dp' });
     expect(codePoints(three)).toEqual(codePoints(`12.345${NBSP}N 6.789${NBSP}E`));
     expect(three).toMatch(shape(3));
     expect(three).not.toMatch(shape(4));
 
-    const two = formatCoordinates({ lat: -12.34, lon: -6.78 }, 2);
+    const two = formatCoordinates({ lat: -12.34, lon: -6.78, precision: '2dp' });
     expect(codePoints(two)).toEqual(codePoints(`12.34${NBSP}S 6.78${NBSP}W`));
     expect(two).toMatch(shape(2));
     expect(two).not.toMatch(shape(3));
   });
 
   it('pads only up to the precision itself: a 3dp value with a zero third decimal keeps three', () => {
-    expect(formatCoordinates({ lat: 12.3, lon: 6.78 }, 3)).toBe(`12.300${NBSP}N 6.780${NBSP}E`);
-    expect(formatCoordinates({ lat: 12, lon: 6 }, 2)).toBe(`12.00${NBSP}N 6.00${NBSP}E`);
+    expect(formatCoordinates({ lat: 12.3, lon: 6.78, precision: '3dp' })).toBe(`12.300${NBSP}N 6.780${NBSP}E`);
+    expect(formatCoordinates({ lat: 12, lon: 6, precision: '2dp' })).toBe(`12.00${NBSP}N 6.00${NBSP}E`);
   });
 
   it('rounds half up at a half step for 3 and 2 decimals, like the 4dp rule (09 IN-04)', () => {
     // 1.0015 * 1e3 and 1.005 * 1e2 are doubles just below their half, so
     // multiplying first would round the written half down.
-    expect(formatCoordinates({ lat: 1.0015, lon: -1.0025 }, 3)).toBe(
+    expect(formatCoordinates({ lat: 1.0015, lon: -1.0025, precision: '3dp' })).toBe(
       `1.002${NBSP}N 1.003${NBSP}W`
     );
-    expect(formatCoordinates({ lat: -1.005, lon: 2.345 }, 2)).toBe(`1.01${NBSP}S 2.35${NBSP}E`);
+    expect(formatCoordinates({ lat: -1.005, lon: 2.345, precision: '2dp' })).toBe(`1.01${NBSP}S 2.35${NBSP}E`);
+  });
+});
+
+/**
+ * 16 IN-01 / 17 D-19: roundedCoordinate is the strip's own rounding as a signed
+ * number string, the text 17-13's JSON-LD GeoCoordinates carry, so the two can
+ * never print different digits. Synthetic values only; no photo's position.
+ */
+describe('roundedCoordinate (one precision-typed rounding for the strip and JSON-LD)', () => {
+  it.each([
+    [46.015, '4dp', '46.0150'],
+    [-1.23456, '4dp', '-1.2346'],
+    [7.7414, '3dp', '7.741'],
+    [1.00185, '4dp', '1.0019'],
+    [46.016, '2dp', '46.02'],
+    [-1.005, '2dp', '-1.01'],
+    [1.0015, '3dp', '1.002'],
+    [12, '2dp', '12.00'],
+  ] as const)('%d at %s -> %s', (v, precision, expected) => {
+    expect(roundedCoordinate(v, precision)).toBe(expected);
+  });
+
+  it('prints exactly the digits of each formatCoordinates half, at every precision', () => {
+    const cases = [
+      { lat: 46.015, lon: 7.7414 },
+      { lat: -45.90145, lon: 45.00075 },
+      { lat: 1.0015, lon: -1.0025 },
+      { lat: -12.34, lon: 6.78 },
+    ];
+    for (const precision of ['4dp', '3dp', '2dp'] as const) {
+      for (const { lat, lon } of cases) {
+        const strip = formatCoordinates({ lat, lon, precision });
+        const digits = `${roundedCoordinate(lat, precision).replace('-', '')}${NBSP}${lat < 0 ? 'S' : 'N'} ${roundedCoordinate(lon, precision).replace('-', '')}${NBSP}${lon < 0 ? 'W' : 'E'}`;
+        expect(codePoints(digits)).toEqual(codePoints(strip));
+      }
+    }
+  });
+
+  it('keeps the trailing zeros a JSON number would drop (decimals equal the precision)', () => {
+    const decimals = (s: string) => s.split('.')[1]?.length ?? 0;
+    expect(decimals(roundedCoordinate(46.1, '4dp'))).toBe(4);
+    expect(decimals(roundedCoordinate(46.1, '3dp'))).toBe(3);
+    expect(decimals(roundedCoordinate(46, '2dp'))).toBe(2);
   });
 });
 
