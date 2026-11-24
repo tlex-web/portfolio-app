@@ -135,3 +135,31 @@ test.describe('Per-slug Open Graph cards (SEO-02, D-14, D-15; 17 D-12, PHOTO-05)
     expect(urls).not.toContain(home);
   });
 });
+
+/**
+ * PHOTO-05 / T-17-12: the four v2.0 photo pages keep exactly the og:image URL they
+ * had at the phase base (285b6d5), query hash included, so links already shared
+ * keep resolving to the same cached card. The pins were observed on the v2.0
+ * Vercel deploy, on a local Windows build and in the Phase 17 harness, so the hash
+ * does not depend on the build machine; it moves only if the card route, its
+ * metadata or its path changes, which is the change this test exists to catch.
+ */
+const v20PinnedCards: Record<string, string> = {
+  'matterhorn-from-zermatt':
+    '/photos/matterhorn-from-zermatt/opengraph-image-126xvw/card?1bf973d7cc2e42c4',
+  'gornerschlucht-waterfall':
+    '/photos/gornerschlucht-waterfall/opengraph-image-126xvw/card?1bf973d7cc2e42c4',
+  'matterhorn-glacier-trail':
+    '/photos/matterhorn-glacier-trail/opengraph-image-126xvw/card?1bf973d7cc2e42c4',
+  'riffelsee-reflection':
+    '/photos/riffelsee-reflection/opengraph-image-126xvw/card?1bf973d7cc2e42c4',
+};
+
+test.describe('v2.0 photo cards keep their base og:image URL (PHOTO-05, T-17-12)', () => {
+  for (const [slug, pinned] of Object.entries(v20PinnedCards)) {
+    test(`/photos/${slug} og:image is still ${pinned}`, async ({ page }) => {
+      await page.goto(`/photos/${slug}`);
+      expect(await metaPath(page, 'meta[property="og:image"]')).toBe(pinned);
+    });
+  }
+});
