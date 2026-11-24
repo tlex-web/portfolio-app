@@ -3,8 +3,9 @@
  */
 /**
  * The per-slug Open Graph routes (SEO-02; D-14, D-15; T-12-27, T-12-28):
- * app/(site)/photos/[slug]/opengraph-image.tsx and
- * app/(site)/projects/[slug]/opengraph-image.tsx.
+ * app/(site)/photos/[slug]/opengraph-image.tsx,
+ * app/(site)/projects/[slug]/opengraph-image.tsx and (17-07, D-12)
+ * app/(site)/photos/regions/[region]/opengraph-image.tsx.
  *
  * Every case runs over the data (publishedSlugs and publishedViews, every
  * published photo since 17-05 (D-07, PHOTO-05); the projects array), never a
@@ -19,7 +20,12 @@
  *   2560 px, never an original (T-12-27);
  * - the image functions render the variant for their own slug and reject an
  *   unknown one;
- * - neither route exports generateStaticParams or dynamicParams: next dev
+ * - the region route (17 D-12, D-13, D-14) gives each registry region one card
+ *   whose alt is Tim's approved regionOgAlt, renders the 'region' variant from
+ *   the cover's JPEG derivative (the only photo file read) over its own plate's
+ *   hero contours, and the photo card still reads the home plate's hero SVG
+ *   (contourDataUrl with no argument), so its PNG bytes are unchanged;
+ * - no route exports generateStaticParams or dynamicParams: next dev
  *   (webpack) fails on a generateStaticParams beside generateImageMetadata
  *   ("Duplicate export"), and dynamicParams = false made every card a 404 under
  *   Turbopack (12-14 deviation, RESEARCH A3).
@@ -32,13 +38,24 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { ReactElement } from 'react';
 import { imageManifest } from '@/data/generated/image-manifest';
+import { plates } from '@/data/generated/plates';
+import { terrain } from '@/data/generated/terrain';
 import { projects } from '@/data/projects';
 import type { Project } from '@/data/types';
 import { site } from '@/data/site';
-import { OG_SIZE, type OgFrameProps } from '@/lib/og/template';
+import { OG_SIZE, OgFrame, type OgFrameProps } from '@/lib/og/template';
 import { publishedSlugs, publishedViews, type PhotoView } from '@/lib/photos/view-model';
+import {
+  COUNTRY_NAME,
+  regionById,
+  regionCover,
+  regionIds,
+  regionOgAlt,
+  regionPhotoViews,
+} from '@/lib/regions';
 import * as photoRoute from '@/app/(site)/photos/[slug]/opengraph-image';
 import * as projectRoute from '@/app/(site)/projects/[slug]/opengraph-image';
+import * as regionRoute from '@/app/(site)/photos/regions/[region]/opengraph-image';
 
 jest.mock('next/og', () => ({
   ImageResponse: jest.fn().mockImplementation(function (
@@ -84,6 +101,32 @@ function onlyCard(route: typeof photoRoute | typeof projectRoute, slug: string) 
   const entries = route.generateImageMetadata({ params: { slug } });
   expect(entries).toHaveLength(1);
   return entries[0];
+}
+
+function onlyRegionCard(id: string) {
+  const entries = regionRoute.generateImageMetadata({ params: { region: id } });
+  expect(entries).toHaveLength(1);
+  return entries[0];
+}
+
+/** The public/-relative paths of every file read so far, '/'-joined. */
+function publicReads(): string[] {
+  return readFile.mock.calls.map(([file]) =>
+    path.relative(PUBLIC, String(file)).split(path.sep).join('/')
+  );
+}
+
+/** The SVG files read so far, public/-relative. */
+const svgReads = () => publicReads().filter((f) => f.endsWith('.svg'));
+
+/** Every string an element tree draws, depth first (OgFrame builds host elements only). */
+function drawnText(node: unknown): string[] {
+  if (typeof node === 'string') return [node];
+  if (Array.isArray(node)) return node.flatMap(drawnText);
+  if (node && typeof node === 'object' && 'props' in node) {
+    return drawnText((node as { props: { children?: unknown } }).props.children);
+  }
+  return [];
 }
 
 beforeEach(() => {
@@ -137,9 +180,113 @@ describe('generateImageMetadata', () => {
     expect(projectRoute.generateImageMetadata({ params: { slug: 'not-a-project' } })).toEqual([]);
   });
 
-  it('no two slugs share an alt (SEO-02 adjacency)', () => {
-    const alts = allCards.map(({ route, slug }) => onlyCard(route, slug).alt);
+  it('no two slugs or regions share an alt (SEO-02 adjacency)', () => {
+    const alts = [
+      ...allCards.map(({ route, slug }) => onlyCard(route, slug).alt),
+      ...regionIds.map((id) => onlyRegionCard(id).alt),
+    ];
     expect(new Set(alts).size).toBe(alts.length);
+  });
+});
+
+describe('region route: generateImageMetadata (17 D-12, D-14)', () => {
+  it('covers every registry region', () => {
+    expect(regionIds.length).toBeGreaterThan(0);
+  });
+
+  it.each(regionIds.map((id) => [id]))(
+    "%s has one 1200 x 630 PNG card whose alt is Tim's approved regionOgAlt",
+    (id) => {
+      const card = onlyRegionCard(id);
+      expect(card.id).toBe('card');
+      expect(card.size).toEqual(OG_SIZE);
+      expect(card.contentType).toBe('image/png');
+      expect(card.alt).toBe(regionOgAlt(id));
+      expect(card.alt).not.toMatch(/undefined|NaN|null/);
+    }
+  );
+
+  it('an unknown or mis-cased region has no card', () => {
+    expect(regionRoute.generateImageMetadata({ params: { region: 'nowhere' } })).toEqual([]);
+    expect(regionRoute.generateImageMetadata({ params: { region: 'Zermatt' } })).toEqual([]);
+  });
+});
+
+describe("region route: the cover's derivative over the region's own plate (17 D-12, D-13; T-17-15)", () => {
+  it.each(regionIds.map((id) => [id]))(
+    "%s renders the region variant from its cover's JPEG derivative and its plate's hero contours",
+    async (id) => {
+      const region = regionById(id);
+      if (!region) throw new Error(`routes.test: ${id} is not a registry region`);
+      const response = (await regionRoute.default({
+        params: Promise.resolve({ region: id }),
+      })) as unknown as Recorded;
+
+      const cover = regionCover(id);
+      expect(cover.id).toBe(region.cover);
+      const { jpeg } = manifest[cover.id];
+      expect(jpeg.src).toMatch(DERIVATIVE);
+      expect(publicReads().filter((f) => PHOTO_FILE.test(f))).toEqual([
+        jpeg.src.replace(/^\//, ''),
+      ]);
+      const hero = (plates as Record<string, { assets: { contours: { hero: string } } }>)[
+        region.plate
+      ].assets.contours.hero;
+      expect(svgReads()).toEqual([hero.replace(/^\//, '')]);
+
+      expect(response.element.type).toBe(OgFrame);
+      const props = response.element.props;
+      expect(props.variant).toBe('region');
+      if (props.variant !== 'region') return;
+      expect(props.contour).toMatch(/^data:image\/svg\+xml;base64,/);
+      expect(props.photo.src).toMatch(/^data:image\/jpeg;base64,/);
+      expect({ width: props.photo.width, height: props.photo.height }).toEqual({
+        width: jpeg.width,
+        height: jpeg.height,
+      });
+      expect(response.options.fonts).toHaveLength(3);
+
+      // The plate prints the name, the country, the count and range, then the rights line.
+      const n = regionPhotoViews(id).length;
+      expect(props.name).toBe(region.name);
+      expect(props.country).toBe(COUNTRY_NAME[region.country]);
+      expect(props.facts.count).toBe(`${n} ${n === 1 ? 'photograph' : 'photographs'}`);
+      expect(regionOgAlt(id).endsWith(`, ${props.facts.range}`)).toBe(true);
+      expect(drawnText(OgFrame(props))).toEqual([
+        region.name,
+        COUNTRY_NAME[region.country],
+        props.facts.count,
+        props.facts.range,
+        `© ${props.facts.years} ${site.name}`,
+      ]);
+    }
+  );
+
+  it("an all-aerial region's range reads 'ground {range}', as in its approved alt", async () => {
+    const aerial = regionIds.filter((id) => regionPhotoViews(id).every((v) => v.aerial));
+    expect(aerial.length).toBeGreaterThan(0);
+    for (const id of aerial) {
+      const response = (await regionRoute.default({
+        params: Promise.resolve({ region: id }),
+      })) as unknown as Recorded;
+      const props = response.element.props;
+      if (props.variant !== 'region') throw new Error('expected the region variant');
+      expect(props.facts.range).toMatch(/^ground\u00a0/);
+    }
+  });
+
+  it('rejects an unknown or mis-cased region', async () => {
+    await expect(
+      regionRoute.default({ params: Promise.resolve({ region: 'nowhere' }) })
+    ).rejects.toThrow();
+    await expect(
+      regionRoute.default({ params: Promise.resolve({ region: 'Zermatt' }) })
+    ).rejects.toThrow();
+  });
+
+  it("a photo card still reads the home plate's hero contours (contourDataUrl() with no argument)", async () => {
+    await photoRoute.default({ params: Promise.resolve({ slug: publishedSlugs[0] }) });
+    expect(svgReads()).toEqual([terrain.assets.contours.hero.replace(/^\//, '')]);
   });
 });
 
@@ -216,6 +363,7 @@ describe('route exports', () => {
   it.each([
     ['photos', photoRoute as Record<string, unknown>],
     ['projects', projectRoute as Record<string, unknown>],
+    ['photos/regions', regionRoute as Record<string, unknown>],
   ])(
     '%s exports size, contentType and generateImageMetadata, never generateStaticParams or dynamicParams',
     (_, route) => {

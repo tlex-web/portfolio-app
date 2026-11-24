@@ -1,6 +1,7 @@
 import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
 import { projects } from '@/data/projects';
-import { photoSlugs } from '@/lib/photos/view-model';
+import { publishedSlugs } from '@/lib/photos/view-model';
+import { regionIds } from '@/lib/regions';
 
 /**
  * Open Graph images (SEO-02; D-16; 12-RESEARCH Pitfall 12).
@@ -78,13 +79,26 @@ test.describe('Default Open Graph card (SEO-02, D-16)', () => {
   });
 });
 
-/** Every detail page from the data, in data order (no literal slugs). */
+/**
+ * Every page with its own card, from the data, in data order (no literal slugs):
+ * every published photo (17 PHOTO-05), every project, and every registry region
+ * (17-07, D-12). The '/photos/' and '/photos/regions/' prefixes are typed here
+ * on purpose, so a changed URL builder cannot move the list with it.
+ */
 const detailPages = [
-  ...photoSlugs.map((slug) => `/photos/${slug}`),
+  ...publishedSlugs.map((slug) => `/photos/${slug}`),
   ...projects.map((p) => `/projects/${p.slug}`),
+  ...regionIds.map((id) => `/photos/regions/${id}`),
 ];
 
-test.describe('Per-slug Open Graph cards (SEO-02, D-14, D-15)', () => {
+test.describe('Per-slug Open Graph cards (SEO-02, D-14, D-15; 17 D-12, PHOTO-05)', () => {
+  test('the page list holds every published photo, project and region', () => {
+    expect(detailPages.filter((p) => p.startsWith('/photos/regions/'))).toHaveLength(
+      regionIds.length
+    );
+    expect(new Set(detailPages).size).toBe(detailPages.length);
+  });
+
   for (const pagePath of detailPages) {
     test(`${pagePath} names its own card, a 1200 x 630 PNG`, async ({ page, request }) => {
       await page.goto(pagePath);
