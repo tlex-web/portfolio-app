@@ -5,6 +5,7 @@ import EndBlock from '@/components/projects/EndBlock';
 import RouteIndex from '@/components/projects/RouteIndex';
 import Trailhead from '@/components/projects/Trailhead';
 import { projects } from '@/data/projects';
+import { jsonLdHtml, projectLd } from '@/lib/json-ld';
 
 /**
  * The case-study route (ENG-02 route contract, ENG-05; 11 D-01, D-22). A
@@ -24,6 +25,12 @@ import { projects } from '@/data/projects';
  * generateMetadata gives the page '{project.name} · Tim Lui' through the root
  * title template, Tim's approved pitch as the description and its own
  * canonical (SEO-01); Phase 12 attaches the OG images here (SEO-02).
+ *
+ * The project's JSON-LD (17-14; SEO-04, D-16) is a native data block ahead of
+ * the article: box as SoftwareSourceCode, coin-flip as SoftwareApplication with
+ * no repository. A data block is never rendered, so the baselined case-study
+ * pixels stay as they are (D-10); its copyrightNotice is the footer line the
+ * page already prints (Tim's 17-01 option a), so no new rights text appears.
  */
 
 interface PageProps {
@@ -56,19 +63,25 @@ export default async function ProjectDetailPage({ params }: PageProps) {
   }
 
   return (
-    <article aria-labelledby="case-title">
-      <Trailhead project={project} />
-      <div className="mx-auto w-full max-w-6xl px-4 pt-16 pb-12 sm:px-6 md:pb-16 lg:px-8">
-        <div className="lg:grid lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-x-12">
-          <RouteIndex
-            sections={caseStudySections(project).map(({ id, label }) => ({ id, label }))}
-          />
-          <div className="mt-8 first:mt-0 lg:mt-0">
-            <CaseStudy project={project} />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(projectLd(project)) }}
+      />
+      <article aria-labelledby="case-title">
+        <Trailhead project={project} />
+        <div className="mx-auto w-full max-w-6xl px-4 pt-16 pb-12 sm:px-6 md:pb-16 lg:px-8">
+          <div className="lg:grid lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-x-12">
+            <RouteIndex
+              sections={caseStudySections(project).map(({ id, label }) => ({ id, label }))}
+            />
+            <div className="mt-8 first:mt-0 lg:mt-0">
+              <CaseStudy project={project} />
+            </div>
           </div>
+          <EndBlock current={project} />
         </div>
-        <EndBlock current={project} />
-      </div>
-    </article>
+      </article>
+    </>
   );
 }

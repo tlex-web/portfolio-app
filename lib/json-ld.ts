@@ -1,10 +1,29 @@
-import type { Graph, ImageObject, Person, Place, Thing, WebSite, WithContext } from 'schema-dts';
+import type {
+  Graph,
+  ImageGallery,
+  ImageObject,
+  Person,
+  Place,
+  SoftwareApplication,
+  SoftwareSourceCode,
+  Thing,
+  WebSite,
+  WithContext,
+} from 'schema-dts';
 import { imageManifest } from '@/data/generated/image-manifest';
 import { photos } from '@/data/generated/photos';
 import { site } from '@/data/site';
+import type { Project } from '@/data/types';
 import { roundedCoordinate, type CoordinatePrecision } from '@/lib/home-format';
-import { photoHref } from '@/lib/photos/routes';
+import { photoHref, regionHref } from '@/lib/photos/routes';
 import type { PhotoView } from '@/lib/photos/view-model';
+import {
+  regionById,
+  regionDescription,
+  regionHeading,
+  regionPhotoViews,
+  regionRights,
+} from '@/lib/regions';
 
 /**
  * JSON-LD for the site (SEO-04). Pure, no 'use client': only server pages and
@@ -34,6 +53,19 @@ import type { PhotoView } from '@/lib/photos/view-model';
  *   trailing zero), so the block is never finer than the page. No elevation, no
  *   capture seconds. It reads the server-only generated photo facts and image
  *   manifest; no client file imports this module.
+ * - 17-14 region pages: regionGalleryLd states the region page as an
+ *   ImageGallery whose texts are the page's own (the heading, the approved
+ *   description, the printed region rights line) and whose hasPart names each
+ *   listed photo's ImageObject by @id, in the page's link order. Its place is the
+ *   region and its country, no geo: the stand-in page prints no coordinates.
+ * - 17-14 case studies: projectLd states the project, box as SoftwareSourceCode
+ *   with its public repository, coin-flip as SoftwareApplication with no
+ *   repository at all (private, 11 D-23). Its copyrightNotice is
+ *   caseStudyRights(slug): Tim's 17-01 option (a), the footer line.
+ * - No breadcrumb markup of any kind: it waits for Phase 18's visible
+ *   breadcrumb, so no block names links the page does not show.
+ * - lib/regions is server-only too (17-16 client-graph guard), which holds as
+ *   long as no client file imports this module.
  */
 
 export const PERSON_ID = `${site.url}/#person`;
@@ -170,4 +202,77 @@ export function siteGraph(): Graph {
     copyrightNotice: siteRights(),
   };
   return { '@context': 'https://schema.org', '@graph': [person, website] };
+}
+
+/**
+ * The ImageGallery on a region page (SEO-04; D-16, D-17, D-18). @id and url are
+ * the page's absolute URL; name is the printed h1 (regionHeading) and
+ * description the approved D-14 description the page's metadata carries.
+ * hasPart refers to each listed photo's ImageObject by its @id (17-13), in
+ * regionPhotoViews order, which is the order the page links them.
+ * copyrightNotice is regionRights(id), the rights paragraph the page prints.
+ *
+ * @throws RangeError for an id that is not a registry region.
+ */
+export function regionGalleryLd(id: string): WithContext<ImageGallery> {
+  const region = regionById(id);
+  if (!region) throw new RangeError(`regionGalleryLd: ${id} is not a registry region`);
+  const views = regionPhotoViews(id);
+  const pageUrl = `${site.url}${regionHref(id)}`;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ImageGallery',
+    '@id': pageUrl,
+    url: pageUrl,
+    name: regionHeading(region),
+    description: regionDescription({ name: region.name, country: region.country, views }),
+    contentLocation: {
+      '@type': 'Place',
+      name: region.name,
+      address: { '@type': 'PostalAddress', addressCountry: region.country },
+    },
+    hasPart: views.map((v) => ({ '@id': photoImageId(v.slug) })),
+    creator: personRef(),
+    creditText: site.name,
+    copyrightNotice: regionRights(id),
+  };
+}
+
+/**
+ * A case study's copyrightNotice (D-17). Tim's 17-01 choice, option (a) "Footer
+ * line (Recommended)" (his reply recorded verbatim in 17-01-SUMMARY.md): the
+ * footer line exactly, siteRights(), the only rights text a case study prints.
+ * The slug stays in the signature so the contract reads per project; under
+ * option (a) every project carries the same line.
+ */
+export function caseStudyRights(_slug: Project['slug']): string {
+  return siteRights();
+}
+
+/**
+ * The project on its case study (SEO-04; D-16, D-17, D-18). A project with a
+ * public repository link (box) is SoftwareSourceCode with codeRepository; one
+ * without (coin-flip, private, 11 D-23) is SoftwareApplication and has no
+ * repository key at all. description is the approved pitch, the page's meta
+ * description, and is left out when a project has none.
+ */
+export function projectLd(
+  project: Project
+): WithContext<SoftwareSourceCode> | WithContext<SoftwareApplication> {
+  const body = {
+    name: project.name,
+    ...(project.pitch ? { description: project.pitch } : {}),
+    url: `${site.url}/projects/${project.slug}`,
+    creator: personRef(),
+    creditText: site.name,
+    copyrightNotice: caseStudyRights(project.slug),
+  };
+  return 'links' in project
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareSourceCode',
+        ...body,
+        codeRepository: project.links.github,
+      }
+    : { '@context': 'https://schema.org', '@type': 'SoftwareApplication', ...body };
 }

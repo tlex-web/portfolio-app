@@ -223,9 +223,15 @@ describe('disclosure: no license, no email, no location (D-20, the 2026-11-12 de
 
 describe('source rules (D-16, D-21)', () => {
   it('imports schema-dts through import type only', () => {
-    const lines = read('lib', 'json-ld.ts').split('\n');
-    expect(lines.some((line) => /^import type .*from 'schema-dts'/.test(line))).toBe(true);
-    expect(lines.filter((line) => /^import (?!type).*schema-dts/.test(line))).toEqual([]);
+    // Whole import statements, so a list prettier wraps over several lines still counts.
+    const source = read('lib', 'json-ld.ts');
+    const statements = source.match(/^import\b[^;]*;/gm) ?? [];
+    const fromSchema = statements.filter((s) => /from 'schema-dts';$/.test(s));
+    expect(fromSchema.length).toBeGreaterThan(0);
+    expect(fromSchema.filter((s) => !/^import type\b/.test(s))).toEqual([]);
+    expect(source.split('\n').filter((line) => /^import (?!type).*schema-dts/.test(line))).toEqual(
+      []
+    );
   });
 
   it('renders the site graph in the (site) layout as a native data block with no nonce and no next/script', () => {
@@ -651,7 +657,11 @@ describe('17-14 blocks: per-node rule and disclosure (D-16, Person exemption)', 
 
 describe('region and case-study page source rules (D-16, D-10)', () => {
   it.each([
-    ['the region page', ['photos', 'regions', '[region]'], 'jsonLdHtml(regionGalleryLd(region.id))'],
+    [
+      'the region page',
+      ['photos', 'regions', '[region]'],
+      'jsonLdHtml(regionGalleryLd(region.id))',
+    ],
     ['the case-study page', ['projects', '[slug]'], 'jsonLdHtml(projectLd(project))'],
   ])('%s renders its block as a native data block with no nonce', (_label, dirs, call) => {
     const page = read('app', '(site)', ...dirs, 'page.tsx');

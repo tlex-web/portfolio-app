@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowSquareOutIcon } from '@phosphor-icons/react/dist/ssr';
 import type { RegionFact } from '@/data/schemas/region';
+import { jsonLdHtml, regionGalleryLd } from '@/lib/json-ld';
 import {
   regionById,
   regionHeading,
@@ -35,6 +36,11 @@ import { factSource } from '@/lib/photos/view-model';
  *
  * Each photo link carries data-photo-id, where the lightbox's restoreFocus
  * returns focus when the dialog closes.
+ *
+ * The region's ImageGallery (17-14; SEO-04, D-16) is a native JSON-LD data
+ * block ahead of the stand-in, on this page only: the @modal region page never
+ * carries one. Its texts are this page's own (heading, description, rights
+ * line) and its hasPart lists the photos linked below, in the same order.
  */
 
 type PageProps = { params: Promise<{ region: string }> };
@@ -75,49 +81,55 @@ export default async function RegionPage({ params }: PageProps) {
   const views = regionPhotoViews(region.id);
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 pb-12 sm:px-6 md:pb-16 lg:px-8">
-      <div className="border-b border-line pt-8 pb-6">
-        <h1>{regionHeading(region)}</h1>
-      </div>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(regionGalleryLd(region.id)) }}
+      />
+      <div className="mx-auto w-full max-w-6xl px-4 pb-12 sm:px-6 md:pb-16 lg:px-8">
+        <div className="border-b border-line pt-8 pb-6">
+          <h1>{regionHeading(region)}</h1>
+        </div>
 
-      <section aria-labelledby="region-facts" className="mt-8 max-w-prose">
-        <h2 id="region-facts">Facts</h2>
-        <ul className="mt-4 flex flex-col gap-4">
-          {region.facts.map((fact) => (
-            <li key={fact.text} className="text-base">
-              <p>{fact.text}</p>
-              <p className="text-sm text-ink-muted">
-                <FactSource source={fact.source} />
-              </p>
-            </li>
-          ))}
-        </ul>
-      </section>
+        <section aria-labelledby="region-facts" className="mt-8 max-w-prose">
+          <h2 id="region-facts">Facts</h2>
+          <ul className="mt-4 flex flex-col gap-4">
+            {region.facts.map((fact) => (
+              <li key={fact.text} className="text-base">
+                <p>{fact.text}</p>
+                <p className="text-sm text-ink-muted">
+                  <FactSource source={fact.source} />
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
 
-      <section aria-labelledby="region-photos" className="mt-12 max-w-prose">
-        <h2 id="region-photos">Photographs</h2>
-        <ol className="mt-4 flex flex-col">
-          {views.map((v) => (
-            <li
-              key={v.slug}
-              className="flex flex-col gap-x-3 border-b border-line py-2 sm:flex-row sm:items-baseline"
-            >
-              <Link
-                href={photoHref(v.slug)}
-                data-photo-id={v.slug}
-                className="prose-link inline-flex min-h-11 items-center text-base"
+        <section aria-labelledby="region-photos" className="mt-12 max-w-prose">
+          <h2 id="region-photos">Photographs</h2>
+          <ol className="mt-4 flex flex-col">
+            {views.map((v) => (
+              <li
+                key={v.slug}
+                className="flex flex-col gap-x-3 border-b border-line py-2 sm:flex-row sm:items-baseline"
               >
-                {v.title}
-              </Link>
-              <span className="font-mono text-sm text-ink-muted">
-                {v.altitudeLabel} · {v.captureLabel}
-              </span>
-            </li>
-          ))}
-        </ol>
-      </section>
+                <Link
+                  href={photoHref(v.slug)}
+                  data-photo-id={v.slug}
+                  className="prose-link inline-flex min-h-11 items-center text-base"
+                >
+                  {v.title}
+                </Link>
+                <span className="font-mono text-sm text-ink-muted">
+                  {v.altitudeLabel} · {v.captureLabel}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </section>
 
-      <p className="mt-12 text-sm text-ink-muted">{regionRights(region.id)}</p>
-    </div>
+        <p className="mt-12 text-sm text-ink-muted">{regionRights(region.id)}</p>
+      </div>
+    </>
   );
 }
