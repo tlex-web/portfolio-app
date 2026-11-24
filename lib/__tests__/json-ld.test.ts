@@ -24,12 +24,32 @@
  *   only (D-21, 0 runtime bytes), and the (site) layout renders a native data
  *   block with no nonce attribute and no next/script (D-16, T-17-08).
  *
+ * - photoImageLd (17-13; SEO-04, D-16..D-19): every published photo page carries
+ *   one ImageObject whose every text equals what the page prints (title, alt,
+ *   rights, place, the strip's Position digits), whose coordinates are strings
+ *   at exactly the position's own precision, and whose dateCreated is no finer
+ *   than the capture label. Expected values come from the data, never typed in.
+ *
  * keysDeep and blocksOf are the helpers 17-13 and 17-14 reuse in this file.
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { imageManifest } from '@/data/generated/image-manifest';
+import { photos } from '@/data/generated/photos';
 import { site } from '@/data/site';
-import { PERSON_ID, WEBSITE_ID, jsonLdHtml, siteGraph, siteRights } from '@/lib/json-ld';
+import {
+  PERSON_ID,
+  WEBSITE_ID,
+  jsonLdHtml,
+  personRef,
+  photoImageId,
+  photoImageLd,
+  photoLdFacts,
+  siteGraph,
+  siteRights,
+} from '@/lib/json-ld';
+import { photoHref } from '@/lib/photos/routes';
+import { publishedViews, type PhotoView } from '@/lib/photos/view-model';
 
 type Node = Record<string, unknown>;
 
@@ -191,5 +211,243 @@ describe('source rules (D-16, D-21)', () => {
     expect(layout).toContain('jsonLdHtml(siteGraph())');
     expect(layout).not.toMatch(/\bnonce\s*=/);
     expect(layout).not.toMatch(/from ['"]next\/script['"]/);
+  });
+});
+
+/** An ImageObject block as JSON.parse returns it from jsonLdHtml. */
+type ImageBlock = {
+  '@context': string;
+  '@type': string;
+  '@id': string;
+  url: string;
+  mainEntityOfPage: string;
+  contentUrl: string;
+  width: unknown;
+  height: unknown;
+  name: string;
+  caption: string;
+  creator: Node;
+  creditText: string;
+  copyrightNotice: string;
+  dateCreated: string;
+  contentLocation: {
+    '@type': string;
+    name: string;
+    geo?: { '@type': string; latitude: string; longitude: string };
+  };
+};
+
+type ManifestVariant = { longEdge: number; width: number; height: number; webp: string };
+
+/** The decimals each generated position precision prints at (16 D-01). */
+const PRECISION_DECIMALS = { '4dp': 4, '3dp': 3, '2dp': 2 } as const;
+
+const generated = (id: string) => {
+  const photo = photos.find((p) => p.id === id);
+  if (!photo) throw new Error(`no generated photo ${id}`);
+  return photo;
+};
+
+const variant2560 = (id: string): ManifestVariant => {
+  const manifest = imageManifest as Readonly<
+    Record<string, { variants: readonly ManifestVariant[] } | undefined>
+  >;
+  const found = manifest[id]?.variants.find((v) => v.longEdge === 2560);
+  if (!found) throw new Error(`no 2560 px variant for ${id}`);
+  return found;
+};
+
+const parseBlock = (html: string) => JSON.parse(html) as ImageBlock;
+const blockOf = (view: PhotoView) => parseBlock(jsonLdHtml(photoImageLd(view)));
+
+/** The strip's Position value with the '≈ ' marker and the U+00A0 before each letter removed. */
+function stripPosition(view: PhotoView): string {
+  const row = view.strip.positionRows.find((r) => r.term === 'Position');
+  if (!row) throw new Error(`${view.slug} has no Position row`);
+  return row.value.replace(/^≈ /, '').replace(/ /g, '');
+}
+
+/** A JSON-LD coordinate pair joined as the strip prints it, hemisphere letters by sign. */
+function joinedGeo(latitude: string, longitude: string): string {
+  const half = (v: string, pos: string, neg: string) =>
+    v.startsWith('-') ? `${v.slice(1)}${neg}` : `${v}${pos}`;
+  return `${half(latitude, 'N', 'S')} ${half(longitude, 'E', 'W')}`;
+}
+
+const viewRows = publishedViews.map((view) => [view.slug, view] as const);
+const located = publishedViews.filter((view) => generated(view.id).position !== null);
+const locatedRows = located.map((view) => [view.slug, view] as const);
+
+describe('photoImageLd: the ImageObject on every photo page (SEO-04; D-16, D-17, D-18)', () => {
+  it('runs over the whole published set', () => {
+    expect(publishedViews.length).toBeGreaterThan(0);
+  });
+
+  it.each(viewRows)('%s round-trips through jsonLdHtml with no raw "<"', (_slug, view) => {
+    const ld = photoImageLd(view);
+    const html = jsonLdHtml(ld);
+    expect(html).not.toContain('<');
+    expect(JSON.parse(html)).toEqual(ld);
+  });
+
+  it.each(viewRows)('%s names its page, image file and size', (_slug, view) => {
+    const block = blockOf(view);
+    const pageUrl = `${site.url}${photoHref(view.slug)}`;
+    const largest = variant2560(view.id);
+    expect(block['@context']).toBe('https://schema.org');
+    expect(block['@type']).toBe('ImageObject');
+    expect(block['@id']).toBe(`${pageUrl}#image`);
+    expect(photoImageId(view.slug)).toBe(`${pageUrl}#image`);
+    expect(block.url).toBe(pageUrl);
+    expect(block.mainEntityOfPage).toBe(pageUrl);
+    expect(block.contentUrl.startsWith(site.url + '/')).toBe(true);
+    expect(block.contentUrl).toBe(`${site.url}${largest.webp}`);
+    expect(block.contentUrl.endsWith('.webp')).toBe(true);
+    const size = (value: number) => ({ '@type': 'QuantitativeValue', value, unitCode: 'E37' });
+    expect(block.width).toEqual(size(largest.width));
+    expect(block.height).toEqual(size(largest.height));
+  });
+
+  it.each(viewRows)('%s prints the title, alt text and rights as the page does', (_slug, view) => {
+    const block = blockOf(view);
+    expect(block.name).toBe(view.title);
+    expect(block.caption).toBe(view.alt);
+    expect(block.copyrightNotice).toBe(view.rights);
+  });
+
+  it.each(viewRows)('%s credits the Person inline by @id, name and site (D-18)', (_slug, view) => {
+    const block = blockOf(view);
+    expect(personRef()).toEqual({
+      '@type': 'Person',
+      '@id': PERSON_ID,
+      name: site.name,
+      url: site.url,
+    });
+    expect(block.creator).toEqual(personRef());
+    expect(block.creditText).toBe(block.creator.name);
+    expect(block.creditText).toBe(site.name);
+  });
+
+  it.each(viewRows)('%s has no license, elevation, email or address key', (_slug, view) => {
+    const keys = keysDeep(blockOf(view));
+    for (const key of ['license', 'acquireLicensePage', 'elevation', 'email', 'address']) {
+      expect(keys).not.toContain(key);
+    }
+  });
+});
+
+describe('photoImageLd location: never finer than the page (D-19, T-17-25)', () => {
+  it('has located photos to check', () => {
+    expect(located.length).toBeGreaterThan(0);
+  });
+
+  it.each(locatedRows)(
+    '%s names the printed place and carries the strip Position digits as strings at the position precision',
+    (_slug, view) => {
+      const position = generated(view.id).position;
+      if (!position) throw new Error('filtered to located views');
+      const { contentLocation } = blockOf(view);
+      expect(contentLocation['@type']).toBe('Place');
+      expect(contentLocation.name).toBe(view.place);
+      expect(contentLocation.name).toBe(view.strip.placeDate.place);
+
+      const geo = contentLocation.geo;
+      if (!geo) throw new Error(`${view.slug} has no geo`);
+      expect(Object.keys(geo).sort()).toEqual(['@type', 'latitude', 'longitude']);
+      expect(geo['@type']).toBe('GeoCoordinates');
+      expect(typeof geo.latitude).toBe('string');
+      expect(typeof geo.longitude).toBe('string');
+
+      const decimals = PRECISION_DECIMALS[position.precision];
+      const shape = new RegExp(`^-?\\d+\\.\\d{${decimals}}$`);
+      expect(geo.latitude).toMatch(shape);
+      expect(geo.longitude).toMatch(shape);
+      expect(joinedGeo(geo.latitude, geo.longitude)).toBe(stripPosition(view));
+    }
+  );
+
+  it.each(locatedRows)(
+    '%s never serializes a stored coordinate finer than its precision',
+    (_slug, view) => {
+      const position = generated(view.id).position;
+      if (!position) throw new Error('filtered to located views');
+      const html = jsonLdHtml(photoImageLd(view));
+      const decimals = PRECISION_DECIMALS[position.precision];
+      for (const v of [position.lat, position.lon]) {
+        const stored = String(v);
+        if ((stored.split('.')[1] ?? '').length > decimals) expect(html).not.toContain(stored);
+      }
+    }
+  );
+});
+
+describe('photoImageLd dateCreated: no finer than the capture label (RESEARCH OQ3, T-17-26)', () => {
+  it('has both an EXIF capture and a year-only scan in the published set', () => {
+    const kinds = new Set(publishedViews.map((view) => generated(view.id).capture.precision));
+    expect(kinds).toEqual(new Set(['second', 'year']));
+  });
+
+  it.each(viewRows)('%s dateCreated is minute-and-offset or the year alone', (_slug, view) => {
+    const capture = generated(view.id).capture;
+    const { dateCreated } = blockOf(view);
+    if (capture.precision === 'second') {
+      expect(dateCreated).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}[+-]\d{2}:\d{2}$/);
+      expect(dateCreated).toBe(`${capture.local.slice(0, 16)}${capture.offset}`);
+    } else {
+      expect(dateCreated).toMatch(/^\d{4}$/);
+      expect(dateCreated).toBe(String(capture.year));
+    }
+  });
+});
+
+describe('photoImageLd edges: empty facts and editorial text (SEO-04)', () => {
+  const sample = publishedViews[0];
+
+  it('a view without a position names the place only: no geo, no placeholder', () => {
+    const block = parseBlock(
+      jsonLdHtml(photoImageLd(sample, { ...photoLdFacts(sample.id), position: null }))
+    );
+    expect(block.contentLocation).toEqual({ '@type': 'Place', name: sample.place });
+    const keys = keysDeep(block);
+    for (const key of ['geo', 'latitude', 'longitude']) expect(keys).not.toContain(key);
+  });
+
+  it('a capture without an EXIF time gives the year form', () => {
+    const facts = {
+      ...photoLdFacts(sample.id),
+      capture: { precision: 'year', year: 2019 },
+    } as const;
+    expect(parseBlock(jsonLdHtml(photoImageLd(sample, facts))).dateCreated).toBe('2019');
+  });
+
+  it('escapes editorial "<" as \\u003c and keeps the text inside one block', () => {
+    const view: PhotoView = { ...sample, title: 'Peaks <after> rain', alt: BREAKOUT };
+    const html = jsonLdHtml(photoImageLd(view));
+    expect(html).not.toContain('<');
+    expect(html).toContain('\\u003cafter>');
+    const blocks = blocksOf(`<script type="application/ld+json">${html}</script><p>after</p>`);
+    expect(blocks).toHaveLength(1);
+    expect((blocks[0] as Node).name).toBe('Peaks <after> rain');
+    expect((blocks[0] as Node).caption).toBe(BREAKOUT);
+  });
+
+  it('photoLdFacts throws for an unknown photo rather than inventing facts', () => {
+    expect(() => photoLdFacts('no-such-photo')).toThrow(RangeError);
+  });
+});
+
+describe('photo page source rules (D-16, anti-pattern 9)', () => {
+  it('renders the ImageObject on the full photo page as a native data block', () => {
+    const page = read('app', '(site)', 'photos', '[slug]', 'page.tsx');
+    expect(page).toContain('type="application/ld+json"');
+    expect(page).toContain('jsonLdHtml(photoImageLd(view))');
+    expect(page).not.toMatch(/\bnonce\s*=/);
+    expect(page).not.toMatch(/from ['"]next\/script['"]/);
+  });
+
+  it('keeps the intercepted @modal photo page free of JSON-LD', () => {
+    const modal = read('app', '(site)', 'photos', '@modal', '(.)[slug]', 'page.tsx');
+    expect(modal).not.toContain('ld+json');
+    expect(modal).not.toContain('photoImageLd');
   });
 });
