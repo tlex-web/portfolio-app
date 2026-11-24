@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { photos } from '@/data/generated/photos';
+import { plates } from '@/data/generated/plates';
 import registry from '@/data/regions/regions.json';
 import { Regions, type Region } from '@/data/schemas/region';
 import { site } from '@/data/site';
@@ -18,7 +19,9 @@ import { buildPhotoViews, seriesInput, type PhotoView } from '@/lib/photos/view-
  * with buildPhotoViews(seriesInput(id)): a registry region with no photo throws
  * seriesInput's RangeError at load, and the order is buildWaypoints' (DEM
  * height ascending, ties broken by id); nothing here re-sorts. Each region's
- * cover (D-13) must be one of those views, checked at load (regionCover).
+ * cover (D-13) must be one of those views, checked at load (regionCover), and
+ * its plate must have a generated hero contour, checked at load too
+ * (regionContourSrc).
  *
  * Server-only: this module holds the registry's names and sourced facts, so no
  * 'use client' file may import it, directly or through another module (the
@@ -94,6 +97,43 @@ export function regionCover(id: string): PhotoView {
   const cover = COVERS.get(id);
   if (!cover) throw new RangeError(`regionCover: ${id} is not a registry region`);
   return cover;
+}
+
+/** The generated plate registry, read by plate id (the registry names plates as zod strings). */
+const PLATES: Readonly<Record<string, { assets: { contours: { hero: string } } } | undefined>> =
+  plates;
+
+/**
+ * Each region's contour field source (17 D-12: its plate's hero contour SVG,
+ * the region OG card's background), resolved once at module load like COVERS.
+ * The schema checks only the plate id's shape; a plate missing from
+ * data/generated/plates.ts throws here, naming the region and the registry
+ * file, so a bad plate fails the build instead of the card's first request
+ * (17-REVIEW IN-01).
+ */
+const CONTOURS: ReadonlyMap<string, string> = new Map(
+  regions.map((r) => {
+    const src = PLATES[r.plate]?.assets.contours.hero;
+    if (!src) {
+      throw new Error(
+        `lib/regions: region ${r.id} names plate ${r.plate} in data/regions/regions.json, ` +
+          'which has no hero contour in data/generated/plates.ts (npm run terrain:build)'
+      );
+    }
+    return [r.id, src];
+  })
+);
+
+/**
+ * The region's contour field: its plate's hero contour SVG, a content-hashed
+ * path under public/ (the region OG card reads it from disk).
+ *
+ * @throws RangeError for an id that is not in the registry.
+ */
+export function regionContourSrc(id: string): string {
+  const src = CONTOURS.get(id);
+  if (!src) throw new RangeError(`regionContourSrc: ${id} is not a registry region`);
+  return src;
 }
 
 /** The region of a generated photo, by photo id, or undefined for an unknown id. */

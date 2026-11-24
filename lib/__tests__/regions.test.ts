@@ -19,11 +19,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { NEUTRAL_SLUG } from '../../proxy';
+import { plates } from '@/data/generated/plates';
 import { editorial } from '@/data/photos/editorial';
 import { formatYearRange } from '@/lib/home-format';
 import { seriesInput } from '@/lib/photos/view-model';
 import {
   regionById,
+  regionContourSrc,
   regionCover,
   regionDescription,
   regionIds,
@@ -173,7 +175,7 @@ describe("each region's cover (D-13)", () => {
     expect(() => regionCover('Zermatt')).toThrow(/Zermatt/);
   });
 
-  it("throws at module load, naming the region and data/regions/regions.json, for a cover from another region", async () => {
+  it('throws at module load, naming the region and data/regions/regions.json, for a cover from another region', async () => {
     await jest.isolateModulesAsync(async () => {
       jest.doMock('@/data/regions/regions.json', () => {
         const actual = jest.requireActual<{ schemaVersion: 1; regions: { id: string }[] }>(
@@ -206,6 +208,58 @@ describe("each region's cover (D-13)", () => {
     await jest.isolateModulesAsync(async () => {
       const mod: RegionsModule = await import('@/lib/regions');
       expect(mod.regionCover('zermatt').slug).toBe(TIM_COVERS.zermatt);
+    });
+  });
+});
+
+/** The generated plates by id, as the region card reads them. */
+const PLATE_HEROES = plates as Readonly<
+  Record<string, { assets: { contours: { hero: string } } } | undefined>
+>;
+
+describe("each region's contour field (17 D-12; 17-REVIEW IN-01)", () => {
+  it.each(regionIds.map((id) => [id]))(
+    "%s: regionContourSrc is its plate's hero contour SVG",
+    (id) => {
+      const plate = regionById(id)?.plate;
+      if (!plate) throw new Error(`regions.test: ${id} has no plate`);
+      const hero = PLATE_HEROES[plate]?.assets.contours.hero;
+      expect(hero).toMatch(/^\/terrain\/[a-z0-9.-]+\.svg$/);
+      expect(regionContourSrc(id)).toBe(hero);
+    }
+  );
+
+  it('throws RangeError for an id that is not in the registry', () => {
+    expect(() => regionContourSrc('nowhere')).toThrow(RangeError);
+    expect(() => regionContourSrc('Zermatt')).toThrow(/Zermatt/);
+  });
+
+  it('throws at module load, naming the region, the plate and data/regions/regions.json, for a plate with no generated sheet', async () => {
+    await jest.isolateModulesAsync(async () => {
+      jest.doMock('@/data/regions/regions.json', () => {
+        const actual = jest.requireActual<{ schemaVersion: 1; regions: { id: string }[] }>(
+          '@/data/regions/regions.json'
+        );
+        return {
+          ...actual,
+          regions: actual.regions.map((r) =>
+            r.id === 'ortler' ? { ...r, plate: 'no-such-plate' } : r
+          ),
+        };
+      });
+      let error: unknown;
+      try {
+        await import('@/lib/regions');
+      } catch (e) {
+        error = e;
+      } finally {
+        // doMock outlives isolateModulesAsync; the next row loads the committed registry.
+        jest.dontMock('@/data/regions/regions.json');
+      }
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).message).toMatch(/ortler/);
+      expect((error as Error).message).toMatch(/no-such-plate/);
+      expect((error as Error).message).toContain('data/regions/regions.json');
     });
   });
 });

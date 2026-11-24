@@ -1,11 +1,11 @@
 import { ImageResponse } from 'next/og';
 import { notFound } from 'next/navigation';
-import { plates } from '@/data/generated/plates';
 import { OG_SIZE, OgFrame, contourDataUrl, ogFonts, ogPhotoImage } from '@/lib/og/template';
 import {
   COUNTRY_NAME,
   regionById,
   regionCardFacts,
+  regionContourSrc,
   regionCover,
   regionOgAlt,
 } from '@/lib/regions';
@@ -20,9 +20,10 @@ import {
  * subject and the contour field change. The subject is the cover Tim picked
  * (D-13, data/regions/regions.json `cover`, checked at load by lib/regions.ts to
  * be one of the region's photos). The contour field is the region plate's hero
- * SVG (matterhorn for Zermatt, ortler, saalfelden), read from
- * data/generated/plates.ts, a server-only module (FORBIDDEN_IN_CLIENT_GRAPH):
- * this is a server metadata route.
+ * SVG (matterhorn for Zermatt, ortler, saalfelden), regionContourSrc(id):
+ * lib/regions.ts resolves it from data/generated/plates.ts, a server-only module
+ * (FORBIDDEN_IN_CLIENT_GRAPH), at load and throws there for a plate the
+ * generated module lacks (17-REVIEW IN-01). This is a server metadata route.
  *
  * Never an original: the photo pixels are the image manifest's 1200 px JPEG
  * derivative under public/images/photos/ (content-hashed, rotated, EXIF-free),
@@ -69,7 +70,7 @@ export default async function Image({ params }: { params: Promise<Params> }) {
   if (!region) notFound();
   const [fonts, contour, photo] = await Promise.all([
     ogFonts(),
-    contourDataUrl(plates[region.plate as keyof typeof plates].assets.contours.hero),
+    contourDataUrl(regionContourSrc(id)),
     ogPhotoImage(regionCover(id).id),
   ]);
   return new ImageResponse(
