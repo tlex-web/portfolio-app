@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import SavedPages from '../SavedPages';
 import { savedPageCatalog } from '@/lib/saved-pages';
 import { site } from '@/data/site';
-import { regionPhotoViews, regions } from '@/lib/regions';
+import { regionById, regionOfPhoto, regionPhotoViews, regions } from '@/lib/regions';
 import { projects } from '@/data/projects';
 import { SLUGS } from '../../../e2e/helpers/photo-fixtures';
 
@@ -21,6 +21,7 @@ const catalog = savedPageCatalog({
   projects,
 });
 const seededPhoto = photoSource.find((view) => view.slug === SLUGS.matterhornFromZermatt)!;
+const seededRegion = regionById(regionOfPhoto(seededPhoto.id)!)!;
 const roadmap = site.nav.find((item) => item.href === '/roadmap')!;
 const ORIGIN = window.location.origin;
 
@@ -92,6 +93,35 @@ describe('SavedPages', () => {
 
     const region = screen.getByRole('region', { name: 'Saved on this device' });
     expect(region.textContent).not.toMatch(/https?:|\/photos\/|\/roadmap|\/offline|_next/);
+  });
+
+  it("lists a cached region page between the nav and photo rows, named from data and labelled 'Region' (D-22)", async () => {
+    const regionPath = `/photos/regions/${seededRegion.id}`;
+    stubCaches({
+      'dynamic-x': [
+        `${ORIGIN}/photos/${seededPhoto.slug}`,
+        `${ORIGIN}${regionPath}/`,
+        `${ORIGIN}${regionPath}?x=1`,
+        `${ORIGIN}/photos/regions/nowhere`,
+        `${ORIGIN}/roadmap`,
+      ],
+    });
+    render(<SavedPages catalog={catalog} />);
+
+    const list = await screen.findByRole('list');
+    const links = within(list).getAllByRole('link');
+    expect(links.map((link) => link.getAttribute('href'))).toEqual([
+      '/roadmap',
+      regionPath,
+      `/photos/${seededPhoto.slug}`,
+    ]);
+    expect(links[1]).toHaveTextContent(seededRegion.name);
+    expect(within(links[1]).getByText('Region')).toBeInTheDocument();
+    expect(links[1]).toHaveClass('flex', 'min-h-12', 'items-center', 'hover:bg-surface-overlay');
+    expect(within(links[2]).getByText('Photograph')).toBeInTheDocument();
+
+    const region = screen.getByRole('region', { name: 'Saved on this device' });
+    expect(region.textContent).not.toMatch(/https?:|\/photos\/|\/roadmap|nowhere|\?x=/);
   });
 
   it('rows are at least 48 px link rows with line rules that hover to surface-overlay, and no count is shown', async () => {

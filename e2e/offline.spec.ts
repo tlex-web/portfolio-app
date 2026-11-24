@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { site } from '@/data/site';
+import { regionById, regionOfPhoto } from '@/lib/regions';
 import { SLUGS, viewBySlug } from './helpers/photo-fixtures';
 
 /**
@@ -10,20 +11,36 @@ import { SLUGS, viewBySlug } from './helpers/photo-fixtures';
  * the worker: the page is visited online, and Cache Storage (which works
  * without a worker) is seeded by the test itself. What the worker stores and
  * serves offline is covered by the SW Jest harness (12-08) and the SW spec
- * (12-17). Data-driven: the nav label comes from the data modules, and the
- * seeded photo is named through viewBySlug (its title and slug from the view).
+ * (12-17). Data-driven: the nav label comes from the data modules, the
+ * seeded photo is named through viewBySlug (its title and slug from the view),
+ * and the seeded region page (17 D-22, EDGE-03) is that photo's region, its
+ * name from lib/regions.ts.
  */
 
 const seededPhoto = viewBySlug(SLUGS.matterhornFromZermatt);
 const roadmap = site.nav.find((item) => item.href === '/roadmap')!;
+const seededRegion = regionById(regionOfPhoto(seededPhoto.id)!)!;
+const regionPath = `/photos/regions/${seededRegion.id}`;
 
 const H1 = "You're offline";
 const BODY = "This page needs a connection and reloads by itself when you're back online.";
 const EMPTY = 'No pages are saved on this device yet.';
 const UNSUPPORTED = "This browser can't list saved pages.";
 
-/** Cache keys the seeded test stores: two pages, plus four entries the list must drop. */
-const SEEDED = ['/roadmap', '/roadmap?view=1', '/offline', '/_next/static/e2e-seed.js', `/photos/${seededPhoto.slug}`];
+/**
+ * Cache keys the seeded test stores: three pages (the region page by its trailing-slash
+ * variant, which collapses into its row), plus six entries the list must drop.
+ */
+const SEEDED = [
+  '/roadmap',
+  '/roadmap?view=1',
+  '/offline',
+  '/_next/static/e2e-seed.js',
+  `/photos/${seededPhoto.slug}`,
+  `${regionPath}/`,
+  `${regionPath}?x=1`,
+  '/photos/regions/nowhere',
+];
 
 function savedRegion(page: Page) {
   return page.getByRole('region', { name: 'Saved on this device' });
@@ -87,7 +104,7 @@ test.describe('Offline page (EDGE-02, D-12)', () => {
     await expect(region.getByRole('list')).toHaveCount(0);
   });
 
-  test('seeded Cache Storage: exactly the two cached pages, in nav then photo order, no raw URL', async ({
+  test('seeded Cache Storage: exactly the three cached pages, in nav, region, photo order, no raw URL', async ({
     page,
     context,
   }) => {
@@ -104,17 +121,21 @@ test.describe('Offline page (EDGE-02, D-12)', () => {
 
     const region = savedRegion(reader);
     const links = region.getByRole('list').getByRole('link');
-    await expect(links).toHaveCount(2);
+    await expect(links).toHaveCount(3);
     await expect(links.nth(0)).toHaveAttribute('href', '/roadmap');
     await expect(links.nth(0)).toHaveText(roadmap.label);
-    await expect(links.nth(1)).toHaveAttribute('href', `/photos/${seededPhoto.slug}`);
-    await expect(links.nth(1)).toContainText(seededPhoto.title);
-    await expect(links.nth(1)).toContainText('Photograph');
+    await expect(links.nth(1)).toHaveAttribute('href', regionPath);
+    await expect(links.nth(1)).toContainText(seededRegion.name);
+    await expect(links.nth(1)).toContainText('Region');
+    await expect(links.nth(2)).toHaveAttribute('href', `/photos/${seededPhoto.slug}`);
+    await expect(links.nth(2)).toContainText(seededPhoto.title);
+    await expect(links.nth(2)).toContainText('Photograph');
 
     const text = (await region.textContent()) ?? '';
-    expect(text).not.toMatch(/https?:|\/photos\/|\/roadmap|\?view|_next|\/offline/);
+    expect(text).not.toMatch(/https?:|\/photos\/|\/roadmap|\?view|\?x=|nowhere|_next|\/offline/);
 
-    for (const box of [await links.nth(0).boundingBox(), await links.nth(1).boundingBox()]) {
+    for (let i = 0; i < 3; i += 1) {
+      const box = await links.nth(i).boundingBox();
       expect(box!.height).toBeGreaterThanOrEqual(48);
     }
 
