@@ -110,7 +110,9 @@ describe('licences and uses', () => {
     ]);
     expect(entry('swissaltiregio').usedOn.at(-1)).toEqual({ label: 'The footer of every page' });
     expect(hrefs(entry('bev-als-dtm'))).toEqual(['/photos/regions/saalfelden']);
-    expect(entry('copernicus-glo-90').usedOn).toEqual([{ label: 'Alps overview', href: '/photos' }]);
+    expect(entry('copernicus-glo-90').usedOn).toEqual([
+      { label: 'Alps overview', href: '/photos' },
+    ]);
   });
 
   it('states that the BEV edition is a creation date, not a survey date', () => {

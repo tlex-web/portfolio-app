@@ -62,7 +62,9 @@ export type WestToEastEntry = {
  * @throws RangeError naming the first entry with no outline (undefined or no
  *   corners), so no region renders without a place in the order.
  */
-export function regionsWestToEastIn<T extends WestToEastEntry>(list: readonly T[]): readonly T[] {
+export const regionsWestToEastIn = <T extends WestToEastEntry>(
+  list: readonly T[]
+): readonly T[] => {
   const keyed = list.map((entry) => {
     const corners = entry.corners;
     if (!corners || corners.length === 0) {
@@ -73,7 +75,7 @@ export function regionsWestToEastIn<T extends WestToEastEntry>(list: readonly T[
   return keyed
     .sort((a, b) => a.u - b.u || (a.entry.id < b.entry.id ? -1 : a.entry.id > b.entry.id ? 1 : 0))
     .map(({ entry }) => entry);
-}
+};
 
 /**
  * Every registry region, west to east by its overview outline (D-01): the

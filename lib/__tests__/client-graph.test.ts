@@ -56,8 +56,15 @@ export const FORBIDDEN_IN_CLIENT_GRAPH = [
  *   it (the pure annotation does not drop a JSON module). Only lib/regions.ts,
  *   lib/photos/region-ids.ts (for proxy.ts), server pages and server routes may
  *   import it. The walk resolves the exact .json path as a leaf.
+ * - data/sources.ts: the /sources entries with the verbatim credits (18 D-20,
+ *   T-18-04). The footer and the map margins link to /sources through
+ *   data/source-credits.ts, which holds only ids and short credits.
  */
-export const SERVER_ONLY_MODULES = ['data/generated/overview.ts', 'data/regions/regions.json'] as const;
+export const SERVER_ONLY_MODULES = [
+  'data/generated/overview.ts',
+  'data/regions/regions.json',
+  'data/sources.ts',
+] as const;
 
 const ROOT = process.cwd();
 const ENTRY = 'app/global-error.tsx';

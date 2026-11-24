@@ -3,6 +3,7 @@ import EdgeLayout from '@/components/site/EdgeLayout';
 import OfflineRetry from '@/components/site/OfflineRetry';
 import SavedPages from '@/components/site/SavedPages';
 import { site } from '@/data/site';
+import { SOURCES_PAGE } from '@/data/source-credits';
 import { projects } from '@/data/projects';
 import { regionPhotoViews, regions } from '@/lib/regions';
 import { savedPageCatalog } from '@/lib/saved-pages';
@@ -18,8 +19,8 @@ import { savedPageCatalog } from '@/lib/saved-pages';
  * list in the extra slot. The catalog of listable pages is built here from
  * data, so the client island ships only titles and paths: the region ids and
  * names from the server-only registry (17 D-22), and every published photo,
- * grouped by region in registry order and by ascending height within one, the
- * sitemap's order. No focus move.
+ * grouped by region in registry order and by ascending height within one, then
+ * /sources (18 D-20), the sitemap's order. No focus move.
  * Noindex, and kept out of the sitemap (12-09).
  */
 export const metadata: Metadata = {
@@ -33,6 +34,7 @@ export default function OfflinePage() {
     regions: regions.map(({ id, name }) => ({ id, name })),
     photos: regions.flatMap((r) => regionPhotoViews(r.id)),
     projects,
+    pages: [SOURCES_PAGE],
   });
 
   return (

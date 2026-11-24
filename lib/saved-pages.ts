@@ -9,9 +9,10 @@
  *    data: the `site.nav` labels for the top routes, then the region names
  *    (17 D-22, labelled 'Region', the word the URL uses), then the photo
  *    titles, then the project names, with a 'Region', 'Photograph' or
- *    'Project' label on detail pages. This mirrors the sitemap's order. The
- *    server page hands in the region ids and names and every published photo;
- *    `/offline` is not a destination, so it never appears.
+ *    'Project' label on detail pages, then the site pages outside the nav
+ *    (/sources, 18 D-20) with no label. This mirrors the sitemap's order. The
+ *    server page hands in the region ids and names, every published photo and
+ *    SOURCES_PAGE; `/offline` is not a destination, so it never appears.
  * 2. `savedPageRows` keeps the catalog rows whose exact path is among the
  *    cached request URLs. Matching is by path, so assets, API and unknown paths
  *    drop and nothing outside the catalog can reach the screen: a cached URL is
@@ -47,14 +48,17 @@ export type SavedPageSource = {
   regions: readonly { id: string; name: string }[];
   photos: readonly { slug: string; title: string }[];
   projects: readonly { slug: string; name: string }[];
+  /** Site pages outside the nav, listed after the projects in sitemap order (/sources). */
+  pages: readonly { href: string; title: string }[];
 };
 
-/** Every listable page in display order: nav, then regions, then photos, each in data order, then projects. */
+/** Every listable page in display order: nav, then regions, then photos, each in data order, then projects, then the other site pages. */
 export function savedPageCatalog({
   nav,
   regions,
   photos,
   projects,
+  pages,
 }: SavedPageSource): readonly SavedPageRow[] {
   return [
     ...nav.map(({ label, href }) => ({ href, title: label })),
@@ -73,6 +77,7 @@ export function savedPageCatalog({
       title: name,
       label: 'Project' as const,
     })),
+    ...pages.map(({ href, title }) => ({ href, title })),
   ];
 }
 

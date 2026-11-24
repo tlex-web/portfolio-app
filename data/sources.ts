@@ -1,6 +1,8 @@
 import { plates } from '@/data/generated/plates';
+import { GLO90_LIABILITY, GLO90_NOTICE } from '@/data/schemas/overview';
 import { site } from '@/data/site';
 import type { SourceId } from '@/data/source-credits';
+import bev from '@/data/terrain/plates/saalfelden/source.json';
 import { regionHref } from '@/lib/photos/routes';
 import { regionHeading, regionsWestToEast } from '@/lib/regions';
 
@@ -15,9 +17,13 @@ import { regionHeading, regionsWestToEast } from '@/lib/regions';
  * and the map margins link here through data/source-credits.ts.
  *
  * Credits are never typed here (16 D-21): each is read from its data source,
- * the same string, so the page cannot drift from the data. A credit is worded
- * by its licensor; no sentence here may imply endorsement by swisstopo, BEV,
- * the Copernicus programme, ESA or the EU (GLO-90 licence Article 6(d)).
+ * the same string, so the page cannot drift from the data: swissALTIRegio's
+ * from site.attribution.terrain, BEV's from the Saalfelden plate's source.json
+ * (its licence and licence URL too), and GLO-90's notice and liability
+ * sentence from data/schemas/overview.ts, which the overview source.json schema
+ * pins to the licence text. A credit is worded by its licensor; no sentence
+ * here may imply endorsement by swisstopo, BEV, the Copernicus programme, ESA
+ * or the EU (GLO-90 licence Article 6(d)).
  *
  * DRAFT: SOURCES_INTRO, the licence names, the changes and the "Used on"
  * labels are draft copy for Tim's D-20 checkpoint (18-03). The credits are
@@ -71,5 +77,31 @@ export const SOURCES: readonly SourceEntry[] = [
     },
     changes: ['Resampled to a 10 m grid; contours every 100 m and a hillshade derived; modified.'],
     usedOn: [...regionPagesOn('swissALTIRegio'), { label: 'The footer of every page' }],
+  },
+  {
+    id: 'bev-als-dtm',
+    name: 'BEV ALS DTM',
+    credit: [bev.credit],
+    licence: { name: bev.licence, href: bev.licenceUrl },
+    changes: [
+      'Resampled to a 10 m grid; contours every 100 m and a hillshade derived; modified.',
+      // 16-RESEARCH BEV: the record's Stichtag is a creation date, never a survey date.
+      'Edition 15 September 2025, the date BEV created the dataset, not a survey date.',
+    ],
+    usedOn: regionPagesOn(bev.product),
+  },
+  {
+    id: 'copernicus-glo-90',
+    name: 'Copernicus DEM GLO-90',
+    credit: [GLO90_NOTICE, GLO90_LIABILITY],
+    licence: {
+      // The licence PDF 16-RESEARCH cites (Article 6, p. 20): draft target for 18-03.
+      name: 'Licence for COP-DEM-GLO-90-F Global 90m Full, Free & Open',
+      href: 'https://dataspace.copernicus.eu/sites/default/files/media/files/2025-06/copernicus_contributing_mission_data_access_v2_cop_dem_licenses.pdf',
+    },
+    changes: [
+      'Resampled to a coarser grid covering the Alps; contours every 1,000 m derived; modified.',
+    ],
+    usedOn: [{ label: 'Alps overview', href: '/photos' }],
   },
 ];

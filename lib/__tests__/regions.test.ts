@@ -357,7 +357,12 @@ describe('regions west to east (D-01; REGION-01 ordering and empty)', () => {
   });
 
   it('breaks a tie in centre u by id ascending, whatever the input order', () => {
-    const square = (u: number) => [{ u: u - 0.01 }, { u: u + 0.01 }, { u: u + 0.01 }, { u: u - 0.01 }];
+    const square = (u: number) => [
+      { u: u - 0.01 },
+      { u: u + 0.01 },
+      { u: u + 0.01 },
+      { u: u - 0.01 },
+    ];
     const list = [
       { id: 'c', corners: square(0.5) },
       { id: 'a', corners: square(0.5) },
