@@ -378,7 +378,84 @@ Plans:
   3. Each photo in the sequence sits in a map collar whose neatline and coordinate ticks are drawn outside the image, never over it, and an altimeter rail reads the sequence as an ascent and marks the current photo.
   4. The lightbox steps only through the current photo's region and ends on an end-of-series card that links to the next region. A visitor can share a photo or a region with the Web Share API where it exists, or copy its link elsewhere, and the button's label says which. Swiss photos show LV95 rounded to 10 m next to WGS84, and other photos show WGS84 only.
   5. The overview and every local plate show their extent, "last surveyed" date and short source credit in their own sheet margin, and the footer links to a sources page with the full credit and licence text of every data source.
-**Plans**: TBD
+**Plans**: 29 plans
+Plans:
+**Wave 1**
+- [ ] 18-01-PLAN.md — Wave 0: bisect the inherited og pin failure, Tim's og and UI-SPEC P1-P7 decisions, green ci/18-01 with the WebKit B8 row classified
+- [ ] 18-02-PLAN.md — /sources page and server-only verbatim credits, regionsWestToEast, sitemap, catalog and audit wiring
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 18-03-PLAN.md — Footer Source row (short credit + /sources link), Tim's D-20 copy checkpoint, approved copy applied
+- [ ] 18-06-PLAN.md — Region header band, breadcrumb + BreadcrumbList, next-region chain on a shared trail sign
+- [ ] 18-13-PLAN.md — Overview label layout, sweep first, with backtracking (conditional Tim decision)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 18-04-PLAN.md — Re-baseline round 1: footer (36 full-page shots), Tim commits
+- [ ] 18-07-PLAN.md — Share / Copy link island on the region header (PHOTO-07)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 18-05-PLAN.md — Re-baseline round 2: /sources (3 new shots) and the film-scan selector (Pitfall 8)
+- [ ] 18-08-PLAN.md — Header slot and the uncropped sequence in map collars, figure and slot sizes (13 #34)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 18-09-PLAN.md — Region plate: sweep-tested badge layout and the server sheet with pins
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 18-10-PLAN.md — Plate key list, anchor jumps (D-08, P2) and list-plate sync
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 18-11-PLAN.md — Sheet margins for every plate and the overview model, Saalfelden WGS84 extent at build
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 18-12-PLAN.md — Altimeter rail island with data-rail-current (REGION-05)
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [ ] 18-14-PLAN.md — Re-baseline round 3: 15 region viewport shots (D-21, D-22), Tim commits
+
+**Wave 10** *(blocked on Wave 9 completion)*
+- [ ] 18-15-PLAN.md — Region-scoped stepping (LBOX-09), every test of the old sets rewritten, LBOX-08 matrix on the region pages
+
+**Wave 11** *(blocked on Wave 10 completion)*
+- [ ] 18-16-PLAN.md — The end-of-series card (LBOX-09, D-12), carousel spec rewritten as the stepping spec
+
+**Wave 12** *(blocked on Wave 11 completion)*
+- [ ] 18-17-PLAN.md — Photo page back link to the region and breadcrumb with BreadcrumbList (D-09, D-10)
+
+**Wave 13** *(blocked on Wave 12 completion)*
+- [ ] 18-18-PLAN.md — LV95 line from the shown WGS84 (PHOTO-08) and Share in the viewer strip
+
+**Wave 14** *(blocked on Wave 13 completion)*
+- [ ] 18-19-PLAN.md — Stage sizes and preload format (13 #33/#34), remaining lightbox tests off the grid, LCP record spec
+
+**Wave 15** *(blocked on Wave 14 completion)*
+- [ ] 18-20-PLAN.md — Re-baseline round 4: photo page and lightbox, Tim commits
+
+**Wave 16** *(blocked on Wave 15 completion)*
+- [ ] 18-21-PLAN.md — Successors first: grid, carousel and grid-lightbox tests rewritten onto the region pages (PHOTO-06)
+
+**Wave 17** *(blocked on Wave 16 completion)*
+- [ ] 18-22-PLAN.md — Overview tracer: region list, ?view= 308 redirect, Map/switcher/?view= tests rewritten, every affected spec run (PHOTO-06)
+
+**Wave 18** *(blocked on Wave 17 completion)*
+- [ ] 18-23-PLAN.md — Overview sheet: rectangles, summits, numbered markers, sync and margin (REGION-01)
+
+**Wave 19** *(blocked on Wave 18 completion)*
+- [ ] 18-24-PLAN.md — Retire the switch, header, view param and grid code with tests rewritten (13 #37)
+
+**Wave 20** *(blocked on Wave 19 completion)*
+- [ ] 18-25-PLAN.md — Retire the carousel family (14 IN-04) and enforce the client-JS cap
+
+**Wave 21** *(blocked on Wave 20 completion)*
+- [ ] 18-26-PLAN.md — Light table part 1: photoBySlug on published views, explicit Jest fixtures (D-27, Pitfall 8)
+
+**Wave 22** *(blocked on Wave 21 completion)*
+- [ ] 18-27-PLAN.md — Light table part 2: MapSheet retired, last e2e fixtures, light table removed (D-27)
+
+**Wave 23** *(blocked on Wave 22 completion)*
+- [ ] 18-28-PLAN.md — Re-baseline round 5: overview, retired view baselines deleted, Tim commits
+
+**Wave 24** *(blocked on Wave 23 completion)*
+- [ ] 18-29-PLAN.md — Phase close: full gate, client JS, og pin, D-25 write-backs, green ci/18-29, HOME-08 perf dispatch
 **UI hint**: yes
 **UI-SPEC**: Required. Run `/gsd-ui-phase` with the ui-ux-pro-max skill before planning. It covers the overview (sheet-index rectangles, reference summits, label placement at 375 px, HTML pin overlays), the region page and its sequence (images contained, never cropped, under the 2,560 px cap), the map collar, the altimeter rail, the end-of-series card, the Share button states, the LV95 line, the coarse-location flag if it needs a new treatment, the sheet margins and the sources page, and it reserves the header slot Phase 19 fills (poster aspect ratio, pause control).
 **Research**: Needed: overview label collision at 375 px; per-breakpoint `sizes` and the photo-page LCP (no photo-page LCP gate exists yet); the JS-budget margin (HOME-08 has about 6.2%); Web Share support and the copy fallback; region order (west to east or by date) and whether the nav hides on scroll.

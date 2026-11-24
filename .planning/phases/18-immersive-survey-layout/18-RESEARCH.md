@@ -577,13 +577,15 @@ Today: `img.srcset = view.stage.srcSetAvif;` unconditionally [VERIFIED: PhotoVie
 | A6 | Candidate-search layout with backtracking resolves Grossglockner at S 589–660 | Pattern 2 | A summit label must be dropped on that range (needs Tim's OK) |
 | A7 | E2E legs grow by ≤ ~3 min (retired carousel sleeps offset new region/overview tests) | Environment / D-26 | If a leg nears 45 min, shard before adding more |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Re-pin or restore the v2.0 OG hash?** Known: hash moved in the 17 review-fix range. Unclear: which commit and whether restorable. Recommendation: Wave 0 bisect, then Tim decides.
-2. **GLO-90 notice in the overview margin or on `/sources` only?** Licence sets no placement. Recommendation: offer both at the D-20 checkpoint.
-3. **Summit labels that cannot be placed:** omit per width range (margin names them) vs. shrink plates. Recommendation: try backtracking first; ask only if the sweep still fails.
-4. **`/sources` in the saved-pages catalog (discretion):** recommend yes — the catalog "mirrors the sitemap's order" (`lib/saved-pages.ts` header) and `/sources` joins the sitemap; it is one more nav-like row.
-5. **Defaults P1–P7** remain open for plan review (UI-SPEC).
+Resolved for planning: question 4 is decided in a plan; questions 1, 2, 3 and 5 are routed to the blocking Tim checkpoint that owns each. No answer of Tim's is recorded here; each checkpoint records his literal reply in its own SUMMARY.
+
+1. **Re-pin or restore the v2.0 OG hash?** Known: hash moved in the 17 review-fix range. Unclear: which commit and whether restorable. Recommendation: Wave 0 bisect, then Tim decides. — **RESOLVED (routed):** 18-01 Task 1 bisects and checks the old query URL; 18-01 Task 2 (`checkpoint:decision`, blocking) asks Tim; 18-01 Task 3 applies his option, and the later plans that touch the og pin (18-26, 18-29) follow it.
+2. **GLO-90 notice in the overview margin or on `/sources` only?** Licence sets no placement. Recommendation: offer both at the D-20 checkpoint. — **RESOLVED (routed):** 18-03 Task 2 (`checkpoint:decision`, blocking: the one D-20 copy checkpoint) offers both placements; 18-11 and 18-23 apply the placement recorded in 18-03's SUMMARY.
+3. **Summit labels that cannot be placed:** omit per width range (margin names them) vs. shrink plates. Recommendation: try backtracking first; ask only if the sweep still fails. — **RESOLVED (routed):** 18-13 Task 1 sweeps with backtracking and pins any remaining gap in `UNPLACED_SUMMIT_LABELS`; 18-13 Task 2 (`checkpoint:decision`, blocking, runs only if a gap remains) asks Tim; 18-13 Task 3 implements his rule.
+4. **`/sources` in the saved-pages catalog (discretion):** recommend yes — the catalog "mirrors the sitemap's order" (`lib/saved-pages.ts` header) and `/sources` joins the sitemap; it is one more nav-like row. — **RESOLVED (decided in plan):** yes; 18-02 Task 2 adds `/sources` to the saved-pages catalog after the projects, in the sitemap's place.
+5. **Defaults P1–P7** remain open for plan review (UI-SPEC). — **RESOLVED (routed):** 18-01 Task 2 (`checkpoint:decision`, blocking) asks Tim to confirm or change P1–P7; the plans that implement them (18-06, 18-08, 18-10, 18-11, 18-12, 18-13, 18-16, 18-19, 18-23) read his reply from 18-01's SUMMARY.
 
 ## Environment Availability
 
