@@ -3,7 +3,7 @@ import { projects } from '@/data/projects';
 import { site } from '@/data/site';
 import { SITE_DESCRIPTION } from '@/lib/metadata';
 import { regionPhotoViews, regions } from '@/lib/regions';
-import { ROUTES } from './routes';
+import { ROUTES, SITEMAP_PATHS } from './routes';
 
 /**
  * Search metadata contract (SEO-01, SEO-02, SEO-03; D-13).
@@ -194,5 +194,41 @@ test.describe('sitemap.xml and robots.txt (SEO-03)', () => {
     expect(lines).toContain('Disallow: /api/');
     expect(lines).toContain('Disallow: /offline');
     expect(lines).toContain(`Sitemap: ${site.url}/sitemap.xml`);
+  });
+});
+
+/**
+ * Time budget per sitemap page for the canonical check, scaled like the audit
+ * sweep (17-02, AUDIT_SWEEP_PAGE_MS): 60 s of setup plus this much per
+ * SITEMAP_PATHS entry. A page here is one load and one head read, far lighter
+ * than an audited page, so 10 s keeps a wide margin.
+ */
+const SITEMAP_CANONICAL_PAGE_MS = 10_000;
+
+test.describe('Sitemap URLs are canonical (D-15, REGION-07)', () => {
+  /**
+   * Every URL the sitemap lists is the page's own canonical, exactly (D-15):
+   * the page answers below 400 and names one canonical link whose href is the
+   * sitemap URL. A data check, so one engine (@chromium-only keeps the e2e time
+   * down); mismatches are collected so a failure names every path.
+   */
+  test("every sitemap URL is its page's canonical @chromium-only", async ({ page }) => {
+    test.setTimeout(60_000 + SITEMAP_PATHS.length * SITEMAP_CANONICAL_PAGE_MS);
+    expect(SITEMAP_PATHS.length).toBeGreaterThan(0);
+    const mismatches: string[] = [];
+
+    for (const path of SITEMAP_PATHS) {
+      const response = await page.goto(path);
+      const status = response?.status() ?? 0;
+      const hrefs = await canonical(page).evaluateAll((links) =>
+        links.map((link) => link.getAttribute('href'))
+      );
+      const want = canonicalFor(path);
+      if (status >= 400) mismatches.push(`${path}: status ${status}`);
+      if (hrefs.length !== 1) mismatches.push(`${path}: ${hrefs.length} canonical links`);
+      else if (hrefs[0] !== want) mismatches.push(`${path}: canonical ${hrefs[0]}, want ${want}`);
+    }
+
+    expect(mismatches).toEqual([]);
   });
 });
