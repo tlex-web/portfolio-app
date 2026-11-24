@@ -5,11 +5,11 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: planning
-stopped_at: Phase 18 context gathered
-last_updated: "2026-11-24T17:55:31.987Z"
+stopped_at: Phase 18 UI-SPEC approved
+last_updated: "2026-11-24T18:27:09.422Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 17 complete, transitioned to Phase 18
-state_head: 4fed9ef145f1b8675c266b832b3770cc5d61371d
+state_head: 77a79999d6fc327ce72680f3c7ac09759425ab32
 progress:
   total_phases: 7
   completed_phases: 5
@@ -398,6 +398,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-24T17:55:30.915Z
-Stopped at: Phase 18 context gathered
-Resume file: .planning/phases/18-immersive-survey-layout/18-CONTEXT.md
+Last session: 2026-11-24T18:27:08.228Z
+Stopped at: Phase 18 UI-SPEC approved
+Resume file: .planning/phases/18-immersive-survey-layout/18-UI-SPEC.md
