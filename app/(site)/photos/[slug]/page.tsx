@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import PhotoViewer from '@/components/photos/PhotoViewer';
+import { jsonLdHtml, photoImageLd } from '@/lib/json-ld';
 import { regionById, regionOfPhoto } from '@/lib/regions';
 import { regionHref } from '@/lib/photos/routes';
 import {
@@ -33,6 +34,12 @@ import {
  * generateMetadata reads photoMetadata(slug), the function the intercepted
  * lightbox route exports too, so both surfaces carry '{title} · Tim Lui'.
  * Phase 12 attaches the OG images to that metadata (SEO-02).
+ *
+ * The photo's ImageObject (17-13; SEO-04, D-16) is a native JSON-LD data block
+ * beside the viewer, on this full page only: the intercepted @modal page never
+ * carries one (a soft navigation would otherwise add a second block over the
+ * gallery). It lands inside SiteChrome's <main>; jsonLdHtml escapes every '<',
+ * and a data block needs no nonce.
  */
 
 type PageProps = { params: Promise<{ slug: string }> };
@@ -69,9 +76,22 @@ export default async function PhotoPage({ params }: PageProps) {
   const back = backFor(view);
 
   // The four get no back prop at all (not back={undefined}), so their props are unchanged.
-  return back ? (
-    <PhotoViewer variant="page" photos={viewerPhotos(view)} initialSlug={view.slug} back={back} />
-  ) : (
-    <PhotoViewer variant="page" photos={viewerPhotos(view)} initialSlug={view.slug} />
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(photoImageLd(view)) }}
+      />
+      {back ? (
+        <PhotoViewer
+          variant="page"
+          photos={viewerPhotos(view)}
+          initialSlug={view.slug}
+          back={back}
+        />
+      ) : (
+        <PhotoViewer variant="page" photos={viewerPhotos(view)} initialSlug={view.slug} />
+      )}
+    </>
   );
 }
