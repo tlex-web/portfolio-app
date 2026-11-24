@@ -232,6 +232,8 @@ const GRIDS = { desktop: 512, mobile: 256 };
 const HERO = { intervalM: 100, indexEvery: 5 };
 const MAP = { intervalM: 50, indexEvery: 5 };
 const STRIP = { intervalM: 100, indexEvery: 5, ratio: 5 };
+/** The strip band's south edge snaps to this many metres (stripBbox's snapM). */
+const STRIP_SNAP_M = 100;
 
 /**
  * D-16 hillshade poster (Imhof/swisstopo convention, NW light). These are the
@@ -859,7 +861,17 @@ async function buildPlate(plate, source, metres, { encode }) {
     throw new Error(
       `plate ${plate.id}: strip.centreN ${centreN} is outside its extent (${extent.south}..${extent.north}); fix ${PLATES_REL}`
     );
-  const strip = stripBbox(extent, centreN, STRIP.ratio);
+  // 16 IN-06: a centre inside the extent but within half a band of its south or
+  // north edge would still be shifted by stripBbox's clamp. Compute the band as
+  // stripBbox does (extent width / ratio tall, south snapped) and fail when it
+  // leaves the extent, so no committed plate ever reaches the clamp.
+  const bandM = (extent.east - extent.west) / STRIP.ratio;
+  const bandSouth = Math.round((centreN - bandM / 2) / STRIP_SNAP_M) * STRIP_SNAP_M;
+  if (bandSouth < extent.south || bandSouth + bandM > extent.north)
+    throw new Error(
+      `plate ${plate.id}: strip band ${bandSouth}..${bandSouth + bandM} for centreN ${centreN} leaves its extent (${extent.south}..${extent.north}); fix ${PLATES_REL}`
+    );
+  const strip = stripBbox(extent, centreN, STRIP.ratio, STRIP_SNAP_M);
   const box = gridKey(source.crs);
   const sw = rowWindow(metres, source, strip);
   const stripUrl = lod('contours-strip', contourText(sw.grid, sw.W, sw.H, STRIP));

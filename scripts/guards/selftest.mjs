@@ -1874,7 +1874,7 @@ async function fixtureDem() {
  * matterhorn when `fixtureFirst` (registry order must change no Matterhorn byte).
  * With `bevFixture`, also writes the EPSG:3035 plate LAEA_FIXTURE_PLATE (the same
  * hill DEM, a BEV-variant source.json) and lists it last. `fixtureCentreN`
- * overrides the 2D fixture's strip.centreN (the IN-05 case).
+ * overrides the 2D fixture's strip.centreN (the 16 D-22 IN-05 and 16 IN-06 cases).
  * Async because sharp makes the DEM; nested one level down so the cleanup loop's
  * path.dirname removes the mkdtemp directory.
  */
@@ -1992,6 +1992,12 @@ function terrainSheet(root, id) {
 /** 16 D-22 IN-05: the 2D fixture's strip centre 1 km south of its extent. */
 const terrainStripRoot = await tempTerrainRoot({ fixture: true, fixtureCentreN: 1199000 });
 let terrainStripBefore = null;
+/**
+ * 16 IN-06: the 2D fixture's strip centre 40 m inside its south edge. Its 200 m
+ * band, snapped to 100 m, would start at 1199900, below the extent.
+ */
+const terrainStripBandRoot = await tempTerrainRoot({ fixture: true, fixtureCentreN: 1200040 });
+let terrainStripBandBefore = null;
 /** 16 D-22 IN-06: a root whose terrain.ts is cut in half (unreadable to committedMeta). */
 const terrainUnreadableRoot = await tempTerrainRoot();
 {
@@ -4023,6 +4029,21 @@ const cases = [
     check: () => treeUnchanged(terrainStripRoot, terrainStripBefore),
   },
   {
+    name: 'terrain: a strip band that would leave its plate extent fails (16 IN-06)',
+    guard: TERRAIN_BUILD,
+    nodeArgs: PHOTO_NODE_ARGS,
+    args: [],
+    setup: () => {
+      terrainStripBandBefore = snapshotTree(terrainStripBandRoot);
+      return ['--root', terrainStripBandRoot];
+    },
+    expectExit: 1,
+    expectOutput: [
+      'terrain: plate fixture: strip band 1199900..1200100 for centreN 1200040 leaves its extent (1200000..1201000); fix data/terrain/plates.json',
+    ],
+    check: () => treeUnchanged(terrainStripBandRoot, terrainStripBandBefore),
+  },
+  {
     name: 'terrain: an unreadable terrain.ts refuses to re-encode posters',
     guard: TERRAIN_BUILD,
     nodeArgs: PHOTO_NODE_ARGS,
@@ -4454,7 +4475,7 @@ function report(index, c, problems, output) {
   }
 }
 
-for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataRomeRoot, photoDataHomeCauseRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDataAerialAltRoot, photoDataDjiGroundRoot, photoDataGroundSourceRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, exifMappedRoot, exifUnmappedRoot, exifDuplicateRoot, terrainFixtureRoot, terrainLaeaRoot, terrainStripRoot, terrainUnreadableRoot, terrainMissingRoot, terrainRemoveRoot, terrainDropCheckRoot, terrainDropWriteRoot, fetchOutRoot, ...ciGateTempRoots, ...telemetryTempRoots, ...privacyTempRoots]) {
+for (const file of [lowerUpdateBaseline, raiseUpdateBaseline, raisePaletteRatchet, lowerPaletteRatchet, pngIgnoredRoot, pngStrayRoot, classnamesMovedRoot, classnamesMovedChangedRoot, classnamesUnchangedRoot, snapshotMergeRoot, parityGoodRoot, parityBadRoot, parityNestedFloorRoot, parityUnflooredLineRoot, ciGateRenamedRoot, ciGateRelayLiteralRoot, ciGateRelayNoNeedsRoot, ciGateRelayPrCheckoutRoot, ciGateRelayTopPermsRoot, ciGateRelayWriteScopeRoot, ciGateNoChangesNeedRoot, ciGateUnconditionedRoot, ciGatePathsIgnoreRoot, photoDataControlRoot, photoDataOffsetRoot, photoDataRomeRoot, photoDataHomeCauseRoot, photoDataGpsRoot, photoDataOffPlateRoot, photoDataAerialAltRoot, photoDataDjiGroundRoot, photoDataGroundSourceRoot, photoMapMissingRoot, photoMapOrphanRoot, photoMapDuplicateRoot, photoMapUnknownRegionRoot, photoMapUnknownPlateRoot, photoMapCountryRoot, photoMapMovedRoot, photoDeriveRoot, exifMappedRoot, exifUnmappedRoot, exifDuplicateRoot, terrainFixtureRoot, terrainLaeaRoot, terrainStripRoot, terrainStripBandRoot, terrainUnreadableRoot, terrainMissingRoot, terrainRemoveRoot, terrainDropCheckRoot, terrainDropWriteRoot, fetchOutRoot, ...ciGateTempRoots, ...telemetryTempRoots, ...privacyTempRoots]) {
   if (file) fs.rmSync(path.dirname(file), { recursive: true, force: true });
 }
 
