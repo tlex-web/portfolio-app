@@ -24,6 +24,7 @@ import { formatYearRange } from '@/lib/home-format';
 import { seriesInput } from '@/lib/photos/view-model';
 import {
   regionById,
+  regionCover,
   regionDescription,
   regionIds,
   regionMetadata,
@@ -136,6 +137,73 @@ describe('region photo order (PHOTO-05 ordering, region half)', () => {
   it('matches region ids exactly and case-sensitively', () => {
     expect(regionById('zermatt')?.id).toBe('zermatt');
     expect(regionById('Zermatt')).toBeUndefined();
+  });
+});
+
+/**
+ * D-13: each region's cover is Tim's pick (17-07 Task 1, his reply recorded
+ * verbatim in 17-07-SUMMARY.md "D-13 covers (Tim's reply, verbatim)"), typed
+ * here literally so a changed cover fails instead of shipping unpicked.
+ */
+const TIM_COVERS = {
+  ortler: 'meadow-stream-below-the-peaks',
+  saalfelden: 'castle-below-limestone-peaks',
+  zermatt: 'matterhorn-from-zermatt',
+} as const;
+
+type RegionsModule = typeof import('@/lib/regions');
+
+describe("each region's cover (D-13)", () => {
+  it('pins every registry region, and only those', () => {
+    expect([...regionIds].sort()).toEqual(Object.keys(TIM_COVERS).sort());
+  });
+
+  it.each(Object.entries(TIM_COVERS))(
+    "%s: regionCover is the view in regionPhotoViews whose id is the registry's cover (%s)",
+    (id, slug) => {
+      const cover = regionCover(id);
+      expect(cover.slug).toBe(slug);
+      expect(cover.id).toBe(regionById(id)?.cover);
+      expect(regionPhotoViews(id).find((v) => v.id === regionById(id)?.cover)).toBe(cover);
+    }
+  );
+
+  it('throws RangeError for an id that is not in the registry', () => {
+    expect(() => regionCover('nowhere')).toThrow(RangeError);
+    expect(() => regionCover('Zermatt')).toThrow(/Zermatt/);
+  });
+
+  it("throws at module load, naming the region and data/regions/regions.json, for a cover from another region", async () => {
+    await jest.isolateModulesAsync(async () => {
+      jest.doMock('@/data/regions/regions.json', () => {
+        const actual = jest.requireActual<{ schemaVersion: 1; regions: { id: string }[] }>(
+          '@/data/regions/regions.json'
+        );
+        return {
+          ...actual,
+          regions: actual.regions.map((r) =>
+            r.id === 'saalfelden' ? { ...r, cover: 'img-0605' } : r
+          ),
+        };
+      });
+      let error: unknown;
+      try {
+        await import('@/lib/regions');
+      } catch (e) {
+        error = e;
+      }
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).message).toMatch(/saalfelden/);
+      expect((error as Error).message).toMatch(/img-0605/);
+      expect((error as Error).message).toContain('data/regions/regions.json');
+    });
+  });
+
+  it('loads cleanly with the committed registry (the throw above is the mock, not the data)', async () => {
+    await jest.isolateModulesAsync(async () => {
+      const mod: RegionsModule = await import('@/lib/regions');
+      expect(mod.regionCover('zermatt').slug).toBe(TIM_COVERS.zermatt);
+    });
   });
 });
 

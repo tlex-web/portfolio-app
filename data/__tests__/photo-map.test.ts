@@ -65,6 +65,7 @@ describe('photo map and region registry: committed data', () => {
       name: 'Ortler',
       country: 'IT',
       plate: 'ortler',
+      cover: 'sam-20160717-120906',
       facts: [
         {
           text: 'The Ortler is the highest mountain in South Tyrol and the main peak of the Ortler Alps.',
@@ -77,6 +78,7 @@ describe('photo map and region registry: committed data', () => {
       name: 'Zermatt',
       country: 'CH',
       plate: 'matterhorn',
+      cover: 'img-0605',
       facts: [
         {
           text: 'Zermatt lies at the head of the Matter Valley in the Swiss canton of Valais.',
@@ -93,6 +95,7 @@ describe('photo map and region registry: committed data', () => {
       name: 'Saalfelden',
       country: 'AT',
       plate: 'saalfelden',
+      cover: 'dji-20260919-162232',
       facts: [
         {
           text: 'Saalfelden am Steinernen Meer is a town in the Zell am See district of the Austrian state of Salzburg, in the historic Pinzgau region.',
@@ -130,6 +133,38 @@ describe('photo map and region registry: committed data', () => {
     const held = new Set<string>(photos.map((p) => p.region));
     const empty = regions.regions.map((r) => r.id).filter((id) => !held.has(id));
     expect(empty).toEqual([]);
+  });
+
+  /**
+   * 17 D-13: each region's cover (Tim's pick, 17-07-SUMMARY "D-13 covers (Tim's
+   * reply, verbatim)") is one of that region's photos. The schema checks only the
+   * id's shape; membership is checked here against photo-map.json and at load by
+   * lib/regions.ts. Returns the ids of the regions whose cover is not theirs.
+   */
+  const coverMismatches = (registry: { regions: readonly { id: string; cover: string }[] }) =>
+    registry.regions
+      .filter((r) => photoMap.photos[r.cover]?.region !== r.id)
+      .map((r) => r.id);
+
+  test("17 D-13: every region's cover is a photo-map id whose record's region is that region", () => {
+    for (const r of regions.regions) expect(record(r.cover).region).toBe(r.id);
+    expect(coverMismatches(regions)).toEqual([]);
+  });
+
+  test('17 D-13: a cover from another region, or an unknown id, fails the cross-check (it can fail)', () => {
+    const swapped = {
+      ...regions,
+      regions: regions.regions.map((r) =>
+        r.id === 'zermatt' ? { ...r, cover: region('ortler').cover } : r
+      ),
+    };
+    expect(Regions.safeParse(swapped).success).toBe(true);
+    expect(coverMismatches(swapped)).toEqual(['zermatt']);
+    const unknown = {
+      ...regions,
+      regions: regions.regions.map((r) => (r.id === 'ortler' ? { ...r, cover: 'img-9999' } : r)),
+    };
+    expect(coverMismatches(unknown)).toEqual(['ortler']);
   });
 
   test('every photo on an EPSG:2056 plate has the uv of its position on that plate (EPSG:3035 plates are checked by photos:build and the guard selftest)', () => {
@@ -313,5 +348,17 @@ describe('photo map and region registry: schema boundaries', () => {
     const zermatt = region('zermatt');
     expect(Regions.safeParse({ schemaVersion: 1, regions: [saas, zermatt] }).success).toBe(true);
     expect(Regions.safeParse({ schemaVersion: 1, regions: [zermatt, saas] }).success).toBe(false);
+  });
+
+  test('17 D-13: Regions rejects a region without a cover, or with a cover that is not a photo-id slug', () => {
+    const { cover, ...rest } = region('zermatt');
+    expect(cover).toBe('img-0605');
+    const one = (entry: unknown) => ({ schemaVersion: 1, regions: [entry] });
+    expect(Regions.safeParse(one({ ...rest, cover })).success).toBe(true);
+    expect(Regions.safeParse(one(rest)).success).toBe(false);
+    expect(Regions.safeParse(one({ ...rest, cover: '' })).success).toBe(false);
+    expect(Regions.safeParse(one({ ...rest, cover: 'IMG_0605' })).success).toBe(false);
+    expect(Regions.safeParse(one({ ...rest, cover: '../img-0605' })).success).toBe(false);
+    expect(Regions.safeParse(one({ ...rest, cover: 'a'.repeat(41) })).success).toBe(false);
   });
 });
