@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 17
 current_phase_name: Region Routes, SEO & Structured Data
 status: executing
-stopped_at: Completed 17-13-PLAN.md
-last_updated: "2026-11-24T01:15:09.120Z"
+stopped_at: Completed 17-14-PLAN.md
+last_updated: "2026-11-24T01:28:04.533Z"
 last_activity: 2026-11-23
 last_activity_desc: Phase 17 execution started
-state_head: 9c7fbafe38ea2b287864b7ef5fb8b0ca201f21cc
+state_head: aefb306d7c89bc2a0823c9ba73a69c418ee8b39f
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 80
-  completed_plans: 78
+  completed_plans: 79
   percent: 57
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-23)
 ## Current Position
 
 Phase: 17 (Region Routes, SEO & Structured Data) — EXECUTING
-Plan: 15 of 16
+Plan: 16 of 16
 Status: Ready to execute
 Last activity: 2026-11-23 — Phase 17 execution started
 
@@ -135,6 +135,7 @@ Progress: [██████░░░░] 57%
 | Phase 17 P12 | 12min | 2 tasks | 6 files |
 | Phase 17 P10 | 7min | 2 tasks | 4 files |
 | Phase 17 P13 | 13min | 2 tasks | 6 files |
+| Phase 17 P14 | 9 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -328,6 +329,8 @@ Recent decisions affecting current work:
 - [Phase 17]: 17-13 16 IN-01: formatCoordinates takes { lat, lon, precision } with no default; PRECISION_DECIMALS lives in lib/home-format.ts and roundedCoordinate shares it (fix commit a56529c)
 - [Phase 17]: 17-13 D-16: ImageObject @id is site.url + photoHref(slug) + '#image'; creator is an inline Person with @id PERSON_ID, name and url; width/height are QuantitativeValue in pixels (E37) from the 2560 px variant
 - [Phase 17]: 17-13 D-19: JSON-LD geo is roundedCoordinate strings at the position precision (equal to the strip digits); dateCreated is minute + offset or the year; the @modal page carries no JSON-LD
+- [Phase 17]: 17-14: case-study copyrightNotice ships option (a), Tim's 17-01 reply "(a) Footer line (Recommended)": caseStudyRights(slug) = siteRights(), the footer line
+- [Phase 17]: 17-14: region ImageGallery contentLocation is a Place named region.name with PostalAddress.addressCountry, no geo (the stand-in prints no coordinates); no BreadcrumbList until Phase 18's visible breadcrumb
 
 ### Pending Todos
 
@@ -387,6 +390,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-24T01:15:07.894Z
-Stopped at: Completed 17-13-PLAN.md
+Last session: 2026-11-24T01:28:03.353Z
+Stopped at: Completed 17-14-PLAN.md
 Resume file: None
