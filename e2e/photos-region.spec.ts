@@ -47,6 +47,11 @@ import { photoSlugs, publishedViews } from '@/lib/photos/view-model';
  * equals the page's one BreadcrumbList block, names in order and items absolute,
  * and the data line equals regionCardFacts' parts joined at ' · '. /photos and
  * /sources carry no breadcrumb (UI E10/empty).
+ *
+ * The next-region chain (18-06; D-01, D-11): starting on Zermatt, following
+ * the next-region sign three times lands on Ortler, Saalfelden, then Zermatt
+ * again; each sign is named '{heading}, next region' and 'All regions' leads
+ * to /photos.
  */
 
 /*
@@ -196,6 +201,42 @@ test.describe('Region header band (18-06; REGION-02, D-10)', () => {
       await expect(page.getByRole('main')).toHaveCount(1);
       await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toHaveCount(0);
     }
+  });
+});
+
+test.describe('Next-region chain (18-06; REGION-02, D-01, D-11)', () => {
+  test('following the sign from Zermatt visits Ortler, Saalfelden, then Zermatt again', async ({
+    page,
+  }) => {
+    await page.goto('/photos/regions/zermatt');
+    await expect(h1(page)).toHaveText(regionHeading(region('zermatt')));
+    const visited: string[] = [];
+    for (const id of ['ortler', 'saalfelden', 'zermatt']) {
+      const section = page.locator('section#next-region');
+      await expect(
+        section.getByRole('heading', { level: 2, name: 'Next region', exact: true })
+      ).toHaveCount(1);
+      const heading = regionHeading(region(id));
+      const sign = section.getByRole('link', { name: `${heading}, next region`, exact: true });
+      await expect(sign).toHaveCount(1);
+      await expect(sign).toHaveAttribute('href', `/photos/regions/${id}`);
+      await sign.click();
+      await expect(page).toHaveURL(new RegExp(`/photos/regions/${id}$`));
+      await expect(h1(page)).toHaveText(heading);
+      visited.push((await h1(page).textContent()) ?? '');
+    }
+    expect(visited).toEqual(['Ortler, Italy', 'Saalfelden, Austria', 'Zermatt, Switzerland']);
+  });
+
+  test('All regions leads to /photos', async ({ page }) => {
+    await page.goto('/photos/regions/ortler');
+    const all = page
+      .locator('section#next-region')
+      .getByRole('link', { name: 'All regions', exact: true });
+    await expect(all).toHaveAttribute('href', '/photos');
+    await all.click();
+    await expect(page).toHaveURL(/\/photos$/);
+    await expect(h1(page)).toHaveText('Photographs');
   });
 });
 

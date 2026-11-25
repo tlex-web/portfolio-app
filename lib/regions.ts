@@ -101,6 +101,47 @@ export function regionById(id: string): Region | undefined {
   return regions.find((r) => r.id === id);
 }
 
+/**
+ * The entry after `id` in an already ordered list, wrapping from the last to
+ * the first (D-11), pure so a test can pass a fixture list. A one-entry list
+ * has no next entry: undefined, never the entry itself.
+ *
+ * @throws RangeError when `id` is not in the list (exact, case-sensitive).
+ */
+export function nextRegionIn<T extends { id: string }>(
+  list: readonly T[],
+  id: string
+): T | undefined {
+  const i = list.findIndex((entry) => entry.id === id);
+  if (i === -1) throw new RangeError(`nextRegion: ${id} is not a registry region`);
+  if (list.length < 2) return undefined;
+  return list[(i + 1) % list.length];
+}
+
+/**
+ * The region the next-region block leads to (REGION-02; D-01, D-11): the next
+ * in regionsWestToEast(), wrapping from the last to the first (Zermatt →
+ * Ortler → Saalfelden → Zermatt), or undefined while the registry holds one
+ * region.
+ *
+ * @throws RangeError for an id that is not in the registry (exact, case-sensitive).
+ */
+export function nextRegion(id: string): Region | undefined {
+  return nextRegionIn(regionsWestToEast(), id);
+}
+
+/**
+ * The region's 1-based place west to east (D-01): Zermatt 1, Ortler 2,
+ * Saalfelden 3.
+ *
+ * @throws RangeError for an id that is not in the registry (exact, case-sensitive).
+ */
+export function regionNumber(id: string): number {
+  const i = regionsWestToEast().findIndex((r) => r.id === id);
+  if (i === -1) throw new RangeError(`regionNumber: ${id} is not a registry region`);
+  return i + 1;
+}
+
 /** One crumb of a page's trail: its visible text and its site path. */
 export type Crumb = { name: string; path: string };
 

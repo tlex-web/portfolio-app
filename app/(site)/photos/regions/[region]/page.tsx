@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowSquareOutIcon } from '@phosphor-icons/react/dist/ssr';
 import type { RegionFact } from '@/data/schemas/region';
+import NextRegion from '@/components/photos/region/NextRegion';
 import RegionHeader from '@/components/photos/region/RegionHeader';
 import { breadcrumbLd, regionGalleryLd } from '@/lib/json-ld/content';
 import { jsonLdHtml } from '@/lib/json-ld/site';
@@ -48,6 +49,9 @@ import { factSource } from '@/lib/photos/view-model';
  * data line). Its breadcrumb and the second data block, breadcrumbLd, both
  * read regionBreadcrumb(id), so the BreadcrumbList equals the visible crumbs.
  * The facts list and the text photo list stay until 18-08 and 18-09.
+ * NextRegion closes the page after the rights line (D-01, D-11): the trail
+ * sign to the next region west to east, wrapping to the first, and 'All
+ * regions'; its own py-12 md:py-16 replaces the container's bottom padding.
  */
 
 type PageProps = { params: Promise<{ region: string }> };
@@ -97,7 +101,7 @@ export default async function RegionPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdHtml(breadcrumbLd(regionBreadcrumb(region.id))) }}
       />
-      <div className="mx-auto w-full max-w-6xl px-4 pb-12 sm:px-6 md:pb-16 lg:px-8">
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
         <RegionHeader id={region.id} />
 
         <section aria-labelledby="region-facts" className="mt-8 max-w-prose">
@@ -139,6 +143,7 @@ export default async function RegionPage({ params }: PageProps) {
 
         <p className="mt-12 text-sm text-ink-muted">{regionRights(region.id)}</p>
       </div>
+      <NextRegion id={region.id} />
     </>
   );
 }
