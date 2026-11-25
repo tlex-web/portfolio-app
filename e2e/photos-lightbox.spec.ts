@@ -128,7 +128,8 @@ test.describe('Photo page (LBOX-01 direct load)', () => {
  * sequence, at 375 (scroll tier), 768 (key) and 1440 (gutter). The large
  * picture's currentSrc is a candidate whose width descriptor covers the
  * painted width times the device pixel ratio, and the next smaller candidate
- * in the same set would not (no gross over-fetch). The project's own DPR
+ * in the same set falls short of the declared sizes slot times the ratio (no
+ * over-fetch beyond what sizes declares; see expectFit). The project's own DPR
  * applies: 1 for Desktop Chrome and Firefox, 2 for Desktop Safari (WebKit).
  */
 test.describe('Stage sizes at 375, 768 and 1440 (13 #34; 18-19)', () => {
@@ -164,9 +165,39 @@ test.describe('Stage sizes at 375, 768 and 1440 (13 #34; 18-19)', () => {
         getComputedStyle(el).objectFit === 'contain'
           ? Math.min(r.width, (r.height * el.naturalWidth) / el.naturalHeight)
           : r.width;
+      const sizes = el.closest('picture')?.querySelector('source')?.sizes ?? '';
+      // The declared slot: the first sizes entry whose media condition matches (the
+      // last entry has none), its length resolved by a fixed-position probe.
+      const entries: string[] = [];
+      let depth = 0;
+      let start = 0;
+      for (let i = 0; i < sizes.length; i++) {
+        if (sizes[i] === '(') depth++;
+        else if (sizes[i] === ')') depth--;
+        else if (sizes[i] === ',' && depth === 0) {
+          entries.push(sizes.slice(start, i).trim());
+          start = i + 1;
+        }
+      }
+      entries.push(sizes.slice(start).trim());
+      const slot = entries
+        .map((entry) => {
+          const m = entry.match(/^(\([^()]*\)(?:\s+and\s+\([^()]*\))*)\s+(.+)$/);
+          return m ? { media: m[1], length: m[2] } : { media: '', length: entry };
+        })
+        .find((e) => e.media === '' || matchMedia(e.media).matches);
+      let declared = 0;
+      if (slot) {
+        const probe = document.createElement('div');
+        probe.style.cssText = `position:fixed;left:0;top:0;height:0;visibility:hidden;width:${slot.length}`;
+        document.body.appendChild(probe);
+        declared = probe.getBoundingClientRect().width;
+        probe.remove();
+      }
       return {
         current,
-        sizes: el.closest('picture')?.querySelector('source')?.sizes ?? '',
+        sizes,
+        declared,
         descriptor: chosen?.w ?? 0,
         nextSmaller: smaller.length > 0 ? Math.max(...smaller) : 0,
         rendered,
@@ -175,17 +206,34 @@ test.describe('Stage sizes at 375, 768 and 1440 (13 #34; 18-19)', () => {
     });
   }
 
+  /**
+   * Under-fetch is strict: the chosen descriptor covers the painted width times
+   * DPR on every row. Over-fetch is judged against the declared sizes slot, not
+   * the painted width: stageSizes ignores the variable-height strip on purpose, an
+   * upper bound that never under-fetches, so the slot can exceed the painted
+   * width (page 1440x900: slot 1008 px, painted 783.7 px; at WebKit DPR 2 the
+   * browser rightly takes 2560w for 2016 px where 1600w would cover the painting).
+   * Tim's answer to the 18-19 Rule-4 question (2026-11-25): "A: keep sizes, relax
+   * check" — the sizes strings stay, and the next smaller candidate must fall
+   * short of the declared slot times DPR, so a browser never skips a candidate
+   * the sizes string says is enough.
+   */
   function expectFit(fit: Awaited<ReturnType<typeof stageFit>>, what: string) {
     const need = fit.rendered * fit.dpr;
+    const declaredNeed = fit.declared * fit.dpr;
     test.info().annotations.push({
       type: 'stage-fit',
-      description: `${what}: DPR ${fit.dpr}, painted ${fit.rendered.toFixed(1)} px, need ${need.toFixed(0)}, chose ${fit.descriptor}w, next smaller ${fit.nextSmaller}w`,
+      description: `${what}: DPR ${fit.dpr}, painted ${fit.rendered.toFixed(1)} px, need ${need.toFixed(0)}, declared ${fit.declared.toFixed(1)} px (${declaredNeed.toFixed(0)}), chose ${fit.descriptor}w, next smaller ${fit.nextSmaller}w`,
     });
     expect(fit.descriptor, `${what}: ${fit.current} is a srcset candidate`).toBeGreaterThan(0);
     expect(fit.descriptor, `${what}: the descriptor covers ${need} px`).toBeGreaterThanOrEqual(
       Math.floor(need)
     );
-    expect(fit.nextSmaller, `${what}: the next smaller candidate would not`).toBeLessThan(need);
+    expect(fit.declared, `${what}: the sizes slot resolves to a length`).toBeGreaterThan(0);
+    expect(
+      fit.nextSmaller,
+      `${what}: the next smaller candidate falls short of the declared ${declaredNeed} px`
+    ).toBeLessThan(declaredNeed);
   }
 
   for (const [width, height] of STAGE_WIDTHS) {
