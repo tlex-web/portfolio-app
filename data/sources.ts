@@ -26,9 +26,10 @@ import { regionHeading, regionsWestToEast } from '@/lib/regions';
  * here may imply endorsement by swisstopo, BEV, the Copernicus programme, ESA
  * or the EU (GLO-90 licence Article 6(d)).
  *
- * DRAFT: SOURCES_INTRO, the licence names, the changes and the "Used on"
- * labels are draft copy for Tim's D-20 checkpoint (18-03). The credits are
- * data, not copy.
+ * SOURCES_INTRO, the licence names and targets, the changes and the "Used on"
+ * labels are Tim's approved D-20 copy (18-03 Task 2, "approve-G1",
+ * 2026-11-25), pinned literally by data/__tests__/sources.test.ts. The credits
+ * are data, not copy.
  */
 
 /** A map that uses a source: a page link, or plain text for a place that is not a page. */
@@ -62,7 +63,7 @@ export type SourceEntry = {
 export const SWISSALTIREGIO_CREDIT =
   'Bundesamt für Landestopografie swisstopo; Tarquini S., I. Isola, M. Favalli, A. Battistini, G. Dotta (2023). TINITALY, a digital elevation model of Italy with a 10 meters cell size (Version 1.1). Istituto Nazionale di Geofisica e Vulcanologia (INGV). https://doi.org/10.13127/tinitaly/1.1; DGM Österreich, geoland.at; DGM1, Bayerische Vermessungsverwaltung – www.geodaten.bayern.de; DGM1, Baden-Württemberg: LGL, www.lgl-bw.de, dl-de/by-2-0”; RGEAlti, Institut National de l’information géographique et forestière, données originales tétéchargées sur https://geoservices.ign.fr/rgealti#telechargement5m, mise à jour du juillet 2023';
 
-/** The intro under the h1 (DRAFT, D-20). */
+/** The intro under the h1 (D-20, approved 2026-11-25). */
 export const SOURCES_INTRO =
   'The maps on this site are drawn from three elevation models. Each entry gives the credit exactly as its licence asks, the licence itself, what was done to the data and the maps that use it.';
 
@@ -86,10 +87,14 @@ export const SOURCES: readonly SourceEntry[] = [
     name: 'swissALTIRegio',
     credit: [SWISSALTIREGIO_CREDIT],
     licence: {
-      name: 'swisstopo terms of use for free geodata',
+      // swisstopo's own heading on the target page: "Terms of use for free geodata and geoservices (OGD)".
+      name: 'swisstopo terms of use for free geodata and geoservices (OGD)',
       href: 'https://www.swisstopo.admin.ch/en/conditions-geodata',
     },
-    changes: ['Resampled to a 10 m grid; contours every 100 m and a hillshade derived; modified.'],
+    // swissALTIRegio is natively 10 m and the pipeline reads it at cellM 10: nothing is resampled.
+    changes: [
+      "Cut to each map's extent at its native 10 m grid; contours every 100 m and a hillshade derived; modified.",
+    ],
     usedOn: [...regionPagesOn('swissALTIRegio'), { label: 'The footer of every page' }],
   },
   {
@@ -109,7 +114,7 @@ export const SOURCES: readonly SourceEntry[] = [
     name: 'Copernicus DEM GLO-90',
     credit: [GLO90_NOTICE, GLO90_LIABILITY],
     licence: {
-      // The licence PDF 16-RESEARCH cites (Article 6, p. 20): draft target for 18-03.
+      // The licence PDF 16-RESEARCH cites (Article 6, p. 20), approved as the target (D-20).
       name: 'Licence for COP-DEM-GLO-90-F Global 90m Full, Free & Open',
       href: 'https://dataspace.copernicus.eu/sites/default/files/media/files/2025-06/copernicus_contributing_mission_data_access_v2_cop_dem_licenses.pdf',
     },

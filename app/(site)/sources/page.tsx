@@ -18,8 +18,9 @@ import { pageMetadata } from '@/lib/metadata';
  * data sources' own strings and wrap anywhere, so a long DOI or URL never
  * widens the page at 375 px.
  *
- * DRAFT: the description below, like every sentence in data/sources.ts that is
- * not a credit, is draft copy for Tim's D-20 checkpoint (18-03).
+ * The description below, like every sentence in data/sources.ts that is not a
+ * credit, is Tim's approved D-20 copy (18-03 Task 2, "approve-G1", 2026-11-25);
+ * e2e/sources.spec.ts pins it literally.
  */
 export const metadata: Metadata = pageMetadata({
   title: SOURCES_PAGE.title,

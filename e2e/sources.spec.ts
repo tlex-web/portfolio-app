@@ -84,7 +84,9 @@ test.describe('/sources (REGION-06, D-20)', () => {
     );
   });
 
-  test('the swissALTIRegio section prints its v2.0 reference exactly (sha256 pin)', async ({ page }) => {
+  test('the swissALTIRegio section prints its v2.0 reference exactly (sha256 pin)', async ({
+    page,
+  }) => {
     await page.goto('/sources');
 
     const section = page.locator('section#swissaltiregio');
