@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import LightboxDialog from '../LightboxDialog';
 import PhotoViewer from '../PhotoViewer';
 import { publishedViews, type PhotoView } from '@/lib/photos/view-model';
@@ -13,6 +13,12 @@ import { SLUGS } from '../../../e2e/helpers/photo-fixtures';
  * to its region page (the link and the page Escape), built on the server and
  * passed as the serialisable `back` prop; the v2.0 four render with no `back`.
  * The lightbox never shows a back link.
+ *
+ * The end-of-series card (18-16; LBOX-09, D-12): after the series' last photo
+ * the viewer shows one extra step, the card built by regionEndCard. It writes
+ * no URL (no replaceState), reads 'End' in the counter, disables Next and Zoom
+ * (aria-disabled), keeps Hide labels operable and announces the card's
+ * sentence; Previous returns to the last photo and writes its URL again.
  *
  * Views come from the server modules: Zermatt's series (regionPhotoViews) and
  * the first published photo off the v2.0 four, as an explicit one-photo set.
@@ -188,5 +194,105 @@ describe('Edge PHOTO-05/empty: the arrows do nothing on a one-photo set', () => 
     fireEvent.keyDown(document, { key: 'ArrowRight' });
     expect(replaceState).toHaveBeenCalledTimes(2);
     expect(status()).toHaveTextContent(`Photo 2 of 7: ${zermatt[1].title}`);
+  });
+});
+
+describe('the end-of-series card (18-16; LBOX-09, D-12)', () => {
+  const last = zermatt[zermatt.length - 1];
+  const card = regionEndCard('zermatt');
+
+  const button = (name: string) => screen.getByRole('button', { name, hidden: true });
+
+  it("a v2.0 photo's counter reads 'n / 7' over Zermatt's photos only", () => {
+    const v20 = zermatt.findIndex((v) => V20_SLUGS.includes(v.slug));
+    renderPage(zermatt, zermatt[v20].slug);
+    expect(counter()).toHaveTextContent(`${v20 + 1} / 7`);
+  });
+
+  it.each(['page', 'modal'] as const)(
+    'the %s variant: Next on photo 7 shows the card and writes no URL',
+    (variant) => {
+      if (variant === 'page') renderPage(zermatt, last.slug);
+      else renderModal(zermatt, last.slug);
+      expect(counter()).toHaveTextContent('7 / 7');
+      const next = button('Next photo');
+      expect(next).not.toHaveAttribute('aria-disabled');
+
+      fireEvent.click(next);
+      const heading = screen.getByRole('heading', { name: card.heading, hidden: true });
+      if (variant === 'page') expect(heading.tagName).toBe('H1');
+      else {
+        expect(heading.tagName).toBe('H2');
+        expect(heading).toHaveAttribute('id', 'photo-title');
+      }
+      expect(counter()).toHaveTextContent(/^End$/);
+      expect(button('Next photo')).toHaveAttribute('aria-disabled', 'true');
+      expect(button('Zoom photo')).toHaveAttribute('aria-disabled', 'true');
+      expect(button('Hide labels')).not.toHaveAttribute('aria-disabled');
+      expect(button('Previous photo')).not.toHaveAttribute('aria-disabled');
+      expect(replaceState).not.toHaveBeenCalled();
+      expect(status()).toHaveTextContent(card.announcement);
+      expect(status()).toHaveTextContent('End of the Zermatt series. Next region: Ortler, Italy.');
+      // The stage and the strip are gone; the sign and All regions are links.
+      expect(document.querySelector('[data-photo-box]')).toBeNull();
+      expect(
+        screen.getByRole('link', { name: 'Ortler, Italy, next region', hidden: true })
+      ).toHaveAttribute('href', '/photos/regions/ortler');
+      expect(screen.getByRole('link', { name: 'All regions', hidden: true })).toHaveAttribute(
+        'href',
+        '/photos'
+      );
+    }
+  );
+
+  it('on the card, Next, Zoom and Z do nothing; Hide labels still toggles', () => {
+    renderPage(zermatt, last.slug);
+    fireEvent.click(button('Next photo'));
+    fireEvent.click(button('Next photo'));
+    fireEvent.keyDown(document, { key: 'ArrowRight' });
+    fireEvent.click(button('Zoom photo'));
+    fireEvent.keyDown(document, { key: 'z' });
+    expect(button('Zoom photo')).toHaveAttribute('aria-pressed', 'false');
+    expect(counter()).toHaveTextContent(/^End$/);
+    expect(replaceState).not.toHaveBeenCalled();
+    const hide = button('Hide labels');
+    const pressed = hide.getAttribute('aria-pressed');
+    fireEvent.click(hide);
+    expect(hide).not.toHaveAttribute('aria-pressed', pressed ?? '');
+    fireEvent.click(hide);
+  });
+
+  it('Previous on the card restores photo 7 and writes its URL', () => {
+    renderPage(zermatt, last.slug);
+    fireEvent.click(button('Next photo'));
+    expect(replaceState).not.toHaveBeenCalled();
+    fireEvent.click(button('Previous photo'));
+    expect(replaceState).toHaveBeenCalledTimes(1);
+    expect(replaceState).toHaveBeenCalledWith(null, '', `/photos/${last.slug}`);
+    expect(counter()).toHaveTextContent('7 / 7');
+    expect(screen.getByRole('heading', { level: 1, name: last.title })).toBeInTheDocument();
+    expect(button('Next photo')).not.toHaveAttribute('aria-disabled');
+    expect(button('Zoom photo')).not.toHaveAttribute('aria-disabled');
+    expect(status()).toHaveTextContent(`Photo 7 of 7: ${last.title}`);
+  });
+
+  // The lightbox: on the page the viewer keys skip a press outside <main> (keyBelongsToChrome),
+  // and this render has no <main>.
+  it('← from a focused card link returns to photo 7 with focus on Previous, not the body', () => {
+    renderModal(zermatt, last.slug);
+    fireEvent.click(button('Next photo'));
+    const sign = screen.getByRole('link', { name: 'Ortler, Italy, next region', hidden: true });
+    act(() => sign.focus());
+    expect(sign).toHaveFocus();
+    fireEvent.keyDown(sign, { key: 'ArrowLeft' });
+    expect(counter()).toHaveTextContent('7 / 7');
+    expect(button('Previous photo')).toHaveFocus();
+  });
+
+  it('a one-photo set never reaches a card', () => {
+    renderPage(onePhotoSet, newPhoto.slug, BACK);
+    fireEvent.keyDown(document, { key: 'ArrowRight' });
+    expect(screen.queryByRole('heading', { name: /^End of the / })).toBeNull();
+    expect(status()).not.toHaveTextContent(/End of the/);
   });
 });

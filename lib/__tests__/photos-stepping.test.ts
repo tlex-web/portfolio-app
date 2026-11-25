@@ -22,6 +22,7 @@ import {
   SWIPE_RATIO,
   slugFromPath,
   stepIndex,
+  stepWithEnd,
   swipeStep,
 } from '@/lib/photos/stepping';
 
@@ -130,6 +131,28 @@ describe('stepIndex (no wrap, UI-SPEC OQ4)', () => {
     expect(stepIndex(1, 1, 4)).toBe(2);
     expect(stepIndex(1, -1, 4)).toBe(0);
     expect(stepIndex(2, 1, 4)).toBe(3);
+  });
+});
+
+describe('stepWithEnd: the end-of-series card is one extra step (18-16; LBOX-09, D-12)', () => {
+  it.each([2, 7])('with %i photos, Next from the last photo lands on the card (index n)', (n) => {
+    expect(stepWithEnd(n - 1, 1, n)).toBe(n);
+  });
+
+  it.each([2, 7])('with %i photos, nothing follows the card and nothing wraps', (n) => {
+    expect(stepWithEnd(n, 1, n)).toBeNull();
+    expect(stepWithEnd(0, -1, n)).toBeNull();
+  });
+
+  it.each([2, 7])('with %i photos, Previous on the card returns to the last photo', (n) => {
+    expect(stepWithEnd(n, -1, n)).toBe(n - 1);
+  });
+
+  it('moves one place among the photos like stepIndex', () => {
+    expect(stepWithEnd(1, 1, 7)).toBe(stepIndex(1, 1, 7));
+    expect(stepWithEnd(1, -1, 7)).toBe(stepIndex(1, -1, 7));
+    // stepIndex itself still stops at the last photo: the card is stepWithEnd's alone.
+    expect(stepIndex(6, 1, 7)).toBeNull();
   });
 });
 

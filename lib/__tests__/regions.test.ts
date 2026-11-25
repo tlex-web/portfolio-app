@@ -21,6 +21,9 @@
  * - LBOX-09 (18-15, D-12): every published photo's viewer steps through its
  *   region's series (regionViewerSet): the v2.0 four within Zermatt's seven,
  *   each Ortler and Saalfelden photo within its region; an unknown id throws.
+ * - LBOX-09 (18-16, D-12): each region's end-of-series card (regionEndCard)
+ *   carries its heading, facts, the next region west to east (wrapping) and the
+ *   live-region sentence; a one-region list has no next region (regionEndCardIn).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -50,6 +53,9 @@ import {
   nextRegion,
   nextRegionIn,
   regionNumber,
+  regionCardFacts,
+  regionEndCard,
+  regionEndCardIn,
 } from '@/lib/regions';
 
 /** Tim's approved copy per region (D-14), verbatim. */
@@ -492,6 +498,58 @@ describe("the viewer set: one region's series (18-15; LBOX-09, D-12)", () => {
   it('throws a RangeError naming an unknown photo id', () => {
     expect(() => regionViewerSet('no-such-photo')).toThrow(
       new RangeError('regionViewerSet: photo no-such-photo has no registry region')
+    );
+  });
+});
+
+describe("each region's end-of-series card (18-16; LBOX-09, D-12, D-11)", () => {
+  /** A region's card facts as the FactsLine parts. */
+  const parts = (id: string) => {
+    const { count, range, years } = regionCardFacts(id);
+    return [count, range, years];
+  };
+
+  it("Zermatt's card: heading, facts, the Ortler sign and the live sentence", () => {
+    expect(regionEndCard('zermatt')).toEqual({
+      regionName: 'Zermatt',
+      heading: 'End of the Zermatt series',
+      facts: parts('zermatt'),
+      next: { heading: 'Ortler, Italy', href: '/photos/regions/ortler', facts: parts('ortler') },
+      allHref: '/photos',
+      announcement: 'End of the Zermatt series. Next region: Ortler, Italy.',
+    });
+    expect(regionEndCard('zermatt').facts).toEqual(['7 photographs', '1,617–2,928 m', '2019–2024']);
+  });
+
+  it('the last region west to east wraps to the first (Saalfelden to Zermatt)', () => {
+    const card = regionEndCard('saalfelden');
+    expect(card.next?.href).toBe('/photos/regions/zermatt');
+    expect(card.next?.heading).toBe('Zermatt, Switzerland');
+    expect(card.announcement).toBe(
+      'End of the Saalfelden series. Next region: Zermatt, Switzerland.'
+    );
+  });
+
+  it('every card leads to nextRegion and names it in the sentence', () => {
+    for (const { id } of regionsWestToEast()) {
+      const card = regionEndCard(id);
+      const next = nextRegion(id)!;
+      expect(card.next?.href).toBe(`/photos/regions/${next.id}`);
+      expect(card.announcement).toBe(`${card.heading}. Next region: ${card.next?.heading}.`);
+    }
+  });
+
+  it('a one-region list: no next region and a one-sentence announcement (UI E7 empty)', () => {
+    const solo = regionsWestToEast().filter((r) => r.id === 'ortler');
+    const card = regionEndCardIn(solo, 'ortler');
+    expect(card.next).toBeNull();
+    expect(card.announcement).toBe('End of the Ortler series.');
+    expect(card.allHref).toBe('/photos');
+  });
+
+  it('throws a RangeError for an unknown id', () => {
+    expect(() => regionEndCard('nowhere')).toThrow(
+      new RangeError('regionEndCard: nowhere is not a registry region')
     );
   });
 });
