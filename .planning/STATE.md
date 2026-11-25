@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
-stopped_at: Completed 18-02-PLAN.md
-last_updated: "2026-11-24T23:39:30.816Z"
+stopped_at: Completed 18-13-PLAN.md (18-03 still paused at its Task 2 checkpoint)
+last_updated: "2026-11-25T00:08:07.859Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: 64eb72471e4abeb2e5b04f552b17a6c865755442
+state_head: 760fd3a66d9664a12a83372c8ffb09c7b3ee3013
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 109
-  completed_plans: 82
+  completed_plans: 83
   percent: 71
 ---
 
@@ -140,6 +140,7 @@ Progress: [███████░░░] 71%
 | Phase 17 P15 | 25min | 3 tasks | 2 files |
 | Phase 18 P01 | 30min | 3 tasks | 3 files |
 | Phase 18 P02 | 11min | 2 tasks | 15 files |
+| Phase 18 P13 | 12min | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -347,6 +348,9 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-02: /sources usedOn region lists come from each plate's dem.product, west to east (regionsWestToEast), so a new region on a product joins its entry with no edit
 - [Phase 18]: 18-02: SavedPageSource.pages is required; /sources sits after the projects, unlabelled, mirroring the sitemap
 - [Phase 18]: 18-02: REGION-01 and REGION-06 stay Pending; 18-02 builds only the /sources target and the D-01 order
+- [Phase 18]: 18-13: every summit label placed at every S 312-1100 (UNPLACED_SUMMIT_LABELS empty); Task 2 fallback decision not needed
+- [Phase 18]: 18-13: overview y positions use 100cqh, so the sheet must be [container-type:size]; CSS hooks data-region-marker/-dot/-leader/-plate/-rect/-row/-badge, data-summit-mark/-plate, data-overview ancestor for :has() sync
+- [Phase 18]: 18-13: no marker, plate or summit label may cover a rectangle's drawn outline; leaders are checked against the drawn summit triangle
 
 ### Pending Todos
 
@@ -408,6 +412,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-24T23:39:30.281Z
-Stopped at: Completed 18-02-PLAN.md
+Last session: 2026-11-25T00:08:07.317Z
+Stopped at: Completed 18-13-PLAN.md (18-03 still paused at its Task 2 checkpoint)
 Resume file: None
