@@ -40,7 +40,8 @@ test.describe.configure({ mode: 'default' });
 
 // Index lookups into series here are positions in Zermatt's series (DEM ascending, ties by
 // id), the set a Zermatt photo's viewer steps through (LBOX-09); a specific photo is named
-// through viewBySlug. The grid shows the v2.0 four, which are series[0..3].
+// through viewBySlug. Every lightbox here opens from that photo's figure link on the Zermatt
+// region page (18-19; PHOTO-06), never from the retiring grid.
 const series = regionPhotoViews('zermatt');
 
 // The v2.0 four by name, for the rows that audit each photo's own page (identity rows).
@@ -617,9 +618,12 @@ test.describe('Stage states (UI-SPEC E5)', () => {
   });
 });
 
-/** The grid list at /photos?view=grid (10-04); its tile links open the lightbox. */
-const GRID_LIST = 'Photographs, lowest first';
-const GRID_URL = /\/photos\?view=grid$/;
+/**
+ * The Zermatt region page (18-08), the stepping set's own surface: its figure links
+ * (`[data-photo-id]`) open the lightbox, and every close returns there (ZERMATT_URL).
+ * It replaced the grid as the opener of every lightbox test here (18-19; PHOTO-06).
+ */
+const ZERMATT_PATH = '/photos/regions/zermatt';
 
 /**
  * Wait until React has hydrated a link. A click on a server-rendered
@@ -661,34 +665,35 @@ async function recordNavigations(page: Page) {
 const navigations = (page: Page) =>
   page.evaluate(() => [...(window as unknown as { __navigations: string[] }).__navigations]);
 
-/** Click a grid tile (already on the grid, hydrated) and wait for the dialog. */
-async function clickTile(page: Page, index = 0) {
-  const tile = page.getByRole('list', { name: GRID_LIST }).getByRole('link').nth(index);
-  await waitForHydration(tile);
-  await tile.click();
+/** Click a photo's figure link (already on the Zermatt region page) once hydrated, and wait for the dialog. */
+async function clickFigure(page: Page, slug: string) {
+  const link = page.locator(`[data-photo-id="${slug}"]`);
+  await expect(link).toHaveCount(1);
+  await waitForHydration(link);
+  await link.click();
   const dialog = page.getByRole('dialog');
   // The dev server compiles the intercepted route on its first request.
   await expect(dialog).toBeVisible({ timeout: 20000 });
   return dialog;
 }
 
-/** Open the first grid tile in-site and wait for the dialog. */
-async function openFirstTile(page: Page) {
-  await page.goto('/photos?view=grid');
-  return clickTile(page, 0);
+/** Open a Zermatt photo (the series' first by default) in-site from its figure link. */
+async function openFigure(page: Page, slug: string = series[0].slug) {
+  await page.goto(ZERMATT_PATH);
+  return clickFigure(page, slug);
 }
 
 test.describe('Lightbox over the gallery (LBOX-01)', () => {
   const first = series[0];
 
-  test('a tile click opens the photo in a dialog over the grid', async ({ page }) => {
-    const dialog = await openFirstTile(page);
+  test('a figure click opens the photo in a dialog over the region page', async ({ page }) => {
+    const dialog = await openFigure(page);
     await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
     await expect(dialog).toHaveAccessibleName(first.title);
     await expect(dialog.getByRole('heading', { level: 2, name: first.title })).toBeVisible();
-    // The gallery stays mounted behind the dialog, inside the one shell.
+    // The region page stays mounted behind the dialog, inside the one shell.
     // The page behind a modal dialog is inert, so these queries include it.
-    await expect(page.getByRole('list', { name: GRID_LIST, includeHidden: true })).toHaveCount(1);
+    await expect(page.locator('section[data-region-sequence]')).toHaveCount(1);
     await expect(page.getByRole('banner', { includeHidden: true })).toHaveCount(1);
     await expect(page).toHaveTitle(`${first.title} · Tim Lui`);
   });
@@ -699,10 +704,10 @@ test.describe('Lightbox over the gallery (LBOX-01)', () => {
   test('Back closes it, Forward reopens it, reload lands on the full page @no-win-webkit', async ({
     page,
   }) => {
-    await openFirstTile(page);
+    await openFigure(page);
 
     await page.goBack();
-    await expect(page).toHaveURL(GRID_URL);
+    await expect(page).toHaveURL(ZERMATT_URL);
     await expect(page.getByRole('dialog')).toHaveCount(0);
 
     await page.goForward();
@@ -717,13 +722,13 @@ test.describe('Lightbox over the gallery (LBOX-01)', () => {
   // @no-win-webkit: history Back while the open's View Transition commit settles crashes
   // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
   // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
-  test('the Close photo button closes it and the URL returns to the grid @no-win-webkit', async ({
+  test('the Close photo button closes it and the URL returns to the region page @no-win-webkit', async ({
     page,
   }) => {
-    const dialog = await openFirstTile(page);
+    const dialog = await openFigure(page);
     await dialog.getByRole('button', { name: 'Close photo', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page).toHaveURL(GRID_URL);
+    await expect(page).toHaveURL(ZERMATT_URL);
   });
 });
 
@@ -735,12 +740,12 @@ test.describe('Focus and Escape (LBOX-03)', () => {
     page.evaluate(() => document.activeElement?.closest('dialog[open]') != null);
 
   test('focus moves to Close photo on open', async ({ page }) => {
-    const dialog = await openFirstTile(page);
+    const dialog = await openFigure(page);
     await expect(dialog.getByRole('button', { name: 'Close photo', exact: true })).toBeFocused();
   });
 
   test('Tab and Shift+Tab, 12 presses each, keep focus inside the dialog', async ({ page }) => {
-    await openFirstTile(page);
+    await openFigure(page);
     for (let i = 0; i < 12; i++) {
       await page.keyboard.press('Tab');
       expect(await focusInDialog(page), `after Tab ${i + 1}`).toBe(true);
@@ -756,7 +761,7 @@ test.describe('Focus and Escape (LBOX-03)', () => {
   // boxes but take no focus: counted as tabbable, Close would not be the last control and Tab
   // would leave the dialog. Holding them hidden makes that moment deterministic.
   test('Tab stays inside the dialog while the gutter labels are still hidden', async ({ page }) => {
-    const dialog = await openFirstTile(page);
+    const dialog = await openFigure(page);
     await page
       .locator('dialog [data-hotspot-gutters]')
       .evaluate((el: HTMLElement) => el.style.setProperty('visibility', 'hidden'));
@@ -770,13 +775,13 @@ test.describe('Focus and Escape (LBOX-03)', () => {
   // @no-win-webkit: history Back while the open's View Transition commit settles crashes
   // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
   // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
-  test('Escape closes through the router and focus returns to the photo tile @no-win-webkit', async ({
+  test('Escape closes through the router and focus returns to the photo figure link @no-win-webkit', async ({
     page,
   }) => {
-    await openFirstTile(page);
+    await openFigure(page);
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page).toHaveURL(GRID_URL);
+    await expect(page).toHaveURL(ZERMATT_URL);
     await expect
       .poll(() => page.evaluate(() => document.activeElement?.getAttribute('data-photo-id')))
       .toBe(first.slug);
@@ -788,33 +793,33 @@ test.describe('Focus and Escape (LBOX-03)', () => {
   test('three open-and-Escape cycles in a row each close with the URL in sync @no-win-webkit', async ({
     page,
   }) => {
-    await page.goto('/photos?view=grid');
+    await page.goto(ZERMATT_PATH);
     for (let cycle = 1; cycle <= 3; cycle++) {
-      await clickTile(page, 0);
+      await clickFigure(page, first.slug);
       await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
       await page.keyboard.press('Escape');
       await expect(page.getByRole('dialog'), `cycle ${cycle}`).toHaveCount(0);
-      await expect(page, `cycle ${cycle}`).toHaveURL(GRID_URL);
+      await expect(page, `cycle ${cycle}`).toHaveURL(ZERMATT_URL);
     }
   });
 
   // @no-win-webkit: history Back while the open's View Transition commit settles crashes
   // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
   // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
-  test('opening from a scrolled grid and closing leaves the scroll position unchanged @no-win-webkit', async ({
+  test('opening from a scrolled region page and closing leaves the scroll position unchanged @no-win-webkit', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1024, height: 700 });
-    await page.goto('/photos?view=grid');
-    const third = page.getByRole('list', { name: GRID_LIST }).getByRole('link').nth(2);
-    // Centred, so the tile and its 4 px focus ring are fully in view and the reveal on close
-    // has nothing to do (LBOX-08, D-09). scrollIntoViewIfNeeded() left the tile's bottom at
-    // 700.375 in Chromium's 700 px viewport, ring clipped, which the reveal rightly fixes.
+    await page.goto(ZERMATT_PATH);
+    const third = page.locator(`[data-photo-id="${series[2].slug}"]`);
+    // Centred, so the figure link and its 4 px focus ring are fully in view and the reveal on
+    // close has nothing to do (LBOX-08, D-09). scrollIntoViewIfNeeded() can leave a trigger's
+    // edge on the viewport's, ring clipped, which the reveal rightly fixes.
     await third.evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
     const before = await page.evaluate(() => window.scrollY);
-    expect(before, 'the grid must be scrolled to its second row').toBeGreaterThan(0);
+    expect(before, 'the region page must be scrolled to its third figure').toBeGreaterThan(0);
 
-    await clickTile(page, 2);
+    await clickFigure(page, series[2].slug);
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect
@@ -935,15 +940,14 @@ test.describe('Moving between photos (LBOX-02)', () => {
     page,
     browserName,
   }) => {
-    const dialog = await openFirstTile(page);
+    const dialog = await openFigure(page);
     const length = await page.evaluate(() => window.history.length);
     const next = dialog.getByRole('button', { name: 'Next photo', exact: true });
     await expect(counter(dialog)).toHaveText(`1 / ${series.length}`);
     await expect(counter(dialog)).toHaveAttribute('aria-hidden', 'true');
 
     // A click, or focus and Enter in WebKit, where a click does not focus a button (helpers/engine.ts).
-    // Zermatt's series is longer than the grid's four (LBOX-09): the presses pass the grid's
-    // last photo and end on the series' last.
+    // The presses run through Zermatt's whole series (LBOX-09) and end on its last photo.
     for (let i = 1; i < series.length; i++) {
       await pressButton(next, browserName);
       await expect(counter(dialog)).toHaveText(`${i + 1} / ${series.length}`);
@@ -967,7 +971,7 @@ test.describe('Moving between photos (LBOX-02)', () => {
   });
 
   test('the arrow keys step, and nothing moves past either end', async ({ page, browserName }) => {
-    const dialog = await openFirstTile(page);
+    const dialog = await openFigure(page);
     const prev = dialog.getByRole('button', { name: 'Previous photo', exact: true });
     await expect(prev).toHaveAttribute('aria-disabled', 'true');
 
@@ -990,35 +994,73 @@ test.describe('Moving between photos (LBOX-02)', () => {
     await expect(status(dialog)).toHaveText(`Photo 1 of ${series.length}: ${first.title}`);
   });
 
+  // Opened from the Zermatt sequence (18-19), whose figures load the same derivatives, so a
+  // network wait cannot tell the preload from a figure: the test records the viewer's
+  // `new Image()` preloads instead and reads what each one loaded (13 #33: in the format
+  // the stage loaded, AVIF or WebP, never the AVIF set unconditionally).
   test('preload: opening a photo fetches the next photo derivative before Next is pressed', async ({
     page,
   }) => {
     const nextView = series[1];
-    const urls = new Set(
-      [
-        nextView.stage.src,
-        ...nextView.stage.srcSetAvif.split(',').map((u) => u.trim().split(' ')[0]),
-      ].map((u) => new URL(u, 'http://localhost').pathname)
-    );
-    expect(urls.size).toBeGreaterThan(1);
-    for (const u of urls) expect(u).toMatch(DERIVATIVE);
+    const pathsOf = (srcset: string) =>
+      new Set(
+        srcset.split(',').map((u) => new URL(u.trim().split(' ')[0], 'http://localhost').pathname)
+      );
+    const sets = {
+      avif: pathsOf(nextView.stage.srcSetAvif),
+      webp: pathsOf(nextView.stage.srcSetWebp),
+    };
+    for (const set of Object.values(sets)) {
+      expect(set.size).toBeGreaterThan(1);
+      for (const u of set) expect(u).toMatch(DERIVATIVE);
+    }
 
-    await page.goto('/photos?view=grid');
-    const tile = page.getByRole('list', { name: GRID_LIST }).getByRole('link').nth(0);
-    await waitForHydration(tile);
-    const preload = page.waitForRequest((request) => urls.has(new URL(request.url()).pathname), {
-      timeout: 20000,
+    await page.addInitScript(() => {
+      const made: HTMLImageElement[] = [];
+      (window as unknown as { __preloads: HTMLImageElement[] }).__preloads = made;
+      const Original = window.Image;
+      window.Image = class extends Original {
+        constructor(width?: number, height?: number) {
+          super(width, height);
+          made.push(this);
+        }
+      } as typeof Image;
     });
-    await tile.click();
-    const dialog = page.getByRole('dialog');
-    await expect(dialog).toBeVisible({ timeout: 20000 });
-    await preload;
+    await page.goto(ZERMATT_PATH);
+    const dialog = await clickFigure(page, series[0].slug);
+    const stage = dialog.locator('[data-stage-layer="large"] img');
+    await expect
+      .poll(() => stage.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0), {
+        timeout: 15000,
+      })
+      .toBe(true);
+    const format = await stage.evaluate((el: HTMLImageElement) =>
+      new URL(el.currentSrc).pathname.endsWith('.avif') ? 'avif' : 'webp'
+    );
+
+    // The preloads the viewer started, and the file each one has finished loading.
+    const preloads = () =>
+      page.evaluate(() =>
+        (window as unknown as { __preloads: HTMLImageElement[] }).__preloads.map((img) => ({
+          srcset: img.srcset,
+          loaded: img.complete && img.naturalWidth > 0 ? new URL(img.currentSrc).pathname : null,
+        }))
+      );
+    await expect
+      .poll(async () => (await preloads()).some((p) => p.loaded && sets[format].has(p.loaded)), {
+        message: `a preload loaded one of ${nextView.slug}'s ${format} derivatives`,
+        timeout: 20000,
+      })
+      .toBe(true);
+    // Each preload asked for the stage's format only.
+    const other = format === 'avif' ? '.webp' : '.avif';
+    for (const p of await preloads()) expect(p.srcset).not.toContain(other);
     // Still on the first photo: the fetch came from the preload, not from a step.
     await expect(page).toHaveURL(new RegExp(`/photos/${series[0].slug}$`));
   });
 
   test('a touch swipe on the photo steps to the next photo @chromium-only', async ({ page }) => {
-    const dialog = await openFirstTile(page);
+    const dialog = await openFigure(page);
     const photoBox = dialog.locator('[data-photo-box]');
     const rect = (await photoBox.boundingBox())!;
     const x = rect.x + rect.width / 2;
@@ -1040,10 +1082,10 @@ test.describe('Moving between photos (LBOX-02)', () => {
   // @no-win-webkit: history Back while the open's View Transition commit settles crashes
   // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
   // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
-  test('closing after two steps returns focus to the tile of the photo shown @no-win-webkit', async ({
+  test('closing after two steps returns focus to the figure link of the photo shown @no-win-webkit', async ({
     page,
   }) => {
-    const dialog = await openFirstTile(page);
+    const dialog = await openFigure(page);
     const next = dialog.getByRole('button', { name: 'Next photo', exact: true });
     await next.click();
     await next.click();
@@ -1051,7 +1093,7 @@ test.describe('Moving between photos (LBOX-02)', () => {
 
     await dialog.getByRole('button', { name: 'Close photo', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page).toHaveURL(GRID_URL);
+    await expect(page).toHaveURL(ZERMATT_URL);
     await expect
       .poll(() => page.evaluate(() => document.activeElement?.getAttribute('data-photo-id')))
       .toBe(series[2].slug);
@@ -1060,10 +1102,10 @@ test.describe('Moving between photos (LBOX-02)', () => {
   // @no-win-webkit: history Back while the open's View Transition commit settles crashes
   // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
   // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
-  test('browser Back right after a step returns focus to the tile of the photo shown (10-REVIEW WR-01) @no-win-webkit', async ({
+  test('browser Back right after a step returns focus to the figure link of the photo shown (10-REVIEW WR-01) @no-win-webkit', async ({
     page,
   }) => {
-    const dialog = await openFirstTile(page);
+    const dialog = await openFigure(page);
     const next = dialog.getByRole('button', { name: 'Next photo', exact: true });
     await waitForHydration(next);
     // The step and the Back in one task: usePathname has not caught up with
@@ -1073,7 +1115,7 @@ test.describe('Moving between photos (LBOX-02)', () => {
       window.history.back();
     });
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page).toHaveURL(GRID_URL);
+    await expect(page).toHaveURL(ZERMATT_URL);
     await expect
       .poll(() => page.evaluate(() => document.activeElement?.getAttribute('data-photo-id')))
       .toBe(series[1].slug);
@@ -1374,13 +1416,15 @@ test.describe('Morph and motion (LBOX-06)', () => {
     `::view-transition-new(photo-${slug})`,
   ];
 
-  test('opening from the grid morphs the tile into the lightbox photo @chromium-only', async ({
+  // P4 (18-01, the defaults): the sequence figure carries the photo-{slug} name while no
+  // photo is open (FigureTransition, 18-08), so it morphs into the lightbox stage.
+  test('opening from the sequence morphs the figure into the lightbox photo @chromium-only', async ({
     page,
   }) => {
     await recordViewTransitions(page);
-    await page.goto('/photos?view=grid');
+    await page.goto(ZERMATT_PATH);
     const before = await readViewTransitions(page);
-    await clickTile(page, 0);
+    await clickFigure(page, first.slug);
 
     await expect
       .poll(async () => (await readViewTransitions(page)).count)
@@ -1392,14 +1436,14 @@ test.describe('Morph and motion (LBOX-06)', () => {
 
   test('browser Back closes with no view transition @chromium-only', async ({ page }) => {
     await recordViewTransitions(page);
-    await openFirstTile(page);
+    await openFigure(page);
     await expect.poll(async () => (await readViewTransitions(page)).count).toBeGreaterThan(0);
     // The open transition has finished before measuring.
     const before = (await waitForViewTransitionsSettled(page)).count;
 
     await page.goBack();
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    // Settled first (10-REVIEW IN-09): focus is back on the tile, the close's last step, so a
+    // Settled first (10-REVIEW IN-09): focus is back on the figure link, the close's last step, so a
     // transition the popstate commit started is already counted, and every one has finished.
     await expect
       .poll(() => page.evaluate(() => document.activeElement?.getAttribute('data-photo-id')))
@@ -1409,7 +1453,7 @@ test.describe('Morph and motion (LBOX-06)', () => {
 
   test('a step morphs nothing: no photo-* pseudo-element @chromium-only', async ({ page }) => {
     await recordViewTransitions(page);
-    const dialog = await openFirstTile(page);
+    const dialog = await openFigure(page);
     // The open transition has finished before measuring.
     const before = (await waitForViewTransitionsSettled(page)).transitions.length;
 
@@ -1436,7 +1480,7 @@ test.describe('Morph and motion (LBOX-06)', () => {
         messages.push(message.text());
       }
     });
-    const dialog = await openFirstTile(page);
+    const dialog = await openFigure(page);
     const next = dialog.getByRole('button', { name: 'Next photo', exact: true });
     for (let i = 1; i <= 3; i++) {
       await next.click();
@@ -1452,9 +1496,9 @@ test.describe('Morph and motion (LBOX-06)', () => {
   }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await recordViewTransitions(page);
-    await page.goto('/photos?view=grid');
+    await page.goto(ZERMATT_PATH);
     const before = await readViewTransitions(page);
-    const dialog = await clickTile(page, 0);
+    const dialog = await clickFigure(page, first.slug);
     await expect(dialog.getByRole('button', { name: 'Close photo', exact: true })).toBeFocused();
 
     // Settled first (10-REVIEW IN-09): every transition the open started has finished.
@@ -1463,20 +1507,20 @@ test.describe('Morph and motion (LBOX-06)', () => {
     expect(opened.filter((pseudo) => pseudo.startsWith('::view-transition'))).toEqual([]);
   });
 
-  test('without the View Transitions API the tile still opens with focus on Close', async ({
+  test('without the View Transitions API the figure still opens with focus on Close', async ({
     page,
   }) => {
     await removeViewTransitions(page);
-    await page.goto('/photos?view=grid');
+    await page.goto(ZERMATT_PATH);
     expect(await page.evaluate(() => 'startViewTransition' in document)).toBe(false);
-    const dialog = await clickTile(page, 0);
+    const dialog = await clickFigure(page, first.slug);
     await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
     await expect(dialog.getByRole('button', { name: 'Close photo', exact: true })).toBeFocused();
   });
 });
 
 test.describe('Zoom (D-06)', () => {
-  /** A landscape photo (2560 px wide at 1:1) that has a next photo, and its grid position. */
+  /** A landscape photo (2560 px wide at 1:1) that has a next photo, and its series position. */
   const zi = series.findIndex((v, i) => v.stage.width === 2560 && i < series.length - 1);
   const photo = series[zi];
   const nextPhoto = series[zi + 1];
@@ -1488,12 +1532,12 @@ test.describe('Zoom (D-06)', () => {
   const scrollOf = (scope: Page | Locator) =>
     stage(scope).evaluate((el) => ({ left: el.scrollLeft, top: el.scrollTop }));
 
-  /** Open the landscape photo's tile in the lightbox at 1440 x 900. */
+  /** Open the landscape photo in the lightbox from its Zermatt figure link at 1440 x 900. */
   async function openZoomPhoto(page: Page) {
     expect(zi, 'a landscape photo with a next photo').toBeGreaterThanOrEqual(0);
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/photos?view=grid');
-    return clickTile(page, zi);
+    await page.goto(ZERMATT_PATH);
+    return clickFigure(page, photo.slug);
   }
 
   /** Wait until the zoomed 1:1 photo has decoded. */
@@ -1565,7 +1609,7 @@ test.describe('Zoom (D-06)', () => {
     await expect(page.getByRole('dialog')).toHaveCount(1);
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page).toHaveURL(GRID_URL);
+    await expect(page).toHaveURL(ZERMATT_URL);
   });
 
   test('a click zooms at the point, a drag pans and a click without movement unzooms', async ({
@@ -1665,12 +1709,12 @@ test.describe('Hotspots (LBOX-05)', () => {
   const zoomButton = (scope: Page | Locator) =>
     scope.getByRole('button', { name: 'Zoom photo', exact: true });
 
-  /** Open the Glacier Trail photo (two hotspots) in the lightbox at the given size. */
+  /** Open the Glacier Trail photo (two hotspots) from its Zermatt figure link at the given size. */
   async function openTrail(page: Page, width = 1440, height = 900) {
     expect(trail).toBeGreaterThanOrEqual(0);
     await page.setViewportSize({ width, height });
-    await page.goto('/photos?view=grid');
-    return clickTile(page, trail);
+    await page.goto(ZERMATT_PATH);
+    return clickFigure(page, series[trail].slug);
   }
 
   /** Load a photo page and wait until its key listeners are attached (they follow hydration). */

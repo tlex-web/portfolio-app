@@ -1,4 +1,5 @@
 import { test, expect, chromium } from '@playwright/test';
+import { SLUGS } from './helpers/photo-fixtures';
 
 /**
  * DSGN-07 type stack (UI-SPEC "Typography", build step 7c): Schibsted Grotesk
@@ -50,9 +51,7 @@ test.describe('Design system', () => {
   test('body uses Inter', async ({ page }) => {
     await page.goto('/');
 
-    const fontFamily = await page.evaluate(
-      () => getComputedStyle(document.body).fontFamily
-    );
+    const fontFamily = await page.evaluate(() => getComputedStyle(document.body).fontFamily);
     expect(fontFamily).toContain('Inter');
   });
 
@@ -102,9 +101,7 @@ test.describe('Design system', () => {
       });
       await page.waitForTimeout(1000);
 
-      const cls = await page.evaluate(
-        () => (window as unknown as { __cls: number }).__cls
-      );
+      const cls = await page.evaluate(() => (window as unknown as { __cls: number }).__cls);
       console.log(`CLS ${route}: ${cls.toFixed(4)}`);
       expect(cls, `layout-shift sum on ${route}`).toBeLessThan(0.1);
     }
@@ -118,7 +115,10 @@ test.describe('Design system', () => {
  * box check runs with that flag removed so real scrollbars take up space.
  */
 test.describe('Scrollbar', () => {
-  test('html carries the stable gutter, thin width and dark scheme', async ({ page, browserName }) => {
+  test('html carries the stable gutter, thin width and dark scheme', async ({
+    page,
+    browserName,
+  }) => {
     await page.goto('/');
 
     const style = await page.evaluate(() => {
@@ -158,8 +158,9 @@ test.describe('Scrollbar', () => {
         viewport: { width: 1440, height: 900 },
       });
       const page = await context.newPage();
-      // The lightbox (10-05) is the scroll-locking overlay: a grid tile opens it.
-      await page.goto('/photos?view=grid');
+      // The lightbox (10-05) is the scroll-locking overlay: a figure link on the Zermatt
+      // region page opens it (18-19; PHOTO-06, the grid's first tile was this photo).
+      await page.goto('/photos/regions/zermatt');
 
       // includeHidden: once the modal dialog is open the header is inert, and
       // the box must still be read from the same element.
@@ -190,19 +191,17 @@ test.describe('Scrollbar', () => {
 
       const before = await settledBox();
 
-      const tile = page
-        .getByRole('list', { name: 'Photographs, lowest first' })
-        .getByRole('link')
-        .first();
+      const figure = page.locator(`[data-photo-id="${SLUGS.matterhornFromZermatt}"]`);
+      await expect(figure).toHaveCount(1);
       // A click before hydration is a document navigation, which is never
       // intercepted, so wait for React to own the link first.
       await expect
         .poll(
-          () => tile.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))),
+          () => figure.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))),
           { timeout: 15000 }
         )
         .toBe(true);
-      await tile.click();
+      await figure.click();
       await expect(page.getByRole('dialog')).toBeVisible({ timeout: 20000 });
       expect(await page.evaluate(() => document.documentElement.style.overflow)).toBe('hidden');
 

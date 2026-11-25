@@ -113,7 +113,9 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * second click in that window would otherwise replay the first step. Each step updates
  * a polite status line inside the viewer ('Photo 2 of 7: {title}') and the
  * document title. Once the current photo's large derivative loads, the
- * neighbours' stage derivatives are fetched at low priority, once per slug.
+ * neighbours' stage derivatives are fetched at low priority, once per slug, in
+ * the format the stage loaded (AVIF, else WebP; 13 #33) and with their own
+ * stageSizes (13 #34).
  *
  * The stepping set and the way back (LBOX-09, 18 D-12; 17 D-09; PHOTO-05):
  * `photos` is the shown photo's region series in sequence order, built on the
@@ -210,13 +212,22 @@ const STEP_BUTTON =
 
 const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
 
-/** Fetch a photo's stage derivative at low priority, so a step finds it in the cache. */
-function preloadStage(view: PhotoView, variant: 'page' | 'modal'): void {
+/** True when a loaded img's currentSrc is an AVIF derivative (the picture's AVIF source won). */
+function loadedAvif(img: HTMLImageElement): boolean {
+  return /\.avif(?:[?#]|$)/.test(img.currentSrc);
+}
+
+/**
+ * Fetch a photo's stage derivative at low priority, so a step finds it in the
+ * cache (13 #33): from the AVIF set only when the stage itself loaded AVIF,
+ * else from the WebP set, with the `sizes` that photo's stage will use.
+ */
+function preloadStage(view: PhotoView, sizes: string, avif: boolean): void {
   const img = new Image();
   img.fetchPriority = 'low';
   img.decoding = 'async';
-  img.sizes = stageSizes(view.aspect.w / view.aspect.h, variant);
-  img.srcset = view.stage.srcSetAvif;
+  img.sizes = sizes;
+  img.srcset = avif ? view.stage.srcSetAvif : view.stage.srcSetWebp;
   img.src = view.stage.src;
 }
 
@@ -483,17 +494,22 @@ export default function PhotoViewer({
     return () => window.removeEventListener('keydown', onKeyDown, true);
   }, [lightbox]);
 
-  // Neighbour preload, once per slug, after the current photo's large layer loads.
+  // Neighbour preload, once per slug, after the current photo's large layer
+  // loads, in the format the stage's loaded img shows the browser chose (13 #33).
   const preloaded = useRef(new Set<string>());
-  const preloadNeighbours = useCallback(() => {
-    for (const slug of [prevSlug, nextSlug]) {
-      if (!slug || preloaded.current.has(slug)) continue;
-      const view = photos.find((p) => p.slug === slug);
-      if (!view) continue;
-      preloaded.current.add(slug);
-      preloadStage(view, variant);
-    }
-  }, [photos, prevSlug, nextSlug, variant]);
+  const preloadNeighbours = useCallback(
+    (loadedImg: HTMLImageElement) => {
+      const avif = loadedAvif(loadedImg);
+      for (const slug of [prevSlug, nextSlug]) {
+        if (!slug || preloaded.current.has(slug)) continue;
+        const view = photos.find((p) => p.slug === slug);
+        if (!view) continue;
+        preloaded.current.add(slug);
+        preloadStage(view, stageSizes(view.aspect.w / view.aspect.h, variant), avif);
+      }
+    },
+    [photos, prevSlug, nextSlug, variant]
+  );
 
   // Swipe on the fitted photo (touch or pen): the box follows the finger, and
   // on release a long horizontal drag steps; anything else springs back over

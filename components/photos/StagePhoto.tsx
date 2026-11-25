@@ -32,8 +32,9 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * in the new photo's box while the new one loads.
  *
  * onLargeLoad (10-06) fires each time the large layer has loaded, including
- * a load that finished before hydration; PhotoViewer uses it to preload the
- * neighbouring photos at low priority.
+ * a load that finished before hydration, with the loaded large img; PhotoViewer
+ * uses it to preload the neighbouring photos at low priority, in the format
+ * that img's currentSrc shows the browser chose (13 #33, 18-19).
  *
  * The error state, like every other, renders no download control and no link
  * to an image file (LBOX-07, T-10-09); the chrome and the strip stay usable.
@@ -60,7 +61,7 @@ export default function StagePhoto({
 }: {
   view: PhotoView;
   sizes: string;
-  onLargeLoad?: () => void;
+  onLargeLoad?: (img: HTMLImageElement) => void;
 }) {
   const { slug, stage, alt, openerSrc } = view;
   const [state, setState] = useState<StageState>('opener');
@@ -80,16 +81,16 @@ export default function StagePhoto({
     setSlow(false);
   }
 
-  const largeLoaded = useEffectEvent(() => {
+  const largeLoaded = useEffectEvent((img: HTMLImageElement) => {
     setState('large');
-    onLargeLoad?.();
+    onLargeLoad?.(img);
   });
 
   // Events that fired before hydration are lost; read the result instead.
   useEffect(() => {
     if (loaded(openerRef.current)) setOpenerLoaded(true);
     const large = largeRef.current;
-    if (loaded(large)) largeLoaded();
+    if (large && loaded(large)) largeLoaded(large);
     else if (failed(large)) setState('error');
   }, [slug, attempt]);
 
@@ -153,9 +154,9 @@ export default function StagePhoto({
           loading="eager"
           fetchPriority="high"
           decoding="async"
-          onLoad={() => {
+          onLoad={(event) => {
             setState('large');
-            onLargeLoad?.();
+            onLargeLoad?.(event.currentTarget);
           }}
           onError={() => setState('error')}
           className="block h-full w-full object-contain"
