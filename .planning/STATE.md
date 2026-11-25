@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
-stopped_at: Completed 18-17-PLAN.md
-last_updated: "2026-11-25T19:38:08.670Z"
+stopped_at: Completed 18-18-PLAN.md
+last_updated: "2026-11-25T19:59:23.426Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: 18c163af9e1214d7cd0a3a1101fefb3714ddee1d
+state_head: 4f02ab6fd790724997561c5ea39d4adeaf01dc74
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 109
-  completed_plans: 97
+  completed_plans: 98
   percent: 71
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-24)
 ## Current Position
 
 Phase: 18 (Immersive Survey Layout) — EXECUTING
-Plan: 17 of 29
+Plan: 18 of 29
 Status: Ready to execute
 Last activity: 2026-11-24 — Phase 18 execution started
 
@@ -155,6 +155,7 @@ Progress: [███████░░░] 71%
 | Phase 18 P15 | 25min | 2 tasks | 11 files |
 | Phase 18 P16 | 21 min | 2 tasks | 14 files |
 | Phase 18 P17 | 17min | 2 tasks | 12 files |
+| Phase 18 P18 | 20min | 2 tasks tasks | 12 files files |
 
 ## Accumulated Context
 
@@ -406,6 +407,10 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-17: photoBack(photoId) and photoBreadcrumb(slug) build the photo page's way back and trail on the server from the registry; PhotoViewer and ExifStrip import no region module and the target never comes from the URL (T-18-37)
 - [Phase 18]: 18-17: PhotoViewer throws a RangeError for a page render without back, ExifStrip for a level-1 strip without backName; no gallery-wide way back remains
 - [Phase 18]: 18-17: the current crumb follows the shown photo by swapping the last crumb's name for current.title; the BreadcrumbList is the load-time list
+- [Phase 18]: 18-18: lv95Line runs on the server only (stripFields); it parses the shown roundedCoordinate strings, converts with wgs84ToLv95 and snaps to 10/100/1,000 m, so the LV95 line is a function of the shown WGS84 alone; CH only, LI included in the null set
+- [Phase 18]: 18-18: the strip data column reads rights line, legend, then Share (mt-4, failurePlacement 'below'); no Share on the end card (no photo; the region page has Share region)
+- [Phase 18]: 18-18: ShareButton resets copied/failure state when its url prop changes instead of being keyed per photo, so focus survives an arrow-key step
+- [Phase 18]: 18-18: mounting ShareButton in the viewer duplicates it and its three Phosphor icons into the photo routes' shared chunk (+11,005 B, ~6.4 KB of six-weight path data); client JS 1,882,651 B (+11,477 vs 1,871,174; 26,810 over the cap), input for 18-25's icon decision
 
 ### Pending Todos
 
@@ -467,6 +472,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-25T19:38:08.028Z
-Stopped at: Completed 18-17-PLAN.md
+Last session: 2026-11-25T19:59:22.770Z
+Stopped at: Completed 18-18-PLAN.md
 Resume file: None
