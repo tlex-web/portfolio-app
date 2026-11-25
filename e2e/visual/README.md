@@ -6,15 +6,18 @@ page), plus Home with motion enabled at three fixed ascent positions on the
 static poster path: the top (p = 0), waypoint 2's block centred and the summit
 centred (`home/<width>-ascent-{start,waypoint-2,summit}.png`), plus the
 lightbox opened from the grid's first tile (`lightbox/<width>.png`, viewport
-only): 48 tests per scheme. Every later plan is judged against these files.
+only), plus the menu shot at 375 (`menu/375-current-focus.png`): 52 tests
+per scheme. Every later plan is judged against these files.
 
 Route slugs (one snapshot folder each): `home`, `photos` (the map, the default
 view), `photos-grid` (`/photos?view=grid`), `photos-carousel`
 (`/photos?view=carousel`, the stepper, since every route shot runs under
 reduced motion), `photo` (the film scan's `/photos/{slug}` page, the photo
-with the partial strip; the slug comes from `buildPhotoViews()`), `projects`,
-`box`, `coin-flip`, `roadmap`, `contact`, `offline`, `not-found`; and
-the `lightbox` viewport shots.
+with the partial strip; the slug comes from the data: the one view in
+`regionPhotoViews('zermatt')` whose strip has a film line, and the spec throws
+unless exactly one matches), `projects`, `box`, `coin-flip`, `roadmap`,
+`sources` (the data sources page, since 18-05), `contact`, `offline`,
+`not-found`; and the `lightbox` viewport shots.
 
 The Home motion shots switch WebGL off (`disableWebGL` from
 `e2e/helpers/webgl.ts`), so the capability gate keeps Home on the poster, its

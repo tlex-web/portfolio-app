@@ -1,7 +1,7 @@
 import path from 'path';
 import { test, expect, type Page } from '@playwright/test';
 import { buildWaypoints } from '@/lib/ascent/waypoints';
-import { buildPhotoViews } from '@/lib/photos/view-model';
+import { regionPhotoViews } from '@/lib/regions';
 import { disableWebGL, nextFrames } from '../helpers/webgl';
 import { scrollBlockToCentre } from '../helpers/ascent';
 
@@ -21,12 +21,23 @@ import { scrollBlockToCentre } from '../helpers/ascent';
  */
 
 /**
- * The film scan (the one approximate position) is the photo-page shot: its
- * strip carries the partial fields (approx. altitude and position, film line).
- * The slug comes from the data, never from a literal.
+ * The film scan is the photo-page shot: its strip carries the partial fields
+ * (approx. altitude and position, film line). The slug comes from the data,
+ * never from a literal.
+ *
+ * It is picked as the one Zermatt view whose strip has a film line (18-RESEARCH
+ * Pitfall 8), not as the first `approximate` view: four non-Zermatt photos in
+ * the published set are approximate too (Saalfelden x2, Ortler x2), and they
+ * sort first by altitude, so once the light table retires the old key would
+ * move this baseline to another photo. Exactly one match, else the spec throws.
  */
-const filmScan = buildPhotoViews().find((view) => view.approximate);
-if (!filmScan) throw new Error('buildPhotoViews() has no approximate (film-scan) view');
+const filmScans = regionPhotoViews('zermatt').filter((view) => view.strip.filmLine !== null);
+if (filmScans.length !== 1) {
+  throw new Error(
+    `regionPhotoViews('zermatt') has ${filmScans.length} film-scan views; the photo shot needs exactly one`,
+  );
+}
+const filmScan = filmScans[0];
 
 const ROUTES = [
   ['home', '/'],
@@ -39,6 +50,8 @@ const ROUTES = [
   ['box', '/projects/box'],
   ['coin-flip', '/projects/coin-flip'],
   ['roadmap', '/roadmap'],
+  // The data sources page (D-20), first baselined in D-24 round 2 (18-05).
+  ['sources', '/sources'],
   ['contact', '/contact'],
   ['offline', '/offline'],
   ['not-found', '/__no-such-page__'],
