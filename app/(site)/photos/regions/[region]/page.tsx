@@ -4,6 +4,7 @@ import { ArrowSquareOutIcon } from '@phosphor-icons/react/dist/ssr';
 import type { RegionFact } from '@/data/schemas/region';
 import HeaderSlot from '@/components/photos/region/HeaderSlot';
 import NextRegion from '@/components/photos/region/NextRegion';
+import PlateKey from '@/components/photos/region/PlateKey';
 import PlateSheet from '@/components/photos/region/PlateSheet';
 import RegionHeader from '@/components/photos/region/RegionHeader';
 import RegionSequence from '@/components/photos/region/RegionSequence';
@@ -14,6 +15,7 @@ import {
   regionById,
   regionIds,
   regionMetadata,
+  regionPhotoViews,
   regionPlateSheet,
 } from '@/lib/regions';
 import { factSource } from '@/lib/photos/view-model';
@@ -64,6 +66,15 @@ import { factSource } from '@/lib/photos/view-model';
  * 'Map': PlateSheet, server-rendered from regionPlateSheet(id)'s plain props,
  * with an exact dot and a numbered badge per photo (a same-page anchor to its
  * figure, pointer-only). 18-10 adds the key list and the facts and plate grid.
+ *
+ * 18-10 (REGION-02, D-08): the facts and plate block, data-plate-root (the
+ * root of the list-plate :has() sync in plateCss). Below 1024 px one column:
+ * Facts, the plate, then PlateKey (the h2 'Map' and the key list of anchors
+ * to the sequence). From 1024 px a 2fr/3fr grid: Facts then the key list on
+ * the left, the plate on the right (634 px at 1440). DOM order stays Facts,
+ * plate, key list; the plate holds nothing focusable, so the tab order is the
+ * left column's visual order. Key rows get each photo's title and altitude
+ * label here, on the server, as plain props.
  */
 
 type PageProps = { params: Promise<{ region: string }> };
@@ -101,6 +112,13 @@ export default async function RegionPage({ params }: PageProps) {
   const { region: id } = await params;
   const region = regionById(id);
   if (!region) notFound();
+  const sheet = regionPlateSheet(region.id);
+  const views = new Map(regionPhotoViews(region.id).map((v) => [v.slug, v]));
+  const keyRows = sheet.pins.map((pin) => {
+    const view = views.get(pin.slug);
+    if (!view) throw new RangeError(`region page: pin ${pin.slug} has no photo view`);
+    return { ...pin, title: view.title, altitudeLabel: view.altitudeLabel };
+  });
 
   return (
     <>
@@ -116,24 +134,30 @@ export default async function RegionPage({ params }: PageProps) {
         <RegionHeader id={region.id} />
         <HeaderSlot id={region.id} />
 
-        <section aria-labelledby="region-facts" className="mt-8 max-w-prose">
-          <h2 id="region-facts">Facts</h2>
-          <ul className="mt-4 flex flex-col gap-4">
-            {region.facts.map((fact) => (
-              <li key={fact.text} className="text-base">
-                <p>{fact.text}</p>
-                <p className="text-sm text-ink-muted">
-                  <FactSource source={fact.source} />
-                </p>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section aria-labelledby="region-map" className="mt-8">
-          <h2 id="region-map">Map</h2>
-          <PlateSheet sheet={regionPlateSheet(region.id)} />
-        </section>
+        <div
+          data-plate-root
+          className="mt-12 flex flex-col gap-12 lg:mt-16 lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:grid-rows-[auto_1fr] lg:gap-8"
+        >
+          <section aria-labelledby="region-facts" className="lg:col-start-1 lg:row-start-1">
+            <h2 id="region-facts">Facts</h2>
+            <ul className="mt-4 flex max-w-prose flex-col gap-4">
+              {region.facts.map((fact) => (
+                <li key={fact.text} className="text-base">
+                  <p>{fact.text}</p>
+                  <p className="text-sm text-ink-muted">
+                    <FactSource source={fact.source} />
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </section>
+          <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1">
+            <PlateSheet sheet={sheet} />
+          </div>
+          <div className="lg:col-start-1 lg:row-start-2">
+            <PlateKey pins={keyRows} />
+          </div>
+        </div>
       </div>
       <RegionSequence id={region.id} />
       <NextRegion id={region.id} />

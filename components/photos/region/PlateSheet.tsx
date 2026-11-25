@@ -7,7 +7,8 @@ import type { RegionPlateSheet } from '@/lib/regions';
  * from its side S. The edge is a 1 px outline drawn inside the box (no layout
  * space), so the container's side is the box's own width, as the sweep
  * assumes (18-13's note on sheets). Full-bleed below 640 px, centred at
- * max-w-xl (576 px) above; 18-10 sets the facts and plate grid.
+ * max-w-xl (576 px) from 640 px, and from 1024 px the right column of the
+ * facts and plate grid (3fr: 634 px at 1440, 18-10).
  */
 const SHEET =
   'relative aspect-square overflow-hidden bg-surface outline-1 -outline-offset-1 outline-line [container-type:inline-size]';
@@ -56,10 +57,12 @@ export default function PlateSheet({ sheet }: { sheet: RegionPlateSheet }) {
   const name = `plate-${sheet.id}`;
   const css = plateCss(sheet.pins, name);
   const { avif, webp } = sheet.hillshade;
-  const sizes = '(min-width: 640px) 576px, 100vw';
+  // The rendered side: 100vw below 640, 576 px to 1023, then the grid's 3fr column
+  // ((min(100vw, 1152px) - 64 - 32) x 3/5, at most 634 px).
+  const sizes = '(min-width: 1024px) 634px, (min-width: 640px) 576px, 100vw';
 
   return (
-    <figure className="mt-4 -mx-4 sm:mx-auto sm:max-w-xl">
+    <figure className="-mx-4 sm:mx-auto sm:w-full sm:max-w-xl lg:mx-0 lg:max-w-none">
       <div data-plate-sheet={sheet.id} className={SHEET} style={{ containerName: name }}>
         <style>{css}</style>
         <picture>

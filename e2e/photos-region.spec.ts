@@ -86,6 +86,14 @@ import {
  * lands inside the sheet; at 375, 768 and 1440 every badge stays 8 px inside
  * the sheet, no two come closer than 8 px, and every shown leader runs from
  * its dot to its badge unit. Data-driven: no position is written here.
+ *
+ * The key list and the jumps (18-10; REGION-02, D-08): every region page has
+ * a key list with one anchor row per pin, in sequence order, named by the
+ * title and altitude label, at least 44 px tall, after the h2 'Map'. At 1440 a
+ * key row click sets the hash, opens no dialog, lands the figure's top collar
+ * 16 px under the nav and the next Tab reaches its photo link; at 1024 the
+ * facts and the key list sit left of the plate in the DOM order Facts, plate,
+ * key list; at 1440 the plate is 634 px square.
  */
 
 /*
@@ -858,6 +866,110 @@ test.describe('Region plate pins (18-09; REGION-02)', () => {
       });
     }
   }
+});
+
+/** A rect's edges, from the page (viewport coordinates). */
+async function rectOf(target: Locator) {
+  return target.evaluate((el) => {
+    const b = el.getBoundingClientRect();
+    return { left: b.left, top: b.top, right: b.right, bottom: b.bottom };
+  });
+}
+
+/**
+ * After a jump to `slug`: the URL hash names it, no dialog opened, the figure's
+ * top collar sits 16 px (within 2) under the nav, and the next Tab focuses
+ * that figure's photo link (D-08; UI-SPEC "Jump to a figure").
+ */
+async function expectLanded(page: Page, slug: string) {
+  await expect(page).toHaveURL(new RegExp(`/photos/regions/zermatt#photo-${slug}$`));
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  const collar = page.locator(`li#photo-${slug} [data-figure-collar]`);
+  const navBottom = (await rectOf(page.getByRole('banner'))).bottom;
+  await expect
+    .poll(async () => Math.round((await rectOf(collar)).top - navBottom), {
+      message: `${slug}: the top collar 16 px under the nav`,
+    })
+    .toBeGreaterThanOrEqual(14);
+  expect((await rectOf(collar)).top - navBottom).toBeLessThanOrEqual(18);
+  await page.keyboard.press('Tab');
+  await expect(page.locator(`li#photo-${slug} [data-photo-id="${slug}"]`)).toBeFocused();
+}
+
+const KEY_LIST = 'ol[aria-label="Photographs on the map, lowest first"]';
+
+test.describe('Region plate key and jumps (18-10; REGION-02, D-08)', () => {
+  for (const r of regions) {
+    test(`/photos/regions/${r.id}: the key list has one anchor row per pin, in sequence order`, async ({
+      page,
+    }) => {
+      await page.goto(`/photos/regions/${r.id}`);
+      const views = regionPhotoViews(r.id);
+      const pinned = pinnedViews(r.id);
+      const rows = page.locator(`${KEY_LIST} [data-key-row]`);
+      await expect(rows).toHaveCount(pinned.length);
+      expect(await rows.evaluateAll((els) => els.map((e) => e.getAttribute('data-key-row')))).toEqual(
+        pinned.map((v) => v.slug)
+      );
+      for (const [i, v] of pinned.entries()) {
+        const row = rows.nth(i);
+        await expect(row).toHaveAttribute('href', `#photo-${v.slug}`);
+        // The badge is aria-hidden: the row's name is the title and the altitude label.
+        await expect(row.locator('[data-key-badge]')).toHaveText(String(views.indexOf(v) + 1));
+        await expect(row.locator('[data-key-badge]')).toHaveAttribute('aria-hidden', 'true');
+        await expect(row).toHaveAccessibleName(`${v.title} · ${v.altitudeLabel}`);
+        // UI E4/overflow: a 44 px row whose title wraps.
+        expect((await rectOf(row)).bottom - (await rectOf(row)).top).toBeGreaterThanOrEqual(43.5);
+      }
+      // The h2 'Map' comes right before the key list.
+      const before = await page
+        .locator(KEY_LIST)
+        .evaluate((el) => el.previousElementSibling?.textContent);
+      expect(before).toBe('Map');
+    });
+  }
+
+  test('at 1440 clicking key row 3 lands its figure under the nav, opens no dialog, and Tab reaches its photo', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/photos/regions/zermatt');
+    const third = pinnedViews('zermatt')[2];
+    await page.locator(`${KEY_LIST} [data-key-row]`).nth(2).click();
+    await expectLanded(page, third.slug);
+  });
+
+  test('at 1024 the key list lies left of the plate; the DOM order is Facts, plate, key list', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await page.goto('/photos/regions/zermatt');
+    const sheet = await rectOf(page.locator('[data-plate-sheet="zermatt"]'));
+    const key = await rectOf(page.locator(KEY_LIST));
+    const facts = await rectOf(page.getByRole('heading', { level: 2, name: 'Facts', exact: true }));
+    expect(key.right, 'the key list ends left of the plate').toBeLessThanOrEqual(sheet.left);
+    expect(facts.right, 'the facts end left of the plate').toBeLessThanOrEqual(sheet.left);
+    expect(key.top, 'the key list follows the facts').toBeGreaterThan(facts.bottom);
+    const order = await page.evaluate((list) => {
+      const nodes = [
+        document.getElementById('region-facts')!,
+        document.querySelector('[data-plate-sheet]')!,
+        document.querySelector(list)!,
+      ];
+      return nodes.every(
+        (n, i) => i === 0 || !!(nodes[i - 1].compareDocumentPosition(n) & Node.DOCUMENT_POSITION_FOLLOWING)
+      );
+    }, KEY_LIST);
+    expect(order, 'Facts, plate, key list in DOM order').toBe(true);
+  });
+
+  test('at 1440 the plate is the 3fr column, 634 px square', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/photos/regions/zermatt');
+    const sheet = await rectOf(page.locator('[data-plate-sheet="zermatt"]'));
+    expect(sheet.right - sheet.left).toBeCloseTo(633.6, 0);
+    expect(sheet.bottom - sheet.top).toBeCloseTo(633.6, 0);
+  });
 });
 
 test.describe('Region page scroll and morph (18-08; D-06, LBOX-06, P4)', () => {
