@@ -52,6 +52,10 @@ import { photoSlugs, publishedViews } from '@/lib/photos/view-model';
  * the next-region sign three times lands on Ortler, Saalfelden, then Zermatt
  * again; each sign is named '{heading}, next region' and 'All regions' leads
  * to /photos.
+ *
+ * Share region (18-07; PHOTO-07, D-13): the header band's button copies the
+ * bare canonical site.url + '/photos/regions/<id>' even from a page loaded with
+ * a query and a hash (the real clipboard, Chromium only).
  */
 
 /*
@@ -201,6 +205,43 @@ test.describe('Region header band (18-06; REGION-02, D-10)', () => {
       await expect(page.getByRole('main')).toHaveCount(1);
       await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toHaveCount(0);
     }
+  });
+});
+
+/** Copy mode on every engine: no Web Share, whatever the browser build ships (Pitfall 7). */
+async function forceCopyMode(page: Page) {
+  await page.addInitScript(() => {
+    delete (Navigator.prototype as Partial<Navigator>).share;
+    delete (Navigator.prototype as Partial<Navigator>).canShare;
+  });
+}
+
+const ZERMATT_URL = `${site.url}/photos/regions/zermatt`;
+
+test.describe('Share region (18-07; PHOTO-07, D-13)', () => {
+  // Only Chromium grants clipboard permissions in Playwright (contact-form.spec.ts),
+  // so the real copy is a Chromium row. The page is loaded with a query and a hash:
+  // the copied URL is still the bare canonical one (T-18-18, Edge PHOTO-07/encoding).
+  test('Copy link writes the bare canonical URL and reads Link copied @chromium-only', async ({
+    page,
+    context,
+    baseURL,
+  }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: baseURL });
+    await forceCopyMode(page);
+    await page.goto('/photos/regions/zermatt?x=1#y');
+    const button = page
+      .locator('[data-region-header]')
+      .getByRole('button', { name: 'Copy link to this region' });
+    await expect(button).toHaveText('Copy link');
+    await waitForHydration(button);
+
+    await button.click();
+
+    await expect(button).toHaveText('Link copied');
+    await expect(page.getByRole('status').filter({ hasText: 'Link copied' })).toHaveCount(1);
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(ZERMATT_URL);
+    await expect(button).toHaveText('Copy link', { timeout: 5000 });
   });
 });
 
