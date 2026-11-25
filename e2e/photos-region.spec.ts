@@ -94,6 +94,12 @@ import {
  * 16 px under the nav and the next Tab reaches its photo link; at 1024 the
  * facts and the key list sit left of the plate in the DOM order Facts, plate,
  * key list; at 1440 the plate is 634 px square.
+ *
+ * The plate margin (18-11; REGION-06, D-16..D-19): the plate figure's
+ * figcaption is its sheet margin. Zermatt's reads 'Zermatt – Matterhorn ·
+ * contours every 100 m', keeps the footer's 'Extent (LV95)' corners, gives
+ * 'May 2026' and links 'swissALTIRegio, swisstopo' to /sources#swissaltiregio;
+ * following it lands with the swissALTIRegio entry in view.
  */
 
 /*
@@ -1097,6 +1103,48 @@ test.describe('Region plate key and jumps (18-10; REGION-02, D-08)', () => {
     expect(first).toBeGreaterThan(0);
     expect(later).toBe(first);
     await expectLanded(page, last.slug);
+  });
+});
+
+/** The plate figure's sheet margin: the figcaption of the figure holding the sheet. */
+const plateMargin = (page: Page, id: string) =>
+  page.locator(`figure:has(> [data-plate-sheet="${id}"]) > figcaption[data-sheet-margin]`);
+
+test.describe('Region plate margin (18-11; REGION-06, D-16..D-19)', () => {
+  test('Zermatt: the plate margin titles the sheet, keeps Extent (LV95) and links its credit', async ({
+    page,
+  }) => {
+    await page.goto('/photos/regions/zermatt');
+    const margin = plateMargin(page, 'zermatt');
+    await expect(margin).toHaveCount(1);
+    await expect(margin.locator('p').first()).toHaveText(
+      'Zermatt – Matterhorn · contours every 100 m'
+    );
+    const terms = await margin.locator('dt').allTextContents();
+    expect(terms).toEqual(['Extent (LV95)', 'Last surveyed', 'Source']);
+    await expect(margin.locator('dd').nth(0)).toHaveText(
+      'SW 2’616’000, 1’088’000 · NE 2’627’000, 1’099’000'
+    );
+    await expect(margin.locator('dd').nth(1)).toHaveText('May 2026');
+    const credit = margin.locator('dd').nth(2).getByRole('link');
+    await expect(credit).toHaveText('swissALTIRegio, swisstopo');
+    await expect(credit).toHaveAttribute('href', '/sources#swissaltiregio');
+  });
+
+  test('following the Zermatt credit lands on /sources with the swissALTIRegio entry in view', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/photos/regions/zermatt');
+    const credit = plateMargin(page, 'zermatt').getByRole('link', {
+      name: 'swissALTIRegio, swisstopo',
+    });
+    await waitForHydration(credit);
+    await credit.click();
+    await expect(page).toHaveURL(/\/sources#swissaltiregio$/);
+    await expect(
+      page.getByRole('heading', { level: 2, name: 'swissALTIRegio', exact: true })
+    ).toBeInViewport();
   });
 });
 

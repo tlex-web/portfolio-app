@@ -1,6 +1,8 @@
 import ContourField from '@/components/terrain/ContourField';
+import SheetMargin from '@/components/terrain/SheetMargin';
 import { plateCss, plateGroups } from '@/lib/photos/plate-layout';
 import type { RegionPlateSheet } from '@/lib/regions';
+import type { SheetMarginModel } from '@/lib/sheet-margin';
 
 /**
  * The square sheet: an inline-size @container, so the pin CSS sizes the marks
@@ -52,8 +54,20 @@ const DOT_APPROX = 'border-2 border-dashed border-ink bg-surface';
  * The relief is lazy (the header slot's cover is the page's LCP image). Until
  * it and the contour mask decode, or if either fails, the sheet shows
  * bg-surface with every dot and badge working (UI E4 loading, error).
+ *
+ * The figure's figcaption is the plate's own sheet margin (18-11; REGION-06,
+ * Contract 7): title and interval, extent, edition and the linked short
+ * credit. The page builds the model on the server (lib/sheet-margin.ts) and
+ * passes it as plain props. Below 640 px the sheet is full-bleed, so the
+ * margin takes the container's 16 px gutters back.
  */
-export default function PlateSheet({ sheet }: { sheet: RegionPlateSheet }) {
+export default function PlateSheet({
+  sheet,
+  margin,
+}: {
+  sheet: RegionPlateSheet;
+  margin?: SheetMarginModel;
+}) {
   const name = `plate-${sheet.id}`;
   const css = plateCss(sheet.pins, name);
   const { avif, webp } = sheet.hillshade;
@@ -122,6 +136,7 @@ export default function PlateSheet({ sheet }: { sheet: RegionPlateSheet }) {
           </div>
         ))}
       </div>
+      {margin && <SheetMargin margin={margin} className="px-4 sm:px-0" />}
     </figure>
   );
 }

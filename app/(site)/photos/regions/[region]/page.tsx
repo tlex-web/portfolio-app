@@ -19,6 +19,7 @@ import {
   regionPlateSheet,
 } from '@/lib/regions';
 import { factSource } from '@/lib/photos/view-model';
+import { sheetMargin } from '@/lib/sheet-margin';
 
 /**
  * The region page (REGION-07; D-01, D-02, D-05, D-11, D-15), built up by
@@ -113,6 +114,8 @@ export default async function RegionPage({ params }: PageProps) {
   const region = regionById(id);
   if (!region) notFound();
   const sheet = regionPlateSheet(region.id);
+  // 18-11 Task 1: the LV95 sheets' margins; Task 2 emits Saalfelden's WGS84 corners.
+  const margin = region.plate === 'saalfelden' ? undefined : sheetMargin(region.plate);
   const views = new Map(regionPhotoViews(region.id).map((v) => [v.slug, v]));
   const keyRows = sheet.pins.map((pin) => {
     const view = views.get(pin.slug);
@@ -152,7 +155,7 @@ export default async function RegionPage({ params }: PageProps) {
             </ul>
           </section>
           <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1">
-            <PlateSheet sheet={sheet} />
+            <PlateSheet sheet={sheet} margin={margin} />
           </div>
           <div className="lg:col-start-1 lg:row-start-2">
             <PlateKey pins={keyRows} />
