@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
-stopped_at: Completed 18-11-PLAN.md
-last_updated: "2026-11-25T15:20:43.091Z"
+stopped_at: Completed 18-12-PLAN.md
+last_updated: "2026-11-25T15:38:26.089Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: 3f16b98ced91023678b1f3200e50ff031a257ec2
+state_head: 0df234355f28a5423115d5651041e81d1e358317
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 109
-  completed_plans: 92
+  completed_plans: 93
   percent: 71
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-24)
 ## Current Position
 
 Phase: 18 (Immersive Survey Layout) — EXECUTING
-Plan: 12 of 29
+Plan: 13 of 29
 Status: Ready to execute
 Last activity: 2026-11-24 — Phase 18 execution started
 
@@ -150,6 +150,7 @@ Progress: [███████░░░] 71%
 | Phase 18 P09 | 16 min | 2 tasks | 6 files |
 | Phase 18 P10 | 25min | 2 tasks | 6 files |
 | Phase 18 P11 | 15min | 2 tasks | 10 files |
+| Phase 18 P12 | 16 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -385,6 +386,9 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-11: the sheet margin prints Last surveyed as a short month ('Sep 2025') per D-18; formatMonthYear validates the edition
 - [Phase 18]: 18-11: the page builds sheetMargin(region.plate) and passes it to PlateSheet, which stays props-only
 - [Phase 18]: 18-11: Saalfelden's WGS84 corners are emitted by build-terrain.mjs (extent.wgs84, 6 decimals); proj4 stays out of app code
+- [Phase 18]: 18-12: P1 as drafted: rail tick labels are metres only, dashed tick = approximate, head 'Ground altitude' only when every photo is aerial
+- [Phase 18]: 18-12: the rail head label wraps at its space ('Ground altitude' overflowed the 96 px column at 768 in Firefox)
+- [Phase 18]: 18-12: client JS 1,864,179 B after the rail island (+2,498 B, one chunk); tracked for 18-25 per Tim's call
 
 ### Pending Todos
 
@@ -446,6 +450,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-25T15:20:42.050Z
-Stopped at: Completed 18-11-PLAN.md
+Last session: 2026-11-25T15:38:25.055Z
+Stopped at: Completed 18-12-PLAN.md
 Resume file: None
