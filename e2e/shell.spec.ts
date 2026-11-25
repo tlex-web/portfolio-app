@@ -27,6 +27,16 @@ const primaryNav = (page: Page) => page.getByRole('navigation', { name: 'Primary
 const skipLinks = (page: Page) => page.getByRole('link', { name: 'Skip to main content', exact: true });
 const anySkipLinks = (page: Page) => page.getByRole('link', { name: /skip to/i });
 const summitSkipLinks = (page: Page) => page.getByRole('link', { name: 'Skip to the summit', exact: true });
+/**
+ * A region page's sequence head row has a "Skip to next region" link to
+ * #next-region (18-08; 18-UI-SPEC Contract 2 "Sequence"), so a region page has
+ * two /skip to/i matches: the global link and this one.
+ */
+const nextRegionSkipLinks = (page: Page) =>
+  page.getByRole('link', { name: 'Skip to next region', exact: true });
+const isRegionPage = (path: string) => path.startsWith('/photos/regions/');
+/** Every /skip to/i match a route may have: the global link plus its one allowed page cue. */
+const expectedSkipTo = (path: string) => 1 + (path === '/' ? 1 : 0) + (isRegionPage(path) ? 1 : 0);
 
 /**
  * Waits until React has hydrated the shell (it attaches its props key to every
@@ -84,10 +94,11 @@ test.describe('Shell landmarks', () => {
       await expect(page.getByRole('contentinfo')).toHaveCount(1);
       // SHELL-01 / SC4: exactly one skip link, so a page-level second skip link fails here.
       await expect(skipLinks(page)).toHaveCount(1);
-      // The only other 'Skip to …' link on any route is Home's 'Skip to the summit' (09-05, D-15):
-      // every /skip to/i match is one of the two allowed names.
+      // The only other 'Skip to …' links are Home's 'Skip to the summit' (09-05, D-15) and a
+      // region page's 'Skip to next region' (18-08): every /skip to/i match is an allowed name.
       await expect(summitSkipLinks(page)).toHaveCount(path === '/' ? 1 : 0);
-      await expect(anySkipLinks(page)).toHaveCount(path === '/' ? 2 : 1);
+      await expect(nextRegionSkipLinks(page)).toHaveCount(isRegionPage(path) ? 1 : 0);
+      await expect(anySkipLinks(page)).toHaveCount(expectedSkipTo(path));
       // The Primary nav lives in the banner; the footer holds no nav.
       await expect(page.getByRole('banner').getByRole('navigation', { name: 'Primary' })).toHaveCount(1);
       await expect(page.getByRole('contentinfo').getByRole('navigation')).toHaveCount(0);
@@ -133,7 +144,7 @@ test.describe('Shell landmarks', () => {
       // 07 IN-17: count again once hydrated and after the Tab/Enter sequence.
       await hydrated(page);
       await expect(skipLinks(page)).toHaveCount(1);
-      await expect(anySkipLinks(page)).toHaveCount(path === '/' ? 2 : 1);
+      await expect(anySkipLinks(page)).toHaveCount(expectedSkipTo(path));
     });
   }
 
