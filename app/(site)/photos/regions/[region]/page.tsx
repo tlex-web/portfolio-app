@@ -4,11 +4,18 @@ import { ArrowSquareOutIcon } from '@phosphor-icons/react/dist/ssr';
 import type { RegionFact } from '@/data/schemas/region';
 import HeaderSlot from '@/components/photos/region/HeaderSlot';
 import NextRegion from '@/components/photos/region/NextRegion';
+import PlateSheet from '@/components/photos/region/PlateSheet';
 import RegionHeader from '@/components/photos/region/RegionHeader';
 import RegionSequence from '@/components/photos/region/RegionSequence';
 import { breadcrumbLd, regionGalleryLd } from '@/lib/json-ld/content';
 import { jsonLdHtml } from '@/lib/json-ld/site';
-import { regionBreadcrumb, regionById, regionIds, regionMetadata } from '@/lib/regions';
+import {
+  regionBreadcrumb,
+  regionById,
+  regionIds,
+  regionMetadata,
+  regionPlateSheet,
+} from '@/lib/regions';
 import { factSource } from '@/lib/photos/view-model';
 
 /**
@@ -52,6 +59,11 @@ import { factSource } from '@/lib/photos/view-model';
  * NextRegion closes the page after the sequence (D-01, D-11): the trail
  * sign to the next region west to east, wrapping to the first, and 'All
  * regions'; its own py-12 md:py-16 replaces the container's bottom padding.
+ *
+ * 18-09 (REGION-02): the region's local plate follows the facts under an h2
+ * 'Map': PlateSheet, server-rendered from regionPlateSheet(id)'s plain props,
+ * with an exact dot and a numbered badge per photo (a same-page anchor to its
+ * figure, pointer-only). 18-10 adds the key list and the facts and plate grid.
  */
 
 type PageProps = { params: Promise<{ region: string }> };
@@ -116,6 +128,11 @@ export default async function RegionPage({ params }: PageProps) {
               </li>
             ))}
           </ul>
+        </section>
+
+        <section aria-labelledby="region-map" className="mt-8">
+          <h2 id="region-map">Map</h2>
+          <PlateSheet sheet={regionPlateSheet(region.id)} />
         </section>
       </div>
       <RegionSequence id={region.id} />

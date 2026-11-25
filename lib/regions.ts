@@ -7,6 +7,7 @@ import { Regions, type Region } from '@/data/schemas/region';
 import { site } from '@/data/site';
 import { formatMetreRange, formatYearRange } from '@/lib/home-format';
 import { pageMetadata } from '@/lib/metadata';
+import { platePins, type PlatePin } from '@/lib/photos/plate-layout';
 import { regionHref } from '@/lib/photos/routes';
 import { buildPhotoViews, seriesInput, type PhotoView } from '@/lib/photos/view-model';
 
@@ -212,9 +213,16 @@ export function regionCover(id: string): PhotoView {
   return cover;
 }
 
+/** A plate's hillshade derivatives: content-hashed AVIF and WebP at 640 and 1100 px. */
+type Hillshade = {
+  avif: { readonly '640': string; readonly '1100': string };
+  webp: { readonly '640': string; readonly '1100': string };
+};
+
 /** The generated plate registry, read by plate id (the registry names plates as zod strings). */
-const PLATES: Readonly<Record<string, { assets: { contours: { hero: string } } } | undefined>> =
-  plates;
+const PLATES: Readonly<
+  Record<string, { assets: { contours: { hero: string }; hillshade?: Hillshade } } | undefined>
+> = plates;
 
 /**
  * Each region's contour field source (17 D-12: its plate's hero contour SVG,
@@ -247,6 +255,56 @@ export function regionContourSrc(id: string): string {
   const src = CONTOURS.get(id);
   if (!src) throw new RangeError(`regionContourSrc: ${id} is not a registry region`);
   return src;
+}
+
+/**
+ * Each region's hillshade (18-09: the region plate's relief), resolved once at
+ * module load like CONTOURS: a plate without one throws here, naming the
+ * region and the registry file, so a bad plate fails the build.
+ */
+const HILLSHADES: ReadonlyMap<string, Hillshade> = new Map(
+  regions.map((r) => {
+    const hillshade = PLATES[r.plate]?.assets.hillshade;
+    if (!hillshade) {
+      throw new Error(
+        `lib/regions: region ${r.id} names plate ${r.plate} in data/regions/regions.json, ` +
+          'which has no hillshade in data/generated/plates.ts (npm run terrain:build)'
+      );
+    }
+    return [r.id, hillshade];
+  })
+);
+
+/** The region plate's plain props (18-09; REGION-02): built on the server, passed to PlateSheet. */
+export type RegionPlateSheet = {
+  /** The region id (the sheet's container name is derived from it). */
+  id: string;
+  /** The plate's hillshade derivatives (the relief, at --relief-opacity). */
+  hillshade: Hillshade;
+  /** The sheet ContourField reads: only the plate's hero contour URL. */
+  contours: { assets: { contours: { hero: string } } };
+  /** One pin per photo with a position, numbered by its place in the sequence (1 = lowest). */
+  pins: readonly PlatePin[];
+};
+
+/**
+ * The region page's local plate (REGION-02; 18-UI-SPEC Contract 2 "Facts and
+ * plate"): the region's own plate hillshade and hero contours, and a pin per
+ * photo from regionPhotoViews (its stored uv, so no pin is placed more
+ * precisely than the published position, T-18-24). Plain strings and numbers
+ * only: the plate registry stays on the server.
+ *
+ * @throws RangeError for an id that is not in the registry.
+ */
+export function regionPlateSheet(id: string): RegionPlateSheet {
+  const hillshade = HILLSHADES.get(id);
+  if (!hillshade) throw new RangeError(`regionPlateSheet: ${id} is not a registry region`);
+  return {
+    id,
+    hillshade,
+    contours: { assets: { contours: { hero: regionContourSrc(id) } } },
+    pins: platePins(regionPhotoViews(id)),
+  };
 }
 
 /** The region of a generated photo, by photo id, or undefined for an unknown id. */

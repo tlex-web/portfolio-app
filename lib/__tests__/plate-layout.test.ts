@@ -199,7 +199,12 @@ describe(`plateLayout SWEEP, sheet sides ${PLATE_SWEEP_MIN_S}-${PLATE_SWEEP_MAX_
     for (const { id, S, layout } of sweep()) {
       for (const b of layout.groups.flatMap((g) => g.badges)) {
         const { x, y } = b.box;
-        if (x < INSET - 1e-6 || y < INSET - 1e-6 || right(b.box) > S - INSET + 1e-6 || bottom(b.box) > S - INSET + 1e-6) {
+        if (
+          x < INSET - 1e-6 ||
+          y < INSET - 1e-6 ||
+          right(b.box) > S - INSET + 1e-6 ||
+          bottom(b.box) > S - INSET + 1e-6
+        ) {
           bad.push(`${id} S=${S} ${b.slug}`);
         }
       }
@@ -250,7 +255,8 @@ describe(`plateLayout SWEEP, sheet sides ${PLATE_SWEEP_MIN_S}-${PLATE_SWEEP_MAX_
           const near =
             Math.abs(a.dot.x - b.dot.x) < (a.unit.width + b.unit.width) / 2 + GAP &&
             Math.abs(a.dot.y - b.dot.y) < BADGE + GAP;
-          if (near && a.leader === null && b.leader === null) bad.push(`${id} S=${S} ${a.key}/${b.key}`);
+          if (near && a.leader === null && b.leader === null)
+            bad.push(`${id} S=${S} ${a.key}/${b.key}`);
         }
       }
     }
@@ -280,7 +286,8 @@ describe(`plateLayout SWEEP, sheet sides ${PLATE_SWEEP_MIN_S}-${PLATE_SWEEP_MAX_
         for (const h of layout.groups) {
           if (h === g) continue;
           for (const b of h.badges) {
-            if (segmentCrosses(g.leader, b.box)) bad.push(`${id} S=${S} ${g.key} leader x ${b.slug}`);
+            if (segmentCrosses(g.leader, b.box))
+              bad.push(`${id} S=${S} ${g.key} leader x ${b.slug}`);
           }
         }
       }

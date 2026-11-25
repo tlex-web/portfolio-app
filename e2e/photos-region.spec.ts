@@ -692,6 +692,39 @@ test.describe('Region header slot (18-08; D-05, UI E3)', () => {
   }
 });
 
+/** The region's photos that have a position, in sequence order: one plate pin each. */
+const pinnedViews = (id: string) => regionPhotoViews(id).filter((v) => v.uv);
+
+test.describe('Region plate pins (18-09; REGION-02)', () => {
+  for (const r of regions) {
+    test(`/photos/regions/${r.id}: one badge per photo with a position, numbered 1..N in sequence order`, async ({
+      page,
+    }) => {
+      await page.goto(`/photos/regions/${r.id}`);
+      const views = regionPhotoViews(r.id);
+      const pinned = pinnedViews(r.id);
+      const sheet = page.locator(`[data-plate-sheet="${r.id}"]`);
+      await expect(sheet).toBeVisible();
+      const badges = sheet.locator('[data-plate-badge]');
+      await expect(badges).toHaveCount(pinned.length);
+      // In sequence order, each badge reads its photo's place in the ascent.
+      const texts = await Promise.all(
+        pinned.map((v) => sheet.locator(`[data-plate-badge="${v.slug}"]`).textContent())
+      );
+      expect(texts).toEqual(pinned.map((v) => String(views.indexOf(v) + 1)));
+      // Each badge jumps to its figure in the sequence (D-08), which exists.
+      for (const v of pinned) {
+        await expect(sheet.locator(`[data-plate-badge="${v.slug}"]`)).toHaveAttribute(
+          'href',
+          `#photo-${v.slug}`
+        );
+        await expect(page.locator(`li#photo-${v.slug}`)).toHaveCount(1);
+      }
+      await expect(page.getByRole('heading', { level: 2, name: 'Map', exact: true })).toBeVisible();
+    });
+  }
+});
+
 test.describe('Region page scroll and morph (18-08; D-06, LBOX-06, P4)', () => {
   for (const [width, height] of [
     [375, 812],
