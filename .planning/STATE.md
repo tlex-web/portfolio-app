@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
-stopped_at: Completed 18-10-PLAN.md
-last_updated: "2026-11-25T15:02:00.108Z"
+stopped_at: Completed 18-11-PLAN.md
+last_updated: "2026-11-25T15:20:43.091Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: ce5d58dd2a0b5da692455f79de120f25a1dc7427
+state_head: 3f16b98ced91023678b1f3200e50ff031a257ec2
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 109
-  completed_plans: 91
+  completed_plans: 92
   percent: 71
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-24)
 ## Current Position
 
 Phase: 18 (Immersive Survey Layout) — EXECUTING
-Plan: 11 of 29
+Plan: 12 of 29
 Status: Ready to execute
 Last activity: 2026-11-24 — Phase 18 execution started
 
@@ -149,6 +149,7 @@ Progress: [███████░░░] 71%
 | Phase 18 P05 | 2h | 3 tasks | 9 files |
 | Phase 18 P09 | 16 min | 2 tasks | 6 files |
 | Phase 18 P10 | 25min | 2 tasks | 6 files |
+| Phase 18 P11 | 15min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -381,6 +382,9 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-10: the list-plate :has() sync is rooted at a new [data-plate-root] on the facts and plate block (the key list sits outside the plate figure)
 - [Phase 18]: 18-10: P2 as drafted: native instant anchors, no client handler; the sync adds 0 B of client JS
 - [Phase 18]: 18-10: the accent state changes fills only, so approximate badges keep their dashed border
+- [Phase 18]: 18-11: the sheet margin prints Last surveyed as a short month ('Sep 2025') per D-18; formatMonthYear validates the edition
+- [Phase 18]: 18-11: the page builds sheetMargin(region.plate) and passes it to PlateSheet, which stays props-only
+- [Phase 18]: 18-11: Saalfelden's WGS84 corners are emitted by build-terrain.mjs (extent.wgs84, 6 decimals); proj4 stays out of app code
 
 ### Pending Todos
 
@@ -442,6 +446,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-25T15:01:59.264Z
-Stopped at: Completed 18-10-PLAN.md
+Last session: 2026-11-25T15:20:42.050Z
+Stopped at: Completed 18-11-PLAN.md
 Resume file: None
