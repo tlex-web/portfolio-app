@@ -12,6 +12,7 @@ import { photos } from '@/data/generated/photos';
 import { editorial } from '@/data/photos/editorial';
 import { lv95ToWgs84 } from '@/lib/geo';
 import { formatCaptureLabel } from '@/lib/photo-format';
+import { lv95Line } from '@/lib/photos/lv95-line';
 import { buildPhotoViews, photoViews, type PhotoView } from '@/lib/photos/view-model';
 
 const NBSP = ' ';
@@ -37,6 +38,14 @@ function renderStrip(view: PhotoView, headingLevel: 1 | 2 = 1) {
   );
   return container;
 }
+
+/** The strip's LV95 line (18 D-15): read by format, never as literal digits (16 D-25). */
+const LV95_EXACT = /^LV95 E \d’\d{3}’\d{3} N \d’\d{3}’\d{3}$/;
+const LV95_APPROX = /^LV95 ≈ E \d’\d{3}’\d{3} N \d’\d{3}’\d{3}$/;
+
+/** The position list's first visual line: Altitude · Position (and the approx note). */
+const positionLine = (strip: Element) =>
+  strip.querySelector('[data-strip-position]')!.firstElementChild!;
 
 /** An element's text without its sr-only terms: what a sighted reader sees on the line. */
 function visibleText(el: Element): string {
@@ -128,11 +137,13 @@ describe('ExifStrip lists (LBOX-04)', () => {
     ]);
 
     const position = strip.querySelector('[data-strip-position]')!;
+    // A Swiss photo: the Altitude · Position line, then its LV95 line (18 D-14).
     expect(Array.from(position.querySelectorAll('dt'), (dt) => dt.textContent)).toEqual([
       'Altitude',
       'Position',
+      'Swiss grid',
     ]);
-    expect(visibleText(position)).toBe(`1,617${NBSP}m · 46.0150${NBSP}N 7.7414${NBSP}E`);
+    expect(visibleText(positionLine(strip))).toBe(`1,617${NBSP}m · 46.0150${NBSP}N 7.7414${NBSP}E`);
     expect(strip.querySelector('[data-strip-film]')).toBeNull();
   });
 
@@ -149,9 +160,11 @@ describe('ExifStrip lists (LBOX-04)', () => {
     const strip = renderStrip(viewOf('r004-011'));
     expect(strip.querySelector('[data-strip-exif]')).toBeNull();
     expect(strip.querySelector('[data-strip-film]')).toHaveTextContent('Film scan · 2019');
-    expect(visibleText(strip.querySelector('[data-strip-position]')!)).toBe(
+    // The ±100 m note stays on the position line; the LV95 line below it reads 'LV95 ≈ …'.
+    expect(visibleText(positionLine(strip))).toBe(
       `2,760${NBSP}m · ≈ 45.9837${NBSP}N 7.7623${NBSP}E · ±100${NBSP}m (approx.)`
     );
+    expect(strip.querySelector('[data-strip-lv95] dd')!.textContent).toMatch(LV95_APPROX);
     expect(strip.querySelector('[data-strip-rights]')).toHaveTextContent(
       '© 2019 Tim Lui, all rights reserved'
     );
@@ -194,17 +207,63 @@ describe('ExifStrip for a coarse position (16 D-01)', () => {
   it('prints a 3dp position with the approximate sign, three decimals per half and the 100 m note', () => {
     const fixture = photos.map((p) => (p.id === 'img-0605' ? { ...p, position: synthetic } : p));
     const view = viewOf('img-0605', buildPhotoViews({ photos: fixture, editorial, imageManifest }));
-    const position = renderStrip(view).querySelector('[data-strip-position]')!;
+    const strip = renderStrip(view);
     const coordinates = `${synthetic.lat.toFixed(3)}${NBSP}N ${synthetic.lon.toFixed(3)}${NBSP}E`;
 
     // A coarse height was rounded at extraction (16 D-03), so it reads approx. too.
-    expect(visibleText(position)).toBe(
+    expect(visibleText(positionLine(strip))).toBe(
       `1,617${NBSP}m approx. · ≈ ${coordinates} · ±100${NBSP}m (approx.)`
     );
     const value = view.strip.positionRows.find((r) => r.term === 'Position')!.value;
     expect(value.startsWith('≈ ')).toBe(true);
     expect(value).toMatch(new RegExp(`^≈ \\d+\\.\\d{3}${NBSP}N \\d+\\.\\d{3}${NBSP}E$`));
     expect(view.strip.approxNote).toBe(`±100${NBSP}m (approx.)`);
+    // Its LV95 line follows at the 3dp grid, 100 m (18 D-15).
+    const lv95 = strip.querySelector('[data-strip-lv95] dd')!.textContent!;
+    expect(lv95).toMatch(LV95_APPROX);
+    for (const m of lv95.matchAll(/\d’\d{3}’\d{3}/g)) {
+      expect(Number(m[0].replaceAll('’', '')) % 100).toBe(0);
+    }
+  });
+});
+
+/**
+ * The LV95 line (18-18; PHOTO-08, D-14, D-15; UI-SPEC Contract 4): its own
+ * visual line in the position list, after the Altitude · Position line, with
+ * the sr-only term 'Swiss grid' and the list's mono style. Swiss photos only.
+ */
+describe('ExifStrip LV95 line (18-18; PHOTO-08)', () => {
+  it.each(photoViews.map((v) => [v.slug, v] as const))(
+    '%s: the LV95 line renders after the position line with an sr-only Swiss grid term',
+    (_slug, view) => {
+      const strip = renderStrip(view);
+      const list = strip.querySelector('[data-strip-position]')!;
+      const row = strip.querySelector('[data-strip-lv95]')!;
+      expect(row).not.toBeNull();
+      // Inside the position list, directly after the Altitude · Position line, last.
+      expect(row.parentElement).toBe(list);
+      expect(row.previousElementSibling).toBe(list.firstElementChild);
+      expect(row.nextElementSibling).toBeNull();
+      expect(list).toHaveClass('font-mono', 'text-sm', 'text-ink', 'tabular-nums');
+      const dt = row.querySelector('dt')!;
+      expect(dt).toHaveTextContent('Swiss grid');
+      expect(dt).toHaveClass('sr-only');
+      const dd = row.querySelector('dd')!;
+      expect(dd.textContent).toBe(view.strip.lv95);
+      expect(dd.textContent).toMatch(view.strip.approxNote ? LV95_APPROX : LV95_EXACT);
+      expect(dd.textContent).toBe(lv95Line(photos.find((p) => p.id === view.id)!.position, 'CH'));
+    }
+  );
+
+  it('a photo outside Switzerland has no LV95 line and no Swiss grid term (D-14)', () => {
+    const fixture = photos.map((p) => (p.id === 'img-0605' ? { ...p, country: 'IT' as const } : p));
+    const view = viewOf('img-0605', buildPhotoViews({ photos: fixture, editorial, imageManifest }));
+    const strip = renderStrip(view);
+    expect(strip.querySelector('[data-strip-lv95]')).toBeNull();
+    expect(strip.textContent).not.toContain('Swiss grid');
+    expect(strip.textContent).not.toContain('LV95');
+    // The position line itself is unchanged.
+    expect(visibleText(positionLine(strip))).toBe(`1,617${NBSP}m · 46.0150${NBSP}N 7.7414${NBSP}E`);
   });
 });
 

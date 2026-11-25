@@ -120,6 +120,61 @@ test.describe('Photo page (LBOX-01 direct load)', () => {
   });
 });
 
+/**
+ * The LV95 line (18-18; PHOTO-08, D-14, D-15): on every Swiss photo page the
+ * strip's position list ends with 'LV95 [≈ ]E … N …', easting first, whose
+ * values are multiples of the grid for the precision the page shows (4
+ * decimals 10 m, 3 decimals 100 m, 2 decimals 1,000 m); a photo outside
+ * Switzerland has no 'Swiss grid' term. Formats and grid multiples are read
+ * from the page, never literal values (16 D-25).
+ */
+test.describe('LV95 line on the photo page (18-18; PHOTO-08)', () => {
+  const LV95 = /^LV95 (≈ )?E (\d’\d{3}’\d{3}) N (\d’\d{3}’\d{3})$/;
+  const GRID_BY_DECIMALS: Record<number, number> = { 4: 10, 3: 100, 2: 1000 };
+
+  for (const view of publishedViews) {
+    const swiss = view.country === 'CH';
+    test(`/photos/${view.slug} (${view.country}): ${swiss ? 'an LV95 line at the shown precision' : 'no LV95 line'}`, async ({
+      page,
+    }) => {
+      await page.goto(`/photos/${view.slug}`);
+      const list = page.locator('[data-photo-strip] [data-strip-position]');
+      await expect(list).toBeVisible();
+      if (!swiss) {
+        await expect(list.locator('[data-strip-lv95]')).toHaveCount(0);
+        await expect(page.locator('[data-photo-strip] dt', { hasText: 'Swiss grid' })).toHaveCount(
+          0
+        );
+        await expect(page.locator('[data-photo-strip]')).not.toContainText('LV95');
+        return;
+      }
+      // The shown Position value: its decimals name the precision, and with it the grid.
+      const position = (await list.locator('dt:text-is("Position") + dd').innerText()).trim();
+      const decimals = /(\d+)\.(\d+) [NS]/.exec(position)?.[2].length;
+      expect(decimals).toBeDefined();
+      const grid = GRID_BY_DECIMALS[decimals!];
+      expect(grid).toBeDefined();
+
+      const row = list.locator('[data-strip-lv95]');
+      await expect(row).toBeVisible();
+      await expect(row.locator('dt')).toHaveText('Swiss grid');
+      await expect(row.locator('dt')).toHaveClass(/\bsr-only\b/);
+      const line = (await row.locator('dd').innerText()).trim();
+      const match = LV95.exec(line);
+      expect(match, line).not.toBeNull();
+      // '≈' exactly when the Position line carries it.
+      expect(match![1] !== undefined).toBe(position.startsWith('≈'));
+      for (const value of [match![2], match![3]]) {
+        expect(Number(value.replaceAll('’', '')) % grid).toBe(0);
+      }
+      // Its own visual line, under the Altitude · Position line.
+      const lineBox = await list.locator(':scope > div').first().boundingBox();
+      const rowBox = await row.boundingBox();
+      expect(rowBox!.y).toBeGreaterThanOrEqual(lineBox!.y + lineBox!.height - 1);
+    });
+  }
+});
+
 test.describe('Viewer layout tiers (D-05)', () => {
   const subject = viewBySlug(SLUGS.matterhornFromZermatt);
   const ratio = subject.aspect.w / subject.aspect.h;

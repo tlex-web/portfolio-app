@@ -11,6 +11,8 @@ import { imageManifest } from '@/data/generated/image-manifest';
 import { photos } from '@/data/generated/photos';
 import { editorial } from '@/data/photos/editorial';
 import { buildWaypoints } from '@/lib/ascent/waypoints';
+import { lv95ToWgs84 } from '@/lib/geo';
+import { lv95Line } from '@/lib/photos/lv95-line';
 import {
   buildPhotoViews,
   elevationMetres,
@@ -263,6 +265,9 @@ const photoOf = (slug: string) => {
   return photo;
 };
 /** The committed photos with one photo's facts replaced, for the D-07 omission cases. */
+/** The strip's LV95 line (18-18; D-14, D-15): exact and approximate shapes, U+2019 grouping. */
+const LV95_EXACT = /^LV95 E \d’\d{3}’\d{3} N \d’\d{3}’\d{3}$/;
+const LV95_APPROX = /^LV95 ≈ E \d’\d{3}’\d{3} N \d’\d{3}’\d{3}$/;
 const withPhoto = (id: string, patch: Record<string, unknown>) =>
   buildPhotoViews({
     ...committed,
@@ -288,7 +293,11 @@ describe('strip fields (D-07, LBOX-04)', () => {
         { term: 'Position', value: `46.0150${NBSP}N 7.7414${NBSP}E` },
       ],
       approxNote: null,
+      // A Swiss photo (18 D-14): its LV95 line, read from the shown WGS84 at 10 m (D-15).
+      // Asserted by format and derivation, never as literal digits (16 D-25).
+      lv95: expect.stringMatching(LV95_EXACT),
     });
+    expect(strip.lv95).toBe(lv95Line(photoOf(SLUGS.matterhornFromZermatt).position, 'CH'));
     expect(codePoints(strip.positionRows[1].value)).toEqual(
       codePoints(`46.0150${NBSP}N 7.7414${NBSP}E`)
     );
@@ -305,7 +314,10 @@ describe('strip fields (D-07, LBOX-04)', () => {
         { term: 'Position', value: `≈ 45.9837${NBSP}N 7.7623${NBSP}E` },
       ],
       approxNote: `±100${NBSP}m (approx.)`,
+      // The hand-placed film scan is approximate, so its LV95 line reads 'LV95 ≈ …' (UI-SPEC Contract 4).
+      lv95: expect.stringMatching(LV95_APPROX),
     });
+    expect(strip.lv95).toBe(lv95Line(photoOf(SLUGS.riffelseeReflection).position, 'CH'));
   });
 
   it('keeps only the EXIF units that are present: a camera alone is one row', () => {
@@ -349,9 +361,12 @@ describe('strip fields (D-07, LBOX-04)', () => {
       place: 'Zermatt, Switzerland',
       captureLabel: '6 September 2021, 10:48',
       altitudeM: 1617,
+      country: 'CH',
     });
     expect(strip.positionRows).toEqual([{ term: 'Altitude', value: `1,617${NBSP}m` }]);
     expect(strip.approxNote).toBeNull();
+    // A Swiss photo without coordinates has no LV95 line either, never a dash (UI-SPEC empty state).
+    expect(strip.lv95).toBeNull();
   });
 
   it('never prints filler in any strip field', () => {
@@ -359,6 +374,70 @@ describe('strip fields (D-07, LBOX-04)', () => {
       expect(v.strip).toBeDefined();
       const json = JSON.stringify(v.strip);
       for (const filler of ['—', 'undefined', 'NaN', 'unknown']) expect(json).not.toContain(filler);
+    }
+  });
+});
+
+/**
+ * The LV95 line (18-18; PHOTO-08, D-14, D-15; Pitfall 4): every published
+ * view carries its photo's country, and its strip has an LV95 line exactly
+ * when that country is CH, computed by lv95Line from the photo's position.
+ * The synthetic rows swap only the country or put a synthetic coarse position
+ * (the WGS84 of a made-up LV95 point) on a committed photo; no photo's own
+ * position is written here (16 D-25).
+ */
+describe('LV95 line (18-18; PHOTO-08, D-14, D-15)', () => {
+  it.each(publishedViews.map((v) => [v.slug, v] as const))(
+    '%s: country from its photo; an LV95 line exactly when the country is CH',
+    (_slug, view) => {
+      const photo = photos.find((p) => p.id === view.id)!;
+      expect(view.country).toBe(photo.country);
+      expect(view.strip.lv95 !== null).toBe(view.country === 'CH');
+      expect(view.strip.lv95).toBe(lv95Line(photo.position, photo.country));
+      if (view.strip.lv95) {
+        expect(view.strip.lv95).toMatch(photo.position?.approximate ? LV95_APPROX : LV95_EXACT);
+      }
+    }
+  );
+
+  it('the light-table views carry the same country and line as their published views', () => {
+    for (const view of photoViews) {
+      const published = publishedViews.find((v) => v.id === view.id)!;
+      expect(view.country).toBe(published.country);
+      expect(view.strip.lv95).toBe(published.strip.lv95);
+    }
+  });
+
+  it('the same Swiss photo moved to another country loses its line (country rule, not position)', () => {
+    for (const country of ['IT', 'AT', 'LI'] as const) {
+      const view = viewOf(withPhoto('img-0605', { country }), 'img-0605');
+      expect(view.country).toBe(country);
+      expect(view.strip.lv95).toBeNull();
+    }
+  });
+
+  it('a synthetic coarse Swiss position prints at its own grid: 3dp 100 m, 2dp 1,000 m', () => {
+    const origin = lv95ToWgs84({ e: 2_600_000, n: 1_200_000 });
+    for (const [precision, grid] of [
+      ['3dp', 100],
+      ['2dp', 1000],
+    ] as const) {
+      const position = {
+        lat: origin.lat,
+        lon: origin.lon,
+        precision,
+        source: 'exif' as const,
+        approximate: true,
+        reason: 'Synthetic coarse test position',
+        radiusM: grid,
+      };
+      const { strip } = viewOf(withPhoto('img-0605', { position }), 'img-0605');
+      expect(strip.lv95).toMatch(LV95_APPROX);
+      const [e, n] = [...strip.lv95!.matchAll(/\d’\d{3}’\d{3}/g)].map((m) =>
+        Number(m[0].replaceAll('’', ''))
+      );
+      expect(e % grid).toBe(0);
+      expect(n % grid).toBe(0);
     }
   });
 });
