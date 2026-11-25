@@ -107,3 +107,13 @@ export function headerSlotSizes(ar: number): string {
     full ? '100vw' : `calc(100vw * ${f})`,
   ].join(', ');
 }
+
+/** The scroll tier's photo cap (70svh, PhotoViewer's lb-scroll photo box width). */
+export const STAGE_SCROLL_VH = 70;
+
+/** RED stub (18-19 Task 1): replaced by the tier-derived string. */
+export function stageSizes(ar: number, variant: 'page' | 'modal'): string {
+  void ar;
+  void variant;
+  return '';
+}

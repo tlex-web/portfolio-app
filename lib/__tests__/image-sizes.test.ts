@@ -10,6 +10,12 @@
  * min(1, 9/16 * ar). A source scan pins the CSS that spells the same values
  * (the figure's 16rem floor and 12rem chrome, the rail column's 6rem), so CSS
  * and TypeScript cannot drift (the lightbox-tiers precedent).
+ *
+ * The viewer stage (13 #34, stage half; 18-19) takes stageSizes(ar, variant):
+ * the gutter, key and scroll tiers of lib/photos/lightbox-tiers.ts, each capped
+ * by the stage height times the ratio (120 px of nav and chrome on the page,
+ * 56 px of chrome in the dialog, 70vh on the scroll tier). The strip below the
+ * stage is ignored on purpose: an upper bound never under-fetches.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -23,9 +29,18 @@ import {
   WIDE_FROM_PX,
   RAIL_COLUMN_PX,
   RAIL_GAP_PX,
+  STAGE_SCROLL_VH,
   figureSizes,
   headerSlotSizes,
+  stageSizes,
 } from '@/lib/photos/image-sizes';
+import {
+  LB_CHROME_PX,
+  LB_GUTTER_MIN_REM,
+  LB_GUTTER_PX,
+  LB_KEY_MIN_REM,
+  LB_MIN_HEIGHT_REM,
+} from '@/lib/photos/lightbox-tiers';
 
 describe('layout constants (18-UI-SPEC Contract 2 "Sequence")', () => {
   it('match the UI-SPEC values', () => {
@@ -141,6 +156,52 @@ describe('headerSlotSizes(ar) (D-05, P3 default: 16:9 box, object-contain)', () 
   });
 });
 
+describe('stageSizes(ar, variant) (13 #34, stage half; 18-19)', () => {
+  it('spells the gutter, key and scroll tiers for a 3:2 photo on the page', () => {
+    expect(stageSizes(1.5, 'page')).toBe(
+      '(min-width: 1280px) and (min-height: 640px) min(calc(100vw - 432px), calc((100vh - 120px) * 1.5000)), ' +
+        '(min-width: 768px) and (min-height: 640px) min(100vw, calc((100vh - 120px) * 1.5000)), ' +
+        'min(100vw, calc(70vh * 1.5000))'
+    );
+  });
+
+  it('takes 56 px of chrome (no nav) in the dialog', () => {
+    expect(stageSizes(1.5, 'modal')).toBe(
+      '(min-width: 1280px) and (min-height: 640px) min(calc(100vw - 432px), calc((100vh - 56px) * 1.5000)), ' +
+        '(min-width: 768px) and (min-height: 640px) min(100vw, calc((100vh - 56px) * 1.5000)), ' +
+        'min(100vw, calc(70vh * 1.5000))'
+    );
+  });
+
+  it('caps a 2:3 portrait by the stage height, ratio to four decimals', () => {
+    const s = stageSizes(2 / 3, 'page');
+    expect(s).toContain('min(calc(100vw - 432px), calc((100vh - 120px) * 0.6667))');
+    expect(s).toContain('min(100vw, calc((100vh - 120px) * 0.6667))');
+    expect(s.endsWith('min(100vw, calc(70vh * 0.6667))')).toBe(true);
+  });
+
+  it('derives every number from the lightbox-tiers constants and NAV_PX', () => {
+    const REM = 16;
+    for (const variant of ['page', 'modal'] as const) {
+      const above = variant === 'page' ? NAV_PX + LB_CHROME_PX : LB_CHROME_PX;
+      const terms = stageSizes(2, variant).split(/, (?=\(min-width|min\(100vw, calc\(\d+vh)/);
+      expect(terms).toEqual([
+        `(min-width: ${LB_GUTTER_MIN_REM * REM}px) and (min-height: ${LB_MIN_HEIGHT_REM * REM}px) ` +
+          `min(calc(100vw - ${2 * LB_GUTTER_PX}px), calc((100vh - ${above}px) * 2.0000))`,
+        `(min-width: ${LB_KEY_MIN_REM * REM}px) and (min-height: ${LB_MIN_HEIGHT_REM * REM}px) ` +
+          `min(100vw, calc((100vh - ${above}px) * 2.0000))`,
+        `min(100vw, calc(${STAGE_SCROLL_VH}vh * 2.0000))`,
+      ]);
+    }
+  });
+
+  it('rejects a ratio that is not a positive finite number', () => {
+    for (const bad of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(() => stageSizes(bad, 'page')).toThrow(RangeError);
+    }
+  });
+});
+
 describe('CSS parity with the layout constants (source scan)', () => {
   const read = (file: string) => fs.readFileSync(path.join(process.cwd(), file), 'utf8');
   const REM = 16;
@@ -169,5 +230,13 @@ describe('CSS parity with the layout constants (source scan)', () => {
   it("HeaderSlot's image takes headerSlotSizes", () => {
     const src = read('components/photos/region/HeaderSlot.tsx');
     expect(src).toContain('sizes={headerSlotSizes(ar)}');
+  });
+
+  it("PhotoViewer's scroll-tier photo box spells STAGE_SCROLL_VH, and the stage takes stageSizes", () => {
+    const src = read('components/photos/PhotoViewer.tsx');
+    const cap = /lb-scroll:w-\[min\(100%,calc\((\d+)svh\*var\(--ar\)\)\)\]/.exec(src);
+    expect(cap).not.toBeNull();
+    expect(Number(cap![1])).toBe(STAGE_SCROLL_VH);
+    expect(src).toContain('sizes={stageSizes(');
   });
 });
