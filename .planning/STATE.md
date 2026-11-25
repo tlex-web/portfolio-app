@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
-stopped_at: Completed 18-08-PLAN.md
-last_updated: "2026-11-25T12:22:04.334Z"
+stopped_at: Completed 18-05-PLAN.md
+last_updated: "2026-11-25T14:24:25.533Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: df4f8e840c720af8cbf7b9b796c2e9d01bfc878f
+state_head: c24568d4c7ff5df51c46bbab1b50bf8503987ef4
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 109
-  completed_plans: 88
+  completed_plans: 89
   percent: 71
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-24)
 ## Current Position
 
 Phase: 18 (Immersive Survey Layout) — EXECUTING
-Plan: 8 of 29
+Plan: 9 of 29
 Status: Ready to execute
 Last activity: 2026-11-24 — Phase 18 execution started
 
@@ -146,6 +146,7 @@ Progress: [███████░░░] 71%
 | Phase 18 P07 | 14 min | 2 tasks | 7 files |
 | Phase 18 P04 | 1h | 3 tasks | 36 files |
 | Phase 18 P08 | 21 min | 2 tasks | 11 files |
+| Phase 18 P05 | 2h | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -369,6 +370,9 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-08: header slot full-bleed on phones via auto width and -mx-4 (the UI-SPEC's w-full -mx-4 would be 343 px, shifted); P3/P4 defaults applied (16:9 contain cover, figure morph)
 - [Phase 18]: 18-08: figure link name is an aria-label (alt + ', open in the photo viewer'); an sr-only suffix after the img gets a stray space before the comma
 - [Phase 18]: 18-08: portrait srcset descriptors use the long edge (view-model imageSet), deferred to 18-19 with the stage sizes and its re-baseline
+- [Phase 18]: 18-05: D-24 round 2 (/sources) re-baselined alone: 3 new, 49 identical, 0 changed; Tim committed the 3 PNGs as c24568d
+- [Phase 18]: 18-05: the visual photo shot is chosen as the single Zermatt view with a film line, not the first approximate view (Pitfall 8); photo/* proved byte-identical
+- [Phase 18]: 18-05: srcset w descriptors use the file's pixel width (97091e8), pulled forward from 18-19 because CI webkit runs at DPR 2 and no baselined srcset changes; resolves the 18-08 deferred item
 
 ### Pending Todos
 
@@ -430,6 +434,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-25T12:22:03.387Z
-Stopped at: Completed 18-08-PLAN.md
+Last session: 2026-11-25T14:24:24.950Z
+Stopped at: Completed 18-05-PLAN.md
 Resume file: None
