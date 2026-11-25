@@ -3,11 +3,12 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowSquareOutIcon } from '@phosphor-icons/react/dist/ssr';
 import type { RegionFact } from '@/data/schemas/region';
-import { regionGalleryLd } from '@/lib/json-ld/content';
+import RegionHeader from '@/components/photos/region/RegionHeader';
+import { breadcrumbLd, regionGalleryLd } from '@/lib/json-ld/content';
 import { jsonLdHtml } from '@/lib/json-ld/site';
 import {
+  regionBreadcrumb,
   regionById,
-  regionHeading,
   regionIds,
   regionMetadata,
   regionPhotoViews,
@@ -42,6 +43,11 @@ import { factSource } from '@/lib/photos/view-model';
  * block ahead of the stand-in, on this page only: the @modal region page never
  * carries one. Its texts are this page's own (heading, description, rights
  * line) and its hasPart lists the photos linked below, in the same order.
+ *
+ * 18-06 (REGION-02, D-10): RegionHeader is the header band (breadcrumb, h1,
+ * data line). Its breadcrumb and the second data block, breadcrumbLd, both
+ * read regionBreadcrumb(id), so the BreadcrumbList equals the visible crumbs.
+ * The facts list and the text photo list stay until 18-08 and 18-09.
  */
 
 type PageProps = { params: Promise<{ region: string }> };
@@ -87,10 +93,12 @@ export default async function RegionPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdHtml(regionGalleryLd(region.id)) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(breadcrumbLd(regionBreadcrumb(region.id))) }}
+      />
       <div className="mx-auto w-full max-w-6xl px-4 pb-12 sm:px-6 md:pb-16 lg:px-8">
-        <div className="border-b border-line pt-8 pb-6">
-          <h1>{regionHeading(region)}</h1>
-        </div>
+        <RegionHeader id={region.id} />
 
         <section aria-labelledby="region-facts" className="mt-8 max-w-prose">
           <h2 id="region-facts">Facts</h2>

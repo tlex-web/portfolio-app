@@ -101,6 +101,27 @@ export function regionById(id: string): Region | undefined {
   return regions.find((r) => r.id === id);
 }
 
+/** One crumb of a page's trail: its visible text and its site path. */
+export type Crumb = { name: string; path: string };
+
+/**
+ * The region page's breadcrumb trail (D-10; 18-UI-SPEC Contract 6):
+ * 'Photographs' (/photos), then the bare region name (not regionHeading, to
+ * keep the trail short) at regionHref(id), the current page. The visible
+ * Breadcrumb nav and the BreadcrumbList JSON-LD (breadcrumbLd) both read this
+ * one list, so the structured data always equals the visible crumbs.
+ *
+ * @throws RangeError for an id that is not in the registry (exact, case-sensitive).
+ */
+export function regionBreadcrumb(id: string): readonly Crumb[] {
+  const region = regionById(id);
+  if (!region) throw new RangeError(`regionBreadcrumb: ${id} is not a registry region`);
+  return [
+    { name: 'Photographs', path: '/photos' },
+    { name: region.name, path: regionHref(id) },
+  ];
+}
+
 /** Each region's photo views, built once per module load (throws for a region with no photo). */
 const VIEWS: ReadonlyMap<string, readonly PhotoView[]> = new Map(
   regions.map((r) => [r.id, buildPhotoViews(seriesInput(r.id))])

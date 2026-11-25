@@ -1,4 +1,5 @@
 import type {
+  BreadcrumbList,
   GeoCircle,
   GeoCoordinates,
   ImageGallery,
@@ -19,6 +20,7 @@ import type { PhotoView } from '@/lib/photos/view-model';
 import {
   regionById,
   regionDescription,
+  type Crumb,
   regionHeading,
   regionPhotoViews,
   regionRights,
@@ -52,8 +54,10 @@ import {
  *   with its public repository, coin-flip as SoftwareApplication with no
  *   repository at all (private, 11 D-23). Its copyrightNotice is
  *   siteRights(): Tim's 17-01 option (a), the footer line.
- * - No breadcrumb markup of any kind: it waits for Phase 18's visible
- *   breadcrumb, so no block names links the page does not show.
+ * - 18-06 region pages (D-10): breadcrumbLd is the only breadcrumb builder.
+ *   The region page passes it regionBreadcrumb(id), the same list its visible
+ *   Breadcrumb nav renders, so the block never names a link the page does not
+ *   show. The site graph and the other blocks hold no breadcrumb.
  * - lib/regions is server-only too (17-16 client-graph guard), which holds as
  *   long as no client file imports this module.
  */
@@ -201,6 +205,33 @@ export function regionGalleryLd(id: string): WithContext<ImageGallery> {
     creator: personRef(),
     creditText: site.name,
     copyrightNotice: regionRights(id),
+  };
+}
+
+/**
+ * A page's BreadcrumbList (D-10; 18-UI-SPEC Contract 6): one ListItem per
+ * visible crumb, in the same order, positions from 1. Each name is the crumb's
+ * visible text verbatim and each item its absolute canonical URL (site.url plus
+ * the crumb's path), the last being the page's own canonical. The caller passes
+ * the list its Breadcrumb nav renders (regionBreadcrumb on region pages), so the
+ * two never disagree. Serialize it with jsonLdHtml (the Next json-ld guide's
+ * '<' escape) in a native ld+json data block.
+ *
+ * A BreadcrumbList is an ItemList, an Intangible, not a CreativeWork, so the
+ * D-16 per-node rights rule (creator, copyrightNotice, creditText) does not
+ * apply to it, as it does not to the Person; schema-dts does not accept the
+ * three on it.
+ */
+export function breadcrumbLd(items: readonly Crumb[]): WithContext<BreadcrumbList> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((crumb, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: crumb.name,
+      item: `${site.url}${crumb.path}`,
+    })),
   };
 }
 

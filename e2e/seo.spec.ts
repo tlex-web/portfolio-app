@@ -290,7 +290,8 @@ async function ldNodeOfType(page: Page, type: string): Promise<LdNode> {
 function expectedTypes(path: string): string[] {
   const own: string[] = [];
   const project = projects.find((p) => path === `/projects/${p.slug}`);
-  if (path.startsWith('/photos/regions/')) own.push('ImageGallery');
+  // A region page carries its gallery and its BreadcrumbList (18-06, D-10).
+  if (path.startsWith('/photos/regions/')) own.push('ImageGallery', 'BreadcrumbList');
   else if (/^\/photos\/[^/]+$/.test(path)) own.push('ImageObject');
   else if (project) own.push('links' in project ? 'SoftwareSourceCode' : 'SoftwareApplication');
   return ['Person', 'WebSite', ...own].sort();
@@ -305,11 +306,19 @@ const filled = (value: unknown) =>
   (typeof value !== 'string' || value.trim() !== '') &&
   (typeof value !== 'object' || Object.keys(value).length > 0);
 
+/**
+ * Node types the D-16 per-node rule exempts: schema.org defines creator,
+ * copyrightNotice and creditText on CreativeWork, and a Person (a Thing) and a
+ * BreadcrumbList (an ItemList, an Intangible; 18-06, D-10) are not
+ * CreativeWorks, so they must carry none of the three.
+ */
+const RIGHTS_EXEMPT = ['Person', 'BreadcrumbList'];
+
 /** The D-16 per-node rule's mismatches for one node, each prefixed with the path. */
 function perNodeMismatches(path: string, node: LdNode): string[] {
   const type = String(node['@type']);
-  if (type === 'Person') {
-    return RIGHTS_KEYS.filter((k) => k in node).map((k) => `${path}: Person carries ${k}`);
+  if (RIGHTS_EXEMPT.includes(type)) {
+    return RIGHTS_KEYS.filter((k) => k in node).map((k) => `${path}: ${type} carries ${k}`);
   }
   return RIGHTS_KEYS.filter((k) => !filled(node[k])).map(
     (k) => `${path}: ${type} has no non-empty ${k}`
@@ -334,8 +343,9 @@ async function waitForHydration(link: Locator) {
 test.describe('JSON-LD on every page (SEO-04; D-16, SC4)', () => {
   /**
    * Every sitemap page plus /offline: each ld+json block parses, the sorted
-   * @types of the flattened nodes equal the path's expected set (nothing else,
-   * so no BreadcrumbList), and every node passes the per-node rule. A data
+   * @types of the flattened nodes equal the path's expected set (nothing else:
+   * a BreadcrumbList only on region pages, 18-06), and every node passes the
+   * per-node rule. A data
    * contract, so one engine; mismatches are collected so a failure names every
    * path.
    */

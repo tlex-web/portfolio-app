@@ -44,8 +44,13 @@
  *   coin-flip is SoftwareApplication with no codeRepository key at all (its
  *   repository is private, 11 D-23, T-17-29). Both carry siteRights(), Tim's
  *   17-01 option (a): the footer line.
- * - No block built here holds BreadcrumbList (it waits for Phase 18's visible
- *   breadcrumb), license or acquireLicensePage.
+ * - No gallery, project, photo or site block holds BreadcrumbList, license or
+ *   acquireLicensePage. breadcrumbLd (18-06; D-10) is the one BreadcrumbList
+ *   builder: lib/json-ld/site.ts never names the type, and in content.ts it
+ *   appears only in breadcrumbLd and its type import (source scan). A region
+ *   page's block lists ['Photographs', region name] in the visible order with
+ *   absolute item URLs, the last the page's canonical, and a name holding '<'
+ *   reaches the page escaped by jsonLdHtml (T-18-16).
  *
  * keysDeep and blocksOf are the helpers 17-13 and 17-14 reuse in this file.
  */
@@ -56,6 +61,7 @@ import { photos } from '@/data/generated/photos';
 import { projects } from '@/data/projects';
 import { site } from '@/data/site';
 import {
+  breadcrumbLd,
   photoImageId,
   photoImageLd,
   photoLdFacts,
@@ -75,6 +81,7 @@ import { photoHref, regionHref } from '@/lib/photos/routes';
 import { siteRights as footerRights } from '@/lib/site-rights';
 import { publishedViews, type PhotoView } from '@/lib/photos/view-model';
 import {
+  regionBreadcrumb,
   regionById,
   regionDescription,
   regionHeading,
@@ -821,8 +828,26 @@ describe('17-14 blocks: per-node rule and disclosure (D-16, Person exemption)', 
     }
   );
 
-  it.each(sourceRows)('%s never builds a BreadcrumbList (it waits for Phase 18)', (file) => {
-    expect(read(file)).not.toContain('BreadcrumbList');
+  it('the site module and the site graph never name a BreadcrumbList (D-10)', () => {
+    expect(read('lib/json-ld/site.ts')).not.toContain('BreadcrumbList');
+    expect(JSON.stringify(siteGraph())).not.toContain('BreadcrumbList');
+  });
+
+  it('breadcrumbLd is the only BreadcrumbList builder in lib/json-ld/content.ts (D-10)', () => {
+    const source = read('lib/json-ld/content.ts').replace(/\r\n/g, '\n');
+    const start = source.indexOf('export function breadcrumbLd(');
+    expect(start).toBeGreaterThan(-1);
+    // The function body ends at the first line that is a lone closing brace.
+    const end = source.indexOf('\n}\n', start);
+    expect(end).toBeGreaterThan(start);
+    const outside = source.slice(0, start) + source.slice(end);
+    // Outside the builder the type is named only in the type import (prose lines aside).
+    const code = outside
+      .split('\n')
+      .filter((line) => !/^\s*(\*|\/\/|\/\*)/.test(line))
+      .join('\n');
+    expect(code.match(/BreadcrumbList/g) ?? []).toHaveLength(1);
+    expect(code).toMatch(/import type \{[^}]*\bBreadcrumbList,/);
   });
 });
 
@@ -840,11 +865,86 @@ describe('region and case-study page source rules (D-16, D-10)', () => {
     expect(page).toContain(call);
     expect(page).not.toMatch(/\bnonce\s*=/);
     expect(page).not.toMatch(/from ['"]next\/script['"]/);
+    // No hand-built breadcrumb object on either page: only breadcrumbLd builds one.
+    expect(page).not.toMatch(/['"]@type['"]\s*:\s*['"]BreadcrumbList['"]/);
+  });
+
+  it('the region page renders its BreadcrumbList from regionBreadcrumb, the list its nav shows (D-10)', () => {
+    const page = read('app', '(site)', 'photos', 'regions', '[region]', 'page.tsx');
+    expect(page).toContain('jsonLdHtml(breadcrumbLd(regionBreadcrumb(region.id)))');
+    expect(page.match(/type="application\/ld\+json"/g)).toHaveLength(2);
+    const header = read('components', 'photos', 'region', 'RegionHeader.tsx');
+    expect(header).toContain('regionBreadcrumb(id)');
+  });
+
+  it('the case-study page carries no breadcrumb', () => {
+    const page = read('app', '(site)', 'projects', '[slug]', 'page.tsx');
+    expect(page).not.toContain('breadcrumbLd');
     expect(page).not.toContain('BreadcrumbList');
   });
 
   it('keeps the intercepted @modal region page free of JSON-LD', () => {
     const modal = read('app', '(site)', 'photos', '@modal', 'regions', '[region]', 'page.tsx');
     expect(modal).not.toContain('ld+json');
+  });
+});
+
+describe('breadcrumbLd: the BreadcrumbList on every region page (18-06; D-10, T-18-16)', () => {
+  type Item = { '@type': string; position: number; name: string; item: string };
+  const itemsOf = (block: Node) => block.itemListElement as Item[];
+
+  it('runs over every registry region', () => {
+    expect(regionRows.length).toBeGreaterThan(0);
+  });
+
+  it.each(regionRows)(
+    '%s: names Photographs and the bare region name, in order, with absolute canonical items',
+    (id) => {
+      const region = regionById(id)!;
+      const block = parsed(breadcrumbLd(regionBreadcrumb(id)));
+      expect(block['@context']).toBe('https://schema.org');
+      expect(block['@type']).toBe('BreadcrumbList');
+      const items = itemsOf(block);
+      expect(items.map((i) => i['@type'])).toEqual(['ListItem', 'ListItem']);
+      expect(items.map((i) => i.position)).toEqual([1, 2]);
+      expect(items.map((i) => i.name)).toEqual(['Photographs', region.name]);
+      expect(items.map((i) => i.item)).toEqual([
+        `${site.url}/photos`,
+        `${site.url}${regionHref(id)}`,
+      ]);
+      // The current crumb's item is the page's own canonical, the gallery's @id.
+      expect(items[1].item).toBe(parsed(regionGalleryLd(id))['@id']);
+      for (const i of items) expect(i.item).toMatch(/^https:\/\//);
+    }
+  );
+
+  it.each(regionRows)('%s: the block holds only its context, type and items', (id) => {
+    // A BreadcrumbList is an Intangible, not a CreativeWork: no rights keys (the Person
+    // exemption from the D-16 per-node rule), and no license, email or address either.
+    const block = parsed(breadcrumbLd(regionBreadcrumb(id)));
+    expect(Object.keys(block).sort()).toEqual(['@context', '@type', 'itemListElement']);
+    const itemKeys = ['@type', 'position', 'name', 'item'];
+    expect(keysDeep(block).sort()).toEqual(
+      ['@context', '@type', 'itemListElement', ...itemKeys, ...itemKeys].sort()
+    );
+  });
+
+  it('keeps every name verbatim and escapes every < through jsonLdHtml', () => {
+    const names = [BREAKOUT, 'Zermatt & <Matterhorn>', 'Saalfelden am Steinernen Meer'];
+    const data = breadcrumbLd(names.map((name, i) => ({ name, path: `/x/${i}` })));
+    const html = jsonLdHtml(data);
+    expect(html).not.toContain('<');
+    const lessThans = names.join('').split('<').length - 1;
+    expect(html.split('\\u003c').length - 1).toBe(lessThans);
+    const blocks = blocksOf(`<script type="application/ld+json">${html}</script>`);
+    expect(blocks).toHaveLength(1);
+    expect(itemsOf(blocks[0] as Node).map((i) => i.name)).toEqual(names);
+  });
+
+  it('regionBreadcrumb throws RangeError for an unknown or wrong-case id', () => {
+    expect(() => regionBreadcrumb('nowhere')).toThrow(
+      new RangeError('regionBreadcrumb: nowhere is not a registry region')
+    );
+    expect(() => regionBreadcrumb('Zermatt')).toThrow(RangeError);
   });
 });

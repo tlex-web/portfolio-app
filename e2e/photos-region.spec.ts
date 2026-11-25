@@ -1,5 +1,14 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
-import { regionById, regionHeading, regionOfPhoto, regions, regionTitle } from '@/lib/regions';
+import { site } from '@/data/site';
+import {
+  regionBreadcrumb,
+  regionById,
+  regionCardFacts,
+  regionHeading,
+  regionOfPhoto,
+  regions,
+  regionTitle,
+} from '@/lib/regions';
 import { photoSlugs, publishedViews } from '@/lib/photos/view-model';
 
 /**
@@ -32,6 +41,12 @@ import { photoSlugs, publishedViews } from '@/lib/photos/view-model';
  * /photos/regions/<id>; Escape there lands on that region page; its lightbox,
  * opened from the region page, has no stepping controls and no back link; and
  * a touch swipe or the arrows on its page do nothing (Edge PHOTO-05/empty).
+ *
+ * The header band (18-06; REGION-02, D-10): on every region page the visible
+ * breadcrumb ('Photographs' link, the region name current, '/' aria-hidden)
+ * equals the page's one BreadcrumbList block, names in order and items absolute,
+ * and the data line equals regionCardFacts' parts joined at ' · '. /photos and
+ * /sources carry no breadcrumb (UI E10/empty).
  */
 
 /*
@@ -118,6 +133,70 @@ test.describe('Region page (REGION-07, D-01 hard load)', () => {
       }
     });
   }
+});
+
+/** Every ld+json block on the page, parsed. */
+async function ldBlocks(page: Page): Promise<Record<string, unknown>[]> {
+  return page
+    .locator('script[type="application/ld+json"]')
+    .evaluateAll((scripts) =>
+      scripts.map((s) => JSON.parse(s.textContent ?? '') as Record<string, unknown>)
+    );
+}
+
+test.describe('Region header band (18-06; REGION-02, D-10)', () => {
+  for (const r of regions) {
+    test(`/photos/regions/${r.id}: the breadcrumb equals its BreadcrumbList; the data line is regionCardFacts`, async ({
+      page,
+    }) => {
+      await page.goto(`/photos/regions/${r.id}`);
+      const nav = page.getByRole('main').getByRole('navigation', { name: 'Breadcrumb' });
+      await expect(nav).toHaveCount(1);
+
+      // Visible crumbs: one link, then the current page as plain text, never a link.
+      const link = nav.getByRole('link');
+      await expect(link).toHaveCount(1);
+      await expect(link).toHaveText('Photographs');
+      await expect(link).toHaveAttribute('href', '/photos');
+      const current = nav.locator('[aria-current="page"]');
+      await expect(current).toHaveText(r.name);
+      expect(await current.evaluate((el) => el.tagName)).toBe('SPAN');
+      await expect(nav.locator('[aria-hidden="true"]')).toHaveText(['/']);
+      const crumbs = (
+        await nav.locator('li > a, li > [aria-current="page"]').allTextContents()
+      ).map((t) => t.trim());
+      expect(crumbs).toEqual(['Photographs', r.name]);
+
+      // The one BreadcrumbList lists exactly the visible crumbs, in order.
+      const lists = (await ldBlocks(page)).filter((b) => b['@type'] === 'BreadcrumbList');
+      expect(lists).toHaveLength(1);
+      const items = lists[0].itemListElement as Array<{
+        name: string;
+        item: string;
+        position: number;
+      }>;
+      expect(items.map((i) => i.name)).toEqual(crumbs);
+      expect(items.map((i) => i.position)).toEqual([1, 2]);
+      expect(items.map((i) => i.item)).toEqual(
+        regionBreadcrumb(r.id).map((c) => `${site.url}${c.path}`)
+      );
+
+      // The data line: regionCardFacts' parts, joined at ' · ' (U+00A0 kept).
+      const facts = regionCardFacts(r.id);
+      const line = page.locator('[data-region-header] [data-facts-line]');
+      await expect(line).toHaveCount(1);
+      expect(await line.textContent()).toBe([facts.count, facts.range, facts.years].join(' · '));
+      await expect(h1(page)).toHaveText(regionHeading(r));
+    });
+  }
+
+  test('/photos and /sources carry no breadcrumb (UI E10/empty)', async ({ page }) => {
+    for (const path of ['/photos', '/sources']) {
+      await page.goto(path);
+      await expect(page.getByRole('main')).toHaveCount(1);
+      await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toHaveCount(0);
+    }
+  });
 });
 
 test.describe('Region page navigation (D-01 soft navigation)', () => {
