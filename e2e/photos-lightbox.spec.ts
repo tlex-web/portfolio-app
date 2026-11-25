@@ -1829,19 +1829,25 @@ test.describe('Zoom (D-06)', () => {
   }) => {
     const dialog = await openZoomPhoto(page);
     const box = (await dialog.locator('[data-photo-box]').boundingBox())!;
-    const cx = box.x + box.width / 2;
-    const cy = box.y + box.height / 2;
+    // Whole pixels: WebKit floors a pointer event's clientX, so a fractional
+    // point (the box's centre at x.99 since 18-20 resized the stage) would reach
+    // the page up to 1 px left of where the test measures, an error the zoom
+    // scale multiplies by 1.56 (18-20).
+    const cx = Math.round(box.x + box.width / 2);
+    const cy = Math.round(box.y + box.height / 2);
     await page.mouse.click(cx, cy);
     await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'true');
-    // The clicked point (the photo's centre) stays under the pointer: the 1:1
-    // photo's x under cx is its middle column. Measured at the pointer, not as a
-    // centred scroll, because WebKit adds a classic scrollbar only once the stage
-    // scrolls, which moves the viewport's centre off the fitted photo's (12-23).
+    // The clicked point (near the photo's centre) stays under the pointer: the
+    // 1:1 photo's x under cx is the clicked column scaled to 1:1. Measured at the
+    // pointer, not as a centred scroll, because WebKit adds a classic scrollbar
+    // only once the stage scrolls, which moves the viewport's centre off the
+    // fitted photo's (12-23).
     const underPointer = await stage(dialog).evaluate(
       (el, x) => el.scrollLeft + x - el.getBoundingClientRect().left - el.clientLeft,
       cx
     );
-    expect(Math.abs(underPointer - photo.stage.width / 2)).toBeLessThanOrEqual(2);
+    const clicked = ((cx - box.x) * photo.stage.width) / box.width;
+    expect(Math.abs(underPointer - clicked)).toBeLessThanOrEqual(2);
     const start = await scrollOf(dialog);
 
     await page.mouse.move(cx, cy);
