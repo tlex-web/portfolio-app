@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
-stopped_at: Completed 18-12-PLAN.md
-last_updated: "2026-11-25T15:38:26.089Z"
+stopped_at: Completed 18-14-PLAN.md
+last_updated: "2026-11-25T18:29:58.211Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: 0df234355f28a5423115d5651041e81d1e358317
+state_head: 894435985ff4dc496ba12708f0cc6c9ceb4265be
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 109
-  completed_plans: 93
+  completed_plans: 94
   percent: 71
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-24)
 ## Current Position
 
 Phase: 18 (Immersive Survey Layout) — EXECUTING
-Plan: 13 of 29
+Plan: 14 of 29
 Status: Ready to execute
 Last activity: 2026-11-24 — Phase 18 execution started
 
@@ -151,6 +151,7 @@ Progress: [███████░░░] 71%
 | Phase 18 P10 | 25min | 2 tasks | 6 files |
 | Phase 18 P11 | 15min | 2 tasks | 10 files |
 | Phase 18 P12 | 16 min | 2 tasks | 6 files |
+| Phase 18 P14 | 167 min | 3 tasks | 30 files |
 
 ## Accumulated Context
 
@@ -389,6 +390,9 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-12: P1 as drafted: rail tick labels are metres only, dashed tick = approximate, head 'Ground altitude' only when every photo is aerial
 - [Phase 18]: 18-12: the rail head label wraps at its space ('Ground altitude' overflowed the 96 px column at 768 in Firefox)
 - [Phase 18]: 18-12: client JS 1,864,179 B after the rail island (+2,498 B, one chunk); tracked for 18-25 per Tim's call
+- [Phase 18]: 18-14: D-24 round 3 (region pages) re-baselined: 24 new region PNGs, 52 identical, 0 changed; Tim committed them as 8944359
+- [Phase 18]: 18-14: D-21 amended (Tim, 'Add plate shots now'): a plate position for all three regions (24 region PNGs, not 15) and one extra visual-baselines dispatch in 18-14
+- [Phase 18]: 18-14: WebKit :has() invalidation does not look inside :is(); the plate sync emits one :has() per state (2325d0a, Tim: 'Diagnose locally, then fix'); the overview's same pattern is deferred to the plan that renders overviewCss
 
 ### Pending Todos
 
@@ -450,6 +454,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-25T15:38:25.055Z
-Stopped at: Completed 18-12-PLAN.md
+Last session: 2026-11-25T18:29:57.573Z
+Stopped at: Completed 18-14-PLAN.md
 Resume file: None
