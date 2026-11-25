@@ -117,6 +117,25 @@ describe('photo images (D-05, T-10-03)', () => {
     }
   });
 
+  // 13 #34: a `w` descriptor is the file's pixel width, not its long edge. For a
+  // portrait the long edge is the height, and a long-edge descriptor made WebKit
+  // at DPR 2 take a 768 px file for a 965 px need (18-05, ci/18-05 run 45613887521).
+  it('writes every srcset descriptor as the derivative pixel width, portraits included', () => {
+    expect(publishedViews.some((v) => v.aspect.w < v.aspect.h)).toBe(true);
+    for (const v of publishedViews) {
+      const variants = imageManifest[v.id as keyof typeof imageManifest].variants;
+      for (const set of [v.tile, v.stage]) {
+        for (const srcSet of [set.srcSetAvif, set.srcSetWebp]) {
+          for (const [url, w] of urls(srcSet)) {
+            const file = variants.find((x) => x.avif === url || x.webp === url);
+            expect(file).toBeDefined();
+            expect(`${v.slug} ${url} ${w}`).toBe(`${v.slug} ${url} ${file!.width}w`);
+          }
+        }
+      }
+    }
+  });
+
   it('builds the tile from the 640, 1024 and 1600 px hashed derivatives', () => {
     for (const v of photoViews) {
       expect(urls(v.tile.srcSetWebp).map(([, w]) => w)).toEqual(['640w', '1024w', '1600w']);

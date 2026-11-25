@@ -200,8 +200,10 @@ function imageSet(
   return {
     width: sized.width,
     height: sized.height,
-    srcSetAvif: set.map((v) => `${v.avif} ${v.longEdge}w`).join(', '),
-    srcSetWebp: set.map((v) => `${v.webp} ${v.longEdge}w`).join(', '),
+    // A `w` descriptor is the file's pixel width (13 #34). Variants are chosen by
+    // long edge, which for a portrait is the height, so it must not be the descriptor.
+    srcSetAvif: set.map((v) => `${v.avif} ${v.width}w`).join(', '),
+    srcSetWebp: set.map((v) => `${v.webp} ${v.width}w`).join(', '),
     src: variant(id, variants, src).webp,
   };
 }
