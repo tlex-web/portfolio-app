@@ -2,15 +2,18 @@ import path from 'path';
 import { test, expect, type Page } from '@playwright/test';
 import { buildWaypoints } from '@/lib/ascent/waypoints';
 import { regionPhotoViews } from '@/lib/regions';
+import { regionHref } from '@/lib/photos/routes';
 import { disableWebGL, nextFrames } from '../helpers/webgl';
 import { scrollBlockToCentre } from '../helpers/ascent';
+import { SLUGS } from '../helpers/photo-fixtures';
 
 /**
  * GUARD-02 visual regression: every route at 375 / 768 / 1440 px, plus Home
  * viewport shots at three fixed ascent positions (top, waypoint 2 centred,
- * summit centred) with motion enabled on the static poster path (D-22), and
- * the lightbox opened from the grid at the same three widths (10-UI-SPEC
- * "Guardrails and Regression Risks", GUARD-02 row).
+ * summit centred) with motion enabled on the static poster path (D-22), the
+ * region page viewport shots (18 D-21), and the lightbox opened from the
+ * Zermatt sequence at the same three widths (10-UI-SPEC "Guardrails and
+ * Regression Risks", GUARD-02 row).
  *
  * Runs only in the visual-dark and visual-light projects. Baselines are
  * captured in the Playwright Linux container (see e2e/visual/README.md);
@@ -72,6 +75,51 @@ const ASCENT_SHOTS = [
   ['summit', '#summit'],
 ] as const;
 
+/**
+ * Region page viewport shots (18 D-21; 18-UI-SPEC "Visual Baselines"), 900 px
+ * high under reduced motion, never full page: a full-page Zermatt shot would be
+ * about 9,000 px and re-baseline with every new photo. Zermatt is shot at the
+ * top, mid sequence and end; Ortler and Saalfelden at the top only.
+ *
+ * D-22: these shots are the rewrite of the `photos-grid` and `photos-carousel`
+ * route entries. Those two entries stay until their pages retire and are
+ * removed there with their PNGs (18-22 / 18-28).
+ *
+ * Positions come from the data, never from a literal slug: the mid shot
+ * centres the figure at index floor((N - 1) / 2) of regionPhotoViews('zermatt'),
+ * and the end shot centres #next-region. From 768 px each shot waits for the
+ * altimeter rail's positive settle signal, `data-rail-current` (18-12): 1 at
+ * the top, index + 1 mid sequence, N at the end (every figure is above the
+ * centre line there). Below 768 px the rail is hidden.
+ */
+type RegionShot = {
+  id: string;
+  pos: 'top' | 'mid' | 'end';
+  /** The element to centre, or null for the top of the page. */
+  selector: string | null;
+  /** The rail's expected 1-based current figure, read from 768 px. */
+  railCurrent: number;
+};
+
+const zermattViews = regionPhotoViews('zermatt');
+const zermattMid = Math.floor((zermattViews.length - 1) / 2);
+
+const REGION_SHOTS: readonly RegionShot[] = [
+  { id: 'zermatt', pos: 'top', selector: null, railCurrent: 1 },
+  {
+    id: 'zermatt',
+    pos: 'mid',
+    selector: `#photo-${zermattViews[zermattMid].slug}`,
+    railCurrent: zermattMid + 1,
+  },
+  { id: 'zermatt', pos: 'end', selector: '#next-region', railCurrent: zermattViews.length },
+  { id: 'ortler', pos: 'top', selector: null, railCurrent: 1 },
+  { id: 'saalfelden', pos: 'top', selector: null, railCurrent: 1 },
+];
+
+/** The width from which the region rail renders (md). */
+const RAIL_MIN_WIDTH = 768;
+
 // Hides every <canvas> (WebGL / random). Never use `mask:` for these.
 // Resolved from this file, so the run does not depend on the cwd.
 const stylePath = path.join(__dirname, 'hide-canvas.css');
@@ -128,6 +176,22 @@ async function settle(page: Page) {
         .getEntriesByType('resource')
         .some((entry) => /\/terrain\/contours-hero\.[0-9a-f]{10}\.svg$/.test(entry.name))
   );
+  // A region page's plate masks its own hero contours, which can carry the
+  // plate's prefix (ortler-contours-hero.<hash>.svg); the wait above matches only
+  // the unprefixed name. Wait for the URL the plate itself names, so the shot can
+  // never show an empty contour layer on the plate (18-09, 18-14).
+  await page.waitForFunction(() => {
+    const sheet = document.querySelector('[data-plate-sheet]');
+    if (!sheet) return true;
+    const masked = sheet.querySelector<HTMLElement>('[style*="contours-hero"]');
+    const mask = masked?.style.maskImage || masked?.style.getPropertyValue('-webkit-mask-image');
+    const url = mask?.match(/url\("?([^")]+)"?\)/)?.[1];
+    if (!url) return false;
+    const pattern = /\/terrain\/(?:[a-z]+-)?contours-hero\.[0-9a-f]{10}\.svg$/;
+    return performance
+      .getEntriesByType('resource')
+      .some((entry) => pattern.test(entry.name) && entry.name.endsWith(url));
+  });
   await page.evaluate(
     () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
   );
@@ -153,6 +217,16 @@ async function freezeTimeAnimations(page: Page) {
     }
   });
 }
+
+// Copy mode in every shot (18-RESEARCH Pitfall 7): with no Web Share the Share
+// button reads "Copy link" in every engine and build, whatever the runner ships.
+// The server and hydration render copy mode anyway, so no earlier shot changes.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    delete (Navigator.prototype as Partial<Navigator>).share;
+    delete (Navigator.prototype as Partial<Navigator>).canShare;
+  });
+});
 
 for (const [name, route] of ROUTES) {
   for (const w of WIDTHS) {
@@ -221,20 +295,46 @@ for (const w of WIDTHS) {
   }
 }
 
-// The lightbox over the grid (LBOX-01): a viewport shot, not full page, since
-// the dialog covers the viewport and the grid behind it is inert. Opened by a
-// click on the first tile of the grid list, so the intercepted route renders
-// exactly as a visitor sees it; reduced motion keeps the open instant.
+// Region page viewport shots (D-21; see REGION_SHOTS). Titled like the route
+// loop ('<name> @<width> reduced'), named region/<id>-<pos>-<width>.
+for (const { id, pos, selector, railCurrent } of REGION_SHOTS) {
+  for (const w of WIDTHS) {
+    test(`region ${id}-${pos} @${w} reduced`, async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.setViewportSize({ width: w, height: HEIGHT });
+      await page.goto(regionHref(id));
+      await settle(page);
+      if (selector === null) {
+        await page.evaluate(() => window.scrollTo(0, 0));
+        await nextFrames(page);
+      } else {
+        await scrollBlockToCentre(page, selector);
+      }
+      if (w >= RAIL_MIN_WIDTH) {
+        await expect(page.locator('[data-region-rail]')).toHaveAttribute(
+          'data-rail-current',
+          String(railCurrent)
+        );
+      }
+      await nextFrames(page);
+      await expect(page).toHaveScreenshot(['region', `${id}-${pos}-${w}.png`], { stylePath });
+    });
+  }
+}
+
+// The lightbox (LBOX-01): a viewport shot, not full page, since the dialog
+// covers the viewport and the page behind it is inert. Opened by a click on the
+// Matterhorn-from-Zermatt figure in the Zermatt sequence (18-14; the photo the
+// grid's first tile opened until then, so the PNGs stay byte-identical), so the
+// intercepted route renders exactly as a visitor sees it; reduced motion keeps
+// the open instant.
 for (const w of WIDTHS) {
   test(`lightbox @${w}`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.setViewportSize({ width: w, height: HEIGHT });
-    await page.goto('/photos?view=grid');
+    await page.goto(regionHref('zermatt'));
     await settle(page);
-    const tile = page
-      .getByRole('list', { name: 'Photographs, lowest first' })
-      .getByRole('link')
-      .first();
+    const tile = page.locator(`[data-photo-id="${SLUGS.matterhornFromZermatt}"]`);
     // A click before hydration is a document navigation (no dialog).
     await expect
       .poll(

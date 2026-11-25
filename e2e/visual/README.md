@@ -5,9 +5,20 @@
 page), plus Home with motion enabled at three fixed ascent positions on the
 static poster path: the top (p = 0), waypoint 2's block centred and the summit
 centred (`home/<width>-ascent-{start,waypoint-2,summit}.png`), plus the
-lightbox opened from the grid's first tile (`lightbox/<width>.png`, viewport
-only), plus the menu shot at 375 (`menu/375-current-focus.png`): 52 tests
-per scheme. Every later plan is judged against these files.
+region page viewport shots (`region/<id>-<position>-<width>.png`, 900 px
+high, reduced motion, since 18-14: Zermatt `top`, `mid` and `end`, Ortler and
+Saalfelden `top`), plus the lightbox opened from the Matterhorn-from-Zermatt
+figure in the Zermatt sequence (`lightbox/<width>.png`, viewport only), plus
+the menu shot at 375 (`menu/375-current-focus.png`): 67 tests per scheme.
+Every later plan is judged against these files.
+
+The region positions come from the data: `mid` centres the figure at index
+floor((N - 1) / 2) of `regionPhotoViews('zermatt')` and `end` centres
+`#next-region`. From 768 px each region shot waits for the altimeter rail's
+`data-rail-current` (1 at the top, index + 1 mid, N at the end). Every test
+deletes `navigator.share` and `navigator.canShare` first, so the Share button
+is always in copy mode. The region shots are the rewrite of `photos-grid` and
+`photos-carousel` (18 D-22); those entries go with their pages.
 
 Route slugs (one snapshot folder each): `home`, `photos` (the map, the default
 view), `photos-grid` (`/photos?view=grid`), `photos-carousel`
@@ -17,7 +28,7 @@ with the partial strip; the slug comes from the data: the one view in
 `regionPhotoViews('zermatt')` whose strip has a film line, and the spec throws
 unless exactly one matches), `projects`, `box`, `coin-flip`, `roadmap`,
 `sources` (the data sources page, since 18-05), `contact`, `offline`,
-`not-found`; and the `lightbox` viewport shots.
+`not-found`; and the `region` and `lightbox` viewport shots.
 
 The Home motion shots switch WebGL off (`disableWebGL` from
 `e2e/helpers/webgl.ts`), so the capability gate keeps Home on the poster, its
