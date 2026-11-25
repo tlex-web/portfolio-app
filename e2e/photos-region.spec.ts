@@ -11,8 +11,9 @@ import {
   regions,
   regionTitle,
 } from '@/lib/regions';
-import { photoSlugs, publishedViews } from '@/lib/photos/view-model';
+import { publishedViews } from '@/lib/photos/view-model';
 import { railTicks } from '@/lib/photos/region-rail';
+import { SLUGS } from './helpers/photo-fixtures';
 import {
   readViewTransitions,
   recordViewTransitions,
@@ -43,12 +44,16 @@ import {
  * lightbox's View Transition settles are @no-win-webkit, as in
  * photos-lightbox.spec.ts.
  *
- * The new photo pages (17 D-08, D-09; PHOTO-05): every published photo off the
- * light table (publishedViews minus photoSlugs) has a page with no stepping
- * controls and one visible back link, named after its region, to
- * /photos/regions/<id>; Escape there lands on that region page; its lightbox,
- * opened from the region page, has no stepping controls and no back link; and
- * a touch swipe or the arrows on its page do nothing (Edge PHOTO-05/empty).
+ * The new photo pages (17 D-09; PHOTO-05) and region stepping (18-15; LBOX-09,
+ * D-12): every published photo sits in exactly one region series, and the
+ * series cover them all. Every published photo off the v2.0 four (publishedViews
+ * minus the SLUGS fixtures) has a page that steps within its region as photo
+ * k of N (counter 'k / N', Previous aria-disabled exactly at k = 1, Next
+ * aria-disabled at k = N until 18-16 adds the end card) and one visible back
+ * link, named after its region, to /photos/regions/<id>; Escape there lands on
+ * that region page; its lightbox, opened from the region page, steps within the
+ * region and has no back link; and a touch swipe and the arrows on its page
+ * step within the region (Zermatt's seven as the second series).
  *
  * The header band (18-06; REGION-02, D-10): on every region page the visible
  * breadcrumb ('Photographs' link, the region name current, '/' aria-hidden)
@@ -964,7 +969,9 @@ test.describe('Region plate key and jumps (18-10; REGION-02, D-08)', () => {
     });
   }
 
-  test('at 1440 clicking key row 3 lands its figure under the nav, opens no dialog, and Tab reaches its photo', async ({
+  // @needs-tab-to-links: WebKit off Linux skips links on Tab (Safari's default); each
+  // row ends at toBeFocused() after a Tab onto a figure link or key row (18-14 deferred item).
+  test('at 1440 clicking key row 3 lands its figure under the nav, opens no dialog, and Tab reaches its photo @needs-tab-to-links', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
@@ -1007,7 +1014,9 @@ test.describe('Region plate key and jumps (18-10; REGION-02, D-08)', () => {
     expect(sheet.bottom - sheet.top).toBeCloseTo(633.6, 0);
   });
 
-  test('at 1440 a badge click lands like a key row: under the nav, no dialog, an ink neatline', async ({
+  // @needs-tab-to-links: WebKit off Linux skips links on Tab (Safari's default); each
+  // row ends at toBeFocused() after a Tab onto a figure link or key row (18-14 deferred item).
+  test('at 1440 a badge click lands like a key row: under the nav, no dialog, an ink neatline @needs-tab-to-links', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
@@ -1061,7 +1070,11 @@ test.describe('Region plate key and jumps (18-10; REGION-02, D-08)', () => {
     await expect.poll(() => bg(badge)).toBe(accent);
   });
 
-  test('a focus-visible key row marks its plate badge accent', async ({ page }) => {
+  // @needs-tab-to-links: WebKit off Linux skips links on Tab (Safari's default); each
+  // row ends at toBeFocused() after a Tab onto a figure link or key row (18-14 deferred item).
+  test('a focus-visible key row marks its plate badge accent @needs-tab-to-links', async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/photos/regions/zermatt');
     const accent = await colourOf(page, '--color-accent');
@@ -1102,7 +1115,9 @@ test.describe('Region plate key and jumps (18-10; REGION-02, D-08)', () => {
     expect(seen).toEqual(pinned.map((v) => v.slug));
   });
 
-  test('under reduced motion a key-row jump is instant (scrollY settled at the first read)', async ({
+  // @needs-tab-to-links: WebKit off Linux skips links on Tab (Safari's default); each
+  // row ends at toBeFocused() after a Tab onto a figure link or key row (18-14 deferred item).
+  test('under reduced motion a key-row jump is instant (scrollY settled at the first read) @needs-tab-to-links', async ({
     page,
   }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -1249,7 +1264,9 @@ test.describe('Region plate margin (18-11; REGION-06, D-16..D-19)', () => {
 test.describe('Region plate jumps without JavaScript (18-10; UI E4 no-JS)', () => {
   test.use({ javaScriptEnabled: false });
 
-  test('a key row jump works with JavaScript off', async ({ page }) => {
+  // @needs-tab-to-links: WebKit off Linux skips links on Tab (Safari's default); each
+  // row ends at toBeFocused() after a Tab onto a figure link or key row (18-14 deferred item).
+  test('a key row jump works with JavaScript off @needs-tab-to-links', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/photos/regions/zermatt');
     const third = pinnedViews('zermatt')[2];
@@ -1690,45 +1707,57 @@ test.describe('Region page navigation (D-01 soft navigation)', () => {
   });
 });
 
-/** The published photos off the light table, in canonical order, each with its region. */
+/** The v2.0 four's slugs (the photos whose page keeps "All photographs" until 18-17). */
+const V20_SLUGS: readonly string[] = Object.values(SLUGS);
+
+/** A published photo's place in its region series: 1-based k of N. */
+function seriesPlace(slug: string, id: string) {
+  const series = regionPhotoViews(id);
+  const k = series.findIndex((v) => v.slug === slug) + 1;
+  if (k === 0) throw new Error(`photos-region.spec: ${slug} is not in the ${id} series`);
+  return { k, n: series.length };
+}
+
+/** The published photos off the v2.0 four, in canonical order, each with its region and place. */
 const NEW_PHOTOS = publishedViews
-  .filter((v) => !photoSlugs.includes(v.slug))
+  .filter((v) => !V20_SLUGS.includes(v.slug))
   .map((view) => {
     const id = regionOfPhoto(view.id);
     if (!id) throw new Error(`photos-region.spec: photo ${view.id} has no region`);
-    return { view, region: region(id) };
+    return { view, region: region(id), ...seriesPlace(view.slug, id) };
   });
 
-/** Ortler's first new photo, by data: the Escape, lightbox and swipe rows use it. */
-const ORTLER_PHOTO = (() => {
-  const found = NEW_PHOTOS.find((p) => p.region.id === 'ortler');
-  if (!found) throw new Error('photos-region.spec: no new photo in Ortler');
-  return found;
-})();
+/** Ortler's series, by data: the Escape, lightbox and swipe rows use its first photo. */
+const ORTLER_SERIES = regionPhotoViews('ortler');
+const ORTLER_PHOTO = { view: ORTLER_SERIES[0], region: region('ortler') };
 
-/** The viewer's stepping group: both buttons and the counter. */
-async function expectNoStepping(scope: Page | Locator) {
-  await expect(
-    scope.getByRole('button', { name: 'Previous photo', exact: true, includeHidden: true })
-  ).toHaveCount(0);
-  await expect(
-    scope.getByRole('button', { name: 'Next photo', exact: true, includeHidden: true })
-  ).toHaveCount(0);
-  await expect(scope.locator('[data-photo-counter]')).toHaveCount(0);
-}
-
-test.describe('New photo pages (D-08, D-09, PHOTO-05)', () => {
-  test('there are seven photos off the light table', () => {
-    expect(NEW_PHOTOS).toHaveLength(7);
+test.describe('New photo pages (D-09, PHOTO-05; LBOX-09)', () => {
+  test('every published photo is in exactly one region series and the series cover them all', () => {
+    const seen = regions.flatMap((r) => regionPhotoViews(r.id).map((v) => v.slug));
+    expect(new Set(seen).size).toBe(seen.length);
+    expect([...seen].sort()).toEqual(publishedViews.map((v) => v.slug).sort());
+    expect(NEW_PHOTOS).toHaveLength(publishedViews.length - V20_SLUGS.length);
   });
 
-  for (const { view, region: r } of NEW_PHOTOS) {
-    test(`/photos/${view.slug}: no stepping, one back link to ${r.name}`, async ({ page }) => {
+  for (const { view, region: r, k, n } of NEW_PHOTOS) {
+    test(`/photos/${view.slug}: steps within ${r.name} as photo ${k} of ${n}, one back link to ${r.name}`, async ({
+      page,
+    }) => {
       const response = await page.goto(`/photos/${view.slug}`);
       expect(response?.status()).toBe(200);
       const main = page.getByRole('main');
       await expect(h1(page)).toHaveText(view.title);
-      await expectNoStepping(main);
+      // LBOX-09: the region's series, k of N; no wrap at either end (Next stays
+      // aria-disabled on the last photo until 18-16 adds the end card).
+      await expect(main.locator('[data-photo-counter]')).toHaveText(`${k} / ${n}`);
+      const prev = main.getByRole('button', { name: 'Previous photo', exact: true });
+      const next = main.getByRole('button', { name: 'Next photo', exact: true });
+      await expect(prev).toHaveCount(1);
+      await expect(next).toHaveCount(1);
+      if (k === 1) await expect(prev).toHaveAttribute('aria-disabled', 'true');
+      else await expect(prev).not.toHaveAttribute('aria-disabled');
+      if (k < n) await expect(next).not.toHaveAttribute('aria-disabled');
+      else await expect(next).toHaveAttribute('aria-disabled', 'true');
       // Two links in the markup (the scroll-tier row and the chrome); CSS shows one per tier.
       const back = main.getByRole('link', { name: r.name, exact: true, includeHidden: true });
       await expect(back).toHaveCount(2);
@@ -1755,10 +1784,11 @@ test.describe('New photo pages (D-08, D-09, PHOTO-05)', () => {
     await expect(h1(page)).toHaveText(regionHeading(r));
   });
 
-  test('the lightbox from the Ortler region page has no stepping and no back link; Back closes it @prod-only @no-win-webkit', async ({
+  test('the lightbox from the Ortler region page steps within Ortler (1 / 2, then 2 / 2) and has no back link; Back closes it @prod-only @no-win-webkit', async ({
     page,
   }) => {
     const { view, region: r } = ORTLER_PHOTO;
+    const second = ORTLER_SERIES[1];
     await page.goto(`/photos/regions/${r.id}`);
     const link = page.locator(`[data-photo-id="${view.slug}"]`);
     await waitForHydration(link);
@@ -1768,7 +1798,15 @@ test.describe('New photo pages (D-08, D-09, PHOTO-05)', () => {
     await expect(dialog).toBeVisible({ timeout: 20000 });
     await expect(page).toHaveURL(new RegExp(`/photos/${view.slug}$`));
     await expect(dialog).toHaveAccessibleName(view.title);
-    await expectNoStepping(dialog);
+    const counter = dialog.locator('[data-photo-counter]');
+    await expect(counter).toHaveText(`1 / ${ORTLER_SERIES.length}`);
+    const next = dialog.getByRole('button', { name: 'Next photo', exact: true });
+    await waitForHydration(next);
+    await next.click();
+    await expect(page).toHaveURL(new RegExp(`/photos/${second.slug}$`));
+    await expect(counter).toHaveText(`2 / ${ORTLER_SERIES.length}`);
+    await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(second.title);
+    await expect(next).toHaveAttribute('aria-disabled', 'true');
     await expect(dialog.getByRole('link', { name: r.name, exact: true })).toHaveCount(0);
     await expect(dialog.getByRole('link', { name: 'All photographs', exact: true })).toHaveCount(0);
 
@@ -1778,14 +1816,18 @@ test.describe('New photo pages (D-08, D-09, PHOTO-05)', () => {
     await expect(h1(page)).toHaveText(regionHeading(r));
   });
 
-  /**
-   * A left touch swipe over the page's photo, then → and ←, then two animation
-   * frames. A web-first assertion passes at its first poll when nothing has
-   * changed yet, so the negative row below reads its state only after this
-   * settle point: a step that lands after a frame or a View Transition commit
-   * has landed by then (17-REVIEW WR-02).
-   */
-  async function swipeAndArrows(page: Page) {
+  /** Two animation frames: a step that lands after a frame or a View Transition commit has landed. */
+  async function settle(page: Page) {
+    await page.evaluate(
+      () =>
+        new Promise<void>((done) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => done()))
+        )
+    );
+  }
+
+  /** A left touch swipe over the page's photo (pointer events, as a finger sends them). */
+  async function swipeLeft(page: Page) {
     const photoBox = page.getByRole('main').locator('[data-photo-box]');
     await waitForHydration(photoBox);
     const rect = (await photoBox.boundingBox())!;
@@ -1800,52 +1842,55 @@ test.describe('New photo pages (D-08, D-09, PHOTO-05)', () => {
       buttons: 1,
     });
     await photoBox.dispatchEvent('pointerup', { ...touch, clientX: x - 120, clientY: y + 10 });
+  }
+
+  /**
+   * A left touch swipe, then → and ←, then the settle point (17-REVIEW WR-02:
+   * a web-first assertion passes at its first poll when nothing has changed
+   * yet, so the state is read after the frames).
+   */
+  async function swipeAndArrows(page: Page) {
+    await swipeLeft(page);
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('ArrowLeft');
-    await page.evaluate(
-      () =>
-        new Promise<void>((done) =>
-          requestAnimationFrame(() => requestAnimationFrame(() => done()))
-        )
-    );
+    await settle(page);
   }
 
   /** The viewer's own polite status line (StagePhoto may hold others). */
   const viewerStatus = (page: Page) => page.locator('[data-photo-viewer] > p[role="status"]');
 
-  /** What a step would change: the history length, the URL, the title and the status line. */
-  const pageState = (page: Page) =>
-    page.evaluate(() => ({
-      length: history.length,
-      url: location.href,
-      title: document.title,
-      status: document.querySelector('[data-photo-viewer] > p[role="status"]')?.textContent ?? '',
-    }));
+  /** The history length, which a step (replaceState) never changes. */
+  const historyLength = (page: Page) => page.evaluate(() => history.length);
 
-  test('Edge PHOTO-05/empty: a touch swipe and the arrows do nothing on a new photo page @chromium-only', async ({
+  test('LBOX-09: a touch swipe and the arrows step within the region on a photo page @chromium-only', async ({
     page,
   }) => {
-    const { view } = ORTLER_PHOTO;
-    await page.goto(`/photos/${view.slug}`);
+    const [first, second] = ORTLER_SERIES;
+    expect(ORTLER_SERIES).toHaveLength(2);
+    await page.goto(`/photos/${first.slug}`);
     await waitForHydration(page.getByRole('main').locator('[data-photo-box]'));
-    const title = await page.title();
-    expect(title).toBe(`${view.title} · Tim Lui`);
-    const before = await pageState(page);
+    expect(await page.title()).toBe(`${first.title} · Tim Lui`);
+    const length = await historyLength(page);
 
+    // The swipe lands on Ortler's second photo, and ← returns to the first.
+    await swipeLeft(page);
+    await expect(page).toHaveURL(new RegExp(`/photos/${second.slug}$`));
+    await expect(viewerStatus(page)).toHaveText(`Photo 2 of 2: ${second.title}`);
+    await expect(page).toHaveTitle(`${second.title} · Tim Lui`);
+    await page.keyboard.press('ArrowLeft');
+    await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
+    await expect(viewerStatus(page)).toHaveText(`Photo 1 of 2: ${first.title}`);
+    await settle(page);
+    expect(await historyLength(page)).toBe(length);
+
+    // The same gestures on Zermatt's seven (swipe to the 2nd, → to the 3rd,
+    // ← back to the 2nd): the series is the region's, not the v2.0 four.
+    const zermatt = regionPhotoViews('zermatt');
+    expect(zermatt).toHaveLength(7);
+    await page.goto(`/photos/${zermatt[0].slug}`);
     await swipeAndArrows(page);
-
-    expect(await pageState(page)).toEqual(before);
-    await expect(page).toHaveURL(new RegExp(`/photos/${view.slug}$`));
-    expect(await page.title()).toBe(title);
-    await expect(viewerStatus(page)).not.toHaveText(/Photo \d+ of/);
-
-    // Positive control: the same gestures on a light-table photo page step
-    // (swipe to the 2nd, → to the 3rd, ← back to the 2nd), so they reach a viewer.
-    expect(photoSlugs.length).toBeGreaterThanOrEqual(3);
-    await page.goto(`/photos/${photoSlugs[0]}`);
-    await swipeAndArrows(page);
-    await expect(page).toHaveURL(new RegExp(`/photos/${photoSlugs[1]}$`));
-    await expect(viewerStatus(page)).toHaveText(new RegExp(`^Photo 2 of ${photoSlugs.length}:`));
+    await expect(page).toHaveURL(new RegExp(`/photos/${zermatt[1].slug}$`));
+    await expect(viewerStatus(page)).toHaveText(`Photo 2 of 7: ${zermatt[1].title}`);
   });
 });
 

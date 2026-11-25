@@ -1,5 +1,5 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
-import { buildPhotoViews } from '@/lib/photos/view-model';
+import { regionPhotoViews } from '@/lib/regions';
 import { HOTSPOT_PREF_KEY } from '@/lib/photos/hotspot-pref';
 import { LB_CHROME_PX, LB_GUTTER_PX } from '@/lib/photos/lightbox-tiers';
 import {
@@ -17,7 +17,10 @@ import { SLUGS, viewBySlug } from './helpers/photo-fixtures';
  * inside the shell: one banner, main and contentinfo, the title as the h1, an
  * "All photographs" link, the rights line, no dialog and no download control,
  * and the photo drawn from a content-hashed manifest derivative. Every
- * expected value is derived from buildPhotoViews(), never hand-typed.
+ * expected value is derived from the data, never hand-typed: Zermatt's series
+ * (regionPhotoViews) for positions, counters and neighbours, since every viewer
+ * steps through its photo's region (LBOX-09, 18 D-12), and the SLUGS fixtures
+ * for the v2.0 four's identity rows.
  */
 
 /*
@@ -31,9 +34,13 @@ import { SLUGS, viewBySlug } from './helpers/photo-fixtures';
  */
 test.describe.configure({ mode: 'default' });
 
-// Index lookups into views here are positions in the series order (DEM ascending, ties
-// by id), not photo identities; a specific photo is named through viewBySlug.
-const views = buildPhotoViews();
+// Index lookups into series here are positions in Zermatt's series (DEM ascending, ties by
+// id), the set a Zermatt photo's viewer steps through (LBOX-09); a specific photo is named
+// through viewBySlug. The grid shows the v2.0 four, which are series[0..3].
+const series = regionPhotoViews('zermatt');
+
+// The v2.0 four by name, for the rows that audit each photo's own page (identity rows).
+const V20 = Object.values(SLUGS).map(viewBySlug);
 
 /** A content-hashed manifest derivative: /images/photos/<name>.<10 hex>.<avif|webp>. */
 const DERIVATIVE = /^\/images\/photos\/[a-z0-9-]+\.[0-9a-f]{10}\.(avif|webp)$/;
@@ -42,7 +49,7 @@ const DERIVATIVE = /^\/images\/photos\/[a-z0-9-]+\.[0-9a-f]{10}\.(avif|webp)$/;
 const NBSP = String.fromCharCode(0xa0);
 
 test.describe('Photo page (LBOX-01 direct load)', () => {
-  for (const view of views) {
+  for (const view of V20) {
     test(`/photos/${view.slug}: the viewer inside the shell, no dialog (D-08)`, async ({
       page,
     }) => {
@@ -80,7 +87,7 @@ test.describe('Photo page (LBOX-01 direct load)', () => {
     // One full page load per photo (nine) in one test: on a loaded dev server they can
     // outrun the 30 s default, so the budget is tripled (12-22, D-26). Assertions unchanged.
     test.slow();
-    for (const view of views) {
+    for (const view of V20) {
       await page.goto(`/photos/${view.slug}`);
       const main = page.getByRole('main');
       await expect(main).toContainText(view.strip.placeDate.place);
@@ -92,7 +99,7 @@ test.describe('Photo page (LBOX-01 direct load)', () => {
       expect(await main.innerText()).not.toMatch(/—|\bundefined\b|\bnull\b|\bNaN\b|\bunknown\b/);
     }
     // The film scan is the one photo with a film line and a radius, so it is checked by value too.
-    const film = views.find((v) => v.strip.filmLine);
+    const film = V20.find((v) => v.strip.filmLine);
     expect(film?.strip.filmLine).toBe('Film scan · 2019');
     expect(film?.strip.approxNote).toBe(`±100${NBSP}m (approx.)`);
   });
@@ -355,7 +362,7 @@ async function openFirstTile(page: Page) {
 }
 
 test.describe('Lightbox over the gallery (LBOX-01)', () => {
-  const first = views[0];
+  const first = series[0];
 
   test('a tile click opens the photo in a dialog over the grid', async ({ page }) => {
     const dialog = await openFirstTile(page);
@@ -400,7 +407,7 @@ test.describe('Lightbox over the gallery (LBOX-01)', () => {
 });
 
 test.describe('Focus and Escape (LBOX-03)', () => {
-  const first = views[0];
+  const first = series[0];
 
   /** True when document.activeElement is inside the open dialog. */
   const focusInDialog = (page: Page) =>
@@ -489,7 +496,7 @@ test.describe('Focus and Escape (LBOX-03)', () => {
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect
       .poll(() => page.evaluate(() => document.activeElement?.getAttribute('data-photo-id')))
-      .toBe(views[2].slug);
+      .toBe(series[2].slug);
     expect(await page.evaluate(() => window.scrollY)).toBe(before);
   });
 
@@ -528,7 +535,7 @@ test.describe('Focus and Escape (LBOX-03)', () => {
     // The viewer's keys are live: from the content, → and ← step.
     await next.focus();
     await page.keyboard.press('ArrowRight');
-    await expect(page).toHaveURL(new RegExp(`/photos/${views[1].slug}$`));
+    await expect(page).toHaveURL(new RegExp(`/photos/${series[1].slug}$`));
     await page.keyboard.press('ArrowLeft');
     await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
 
@@ -572,8 +579,8 @@ test.describe('Focus and Escape (LBOX-03)', () => {
     // entry was added (a stray router.push('/photos') adds one).
     await next.focus();
     await page.keyboard.press('ArrowRight');
-    await expect(page).toHaveURL(new RegExp(`/photos/${views[1].slug}$`));
-    await expect(main.getByRole('heading', { level: 1 })).toHaveText(views[1].title);
+    await expect(page).toHaveURL(new RegExp(`/photos/${series[1].slug}$`));
+    await expect(main.getByRole('heading', { level: 1 })).toHaveText(series[1].title);
     expect(await page.evaluate(() => window.history.length)).toBe(length);
 
     // From the content, Escape still goes to the gallery (D-08), and the
@@ -589,33 +596,39 @@ test.describe('Focus and Escape (LBOX-03)', () => {
 });
 
 test.describe('Moving between photos (LBOX-02)', () => {
-  const first = views[0];
-  const last = views[views.length - 1];
+  const first = series[0];
+  const last = series[series.length - 1];
 
-  /** The viewer's counter ('n / 4', aria-hidden) and its polite status line. */
+  /** The viewer's counter ('n / 7' in Zermatt, aria-hidden) and its polite status line. */
   const counter = (scope: Page | Locator) => scope.locator('[data-photo-counter]');
   const status = (scope: Page | Locator) => scope.locator('[data-photo-viewer] p[role="status"]');
 
-  test('three Next presses in the lightbox: URL, title, counter, focus and no history entry', async ({
+  test('Next presses to the last photo: URL, title, counter, focus and no history entry', async ({
     page,
     browserName,
   }) => {
     const dialog = await openFirstTile(page);
     const length = await page.evaluate(() => window.history.length);
     const next = dialog.getByRole('button', { name: 'Next photo', exact: true });
-    await expect(counter(dialog)).toHaveText(`1 / ${views.length}`);
+    await expect(counter(dialog)).toHaveText(`1 / ${series.length}`);
     await expect(counter(dialog)).toHaveAttribute('aria-hidden', 'true');
 
     // A click, or focus and Enter in WebKit, where a click does not focus a button (helpers/engine.ts).
-    for (let i = 0; i < 3; i++) await pressButton(next, browserName);
+    // Zermatt's series is longer than the grid's four (LBOX-09): the presses pass the grid's
+    // last photo and end on the series' last.
+    for (let i = 1; i < series.length; i++) {
+      await pressButton(next, browserName);
+      await expect(counter(dialog)).toHaveText(`${i + 1} / ${series.length}`);
+    }
 
     await expect(page).toHaveURL(new RegExp(`/photos/${last.slug}$`));
     await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(last.title);
-    await expect(counter(dialog)).toHaveText(`${views.length} / ${views.length}`);
+    await expect(counter(dialog)).toHaveText(`${series.length} / ${series.length}`);
+    // Until 18-16 adds the end card, Next on the region's last photo stays aria-disabled.
     await expect(next).toHaveAttribute('aria-disabled', 'true');
     await expect(next).toBeFocused();
     await expect(status(dialog)).toHaveText(
-      `Photo ${views.length} of ${views.length}: ${last.title}`
+      `Photo ${series.length} of ${series.length}: ${last.title}`
     );
     await expect(status(dialog)).toHaveAttribute('aria-atomic', 'true');
     await expect(page).toHaveTitle(`${last.title} · Tim Lui`);
@@ -630,28 +643,28 @@ test.describe('Moving between photos (LBOX-02)', () => {
     await expect(prev).toHaveAttribute('aria-disabled', 'true');
 
     await page.keyboard.press('ArrowRight');
-    await expect(page).toHaveURL(new RegExp(`/photos/${views[1].slug}$`));
-    await expect(counter(dialog)).toHaveText(`2 / ${views.length}`);
+    await expect(page).toHaveURL(new RegExp(`/photos/${series[1].slug}$`));
+    await expect(counter(dialog)).toHaveText(`2 / ${series.length}`);
 
     await page.keyboard.press('ArrowLeft');
     await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
-    await expect(counter(dialog)).toHaveText(`1 / ${views.length}`);
+    await expect(counter(dialog)).toHaveText(`1 / ${series.length}`);
 
-    // At 1 / 4 neither ArrowLeft nor a press on the disabled Previous changes anything.
+    // At 1 / 7 neither ArrowLeft nor a press on the disabled Previous changes anything.
     await page.keyboard.press('ArrowLeft');
     await pressButton(prev, browserName, { force: true });
     await expect(prev).toBeFocused();
     await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
-    await expect(counter(dialog)).toHaveText(`1 / ${views.length}`);
+    await expect(counter(dialog)).toHaveText(`1 / ${series.length}`);
     await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(first.title);
     // The ignored presses announce nothing new: the line still names the last real step.
-    await expect(status(dialog)).toHaveText(`Photo 1 of ${views.length}: ${first.title}`);
+    await expect(status(dialog)).toHaveText(`Photo 1 of ${series.length}: ${first.title}`);
   });
 
   test('preload: opening a photo fetches the next photo derivative before Next is pressed', async ({
     page,
   }) => {
-    const nextView = views[1];
+    const nextView = series[1];
     const urls = new Set(
       [
         nextView.stage.src,
@@ -672,7 +685,7 @@ test.describe('Moving between photos (LBOX-02)', () => {
     await expect(dialog).toBeVisible({ timeout: 20000 });
     await preload;
     // Still on the first photo: the fetch came from the preload, not from a step.
-    await expect(page).toHaveURL(new RegExp(`/photos/${views[0].slug}$`));
+    await expect(page).toHaveURL(new RegExp(`/photos/${series[0].slug}$`));
   });
 
   test('a touch swipe on the photo steps to the next photo @chromium-only', async ({ page }) => {
@@ -691,8 +704,8 @@ test.describe('Moving between photos (LBOX-02)', () => {
     });
     await photoBox.dispatchEvent('pointerup', { ...touch, clientX: x - 120, clientY: y + 10 });
 
-    await expect(page).toHaveURL(new RegExp(`/photos/${views[1].slug}$`));
-    await expect(counter(dialog)).toHaveText(`2 / ${views.length}`);
+    await expect(page).toHaveURL(new RegExp(`/photos/${series[1].slug}$`));
+    await expect(counter(dialog)).toHaveText(`2 / ${series.length}`);
   });
 
   // @no-win-webkit: history Back while the open's View Transition commit settles crashes
@@ -703,14 +716,14 @@ test.describe('Moving between photos (LBOX-02)', () => {
     const next = dialog.getByRole('button', { name: 'Next photo', exact: true });
     await next.click();
     await next.click();
-    await expect(page).toHaveURL(new RegExp(`/photos/${views[2].slug}$`));
+    await expect(page).toHaveURL(new RegExp(`/photos/${series[2].slug}$`));
 
     await dialog.getByRole('button', { name: 'Close photo', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page).toHaveURL(GRID_URL);
     await expect
       .poll(() => page.evaluate(() => document.activeElement?.getAttribute('data-photo-id')))
-      .toBe(views[2].slug);
+      .toBe(series[2].slug);
   });
 
   // @no-win-webkit: history Back while the open's View Transition commit settles crashes
@@ -732,7 +745,7 @@ test.describe('Moving between photos (LBOX-02)', () => {
     await expect(page).toHaveURL(GRID_URL);
     await expect
       .poll(() => page.evaluate(() => document.activeElement?.getAttribute('data-photo-id')))
-      .toBe(views[1].slug);
+      .toBe(series[1].slug);
   });
 
   test('on the photo page Next shows the next photo with no dialog, and reload keeps it (Pitfall 1)', async ({
@@ -746,16 +759,16 @@ test.describe('Moving between photos (LBOX-02)', () => {
     const length = await page.evaluate(() => window.history.length);
 
     await pressButton(next, browserName);
-    await expect(page).toHaveURL(new RegExp(`/photos/${views[1].slug}$`));
-    await expect(main.getByRole('heading', { level: 1 })).toHaveText(views[1].title);
+    await expect(page).toHaveURL(new RegExp(`/photos/${series[1].slug}$`));
+    await expect(main.getByRole('heading', { level: 1 })).toHaveText(series[1].title);
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(next).toBeFocused();
-    await expect(page).toHaveTitle(`${views[1].title} · Tim Lui`);
+    await expect(page).toHaveTitle(`${series[1].title} · Tim Lui`);
     expect(await page.evaluate(() => window.history.length)).toBe(length);
 
     await page.reload();
     await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toHaveText(
-      views[1].title
+      series[1].title
     );
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
@@ -766,10 +779,15 @@ test.describe('Moving between photos (LBOX-02)', () => {
  * a history traversal, and the browser's scroll restoration used to undo the reveal, so focus
  * landed on a trigger off-screen. The contract asserted here is view-agnostic (D-11): focus is
  * on `[data-photo-id={shown slug}]`, and that box inflated by the 4 px ring lies inside the
- * viewport below `--nav-h`. Phase 18 rewrites only the open-and-step setup, never the
- * assertion. Each row first proves the shown photo's trigger is off-screen while the dialog is
- * still open, so it really exercises the reveal. The two setups (14-RESEARCH Pitfall 4):
- * (a) bottom edge: from scrollY 0, the trigger of the last photo sits below the fold;
+ * viewport below `--nav-h`. Phase 18 rewrote only the open-and-step setup, as planned, never
+ * the assertion (18-15; PHOTO-06): every viewer now steps through its photo's region series
+ * (LBOX-09), and the retiring Map, Grid and Carousel views show only the v2.0 four, so a step
+ * to Zermatt's seventh photo had no trigger there. The matrix runs on the region pages, whose
+ * figure links carry `data-photo-id`: the Map rows on Zermatt, the Grid rows on Ortler and the
+ * Carousel rows on Saalfelden, each with its size, setup, close path and tags. Each row first
+ * proves the shown photo's trigger is off-screen while the dialog is still open, so it really
+ * exercises the reveal. The two setups (14-RESEARCH Pitfall 4):
+ * (a) bottom edge: from scrollY 0, the trigger of the series' last photo sits below the fold;
  * (b) top edge: from the page end, it sits above the viewport, under the nav.
  * Each row records the scroll delta the reveal applied as a `reveal-delta` annotation.
  */
@@ -777,15 +795,13 @@ test.describe('Moving between photos (LBOX-02)', () => {
 // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
 // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
 test.describe('Focus on close stays in view (LBOX-08)', () => {
-  const first = views[0];
-  const last = views[views.length - 1];
   /** The global focus ring: a 2 px outline at a 2 px offset (app/globals.css :focus-visible). */
   const RING_PX = 4;
 
-  type View = 'Map' | 'Grid' | 'Carousel';
+  type Surface = 'Zermatt' | 'Ortler' | 'Saalfelden';
   type Close = 'Escape' | 'Close photo' | 'browser Back';
   type Row = {
-    view: View;
+    surface: Surface;
     width: number;
     height: number;
     setup: 'a' | 'b';
@@ -793,43 +809,81 @@ test.describe('Focus on close stays in view (LBOX-08)', () => {
     tags: string;
   };
 
-  const VIEW_URL: Record<View, { path: string; url: RegExp }> = {
-    Map: { path: '/photos', url: /\/photos$/ },
-    Grid: { path: '/photos?view=grid', url: GRID_URL },
-    Carousel: { path: '/photos?view=carousel', url: /\/photos\?view=carousel$/ },
+  /** The region page each surface is: its id, its path and the URL a close returns to. */
+  const SURFACE_URL: Record<Surface, { id: string; path: string; url: RegExp }> = {
+    Zermatt: { id: 'zermatt', path: '/photos/regions/zermatt', url: /\/photos\/regions\/zermatt$/ },
+    Ortler: { id: 'ortler', path: '/photos/regions/ortler', url: /\/photos\/regions\/ortler$/ },
+    Saalfelden: {
+      id: 'saalfelden',
+      path: '/photos/regions/saalfelden',
+      url: /\/photos\/regions\/saalfelden$/,
+    },
   };
 
   /** The D-11 matrix engine is Chromium; every history close carries @no-win-webkit. */
   const CHROMIUM = '@chromium-only @no-win-webkit';
   const ROWS: Row[] = [
     // The cross-engine row (D-11): Chromium, Firefox and Linux WebKit.
-    { view: 'Map', width: 720, height: 450, setup: 'a', close: 'Escape', tags: '@no-win-webkit' },
-    // Map: from the top, the last mark is below the fold at the three larger sizes; at 375x667
-    // every mark is on screen from the top, so that size starts at the page end (Pitfall 4).
-    { view: 'Map', width: 1366, height: 650, setup: 'a', close: 'Escape', tags: CHROMIUM },
-    { view: 'Map', width: 1280, height: 560, setup: 'a', close: 'Escape', tags: CHROMIUM },
-    { view: 'Map', width: 375, height: 667, setup: 'b', close: 'Escape', tags: CHROMIUM },
-    // Grid: the last tile is below the fold at every size. At 720x450 it is the 286 px tile,
-    // which fits below the nav (Pitfall 3).
-    { view: 'Grid', width: 1366, height: 650, setup: 'a', close: 'Escape', tags: CHROMIUM },
-    { view: 'Grid', width: 1280, height: 560, setup: 'a', close: 'Escape', tags: CHROMIUM },
-    { view: 'Grid', width: 720, height: 450, setup: 'a', close: 'Escape', tags: CHROMIUM },
-    { view: 'Grid', width: 375, height: 667, setup: 'a', close: 'Escape', tags: CHROMIUM },
-    // Carousel: its one trigger ('Open photo') stays where it was pressed, so every size starts
-    // at the page end and the trigger ends above the viewport, under the nav.
-    { view: 'Carousel', width: 1366, height: 650, setup: 'b', close: 'Escape', tags: CHROMIUM },
-    { view: 'Carousel', width: 1280, height: 560, setup: 'b', close: 'Escape', tags: CHROMIUM },
-    { view: 'Carousel', width: 720, height: 450, setup: 'b', close: 'Escape', tags: CHROMIUM },
-    { view: 'Carousel', width: 375, height: 667, setup: 'b', close: 'Escape', tags: CHROMIUM },
+    {
+      surface: 'Zermatt',
+      width: 720,
+      height: 450,
+      setup: 'a',
+      close: 'Escape',
+      tags: '@no-win-webkit',
+    },
+    // Zermatt (the Map rows' surface): from the top, the seventh figure is below the fold.
+    { surface: 'Zermatt', width: 1366, height: 650, setup: 'a', close: 'Escape', tags: CHROMIUM },
+    { surface: 'Zermatt', width: 1280, height: 560, setup: 'a', close: 'Escape', tags: CHROMIUM },
+    { surface: 'Zermatt', width: 375, height: 667, setup: 'b', close: 'Escape', tags: CHROMIUM },
+    // Ortler (the Grid rows' surface): from the top, the second figure is below the fold.
+    { surface: 'Ortler', width: 1366, height: 650, setup: 'a', close: 'Escape', tags: CHROMIUM },
+    { surface: 'Ortler', width: 1280, height: 560, setup: 'a', close: 'Escape', tags: CHROMIUM },
+    { surface: 'Ortler', width: 720, height: 450, setup: 'a', close: 'Escape', tags: CHROMIUM },
+    { surface: 'Ortler', width: 375, height: 667, setup: 'a', close: 'Escape', tags: CHROMIUM },
+    // Saalfelden (the Carousel rows' surface): every size starts at the page end and the
+    // second figure ends above the viewport, under the nav.
+    {
+      surface: 'Saalfelden',
+      width: 1366,
+      height: 650,
+      setup: 'b',
+      close: 'Escape',
+      tags: CHROMIUM,
+    },
+    {
+      surface: 'Saalfelden',
+      width: 1280,
+      height: 560,
+      setup: 'b',
+      close: 'Escape',
+      tags: CHROMIUM,
+    },
+    { surface: 'Saalfelden', width: 720, height: 450, setup: 'b', close: 'Escape', tags: CHROMIUM },
+    { surface: 'Saalfelden', width: 375, height: 667, setup: 'b', close: 'Escape', tags: CHROMIUM },
     // The other two close paths (D-10), through the same restoreFocus.
-    { view: 'Map', width: 720, height: 450, setup: 'a', close: 'Close photo', tags: CHROMIUM },
-    { view: 'Map', width: 720, height: 450, setup: 'a', close: 'browser Back', tags: CHROMIUM },
+    {
+      surface: 'Zermatt',
+      width: 720,
+      height: 450,
+      setup: 'a',
+      close: 'Close photo',
+      tags: CHROMIUM,
+    },
+    {
+      surface: 'Zermatt',
+      width: 720,
+      height: 450,
+      setup: 'a',
+      close: 'browser Back',
+      tags: CHROMIUM,
+    },
     // Browser Back beyond Chromium (14 IN-06): Back is the close most tied to the engine's
     // history scroll restoration, which the next-frame re-reveal races. This row guards that
-    // timing in Firefox and Linux WebKit before Phase 18 rewrites the lightbox. Chromium runs
-    // the row above instead (@not-chromium, 15 IN-03).
+    // timing in Firefox and Linux WebKit. Chromium runs the row above instead (@not-chromium,
+    // 15 IN-03).
     {
-      view: 'Map',
+      surface: 'Zermatt',
       width: 720,
       height: 450,
       setup: 'a',
@@ -899,11 +953,11 @@ test.describe('Focus on close stays in view (LBOX-08)', () => {
   }
 
   /**
-   * Open the first photo from its trigger in the mounted view, without moving the page:
-   * focus without a scroll, then Enter (a click would scroll the trigger into view first).
-   * Setup (a) starts at scrollY 0, setup (b) at the page end.
+   * Open the series' first photo from its figure link on the region page, without moving the
+   * page: focus without a scroll, then Enter (a click would scroll the trigger into view
+   * first). Setup (a) starts at scrollY 0, setup (b) at the page end.
    */
-  async function openFirst(page: Page, setup: 'a' | 'b') {
+  async function openFirst(page: Page, setup: 'a' | 'b', first: { slug: string }) {
     const trigger = page.locator(`[data-photo-id="${first.slug}"]`);
     await expect(trigger).toHaveCount(1);
     await waitForHydration(trigger);
@@ -912,7 +966,10 @@ test.describe('Focus on close stays in view (LBOX-08)', () => {
       window.scrollTo({ top, behavior: 'instant' });
     }, setup === 'b');
     if (setup === 'b') {
-      expect(await page.evaluate(() => window.scrollY), 'setup (b) starts scrolled').toBeGreaterThan(0);
+      expect(
+        await page.evaluate(() => window.scrollY),
+        'setup (b) starts scrolled'
+      ).toBeGreaterThan(0);
     }
     await trigger.evaluate((el: HTMLElement) => el.focus({ preventScroll: true }));
     await page.keyboard.press('Enter');
@@ -922,16 +979,21 @@ test.describe('Focus on close stays in view (LBOX-08)', () => {
     return dialog;
   }
 
-  /** Press 'Next photo' until the last photo is shown, checking the counter at each step. */
-  async function stepToLast(page: Page, dialog: Locator, browserName: string) {
+  /** Press 'Next photo' until the series' last photo is shown, checking 'n / N' at each step. */
+  async function stepToLast(
+    page: Page,
+    dialog: Locator,
+    browserName: string,
+    steps: readonly { slug: string }[]
+  ) {
     const next = dialog.getByRole('button', { name: 'Next photo', exact: true });
     const counter = dialog.locator('[data-photo-counter]');
     await waitForHydration(next);
-    for (let n = 2; n <= views.length; n++) {
+    for (let n = 2; n <= steps.length; n++) {
       await pressButton(next, browserName);
-      await expect(counter).toHaveText(`${n} / ${views.length}`);
+      await expect(counter).toHaveText(`${n} / ${steps.length}`);
     }
-    await expect(page).toHaveURL(new RegExp(`/photos/${last.slug}$`));
+    await expect(page).toHaveURL(new RegExp(`/photos/${steps[steps.length - 1].slug}$`));
   }
 
   /** Close by the row's path; all three end in restoreFocus through a history traversal. */
@@ -943,21 +1005,24 @@ test.describe('Focus on close stays in view (LBOX-08)', () => {
   }
 
   for (const row of ROWS) {
-    const { view, width, height, setup, close, tags } = row;
-    test(`${view} at ${width}x${height}: step to the last photo, ${close}, the trigger is fully in view ${tags}`, async ({
+    const { surface, width, height, setup, close, tags } = row;
+    test(`${surface} at ${width}x${height}: step to the last photo, ${close}, the trigger is fully in view ${tags}`, async ({
       page,
       browserName,
     }) => {
+      const steps = regionPhotoViews(SURFACE_URL[surface].id);
+      expect(steps.length, `${surface} has a series to step through`).toBeGreaterThan(1);
+      const last = steps[steps.length - 1];
       await page.setViewportSize({ width, height });
-      await page.goto(VIEW_URL[view].path);
-      const dialog = await openFirst(page, setup);
-      await stepToLast(page, dialog, browserName);
+      await page.goto(SURFACE_URL[surface].path);
+      const dialog = await openFirst(page, setup, steps[0]);
+      await stepToLast(page, dialog, browserName, steps);
       await expectTriggerOffscreen(page, last.slug);
       const before = await page.evaluate(() => window.scrollY);
 
       await closeBy(page, dialog, close);
       await expect(page.getByRole('dialog')).toHaveCount(0);
-      await expect(page).toHaveURL(VIEW_URL[view].url);
+      await expect(page).toHaveURL(SURFACE_URL[surface].url);
       await expectTriggerFullyInView(page, last.slug);
 
       const after = await page.evaluate(() => window.scrollY);
@@ -970,7 +1035,7 @@ test.describe('Focus on close stays in view (LBOX-08)', () => {
 });
 
 test.describe('Morph and motion (LBOX-06)', () => {
-  const first = views[0];
+  const first = series[0];
   /** The morph pair's pseudo-elements for a slug. */
   const morphPseudos = (slug: string) => [
     `::view-transition-group(photo-${slug})`,
@@ -1018,10 +1083,10 @@ test.describe('Morph and motion (LBOX-06)', () => {
     const before = (await waitForViewTransitionsSettled(page)).transitions.length;
 
     await dialog.getByRole('button', { name: 'Next photo', exact: true }).click();
-    await expect(page).toHaveURL(new RegExp(`/photos/${views[1].slug}$`));
+    await expect(page).toHaveURL(new RegExp(`/photos/${series[1].slug}$`));
     // Settled first (10-REVIEW IN-09): the step has rendered the next photo's title, and every
     // transition started so far has finished, so its pseudo-elements are recorded.
-    await expect(dialog.getByRole('heading', { level: 2, name: views[1].title })).toBeVisible();
+    await expect(dialog.getByRole('heading', { level: 2, name: series[1].title })).toBeVisible();
     const after = (await waitForViewTransitionsSettled(page)).transitions.slice(before).flat();
     expect(after.filter((pseudo) => pseudo.includes('photo-'))).toEqual([]);
   });
@@ -1042,7 +1107,7 @@ test.describe('Morph and motion (LBOX-06)', () => {
     const next = dialog.getByRole('button', { name: 'Next photo', exact: true });
     for (let i = 1; i <= 3; i++) {
       await next.click();
-      await expect(page).toHaveURL(new RegExp(`/photos/${views[i].slug}$`));
+      await expect(page).toHaveURL(new RegExp(`/photos/${series[i].slug}$`));
     }
     await dialog.getByRole('button', { name: 'Close photo', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -1079,9 +1144,9 @@ test.describe('Morph and motion (LBOX-06)', () => {
 
 test.describe('Zoom (D-06)', () => {
   /** A landscape photo (2560 px wide at 1:1) that has a next photo, and its grid position. */
-  const zi = views.findIndex((v, i) => v.stage.width === 2560 && i < views.length - 1);
-  const photo = views[zi];
-  const nextPhoto = views[zi + 1];
+  const zi = series.findIndex((v, i) => v.stage.width === 2560 && i < series.length - 1);
+  const photo = series[zi];
+  const nextPhoto = series[zi + 1];
 
   const zoomButton = (scope: Page | Locator) =>
     scope.getByRole('button', { name: 'Zoom photo', exact: true });
@@ -1254,8 +1319,8 @@ test.describe('Zoom (D-06)', () => {
 });
 
 test.describe('Hotspots (LBOX-05)', () => {
-  const trail = views.findIndex((v) => v.id === 'img-0662');
-  const lake = views.find((v) => v.id === 'r004-011')!;
+  const trail = series.findIndex((v) => v.id === 'img-0662');
+  const lake = series.find((v) => v.id === 'r004-011')!;
   const labels = (scope: Page | Locator) => scope.locator('[data-hotspot-label]');
   const markers = (scope: Page | Locator) => scope.locator('[data-hotspot-marker]');
   const hideLabels = (scope: Page | Locator) =>
@@ -1399,9 +1464,9 @@ test.describe('Hotspots (LBOX-05)', () => {
     await labels(dialog).first().click();
     await expect(labels(dialog).first()).toHaveAttribute('aria-expanded', 'true');
     await dialog.getByRole('button', { name: 'Previous photo', exact: true }).click();
-    await expect(page).toHaveURL(new RegExp(`/photos/${views[trail - 1].slug}$`));
+    await expect(page).toHaveURL(new RegExp(`/photos/${series[trail - 1].slug}$`));
     await dialog.getByRole('button', { name: 'Next photo', exact: true }).click();
-    await expect(page).toHaveURL(new RegExp(`/photos/${views[trail].slug}$`));
+    await expect(page).toHaveURL(new RegExp(`/photos/${series[trail].slug}$`));
     await expect(labels(dialog)).toHaveCount(2);
     for (const label of await labels(dialog).all()) {
       await expect(label).toHaveAttribute('aria-expanded', 'false');
@@ -1410,7 +1475,7 @@ test.describe('Hotspots (LBOX-05)', () => {
 
   test('H hides every label and marker, and the choice survives a reload', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    const slug = views[trail].slug;
+    const slug = series[trail].slug;
     const button = await loadPage(page, slug);
     await expect(button).toHaveAttribute('aria-pressed', 'false');
     await expect(button).toHaveAttribute('aria-keyshortcuts', 'h');
@@ -1450,7 +1515,7 @@ test.describe('Hotspots (LBOX-05)', () => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await page.setViewportSize({ width: 1440, height: 900 });
-    const button = await loadPage(page, views[trail].slug);
+    const button = await loadPage(page, series[trail].slug);
     await expect(button).toHaveAttribute('aria-pressed', 'false');
     await expect(labels(page)).toHaveCount(2);
     await expect(async () => {
@@ -1502,7 +1567,7 @@ test.describe('Hotspots (LBOX-05)', () => {
   test('scroll tier (375 x 800): numbered dots on the photo and the Labels key match the hotspots', async ({
     page,
   }) => {
-    const hotspots = views[trail].hotspots;
+    const hotspots = series[trail].hotspots;
     expect(hotspots.length).toBeGreaterThan(1);
     const dialog = await openTrail(page, 375, 800);
     const dots = dialog.locator('[data-hotspot-dot]');
@@ -1533,7 +1598,7 @@ test.describe('Hotspots (LBOX-05)', () => {
   test('leader lines: one per gutter label, each running from its label to its glyph', async ({
     page,
   }) => {
-    const hotspots = views[trail].hotspots;
+    const hotspots = series[trail].hotspots;
     const dialog = await openTrail(page, 1440, 900);
     await expect(labels(dialog)).toHaveCount(hotspots.length);
     const leaders = dialog.locator('[data-hotspot-leader]');
@@ -1606,7 +1671,7 @@ test.describe('Hotspots (LBOX-05)', () => {
     await expect(legend).toBeHidden();
 
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto(`/photos/${views[trail].slug}`);
+    await page.goto(`/photos/${series[trail].slug}`);
     await expect(page.locator('[data-strip-legend]')).toHaveText(
       '← → photos · Z zoom · H labels · Esc all photographs'
     );
