@@ -266,3 +266,56 @@ None new. The Windows WebKit Hotspots D-22 row is unchanged (deferred-items.md).
 - FOUND: lib/photos/lv95-line.ts, lib/__tests__/lv95-line.test.ts
 - FOUND: b9bd3e8, a55b0d2, 0f19923 (ancestors of HEAD)
 - Acceptance greps re-run: 1, 4, 4; lv95-line.test 26 rows
+
+## Post-plan fix (Tim-approved, 2026-11-25)
+
+After 18-18, Tim answered two questions (AskUserQuestion, 2026-11-25): "Inline icons now (Recommended)" and "Tag it @no-win-webkit (Recommended)". 18-18 stays complete; this section records the fix.
+
+**Why:** client JS was 1,882,651 B after 18-18 (cap 1,855,841; +26,810). `@phosphor-icons/react/dist/ssr` icons carry all six weights' path data, and ShareButton (a client island in two chunks) and EndCard (inside PhotoViewer's client tree) shipped all of it.
+
+**Commits:**
+
+| Commit | Subject |
+|--------|---------|
+| 038d15a | test(18-18): inline Phosphor icons render the SSR regular-weight markup (RED) |
+| 4d59e28 | fix(18-18): inline regular-weight Link, Check, ShareNetwork and MapTrifold in ShareButton and EndCard (client JS) |
+| 4a82db7 | test(18-18): tag the lightbox Hotspots D-22 row @no-win-webkit (WinCairo history-traversal crash) |
+| (this commit) | docs(18-18): record the inline-icon fix and the @no-win-webkit tag |
+
+**What changed:** `components/icons/inline-phosphor.tsx` (new; no `'use client'`, no hooks) exports `LinkIcon`, `CheckIcon`, `ShareNetworkIcon` and `MapTrifoldIcon`. Each renders the SVG that Phosphor's `SSRBase` renders: the same attributes in the same order (`xmlns`, `width`, `height`, `fill="currentColor"`, `viewBox="0 0 256 256"`, then the caller's props), with the regular `d` copied verbatim from `@phosphor-icons/react` 2.1.10 `dist/defs/*.es.js`. ShareButton and EndCard change only their import line; the names and call sites stay the same. Server components, CopyEmailButton, ViewSwitcher, NextRegion and PhotoViewer's own icons are unchanged. The 18-UI-SPEC icon-library row carries the dated amendment.
+
+**Markup-identity proof (pixel neutrality for the 24 region shots):** `components/icons/__tests__/inline-phosphor.test.tsx`, 21 rows. For each of the four icons, `renderToStaticMarkup` of the inline icon equals that of the `dist/ssr` icon at `weight="regular"` for four prop shapes: the call sites' `size={20} aria-hidden="true"`, no props (1em), size 16 with a className, and a string size with an inline style. All 16 identity rows pass. The other rows check one path, the viewBox and `fill="currentColor"` per icon, plus a source guard that ShareButton, EndCard and the module never import `@phosphor-icons`. RED (038d15a): the suite failed with "Cannot find module '../inline-phosphor'". The production region page's server HTML shows the same `<svg xmlns=... width="20" height="20" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true"><path d=.../></svg>`.
+
+**Client JS** (`rm -rf .next/static && npm run build`, byte sum of `.next/static/chunks/**/*.js`, `public/service-worker.js` restored). The before build was at 5de7eca (the same source as 0f19923).
+
+| Build | Total | vs 1,882,651 | vs cap 1,855,841 |
+|-------|-------|--------------|------------------|
+| 5de7eca (before) | 1,882,651 B | 0 | +26,810 |
+| **4d59e28 (after)** | **1,866,470 B** | **-16,181** | **+10,629** |
+
+| Chunk role | Before | After | Delta |
+|------------|--------|-------|-------|
+| Photo routes' shared chunk (LightboxDialog, ShareButton, now the inline icon module) | 3kly0g95h-y_2 21,767 | 3it7tru6edzjp 12,445 | -9,322 |
+| Region (RegionHeader's ShareButton) | 2v3_dqmmb7cgb 13,879 | 1_yz-tr9khqta 7,192 | -6,687 |
+| Shared chunk with Phosphor MapTrifold (ViewSwitcher) | 3kg53mn8wxzle 31,155 | 1ali6j7cw1vc2 31,061 | -94 |
+| Shared chunk with Phosphor Check | 2courix-3sawj 23,709 | 1yfejwxl6q-mh 23,631 | -78 |
+| Viewer (PhotoViewer, EndCard) | 15cby9nt1-he- 43,922 | 3l87xi80jlfur 43,922 | 0 (new hash only) |
+
+The other 20 chunks are byte-identical. Two things to know for 18-25:
+- **EndCard's switch saves little on its own.** ViewSwitcher (a client component, outside this fix's scope) still imports Phosphor's `MapTrifoldIcon`, so the six-weight MapTrifold module still ships in 1ali6j7cw1vc2. The viewer chunk is unchanged in size because EndCard now uses the inline module, which Turbopack placed in the photo routes' shared chunk.
+- **Turbopack keeps unused exports of the inline module.** Both ShareButton chunks hold all four inline icons, so the region chunk carries MapTrifold's path (about 0.47 KB) that it never draws. Moving MapTrifold into its own module would save that; it is not done here, because the brief asked for one small module.
+
+**@no-win-webkit:** the lightbox row 'from zoomed with a callout open, one Escape leaves zoom and drops the hidden callout, the next closes (D-22)' now ends in `@no-win-webkit`, with a comment naming the WinCairo history-traversal crash on the second Escape. Windows WebKit drops it; Chromium, Firefox and CI's Linux WebKit still run it. The deferred-items.md entry (from 18-15) is marked resolved.
+
+**Verification:**
+- Full Jest: 131 suites, 2,763 passed (+21, the new suite), 0 skipped. `npm run lint` (eslint and every guard) and `npm run type-check` are clean.
+- e2e, production build (`PW_PROD=1 PW_REUSE=1`, the 4d59e28 build): photos-region, photos-lightbox and photos-stepping, 622 passed and 0 failed (Chromium 233, Firefox 211, local WebKit webkit-2388 178). The D-22 row ran in Chromium and Firefox only. `updateSnapshots` is `none` in a reused run, so no PNG was written.
+- GUARD-03 (`test-count.mjs` with `jest --json` and a CI-mode `playwright test --list`): jest 2,763 + e2e 822 = 3,585 (baseline 3,024), OK. The retitled row keeps the e2e count unchanged.
+- `check-snapshot-commit --none`: OK (0 changed) on each commit. No PNG changed.
+
+**Deviation:** the RED source guard matched any mention of `@phosphor-icons`, so the module's doc comment tripped it. In 4d59e28 it was narrowed to an import or require of the package. The identity rows are unchanged.
+
+### Post-plan fix self-check: PASSED
+
+- FOUND: components/icons/inline-phosphor.tsx, components/icons/__tests__/inline-phosphor.test.tsx
+- FOUND: 038d15a, 4d59e28, 4a82db7 (ancestors of HEAD)

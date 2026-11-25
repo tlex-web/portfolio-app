@@ -27,7 +27,7 @@ created: "2026-11-24"
 | Tool | none [07, LOCKED]. No `components.json` (verified: `ls components.json` fails, 2026-11-24) [REPO]. Tailwind v4 CSS-first tokens in `app/globals.css`. The shadcn gate does not apply |
 | Preset | not applicable |
 | Component library | none (hand-built; native `<dialog>`, `<figure>`, `<nav>`, `<ol>`, `<dl>`) |
-| Icon library | `@phosphor-icons/react` 2.1.10, `dist/ssr` only, weight `regular`, sizes 16/20/24, `*Icon` exports [07, 10] |
+| Icon library | `@phosphor-icons/react` 2.1.10, `dist/ssr` only, weight `regular`, sizes 16/20/24, `*Icon` exports [07, 10]. Amended 2026-11-25 (Tim, after 18-18): ShareButton's Link/Check/ShareNetwork and EndCard's MapTrifold are inline single-weight copies of the Phosphor regular paths (client bundle size); markup-identical to dist/ssr, pinned by a Jest test. |
 | Font | Schibsted Grotesk (display), Inter (body), JetBrains Mono (data, always tabular) [07]. No new family |
 | Styling engine | Tailwind CSS 4.3.4 (`node -p "require('tailwindcss/package.json').version"`) [REPO] |
 | Framework | Next 16.4.5 (`node -p "require('next/package.json').version"`); Motion 14.10.0 is installed but **this phase adds no Motion code** (every transition below is CSS) [REPO] |
