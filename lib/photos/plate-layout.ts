@@ -56,6 +56,8 @@ export const PLATE_SWEEP_MIN_S = 320;
 export const PLATE_SWEEP_MAX_S = 634;
 /** How far a displaced badge unit's facing edge sits from its dot centre, shortest first. */
 export const LEADER_STEPS = [12, 20, 28, 40] as const;
+/** Pins whose dots are under this far apart at the widest swept side share one dot. */
+export const SAME_SPOT_PX = 1;
 
 /** The depth-first search gives up after this many candidate checks (the real data needs a few hundred). */
 const SEARCH_BUDGET = 200_000;
@@ -117,7 +119,14 @@ export type PlatePinSource = {
 };
 
 /** One dot and the pins that share it, in ascent order; the dot is the first pin's stored uv. */
-export type PlateGroup = { key: string; u: number; v: number; pins: readonly PlatePin[] };
+export type PlateGroup = {
+  key: string;
+  u: number;
+  v: number;
+  /** A hollow dashed dot: every pin at it is approximate. */
+  approximate: boolean;
+  pins: readonly PlatePin[];
+};
 
 /**
  * The pins of a region's photos in sequence order: n is the photo's 1-based
@@ -141,7 +150,7 @@ export function platePins(views: readonly PlatePinSource[]): PlatePin[] {
 
 /** The dots: one per pin. */
 export function plateGroups(pins: readonly PlatePin[]): PlateGroup[] {
-  return pins.map((p) => ({ key: p.slug, u: p.u, v: p.v, pins: [p] }));
+  return pins.map((p) => ({ key: p.slug, u: p.u, v: p.v, approximate: p.approximate, pins: [p] }));
 }
 
 // ---------------------------------------------------------------- geometry

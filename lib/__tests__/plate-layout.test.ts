@@ -14,6 +14,14 @@
  * leader that ends exactly at its dot; no badge covers another pin's dot, and
  * no leader crosses another badge. plateSegments and plateCss must reproduce
  * the layout at every S.
+ *
+ * The rules for the data that makes them hard: photos at one spot
+ * (Zermatt's img-0680 and img-0682) share one dot with their badges side by
+ * side; Saalfelden's two aerial photos (a few px apart at every S) and
+ * Zermatt's img-0605/img-0629 pair (closer than 24 + 8 px at 320-375) are
+ * displaced; a per-region count guard fails when a region's pin count changes,
+ * forcing a re-sweep; plateCss refuses a slug or container name outside the
+ * slug pattern (T-18-23).
  */
 import { regionPhotoViews, regions } from '@/lib/regions';
 import {
@@ -25,7 +33,9 @@ import {
   LEADER_STEPS,
   PLATE_SWEEP_MAX_S,
   PLATE_SWEEP_MIN_S,
+  SAME_SPOT_PX,
   plateCss,
+  plateGroups,
   plateLayout,
   platePins,
   plateSegments,
@@ -448,4 +458,162 @@ describe('plateCss', () => {
       }
     });
   }
+});
+
+/** The pin of a region photo, by photo id (ids name the photos; no position is written here). */
+function pinOf(region: string, photoId: string): PlatePin {
+  const view = regionPhotoViews(region).find((v) => v.id === photoId);
+  if (!view) throw new Error(`plate-layout test: ${photoId} is not a ${region} photo`);
+  return PINS.get(region)!.find((p) => p.slug === view.slug)!;
+}
+
+/** The group holding a pin at one layout. */
+const groupOf = (layout: PlatePlacement, slug: string) =>
+  layout.groups.find((g) => g.badges.some((b) => b.slug === slug))!;
+
+describe('shared spots (UI E4/zero-one-many)', () => {
+  it('declares the same-spot tolerance: dots under 1 px apart at the widest swept side', () => {
+    expect(SAME_SPOT_PX).toBe(1);
+  });
+
+  it("gives Zermatt's img-0680 and img-0682 one dot and two badges side by side at every side", () => {
+    const a = pinOf('zermatt', 'img-0680');
+    const b = pinOf('zermatt', 'img-0682');
+    const bad: string[] = [];
+    for (const S of SWEEP) {
+      const layout = LAYOUTS.get('zermatt')!.get(S)!;
+      const g = groupOf(layout, a.slug);
+      if (g !== groupOf(layout, b.slug)) {
+        bad.push(`S=${S}: two dots`);
+        continue;
+      }
+      if (g.badges.length !== 2) bad.push(`S=${S}: ${g.badges.length} badges`);
+      const [first, second] = g.badges;
+      // Side by side: one row, GAP apart, in ascent order.
+      if (first.box.y !== second.box.y || second.box.x - (first.box.x + BADGE) !== GAP) {
+        bad.push(`S=${S}: not side by side`);
+      }
+      if (first.n > second.n) bad.push(`S=${S}: not in ascent order`);
+    }
+    expect(bad).toEqual([]);
+  });
+
+  it("puts a shared dot on its first pin's stored uv (never between the two)", () => {
+    for (const r of regions) {
+      for (const g of plateGroups(PINS.get(r.id)!)) {
+        expect(g.key).toBe(g.pins[0].slug);
+        expect([g.u, g.v]).toEqual([g.pins[0].u, g.pins[0].v]);
+        for (const p of g.pins) {
+          expect(Math.hypot(p.u - g.u, p.v - g.v) * PLATE_SWEEP_MAX_S).toBeLessThan(SAME_SPOT_PX);
+        }
+      }
+    }
+  });
+
+  it('keeps pins further apart than the tolerance on their own dots', () => {
+    const groups = plateGroups([
+      { slug: 'a', n: 1, u: 0.5, v: 0.5, approximate: false },
+      { slug: 'b', n: 2, u: 0.5, v: 0.5 + 0.5 / PLATE_SWEEP_MAX_S, approximate: false },
+      { slug: 'c', n: 3, u: 0.5, v: 0.5 + 2 / PLATE_SWEEP_MAX_S, approximate: false },
+    ]);
+    expect(groups.map((g) => g.pins.map((p) => p.slug))).toEqual([['a', 'b'], ['c']]);
+  });
+
+  it('draws a hollow dot only when every pin at it is approximate (UI E4/partial)', () => {
+    const groups = plateGroups([
+      { slug: 'a', n: 1, u: 0.2, v: 0.2, approximate: true },
+      { slug: 'b', n: 2, u: 0.6, v: 0.6, approximate: true },
+      { slug: 'c', n: 3, u: 0.6, v: 0.6, approximate: false },
+    ]);
+    expect(groups.map((g) => g.approximate)).toEqual([true, false]);
+    for (const r of regions) {
+      for (const g of plateGroups(PINS.get(r.id)!)) {
+        expect(g.approximate).toBe(g.pins.every((p) => p.approximate));
+      }
+    }
+  });
+});
+
+describe('near pairs (Pitfall 9)', () => {
+  it("displaces both of Saalfelden's aerial pins at every side", () => {
+    const aerial = regionPhotoViews('saalfelden').filter((v) => v.aerial);
+    expect(aerial).toHaveLength(2);
+    const bad: string[] = [];
+    for (const S of SWEEP) {
+      const layout = LAYOUTS.get('saalfelden')!.get(S)!;
+      for (const v of aerial) {
+        const g = groupOf(layout, v.slug);
+        if (g.leader === null) bad.push(`S=${S} ${v.slug} centred`);
+      }
+      if (groupOf(layout, aerial[0].slug) === groupOf(layout, aerial[1].slug)) {
+        bad.push(`S=${S}: one dot`);
+      }
+    }
+    expect(bad).toEqual([]);
+  });
+
+  it("displaces Zermatt's img-0605/img-0629 pair at 320-375", () => {
+    const a = pinOf('zermatt', 'img-0605');
+    const b = pinOf('zermatt', 'img-0629');
+    for (let S = 320; S <= 375; S++) {
+      const layout = LAYOUTS.get('zermatt')!.get(S)!;
+      const ga = groupOf(layout, a.slug);
+      const gb = groupOf(layout, b.slug);
+      expect(ga).not.toBe(gb);
+      expect(ga.leader !== null || gb.leader !== null).toBe(true);
+    }
+  });
+});
+
+/** The pin counts the S 320-634 sweep was measured for. */
+const SWEPT_COUNTS: Readonly<Record<string, number>> = { ortler: 2, saalfelden: 2, zermatt: 7 };
+
+/** Fails with a message naming the sweep when a region's pin count changes. */
+function guardCount(region: string, got: number, want: number | undefined) {
+  if (got !== want) {
+    throw new Error(
+      `plate-layout: the S ${PLATE_SWEEP_MIN_S}-${PLATE_SWEEP_MAX_S} sweep was measured for ` +
+        `${want ?? 'no'} pins on ${region}, found ${got}; re-run the sweep and check the plate`
+    );
+  }
+}
+
+describe('count guard (UI E4/zero-one-many)', () => {
+  it('was measured for exactly these pins per region (a change forces a re-sweep)', () => {
+    expect(Object.keys(SWEPT_COUNTS).sort()).toEqual(regions.map((r) => r.id).sort());
+    for (const r of regions) guardCount(r.id, PINS.get(r.id)!.length, SWEPT_COUNTS[r.id]);
+  });
+
+  it('fails with a message naming the sweep when a count changes', () => {
+    expect(() => guardCount('zermatt', 8, 7)).toThrow(/S 320-634 sweep/);
+    expect(() => guardCount('newregion', 3, undefined)).toThrow(/re-run the sweep/);
+  });
+
+  it('gives every region at least one pin (a region with no photo already fails the build)', () => {
+    for (const r of regions) expect(PINS.get(r.id)!.length).toBeGreaterThan(0);
+  });
+});
+
+describe('plateCss guards (T-18-23)', () => {
+  const pins = PINS.get('zermatt')!;
+
+  it('throws a RangeError naming a slug outside the slug pattern', () => {
+    for (const slug of ['Bad', 'a"]{}', 'a--b', '-a', 'a b', '']) {
+      const bad = [{ ...pins[0], slug }, ...pins.slice(1)];
+      expect(() => plateCss(bad, 'plate-zermatt')).toThrow(RangeError);
+      expect(() => plateCss(bad, 'plate-zermatt')).toThrow(JSON.stringify(slug));
+    }
+  });
+
+  it('throws a RangeError for a container name outside the slug pattern', () => {
+    expect(() => plateCss(pins, 'plate zermatt')).toThrow(RangeError);
+    expect(() => plateCss(pins, 'plate{}')).toThrow(RangeError);
+  });
+
+  it('is built only from numbers, the slugs and fixed selectors', () => {
+    let rest = plateCss(pins, 'plate-zermatt');
+    for (const p of pins) rest = rest.split(`"${p.slug}"`).join('""');
+    rest = rest.split('plate-zermatt').join('');
+    expect(rest).toMatch(/^[-[\]a-z0-9@(){}:;.,*+="\s]*$/);
+  });
 });
