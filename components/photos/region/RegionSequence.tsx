@@ -1,4 +1,6 @@
+import RegionRail from '@/components/photos/region/RegionRail';
 import SequenceFigure from '@/components/photos/region/SequenceFigure';
+import { railHead, railTicks } from '@/lib/photos/region-rail';
 import { regionById, regionPhotoViews, regionRights } from '@/lib/regions';
 
 /**
@@ -10,8 +12,9 @@ import { regionById, regionPhotoViews, regionRights } from '@/lib/regions';
  * 'Skip to next region' link to #next-region (the block that closes every
  * region page). Below 768 px one column; from 768 px the photo column and the
  * 6rem rail column (RAIL_COLUMN_PX, lib/photos/image-sizes.ts; image-sizes.test
- * pins the two), left empty here for 18-12's altimeter rail. No ancestor of the
- * rail column clips overflow (18-RESEARCH Pitfall 10: an overflow ancestor
+ * pins the two), which holds the sticky altimeter rail (18-12, REGION-05): its
+ * ticks and head label are built here from the views and cross to the RegionRail
+ * island as plain props (T-18-29). No ancestor of the rail column clips overflow (18-RESEARCH Pitfall 10: an overflow ancestor
  * would break the rail's sticky box).
  *
  * The list is in regionPhotoViews order (DEM height ascending, ties by id),
@@ -63,7 +66,9 @@ export default function RegionSequence({ id }: { id: string }) {
               <SequenceFigure key={view.slug} view={view} n={i + 1} N={views.length} />
             ))}
           </ol>
-          <div data-region-rail-column="" className="hidden md:block" />
+          <div data-region-rail-column="" className="hidden md:block">
+            <RegionRail ticks={railTicks(views)} head={railHead(views)} />
+          </div>
         </div>
         <p className="mt-12 text-sm text-ink-muted">{regionRights(id)}</p>
       </div>

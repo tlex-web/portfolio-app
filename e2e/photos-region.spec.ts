@@ -1321,6 +1321,31 @@ test.describe('Region page scroll and morph (18-08; D-06, LBOX-06, P4)', () => {
   });
 });
 
+/** The region altimeter rail (18-12): its root carries data-rail-current, the settle signal. */
+const RAIL = 'section[data-region-sequence] [data-region-rail]';
+
+/** Scroll the n-th (1-based) sequence figure to the viewport centre, instantly. */
+async function centreFigure(page: Page, n: number) {
+  await page
+    .locator('section[data-region-sequence] li[data-sequence-item]')
+    .nth(n - 1)
+    .evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
+}
+
+test.describe('Region altimeter rail (18-12; REGION-05, D-07)', () => {
+  test('Zermatt at 1440: the rail marks photo 1 on load and photo 4 once figure 4 is centred', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/photos/regions/zermatt');
+    const rail = page.locator(RAIL);
+    await expect(rail).toHaveAttribute('data-rail-current', '1');
+    await expect(rail).toHaveAttribute('aria-hidden', 'true');
+    await centreFigure(page, 4);
+    await expect(rail).toHaveAttribute('data-rail-current', '4');
+  });
+});
+
 test.describe('Next-region chain (18-06; REGION-02, D-01, D-11)', () => {
   test('following the sign from Zermatt visits Ortler, Saalfelden, then Zermatt again', async ({
     page,

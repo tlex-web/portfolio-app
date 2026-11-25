@@ -162,7 +162,7 @@ describe('RegionSequence', () => {
         'href',
         '#next-region'
       );
-      const items = [...band.querySelectorAll('ol > li')].map((li) =>
+      const items = [...band.querySelectorAll('ol[aria-label] > li')].map((li) =>
         li.getAttribute('data-sequence-item')
       );
       expect(items).toEqual(views.map((v) => v.slug));
