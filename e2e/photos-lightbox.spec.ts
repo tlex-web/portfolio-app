@@ -335,14 +335,15 @@ test.describe('LV95 line on the photo page (18-18; PHOTO-08)', () => {
 });
 
 /**
- * The strip's Share / Copy link (18-18; PHOTO-07, D-13): it shares the photo on
+ * The viewer's Share / Copy link (18-18; PHOTO-07, D-13; in the top bar from the
+ * key tier since 18-20, in the strip on the scroll tier): it shares the photo on
  * screen, so after a step it hands over the stepped photo's canonical URL,
  * site.url + photoHref, never the window address (T-18-39). Opened from the
  * Zermatt sequence, the stepping set's own surface. The real clipboard is a
  * Chromium row (only Chromium grants clipboard permissions in Playwright);
  * the navigator.share stub runs in every engine (Pitfall 7).
  */
-test.describe('Share in the viewer strip (18-18; PHOTO-07)', () => {
+test.describe('Share in the viewer (18-18, 18-20; PHOTO-07)', () => {
   const second = series[1];
   const secondUrl = `${site.url}/photos/${second.slug}`;
 
@@ -445,14 +446,17 @@ test.describe('Share in the viewer strip (18-18; PHOTO-07)', () => {
       .toEqual([{ title: `${second.title} · ${site.name}`, url: secondUrl }]);
   });
 
-  test('the end card has no Share button; the strip and its button return with Previous', async ({
+  test('the end card has no Share button; the bar button returns with Previous', async ({
     page,
     browserName,
   }) => {
     const last = series[series.length - 1];
     const dialog = await openFromSequence(page, last.slug);
-    const share = dialog.locator('[data-strip-share] button');
+    // The default 1280 x 720 viewport is the gutter tier: Share is the bar's (18-20).
+    const share = dialog.locator('[data-viewer-chrome] [data-chrome-share] button');
     await expect(share).toHaveCount(1);
+    await expect(share).toBeVisible();
+    await expect(dialog.locator('[data-strip-share]')).toBeHidden();
     const next = dialog.getByRole('button', { name: 'Next photo', exact: true });
     await waitForHydration(next);
     await pressButton(next, browserName);
@@ -466,7 +470,167 @@ test.describe('Share in the viewer strip (18-18; PHOTO-07)', () => {
       `${series.length} / ${series.length}`
     );
     await expect(share).toHaveCount(1);
+    await expect(share).toBeVisible();
   });
+});
+
+/**
+ * Share in the viewer's top bar (18-20, Tim's compact-strip choice; 18-UI-SPEC
+ * Contract 4 as amended 2026-11-25). From the key tier the bar holds Share after
+ * Zoom (before Close in the lightbox): icon-only from 768 (named 'Copy link to
+ * this photo'), with its label from 1024; the bar stays one 56 px row with no
+ * overflow, and the strip shows no Share. On the scroll tier (375) the bar has
+ * no room for a fifth button in the lightbox, so the strip keeps Share there. A
+ * failed copy's line is a panel under the bar: no bar control and not the photo
+ * moves. Copy mode in every engine (Pitfall 7).
+ */
+test.describe('Share in the viewer bar (18-20; PHOTO-07)', () => {
+  const subjectSlug = series[0].slug;
+
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      delete (Navigator.prototype as Partial<Navigator>).share;
+      delete (Navigator.prototype as Partial<Navigator>).canShare;
+    });
+  });
+
+  async function openSurface(page: Page, surface: 'page' | 'lightbox') {
+    if (surface === 'page') {
+      await page.goto(`/photos/${subjectSlug}`);
+    } else {
+      await page.goto('/photos/regions/zermatt');
+      const link = page.locator(`[data-photo-id="${subjectSlug}"]`);
+      await waitForHydration(link);
+      await link.click();
+      await expect(page.getByRole('dialog')).toBeVisible({ timeout: 20000 });
+    }
+    const viewer = page.locator('[data-photo-viewer]').last();
+    await waitForHydration(viewer.getByRole('button', { name: 'Zoom photo' }));
+    return viewer;
+  }
+
+  /** Every visible bar control's box, and whether the bar overflows. */
+  const barGeometry = (viewer: Locator) =>
+    viewer.locator('[data-viewer-chrome]').evaluate((bar) => ({
+      height: bar.getBoundingClientRect().height,
+      overflow: bar.scrollWidth - bar.clientWidth,
+      controls: [...bar.querySelectorAll('a, button')]
+        .filter((el) => el.getClientRects().length > 0)
+        .map((el) => {
+          const r = el.getBoundingClientRect();
+          return {
+            name: el.getAttribute('aria-label') ?? el.textContent ?? '',
+            x: r.x,
+            y: r.y,
+            w: r.width,
+            h: r.height,
+          };
+        }),
+    }));
+
+  for (const surface of ['page', 'lightbox'] as const) {
+    for (const width of [768, 1024, 1440]) {
+      test(`${surface} @${width}: Share sits in the one-row bar after Zoom, the strip has none`, async ({
+        page,
+      }) => {
+        await page.setViewportSize({ width, height: 900 });
+        const viewer = await openSurface(page, surface);
+        const bar = viewer.locator('[data-viewer-chrome]');
+        const share = bar.getByRole('button', { name: 'Copy link to this photo' });
+        await expect(share).toBeVisible();
+        await expect(viewer.locator('[data-strip-share]')).toBeHidden();
+        // Icon-only below 1024, the label from 1024.
+        const label = share.locator('span');
+        if (width < 1024) await expect(label).toBeHidden();
+        else await expect(label).toHaveText('Copy link');
+
+        const geo = await barGeometry(viewer);
+        expect(geo.height).toBe(56);
+        expect(geo.overflow, 'the bar does not overflow').toBeLessThanOrEqual(0);
+        for (const c of geo.controls) {
+          expect(c.h, `${c.name} is a 44 px target`).toBeGreaterThanOrEqual(44);
+          expect(c.y, `${c.name} on the bar's one row`).toBe(geo.controls[0].y);
+        }
+        const names = geo.controls.map((c) => c.name);
+        const zoom = names.indexOf('Zoom photo');
+        expect(names[zoom + 1]).toBe('Copy link to this photo');
+        if (surface === 'lightbox') expect(names[zoom + 2]).toBe('Close photo');
+        else expect(names).toHaveLength(zoom + 2);
+        // Left to right without overlap.
+        for (let i = 1; i < geo.controls.length; i++) {
+          const a = geo.controls[i - 1];
+          expect(geo.controls[i].x, `${names[i]} after ${a.name}`).toBeGreaterThanOrEqual(
+            a.x + a.w
+          );
+        }
+      });
+    }
+
+    test(`${surface} @375: the bar has no visible Share; the strip keeps it`, async ({ page }) => {
+      await page.setViewportSize({ width: 375, height: 900 });
+      const viewer = await openSurface(page, surface);
+      await expect(viewer.locator('[data-chrome-share]')).toBeHidden();
+      const stripShare = viewer
+        .locator('[data-strip-share]')
+        .getByRole('button', { name: 'Copy link to this photo' });
+      await expect(stripShare).toBeVisible();
+      await expect(viewer.getByRole('button', { name: 'Copy link to this photo' })).toHaveCount(1);
+      const geo = await barGeometry(viewer);
+      expect(geo.overflow).toBeLessThanOrEqual(0);
+    });
+  }
+
+  test('lightbox @1440: Zoom, Tab, Share, Tab, Close; → steps with Share focused and keeps the focus', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const viewer = await openSurface(page, 'lightbox');
+    const share = viewer.getByRole('button', { name: 'Copy link to this photo' });
+    await viewer.getByRole('button', { name: 'Zoom photo' }).focus();
+    await page.keyboard.press('Tab');
+    await expect(share).toBeFocused();
+    await page.keyboard.press('ArrowRight');
+    await expect(viewer.locator('[data-photo-counter]')).toHaveText(`2 / ${series.length}`);
+    await expect(page).toHaveURL(new RegExp(`/photos/${series[1].slug}$`));
+    await expect(share).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(viewer.getByRole('button', { name: 'Close photo' })).toBeFocused();
+  });
+
+  for (const surface of ['page', 'lightbox'] as const) {
+    test(`${surface} @1440: a failed copy drops a panel under the bar; no bar control and not the photo moves`, async ({
+      page,
+    }) => {
+      await page.addInitScript(() => {
+        Object.defineProperty(Clipboard.prototype, 'writeText', {
+          configurable: true,
+          value: () => Promise.reject(new DOMException('Write denied', 'NotAllowedError')),
+        });
+      });
+      await page.setViewportSize({ width: 1440, height: 900 });
+      const viewer = await openSurface(page, surface);
+      const before = await barGeometry(viewer);
+      const photo = await viewer.locator('[data-photo-box]').boundingBox();
+      await viewer.getByRole('button', { name: 'Copy link to this photo' }).click();
+
+      const panel = viewer.locator('[data-viewer-chrome] [data-share-failure]');
+      await expect(panel).toBeVisible();
+      await expect(panel).toContainText(`${site.url}/photos/${subjectSlug}`);
+      await page.mouse.move(0, 0);
+      const after = await barGeometry(viewer);
+      expect(after.height).toBe(56);
+      expect(after.controls.map(({ x, y, w }) => [x, y, w])).toEqual(
+        before.controls.map(({ x, y, w }) => [x, y, w])
+      );
+      expect(await viewer.locator('[data-photo-box]').boundingBox()).toEqual(photo);
+      // The panel hangs under the bar, inside the viewport.
+      const barBox = (await viewer.locator('[data-viewer-chrome]').boundingBox())!;
+      const panelBox = (await panel.boundingBox())!;
+      expect(panelBox.y).toBeGreaterThanOrEqual(barBox.y + barBox.height);
+      expect(panelBox.x).toBeGreaterThanOrEqual(0);
+      expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(1440);
+    });
+  }
 });
 
 test.describe('Viewer layout tiers (D-05)', () => {

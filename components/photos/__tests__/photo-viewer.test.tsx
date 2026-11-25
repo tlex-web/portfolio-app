@@ -413,21 +413,60 @@ describe('the end-of-series card (18-16; LBOX-09, D-12)', () => {
 });
 
 /**
- * The strip's Share / Copy link (18-18; PHOTO-07, D-13): on both surfaces the
- * strip ends with ShareButton for the shown photo, site.url + photoHref, so a
- * step changes what it copies; the end card has no strip and no Share button.
+ * Share / Copy link for the shown photo (18-18; PHOTO-07, D-13), moved to the
+ * viewer's top bar at 18-20 (Tim's compact-strip choice; 18-UI-SPEC Contract 4
+ * as amended 2026-11-25). Two instances of ShareButton, one per tier, CSS picks
+ * the one shown: in the bar after Zoom and before Close, hidden on the scroll
+ * tier (the bar has no room for a fifth button at 375 in the lightbox), and in
+ * the strip, shown on the scroll tier only. Both copy site.url + photoHref of
+ * the shown photo, so a step changes what they copy; the end card has neither.
  */
-describe('the strip Share button follows the shown photo (18-18; PHOTO-07)', () => {
-  const shareButton = () =>
-    screen.queryByRole('button', { name: 'Copy link to this photo', hidden: true });
+describe('the Share button follows the shown photo, in the bar from the key tier (18-18, 18-20; PHOTO-07)', () => {
+  const barShare = () =>
+    document.querySelector<HTMLButtonElement>('[data-viewer-chrome] [data-chrome-share] button');
+  const stripShare = () =>
+    document.querySelector<HTMLButtonElement>('[data-photo-strip] [data-strip-share] button');
 
   afterEach(() => {
     delete (navigator as unknown as Record<string, unknown>).clipboard;
   });
 
   it.each(['page', 'modal'] as const)(
-    'the %s variant: Next, then Copy link writes the second photo’s canonical URL',
-    async (variant) => {
+    'the %s variant: the bar Share sits after Zoom (before Close), hidden on the scroll tier; the strip one only on it',
+    (variant) => {
+      if (variant === 'page') renderPage(zermatt, zermatt[0].slug);
+      else renderModal(zermatt, zermatt[0].slug);
+      const right = document.querySelector('[data-chrome-right]')!;
+      const slot = right.querySelector('[data-chrome-share]')!;
+      expect(slot).not.toBeNull();
+      expect(slot.className.split(' ')).toContain('lb-scroll:hidden');
+      const order = [...right.children].map(
+        (el) => el.getAttribute('aria-label') ?? (el.hasAttribute('data-chrome-share') ? 'share' : '?')
+      );
+      expect(order).toEqual(
+        variant === 'page'
+          ? ['Hide labels', 'Zoom photo', 'share']
+          : ['Hide labels', 'Zoom photo', 'share', 'Close photo']
+      );
+      expect(barShare()).toHaveAccessibleName('Copy link to this photo');
+      expect(barShare()!.className.split(' ')).toContain('lg:min-w-40');
+
+      const stripSlot = document.querySelector('[data-strip-share]')!;
+      expect(stripSlot.className.split(' ')).toEqual(
+        expect.arrayContaining(['lb-key:hidden', 'lb-gutter:hidden'])
+      );
+      expect(stripShare()).toHaveAccessibleName('Copy link to this photo');
+    }
+  );
+
+  it.each([
+    ['page', 'bar'],
+    ['page', 'strip'],
+    ['modal', 'bar'],
+    ['modal', 'strip'],
+  ] as const)(
+    'the %s variant, the %s Share: Next, then Copy link writes the second photo’s canonical URL',
+    async (variant, where) => {
       const writeText = jest.fn<Clipboard['writeText']>().mockResolvedValue(undefined);
       Object.defineProperty(navigator, 'clipboard', {
         value: { writeText },
@@ -436,13 +475,13 @@ describe('the strip Share button follows the shown photo (18-18; PHOTO-07)', () 
       });
       if (variant === 'page') renderPage(zermatt, zermatt[0].slug);
       else renderModal(zermatt, zermatt[0].slug);
-      expect(shareButton()).not.toBeNull();
-      expect(shareButton()!.closest('[data-strip-share]')).not.toBeNull();
+      const share = where === 'bar' ? barShare : stripShare;
+      expect(share()).not.toBeNull();
 
       fireEvent.click(screen.getByRole('button', { name: 'Next photo', hidden: true }));
       expect(counter()).toHaveTextContent(`2 / ${zermatt.length}`);
       await act(async () => {
-        fireEvent.click(shareButton()!);
+        fireEvent.click(share()!);
       });
 
       expect(writeText).toHaveBeenCalledTimes(1);
@@ -450,17 +489,56 @@ describe('the strip Share button follows the shown photo (18-18; PHOTO-07)', () 
     }
   );
 
-  it('the end card shows no Share button; Previous brings it back for the last photo', () => {
+  it('the end card shows no Share button in the bar or the strip; Previous brings both back', () => {
     const last = zermatt[zermatt.length - 1];
     renderPage(zermatt, last.slug);
-    expect(shareButton()).not.toBeNull();
+    expect(barShare()).not.toBeNull();
+    expect(stripShare()).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Next photo', hidden: true }));
     expect(counter()).toHaveTextContent('End');
-    expect(shareButton()).toBeNull();
+    expect(barShare()).toBeNull();
+    expect(stripShare()).toBeNull();
+    expect(document.querySelector('[data-chrome-share]')).toBeNull();
     expect(document.querySelector('[data-strip-share]')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Previous photo', hidden: true }));
-    expect(shareButton()).not.toBeNull();
+    expect(barShare()).not.toBeNull();
+    expect(stripShare()).not.toBeNull();
   });
+
+  it('with focus on the bar Share, → steps and keeps focus on it (the button stays mounted)', () => {
+    renderModal(zermatt, zermatt[0].slug);
+    act(() => barShare()!.focus());
+    expect(barShare()).toHaveFocus();
+    fireEvent.keyDown(barShare()!, { key: 'ArrowRight' });
+    expect(counter()).toHaveTextContent(`2 / ${zermatt.length}`);
+    expect(barShare()).toHaveFocus();
+  });
+
+  it.each(['page', 'modal'] as const)(
+    'the %s variant: with focus on the bar Share, → onto the end card moves focus to Next photo',
+    (variant) => {
+      const last = zermatt[zermatt.length - 1];
+      if (variant === 'page') {
+        // The page's viewer keys skip a press outside <main> (keyBelongsToChrome), so
+        // the page renders inside one here, as it does in the shell.
+        render(
+          <PhotoViewer
+            variant="page"
+            photos={zermatt}
+            initialSlug={last.slug}
+            back={backFor(zermatt, last.slug)}
+            breadcrumb={crumbsFor(last.slug)}
+            endCard={cardFor(zermatt, last.slug)}
+          />,
+          { container: document.body.appendChild(document.createElement('main')) }
+        );
+      } else renderModal(zermatt, last.slug);
+      act(() => barShare()!.focus());
+      fireEvent.keyDown(barShare()!, { key: 'ArrowRight' });
+      expect(counter()).toHaveTextContent('End');
+      expect(screen.getByRole('button', { name: 'Next photo', hidden: true })).toHaveFocus();
+    }
+  );
 });
 
 /**

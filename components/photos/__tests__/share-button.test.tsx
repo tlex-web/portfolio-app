@@ -497,3 +497,78 @@ describe('ShareButton across a url change (18-18, the viewer strip)', () => {
     expect(button()).toHaveTextContent('Link copied');
   });
 });
+
+/**
+ * The viewer bar's Share (18-20, Tim's compact-strip choice; 18-UI-SPEC Contract
+ * 4 as amended 2026-11-25): appearance 'chrome' matches the bar's Hide labels and
+ * Zoom (regular weight, md:px-4), shows its label only from lg (icon-only below,
+ * so it always carries an aria-label), holds the longest label with lg:min-w-40
+ * ('Share photo' measures 91.83 px in Inter, so the button is 153.83 px), and with
+ * failurePlacement 'overlay' drops the failure line under the bar as an absolute
+ * panel: nothing in the bar or below it moves.
+ */
+describe("ShareButton appearance 'chrome' and failurePlacement 'overlay' (18-20)", () => {
+  const chromeButton = () => (
+    <ShareButton
+      url={URL_}
+      title={TITLE}
+      subject="photo"
+      surface="gallery"
+      appearance="chrome"
+      failurePlacement="overlay"
+    />
+  );
+
+  it('server-renders copy mode with the bar look: icon, a label shown from lg, the copy-mode name', () => {
+    const host = document.createElement('div');
+    host.innerHTML = renderToString(chromeButton());
+    const b = host.querySelector('button')!;
+    expect(b.getAttribute('aria-label')).toBe('Copy link to this photo');
+    expect(b.textContent).toBe('Copy link');
+    const label = b.querySelector('span')!;
+    expect(label.textContent).toBe('Copy link');
+    expect(label.className).toBe('hidden lg:inline');
+    for (const cls of ['min-h-11', 'min-w-11', 'md:px-4', 'lg:min-w-40', 'hover:border-ink-muted']) {
+      expect(b.className.split(' ')).toContain(cls);
+    }
+    // The secondary button's look stays on the strip and region uses.
+    expect(b.className).not.toContain('min-w-42');
+    expect(b.className).not.toContain('font-semibold');
+  });
+
+  it('share mode keeps an accessible name, Share photo, while the label is hidden below lg', () => {
+    stub('share', jest.fn());
+    render(chromeButton());
+    expect(button()).toHaveAttribute('aria-label', 'Share photo');
+    expect(button()).toHaveAccessibleName('Share photo');
+    expect(button()).toHaveTextContent('Share photo');
+  });
+
+  it('a failed copy shows the line as an absolute panel under the bar; the next press clears it', async () => {
+    stub('clipboard', {
+      writeText: jest.fn<Clipboard['writeText']>().mockRejectedValue(new Error('denied')),
+    });
+    const { container } = render(chromeButton());
+    expect(container.children).toHaveLength(1);
+
+    await press();
+
+    const line = failureLine()!;
+    expect(line.parentElement).toBe(button().parentElement);
+    for (const cls of ['absolute', 'top-full', 'right-4', 'z-10']) {
+      expect(line.className.split(' ')).toContain(cls);
+    }
+    // The group is not positioned, so the panel anchors to the bar (the nearest positioned ancestor).
+    expect(button().parentElement?.className ?? '').not.toMatch(/\b(relative|absolute)\b/);
+    expect(line).toHaveTextContent(`Couldn't copy the link. It's selected here: ${URL_}`);
+    expect(window.getSelection()?.toString()).toBe(URL_);
+    expect(status()).toHaveTextContent(FAILED_STATUS);
+
+    stub('clipboard', {
+      writeText: jest.fn<Clipboard['writeText']>().mockResolvedValue(undefined),
+    });
+    await press();
+    expect(failureLine()).toBeNull();
+    expect(status()).toHaveTextContent('Link copied');
+  });
+});

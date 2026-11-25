@@ -399,9 +399,10 @@ describe('capture label (rewritten from the ImageDetailModal tests, D-03)', () =
  * The strip's Share / Copy link slot (18-18; PHOTO-07, D-13; UI-SPEC Contract
  * 4): PhotoViewer fills it with ShareButton for the shown photo (subject
  * photo, gallery surface). The slot is the data column's last row, mt-4 after
- * the rights line and the legend; the server HTML is copy mode.
+ * the rights line and the legend, shown on the scroll tier only (18-20: from
+ * the key tier the viewer's top bar carries Share); the server HTML is copy mode.
  */
-describe('ExifStrip share slot (18-18; PHOTO-07)', () => {
+describe('ExifStrip share slot (18-18, 18-20; PHOTO-07)', () => {
   const view = viewOf('img-0605');
   const share = (
     <ShareButton
@@ -413,7 +414,7 @@ describe('ExifStrip share slot (18-18; PHOTO-07)', () => {
   );
 
   it.each([1, 2] as const)(
-    'heading level %i: the button ends the data column, after the rights line, mt-4',
+    'heading level %i: the button ends the data column, after the rights line, mt-4, on the scroll tier only',
     (level) => {
       const { container } = render(
         <ExifStrip
@@ -428,6 +429,8 @@ describe('ExifStrip share slot (18-18; PHOTO-07)', () => {
       expect(slot).not.toBeNull();
       expect(data.lastElementChild).toBe(slot);
       expect(slot).toHaveClass('mt-4');
+      // The scroll tier only (18-20): from lb-key the viewer's top bar carries Share.
+      expect(slot).toHaveClass('lb-key:hidden', 'lb-gutter:hidden');
       // Rights, then the legend, then the one action.
       expect(slot.previousElementSibling).toHaveAttribute('data-strip-legend');
       expect(slot.previousElementSibling!.previousElementSibling).toHaveAttribute(
