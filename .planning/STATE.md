@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
-stopped_at: Completed 18-16-PLAN.md
-last_updated: "2026-11-25T19:18:05.779Z"
+stopped_at: Completed 18-17-PLAN.md
+last_updated: "2026-11-25T19:38:08.670Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: 7b5ccc748a3ffd019a35cbfd5cf59434456510a3
+state_head: 18c163af9e1214d7cd0a3a1101fefb3714ddee1d
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 109
-  completed_plans: 96
+  completed_plans: 97
   percent: 71
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-24)
 ## Current Position
 
 Phase: 18 (Immersive Survey Layout) — EXECUTING
-Plan: 16 of 29
+Plan: 17 of 29
 Status: Ready to execute
 Last activity: 2026-11-24 — Phase 18 execution started
 
@@ -154,6 +154,7 @@ Progress: [███████░░░] 71%
 | Phase 18 P14 | 167 min | 3 tasks | 30 files |
 | Phase 18 P15 | 25min | 2 tasks | 11 files |
 | Phase 18 P16 | 21 min | 2 tasks | 14 files |
+| Phase 18 P17 | 17min | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -402,6 +403,9 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-16: A one-photo set keeps the 18-15 rule (no controls, no steps) and has no end card
 - [Phase 18]: 18-16: When a step across the card removes the focused element, focus moves to the step button of the direction taken
 - [Phase 18]: 18-16: The tracer row carries @no-win-webkit; Windows WebKit crashes on any soft navigation out of the lightbox after a step, card or not (deferred-items.md; watch CI's Linux WebKit)
+- [Phase 18]: 18-17: photoBack(photoId) and photoBreadcrumb(slug) build the photo page's way back and trail on the server from the registry; PhotoViewer and ExifStrip import no region module and the target never comes from the URL (T-18-37)
+- [Phase 18]: 18-17: PhotoViewer throws a RangeError for a page render without back, ExifStrip for a level-1 strip without backName; no gallery-wide way back remains
+- [Phase 18]: 18-17: the current crumb follows the shown photo by swapping the last crumb's name for current.title; the BreadcrumbList is the load-time list
 
 ### Pending Todos
 
@@ -463,6 +467,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-25T19:18:05.137Z
-Stopped at: Completed 18-16-PLAN.md
+Last session: 2026-11-25T19:38:08.028Z
+Stopped at: Completed 18-17-PLAN.md
 Resume file: None
