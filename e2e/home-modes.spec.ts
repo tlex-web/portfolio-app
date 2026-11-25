@@ -608,6 +608,13 @@ test.describe('Home modes (HOME-02, HOME-07, HOME-08)', () => {
 
     for (const { width, height } of WIDTHS) {
       test(`B8: poster at ${width} x ${height}, every waypoint stop and the summit`, async ({ page }) => {
+        // 25 samples (5 stops x 5 labels), each a clipped screenshot decoded in
+        // the page. WebKit's screenshot cost grows with the viewport: on CI the
+        // 1440 row took 20 s at 18-14 and 31-32 s at 18-20 (run 45697912592, every
+        // spec about 1.44x slower on that leg), so the default 30 s timed out at
+        // sample 23-24 with every value near 8:1. The budget covers the work; no
+        // wait is lengthened.
+        test.setTimeout(60000);
         await disableWebGL(page);
         await page.setViewportSize({ width, height });
         await page.goto('/');
