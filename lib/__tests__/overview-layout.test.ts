@@ -119,6 +119,66 @@ function segmentCrosses(
   );
 }
 
+type Pt = { x: number; y: number };
+
+/** The triangle a summit mark draws in its box: apex top-centre, base at the bottom. */
+const triangleOf = (b: OverviewBox): Pt[] => [
+  { x: b.x + b.width / 2, y: b.y },
+  { x: right(b), y: bottom(b) },
+  { x: b.x, y: bottom(b) },
+];
+
+/**
+ * Whether a segment passes through a convex polygon's interior: sampled at
+ * 1/2000 steps against the polygon shrunk by 0.01 px (independent of the
+ * module's Cyrus-Beck clip).
+ */
+function segmentCrossesPolygon(
+  s: { x1: number; y1: number; x2: number; y2: number },
+  pts: readonly Pt[]
+): boolean {
+  const cx = pts.reduce((sum, p) => sum + p.x, 0) / pts.length;
+  const cy = pts.reduce((sum, p) => sum + p.y, 0) / pts.length;
+  const inside = (x: number, y: number) =>
+    pts.every((a, i) => {
+      const b = pts[(i + 1) % pts.length];
+      const nx = a.y - b.y;
+      const ny = b.x - a.x;
+      const n = Math.hypot(nx, ny);
+      const side = Math.sign(nx * (cx - a.x) + ny * (cy - a.y));
+      return (side * (nx * (x - a.x) + ny * (y - a.y))) / n > 0.01;
+    });
+  for (let i = 0; i <= 2000; i++) {
+    const t = i / 2000;
+    if (inside(s.x1 + t * (s.x2 - s.x1), s.y1 + t * (s.y2 - s.y1))) return true;
+  }
+  return false;
+}
+
+/** Whether a box and a convex polygon overlap with positive area (separating axis test). */
+function boxOverlapsPolygon(box: OverviewBox, pts: readonly Pt[]): boolean {
+  const corners: Pt[] = [
+    { x: box.x, y: box.y },
+    { x: right(box), y: box.y },
+    { x: right(box), y: bottom(box) },
+    { x: box.x, y: bottom(box) },
+  ];
+  const axes: Pt[] = [
+    { x: 1, y: 0 },
+    { x: 0, y: 1 },
+    ...pts.map((a, i) => {
+      const b = pts[(i + 1) % pts.length];
+      const n = Math.hypot(b.x - a.x, b.y - a.y);
+      return { x: (a.y - b.y) / n, y: (b.x - a.x) / n };
+    }),
+  ];
+  return axes.every((axis) => {
+    const pa = corners.map((p) => p.x * axis.x + p.y * axis.y);
+    const pb = pts.map((p) => p.x * axis.x + p.y * axis.y);
+    return Math.max(...pa) > Math.min(...pb) + 1e-6 && Math.max(...pb) > Math.min(...pa) + 1e-6;
+  });
+}
+
 /** Whether a summit's label is pinned as unplaceable at S (excluded from the rule rows). */
 function pending(summit: string, S: number): boolean {
   return UNPLACED_SUMMIT_LABELS.some(
@@ -142,9 +202,7 @@ function boxesOf(p: OverviewPlacement): Named[] {
   return out;
 }
 
-const layouts = new Map<number, OverviewPlacement>(
-  SIDES.map((S) => [S, overviewLayout(input, S)])
-);
+const layouts = new Map<number, OverviewPlacement>(SIDES.map((S) => [S, overviewLayout(input, S)]));
 
 /** Fails with a message naming the sweep when a count changes. */
 function guardCount(what: string, got: number, want: number) {
@@ -323,7 +381,10 @@ describe('overviewLayout sweep, sheet widths 312-1100 px (UI E1 populated)', () 
     expect(bad).toEqual([]);
   });
 
-  it('draws no leader across a box other than its own marker', () => {
+  it('draws no leader across a box other than its own marker (a triangle as drawn)', () => {
+    // A triangle is checked as the shape it draws: at small widths
+    // Dufourspitze's triangle box overlaps the Zermatt rectangle, so every
+    // leader end on that rectangle lies inside the box.
     const bad: string[] = [];
     for (const S of SIDES) {
       const p = layouts.get(S)!;
@@ -332,22 +393,27 @@ describe('overviewLayout sweep, sheet widths 312-1100 px (UI E1 populated)', () 
         for (const b of boxes) {
           if (b.name === `marker ${r.id}`) continue;
           if (b.summit && pending(b.summit, S)) continue;
-          if (segmentCrosses(r.leader, b.box)) bad.push(`S=${S} leader ${r.id} / ${b.name}`);
+          const hit = b.name.startsWith('triangle')
+            ? segmentCrossesPolygon(r.leader, triangleOf(b.box))
+            : segmentCrosses(r.leader, b.box);
+          if (hit) bad.push(`S=${S} leader ${r.id} / ${b.name}`);
         }
       }
     }
     expect(bad).toEqual([]);
   });
 
-  it('covers no sheet-index rectangle with a marker, a region plate or a summit label', () => {
+  it('covers no sheet-index rectangle (its drawn outline) with a marker, a region plate or a summit label', () => {
     const bad: string[] = [];
     for (const S of SIDES) {
       const p = layouts.get(S)!;
       for (const b of boxesOf(p)) {
         if (b.name.startsWith('triangle')) continue;
         if (b.summit && pending(b.summit, S)) continue;
-        for (const r of p.regions) {
-          if (!clearOf(b.box, r.rect, 0)) bad.push(`S=${S} ${b.name} over rectangle ${r.id}`);
+        for (const r of input.regions) {
+          const outline = r.corners.map((c) => ({ x: c.u * S, y: c.v * p.H }));
+          if (boxOverlapsPolygon(b.box, outline))
+            bad.push(`S=${S} ${b.name} over rectangle ${r.id}`);
         }
       }
     }
@@ -366,7 +432,10 @@ describe('overviewLayout sweep, sheet widths 312-1100 px (UI E1 populated)', () 
         if (Math.abs(y1 - (r.marker.y + MARKER / 2)) > 1e-6) bad.push(`S=${S} ${r.id} y1`);
         const onX = [r.rect.x, r.rect.x + r.rect.width / 2, right(r.rect)];
         const onY = [r.rect.y, r.rect.y + r.rect.height / 2, bottom(r.rect)];
-        if (!onX.some((v) => Math.abs(v - x2) < 1e-6) || !onY.some((v) => Math.abs(v - y2) < 1e-6)) {
+        if (
+          !onX.some((v) => Math.abs(v - x2) < 1e-6) ||
+          !onY.some((v) => Math.abs(v - y2) < 1e-6)
+        ) {
           bad.push(`S=${S} ${r.id} leader end off the rectangle's edge points`);
         }
         const g = gapOf(r.marker, r.rect);
@@ -425,8 +494,7 @@ describe('overviewLayout sweep, sheet widths 312-1100 px (UI E1 populated)', () 
   });
 });
 
-const at = (l: OverviewLength, S: number) =>
-  l.f * (l.axis === 'x' ? S : S * OVERVIEW_RATIO) + l.px;
+const at = (l: OverviewLength, S: number) => l.f * (l.axis === 'x' ? S : S * OVERVIEW_RATIO) + l.px;
 
 describe('overviewSegments', () => {
   const segments = overviewSegments(input);
@@ -482,7 +550,9 @@ describe('overviewCss', () => {
   it('emits the first segment unconditionally and one @container rule per later segment', () => {
     const lines = css.split('\n');
     expect(lines[0].startsWith('@')).toBe(false);
-    const queries = lines.filter((l) => /^@container overview-sheet \(min-width: \d+px\)\{$/.test(l));
+    const queries = lines.filter((l) =>
+      /^@container overview-sheet \(min-width: \d+px\)\{$/.test(l)
+    );
     expect(queries.map((q) => Number(q.match(/(\d+)px/)![1]))).toEqual(
       segments.slice(1).map((g) => g.minS)
     );
