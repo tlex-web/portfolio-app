@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { CheckIcon, CopyIcon } from '@phosphor-icons/react/dist/ssr';
+import { COPIED_MS } from '@/lib/copy-feedback';
 
-/** How long the button reads 'Copied' after a successful copy (D-06). */
-export const COPIED_MS = 2000;
+/** How long the button reads 'Copied' after a successful copy (D-06); see lib/copy-feedback. */
+export { COPIED_MS };
 
 /** The 07 secondary button at px-4 (12-UI-SPEC "Direct contact panel"). */
 const SECONDARY =

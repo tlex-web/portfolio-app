@@ -15,7 +15,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { renderToString } from 'react-dom/server';
 import { hydrateRoot } from 'react-dom/client';
 import ShareButton from '../ShareButton';
-import { COPIED_MS } from '@/components/contact/CopyEmailButton';
+import { COPIED_MS } from '@/lib/copy-feedback';
 
 const URL_ = 'https://www.tlui.de/photos/example-photo';
 const TITLE = 'Example photo · Tim Lui';

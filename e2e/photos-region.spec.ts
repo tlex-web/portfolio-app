@@ -55,7 +55,10 @@ import { photoSlugs, publishedViews } from '@/lib/photos/view-model';
  *
  * Share region (18-07; PHOTO-07, D-13): the header band's button copies the
  * bare canonical site.url + '/photos/regions/<id>' even from a page loaded with
- * a query and a hash (the real clipboard, Chromium only).
+ * a query and a hash (the real clipboard, Chromium only). Stubbed through
+ * addInitScript in both engines: share mode hands navigator.share the canonical
+ * URL and '{heading} · Tim Lui'; a cancelled sheet changes nothing; a rejected
+ * clipboard write shows the URL under the button, selected.
  */
 
 /*
@@ -242,6 +245,98 @@ test.describe('Share region (18-07; PHOTO-07, D-13)', () => {
     await expect(page.getByRole('status').filter({ hasText: 'Link copied' })).toHaveCount(1);
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(ZERMATT_URL);
     await expect(button).toHaveText('Copy link', { timeout: 5000 });
+  });
+
+  // The rows below stub the browser APIs through addInitScript, so they run in
+  // both local engines (neither ships navigator.share headless, Pitfall 7).
+
+  test('share mode: Share region passes the canonical URL and title to navigator.share', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      const w = window as unknown as { __shared: ShareData[] };
+      w.__shared = [];
+      Object.defineProperty(Navigator.prototype, 'share', {
+        configurable: true,
+        value: (data: ShareData) => {
+          w.__shared.push(data);
+          return Promise.resolve();
+        },
+      });
+    });
+    await page.goto('/photos/regions/zermatt?x=1#y');
+    const button = page
+      .locator('[data-region-header]')
+      .getByRole('button', { name: 'Share region' });
+    await expect(button).toHaveText('Share region');
+    await waitForHydration(button);
+
+    await button.click();
+
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { __shared: ShareData[] }).__shared))
+      .toEqual([{ title: `${regionHeading(region('zermatt'))} · ${site.name}`, url: ZERMATT_URL }]);
+    await expect(button).toHaveText('Share region');
+    await expect(page.locator('[data-share-failure]')).toHaveCount(0);
+  });
+
+  test('share mode: a cancelled sheet (AbortError) leaves Share region and no failure line', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      const w = window as unknown as { __shareCalls: number };
+      w.__shareCalls = 0;
+      Object.defineProperty(Navigator.prototype, 'share', {
+        configurable: true,
+        value: () => {
+          w.__shareCalls += 1;
+          return Promise.reject(new DOMException('Share canceled', 'AbortError'));
+        },
+      });
+    });
+    await page.goto('/photos/regions/zermatt');
+    const button = page
+      .locator('[data-region-header]')
+      .getByRole('button', { name: 'Share region' });
+    await waitForHydration(button);
+
+    await button.click();
+
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { __shareCalls: number }).__shareCalls))
+      .toBe(1);
+    await expect(button).toHaveText('Share region');
+    await expect(page.locator('[data-share-failure]')).toHaveCount(0);
+    await expect(page.locator('[data-region-header] [role="status"]')).toHaveText('');
+  });
+
+  test('copy failure: the URL shows under the button, selected, with the failure status', async ({
+    page,
+  }) => {
+    await forceCopyMode(page);
+    await page.addInitScript(() => {
+      Object.defineProperty(Clipboard.prototype, 'writeText', {
+        configurable: true,
+        value: () => Promise.reject(new DOMException('Write denied', 'NotAllowedError')),
+      });
+    });
+    await page.goto('/photos/regions/zermatt?x=1#y');
+    const button = page
+      .locator('[data-region-header]')
+      .getByRole('button', { name: 'Copy link to this region' });
+    await waitForHydration(button);
+
+    await button.click();
+
+    const line = page.locator('[data-region-header] [data-share-failure]');
+    await expect(line).toHaveText(`Couldn't copy the link. It's selected here: ${ZERMATT_URL}`);
+    await expect
+      .poll(() => page.evaluate(() => window.getSelection()?.toString()))
+      .toBe(ZERMATT_URL);
+    await expect(page.locator('[data-region-header] [role="status"]')).toHaveText(
+      "Couldn't copy the link. It's selected below."
+    );
+    await expect(button).toHaveText('Copy link');
   });
 });
 

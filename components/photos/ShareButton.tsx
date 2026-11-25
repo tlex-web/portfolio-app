@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { CheckIcon, LinkIcon, ShareNetworkIcon } from '@phosphor-icons/react/dist/ssr';
-import { COPIED_MS } from '@/components/contact/CopyEmailButton';
+import { COPIED_MS } from '@/lib/copy-feedback';
 import { useShareMode } from '@/lib/photos/share-mode';
 
 /** The 12 secondary button (CopyEmailButton's SECONDARY) at min-w-40, label centred. */
@@ -16,6 +16,13 @@ const HOVER = {
 } as const;
 
 const FAILED_STATUS = "Couldn't copy the link. It's selected below.";
+
+/** A cancelled share sheet; matched by name so a DOMException from any realm counts. */
+function isAbort(err: unknown): boolean {
+  return (
+    typeof err === 'object' && err !== null && (err as { name?: unknown }).name === 'AbortError'
+  );
+}
 
 export type ShareButtonProps = {
   /** The canonical absolute URL, built on the server (site.url + photoHref / regionHref). */
@@ -37,15 +44,21 @@ export type ShareButtonProps = {
  * useShareMode switches to share mode after hydration where the browser can
  * share the URL. min-w-40 holds every label, so the swap shifts nothing.
  *
+ * In share mode a press calls navigator.share({ title, url }) first, with no
+ * await before it, so the call keeps the click's transient activation (18
+ * Pitfall 6). A cancelled sheet (AbortError) does nothing; any other rejection
+ * runs the copy path. Presses while a share is pending are ignored, since a
+ * second share would reject with InvalidStateError (T-18-19).
+ *
  * Copy follows CopyEmailButton: when the write resolves the label reads 'Link
  * copied' with a check for COPIED_MS and the polite status says 'Link copied';
  * a repeat press restarts the window. When the write fails (no Clipboard API,
  * an insecure origin, a denied permission) a line under the button shows the
  * URL, selected through a Range so Ctrl/Cmd+C copies it, and the status says
  * so; the line stays until the next press. Unmounting clears the timer, and a
- * write that resolves after unmount starts none.
+ * write or share that settles after unmount starts none.
  */
-export default function ShareButton({ url, subject, surface }: ShareButtonProps) {
+export default function ShareButton({ url, title, subject, surface }: ShareButtonProps) {
   const mode = useShareMode(url);
   const [copied, setCopied] = useState(false);
   const [failure, setFailure] = useState(0);
@@ -53,6 +66,7 @@ export default function ShareButton({ url, subject, surface }: ShareButtonProps)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mounted = useRef(true);
   const failures = useRef(0);
+  const pending = useRef(false);
   const urlRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
@@ -98,9 +112,30 @@ export default function ShareButton({ url, subject, surface }: ShareButtonProps)
   }
 
   function onClick() {
+    if (pending.current) return;
     setAnnouncement('');
     setFailure(0);
-    void copy();
+    if (mode !== 'share') {
+      void copy();
+      return;
+    }
+    let shared: Promise<void>;
+    try {
+      shared = navigator.share({ title, url });
+    } catch (err) {
+      shared = Promise.reject(err);
+    }
+    pending.current = true;
+    shared.then(
+      () => {
+        pending.current = false;
+      },
+      (err: unknown) => {
+        pending.current = false;
+        if (!mounted.current || isAbort(err)) return;
+        void copy();
+      }
+    );
   }
 
   const shareLabel = subject === 'photo' ? 'Share photo' : 'Share region';
