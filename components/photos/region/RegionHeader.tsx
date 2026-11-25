@@ -18,6 +18,10 @@ import { regionBreadcrumb, regionById, regionCardFacts, regionHeading } from '@/
  * printing its 'ground' range. Right: Share region / Copy link (18-07;
  * PHOTO-07, D-13), given the canonical site.url + regionHref(id) built here on
  * the server, never the window's address; it wraps below the title on phones.
+ * The button is a direct flex item of the band (failurePlacement 'row'), so a
+ * failed copy's note takes a full-width row at the bottom of the band: the
+ * band only grows downward, and the title column and button stay put (post-plan
+ * fix, Tim, 2026-11-25).
  *
  * @throws RangeError for an id that is not a registry region.
  */
@@ -37,14 +41,13 @@ export default function RegionHeader({ id }: { id: string }) {
         <h1>{regionHeading(region)}</h1>
         <FactsLine parts={[facts.count, facts.range, facts.years]} className="mt-2" />
       </div>
-      <div className="shrink-0">
-        <ShareButton
-          url={`${site.url}${regionHref(region.id)}`}
-          title={`${regionHeading(region)} · ${site.name}`}
-          subject="region"
-          surface="surface"
-        />
-      </div>
+      <ShareButton
+        url={`${site.url}${regionHref(region.id)}`}
+        title={`${regionHeading(region)} · ${site.name}`}
+        subject="region"
+        surface="surface"
+        failurePlacement="row"
+      />
     </div>
   );
 }
