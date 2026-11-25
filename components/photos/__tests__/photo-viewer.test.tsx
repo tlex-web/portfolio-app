@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import LightboxDialog from '../LightboxDialog';
 import PhotoViewer from '../PhotoViewer';
 import { site } from '@/data/site';
+import { stageSizes } from '@/lib/photos/image-sizes';
 import { photoHref } from '@/lib/photos/routes';
 import { publishedViews, type PhotoView } from '@/lib/photos/view-model';
 import {
@@ -459,5 +460,73 @@ describe('the strip Share button follows the shown photo (18-18; PHOTO-07)', () 
     expect(document.querySelector('[data-strip-share]')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Previous photo', hidden: true }));
     expect(shareButton()).not.toBeNull();
+  });
+});
+
+/**
+ * The neighbour preload (13 #33; 18-19): once the stage's large picture has
+ * loaded, each neighbour's stage derivative is fetched at low priority in the
+ * format the stage actually loaded (its currentSrc: AVIF, else WebP), never the
+ * AVIF set unconditionally, with the neighbour's own stageSizes for the surface.
+ */
+describe('the neighbour preload asks for the format the stage loaded (13 #33; 18-19)', () => {
+  let created: HTMLImageElement[];
+  let imageSpy: jest.Spied<typeof window.Image>;
+
+  beforeEach(() => {
+    created = [];
+    imageSpy = jest.spyOn(window, 'Image').mockImplementation(() => {
+      const img = document.createElement('img');
+      created.push(img);
+      return img;
+    });
+  });
+
+  afterEach(() => {
+    imageSpy.mockRestore();
+  });
+
+  /** Load the stage's large img as if its <source> of the given format had been chosen. */
+  function loadLarge(format: 'avif' | 'webp') {
+    const large = document.querySelector<HTMLImageElement>('[data-stage-layer="large"] img');
+    expect(large).not.toBeNull();
+    Object.defineProperty(large!, 'currentSrc', {
+      configurable: true,
+      value: `http://localhost/images/photos/stage-1600.0123456789.${format}`,
+    });
+    fireEvent.load(large!);
+  }
+
+  const ratioOf = (v: PhotoView) => v.aspect.w / v.aspect.h;
+
+  it('an AVIF stage in the lightbox preloads the next photo from its AVIF set, with its modal sizes', () => {
+    renderModal(zermatt, zermatt[0].slug);
+    loadLarge('avif');
+    const next = zermatt[1];
+    expect(created).toHaveLength(1);
+    expect(created[0].srcset).toBe(next.stage.srcSetAvif);
+    expect(created[0].sizes).toBe(stageSizes(ratioOf(next), 'modal'));
+    expect(created[0].getAttribute('src')).toBe(next.stage.src);
+  });
+
+  it('a WebP stage on the page preloads both neighbours from their WebP sets, with their page sizes', () => {
+    renderPage(zermatt, zermatt[2].slug);
+    loadLarge('webp');
+    const neighbours = [zermatt[1], zermatt[3]];
+    expect(created).toHaveLength(2);
+    for (const [i, view] of neighbours.entries()) {
+      expect(created[i].srcset).toBe(view.stage.srcSetWebp);
+      expect(created[i].srcset).not.toContain('.avif');
+      expect(created[i].sizes).toBe(stageSizes(ratioOf(view), 'page'));
+    }
+  });
+
+  it('a WebP stage in the lightbox preloads WebP, and a second load preloads nothing again', () => {
+    renderModal(zermatt, zermatt[0].slug);
+    loadLarge('webp');
+    expect(created).toHaveLength(1);
+    expect(created[0].srcset).toBe(zermatt[1].stage.srcSetWebp);
+    loadLarge('avif');
+    expect(created).toHaveLength(1);
   });
 });
