@@ -33,10 +33,14 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * The strip holds no link and no download control (LBOX-07).
  */
 
-type ListRow = { key: string; term?: string; value: string };
+export type ListRow = { key: string; term?: string; value: string };
 
-/** One visual line of a list: sr-only dt, then a dd holding the nowrap value and its trailing separator. */
-function ListLine({ rows }: { rows: readonly ListRow[] }) {
+/**
+ * One visual line of a list: sr-only dt, then a dd holding the nowrap value and
+ * its trailing separator. The region sequence's captions (18-08 SequenceFigure)
+ * print their EXIF lines with it, so both surfaces format them alike.
+ */
+export function ListLine({ rows }: { rows: readonly ListRow[] }) {
   return rows.map((row, i) => (
     <Fragment key={row.key}>
       {row.term && <dt className="sr-only">{row.term}</dt>}
@@ -52,6 +56,17 @@ function ListLine({ rows }: { rows: readonly ListRow[] }) {
       </dd>
     </Fragment>
   ));
+}
+
+/** The EXIF rows as list lines: line 1 (camera · lens), line 2 (focal · aperture · shutter · ISO); empty lines left out. */
+export function exifLineRows(strip: PhotoView['strip']): ListRow[][] {
+  return ([1, 2] as const)
+    .map((line) =>
+      strip.exifRows
+        .filter((row) => row.line === line)
+        .map((row) => ({ key: row.term, term: row.term, value: row.value }))
+    )
+    .filter((rows) => rows.length > 0);
 }
 
 /** Row 8: only from 768 px with hover and a fine pointer (an arbitrary media variant). */
@@ -71,13 +86,7 @@ export default function ExifStrip({
 }) {
   const { title, story, rights, strip } = view;
   const Title = headingLevel === 1 ? 'h1' : 'h2';
-  const exifLines = ([1, 2] as const)
-    .map((line) =>
-      strip.exifRows
-        .filter((row) => row.line === line)
-        .map((row) => ({ key: row.term, term: row.term, value: row.value }))
-    )
-    .filter((rows) => rows.length > 0);
+  const exifLines = exifLineRows(strip);
   const positionRows: ListRow[] = strip.positionRows.map((row) => ({
     key: row.term,
     term: row.term,

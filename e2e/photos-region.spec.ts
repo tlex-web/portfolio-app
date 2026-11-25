@@ -59,6 +59,10 @@ import { photoSlugs, publishedViews } from '@/lib/photos/view-model';
  * addInitScript in both engines: share mode hands navigator.share the canonical
  * URL and '{heading} · Tim Lui'; a cancelled sheet changes nothing; a rejected
  * clipboard write shows the URL under the button, selected.
+ *
+ * The sequence (18-08; REGION-03, REGION-04, D-07): on Zermatt at 1440 the
+ * first figure's image keeps its natural ratio (within 1 %) and none of its
+ * eight corner ticks intersects the image.
  */
 
 /*
@@ -433,6 +437,62 @@ test.describe('Share region (18-07; PHOTO-07, D-13)', () => {
   }
 });
 
+/** A rect as plain numbers. */
+type Rect = { left: number; top: number; right: number; bottom: number };
+
+/** True when two rects share an area (touching edges do not count). */
+function intersects(a: Rect, b: Rect): boolean {
+  return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+}
+
+/** A figure's image rect, its natural ratio and its tick rects, read from the page. */
+async function figureGeometry(item: Locator) {
+  return item.evaluate((li) => {
+    const img = li.querySelector('img')!;
+    const r = img.getBoundingClientRect();
+    const rect = (e: Element) => {
+      const b = e.getBoundingClientRect();
+      return { left: b.left, top: b.top, right: b.right, bottom: b.bottom };
+    };
+    return {
+      image: rect(img),
+      rendered: r.width / r.height,
+      natural: img.naturalWidth / img.naturalHeight,
+      ticks: [...li.querySelectorAll('[data-figure-tick]')].map(rect),
+    };
+  });
+}
+
+/** Scroll a figure into view and wait until its lazy image has loaded. */
+async function loadFigure(item: Locator) {
+  await item.scrollIntoViewIfNeeded();
+  await expect
+    .poll(() =>
+      item.evaluate((li) => {
+        const img = li.querySelector('img');
+        return !!img && img.complete && img.naturalWidth > 0;
+      })
+    )
+    .toBe(true);
+}
+
+test.describe('Region sequence (18-08; REGION-03, REGION-04)', () => {
+  test('Zermatt at 1440: the first figure is uncropped and its ticks stay off the image', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/photos/regions/zermatt');
+    const band = page.locator('section[data-region-sequence]');
+    await expect(band).toHaveCount(1);
+    const first = band.locator('li[data-sequence-item]').first();
+    await loadFigure(first);
+    const g = await figureGeometry(first);
+    expect(Math.abs(g.rendered / g.natural - 1), 'rendered vs natural ratio').toBeLessThan(0.01);
+    expect(g.ticks).toHaveLength(8);
+    for (const tick of g.ticks) expect(intersects(tick, g.image), JSON.stringify(tick)).toBe(false);
+  });
+});
+
 test.describe('Next-region chain (18-06; REGION-02, D-01, D-11)', () => {
   test('following the sign from Zermatt visits Ortler, Saalfelden, then Zermatt again', async ({
     page,
@@ -493,7 +553,8 @@ test.describe('Region page navigation (D-01 soft navigation)', () => {
     await page.goto('/photos/regions/zermatt');
     const link = page.locator(`[data-photo-id="${PHOTO}"]`);
     await waitForHydration(link);
-    const title = (await link.textContent())?.trim() ?? '';
+    // The figure link's name is the photo's alt (18-08), so the title comes from the data.
+    const title = publishedViews.find((v) => v.slug === PHOTO)?.title ?? '';
     expect(title).not.toBe('');
     await setMark(page);
     await link.click();

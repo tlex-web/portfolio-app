@@ -1,28 +1,20 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowSquareOutIcon } from '@phosphor-icons/react/dist/ssr';
 import type { RegionFact } from '@/data/schemas/region';
 import NextRegion from '@/components/photos/region/NextRegion';
 import RegionHeader from '@/components/photos/region/RegionHeader';
+import RegionSequence from '@/components/photos/region/RegionSequence';
 import { breadcrumbLd, regionGalleryLd } from '@/lib/json-ld/content';
 import { jsonLdHtml } from '@/lib/json-ld/site';
-import {
-  regionBreadcrumb,
-  regionById,
-  regionIds,
-  regionMetadata,
-  regionPhotoViews,
-  regionRights,
-} from '@/lib/regions';
-import { photoHref } from '@/lib/photos/routes';
+import { regionBreadcrumb, regionById, regionIds, regionMetadata } from '@/lib/regions';
 import { factSource } from '@/lib/photos/view-model';
 
 /**
- * The region page (REGION-07; D-01, D-02, D-05, D-11, D-15). A plain stand-in
- * inside the site shell until Phase 18's region plates: the region heading as
- * the h1, the region's sourced facts, its photos as text links in the series
- * order, and the printed rights line. No images, map or rail (D-11).
+ * The region page (REGION-07; D-01, D-02, D-05, D-11, D-15), built up by
+ * Phase 18 inside the site shell: the header band, the region's sourced facts,
+ * its photos as the sequence in the series order with the printed rights line,
+ * and the next-region block. The plate and the rail follow (18-09, 18-12).
  *
  * The page lives at /photos/regions/<id>, beside photos/[slug] in the photos
  * layout, so "Photographs" is the current nav item and a photo link clicked
@@ -48,8 +40,13 @@ import { factSource } from '@/lib/photos/view-model';
  * 18-06 (REGION-02, D-10): RegionHeader is the header band (breadcrumb, h1,
  * data line). Its breadcrumb and the second data block, breadcrumbLd, both
  * read regionBreadcrumb(id), so the BreadcrumbList equals the visible crumbs.
- * The facts list and the text photo list stay until 18-08 and 18-09.
- * NextRegion closes the page after the rights line (D-01, D-11): the trail
+ * The facts list stays until 18-09.
+ *
+ * 18-08 (REGION-03, REGION-04, D-07): RegionSequence replaces the stand-in's
+ * text photo list: a full-bleed gallery band, after the container, holding
+ * each photo uncropped in its map collar with its caption, and the rights line
+ * after the list. Each photo link still carries data-photo-id.
+ * NextRegion closes the page after the sequence (D-01, D-11): the trail
  * sign to the next region west to east, wrapping to the first, and 'All
  * regions'; its own py-12 md:py-16 replaces the container's bottom padding.
  */
@@ -89,7 +86,6 @@ export default async function RegionPage({ params }: PageProps) {
   const { region: id } = await params;
   const region = regionById(id);
   if (!region) notFound();
-  const views = regionPhotoViews(region.id);
 
   return (
     <>
@@ -117,32 +113,8 @@ export default async function RegionPage({ params }: PageProps) {
             ))}
           </ul>
         </section>
-
-        <section aria-labelledby="region-photos" className="mt-12 max-w-prose">
-          <h2 id="region-photos">Photographs</h2>
-          <ol className="mt-4 flex flex-col">
-            {views.map((v) => (
-              <li
-                key={v.slug}
-                className="flex flex-col gap-x-3 border-b border-line py-2 sm:flex-row sm:items-baseline"
-              >
-                <Link
-                  href={photoHref(v.slug)}
-                  data-photo-id={v.slug}
-                  className="prose-link inline-flex min-h-11 items-center text-base"
-                >
-                  {v.title}
-                </Link>
-                <span className="font-mono text-sm text-ink-muted">
-                  {v.altitudeLabel} · {v.captureLabel}
-                </span>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        <p className="mt-12 text-sm text-ink-muted">{regionRights(region.id)}</p>
       </div>
+      <RegionSequence id={region.id} />
       <NextRegion id={region.id} />
     </>
   );
