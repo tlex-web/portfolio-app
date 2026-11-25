@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
-stopped_at: Completed 18-03-PLAN.md
-last_updated: "2026-11-25T00:18:31.173Z"
+stopped_at: Completed 18-06-PLAN.md
+last_updated: "2026-11-25T00:37:23.996Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: c73e9290eabe9e4f8e8ce8ce42de4fb628fc6f11
+state_head: b28da0978573d33b9864705d8c9e45618ab854c3
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 109
-  completed_plans: 84
+  completed_plans: 85
   percent: 71
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-24)
 ## Current Position
 
 Phase: 18 (Immersive Survey Layout) — EXECUTING
-Plan: 4 of 29
+Plan: 5 of 29
 Status: Ready to execute
 Last activity: 2026-11-24 — Phase 18 execution started
 
@@ -142,6 +142,7 @@ Progress: [███████░░░] 71%
 | Phase 18 P02 | 11min | 2 tasks | 15 files |
 | Phase 18 P13 | 12min | 1 tasks | 2 files |
 | Phase 18 P03 | 40min | 3 tasks | 10 files |
+| Phase 18 P06 | 15 min | 2 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -354,6 +355,9 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-13: no marker, plate or summit label may cover a rectangle's drawn outline; leaders are checked against the drawn summit triangle
 - [Phase 18]: 18-03 D-20: Tim approved every proposed final of the copy packet, the licence reading (a short credit linked to /sources is enough) and G1 ('approve-G1 (Recommended)', 2026-11-25); the final strings are in 18-03-SUMMARY
 - [Phase 18]: 18-03 GLO-90 placement G1: the overview margin shows 'Copernicus DEM GLO-90' linked to /sources#copernicus-glo-90 (18-23 applies it)
+- [Phase 18]: 18-06: BreadcrumbList is exempt from the D-16 per-node rights rule like Person (an Intangible, not a CreativeWork); seo.spec and json-ld.test assert it carries none of the three
+- [Phase 18]: 18-06: regionBreadcrumb is the one crumb list for the visible nav and breadcrumbLd; ListItem.item is the absolute URL string, the last the page canonical
+- [Phase 18]: 18-06: TrailSign (components/site) is the shared props-only sign; EndBlock markup byte-identical after the move; NextRegion keeps the yellow tip (P5 default)
 
 ### Pending Todos
 
@@ -415,6 +419,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-25T00:18:30.624Z
-Stopped at: Completed 18-03-PLAN.md
+Last session: 2026-11-25T00:37:23.442Z
+Stopped at: Completed 18-06-PLAN.md
 Resume file: None
