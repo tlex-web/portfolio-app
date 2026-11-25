@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import LightboxDialog from '../LightboxDialog';
 import PhotoViewer from '../PhotoViewer';
 import { publishedViews, type PhotoView } from '@/lib/photos/view-model';
-import { regionPhotoViews } from '@/lib/regions';
+import { regionEndCard, regionOfPhoto, regionPhotoViews } from '@/lib/regions';
 import { SLUGS } from '../../../e2e/helpers/photo-fixtures';
 
 /**
@@ -54,16 +54,35 @@ afterEach(() => {
   replaceState.mockRestore();
 });
 
+/** The end card both routes pass: the shown photo's region's (regionEndCard, 18 D-12). */
+function cardFor(photos: readonly PhotoView[], initialSlug: string) {
+  const view = photos.find((p) => p.slug === initialSlug);
+  const regionId = view ? regionOfPhoto(view.id) : undefined;
+  if (!regionId) throw new Error(`photo-viewer.test: no region for ${initialSlug}`);
+  return regionEndCard(regionId);
+}
+
 function renderPage(photos: readonly PhotoView[], initialSlug: string, back?: typeof BACK) {
   return render(
-    <PhotoViewer variant="page" photos={photos} initialSlug={initialSlug} back={back} />
+    <PhotoViewer
+      variant="page"
+      photos={photos}
+      initialSlug={initialSlug}
+      back={back}
+      endCard={cardFor(photos, initialSlug)}
+    />
   );
 }
 
 function renderModal(photos: readonly PhotoView[], initialSlug: string) {
   return render(
     <LightboxDialog labelledBy="photo-title">
-      <PhotoViewer variant="modal" photos={photos} initialSlug={initialSlug} />
+      <PhotoViewer
+        variant="modal"
+        photos={photos}
+        initialSlug={initialSlug}
+        endCard={cardFor(photos, initialSlug)}
+      />
     </LightboxDialog>
   );
 }

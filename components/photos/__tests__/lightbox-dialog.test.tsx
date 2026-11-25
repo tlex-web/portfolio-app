@@ -9,6 +9,7 @@ import LightboxDialog, {
 import PhotoViewer from '../PhotoViewer';
 import { photoViews } from '@/lib/photos/view-model';
 import { HOTSPOT_PREF_KEY } from '@/lib/photos/hotspot-pref';
+import { regionEndCard } from '@/lib/regions';
 
 /**
  * The lightbox shell in jsdom (LBOX-01; 10-RESEARCH Pitfall 11). jsdom has no
@@ -174,7 +175,12 @@ describe('LightboxDialog', () => {
       const view = photoViews.find((v) => v.id === 'img-0662')!;
       render(
         <LightboxDialog labelledBy="photo-title">
-          <PhotoViewer variant="modal" photos={photoViews} initialSlug={view.slug} />
+          <PhotoViewer
+            variant="modal"
+            photos={photoViews}
+            initialSlug={view.slug}
+            endCard={regionEndCard('zermatt')}
+          />
         </LightboxDialog>
       );
       const key = screen.getByRole('list', { name: 'Labels', hidden: true });
@@ -198,7 +204,12 @@ describe('LightboxDialog', () => {
     const view = photoViews.find((v) => v.id === 'img-0662')!;
     render(
       <LightboxDialog labelledBy="photo-title">
-        <PhotoViewer variant="modal" photos={photoViews} initialSlug={view.slug} />
+        <PhotoViewer
+          variant="modal"
+          photos={photoViews}
+          initialSlug={view.slug}
+          endCard={regionEndCard('zermatt')}
+        />
       </LightboxDialog>
     );
     const key = screen.getByRole('list', { name: 'Labels', hidden: true });
@@ -216,7 +227,12 @@ describe('LightboxDialog', () => {
     try {
       render(
         <LightboxDialog labelledBy="photo-title">
-          <PhotoViewer variant="modal" photos={photoViews} initialSlug={view.slug} />
+          <PhotoViewer
+            variant="modal"
+            photos={photoViews}
+            initialSlug={view.slug}
+            endCard={regionEndCard('zermatt')}
+          />
         </LightboxDialog>
       );
       const key = screen.getByRole('list', { name: 'Labels', hidden: true });

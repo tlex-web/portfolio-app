@@ -62,6 +62,17 @@ export function stepIndex(index: number, dir: -1 | 1, n: number): number | null 
   return next >= 0 && next < n ? next : null;
 }
 
+/**
+ * The neighbouring position in a region series of n photos followed by its
+ * end-of-series card (LBOX-09, 18 D-12): positions 0 … n - 1 are the photos and
+ * n is the card, one extra step after the last photo. Null past either end (no
+ * wrap): Previous on photo 1 and Next on the card do nothing.
+ */
+export function stepWithEnd(index: number, dir: -1 | 1, n: number): number | null {
+  const next = index + dir;
+  return next >= 0 && next <= n ? next : null;
+}
+
 /** The step a released swipe asks for: +1 next, -1 previous, 0 none. */
 export function swipeStep(dx: number, dy: number): -1 | 0 | 1 {
   const ax = Math.abs(dx);

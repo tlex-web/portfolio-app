@@ -2,6 +2,7 @@ import { test, expect, type Locator, type Page } from '@playwright/test';
 import { buildPhotoViews } from '@/lib/photos/view-model';
 import { countDraws, readDraws } from './helpers/webgl';
 import { pressButton } from './helpers/engine';
+import { nextRegion, regionById, regionHeading, regionPhotoViews } from '@/lib/regions';
 
 // Index lookups into views here are positions in the series order (DEM ascending, ties
 // by id), not photo identities; a specific photo is named through viewBySlug.
@@ -75,6 +76,67 @@ async function loadedScriptBodies(page: Page): Promise<{ url: string; body: stri
 /** The data-photo-id of the focused element. */
 const focusedPhotoId = (page: Page) =>
   page.evaluate(() => document.activeElement?.getAttribute('data-photo-id') ?? null);
+
+/** A registry region by id, or a thrown error naming it. */
+function regionOf(id: string) {
+  const r = regionById(id);
+  if (!r) throw new Error(`photos-stepping.spec: ${id} is not a registry region`);
+  return r;
+}
+
+/** Zermatt's series (sequence order) and the region after it west to east (D-01, D-11). */
+const ZERMATT = regionOf('zermatt');
+const ZERMATT_SERIES = regionPhotoViews(ZERMATT.id);
+const AFTER_ZERMATT = nextRegion(ZERMATT.id)!;
+
+/**
+ * Open a photo in the lightbox from its figure link on its region page and
+ * wait for the dialog: the region page is the stepping set's own surface.
+ */
+async function openFromRegion(page: Page, regionId: string, slug: string) {
+  await page.goto(`/photos/regions/${regionId}`);
+  const link = page.locator(`[data-photo-id="${slug}"]`);
+  await expect(link).toHaveCount(1);
+  await waitForHydration(link);
+  await link.click();
+  const dialog = page.getByRole('dialog');
+  // The dev server compiles the intercepted route on its first request.
+  await expect(dialog).toBeVisible({ timeout: 20000 });
+  await expect(page).toHaveURL(new RegExp(`/photos/${slug}$`));
+  return dialog;
+}
+
+test.describe('The end-of-series card (18-16; LBOX-09, D-12)', () => {
+  test('tracer: Next from the last Zermatt photo shows the end card, and its sign leads to the next region with no dialog', async ({
+    page,
+    browserName,
+  }) => {
+    const last = ZERMATT_SERIES[ZERMATT_SERIES.length - 1];
+    const dialog = await openFromRegion(page, ZERMATT.id, last.slug);
+    const counter = dialog.locator('[data-photo-counter]');
+    await expect(counter).toHaveText(`${ZERMATT_SERIES.length} / ${ZERMATT_SERIES.length}`);
+
+    const next = dialog.getByRole('button', { name: 'Next photo', exact: true });
+    await waitForHydration(next);
+    await pressButton(next, browserName);
+    await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(
+      `End of the ${ZERMATT.name} series`
+    );
+    await expect(dialog).toHaveAccessibleName(`End of the ${ZERMATT.name} series`);
+    await expect(counter).toHaveText('End');
+    await expect(next).toHaveAttribute('aria-disabled', 'true');
+    // The card is a viewer state, not a page: the URL stays on the last photo.
+    await expect(page).toHaveURL(new RegExp(`/photos/${last.slug}$`));
+
+    const heading = regionHeading(AFTER_ZERMATT);
+    const sign = dialog.getByRole('link', { name: `${heading}, next region`, exact: true });
+    await expect(sign).toHaveAttribute('href', `/photos/regions/${AFTER_ZERMATT.id}`);
+    await sign.click();
+    await expect(page).toHaveURL(new RegExp(`/photos/regions/${AFTER_ZERMATT.id}$`));
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(heading);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
+});
 
 test.describe('Carousel stepper (reduced motion; PHOTO-02, PHOTO-04, D-12, D-13)', () => {
   test.beforeEach(async ({ page }) => {

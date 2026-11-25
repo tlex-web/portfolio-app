@@ -21,6 +21,7 @@ import {
   MagnifyingGlassPlusIcon,
   XIcon,
 } from '@phosphor-icons/react/dist/ssr';
+import EndCard, { type EndCardProps } from '@/components/photos/EndCard';
 import ExifStrip from '@/components/photos/ExifStrip';
 import { HotspotKey, HotspotMarks, HotspotOverlay } from '@/components/photos/Hotspots';
 import { useLightbox } from '@/components/photos/LightboxDialog';
@@ -32,7 +33,7 @@ import { isEditable } from '@/lib/dom/editable';
 import { cssEscape } from '@/lib/photos/css-escape';
 import { useLabelsOn } from '@/lib/photos/hotspot-pref';
 import { photoHref } from '@/lib/photos/routes';
-import { slugFromPath, stepIndex, swipeStep } from '@/lib/photos/stepping';
+import { slugFromPath, stepWithEnd, swipeStep } from '@/lib/photos/stepping';
 import type { PhotoView } from '@/lib/photos/view-model';
 
 /**
@@ -122,6 +123,19 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * page-only). This file imports no region data; the region reaches the client
  * only through the serialisable prop.
  *
+ * The end-of-series card (LBOX-09, 18 D-12; 18-UI-SPEC Contract 3): after the
+ * series' last photo comes one extra step (stepWithEnd), the `endCard` props
+ * built on the server by regionEndCard, rendered by EndCard in place of the
+ * stage and the strip. The counter reads 'End' there; Next and Zoom are
+ * aria-disabled (focusable, no action, Z does nothing), Previous, ← and a swipe
+ * right return to the last photo, Hide labels and Close are unchanged. The card
+ * is a viewer state, not a page: no replaceState, so the URL, the document
+ * title and the lightbox's shown slug stay on the last photo, a reload shows
+ * the last photo and a close returns focus to its figure (14 LBOX-08). The
+ * status line reads the card's announcement. When the swap removes the
+ * focused element (focus in the stage, strip or card), focus moves to the step
+ * button of the direction taken. A one-photo set has no card (no steps at all).
+ *
  * Open morph (LBOX-06; UI-SPEC "Open and close motion"): the photo box is
  * the lightbox half of the photo-{slug} pair (the morph share class, default none;
  * TileTransition is the grid half, named only while no photo is open). The
@@ -201,10 +215,13 @@ export default function PhotoViewer({
   photos,
   initialSlug,
   back,
+  endCard,
 }: {
   variant: 'page' | 'modal';
   photos: readonly PhotoView[];
   initialSlug: string;
+  /** The region's end-of-series card (18 D-12), built on the server by regionEndCard. */
+  endCard: EndCardProps;
   /** The page surface's way back (17 D-09), built on the server; absent: "All photographs" to /photos. */
   back?: { href: string; label: string };
 }) {
@@ -226,9 +243,18 @@ export default function PhotoViewer({
     return fromPath && photos.some((p) => p.slug === fromPath) ? fromPath : initialSlug;
   });
   const lastWritten = useRef(shownSlug);
+  // On the end card (18 D-12): a viewer state, not a page. The shown slug, the
+  // URL and the lightbox's shown slug all stay on the last photo meanwhile.
+  const [onCard, setOnCard] = useState(false);
+  const onCardRef = useRef(false);
   const index = photos.findIndex((p) => p.slug === shownSlug);
   const current = photos[index];
   const { aspect, prevSlug, nextSlug } = current;
+  // The position among the steps: 0 … N - 1 the photos, N the card. The step
+  // buttons' ends derive from it (stepWithEnd), not from the neighbour slugs.
+  const position = onCard ? photos.length : index;
+  const canStep = (dir: -1 | 1) =>
+    photos.length > 1 && stepWithEnd(position, dir, photos.length) !== null;
   const [announcement, setAnnouncement] = useState('');
   // Fit (false) or 1:1 (true); every step starts fitted (D-06).
   const [zoomed, setZoomed] = useState(false);
@@ -243,14 +269,45 @@ export default function PhotoViewer({
   const viewerRef = useRef<HTMLDivElement>(null);
   const onZoomChange = useCallback((z: boolean) => setZoomed(z), []);
 
+  // Where focus goes when a step swaps the stage and strip for the card or
+  // back: set by step, applied once the swap has committed (below).
+  const focusAfterSwap = useRef<-1 | 1 | null>(null);
+
   // One step: the target is the neighbour in the committed view-model's
   // canonical order (T-10-14), never input; past either end nothing happens
-  // (no wrap); the URL is replaced, never pushed; zoom resets to fit.
+  // (no wrap); the URL is replaced, never pushed; zoom resets to fit. After the
+  // last photo comes one extra step, the end card (18 D-12): it writes no URL
+  // and no history entry and leaves the lightbox's shown slug on the last
+  // photo, so a close returns focus to that photo's figure. A one-photo set
+  // keeps its rule (no controls, no steps), so it never reaches the card.
   const step = useCallback(
     (dir: -1 | 1) => {
-      const from = photos.findIndex((p) => p.slug === lastWritten.current);
-      const to = stepIndex(from, dir, photos.length);
+      const n = photos.length;
+      if (n < 2) return;
+      const from = onCardRef.current ? n : photos.findIndex((p) => p.slug === lastWritten.current);
+      const to = stepWithEnd(from, dir, n);
       if (from < 0 || to === null) return;
+      // A step across the card swaps out the stage and the strip, so focus
+      // that sat in them would fall to the body: it moves to the step button
+      // of the direction taken (a pressed Next or Previous keeps it anyway).
+      if (to === n || from === n) {
+        const viewer = viewerRef.current;
+        const active = document.activeElement;
+        const chrome = viewer?.querySelector('[data-viewer-chrome]');
+        const swappedOut =
+          !!viewer && !!active && viewer.contains(active) && !chrome?.contains(active);
+        focusAfterSwap.current = swappedOut ? dir : null;
+      }
+      setZoomed(false);
+      setExpandedId(null);
+      if (to === n) {
+        onCardRef.current = true;
+        setOnCard(true);
+        setAnnouncement(endCard.announcement);
+        return;
+      }
+      onCardRef.current = false;
+      setOnCard(false);
       const { slug, title } = photos[to];
       lastWritten.current = slug;
       window.history.replaceState(null, '', photoHref(slug));
@@ -258,12 +315,21 @@ export default function PhotoViewer({
       // focus by it, and usePathname can lag the replaceState (10-REVIEW WR-01).
       lightbox?.setShown(slug);
       setShownSlug(slug);
-      setZoomed(false);
-      setExpandedId(null);
-      setAnnouncement(`Photo ${to + 1} of ${photos.length}: ${title}`);
+      setAnnouncement(`Photo ${to + 1} of ${n}: ${title}`);
     },
-    [lightbox, photos]
+    [lightbox, photos, endCard.announcement]
   );
+
+  // The focus move a card swap asked for, once the new content has committed.
+  useLayoutEffect(() => {
+    const dir = focusAfterSwap.current;
+    if (dir === null) return;
+    focusAfterSwap.current = null;
+    const name = dir === 1 ? 'Next photo' : 'Previous photo';
+    viewerRef.current
+      ?.querySelector<HTMLButtonElement>(`[data-viewer-chrome] button[aria-label="${name}"]`)
+      ?.focus();
+  }, [onCard]);
 
   // The document title follows the shown photo (the metadata only sets it on
   // load). The route's own <title> can still be written after hydration (WebKit
@@ -328,6 +394,8 @@ export default function PhotoViewer({
       if (event.shiftKey || event.repeat || isEditable(event.target)) return;
       if (isPage && keyBelongsToChrome(event)) return;
       event.preventDefault();
+      // Nothing to zoom on the end card: Zoom is aria-disabled there.
+      if (onCardRef.current) return;
       toggleZoom();
     };
     document.addEventListener('keydown', onKeyDown);
@@ -446,8 +514,7 @@ export default function PhotoViewer({
     if (!start || start.id !== event.pointerId) return;
     swipe.current = null;
     const dir = released ? swipeStep(event.clientX - start.x, event.clientY - start.y) : 0;
-    const target = dir === 1 ? nextSlug : dir === -1 ? prevSlug : null;
-    if (dir !== 0 && target) {
+    if (dir !== 0 && canStep(dir)) {
       setOffset(0, false);
       step(dir);
     } else {
@@ -538,7 +605,7 @@ export default function PhotoViewer({
               <button
                 type="button"
                 aria-label="Previous photo"
-                aria-disabled={prevSlug ? undefined : 'true'}
+                aria-disabled={canStep(-1) ? undefined : 'true'}
                 className={STEP_BUTTON}
                 onClick={() => step(-1)}
               >
@@ -549,12 +616,12 @@ export default function PhotoViewer({
                 aria-hidden="true"
                 className="font-mono text-sm text-ink-muted tabular-nums"
               >
-                {index + 1} / {photos.length}
+                {onCard ? 'End' : `${index + 1} / ${photos.length}`}
               </span>
               <button
                 type="button"
                 aria-label="Next photo"
-                aria-disabled={nextSlug ? undefined : 'true'}
+                aria-disabled={canStep(1) ? undefined : 'true'}
                 className={STEP_BUTTON}
                 onClick={() => step(1)}
               >
@@ -580,8 +647,9 @@ export default function PhotoViewer({
             aria-label="Zoom photo"
             aria-pressed={zoomed}
             aria-keyshortcuts="z"
-            className={`${CHROME_BUTTON} aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-gallery aria-pressed:hover:border-ink`}
-            onClick={toggleZoom}
+            aria-disabled={onCard ? 'true' : undefined}
+            className={`${CHROME_BUTTON} aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-gallery aria-pressed:hover:border-ink aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:border-line-strong`}
+            onClick={onCard ? undefined : toggleZoom}
           >
             {zoomed ? (
               <MagnifyingGlassMinusIcon size={24} aria-hidden="true" className="md:size-5" />
@@ -603,27 +671,40 @@ export default function PhotoViewer({
           )}
         </div>
       </div>
-      <ZoomStage view={current} zoomed={zoomed} onZoomChange={onZoomChange}>
-        {photoBox}
-        <HotspotOverlay
-          view={current}
-          labelsOn={labelsOn}
-          zoomed={zoomed}
-          expandedId={expandedId}
-          onToggle={toggleHotspot}
-        />
-      </ZoomStage>
-      <ExifStrip
-        view={current}
-        headingLevel={isPage ? 1 : 2}
-        hotspotKey={
-          <HotspotKey
+      {onCard ? (
+        // The end card replaces the stage and the strip (the strip describes a
+        // photo; the card shows none). A swipe right on it returns to the last photo.
+        <div
+          data-end-card-stage=""
+          className="flex flex-1 items-center justify-center bg-gallery py-12 [touch-action:pan-y_pinch-zoom]"
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={(event) => endSwipe(event, true)}
+          onPointerCancel={(event) => endSwipe(event, false)}
+        >
+          <EndCard card={endCard} headingLevel={isPage ? 1 : 2} />
+        </div>
+      ) : (
+        <>
+          <ZoomStage view={current} zoomed={zoomed} onZoomChange={onZoomChange}>
+            {photoBox}
+            <HotspotOverlay
+              view={current}
+              labelsOn={labelsOn}
+              zoomed={zoomed}
+              expandedId={expandedId}
+              onToggle={toggleHotspot}
+            />
+          </ZoomStage>
+          <ExifStrip
             view={current}
-            expandedId={expandedId}
-            onToggle={toggleHotspot}
+            headingLevel={isPage ? 1 : 2}
+            hotspotKey={
+              <HotspotKey view={current} expandedId={expandedId} onToggle={toggleHotspot} />
+            }
           />
-        }
-      />
+        </>
+      )}
       <p role="status" aria-atomic="true" className="sr-only">
         {announcement}
       </p>

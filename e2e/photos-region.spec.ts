@@ -49,7 +49,7 @@ import {
  * series cover them all. Every published photo off the v2.0 four (publishedViews
  * minus the SLUGS fixtures) has a page that steps within its region as photo
  * k of N (counter 'k / N', Previous aria-disabled exactly at k = 1, Next
- * aria-disabled at k = N until 18-16 adds the end card) and one visible back
+ * enabled throughout, since after photo N comes the end card, 18-16) and one visible back
  * link, named after its region, to /photos/regions/<id>; Escape there lands on
  * that region page; its lightbox, opened from the region page, steps within the
  * region and has no back link; and a touch swipe and the arrows on its page
@@ -1747,8 +1747,8 @@ test.describe('New photo pages (D-09, PHOTO-05; LBOX-09)', () => {
       expect(response?.status()).toBe(200);
       const main = page.getByRole('main');
       await expect(h1(page)).toHaveText(view.title);
-      // LBOX-09: the region's series, k of N; no wrap at either end (Next stays
-      // aria-disabled on the last photo until 18-16 adds the end card).
+      // LBOX-09: the region's series, k of N; no wrap before photo 1, and Next stays
+      // enabled on photo N, where it leads to the end-of-series card (18-16, D-12).
       await expect(main.locator('[data-photo-counter]')).toHaveText(`${k} / ${n}`);
       const prev = main.getByRole('button', { name: 'Previous photo', exact: true });
       const next = main.getByRole('button', { name: 'Next photo', exact: true });
@@ -1756,8 +1756,7 @@ test.describe('New photo pages (D-09, PHOTO-05; LBOX-09)', () => {
       await expect(next).toHaveCount(1);
       if (k === 1) await expect(prev).toHaveAttribute('aria-disabled', 'true');
       else await expect(prev).not.toHaveAttribute('aria-disabled');
-      if (k < n) await expect(next).not.toHaveAttribute('aria-disabled');
-      else await expect(next).toHaveAttribute('aria-disabled', 'true');
+      await expect(next).not.toHaveAttribute('aria-disabled');
       // Two links in the markup (the scroll-tier row and the chrome); CSS shows one per tier.
       const back = main.getByRole('link', { name: r.name, exact: true, includeHidden: true });
       await expect(back).toHaveCount(2);
@@ -1806,7 +1805,8 @@ test.describe('New photo pages (D-09, PHOTO-05; LBOX-09)', () => {
     await expect(page).toHaveURL(new RegExp(`/photos/${second.slug}$`));
     await expect(counter).toHaveText(`2 / ${ORTLER_SERIES.length}`);
     await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(second.title);
-    await expect(next).toHaveAttribute('aria-disabled', 'true');
+    // Next stays enabled on the last photo: it leads to the end card (18-16, D-12).
+    await expect(next).not.toHaveAttribute('aria-disabled');
     await expect(dialog.getByRole('link', { name: r.name, exact: true })).toHaveCount(0);
     await expect(dialog.getByRole('link', { name: 'All photographs', exact: true })).toHaveCount(0);
 

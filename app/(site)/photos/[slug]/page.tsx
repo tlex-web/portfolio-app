@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import PhotoViewer from '@/components/photos/PhotoViewer';
 import { photoImageLd } from '@/lib/json-ld/content';
 import { jsonLdHtml } from '@/lib/json-ld/site';
-import { regionById, regionOfPhoto, regionViewerSet } from '@/lib/regions';
+import { regionById, regionEndCard, regionOfPhoto, regionViewerSet } from '@/lib/regions';
 import { regionHref } from '@/lib/photos/routes';
 import { photoBySlug, photoMetadata, photoSlugs, publishedSlugs } from '@/lib/photos/view-model';
 
@@ -19,7 +19,9 @@ import { photoBySlug, photoMetadata, photoSlugs, publishedSlugs } from '@/lib/ph
  * before it matches a known view. The viewer steps through
  * regionViewerSet(view.id), the photo's region series in sequence order, built
  * here on the server and passed as props (LBOX-09, 18 D-12; it supersedes 17
- * D-08's per-photo set).
+ * D-08's per-photo set). After the series' last photo the viewer shows one
+ * extra step, the end-of-series card, whose props regionEndCard builds here too
+ * (18 D-12).
  *
  * The way back (17 D-09): a photo off the light table gets `back`, its
  * region's name and regionHref(region.id), built here on the server from the
@@ -65,11 +67,24 @@ function backFor(view: { id: string; slug: string }): { href: string; label: str
   return { href: regionHref(region.id), label: region.name };
 }
 
+/**
+ * The viewer's end-of-series card for the photo's region (LBOX-09, 18 D-12),
+ * built here on the server and passed as props.
+ *
+ * @throws Error when a published photo has no registry region (as backFor).
+ */
+function endCardFor(view: { id: string }) {
+  const regionId = regionOfPhoto(view.id);
+  if (regionId === undefined) throw new Error(`PhotoPage: photo ${view.id} has no registry region`);
+  return regionEndCard(regionId);
+}
+
 export default async function PhotoPage({ params }: PageProps) {
   const { slug } = await params;
   const view = photoBySlug(slug);
   if (!view) notFound();
   const back = backFor(view);
+  const endCard = endCardFor(view);
 
   // The four get no back prop at all (not back={undefined}), so their props are unchanged.
   return (
@@ -84,9 +99,15 @@ export default async function PhotoPage({ params }: PageProps) {
           photos={regionViewerSet(view.id)}
           initialSlug={view.slug}
           back={back}
+          endCard={endCard}
         />
       ) : (
-        <PhotoViewer variant="page" photos={regionViewerSet(view.id)} initialSlug={view.slug} />
+        <PhotoViewer
+          variant="page"
+          photos={regionViewerSet(view.id)}
+          initialSlug={view.slug}
+          endCard={endCard}
+        />
       )}
     </>
   );

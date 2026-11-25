@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import LightboxDialog from '@/components/photos/LightboxDialog';
 import PhotoViewer from '@/components/photos/PhotoViewer';
 import { photoBySlug, photoMetadata } from '@/lib/photos/view-model';
-import { regionViewerSet } from '@/lib/regions';
+import { regionEndCard, regionOfPhoto, regionViewerSet } from '@/lib/regions';
 
 /**
  * The intercepted photo route (LBOX-01; 10-RESEARCH Spike Results). A soft
@@ -17,7 +17,10 @@ import { regionViewerSet } from '@/lib/regions';
  * showed the intercepted page otherwise keeps the gallery's title). Only the
  * published slugs render (17 D-07); any other slug is a 404 (T-10-12). The
  * viewer steps through regionViewerSet(view.id), the photo's region series built
- * on the server, as on the full page (LBOX-09, 18 D-12). No loading.tsx in this slot: a suspended destination would paint a fallback first and the
+ * on the server, as on the full page (LBOX-09, 18 D-12), and ends on the
+ * region's end-of-series card (regionEndCard, server-built props); following
+ * its sign soft-navigates to the region page, where the @modal/regions null
+ * slot leaves no dialog. No loading.tsx in this slot: a suspended destination would paint a fallback first and the
  * open morph (10-06) would meet an empty box (10-RESEARCH Pitfall 4).
  */
 
@@ -32,10 +35,17 @@ export default async function InterceptedPhotoPage({ params }: PageProps) {
   const { slug } = await params;
   const view = photoBySlug(slug);
   if (!view) notFound();
+  const regionId = regionOfPhoto(view.id);
+  if (regionId === undefined) throw new Error(`Lightbox: photo ${view.id} has no registry region`);
 
   return (
     <LightboxDialog labelledBy="photo-title">
-      <PhotoViewer variant="modal" photos={regionViewerSet(view.id)} initialSlug={view.slug} />
+      <PhotoViewer
+        variant="modal"
+        photos={regionViewerSet(view.id)}
+        initialSlug={view.slug}
+        endCard={regionEndCard(regionId)}
+      />
     </LightboxDialog>
   );
 }

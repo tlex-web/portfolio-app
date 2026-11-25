@@ -624,8 +624,9 @@ test.describe('Moving between photos (LBOX-02)', () => {
     await expect(page).toHaveURL(new RegExp(`/photos/${last.slug}$`));
     await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(last.title);
     await expect(counter(dialog)).toHaveText(`${series.length} / ${series.length}`);
-    // Until 18-16 adds the end card, Next on the region's last photo stays aria-disabled.
-    await expect(next).toHaveAttribute('aria-disabled', 'true');
+    // On the region's last photo Next stays enabled: it leads to the end-of-series card
+    // (18-16; LBOX-09, D-12), asserted in e2e/photos-stepping.spec.ts.
+    await expect(next).not.toHaveAttribute('aria-disabled', 'true');
     await expect(next).toBeFocused();
     await expect(status(dialog)).toHaveText(
       `Photo ${series.length} of ${series.length}: ${last.title}`

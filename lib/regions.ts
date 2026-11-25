@@ -10,6 +10,9 @@ import { pageMetadata } from '@/lib/metadata';
 import { platePins, type PlatePin } from '@/lib/photos/plate-layout';
 import { regionHref } from '@/lib/photos/routes';
 import { buildPhotoViews, seriesInput, type PhotoView } from '@/lib/photos/view-model';
+import type { EndCardProps } from '@/components/photos/EndCard';
+
+export type { EndCardProps };
 
 /**
  * The server-only region model (REGION-07; D-06, D-11, D-14, D-17).
@@ -469,4 +472,54 @@ export function regionMetadata(id: string): Metadata {
     }),
     path: regionHref(id),
   });
+}
+
+/**
+ * The viewer's end-of-series card for a region (LBOX-09, 18 D-12; 18-UI-SPEC
+ * Contract 3 "End-of-series card", UI E7), built on the server and handed to
+ * PhotoViewer as props, so no registry string reaches the client viewer by
+ * import (T-18-35): the heading 'End of the {name} series', this region's
+ * regionCardFacts parts, the next region in `list` (wrapping, D-11) as the
+ * trail sign's heading, href and facts, '/photos' for 'All regions', and the
+ * live-region sentence. With no next region (a one-region list) `next` is null
+ * and the sentence ends after the series.
+ *
+ * Pure over `list` so a test can pass a one-region fixture; regionEndCard
+ * passes regionsWestToEast().
+ *
+ * @throws RangeError when `id` is not in the list or not a registry region.
+ */
+export function regionEndCardIn(list: readonly Region[], id: string): EndCardProps {
+  const region = regionById(id);
+  if (!region) throw new RangeError(`regionEndCard: ${id} is not a registry region`);
+  const next = nextRegionIn(list, id);
+  const heading = `End of the ${region.name} series`;
+  const nextHeading = next ? regionHeading(next) : null;
+  return {
+    regionName: region.name,
+    heading,
+    facts: factsParts(id),
+    next:
+      next && nextHeading
+        ? { heading: nextHeading, href: regionHref(next.id), facts: factsParts(next.id) }
+        : null,
+    allHref: '/photos',
+    announcement: nextHeading ? `${heading}. Next region: ${nextHeading}.` : `${heading}.`,
+  };
+}
+
+/**
+ * The end-of-series card for a registry region, leading on to the next region
+ * west to east (D-01, D-11): Zermatt → Ortler → Saalfelden → Zermatt.
+ *
+ * @throws RangeError for an id that is not a registry region.
+ */
+export function regionEndCard(id: string): EndCardProps {
+  return regionEndCardIn(regionsWestToEast(), id);
+}
+
+/** regionCardFacts as the FactsLine parts, in order: count, range, years. */
+function factsParts(id: string): readonly string[] {
+  const { count, range, years } = regionCardFacts(id);
+  return [count, range, years];
 }
