@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
-stopped_at: Completed 18-04-PLAN.md
-last_updated: "2026-11-25T11:45:13.704Z"
+stopped_at: Completed 18-08-PLAN.md
+last_updated: "2026-11-25T12:22:04.334Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: 48963a968e16bf242f15306b790665449fe8193d
+state_head: df4f8e840c720af8cbf7b9b796c2e9d01bfc878f
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 109
-  completed_plans: 87
+  completed_plans: 88
   percent: 71
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-24)
 ## Current Position
 
 Phase: 18 (Immersive Survey Layout) — EXECUTING
-Plan: 7 of 29
+Plan: 8 of 29
 Status: Ready to execute
 Last activity: 2026-11-24 — Phase 18 execution started
 
@@ -145,6 +145,7 @@ Progress: [███████░░░] 71%
 | Phase 18 P06 | 15 min | 2 tasks | 15 files |
 | Phase 18 P07 | 14 min | 2 tasks | 7 files |
 | Phase 18 P04 | 1h | 3 tasks | 36 files |
+| Phase 18 P08 | 21 min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -364,6 +365,10 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-07: COPIED_MS moved to lib/copy-feedback.ts (CopyEmailButton re-exports) so client islands share it without bundling CopyEmailButton; client JS 1,861,272 B (+9,527 vs phase base, 5,431 over cap, record-only until 18-25)
 - [Phase 18]: 18-04: D-24 round 1 (footer Source row) re-baselined alone: 36 declared full-page shots changed, 13 undeclared identical, 0 new; Tim committed them as 48963a9; CI OK green on run 45601152533 attempt 2
 - [Phase 18]: 18-04: WebKit B8 flake recurred on a PNG-only commit (45601152533 attempt 1); the one allowed re-run passed; two 1/255 anti-aliasing diffs above the footer (home/375, photo/375) accepted by Tim's commit
+- [Phase 18]: 18-08: sizes strings come from exported layout constants (image-sizes.ts); the widest term starts at 1216 px so a scrollbar never makes a term under-fetch; a Jest source scan pins the 16rem/12rem/6rem CSS
+- [Phase 18]: 18-08: header slot full-bleed on phones via auto width and -mx-4 (the UI-SPEC's w-full -mx-4 would be 343 px, shifted); P3/P4 defaults applied (16:9 contain cover, figure morph)
+- [Phase 18]: 18-08: figure link name is an aria-label (alt + ', open in the photo viewer'); an sr-only suffix after the img gets a stray space before the comma
+- [Phase 18]: 18-08: portrait srcset descriptors use the long edge (view-model imageSet), deferred to 18-19 with the stage sizes and its re-baseline
 
 ### Pending Todos
 
@@ -425,6 +430,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-25T11:45:12.873Z
-Stopped at: Completed 18-04-PLAN.md
+Last session: 2026-11-25T12:22:03.387Z
+Stopped at: Completed 18-08-PLAN.md
 Resume file: None
