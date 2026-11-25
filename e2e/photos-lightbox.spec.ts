@@ -122,6 +122,104 @@ test.describe('Photo page (LBOX-01 direct load)', () => {
 });
 
 /**
+ * The stage's `sizes` (13 #34, stage half; 18-19): stageSizes(ar, variant) from
+ * the lightbox tiers, on the page and in the dialog opened from the Zermatt
+ * sequence, at 375 (scroll tier), 768 (key) and 1440 (gutter). The large
+ * picture's currentSrc is a candidate whose width descriptor covers the
+ * painted width times the device pixel ratio, and the next smaller candidate
+ * in the same set would not (no gross over-fetch). The project's own DPR
+ * applies: 1 for Desktop Chrome and Firefox, 2 for Desktop Safari (WebKit).
+ */
+test.describe('Stage sizes at 375, 768 and 1440 (13 #34; 18-19)', () => {
+  const STAGE_WIDTHS = [
+    [375, 800],
+    [768, 900],
+    [1440, 900],
+  ] as const;
+  const subject = series[0];
+
+  /** The chosen candidate, the next smaller one in its set, the painted width and the DPR. */
+  async function stageFit(img: Locator) {
+    await expect
+      .poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0), {
+        timeout: 15000,
+      })
+      .toBe(true);
+    return img.evaluate((el: HTMLImageElement) => {
+      const current = el.currentSrc;
+      const sources = [...(el.closest('picture')?.querySelectorAll('source') ?? [])];
+      const sets = sources.map((source) =>
+        source.srcset.split(',').map((entry) => {
+          const [url, w] = entry.trim().split(/\s+/);
+          return { href: new URL(url, location.href).href, w: parseInt(w, 10) };
+        })
+      );
+      const set = sets.find((s) => s.some((c) => c.href === current)) ?? [];
+      const chosen = set.find((c) => c.href === current);
+      const smaller = set.filter((c) => chosen && c.w < chosen.w).map((c) => c.w);
+      // The painted width: under object-fit contain, the image inside its box.
+      const r = el.getBoundingClientRect();
+      const rendered =
+        getComputedStyle(el).objectFit === 'contain'
+          ? Math.min(r.width, (r.height * el.naturalWidth) / el.naturalHeight)
+          : r.width;
+      return {
+        current,
+        sizes: el.closest('picture')?.querySelector('source')?.sizes ?? '',
+        descriptor: chosen?.w ?? 0,
+        nextSmaller: smaller.length > 0 ? Math.max(...smaller) : 0,
+        rendered,
+        dpr: window.devicePixelRatio,
+      };
+    });
+  }
+
+  function expectFit(fit: Awaited<ReturnType<typeof stageFit>>, what: string) {
+    const need = fit.rendered * fit.dpr;
+    test.info().annotations.push({
+      type: 'stage-fit',
+      description: `${what}: DPR ${fit.dpr}, painted ${fit.rendered.toFixed(1)} px, need ${need.toFixed(0)}, chose ${fit.descriptor}w, next smaller ${fit.nextSmaller}w`,
+    });
+    expect(fit.descriptor, `${what}: ${fit.current} is a srcset candidate`).toBeGreaterThan(0);
+    expect(fit.descriptor, `${what}: the descriptor covers ${need} px`).toBeGreaterThanOrEqual(
+      Math.floor(need)
+    );
+    expect(fit.nextSmaller, `${what}: the next smaller candidate would not`).toBeLessThan(need);
+  }
+
+  for (const [width, height] of STAGE_WIDTHS) {
+    test(`page at ${width}x${height}: the stage currentSrc fits the painted width times DPR`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height });
+      await page.goto(`/photos/${subject.slug}`);
+      const img = page.locator('[data-photo-viewer] [data-stage-layer="large"] img');
+      const fit = await stageFit(img);
+      expect(fit.sizes).toContain('(min-height: 640px)');
+      expect(fit.sizes).toContain('(100vh - 120px)');
+      expectFit(fit, `page ${width}x${height}`);
+    });
+
+    test(`dialog from the Zermatt sequence at ${width}x${height}: the stage currentSrc fits the painted width times DPR`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height });
+      await page.goto('/photos/regions/zermatt');
+      const link = page.locator(`[data-photo-id="${subject.slug}"]`);
+      await expect(link).toHaveCount(1);
+      await waitForHydration(link);
+      await link.click();
+      const dialog = page.getByRole('dialog');
+      await expect(dialog).toBeVisible({ timeout: 20000 });
+      await expect(page).toHaveURL(new RegExp(`/photos/${subject.slug}$`));
+      const fit = await stageFit(dialog.locator('[data-stage-layer="large"] img'));
+      expect(fit.sizes).toContain('(100vh - 56px)');
+      expectFit(fit, `dialog ${width}x${height}`);
+    });
+  }
+});
+
+/**
  * The LV95 line (18-18; PHOTO-08, D-14, D-15): on every Swiss photo page the
  * strip's position list ends with 'LV95 [≈ ]E … N …', easting first, whose
  * values are multiples of the grid for the precision the page shows (4

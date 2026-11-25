@@ -33,6 +33,7 @@ import { keyBelongsToChrome } from '@/components/site/SiteNav';
 import { site } from '@/data/site';
 import { isEditable } from '@/lib/dom/editable';
 import { cssEscape } from '@/lib/photos/css-escape';
+import { stageSizes } from '@/lib/photos/image-sizes';
 import { useLabelsOn } from '@/lib/photos/hotspot-pref';
 import { photoHref } from '@/lib/photos/routes';
 import { slugFromPath, stepWithEnd, swipeStep } from '@/lib/photos/stepping';
@@ -192,9 +193,6 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * press so the later layers skip it.
  */
 
-/** The stage `sizes`: the gutter tier takes 2 x 216 px from the viewport width. */
-const STAGE_SIZES = '(min-width: 1280px) calc(100vw - 432px), 100vw';
-
 const BACK_LINK =
   'min-h-11 items-center gap-2 text-base font-semibold text-ink-muted hover:text-ink';
 
@@ -213,11 +211,11 @@ const STEP_BUTTON =
 const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
 
 /** Fetch a photo's stage derivative at low priority, so a step finds it in the cache. */
-function preloadStage(view: PhotoView): void {
+function preloadStage(view: PhotoView, variant: 'page' | 'modal'): void {
   const img = new Image();
   img.fetchPriority = 'low';
   img.decoding = 'async';
-  img.sizes = STAGE_SIZES;
+  img.sizes = stageSizes(view.aspect.w / view.aspect.h, variant);
   img.srcset = view.stage.srcSetAvif;
   img.src = view.stage.src;
 }
@@ -493,9 +491,9 @@ export default function PhotoViewer({
       const view = photos.find((p) => p.slug === slug);
       if (!view) continue;
       preloaded.current.add(slug);
-      preloadStage(view);
+      preloadStage(view, variant);
     }
-  }, [photos, prevSlug, nextSlug]);
+  }, [photos, prevSlug, nextSlug, variant]);
 
   // Swipe on the fitted photo (touch or pen): the box follows the finger, and
   // on release a long horizontal drag steps; anything else springs back over
@@ -573,7 +571,11 @@ export default function PhotoViewer({
       onPointerUp={(event) => endSwipe(event, true)}
       onPointerCancel={(event) => endSwipe(event, false)}
     >
-      <StagePhoto view={current} sizes={STAGE_SIZES} onLargeLoad={preloadNeighbours} />
+      <StagePhoto
+        view={current}
+        sizes={stageSizes(aspect.w / aspect.h, variant)}
+        onLargeLoad={preloadNeighbours}
+      />
       <HotspotMarks
         view={current}
         labelsOn={labelsOn}
