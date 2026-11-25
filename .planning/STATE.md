@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
-stopped_at: Completed 18-09-PLAN.md
-last_updated: "2026-11-25T14:47:57.464Z"
+stopped_at: Completed 18-10-PLAN.md
+last_updated: "2026-11-25T15:02:00.108Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: 82fbd6069b2883765c961e7efefc409dfccecc24
+state_head: ce5d58dd2a0b5da692455f79de120f25a1dc7427
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 109
-  completed_plans: 90
+  completed_plans: 91
   percent: 71
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-24)
 ## Current Position
 
 Phase: 18 (Immersive Survey Layout) — EXECUTING
-Plan: 10 of 29
+Plan: 11 of 29
 Status: Ready to execute
 Last activity: 2026-11-24 — Phase 18 execution started
 
@@ -148,6 +148,7 @@ Progress: [███████░░░] 71%
 | Phase 18 P08 | 21 min | 2 tasks | 11 files |
 | Phase 18 P05 | 2h | 3 tasks | 9 files |
 | Phase 18 P09 | 16 min | 2 tasks | 6 files |
+| Phase 18 P10 | 25min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -377,6 +378,9 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-09: pins under 1 px apart at S 634 share one dot (SAME_SPOT_PX), placed at the first pin's stored uv; img-0680/img-0682 are near, not identical
 - [Phase 18]: 18-09: no plate badge may cover another pin's dot, so Saalfelden's aerial pair is displaced outward on both sides with leaders
 - [Phase 18]: 18-09: client JS unchanged at 1,861,681 B (25 files); the plate is server-only
+- [Phase 18]: 18-10: the list-plate :has() sync is rooted at a new [data-plate-root] on the facts and plate block (the key list sits outside the plate figure)
+- [Phase 18]: 18-10: P2 as drafted: native instant anchors, no client handler; the sync adds 0 B of client JS
+- [Phase 18]: 18-10: the accent state changes fills only, so approximate badges keep their dashed border
 
 ### Pending Todos
 
@@ -438,6 +442,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-25T14:47:56.871Z
-Stopped at: Completed 18-09-PLAN.md
+Last session: 2026-11-25T15:01:59.264Z
+Stopped at: Completed 18-10-PLAN.md
 Resume file: None
