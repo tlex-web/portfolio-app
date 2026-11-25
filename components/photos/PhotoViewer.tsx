@@ -66,10 +66,21 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * HTML already holds the layout, the title and the strip before the photo
  * decodes. Below the stage, ExifStrip carries the title, place and date,
  * story, EXIF, position (with the LV95 line for a Swiss photo, 18 D-14) and
- * the rights line (D-05), and ends with ShareButton for the shown photo (18
- * D-13, PHOTO-07): site.url + photoHref(current.slug), so every step shares
- * the photo on screen. The end card has no strip and so no Share button: it
- * shows no photo, and the region page carries its own Share. Only the content-hashed
+ * the rights line (D-05).
+ *
+ * Share (18 D-13, PHOTO-07; moved at 18-20, Tim's compact-strip choice):
+ * ShareButton for the shown photo, site.url + photoHref(current.slug), so every
+ * step shares the photo on screen. From the key tier it is a bar button after
+ * Zoom and before Close (appearance 'chrome': icon-only below lg, the label
+ * from lg; a failed copy's line drops under the bar as a panel, so the bar
+ * never jumps), and the strip loses its Share row, which gives the stage that
+ * height back. On the scroll tier the bar has no room for a fifth 44 px
+ * button (375 in the lightbox), and there the strip's height costs the photo
+ * nothing, so the strip keeps its Share row. Two instances, CSS shows one per
+ * tier (data-chrome-share lb-scroll:hidden; the strip's slot lb-key:hidden
+ * lb-gutter:hidden); the hidden one is display: none, out of the tab order and
+ * the accessibility tree. The end card renders neither: it shows no photo, and
+ * the region page carries its own Share. Only the content-hashed
  * manifest derivatives (AVIF and WebP at 1024, 1600 and 2560 px) are
  * referenced: no original, no download control and no right-click or drag
  * blocking (LBOX-07, T-10-03).
@@ -150,8 +161,8 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * title and the lightbox's shown slug stay on the last photo, a reload shows
  * the last photo and a close returns focus to its figure (14 LBOX-08). The
  * status line reads the card's announcement. When the swap removes the
- * focused element (focus in the stage, strip or card), focus moves to the step
- * button of the direction taken. A one-photo set has no card (no steps at all).
+ * focused element (focus in the stage, strip or card, or on the bar's Share,
+ * which the card drops), focus moves to the step button of the direction taken. A one-photo set has no card (no steps at all).
  *
  * Open morph (LBOX-06; UI-SPEC "Open and close motion"): the photo box is
  * the lightbox half of the photo-{slug} pair (the morph share class, default none;
@@ -330,8 +341,13 @@ export default function PhotoViewer({
         const viewer = viewerRef.current;
         const active = document.activeElement;
         const chrome = viewer?.querySelector('[data-viewer-chrome]');
+        // The bar's Share (18-20) is the one chrome control the swap removes.
+        const inBarShare = !!active?.closest('[data-chrome-share]');
         const swappedOut =
-          !!viewer && !!active && viewer.contains(active) && !chrome?.contains(active);
+          !!viewer &&
+          !!active &&
+          viewer.contains(active) &&
+          (!chrome?.contains(active) || inBarShare);
         focusAfterSwap.current = swappedOut ? dir : null;
       }
       setZoomed(false);
@@ -571,6 +587,21 @@ export default function PhotoViewer({
   // mounts the new one, because React tracks names per boundary at mount and
   // a renamed boundary would leave the old name registered.
   const named = slugFromPath(pathname) !== null;
+
+  // Share for the shown photo: its canonical URL, never the window address
+  // (T-18-39). Not keyed per photo: the arrows step while it has focus, and a
+  // remount would drop that focus; ShareButton resets its state when the url
+  // changes. 'chrome' is the bar's (key and gutter tiers), 'button' the strip's.
+  const share = (appearance: 'chrome' | 'button') => (
+    <ShareButton
+      url={`${site.url}${photoHref(current.slug)}`}
+      title={`${current.title} · ${site.name}`}
+      subject="photo"
+      surface="gallery"
+      appearance={appearance}
+      failurePlacement={appearance === 'chrome' ? 'overlay' : 'below'}
+    />
+  );
   const boxStyle = {
     aspectRatio: `${aspect.w} / ${aspect.h}`,
     '--ar': aspect.w / aspect.h,
@@ -631,8 +662,8 @@ export default function PhotoViewer({
         data-viewer-chrome=""
         className={
           isPage
-            ? 'flex h-14 shrink-0 items-center justify-between gap-2 bg-gallery px-4 lb-scroll:sticky lb-scroll:top-(--nav-h)'
-            : 'flex h-14 shrink-0 items-center justify-between gap-2 bg-gallery px-4 lb-scroll:sticky lb-scroll:top-0'
+            ? 'flex h-14 shrink-0 items-center justify-between gap-2 bg-gallery px-4 lb-scroll:sticky lb-scroll:top-(--nav-h) lb-key:relative lb-gutter:relative'
+            : 'flex h-14 shrink-0 items-center justify-between gap-2 bg-gallery px-4 lb-scroll:sticky lb-scroll:top-0 lb-key:relative lb-gutter:relative'
         }
       >
         <div data-chrome-left="" className="flex items-center gap-2">
@@ -703,6 +734,13 @@ export default function PhotoViewer({
             )}
             <span className="hidden md:inline">Zoom</span>
           </button>
+          {!onCard && (
+            // The bar's Share (18-20), from the key tier; the strip's on the scroll tier.
+            // The bar is `relative` there, so a failed copy's panel anchors under it.
+            <div data-chrome-share="" className="flex lb-scroll:hidden">
+              {share('chrome')}
+            </div>
+          )}
           {lightbox && (
             <button
               type="button"
@@ -753,17 +791,7 @@ export default function PhotoViewer({
             hotspotKey={
               <HotspotKey view={current} expandedId={expandedId} onToggle={toggleHotspot} />
             }
-            share={
-              // The shown photo's canonical URL, never the window address (T-18-39). Not
-              // keyed per photo: the arrows step while it has focus, and a remount would
-              // drop that focus; ShareButton resets its state when the url changes.
-              <ShareButton
-                url={`${site.url}${photoHref(current.slug)}`}
-                title={`${current.title} · ${site.name}`}
-                subject="photo"
-                surface="gallery"
-              />
-            }
+            share={share('button')}
           />
         </>
       )}

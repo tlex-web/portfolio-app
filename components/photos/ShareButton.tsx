@@ -13,6 +13,15 @@ import { useShareMode } from '@/lib/photos/share-mode';
 const BASE =
   'inline-flex min-h-11 min-w-42 items-center justify-center gap-2 rounded-sm border border-line-strong px-4 text-base font-semibold text-ink cursor-pointer touch-manipulation transition-colors duration-(--duration-fast) ease-erosion';
 
+/**
+ * The viewer bar's look (18-20; PhotoViewer's CHROME_BUTTON): regular weight,
+ * md:px-4, the label from lg only. lg:min-w-40 (160 px) holds the longest label,
+ * 'Share photo' (91.83 px in Inter in Chromium, Firefox and WebKit, so the
+ * button is 153.83 px), so the copy-to-share swap shifts nothing in the bar.
+ */
+const CHROME =
+  'inline-flex min-h-11 min-w-11 cursor-pointer touch-manipulation items-center justify-center gap-2 rounded-sm border border-line-strong text-ink hover:border-ink-muted md:px-4 lg:min-w-40';
+
 /** Hover per background: the 12 overlay fill on surface, the viewer chrome border on gallery. */
 const HOVER = {
   surface: 'hover:bg-surface-overlay',
@@ -43,13 +52,25 @@ export type ShareButtonProps = {
    * failure, the line with `basis-full`, which takes its own full-width row at
    * the end of the parent, so the parent only grows downward and nothing
    * before it moves. The button group carries `shrink-0` in that mode.
+   * 'overlay' is for a fixed-height bar (the viewer's top bar, 18-20): the line
+   * is an absolute panel at `top-full right-4` of the nearest positioned
+   * ancestor (the bar, `relative`), over the content below, so nothing in the
+   * bar or under it moves. The button group is not positioned in that mode.
    */
-  failurePlacement?: 'below' | 'row';
+  failurePlacement?: 'below' | 'row' | 'overlay';
+  /**
+   * 'button' (the default): the secondary button with its visible label (the
+   * strip on the scroll tier, the region band). 'chrome' (the viewer's top bar,
+   * 18-20): the bar's look, icon-only below lg with the label from lg, and an
+   * aria-label in both modes so the icon-only button keeps its name.
+   */
+  appearance?: 'button' | 'chrome';
 };
 
 /**
  * Share / Copy link (PHOTO-07, D-13; 18-UI-SPEC Contract 4), one client island
- * for the region header band and the viewer strip. It takes strings only: the
+ * for the region header band and the photo viewer (its top bar from the key
+ * tier, its strip on the scroll tier; 18-20). It takes strings only: the
  * URL is the server-built canonical `url` prop and never the window's address,
  * so a query or hash on the current page can't leak (T-18-18).
  *
@@ -68,7 +89,8 @@ export type ShareButtonProps = {
  * copied' with a check for COPIED_MS and the polite status says 'Link copied';
  * a repeat press restarts the window. When the write fails (no Clipboard API,
  * an insecure origin, a denied permission) a line shows the URL (under the
- * button, or in its own row with failurePlacement 'row'), selected through a
+ * button, in its own row with failurePlacement 'row', or as a panel under the
+ * viewer bar with 'overlay'), selected through a
  * Range so Ctrl/Cmd+C copies it, and the status says so; the line stays until
  * the next press. Unmounting clears the timer, and a
  * write or share that settles after unmount starts none.
@@ -79,6 +101,7 @@ export default function ShareButton({
   subject,
   surface,
   failurePlacement = 'below',
+  appearance = 'button',
 }: ShareButtonProps) {
   const mode = useShareMode(url);
   const [copied, setCopied] = useState(false);
@@ -177,12 +200,16 @@ export default function ShareButton({
   const label = copied ? 'Link copied' : sharing ? shareLabel : 'Copy link';
 
   const row = failurePlacement === 'row';
+  const chrome = appearance === 'chrome';
+  const placement = {
+    below: 'mt-2 w-0 min-w-full',
+    row: 'basis-full',
+    overlay:
+      'absolute top-full right-4 z-10 mt-1 w-[min(28rem,calc(100%-2rem))] rounded-sm border border-line-strong bg-gallery p-3',
+  }[failurePlacement];
   const failed =
     failure > 0 ? (
-      <p
-        data-share-failure
-        className={`${row ? 'basis-full' : 'mt-2 w-0 min-w-full'} text-sm text-ink-muted`}
-      >
+      <p data-share-failure className={`${placement} text-sm text-ink-muted`}>
         Couldn&apos;t copy the link. It&apos;s selected here:{' '}
         <span ref={urlRef} className="font-mono text-ink wrap-anywhere">
           {url}
@@ -195,12 +222,14 @@ export default function ShareButton({
       <button
         type="button"
         onClick={onClick}
-        aria-label={mode === 'copy' ? `Copy link to this ${subject}` : undefined}
+        aria-label={
+          mode === 'copy' ? `Copy link to this ${subject}` : chrome ? shareLabel : undefined
+        }
         data-share-mode={mode}
-        className={`${BASE} ${HOVER[surface]}`}
+        className={chrome ? CHROME : `${BASE} ${HOVER[surface]}`}
       >
         <Icon size={20} aria-hidden="true" />
-        {label}
+        {chrome ? <span className="hidden lg:inline">{label}</span> : label}
       </button>
       {row ? null : failed}
       <span role="status" aria-live="polite" aria-atomic="true" className="sr-only">

@@ -22,7 +22,9 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * key and its word are one nowrap unit, so the line wraps only at ' · '.
  * The data column ends with the `share` slot (18 D-13: PhotoViewer's
  * Share / Copy link button for the shown photo), mt-4 below the rights line
- * and the legend, so a pointer visitor reads the keys before the one action.
+ * and the legend, on the scroll tier only: from the key tier (lb-key,
+ * lb-gutter) the viewer's top bar carries Share, so the strip loses that row
+ * and the stage gets the height back (18-20, Tim's compact-strip choice).
  * On the scroll tier the two blocks stack in one column; on the key and
  * gutter tiers (lb-key, lb-gutter) they sit side by side in a 3fr / 2fr grid
  * with a 32 px gap: identity and story left, data right. At 1440 the 420 px
@@ -38,7 +40,7 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * by a plain space inside the same dd (valid dl content), so a line wraps only
  * after a separator, never inside a value or before a '·'.
  * The strip holds no link but the page trail's crumbs, and no download control (LBOX-07);
- * its one control is the share slot's button.
+ * its one control is the share slot's button (scroll tier).
  */
 
 export type ListRow = { key: string; term?: string; value: string };
@@ -100,8 +102,9 @@ export default function ExifStrip({
   hotspotKey?: ReactNode;
   /**
    * The Share / Copy link control (18 D-13, PHOTO-07; ShareButton, filled by
-   * PhotoViewer with the shown photo's URL), the data column's last row, mt-4.
-   * A slot, so the strip itself stays presentational and server-safe.
+   * PhotoViewer with the shown photo's URL), the data column's last row, mt-4,
+   * shown on the scroll tier only (18-20). A slot, so the strip itself stays
+   * presentational and server-safe.
    */
   share?: ReactNode;
 }) {
@@ -190,7 +193,7 @@ export default function ExifStrip({
             </span>
           </p>
           {share && (
-            <div data-strip-share="" className="mt-4">
+            <div data-strip-share="" className="mt-4 lb-key:hidden lb-gutter:hidden">
               {share}
             </div>
           )}
