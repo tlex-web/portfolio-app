@@ -403,14 +403,21 @@ test.describe('Share region (18-07; PHOTO-07, D-13)', () => {
       // The row spans the band's content box (the band has no inline padding).
       const row = await line.evaluate((el) => {
         const r = el.getBoundingClientRect();
-        const b = el.closest('[data-region-header]')!.getBoundingClientRect();
-        return { x: r.left - b.left, w: r.width, bandW: b.width, bottomGap: b.bottom - r.bottom };
+        const host = el.closest('[data-region-header]')!;
+        const b = host.getBoundingClientRect();
+        const cs = getComputedStyle(host);
+        return {
+          x: r.left - b.left,
+          w: r.width,
+          bandW: b.width,
+          bottomGap: b.bottom - r.bottom,
+          padAndBorder: parseFloat(cs.paddingBottom) + parseFloat(cs.borderBottomWidth),
+        };
       });
       expect(Math.abs(row.x), 'row starts at the band edge').toBeLessThan(1);
       expect(Math.abs(row.w - row.bandW), 'row spans the band').toBeLessThan(1);
-      // It is the band's last row: nothing but the band's bottom padding below it.
-      expect(row.bottomGap).toBeLessThan(25);
-      expect(row.bottomGap).toBeGreaterThan(23);
+      // It is the band's last row: only the band's bottom padding and border lie below it.
+      expect(Math.abs(row.bottomGap - row.padAndBorder), 'row is the last row').toBeLessThan(1);
 
       // The URL's line count: distinct line tops of its inline boxes.
       const urlLines = await line.locator('span').evaluate((el) => {
