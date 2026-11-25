@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
-stopped_at: Completed 18-15-PLAN.md
-last_updated: "2026-11-25T18:53:31.126Z"
+stopped_at: Completed 18-16-PLAN.md
+last_updated: "2026-11-25T19:18:05.779Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: 0412238abc757581b44c60af185cc7a1f528b824
+state_head: 7b5ccc748a3ffd019a35cbfd5cf59434456510a3
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 109
-  completed_plans: 95
+  completed_plans: 96
   percent: 71
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-24)
 ## Current Position
 
 Phase: 18 (Immersive Survey Layout) — EXECUTING
-Plan: 15 of 29
+Plan: 16 of 29
 Status: Ready to execute
 Last activity: 2026-11-24 — Phase 18 execution started
 
@@ -153,6 +153,7 @@ Progress: [███████░░░] 71%
 | Phase 18 P12 | 16 min | 2 tasks | 6 files |
 | Phase 18 P14 | 167 min | 3 tasks | 30 files |
 | Phase 18 P15 | 25min | 2 tasks | 11 files |
+| Phase 18 P16 | 21 min | 2 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -396,6 +397,11 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-14: WebKit :has() invalidation does not look inside :is(); the plate sync emits one :has() per state (2325d0a, Tim: 'Diagnose locally, then fix'); the overview's same pattern is deferred to the plan that renders overviewCss
 - [Phase 18]: 18-15: Every viewer steps through its photo's region series (regionViewerSet, built in both server routes, props only); viewerPhotos and lightTableSlugs retired (LBOX-09, D-12)
 - [Phase 18]: 18-15: The LBOX-08 focus-return matrix runs on the region pages (Map rows on Zermatt, Grid on Ortler, Carousel on Saalfelden); every row keeps its size, setup, close path and tags, and no setup swap was needed
+- [Phase 18]: 18-16: The end card's facts travel as FactsLine parts, not one string joined at ' · ', so the card wraps like the region page's line
+- [Phase 18]: 18-16: EndCardProps lives in components/photos/EndCard.tsx and lib/regions.ts re-exports it type-only, so neither EndCard nor PhotoViewer imports lib/regions
+- [Phase 18]: 18-16: A one-photo set keeps the 18-15 rule (no controls, no steps) and has no end card
+- [Phase 18]: 18-16: When a step across the card removes the focused element, focus moves to the step button of the direction taken
+- [Phase 18]: 18-16: The tracer row carries @no-win-webkit; Windows WebKit crashes on any soft navigation out of the lightbox after a step, card or not (deferred-items.md; watch CI's Linux WebKit)
 
 ### Pending Todos
 
@@ -457,6 +463,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-25T18:53:30.490Z
-Stopped at: Completed 18-15-PLAN.md
+Last session: 2026-11-25T19:18:05.137Z
+Stopped at: Completed 18-16-PLAN.md
 Resume file: None
