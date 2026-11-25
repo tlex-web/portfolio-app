@@ -292,7 +292,8 @@ function expectedTypes(path: string): string[] {
   const project = projects.find((p) => path === `/projects/${p.slug}`);
   // A region page carries its gallery and its BreadcrumbList (18-06, D-10).
   if (path.startsWith('/photos/regions/')) own.push('ImageGallery', 'BreadcrumbList');
-  else if (/^\/photos\/[^/]+$/.test(path)) own.push('ImageObject');
+  // A photo page carries its ImageObject and its BreadcrumbList (18-17, D-10).
+  else if (/^\/photos\/[^/]+$/.test(path)) own.push('ImageObject', 'BreadcrumbList');
   else if (project) own.push('links' in project ? 'SoftwareSourceCode' : 'SoftwareApplication');
   return ['Person', 'WebSite', ...own].sort();
 }
@@ -344,7 +345,7 @@ test.describe('JSON-LD on every page (SEO-04; D-16, SC4)', () => {
   /**
    * Every sitemap page plus /offline: each ld+json block parses, the sorted
    * @types of the flattened nodes equal the path's expected set (nothing else:
-   * a BreadcrumbList only on region pages, 18-06), and every node passes the
+   * a BreadcrumbList only on region pages, 18-06, and photo pages, 18-17), and every node passes the
    * per-node rule. A data
    * contract, so one engine; mismatches are collected so a failure names every
    * path.

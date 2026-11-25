@@ -8,8 +8,13 @@ import { site } from '@/data/site';
 import { formatMetreRange, formatYearRange } from '@/lib/home-format';
 import { pageMetadata } from '@/lib/metadata';
 import { platePins, type PlatePin } from '@/lib/photos/plate-layout';
-import { regionHref } from '@/lib/photos/routes';
-import { buildPhotoViews, seriesInput, type PhotoView } from '@/lib/photos/view-model';
+import { photoHref, regionHref } from '@/lib/photos/routes';
+import {
+  buildPhotoViews,
+  publishedViews,
+  seriesInput,
+  type PhotoView,
+} from '@/lib/photos/view-model';
 import type { EndCardProps } from '@/components/photos/EndCard';
 
 export type { EndCardProps };
@@ -165,6 +170,26 @@ export function regionBreadcrumb(id: string): readonly Crumb[] {
     { name: 'Photographs', path: '/photos' },
     { name: region.name, path: regionHref(id) },
   ];
+}
+
+/**
+ * A photo page's breadcrumb trail (18 D-10; 18-UI-SPEC Contract 6):
+ * 'Photographs' (/photos), the bare region name at regionHref (as the region
+ * page's own trail), then the photo's title at photoHref(slug), the current
+ * page. The photo page renders the visible Breadcrumb from this list (the last
+ * crumb without a link) and its BreadcrumbList JSON-LD with breadcrumbLd, so
+ * the structured data always equals the visible crumbs at load. The lightbox
+ * shows no trail (the region page behind it has its own).
+ *
+ * @throws RangeError for a slug that is not a published photo (exact, case-sensitive) or has no region.
+ */
+export function photoBreadcrumb(slug: string): readonly Crumb[] {
+  const view = publishedViews.find((v) => v.slug === slug);
+  if (!view) throw new RangeError(`photoBreadcrumb: ${slug} is not a published photo`);
+  const regionId = photos.find((p) => p.id === view.id)?.region;
+  const region = regionId === undefined ? undefined : regionById(regionId);
+  if (!region) throw new RangeError(`photoBreadcrumb: ${slug} has no registry region`);
+  return [...regionBreadcrumb(region.id), { name: view.title, path: photoHref(slug) }];
 }
 
 /** Each region's photo views, built once per module load (throws for a region with no photo). */

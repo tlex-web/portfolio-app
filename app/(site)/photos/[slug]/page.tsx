@@ -1,8 +1,14 @@
 import { notFound } from 'next/navigation';
 import PhotoViewer from '@/components/photos/PhotoViewer';
-import { photoImageLd } from '@/lib/json-ld/content';
+import { breadcrumbLd, photoImageLd } from '@/lib/json-ld/content';
 import { jsonLdHtml } from '@/lib/json-ld/site';
-import { photoBack, regionEndCard, regionOfPhoto, regionViewerSet } from '@/lib/regions';
+import {
+  photoBack,
+  photoBreadcrumb,
+  regionEndCard,
+  regionOfPhoto,
+  regionViewerSet,
+} from '@/lib/regions';
 import { photoBySlug, photoMetadata, publishedSlugs } from '@/lib/photos/view-model';
 
 /**
@@ -38,6 +44,13 @@ import { photoBySlug, photoMetadata, publishedSlugs } from '@/lib/photos/view-mo
  * carries one (a soft navigation would otherwise add a second block over the
  * gallery). It lands inside SiteChrome's <main>; jsonLdHtml escapes every '<',
  * and a data block needs no nonce.
+ *
+ * The trail (18 D-10; 18-UI-SPEC Contract 6): photoBreadcrumb(slug) builds
+ * 'Photographs / {region} / {title}' once, here on the server. The second data
+ * block is its BreadcrumbList (breadcrumbLd; a title holding '<' stays inside
+ * it through jsonLdHtml, T-18-36), and the same list reaches the viewer as the
+ * `breadcrumb` prop, the last crumb without a link, so the visible trail and
+ * the structured data are one list at load. The lightbox gets neither.
  */
 
 type PageProps = { params: Promise<{ slug: string }> };
@@ -65,6 +78,14 @@ function endCardFor(view: { id: string }) {
   return regionEndCard(regionId);
 }
 
+/** The visible trail as Breadcrumb items: every crumb a link but the last, the current page. */
+function breadcrumbItems(slug: string) {
+  const crumbs = photoBreadcrumb(slug);
+  return crumbs.map((c, i) =>
+    i === crumbs.length - 1 ? { name: c.name } : { name: c.name, href: c.path }
+  );
+}
+
 export default async function PhotoPage({ params }: PageProps) {
   const { slug } = await params;
   const view = photoBySlug(slug);
@@ -76,11 +97,18 @@ export default async function PhotoPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdHtml(photoImageLd(view)) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLdHtml(breadcrumbLd(photoBreadcrumb(view.slug))),
+        }}
+      />
       <PhotoViewer
         variant="page"
         photos={regionViewerSet(view.id)}
         initialSlug={view.slug}
         back={photoBack(view.id)}
+        breadcrumb={breadcrumbItems(view.slug)}
         endCard={endCardFor(view)}
       />
     </>

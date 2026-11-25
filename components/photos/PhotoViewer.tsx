@@ -22,6 +22,7 @@ import {
   XIcon,
 } from '@phosphor-icons/react/dist/ssr';
 import EndCard, { type EndCardProps } from '@/components/photos/EndCard';
+import type { BreadcrumbItem } from '@/components/photos/Breadcrumb';
 import ExifStrip from '@/components/photos/ExifStrip';
 import { HotspotKey, HotspotMarks, HotspotOverlay } from '@/components/photos/Hotspots';
 import { useLightbox } from '@/components/photos/LightboxDialog';
@@ -124,6 +125,13 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * page-only) and ignores `back`. This file imports no region data; the region
  * reaches the client only through the serialisable prop.
  *
+ * The trail (18 D-10; 18-UI-SPEC Contract 6): the page passes `breadcrumb`,
+ * photoBreadcrumb's 'Photographs / {region} / {title}' built on the server, and
+ * ExifStrip renders it above the h1. The current crumb follows the shown photo:
+ * after a step its name is the shown photo's title (a step stays inside the
+ * region, so the other crumbs hold). The end card replaces the strip, so it
+ * shows no trail; the lightbox shows none (the region page behind it has its own).
+ *
  * The end-of-series card (LBOX-09, 18 D-12; 18-UI-SPEC Contract 3): after the
  * series' last photo comes one extra step (stepWithEnd), the `endCard` props
  * built on the server by regionEndCard, rendered by EndCard in place of the
@@ -216,6 +224,7 @@ export default function PhotoViewer({
   photos,
   initialSlug,
   back,
+  breadcrumb,
   endCard,
 }: {
   variant: 'page' | 'modal';
@@ -228,6 +237,11 @@ export default function PhotoViewer({
    * name, built on the server by photoBack. Required on the page; the lightbox ignores it.
    */
   back?: { href: string; name: string };
+  /**
+   * The page's trail (18 D-10), built on the server by photoBreadcrumb, the last
+   * crumb (the photo at load) without href. The lightbox ignores it.
+   */
+  breadcrumb?: readonly BreadcrumbItem[];
 }) {
   if (!photos.some((p) => p.slug === initialSlug)) {
     throw new RangeError(`PhotoViewer: no photo with slug ${initialSlug}`);
@@ -708,6 +722,11 @@ export default function PhotoViewer({
             view={current}
             headingLevel={isPage ? 1 : 2}
             backName={isPage ? back?.name : undefined}
+            breadcrumb={
+              isPage && breadcrumb && breadcrumb.length > 0
+                ? [...breadcrumb.slice(0, -1), { name: current.title }]
+                : undefined
+            }
             hotspotKey={
               <HotspotKey view={current} expandedId={expandedId} onToggle={toggleHotspot} />
             }

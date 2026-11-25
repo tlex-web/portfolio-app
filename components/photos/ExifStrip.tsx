@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode } from 'react';
+import Breadcrumb, { type BreadcrumbItem } from '@/components/photos/Breadcrumb';
 import type { PhotoView } from '@/lib/photos/view-model';
 
 /**
@@ -6,7 +7,9 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * read like the margin of a map sheet. Server-safe: no hooks and no client
  * directive, so it renders in the server HTML of the photo page.
  *
- * Order (D-05): the title (h1 on the page, h2#photo-title as the dialog label
+ * Order (D-05): on the page only, the breadcrumb trail (18 D-10, the
+ * `breadcrumb` prop: 'Photographs / {region} / {title}', mb-2, never at
+ * heading level 2), then the title (h1 on the page, h2#photo-title as the dialog label
  * in the lightbox), place · date, the story, then the data column: the EXIF
  * list (or 'Film scan · 2019'), the altitude and position list, and the
  * rights line last. Row 4 is the hotspot key (the `hotspotKey` slot, filled by
@@ -30,7 +33,7 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * aria-hidden ' ·' separator sits at the end of the unit before it, followed
  * by a plain space inside the same dd (valid dl content), so a line wraps only
  * after a separator, never inside a value or before a '·'.
- * The strip holds no link and no download control (LBOX-07).
+ * The strip holds no link but the page trail's crumbs, and no download control (LBOX-07).
  */
 
 export type ListRow = { key: string; term?: string; value: string };
@@ -77,6 +80,7 @@ export default function ExifStrip({
   view,
   headingLevel,
   backName,
+  breadcrumb,
   hotspotKey,
 }: {
   view: PhotoView;
@@ -84,6 +88,8 @@ export default function ExifStrip({
   headingLevel: 1 | 2;
   /** The page's back target by name (18 D-09), for the legend's 'Esc back to {name}'. Required at level 1. */
   backName?: string;
+  /** The page's trail (18 D-10), rendered above the h1 at heading level 1 only. */
+  breadcrumb?: readonly BreadcrumbItem[];
   /** Row 4, the hotspot key (HotspotKey), after the story. */
   hotspotKey?: ReactNode;
 }) {
@@ -106,6 +112,7 @@ export default function ExifStrip({
     <div data-photo-strip="" className="shrink-0 border-t border-line bg-gallery py-4">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 lb-key:grid lb-key:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lb-key:gap-x-8 lb-gutter:grid lb-gutter:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lb-gutter:gap-x-8">
         <div data-strip-identity="">
+          {headingLevel === 1 && breadcrumb && <Breadcrumb items={breadcrumb} className="mb-2" />}
           <Title
             id={headingLevel === 2 ? 'photo-title' : undefined}
             className="font-display text-heading font-semibold text-ink"

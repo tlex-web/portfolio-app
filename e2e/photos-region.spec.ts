@@ -1,6 +1,8 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
 import { site } from '@/data/site';
 import {
+  photoBack,
+  photoBreadcrumb,
   regionBreadcrumb,
   regionById,
   regionCardFacts,
@@ -54,6 +56,14 @@ import {
  * that region page; its lightbox, opened from the region page, steps within the
  * region and has no back link (the v2.0 four's pages: photos-lightbox.spec); and a touch swipe and the arrows on its page
  * step within the region (Zermatt's seven as the second series).
+ *
+ * The photo page trail and its one way back (18-17; REGION-02, D-09, D-10):
+ * on every published photo page the breadcrumb ('Photographs' and the region
+ * name as links at least 44 px tall, the title current, two aria-hidden '/')
+ * equals the page's one BreadcrumbList (names in order, items absolute); after
+ * a step the current crumb names the new photo; the lightbox holds no trail;
+ * at 375, 768 and 1440 exactly one link named 'Back to …' is visible; and at
+ * 768 x 900 the key-tier chrome bar does not overflow (17-UI-REVIEW hand-over).
  *
  * The header band (18-06; REGION-02, D-10): on every region page the visible
  * breadcrumb ('Photographs' link, the region name current, '/' aria-hidden)
@@ -1920,4 +1930,126 @@ test.describe('Region stepping on the photo page (18-15; LBOX-09, D-12)', () => 
     await expect(h1(page)).toHaveText(second.title);
     await expect(counter).toHaveText('2 / 2');
   });
+});
+
+test.describe('Photo page trail and one way back (18-17; REGION-02, D-09, D-10)', () => {
+  /** The trail inside <main> (the photo page's strip). */
+  const trail = (page: Page) =>
+    page.getByRole('main').getByRole('navigation', { name: 'Breadcrumb' });
+
+  /** The trail's visible crumbs in order: the links, then the current page. */
+  const crumbTexts = async (nav: Locator) =>
+    (await nav.locator('li > a, li > [aria-current="page"]').allTextContents()).map((t) =>
+      t.trim()
+    );
+
+  for (const view of publishedViews) {
+    test(`/photos/${view.slug}: the trail equals its one BreadcrumbList (UI E10/populated)`, async ({
+      page,
+    }) => {
+      await page.goto(`/photos/${view.slug}`);
+      const nav = trail(page);
+      await expect(nav).toHaveCount(1);
+      const crumbs = photoBreadcrumb(view.slug);
+      expect(await crumbTexts(nav)).toEqual(crumbs.map((c) => c.name));
+
+      // Two links (44 px targets), the current title a plain span, two hidden '/'.
+      const links = nav.getByRole('link');
+      await expect(links).toHaveCount(2);
+      for (const [i, link] of (await links.all()).entries()) {
+        await expect(link).toHaveAttribute('href', crumbs[i].path);
+        expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      }
+      const current = nav.locator('[aria-current="page"]');
+      await expect(current).toHaveText(view.title);
+      expect(await current.evaluate((el) => el.tagName)).toBe('SPAN');
+      await expect(nav.locator('[aria-hidden="true"]')).toHaveText(['/', '/']);
+      // The trail sits above the h1, in the strip's identity column.
+      const identity = page.locator('[data-strip-identity]');
+      expect(
+        await identity.evaluate(
+          (el) =>
+            el.firstElementChild?.getAttribute('aria-label') === 'Breadcrumb' &&
+            el.firstElementChild?.nextElementSibling?.tagName === 'H1'
+        )
+      ).toBe(true);
+
+      // The one BreadcrumbList names exactly the visible crumbs, in order, items absolute.
+      const lists = (await ldBlocks(page)).filter((b) => b['@type'] === 'BreadcrumbList');
+      expect(lists).toHaveLength(1);
+      const items = lists[0].itemListElement as Array<{
+        name: string;
+        item: string;
+        position: number;
+      }>;
+      expect(items.map((i) => i.name)).toEqual(await crumbTexts(nav));
+      expect(items.map((i) => i.position)).toEqual([1, 2, 3]);
+      expect(items.map((i) => i.item)).toEqual(crumbs.map((c) => `${site.url}${c.path}`));
+    });
+  }
+
+  test('after one step the current crumb names the new photo; the region crumb stays', async ({
+    page,
+  }) => {
+    const [first, second] = regionPhotoViews('ortler');
+    await page.goto(`/photos/${first.slug}`);
+    const nav = trail(page);
+    const next = page.getByRole('main').getByRole('button', { name: 'Next photo', exact: true });
+    await waitForHydration(next);
+    await next.click();
+    await expect(page).toHaveURL(new RegExp(`/photos/${second.slug}$`));
+    await expect(nav.locator('[aria-current="page"]')).toHaveText(second.title);
+    await expect(h1(page)).toHaveText(second.title);
+    expect(await crumbTexts(nav)).toEqual(photoBreadcrumb(second.slug).map((c) => c.name));
+  });
+
+  test('the lightbox holds no trail and no back link (D-09, D-10: page only; UI E10/zero-one-many) @prod-only', async ({
+    page,
+  }) => {
+    const view = regionPhotoViews('ortler')[0];
+    await page.goto('/photos/regions/ortler');
+    const link = page.locator(`[data-photo-id="${view.slug}"]`);
+    await waitForHydration(link);
+    await link.click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible({ timeout: 20000 });
+    await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(view.title);
+    await expect(dialog.locator('nav[aria-label="Breadcrumb"]')).toHaveCount(0);
+    await expect(dialog.getByRole('link', { name: /^Back to / })).toHaveCount(0);
+  });
+
+  // Saalfelden's first photo carries the longest back label ('Back to Saalfelden').
+  const longest = regionPhotoViews('saalfelden')[0];
+  const longestBack = photoBack(longest.id);
+  for (const [width, height] of [
+    [375, 800],
+    [768, 900],
+    [1440, 900],
+  ] as const) {
+    test(`/photos/${longest.slug} at ${width}: exactly one visible 'Back to …' link (17-UI-REVIEW hand-over)`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height });
+      await page.goto(`/photos/${longest.slug}`);
+      const main = page.getByRole('main');
+      const back = main.getByRole('link', { name: /^Back to / });
+      await expect(back).toHaveCount(1);
+      await expect(back).toBeVisible();
+      await expect(back).toHaveText(`Back to ${longestBack.name}`);
+      await expect(back).toHaveAttribute('href', longestBack.href);
+      if (width === 768) {
+        // Key tier: the link sits in the chrome bar, which does not overflow.
+        const chrome = page.locator('[data-viewer-chrome]');
+        await expect(chrome.getByRole('link', { name: /^Back to / })).toBeVisible();
+        const fit = await chrome.evaluate((el) => ({
+          scroll: el.scrollWidth,
+          client: el.clientWidth,
+        }));
+        expect(fit.scroll).toBeLessThanOrEqual(fit.client);
+        const left = (await page.locator('[data-chrome-left]').boundingBox())!;
+        const right = (await page.locator('[data-chrome-right]').boundingBox())!;
+        expect(left.x + left.width).toBeLessThanOrEqual(right.x);
+      }
+    });
+  }
 });
