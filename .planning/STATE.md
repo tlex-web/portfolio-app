@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
-stopped_at: Completed 18-13-PLAN.md (18-03 still paused at its Task 2 checkpoint)
-last_updated: "2026-11-25T00:08:07.859Z"
+stopped_at: Completed 18-03-PLAN.md
+last_updated: "2026-11-25T00:18:31.173Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: 760fd3a66d9664a12a83372c8ffb09c7b3ee3013
+state_head: c73e9290eabe9e4f8e8ce8ce42de4fb628fc6f11
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 109
-  completed_plans: 83
+  completed_plans: 84
   percent: 71
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-24)
 ## Current Position
 
 Phase: 18 (Immersive Survey Layout) — EXECUTING
-Plan: 3 of 29
+Plan: 4 of 29
 Status: Ready to execute
 Last activity: 2026-11-24 — Phase 18 execution started
 
@@ -141,6 +141,7 @@ Progress: [███████░░░] 71%
 | Phase 18 P01 | 30min | 3 tasks | 3 files |
 | Phase 18 P02 | 11min | 2 tasks | 15 files |
 | Phase 18 P13 | 12min | 1 tasks | 2 files |
+| Phase 18 P03 | 40min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -351,6 +352,8 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-13: every summit label placed at every S 312-1100 (UNPLACED_SUMMIT_LABELS empty); Task 2 fallback decision not needed
 - [Phase 18]: 18-13: overview y positions use 100cqh, so the sheet must be [container-type:size]; CSS hooks data-region-marker/-dot/-leader/-plate/-rect/-row/-badge, data-summit-mark/-plate, data-overview ancestor for :has() sync
 - [Phase 18]: 18-13: no marker, plate or summit label may cover a rectangle's drawn outline; leaders are checked against the drawn summit triangle
+- [Phase 18]: 18-03 D-20: Tim approved every proposed final of the copy packet, the licence reading (a short credit linked to /sources is enough) and G1 ('approve-G1 (Recommended)', 2026-11-25); the final strings are in 18-03-SUMMARY
+- [Phase 18]: 18-03 GLO-90 placement G1: the overview margin shows 'Copernicus DEM GLO-90' linked to /sources#copernicus-glo-90 (18-23 applies it)
 
 ### Pending Todos
 
@@ -412,6 +415,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-25T00:08:07.317Z
-Stopped at: Completed 18-13-PLAN.md (18-03 still paused at its Task 2 checkpoint)
+Last session: 2026-11-25T00:18:30.624Z
+Stopped at: Completed 18-03-PLAN.md
 Resume file: None

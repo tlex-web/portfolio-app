@@ -3,7 +3,7 @@ phase: 18-immersive-survey-layout
 plan: 03
 subsystem: ui
 tags: [footer, sources-page, licences, attribution, client-graph, copy-checkpoint]
-status: in-progress   # DRAFT: paused at Task 2 (checkpoint:decision, gate blocking-human); Task 3 not started
+status: complete
 
 requires:
   - phase: 18-02
@@ -11,28 +11,35 @@ requires:
 provides:
   - "Footer Source row on every route: 'Contours derived from' + short swissALTIRegio credit linked to /sources#swissaltiregio, then an 'All data sources' link to /sources (D-16)"
   - "SWISSALTIREGIO_CREDIT in server-only data/sources.ts, byte-identical to v2.0 (631 chars, sha256 bb9aae2f...); site.attribution removed from data/site.ts and the Site type"
-  - "D-20 packet for Tim (strings 1-6, licence reading, G1/G2), awaiting his reply"
+  - "Tim's D-20 reply recorded verbatim ('approve-G1 (Recommended)', 2026-11-25) with the final-string table that 18-11, 18-22 and 18-23 apply"
+  - "Approved copy shipped and pinned literally: SHORT_CREDIT, the /sources description and intro, licence names and targets (6a renamed), Changes (6c rewritten), Used on labels"
+  - "GLO-90 placement G1 and the confirmed licence reading (a linked short credit is enough), for 18-11 and 18-23"
 affects: [18-04, 18-11, 18-22, 18-23, SiteFooter, SheetLegend, global-error]
 
-actuals:   # partial (Task 1 only); the continuation agent rewrites these at plan completion
-  tokens: 5800     # chars/4 over the Task 1 code diff (git diff dee02a8..f9e7308 = 23,309 chars)
-  tasks: 1
-  commits: 1       # measured: git rev-list --count dee02a8..f9e7308
+actuals:
+  tokens: 8900     # chars/4 over the 18-03 code diffs: f9e7308 23,309 + ac95468 6,081 + c73e929 6,103 = 35,493 chars (the two SUMMARY commits add 19,560 chars, about 4,900 more)
+  tasks: 3
+  commits: 5       # 18-03's own, measured over dee02a8..plan_head_after: git rev-list --count = 8, minus 18-13's three interleaved commits (ff63800, 760fd3a, 2baae54); the metadata commit follows
+  commits_in_range: 8   # git rev-list --count dee02a8..c73e929, as measured, 18-13's three included
 plan_head_before: dee02a82614aa18e07e045e4934d7c03f30283a5
+plan_head_after: c73e9290eabe9e4f8e8ce8ce42de4fb628fc6f11
 
 tech-stack:
   added: []
   patterns:
     - "A moved verbatim string is pinned by sha256 and length, so a move can never change it; e2e checks the rendered text against the same hash instead of importing the server-only module"
     - "Footer links are plain anchors: the global-error fallback must not use next/link"
+    - "Approved copy is typed literally in the tests (as seo.spec types descriptions), so any drift from Tim's wording fails"
 
 key-files:
   created: []
   modified:
     - components/terrain/SheetLegend.tsx
     - data/sources.ts
+    - data/source-credits.ts
     - data/site.ts
     - data/types.ts
+    - "app/(site)/sources/page.tsx"
     - data/__tests__/sources.test.ts
     - components/site/__tests__/SiteFooter.test.tsx
     - e2e/shell.spec.ts
@@ -41,21 +48,29 @@ key-files:
 key-decisions:
   - "The footer Source links are plain <a>, not next/link: global-error.test pins that the fallback never uses the router link"
   - "The footer now has five tab stops (GitHub, LinkedIn, Email + the two Source links); the 07 'three tab stops' rows are rewritten to name all five"
+  - "D-20 approved by Tim on 2026-11-25 ('approve-G1 (Recommended)'): every proposed final of the packet, the licence reading (a short credit linked to /sources is enough) and G1 for the GLO-90 placement"
+  - "GLO-90 placement is G1: the overview margin shows 'Copernicus DEM GLO-90' linked to /sources#copernicus-glo-90 (18-23 applies it)"
 
-requirements-completed: []   # REGION-06 is marked at plan completion (Task 3)
+requirements-completed: []  # REGION-06 stays Pending: this plan delivers the footer half and the approved copy; the sheet margins (18-11, 18-23), the re-baselines (18-04, 18-05) and 18-29 complete it
+
+metrics:
+  duration: "about 40 min of execution over two sessions (23:39Z 2026-11-24 to 00:20Z 2026-11-25), plus the wait for Tim's reply"
+  completed: 2026-11-25
 ---
 
-# Phase 18 Plan 03: Footer Source row and the D-20 copy checkpoint Summary (DRAFT, paused at Task 2)
+# Phase 18 Plan 03: Footer Source row and the D-20 copy checkpoint Summary
 
-On every route the footer's Source row now gives a short swissALTIRegio credit linked to its /sources entry and an "All data sources" link. The 631-character reference lives once, in server-only `data/sources.ts`, and has left the client JS. The D-20 copy packet is ready, and the plan is paused for Tim's reply.
+On every route the footer's Source row gives a short swissALTIRegio credit linked to its /sources entry and an "All data sources" link. The 631-character reference lives once, in server-only `data/sources.ts`, and has left the client JS. Tim approved the D-20 copy as "approve-G1 (Recommended)" on 2026-11-25. The strings this plan owns now ship as approved: the swissALTIRegio licence is renamed (row 6a) and its Changes line rewritten (row 6c). Every one of them is pinned literally in the tests.
 
 ## Progress
 
 | Task | Name | Status | Commit |
 |------|------|--------|--------|
 | 1 | Footer Source row end to end; reference moved to server-only data (tracer) | Done | f9e7308 |
-| 2 | Tim approves the D-20 copy, the licence reading and the GLO-90 placement | Done: "approve-G1 (Recommended)", 2026-11-25 | this commit |
-| 3 | Apply the approved copy verbatim and pin it (tdd) | Not started | n/a |
+| 2 | Tim approves the D-20 copy, the licence reading and the GLO-90 placement | Done: "approve-G1 (Recommended)", 2026-11-25 | c66e08a |
+| 3 | Apply the approved copy verbatim and pin it (tdd) | Done | ac95468 (RED), c73e929 (GREEN) |
+
+18-13's three commits (ff63800, 760fd3a, 2baae54) sit between 9928d49 and c66e08a in this plan's range. They belong to 18-13, touch only `lib/photos/overview-layout.ts` and its test, and none of 18-03's files.
 
 ## Task 1 (f9e7308)
 
@@ -166,9 +181,68 @@ The text is copied from the packet's section B, proposed-final column; for a "Sa
 
 Row 6f's target is written out in full from `data/sources.ts`; the packet abbreviated it as "dataspace.copernicus.eu licence PDF". Row 6c's apostrophe is the ASCII `'` (U+0027) the packet uses, and it ships as that byte.
 
+## Task 3 (ac95468 RED, c73e929 GREEN)
+
+- `data/sources.ts`:
+  - swissALTIRegio licence name is now "swisstopo terms of use for free geodata and geoservices (OGD)" (6a).
+  - Its Changes line is now "Cut to each map's extent at its native 10 m grid; contours every 100 m and a hillshade derived; modified." (6c).
+  - Every other licence, Changes line, the intro and the Used on labels were approved as drafted ("Same") and are unchanged.
+  - The DRAFT doc notes now name the approval (approve-G1, 2026-11-25).
+  - The GLO-90 licence comment no longer calls its target a draft.
+- `data/source-credits.ts`: `SHORT_CREDIT` is unchanged, as approved (3a-3c). Its doc block and the `SHORT_CREDIT` comment now record the approval, the licence reading and G1.
+- `app/(site)/sources/page.tsx`: the description is unchanged, as approved (5a). The DRAFT note is replaced by the approval line.
+- Pins, all typed literally:
+  - `sources.test`, a new "approved copy (D-20, Tim's reply 2026-11-25)" block with 7 tests: `SHORT_CREDIT` (toStrictEqual), `SOURCES_INTRO`, each entry's licence `{name, href}`, each entry's Changes array, and the non-region Used on labels.
+  - `SiteFooter.test`: the short credit link text `swissALTIRegio, swisstopo` and the Source row text `Contours derived from swissALTIRegio, swisstopo.All data sources`.
+  - `sources.spec`: the rendered intro and the `<meta name="description">` content.
+- Strings owned by later plans (kicker, /photos description, sheet titles, margin credits, G1) are recorded only in the table above. This plan renders none of them.
+
+### Verification
+
+- Jest, the plan's verify (`sources.test` + `SiteFooter.test`) plus `client-graph.test`: 51/51 passed. The full suite passed 2,439/2,439 in 121 suites: 2,432 after 18-13, plus 7 new.
+- `PW_PROD=1` sources + shell specs on Chromium and Firefox: 98 passed, 0 flaky, on a fresh production build. `public/service-worker.js` was restored, and no server is left on :3000 or :3017.
+- No client chunk contains "Tarquini" (same build).
+- `npm run type-check` exit 0; `npm run lint` exit 0 (eslint and every guard, test-count scan OK).
+- `node scripts/ci/check-snapshot-commit.mjs --none`: OK (0 changed) after c66e08a, ac95468 and c73e929. No PNG was staged.
+
+### Acceptance greps (one `git grep -F -c` per string this plan owns, over data/source-credits.ts, data/sources.ts and app/(site)/sources/page.tsx)
+
+| Row | String | Count | File |
+|-----|--------|-------|------|
+| 3a | `swissALTIRegio, swisstopo` | 1 | data/source-credits.ts |
+| 3b | `ALS DTM, BEV, CC BY 4.0` | 1 | data/source-credits.ts |
+| 3c | `'copernicus-glo-90': 'Copernicus DEM GLO-90'` | 1 | data/source-credits.ts |
+| 5a | /sources description (full sentence) | 1 | app/(site)/sources/page.tsx |
+| 5b | /sources intro (full text) | 1 | data/sources.ts |
+| 6a | `swisstopo terms of use for free geodata and geoservices (OGD)` | 1 | data/sources.ts |
+| 6b | `https://www.swisstopo.admin.ch/en/conditions-geodata` | 1 | data/sources.ts |
+| 6c | `Cut to each map's extent at its native 10 m grid; contours every 100 m and a hillshade derived; modified.` | 1 | data/sources.ts |
+| 6d | `"licence": "CC BY 4.0"` / `"licenceUrl": "https://creativecommons.org/licenses/by/4.0/"` | 1 / 1 | data/terrain/plates/saalfelden/source.json (data, read by data/sources.ts; pinned literally in sources.test) |
+| 6e | both BEV Changes lines | 1 / 1 | data/sources.ts |
+| 6f | GLO-90 licence name / PDF target | 1 / 1 | data/sources.ts |
+| 6g | GLO-90 Changes | 1 | data/sources.ts |
+| 6h | `The footer of every page` / `Alps overview` | 1 / 1 | data/sources.ts |
+| 3d | `Contours derived from` / `All data sources` | 1 / 2 | components/terrain/SheetLegend.tsx (Task 1) |
+
+The old 6a name with its closing quote, and every `DRAFT` note in the three files: 0.
+
+## TDD Gate Compliance
+
+- RED ac95468 comes before GREEN c73e929. No refactor commit was needed.
+- RED evidence: `RED_EVIDENCE_OK` (`target_test_failed`) from `gsd-tools check tdd-red-evidence`.
+  - The record is `.gsd/tdd-evidence/18-03/red-t3.json` (ignored), with JUnit XML from the scratchpad Jest reporter that 18-13 used (no dependency added).
+  - Target: "names swissALTIRegio's licence as approved and links swisstopo's terms (rows 6a, 6b)".
+- Semantic assessment: 2 of 35 failed, both on the planned approved-copy assertions, for the two rows Tim's approval changed. 6a: the received name was the draft "swisstopo terms of use for free geodata". 6c: the received Changes line was the draft "Resampled to a 10 m grid; …". The other approved rows equal their drafts ("Same"), so their pins passed at RED, as expected. They guard against future drift rather than drive this change. The SiteFooter literal pins pass for the same reason (3a and 3d are unchanged).
+
 ## Deviations from Plan
 
 ### Auto-fixed Issues
+
+**0. [Rule 1 - Bookkeeping] REGION-06 not marked complete**
+- **Found during:** state updates
+- **Issue:** `requirements.mark-complete REGION-06` checked the requirement off. But 18-04, 18-05, 18-11, 18-23 and 18-29 also carry REGION-06, and its sheet-margin half is not built yet. 18-02 left it Pending for the same reason.
+- **Fix:** REQUIREMENTS.md was restored before the metadata commit, so REGION-06 stays Pending. `requirements-completed` is `[]`, with the reason.
+- **Files modified:** none committed (.planning/REQUIREMENTS.md unchanged)
 
 **1. [Rule 1 - Bug] Footer links switched from next/link to plain anchors**
 - **Found during:** Task 1 (full Jest run)
@@ -190,7 +264,30 @@ Row 6f's target is written out in full from `data/sources.ts`; the packet abbrev
 - **Fix:** Both rows are rewritten to five; the Jest row names each stop. keyboard.spec reads the footer links dynamically and needed no change.
 - **Commit:** f9e7308
 
+**4. [Plan detail] e2e intro pin typed literally, not imported from SOURCES_INTRO; meta description pinned in e2e**
+- **Found during:** Task 3
+- **Issue:** The plan says sources.spec should assert the rendered intro "equals `SOURCES_INTRO`". The spec's doc block, however, requires that its expected values never come from `data/sources.ts`, so the page is checked against its sources.
+- **Fix:** The spec types the approved intro literally. `sources.test` pins `SOURCES_INTRO` to the same literal, so the two are equal by construction. The /sources meta description lives in `page.tsx`, which Jest does not import, so it is pinned in the same e2e test.
+- **Files modified:** e2e/sources.spec.ts
+- **Commit:** ac95468
+
+**5. [Style] Prettier wrap of one Task 1 test title in e2e/sources.spec.ts**
+- **Found during:** Task 3 (prettier check)
+- **Issue:** f9e7308 left one line in sources.spec over the print width.
+- **Fix:** Prettier's wrap only. `components/site/__tests__/SiteFooter.test.tsx` was already unformatted at dee02a8 (pre-existing, out of scope) and is left as is.
+- **Commit:** c73e929
+
 ## Notes for later plans
 
+- **18-11 / 18-22 / 18-23:** apply the "Final strings" table above verbatim.
+  - The /photos description (row 2) is the new text, not the draft.
+  - G1 is chosen: the overview margin carries the linked short credit `Copernicus DEM GLO-90` → `/sources#copernicus-glo-90`, never the verbatim notice.
+  - The licence reading is confirmed, so every margin may carry a linked short credit.
 - 18-04's re-baseline round covers this footer change (D-24). No baseline was run or dispatched here.
 - Planning docs (18-UI-SPEC E9 long-text backstop, 18-CONTEXT, 18-RESEARCH, 18-PATTERNS) still say `site.attribution.terrain`. The string's home is now `SWISSALTIREGIO_CREDIT` in `data/sources.ts`, and no later plan in this phase references the old name.
+
+## Self-Check: PASSED
+
+- Files: data/sources.ts, data/source-credits.ts, app/(site)/sources/page.tsx, data/__tests__/sources.test.ts, components/site/__tests__/SiteFooter.test.tsx, e2e/sources.spec.ts, components/terrain/SheetLegend.tsx and this SUMMARY all exist.
+- Commits: f9e7308, 9928d49, c66e08a, ac95468 and c73e929 are all ancestors of HEAD.
+- No stub markers (TODO, FIXME, placeholder, coming soon) in the three copy files; no Known Stubs; no new threat surface beyond the plan's threat model.
