@@ -16,6 +16,15 @@ const SHEET =
 const BADGE =
   "relative flex size-6 cursor-pointer items-center justify-center rounded-full font-mono text-sm leading-none font-semibold tabular-nums before:absolute before:-inset-2.5 before:content-['']";
 
+/** Solid for an exact position; hollow and dashed for an approximate one, by shape, not colour (08 D-02, Contract 5). */
+const BADGE_EXACT = 'bg-ink text-ink-inverse';
+const BADGE_APPROX = 'border-2 border-dashed border-ink bg-surface text-ink';
+
+/** The 8 px exact-position dot with its 2 px surface casing. */
+const DOT = 'absolute size-2 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface';
+const DOT_EXACT = 'bg-ink';
+const DOT_APPROX = 'border-2 border-dashed border-ink bg-surface';
+
 /**
  * The region page's local plate (REGION-02; 18-UI-SPEC Contract 2 "Facts and
  * plate"). Server component, zero JS of its own, no motion.
@@ -27,7 +36,9 @@ const BADGE =
  * to its figure in the sequence (#photo-{slug}, D-08). Badges are pointer-only:
  * tabIndex -1 and aria-hidden, so nothing inside the sheet is focusable; the
  * key list (18-10) is the keyboard and screen-reader path. They work without
- * JavaScript.
+ * JavaScript. Pins at one spot share one dot with their badges side by
+ * side. An approximate position draws a hollow dashed dot and badge (08 D-02,
+ * Contract 5); a photo without a position has no pin (regionPlateSheet).
  *
  * The positions come from lib/photos/plate-layout.ts as one server-rendered
  * style element (container queries on this sheet's own container name with
@@ -87,7 +98,8 @@ export default function PlateSheet({ sheet }: { sheet: RegionPlateSheet }) {
             <span
               data-plate-dot
               aria-hidden="true"
-              className="absolute size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ink ring-2 ring-surface"
+              data-approximate={g.approximate || undefined}
+              className={`${DOT} ${g.approximate ? DOT_APPROX : DOT_EXACT}`}
             />
             <div data-plate-unit className="absolute flex gap-2">
               {g.pins.map((p) => (
@@ -97,7 +109,8 @@ export default function PlateSheet({ sheet }: { sheet: RegionPlateSheet }) {
                   tabIndex={-1}
                   aria-hidden="true"
                   data-plate-badge={p.slug}
-                  className={`${BADGE} bg-ink text-ink-inverse`}
+                  data-approximate={p.approximate || undefined}
+                  className={`${BADGE} ${p.approximate ? BADGE_APPROX : BADGE_EXACT}`}
                 >
                   {p.n}
                 </a>

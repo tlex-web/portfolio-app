@@ -78,6 +78,14 @@ import {
  * caption row fits two lines at 375. The nav stays at the top after a long
  * scroll (D-06). Opening a figure morphs it into the lightbox (Chromium), and
  * under reduced motion no view-transition pseudo-element runs.
+ *
+ * The plate (18-09; REGION-02, D-08): on every region page the plate has one
+ * badge per photo with a position, reading its place in the ascent and
+ * linking to #photo-{slug}; an approximate photo's badge and dot are hollow and
+ * dashed; every badge is tabindex -1 and aria-hidden and a Tab walk never
+ * lands inside the sheet; at 375, 768 and 1440 every badge stays 8 px inside
+ * the sheet, no two come closer than 8 px, and every shown leader runs from
+ * its dot to its badge unit. Data-driven: no position is written here.
  */
 
 /*
@@ -722,6 +730,133 @@ test.describe('Region plate pins (18-09; REGION-02)', () => {
       }
       await expect(page.getByRole('heading', { level: 2, name: 'Map', exact: true })).toBeVisible();
     });
+
+    test(`/photos/regions/${r.id}: approximate photos draw hollow dashed badges and dots; badges are pointer-only`, async ({
+      page,
+    }) => {
+      await page.goto(`/photos/regions/${r.id}`);
+      const sheet = page.locator(`[data-plate-sheet="${r.id}"]`);
+      for (const v of pinnedViews(r.id)) {
+        const badge = sheet.locator(`[data-plate-badge="${v.slug}"]`);
+        const style = await badge.evaluate((el) => {
+          const s = getComputedStyle(el);
+          return { border: s.borderTopStyle, width: s.borderTopWidth };
+        });
+        // Contract 5 / 08 D-02: precision is shown by shape, not colour.
+        // (Preflight gives every element a solid 0 px border, so an exact badge reads 0 px.)
+        expect(style.border === 'dashed', `${v.slug} badge dashed`).toBe(v.approximate);
+        expect(style.width, `${v.slug} badge border width`).toBe(v.approximate ? '2px' : '0px');
+        await expect(badge).toHaveAttribute('tabindex', '-1');
+        await expect(badge).toHaveAttribute('aria-hidden', 'true');
+        // Its dot (shared or not) is hollow only when every photo at it is approximate.
+        const dotDashed = await badge.evaluate((el) => {
+          const dot = el.closest('[data-plate-pin]')!.querySelector('[data-plate-dot]')!;
+          return getComputedStyle(dot).borderTopStyle === 'dashed';
+        });
+        const pin = await badge.evaluate((el) =>
+          [...el.closest('[data-plate-pin]')!.querySelectorAll('[data-plate-badge]')].map((b) =>
+            b.getAttribute('data-plate-badge')
+          )
+        );
+        const atDot = pinnedViews(r.id).filter((x) => pin.includes(x.slug));
+        expect(dotDashed, `${v.slug} dot`).toBe(atDot.every((x) => x.approximate));
+      }
+    });
+
+    // @needs-tab-to-links: the walk Tabs through the page's links to pass the
+    // plate, which WebKit off Linux never does (Safari's default); Linux WebKit
+    // (CI) runs it.
+    test(`/photos/regions/${r.id}: nothing inside the plate is reachable by Tab @needs-tab-to-links`, async ({
+      page,
+    }) => {
+      await page.goto(`/photos/regions/${r.id}`);
+      const states: string[] = [];
+      for (let i = 0; i < 120; i++) {
+        await page.keyboard.press('Tab');
+        const where = await page.evaluate(() => {
+          const sheet = document.querySelector('[data-plate-sheet]')!;
+          const a = document.activeElement;
+          if (!a || a === document.body) return 'body';
+          if (sheet.contains(a)) return 'inside';
+          return sheet.compareDocumentPosition(a) & Node.DOCUMENT_POSITION_FOLLOWING
+            ? 'after'
+            : 'before';
+        });
+        states.push(where);
+        if (where === 'after') break;
+      }
+      expect(states).not.toContain('inside');
+      expect(states[states.length - 1], 'Tab walked past the plate').toBe('after');
+    });
+
+    for (const [width, height] of WIDTHS) {
+      test(`/photos/regions/${r.id} at ${width}: every badge 8 px inside the sheet, no two closer than 8 px, leaders end at their dots`, async ({
+        page,
+      }) => {
+        await page.setViewportSize({ width, height });
+        await page.goto(`/photos/regions/${r.id}`);
+        const sheet = page.locator(`[data-plate-sheet="${r.id}"]`);
+        await sheet.scrollIntoViewIfNeeded();
+        const g = await sheet.evaluate((el) => {
+          const box = (e: Element) => {
+            const b = e.getBoundingClientRect();
+            return { left: b.left, top: b.top, right: b.right, bottom: b.bottom };
+          };
+          return {
+            sheet: box(el),
+            badges: [...el.querySelectorAll('[data-plate-badge]')].map((b) => ({
+              slug: b.getAttribute('data-plate-badge')!,
+              ...box(b),
+            })),
+            pins: [...el.querySelectorAll('[data-plate-pin]')].map((p) => {
+              const leader = p.querySelector('[data-plate-leader]')!;
+              const shown = getComputedStyle(leader).display !== 'none';
+              return {
+                key: p.getAttribute('data-plate-pin')!,
+                dot: box(p.querySelector('[data-plate-dot]')!),
+                unit: box(p.querySelector('[data-plate-unit]')!),
+                leader: shown ? box(leader) : null,
+              };
+            }),
+          };
+        });
+        const name = `${r.id} at ${width}`;
+        expect(g.badges).toHaveLength(pinnedViews(r.id).length);
+        for (const b of g.badges) {
+          expect(b.right - b.left, `${name} ${b.slug} width`).toBeCloseTo(24, 0);
+          expect(b.left - g.sheet.left, `${name} ${b.slug} left`).toBeGreaterThanOrEqual(7.5);
+          expect(b.top - g.sheet.top, `${name} ${b.slug} top`).toBeGreaterThanOrEqual(7.5);
+          expect(g.sheet.right - b.right, `${name} ${b.slug} right`).toBeGreaterThanOrEqual(7.5);
+          expect(g.sheet.bottom - b.bottom, `${name} ${b.slug} bottom`).toBeGreaterThanOrEqual(7.5);
+        }
+        for (let i = 0; i < g.badges.length; i++) {
+          for (let j = i + 1; j < g.badges.length; j++) {
+            const a = g.badges[i];
+            const b = g.badges[j];
+            const gap = Math.max(
+              b.left - a.right,
+              a.left - b.right,
+              b.top - a.bottom,
+              a.top - b.bottom
+            );
+            expect(gap, `${name} ${a.slug}/${b.slug}`).toBeGreaterThanOrEqual(7.5);
+          }
+        }
+        for (const p of g.pins) {
+          if (!p.leader) continue;
+          // The leader box runs from the dot centre to the badge unit's centre.
+          const dot = { x: (p.dot.left + p.dot.right) / 2, y: (p.dot.top + p.dot.bottom) / 2 };
+          const unit = { x: (p.unit.left + p.unit.right) / 2, y: (p.unit.top + p.unit.bottom) / 2 };
+          const xs = [p.leader.left, p.leader.right];
+          const ys = [p.leader.top, p.leader.bottom];
+          const near = (v: number, ends: number[]) => Math.min(...ends.map((e) => Math.abs(e - v)));
+          expect(near(dot.x, xs), `${name} ${p.key} leader x at the dot`).toBeLessThan(1.5);
+          expect(near(dot.y, ys), `${name} ${p.key} leader y at the dot`).toBeLessThan(1.5);
+          expect(near(unit.x, xs), `${name} ${p.key} leader x at the unit`).toBeLessThan(1.5);
+          expect(near(unit.y, ys), `${name} ${p.key} leader y at the unit`).toBeLessThan(1.5);
+        }
+      });
+    }
   }
 });
 

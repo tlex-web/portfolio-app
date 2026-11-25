@@ -6,8 +6,9 @@
  *
  * The sheet is a square, S px a side (sheet px: origin at the top-left, x
  * right, y down). Every pin has an exact-position dot (8 px plus its 2 px
- * casing) at uv x S and a 24 px numbered badge. A group is one dot with its
- * badges side by side, GAP apart (the unit). A unit sits centred on its dot
+ * casing) at uv x S and a 24 px numbered badge. Pins at one spot (under
+ * SAME_SPOT_PX apart at the widest swept side) share one dot (plateGroups); a
+ * group's badges sit side by side, GAP apart, in one row (the unit). A unit sits centred on its dot
  * unless that breaks a rule; then it is displaced, and a 1 px leader runs from
  * the unit's centre (under the badges, so it shows from the badge edge) to the
  * exact dot. Candidates, in order: centred, then for each leader step (12, 20,
@@ -63,6 +64,9 @@ export const SAME_SPOT_PX = 1;
 const SEARCH_BUDGET = 200_000;
 
 const EPS = 1e-6;
+
+/** A photo slug or container name: lowercase letters and digits, single hyphens between. */
+const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 /** One photo's pin: its slug, its place in the ascent (1 = lowest), its sheet uv and its precision. */
 export type PlatePin = { slug: string; n: number; u: number; v: number; approximate: boolean };
@@ -148,9 +152,25 @@ export function platePins(views: readonly PlatePinSource[]): PlatePin[] {
   return pins;
 }
 
-/** The dots: one per pin. */
+/**
+ * The dots, in ascent order of their first pin: a pin whose stored uv is under
+ * SAME_SPOT_PX from an earlier dot at the widest swept side (PLATE_SWEEP_MAX_S)
+ * joins that dot, so the grouping is the same at every side (Zermatt's
+ * img-0680 and img-0682, under 1 px apart); otherwise it starts its own. The
+ * dot is its first pin's stored uv, never a mean, so no dot is placed more
+ * precisely than a published position (T-18-24). A dot is hollow when every
+ * pin at it is approximate.
+ */
 export function plateGroups(pins: readonly PlatePin[]): PlateGroup[] {
-  return pins.map((p) => ({ key: p.slug, u: p.u, v: p.v, approximate: p.approximate, pins: [p] }));
+  const groups: { key: string; u: number; v: number; pins: PlatePin[] }[] = [];
+  for (const p of pins) {
+    const same = groups.find(
+      (g) => Math.hypot(p.u - g.u, p.v - g.v) * PLATE_SWEEP_MAX_S < SAME_SPOT_PX
+    );
+    if (same) same.pins.push(p);
+    else groups.push({ key: p.slug, u: p.u, v: p.v, pins: [p] });
+  }
+  return groups.map((g) => ({ ...g, approximate: g.pins.every((x) => x.approximate) }));
 }
 
 // ---------------------------------------------------------------- geometry
@@ -497,8 +517,17 @@ function segmentRules(groups: readonly PlateSegmentGroup[]): string[] {
  * cssEscape). The first segment is unconditional; every later one is an
  * `@container <name> (min-width: …)` rule repeating only the rules that
  * change, so the CSS covers every sheet side, fractional ones included.
+ *
+ * @throws RangeError for a slug or container name outside the slug pattern
+ *   (the mapMarkCss precedent), a duplicate slug or a uv outside [0, 1].
  */
 export function plateCss(pins: readonly PlatePin[], containerName: string): string {
+  if (!SLUG.test(containerName)) {
+    throw new RangeError(`plateCss: unsafe container name ${JSON.stringify(containerName)}`);
+  }
+  for (const p of pins) {
+    if (!SLUG.test(p.slug)) throw new RangeError(`plateCss: unsafe slug ${JSON.stringify(p.slug)}`);
+  }
   const current = new Map<string, string>();
   return plateSegments(pins)
     .map((seg) => {

@@ -490,7 +490,10 @@ describe('shared spots (UI E4/zero-one-many)', () => {
       if (g.badges.length !== 2) bad.push(`S=${S}: ${g.badges.length} badges`);
       const [first, second] = g.badges;
       // Side by side: one row, GAP apart, in ascent order.
-      if (first.box.y !== second.box.y || second.box.x - (first.box.x + BADGE) !== GAP) {
+      if (
+        first.box.y !== second.box.y ||
+        Math.abs(second.box.x - (first.box.x + BADGE) - GAP) > 1e-9
+      ) {
         bad.push(`S=${S}: not side by side`);
       }
       if (first.n > second.n) bad.push(`S=${S}: not in ascent order`);
