@@ -22,6 +22,7 @@ function strip(over: Partial<PhotoView['strip']>): PhotoView['strip'] {
     filmLine: null,
     positionRows: [],
     approxNote: null,
+    lv95: null,
     ...over,
   };
 }
@@ -33,6 +34,14 @@ describe('collarParts (Contract 2 "Top collar", Contract 5)', () => {
       { term: 'Position', value: 'POS-EXACT' },
     ] as const;
     expect(collarParts(strip({ positionRows: rows }))).toEqual(['POS-EXACT']);
+  });
+
+  it('never prints the LV95 line: collars show WGS84 for every photo (18 D-14)', () => {
+    const s = strip({
+      positionRows: [{ term: 'Position', value: 'POS-EXACT' }],
+      lv95: 'LV95-PLACEHOLDER',
+    });
+    expect(collarParts(s)).toEqual(['POS-EXACT']);
   });
 
   it('adds the radius for an approximate position with one', () => {

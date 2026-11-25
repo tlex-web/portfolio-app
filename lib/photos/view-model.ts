@@ -5,6 +5,7 @@ import { terrain } from '@/data/generated/terrain';
 import { lightTableIds } from '@/data/light-table';
 import { editorial } from '@/data/photos/editorial';
 import type { EditorialAnnotation, ElevationRef, Fact } from '@/data/schemas/editorial';
+import type { Country } from '@/data/schemas/photo';
 import { site } from '@/data/site';
 import { buildWaypoints, type Waypoint, type WaypointInput } from '@/lib/ascent/waypoints';
 import { formatCoordinates, type CoordinatePrecision } from '@/lib/home-format';
@@ -17,6 +18,7 @@ import {
   formatMetres,
   type CaptureLike,
 } from '@/lib/photo-format';
+import { lv95Line } from '@/lib/photos/lv95-line';
 import { photoHref } from '@/lib/photos/routes';
 
 /**
@@ -60,6 +62,12 @@ export type StripFields = {
   positionRows: readonly { term: 'Altitude' | 'Position'; value: string }[];
   /** '±100 m (approx.)' for an approximate position with a radius, '(approx.)' without one, else null. */
   approxNote: string | null;
+  /**
+   * Field 6, its own line after Altitude · Position (18 D-14, D-15): 'LV95 E 2’…’… N 1’…’…'
+   * ('LV95 ≈ E …' when approximate) from the shown WGS84 at its precision's grid; null
+   * outside Switzerland or without a position (lib/photos/lv95-line.ts).
+   */
+  lv95: string | null;
 };
 
 /**
@@ -89,6 +97,8 @@ export type HotspotView = {
 
 /** One photo as every Phase 10 surface shows it. */
 export type PhotoView = Waypoint & {
+  /** The photo's country (ISO 3166-1 alpha-2, 17 D-02), copied from the generated photo; CH gets the LV95 line. */
+  country: Country;
   /** The capture as the strip prints it: '6 September 2021, 10:48', or '2019' for the film scan. */
   captureLabel: string;
   /** '1,617 m', '2,760 m approx.' for an approximate position, 'ground 2,410 m' for an aerial photo (16 D-04). */
@@ -142,6 +152,7 @@ type PositionInput = {
  * buildWaypoints photo, so one fixture feeds both).
  */
 type PhotoViewPhoto = WaypointInput['photos'][number] & {
+  country: Country;
   capture: CaptureLike;
   medium: 'digital' | 'film-scan';
   exif: ExifInput | null;
@@ -158,6 +169,8 @@ export type StripSource = {
   altitudeM: number;
   /** An aerial photo (16 D-04): the Altitude row reads 'ground …'. Absent means a ground photo. */
   aerial?: boolean;
+  /** The photo's country: only CH gets the LV95 line (18 D-14). */
+  country: Country;
 };
 
 /** The editorial fields buildPhotoViews reads beyond buildWaypoints' own: the annotations. */
@@ -219,10 +232,21 @@ const text = (v: string | null | undefined): v is string =>
  * shows 'Film scan · {year}' instead of EXIF; the position is printed at its
  * own precision (4, 3 or 2 dp, 16 D-01), marked '≈' with its radius and
  * '(approx.)' when hand-placed or coarse (LBOX-04, T-10-02, T-16-12); a view
- * without coordinates has no Position row.
+ * without coordinates has no Position row. A Swiss photo's LV95 line is read
+ * from the same shown coordinates (18 D-14, D-15, Pitfall 4), so it is never
+ * finer than the Position row; any other country, or no position, has none.
  */
 export function stripFields(source: StripSource): StripFields {
-  const { medium, exif, position, place, captureLabel, altitudeM, aerial = false } = source;
+  const {
+    medium,
+    exif,
+    position,
+    place,
+    captureLabel,
+    altitudeM,
+    aerial = false,
+    country,
+  } = source;
   const exifRows: { line: 1 | 2; term: string; value: string }[] = [];
   if (medium === 'digital' && exif) {
     if (text(exif.camera)) exifRows.push({ line: 1, term: 'Camera', value: exif.camera });
@@ -282,6 +306,7 @@ export function stripFields(source: StripSource): StripFields {
     filmLine: medium === 'film-scan' ? `Film scan · ${captureLabel}` : null,
     positionRows,
     approxNote,
+    lv95: located ? lv95Line(position, country) : null,
   };
 }
 
@@ -419,6 +444,7 @@ export function buildPhotoViews(input: PhotoViewInput = lightTableInput()): read
 
     return {
       ...w,
+      country: photo.country,
       captureLabel,
       altitudeLabel,
       aspect: { w: largest.width, h: largest.height },
@@ -436,6 +462,7 @@ export function buildPhotoViews(input: PhotoViewInput = lightTableInput()): read
         captureLabel,
         altitudeM: w.altitudeM,
         aerial: w.aerial,
+        country: photo.country,
       }),
       hotspots: hotspotViews(input.editorial[w.id]?.annotations ?? [], w.altitudeM, altitudeLabel),
     };

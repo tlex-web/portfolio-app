@@ -173,6 +173,17 @@ test.describe('LV95 line on the photo page (18-18; PHOTO-08)', () => {
       expect(rowBox!.y).toBeGreaterThanOrEqual(lineBox!.y + lineBox!.height - 1);
     });
   }
+
+  test('LV95 stays in the viewer strip: the Zermatt sequence collars show WGS84 only (D-14)', async ({
+    page,
+  }) => {
+    await page.goto('/photos/regions/zermatt');
+    const sequence = page.locator('[data-region-sequence]');
+    await expect(sequence).toHaveCount(1);
+    await expect(sequence).toContainText(/\d+\.\d{2,4} N/);
+    await expect(sequence).not.toContainText('LV95');
+    await expect(page.locator('[data-strip-lv95]')).toHaveCount(0);
+  });
 });
 
 test.describe('Viewer layout tiers (D-05)', () => {

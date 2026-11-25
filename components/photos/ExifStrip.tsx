@@ -11,8 +11,9 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * `breadcrumb` prop: 'Photographs / {region} / {title}', mb-2, never at
  * heading level 2), then the title (h1 on the page, h2#photo-title as the dialog label
  * in the lightbox), place · date, the story, then the data column: the EXIF
- * list (or 'Film scan · 2019'), the altitude and position list, and the
- * rights line last. Row 4 is the hotspot key (the `hotspotKey` slot, filled by
+ * list (or 'Film scan · 2019'), the altitude and position list (for a Swiss
+ * photo its last line is the LV95 line, 'LV95 E … N …' under the sr-only term
+ * 'Swiss grid', 18 D-14), and the rights line last. Row 4 is the hotspot key (the `hotspotKey` slot, filled by
  * PhotoViewer with HotspotKey, which shows only on the key and scroll tiers).
  * Row 8 is the shortcut legend, '← → photos · Z zoom · H labels · Esc close'
  * ('Esc back to {region}' on the page, h1 surface, 18 D-09), each key in a kbd, shown
@@ -149,6 +150,12 @@ export default function ExifStrip({
               <div>
                 <ListLine rows={positionRows} />
               </div>
+              {strip.lv95 && (
+                <div data-strip-lv95="">
+                  <dt className="sr-only">Swiss grid</dt>
+                  <dd className="whitespace-nowrap">{strip.lv95}</dd>
+                </div>
+              )}
             </dl>
           )}
           <p data-strip-rights="" className="mt-2 text-sm text-ink-muted">
