@@ -54,7 +54,7 @@ On every route the footer's Source row now gives a short swissALTIRegio credit l
 | Task | Name | Status | Commit |
 |------|------|--------|--------|
 | 1 | Footer Source row end to end; reference moved to server-only data (tracer) | Done | f9e7308 |
-| 2 | Tim approves the D-20 copy, the licence reading and the GLO-90 placement | **Awaiting Tim** (checkpoint:decision, gate blocking-human) | n/a |
+| 2 | Tim approves the D-20 copy, the licence reading and the GLO-90 placement | Done: "approve-G1 (Recommended)", 2026-11-25 | this commit |
 | 3 | Apply the approved copy verbatim and pin it (tdd) | Not started | n/a |
 
 ## Task 1 (f9e7308)
@@ -72,7 +72,7 @@ On every route the footer's Source row now gives a short swissALTIRegio credit l
 - Acceptance greps: `attribution` in the code lines of data/site.ts = 0; `site.attribution.terrain` in the code lines of SheetLegend.tsx = 0; `SWISSALTIREGIO_CREDIT` in data/sources.ts = 3.
 - Tracer gate: `<verify>` passed end to end, so expansion may proceed. The next task is the human checkpoint.
 
-## Task 2 material: D-20 packet (awaiting Tim, nothing approved)
+## Task 2 material: D-20 packet (as shown to Tim; his reply is below)
 
 Captured from the f9e7308 build served on :3017 (server stopped). The same packet is at `C:/Users/tim/AppData/Local/Temp/claude/b700806455329315/41a6ee3c-da8d-49d7-8f73-f61ebc0e4623/scratchpad/d20-packet.md`.
 
@@ -119,7 +119,52 @@ No licence was found that requires its full notice at the map.
 
 ## D-20 copy (Tim's reply, verbatim)
 
-_Awaiting Tim's reply. Nothing above is approved. The continuation agent records the reply here word for word, with the final-string table and the plan that applies each string._
+Tim answered on 2026-11-25 through an AskUserQuestion prompt in the orchestrator session, after seeing the packet (scratchpad `d20-packet.md`, built from f9e7308). The literal record is the "18-03 Task 2" section of `C:/Users/tim/AppData/Local/Temp/claude/b700806455329315/41a6ee3c-da8d-49d7-8f73-f61ebc0e4623/scratchpad/tim-answers-18.md`.
+
+**Question (verbatim):** "18-03 D-20 copy checkpoint: approve the proposed finals (including the three changed rows 2, 6a, 6c), the licence reading (credit by link is enough), and which GLO-90 placement? To change any string, pick Other and type the row number and replacement text plus G1 or G2."
+
+**Selected label (verbatim):** "approve-G1 (Recommended)"
+
+**Option description as shown (verbatim):** "Every proposed final in the packet, the licence reading, and G1: the overview margin shows the short credit 'Copernicus DEM GLO-90' linked to /sources#copernicus-glo-90, where the notice and the liability sentence stand in full."
+
+**Options offered and not chosen:** "approve-G2"; "Drafts for 2/6a/6c, G1".
+
+What the reply approves, per the packet's section E ("`approve-G1`: approve every proposed final in B, the reading in C, and G1"):
+
+- the **proposed final** column of section B, every row (rows 2, 6a and 6c take the new text, not the draft);
+- the **licence reading** of section C: no licence requires its full notice on the map itself, so the footer and the sheet margins may carry a short credit that links to the full text on /sources;
+- **G1** for the GLO-90 placement (D-17): the overview margin shows the short credit `Copernicus DEM GLO-90` linked to `/sources#copernicus-glo-90`, where GLO90_NOTICE and GLO90_LIABILITY stand in full. G2 (the verbatim notice in the overview margin) is not chosen.
+
+### Final strings and the plan that applies each
+
+The text is copied from the packet's section B, proposed-final column; for a "Same" row it is the draft text, word for word.
+
+| # | String | Final text (approved 2026-11-25) | Applies |
+|---|--------|----------------------------------|---------|
+| 1 | Overview kicker | `3 regions · 11 photographs · 2016–2026` (the format `N regions · N photographs · YYYY–YYYY`, computed from the data) | 18-22 |
+| 2 | /photos meta description | "Landscape photographs from across the Alps, each placed on the terrain where Tim took it." | 18-22 |
+| 3a | Short credit, swissALTIRegio (footer, Zermatt and Ortler margins) | `swissALTIRegio, swisstopo` | 18-03 (footer, `SHORT_CREDIT`), 18-11 (margins) |
+| 3b | Short credit, BEV (Saalfelden margin) | `ALS DTM, BEV, CC BY 4.0` | 18-03 (`SHORT_CREDIT`), 18-11 (margin) |
+| 3c | Short credit, GLO-90 (overview margin) | `Copernicus DEM GLO-90` | 18-03 (`SHORT_CREDIT`), 18-23 (margin, G1) |
+| 3d | Footer Source row | `Contours derived from swissALTIRegio, swisstopo.` then `All data sources` | 18-03 |
+| 4a | Sheet title, overview | `The Alps` | 18-11 / 18-23 |
+| 4b | Sheet title, Zermatt | `Zermatt – Matterhorn` | 18-11 |
+| 4c | Sheet title, Ortler | `Ortler` | 18-11 |
+| 4d | Sheet title, Saalfelden | `Saalfelden` | 18-11 |
+| 5a | /sources meta description | "The elevation models behind the maps on this site, with the credit each licence asks for, the licence and the changes made." | 18-03 |
+| 5b | /sources intro | "The maps on this site are drawn from three elevation models. Each entry gives the credit exactly as its licence asks, the licence itself, what was done to the data and the maps that use it." | 18-03 |
+| 6a | swissALTIRegio licence name | "swisstopo terms of use for free geodata and geoservices (OGD)" | 18-03 |
+| 6b | swissALTIRegio licence target | https://www.swisstopo.admin.ch/en/conditions-geodata | 18-03 |
+| 6c | swissALTIRegio Changes | "Cut to each map's extent at its native 10 m grid; contours every 100 m and a hillshade derived; modified." | 18-03 |
+| 6d | BEV licence name and target | "CC BY 4.0" → https://creativecommons.org/licenses/by/4.0/ | 18-03 |
+| 6e | BEV Changes | "Resampled to a 10 m grid; contours every 100 m and a hillshade derived; modified." / "Edition 15 September 2025, the date BEV created the dataset, not a survey date." | 18-03 |
+| 6f | GLO-90 licence name and target | "Licence for COP-DEM-GLO-90-F Global 90m Full, Free & Open" → https://dataspace.copernicus.eu/sites/default/files/media/files/2025-06/copernicus_contributing_mission_data_access_v2_cop_dem_licenses.pdf | 18-03 |
+| 6g | GLO-90 Changes | "Resampled to a coarser grid covering the Alps; contours every 1,000 m derived; modified." | 18-03 |
+| 6h | Used on labels | "The footer of every page" · "Alps overview" | 18-03 |
+| G | GLO-90 placement | G1: the overview margin shows `Copernicus DEM GLO-90` linked to `/sources#copernicus-glo-90` | 18-23 |
+| C | Licence reading | A short credit linked to the full text on /sources is enough for every licence; no full notice at the map | 18-11, 18-23 (margins), 18-03 (footer) |
+
+Row 6f's target is written out in full from `data/sources.ts`; the packet abbreviated it as "dataspace.copernicus.eu licence PDF". Row 6c's apostrophe is the ASCII `'` (U+0027) the packet uses, and it ships as that byte.
 
 ## Deviations from Plan
 
