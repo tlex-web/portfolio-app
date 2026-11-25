@@ -132,6 +132,9 @@ describe('SiteFooter sheet margin (D-15, D-18)', () => {
     expect(all).toHaveClass('prose-link', 'inline-flex', 'min-h-11', 'items-center');
     expect(all.parentElement).toHaveClass('mt-1', 'block');
     expect(source.textContent).toBe(`Contours derived from ${SHORT_CREDIT.swissaltiregio}.All data sources`);
+    // Tim's approved wording (18-03 D-20, 2026-11-25, rows 3a and 3d), typed literally.
+    expect(credit.textContent).toBe('swissALTIRegio, swisstopo');
+    expect(source.textContent).toBe('Contours derived from swissALTIRegio, swisstopo.All data sources');
 
     // The long reference stays on /sources: nothing past its first word is in the footer.
     const [first, ...rest] = SWISSALTIREGIO_CREDIT.split(' ');

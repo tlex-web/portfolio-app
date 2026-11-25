@@ -20,7 +20,8 @@ import { SOURCE_IDS } from '@/data/source-credits';
  * constants) or the swissALTIRegio hash pin, never from data/sources.ts, so
  * the page is checked against its sources. /sources#bev-als-dtm lands its h2
  * below the fixed nav, and at 375 px nothing widens the page (verbatim credits
- * and URLs wrap anywhere).
+ * and URLs wrap anywhere). The intro and the meta description are Tim's
+ * approved D-20 copy (18-03, 2026-11-25), typed literally.
  */
 
 /*
@@ -64,6 +65,23 @@ test.describe('/sources (REGION-06, D-20)', () => {
     await expect(primaryNav(page)).toHaveCount(1);
     await expect(primaryNav(page).locator('[aria-current]')).toHaveCount(0);
     await expect(page.getByRole('contentinfo')).toHaveCount(1);
+  });
+
+  test("renders Tim's approved intro and meta description (D-20, 2026-11-25)", async ({ page }) => {
+    await page.goto('/sources');
+
+    // Typed literally, as data/__tests__/sources.test.ts pins SOURCES_INTRO (packet rows 5a, 5b).
+    const intro = await page
+      .locator('main h1')
+      .locator('xpath=ancestor::div[1]/following-sibling::p[1]')
+      .textContent();
+    expect(intro).toBe(
+      'The maps on this site are drawn from three elevation models. Each entry gives the credit exactly as its licence asks, the licence itself, what was done to the data and the maps that use it.'
+    );
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+      'content',
+      'The elevation models behind the maps on this site, with the credit each licence asks for, the licence and the changes made.'
+    );
   });
 
   test('the swissALTIRegio section prints its v2.0 reference exactly (sha256 pin)', async ({ page }) => {

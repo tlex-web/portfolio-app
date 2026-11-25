@@ -127,3 +127,66 @@ describe('licences and uses', () => {
     );
   });
 });
+
+/*
+ * Tim's D-20 copy (18-03 Task 2, "approve-G1 (Recommended)", 2026-11-25): the
+ * proposed finals of the packet, typed literally here as seo.spec types its
+ * descriptions, so any drift from the approved wording fails. The row numbers
+ * are the packet's (18-03-SUMMARY "D-20 copy (Tim's reply, verbatim)").
+ */
+describe("approved copy (D-20, Tim's reply 2026-11-25)", () => {
+  it('pins the short credits the footer and the margins link with (rows 3a-3c)', () => {
+    expect(SHORT_CREDIT).toStrictEqual({
+      swissaltiregio: 'swissALTIRegio, swisstopo',
+      'bev-als-dtm': 'ALS DTM, BEV, CC BY 4.0',
+      'copernicus-glo-90': 'Copernicus DEM GLO-90',
+    });
+  });
+
+  it('pins the /sources intro (row 5b)', () => {
+    expect(SOURCES_INTRO).toBe(
+      'The maps on this site are drawn from three elevation models. Each entry gives the credit exactly as its licence asks, the licence itself, what was done to the data and the maps that use it.'
+    );
+  });
+
+  it("names swissALTIRegio's licence as approved and links swisstopo's terms (rows 6a, 6b)", () => {
+    expect(entry('swissaltiregio').licence).toStrictEqual({
+      name: 'swisstopo terms of use for free geodata and geoservices (OGD)',
+      href: 'https://www.swisstopo.admin.ch/en/conditions-geodata',
+    });
+  });
+
+  it("states swissALTIRegio's changes as approved: cut at its native 10 m grid, not resampled (row 6c)", () => {
+    expect(entry('swissaltiregio').changes).toStrictEqual([
+      "Cut to each map's extent at its native 10 m grid; contours every 100 m and a hillshade derived; modified.",
+    ]);
+  });
+
+  it("pins BEV's licence and changes (rows 6d, 6e)", () => {
+    expect(entry('bev-als-dtm').licence).toStrictEqual({
+      name: 'CC BY 4.0',
+      href: 'https://creativecommons.org/licenses/by/4.0/',
+    });
+    expect(entry('bev-als-dtm').changes).toStrictEqual([
+      'Resampled to a 10 m grid; contours every 100 m and a hillshade derived; modified.',
+      'Edition 15 September 2025, the date BEV created the dataset, not a survey date.',
+    ]);
+  });
+
+  it("pins GLO-90's licence and changes (rows 6f, 6g)", () => {
+    expect(entry('copernicus-glo-90').licence).toStrictEqual({
+      name: 'Licence for COP-DEM-GLO-90-F Global 90m Full, Free & Open',
+      href: 'https://dataspace.copernicus.eu/sites/default/files/media/files/2025-06/copernicus_contributing_mission_data_access_v2_cop_dem_licenses.pdf',
+    });
+    expect(entry('copernicus-glo-90').changes).toStrictEqual([
+      'Resampled to a coarser grid covering the Alps; contours every 1,000 m derived; modified.',
+    ]);
+  });
+
+  it('pins the Used on labels that are not region headings (row 6h)', () => {
+    const isRegionPage = (u: SourceEntry['usedOn'][number]) =>
+      'href' in u && u.href.startsWith('/photos/regions/');
+    const plain = SOURCES.flatMap((s) => s.usedOn.filter((u) => !isRegionPage(u)));
+    expect(plain.map((u) => u.label)).toStrictEqual(['The footer of every page', 'Alps overview']);
+  });
+});
