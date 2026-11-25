@@ -94,7 +94,9 @@ describe('ShareButton modes', () => {
     const b = host.querySelector('button')!;
     expect(b.textContent).toBe('Copy link');
     expect(b.getAttribute('aria-label')).toBe('Copy link to this photo');
-    expect(b.className).toContain('min-w-40');
+    // min-w-42 (168 px): 'Share region' measures 160.08 px in Chromium on Windows.
+    expect(b.className).toContain('min-w-42');
+    expect(b.className).not.toContain('min-w-40');
     expect(b.className).toContain('hover:border-ink-muted');
     expect(host.querySelector('[role="status"]')?.textContent).toBe('');
   });
@@ -348,6 +350,57 @@ describe('ShareButton copy mode', () => {
     await press();
     expect(failureLine()).toBeNull();
     expect(status()).toHaveTextContent('Link copied');
+  });
+
+  it('by default the failure line sits under the button, inside its wrapper (a standalone use)', async () => {
+    stub('clipboard', {
+      writeText: jest.fn<Clipboard['writeText']>().mockRejectedValue(new Error('denied')),
+    });
+    const { container } = render(photoButton());
+
+    await press();
+
+    const line = failureLine()!;
+    expect(line.parentElement).toBe(button().parentElement);
+    expect(container.children).toHaveLength(1);
+    expect(line.className).toContain('min-w-full');
+  });
+
+  it("failurePlacement='row' renders the line as a sibling flex item with its own full-width row", async () => {
+    stub('clipboard', {
+      writeText: jest.fn<Clipboard['writeText']>().mockRejectedValue(new Error('denied')),
+    });
+    const { container } = render(
+      <ShareButton
+        url={URL_}
+        title={TITLE}
+        subject="region"
+        surface="surface"
+        failurePlacement="row"
+      />
+    );
+    // Before a failure the component is one flex item: the button group.
+    expect(container.children).toHaveLength(1);
+    expect(container.firstElementChild).toBe(button().parentElement);
+    expect(button().parentElement?.className).toContain('shrink-0');
+
+    await press();
+
+    const line = failureLine()!;
+    expect(line.parentElement).toBe(container);
+    expect(line.previousElementSibling).toBe(button().parentElement);
+    expect(line.className).toContain('basis-full');
+    expect(line).toHaveTextContent(`Couldn't copy the link. It's selected here: ${URL_}`);
+    expect(window.getSelection()?.toString()).toBe(URL_);
+    expect(status()).toHaveTextContent(FAILED_STATUS);
+
+    // Still cleared by the next press.
+    stub('clipboard', {
+      writeText: jest.fn<Clipboard['writeText']>().mockResolvedValue(undefined),
+    });
+    await press();
+    expect(failureLine()).toBeNull();
+    expect(container.children).toHaveLength(1);
   });
 
   it('Edge PHOTO-07/empty: with no navigator.clipboard the failure path shows and selects the URL', async () => {

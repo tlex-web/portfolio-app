@@ -338,6 +338,92 @@ test.describe('Share region (18-07; PHOTO-07, D-13)', () => {
     );
     await expect(button).toHaveText('Copy link');
   });
+
+  // Post-plan fix (Tim-approved, 2026-11-25): the failure note takes a full-width
+  // row at the bottom of the band, so the band only grows downward. Every box
+  // above it keeps its page position to < 1 px, the row spans the band's
+  // content width, and the URL is one line wherever the row is wide enough.
+  for (const [width, height] of [
+    [1440, 900],
+    [768, 1024],
+    [375, 812],
+  ] as const) {
+    test(`copy failure at ${width}: the note takes a full-width row under the band and nothing above it moves`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height });
+      await forceCopyMode(page);
+      await page.addInitScript(() => {
+        Object.defineProperty(Clipboard.prototype, 'writeText', {
+          configurable: true,
+          value: () => Promise.reject(new DOMException('Write denied', 'NotAllowedError')),
+        });
+      });
+      await page.goto('/photos/regions/zermatt');
+      const band = page.locator('[data-region-header]');
+      const button = band.getByRole('button', { name: 'Copy link to this region' });
+      await waitForHydration(button);
+      await page.evaluate(() => document.fonts.ready);
+
+      const parts = {
+        band: '[data-region-header]',
+        breadcrumb: '[data-region-header] nav[aria-label="Breadcrumb"]',
+        h1: '[data-region-header] h1',
+        facts: '[data-region-header] [data-facts-line]',
+        button: '[data-region-header] button',
+      };
+      /** Page-relative boxes, so a scroll can't pass for a shift. */
+      const boxes = () =>
+        page.evaluate((sel) => {
+          const out: Record<string, { x: number; y: number; w: number; h: number }> = {};
+          for (const [k, s] of Object.entries(sel)) {
+            const r = document.querySelector(s)!.getBoundingClientRect();
+            out[k] = { x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height };
+          }
+          return out;
+        }, parts);
+
+      const before = await boxes();
+      await button.click();
+      const line = band.locator('[data-share-failure]');
+      await expect(line).toHaveText(`Couldn't copy the link. It's selected here: ${ZERMATT_URL}`);
+      const after = await boxes();
+
+      for (const k of ['breadcrumb', 'h1', 'facts', 'button'] as const) {
+        for (const d of ['x', 'y', 'w', 'h'] as const) {
+          expect(
+            Math.abs(after[k][d] - before[k][d]),
+            `${k}.${d} moved: ${before[k][d]} -> ${after[k][d]}`
+          ).toBeLessThan(1);
+        }
+      }
+      expect(Math.abs(after.band.y - before.band.y), 'band top moved').toBeLessThan(1);
+      expect(after.band.h, 'the band grows downward').toBeGreaterThan(before.band.h);
+
+      // The row spans the band's content box (the band has no inline padding).
+      const row = await line.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        const b = el.closest('[data-region-header]')!.getBoundingClientRect();
+        return { x: r.left - b.left, w: r.width, bandW: b.width, bottomGap: b.bottom - r.bottom };
+      });
+      expect(Math.abs(row.x), 'row starts at the band edge').toBeLessThan(1);
+      expect(Math.abs(row.w - row.bandW), 'row spans the band').toBeLessThan(1);
+      // It is the band's last row: nothing but the band's bottom padding below it.
+      expect(row.bottomGap).toBeLessThan(25);
+      expect(row.bottomGap).toBeGreaterThan(23);
+
+      // The URL's line count: distinct line tops of its inline boxes.
+      const urlLines = await line.locator('span').evaluate((el) => {
+        const tops = new Set([...el.getClientRects()].map((r) => Math.round(r.top)));
+        return tops.size;
+      });
+      test.info().annotations.push({ type: 'url-lines', description: `${width}: ${urlLines}` });
+      if (width >= 768) expect(urlLines, 'the URL is one line').toBe(1);
+      await expect
+        .poll(() => page.evaluate(() => window.getSelection()?.toString()))
+        .toBe(ZERMATT_URL);
+    });
+  }
 });
 
 test.describe('Next-region chain (18-06; REGION-02, D-01, D-11)', () => {
