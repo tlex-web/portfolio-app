@@ -12,7 +12,7 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * rights line last. Row 4 is the hotspot key (the `hotspotKey` slot, filled by
  * PhotoViewer with HotspotKey, which shows only on the key and scroll tiers).
  * Row 8 is the shortcut legend, '← → photos · Z zoom · H labels · Esc close'
- * ('Esc all photographs' on the page, h1 surface), each key in a kbd, shown
+ * ('Esc back to {region}' on the page, h1 surface, 18 D-09), each key in a kbd, shown
  * only from 768 px on a device that hovers with a fine pointer: the keys mean
  * nothing on touch (10-UI-SPEC Strip row 8, in place of a '?' overlay). Each
  * key and its word are one nowrap unit, so the line wraps only at ' · '.
@@ -76,15 +76,23 @@ const LEGEND =
 export default function ExifStrip({
   view,
   headingLevel,
+  backName,
   hotspotKey,
 }: {
   view: PhotoView;
-  /** 1 on the photo page (the h1 surface, Escape goes to all photographs), 2 in the lightbox. */
+  /** 1 on the photo page (the h1 surface, Escape goes back to the region), 2 in the lightbox. */
   headingLevel: 1 | 2;
+  /** The page's back target by name (18 D-09), for the legend's 'Esc back to {name}'. Required at level 1. */
+  backName?: string;
   /** Row 4, the hotspot key (HotspotKey), after the story. */
   hotspotKey?: ReactNode;
 }) {
   const { title, story, rights, strip } = view;
+  if (headingLevel === 1 && !backName) {
+    throw new RangeError(
+      `ExifStrip: the page strip needs backName (18 D-09), none for ${view.slug}`
+    );
+  }
   const Title = headingLevel === 1 ? 'h1' : 'h2';
   const exifLines = exifLineRows(strip);
   const positionRows: ListRow[] = strip.positionRows.map((row) => ({
@@ -153,7 +161,7 @@ export default function ExifStrip({
             </span>
             {' · '}
             <span className="whitespace-nowrap">
-              <kbd>Esc</kbd> {headingLevel === 1 ? 'all photographs' : 'close'}
+              <kbd>Esc</kbd> {headingLevel === 1 ? `back to ${backName}` : 'close'}
             </span>
           </p>
         </div>

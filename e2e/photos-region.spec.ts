@@ -50,9 +50,9 @@ import {
  * minus the SLUGS fixtures) has a page that steps within its region as photo
  * k of N (counter 'k / N', Previous aria-disabled exactly at k = 1, Next
  * enabled throughout, since after photo N comes the end card, 18-16) and one visible back
- * link, named after its region, to /photos/regions/<id>; Escape there lands on
+ * link, 'Back to {region}' (18-17, D-09), to /photos/regions/<id>; Escape there lands on
  * that region page; its lightbox, opened from the region page, steps within the
- * region and has no back link; and a touch swipe and the arrows on its page
+ * region and has no back link (the v2.0 four's pages: photos-lightbox.spec); and a touch swipe and the arrows on its page
  * step within the region (Zermatt's seven as the second series).
  *
  * The header band (18-06; REGION-02, D-10): on every region page the visible
@@ -1707,7 +1707,7 @@ test.describe('Region page navigation (D-01 soft navigation)', () => {
   });
 });
 
-/** The v2.0 four's slugs (the photos whose page keeps "All photographs" until 18-17). */
+/** The v2.0 four's slugs (their pages, back link included, are photos-lightbox.spec's identity rows). */
 const V20_SLUGS: readonly string[] = Object.values(SLUGS);
 
 /** A published photo's place in its region series: 1-based k of N. */
@@ -1740,7 +1740,7 @@ test.describe('New photo pages (D-09, PHOTO-05; LBOX-09)', () => {
   });
 
   for (const { view, region: r, k, n } of NEW_PHOTOS) {
-    test(`/photos/${view.slug}: steps within ${r.name} as photo ${k} of ${n}, one back link to ${r.name}`, async ({
+    test(`/photos/${view.slug}: steps within ${r.name} as photo ${k} of ${n}, one back link 'Back to ${r.name}'`, async ({
       page,
     }) => {
       const response = await page.goto(`/photos/${view.slug}`);
@@ -1758,13 +1758,14 @@ test.describe('New photo pages (D-09, PHOTO-05; LBOX-09)', () => {
       else await expect(prev).not.toHaveAttribute('aria-disabled');
       await expect(next).not.toHaveAttribute('aria-disabled');
       // Two links in the markup (the scroll-tier row and the chrome); CSS shows one per tier.
-      const back = main.getByRole('link', { name: r.name, exact: true, includeHidden: true });
+      const name = `Back to ${r.name}`;
+      const back = main.getByRole('link', { name, exact: true, includeHidden: true });
       await expect(back).toHaveCount(2);
       for (const link of await back.all()) {
         await expect(link).toHaveAttribute('href', `/photos/regions/${r.id}`);
       }
-      await expect(main.getByRole('link', { name: r.name, exact: true })).toHaveCount(1);
-      await expect(main.getByRole('link', { name: r.name, exact: true })).toBeVisible();
+      await expect(main.getByRole('link', { name, exact: true })).toHaveCount(1);
+      await expect(main.getByRole('link', { name, exact: true })).toBeVisible();
       await expect(
         main.getByRole('link', { name: 'All photographs', exact: true, includeHidden: true })
       ).toHaveCount(0);
@@ -1776,7 +1777,10 @@ test.describe('New photo pages (D-09, PHOTO-05; LBOX-09)', () => {
   }) => {
     const { view, region: r } = ORTLER_PHOTO;
     await page.goto(`/photos/${view.slug}`);
-    const back = page.getByRole('main').getByRole('link', { name: r.name, exact: true }).first();
+    const back = page
+      .getByRole('main')
+      .getByRole('link', { name: `Back to ${r.name}`, exact: true })
+      .first();
     await waitForHydration(back);
     await page.keyboard.press('Escape');
     await expect(page).toHaveURL(new RegExp(`/photos/regions/${r.id}$`));
@@ -1807,7 +1811,10 @@ test.describe('New photo pages (D-09, PHOTO-05; LBOX-09)', () => {
     await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(second.title);
     // Next stays enabled on the last photo: it leads to the end card (18-16, D-12).
     await expect(next).not.toHaveAttribute('aria-disabled');
-    await expect(dialog.getByRole('link', { name: r.name, exact: true })).toHaveCount(0);
+    await expect(dialog.getByRole('link', { name: `Back to ${r.name}`, exact: true })).toHaveCount(
+      0
+    );
+    await expect(dialog.getByRole('link', { name: /^Back to / })).toHaveCount(0);
     await expect(dialog.getByRole('link', { name: 'All photographs', exact: true })).toHaveCount(0);
 
     await page.goBack();

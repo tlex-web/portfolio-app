@@ -1,5 +1,6 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
-import { regionPhotoViews } from '@/lib/regions';
+import { photoBack, regionPhotoViews } from '@/lib/regions';
+import { publishedViews } from '@/lib/photos/view-model';
 import { HOTSPOT_PREF_KEY } from '@/lib/photos/hotspot-pref';
 import { LB_CHROME_PX, LB_GUTTER_PX } from '@/lib/photos/lightbox-tiers';
 import {
@@ -14,8 +15,10 @@ import { SLUGS, viewBySlug } from './helpers/photo-fixtures';
 /**
  * The photo viewer in a browser (LBOX-01, LBOX-04, LBOX-07; D-05, D-08;
  * 10-UI-SPEC "Photo Viewer"). A directly loaded /photos/{slug} is the viewer
- * inside the shell: one banner, main and contentinfo, the title as the h1, an
- * "All photographs" link, the rights line, no dialog and no download control,
+ * inside the shell: one banner, main and contentinfo, the title as the h1, a
+ * 'Back to {region}' link to its region page (18 D-09, photoBack: every
+ * published photo, the v2.0 four included), the rights line, no dialog and no
+ * download control,
  * and the photo drawn from a content-hashed manifest derivative. Every
  * expected value is derived from the data, never hand-typed: Zermatt's series
  * (regionPhotoViews) for positions, counters and neighbours, since every viewer
@@ -42,6 +45,10 @@ const series = regionPhotoViews('zermatt');
 // The v2.0 four by name, for the rows that audit each photo's own page (identity rows).
 const V20 = Object.values(SLUGS).map(viewBySlug);
 
+// Zermatt's way back, the target of every Zermatt photo page (18 D-09): 'Back to Zermatt'.
+const ZERMATT_BACK = photoBack(series[0].id);
+const ZERMATT_URL = new RegExp(`${ZERMATT_BACK.href}$`);
+
 /** A content-hashed manifest derivative: /images/photos/<name>.<10 hex>.<avif|webp>. */
 const DERIVATIVE = /^\/images\/photos\/[a-z0-9-]+\.[0-9a-f]{10}\.(avif|webp)$/;
 
@@ -49,8 +56,11 @@ const DERIVATIVE = /^\/images\/photos\/[a-z0-9-]+\.[0-9a-f]{10}\.(avif|webp)$/;
 const NBSP = String.fromCharCode(0xa0);
 
 test.describe('Photo page (LBOX-01 direct load)', () => {
-  for (const view of V20) {
-    test(`/photos/${view.slug}: the viewer inside the shell, no dialog (D-08)`, async ({
+  // Every published photo since 18-17 (was the v2.0 four): each page's one way back is
+  // its region page by name (18 D-09), the four included.
+  for (const view of publishedViews) {
+    const back = photoBack(view.id);
+    test(`/photos/${view.slug}: the viewer inside the shell, no dialog, 'Back to ${back.name}' (D-08, 18 D-09)`, async ({
       page,
     }) => {
       const response = await page.goto(`/photos/${view.slug}`);
@@ -64,9 +74,14 @@ test.describe('Photo page (LBOX-01 direct load)', () => {
       const main = page.getByRole('main');
       await expect(main.getByRole('heading', { level: 1 })).toHaveText(view.title);
       await expect(main.getByText(view.rights, { exact: true })).toBeVisible();
+      // One visible back link (the other tier's copy is display: none), to the region page.
+      const backLink = main.getByRole('link', { name: `Back to ${back.name}`, exact: true });
+      await expect(backLink).toHaveCount(1);
+      await expect(backLink).toBeVisible();
+      await expect(backLink).toHaveAttribute('href', back.href);
       await expect(
-        main.getByRole('link', { name: 'All photographs', exact: true })
-      ).toHaveAttribute('href', '/photos');
+        main.getByRole('link', { name: 'All photographs', exact: true, includeHidden: true })
+      ).toHaveCount(0);
       await expect(page).toHaveTitle(`${view.title} · Tim Lui`);
 
       // LBOX-07: no download control anywhere, and only hashed derivatives on the stage.
@@ -141,11 +156,11 @@ test.describe('Viewer layout tiers (D-05)', () => {
     expect(data.x).toBeGreaterThan(identity.x + identity.width);
     expect(Math.abs(data.y - identity.y)).toBeLessThanOrEqual(1);
 
-    // The 'All photographs' link is the first control of the chrome's left group.
-    const link = page.getByRole('link', { name: 'All photographs', exact: true });
+    // The 'Back to Zermatt' link is the first control of the chrome's left group (18 D-09).
+    const link = page.getByRole('link', { name: `Back to ${ZERMATT_BACK.name}`, exact: true });
     await expect(link).toHaveCount(1);
     await expect(page.locator('[data-chrome-left]').getByRole('link')).toHaveText(
-      'All photographs'
+      `Back to ${ZERMATT_BACK.name}`
     );
   });
 
@@ -179,7 +194,7 @@ test.describe('Viewer layout tiers (D-05)', () => {
     await page.setViewportSize({ width: 375, height: 800 });
     await page.goto(`/photos/${subject.slug}`);
 
-    const link = page.getByRole('link', { name: 'All photographs', exact: true });
+    const link = page.getByRole('link', { name: `Back to ${ZERMATT_BACK.name}`, exact: true });
     await expect(link).toHaveCount(1);
     await expect(page.locator('[data-viewer-back]').getByRole('link')).toBeVisible();
     const linkBox = (await link.boundingBox())!;
@@ -245,7 +260,9 @@ test.describe('Stage states (UI-SPEC E5)', () => {
     // The strip and the chrome stay usable; nothing offers the file.
     const main = page.getByRole('main');
     await expect(main.getByText(subject.rights, { exact: true })).toBeVisible();
-    await expect(main.getByRole('link', { name: 'All photographs', exact: true })).toBeVisible();
+    await expect(
+      main.getByRole('link', { name: `Back to ${ZERMATT_BACK.name}`, exact: true })
+    ).toBeVisible();
     await expect(page.locator('[download]')).toHaveCount(0);
     await expect(page.locator('a[href*="/images/"]')).toHaveCount(0);
   });
@@ -379,7 +396,9 @@ test.describe('Lightbox over the gallery (LBOX-01)', () => {
   // @no-win-webkit: history Back while the open's View Transition commit settles crashes
   // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
   // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
-  test('Back closes it, Forward reopens it, reload lands on the full page @no-win-webkit', async ({ page }) => {
+  test('Back closes it, Forward reopens it, reload lands on the full page @no-win-webkit', async ({
+    page,
+  }) => {
     await openFirstTile(page);
 
     await page.goBack();
@@ -398,7 +417,9 @@ test.describe('Lightbox over the gallery (LBOX-01)', () => {
   // @no-win-webkit: history Back while the open's View Transition commit settles crashes
   // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
   // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
-  test('the Close photo button closes it and the URL returns to the grid @no-win-webkit', async ({ page }) => {
+  test('the Close photo button closes it and the URL returns to the grid @no-win-webkit', async ({
+    page,
+  }) => {
     const dialog = await openFirstTile(page);
     await dialog.getByRole('button', { name: 'Close photo', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -449,7 +470,9 @@ test.describe('Focus and Escape (LBOX-03)', () => {
   // @no-win-webkit: history Back while the open's View Transition commit settles crashes
   // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
   // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
-  test('Escape closes through the router and focus returns to the photo tile @no-win-webkit', async ({ page }) => {
+  test('Escape closes through the router and focus returns to the photo tile @no-win-webkit', async ({
+    page,
+  }) => {
     await openFirstTile(page);
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -500,16 +523,21 @@ test.describe('Focus and Escape (LBOX-03)', () => {
     expect(await page.evaluate(() => window.scrollY)).toBe(before);
   });
 
-  test('on the photo page, Escape goes to /photos (D-08)', async ({ page }) => {
+  test("on the photo page, Escape goes to the photo's region page (D-08, 18 D-09)", async ({
+    page,
+  }) => {
     await page.goto(`/photos/${first.slug}`);
-    const back = page.getByRole('main').getByRole('link', { name: 'All photographs' }).first();
+    const back = page
+      .getByRole('main')
+      .getByRole('link', { name: `Back to ${ZERMATT_BACK.name}` })
+      .first();
     await waitForHydration(back);
     await page.waitForLoadState('load');
     // The listener attaches in an effect just after hydration; under parallel
     // dev-server load a press can land before it, so press again until it does.
     await expect(async () => {
       await page.keyboard.press('Escape');
-      await expect(page).toHaveURL(/\/photos$/, { timeout: 2000 });
+      await expect(page).toHaveURL(ZERMATT_URL, { timeout: 2000 });
     }).toPass({ timeout: 15000 });
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
@@ -576,22 +604,22 @@ test.describe('Focus and Escape (LBOX-03)', () => {
     await expect(hide).toHaveAttribute('aria-pressed', 'false');
 
     // Still on the photo page: a step from the content works, and no history
-    // entry was added (a stray router.push('/photos') adds one).
+    // entry was added (a stray router.push to the region page adds one).
     await next.focus();
     await page.keyboard.press('ArrowRight');
     await expect(page).toHaveURL(new RegExp(`/photos/${series[1].slug}$`));
     await expect(main.getByRole('heading', { level: 1 })).toHaveText(series[1].title);
     expect(await page.evaluate(() => window.history.length)).toBe(length);
 
-    // From the content, Escape still goes to the gallery (D-08), and the
-    // recorder sees that navigation (so its silence above is meaningful).
+    // From the content, Escape still goes to the region page (D-08, 18 D-09), and
+    // the recorder sees that navigation (so its silence above is meaningful).
     // Polled: router.push may issue its RSC fetch after the key handler
     // returns, and a loaded WebKit runner read [] here once (13-15, PR #143).
     await page.keyboard.press('Escape');
     await expect
       .poll(() => navigations(page), { message: 'Escape from the content did not navigate' })
-      .toEqual([...before, '/photos']);
-    await expect(page).toHaveURL(/\/photos$/);
+      .toEqual([...before, ZERMATT_BACK.href]);
+    await expect(page).toHaveURL(ZERMATT_URL);
   });
 });
 
@@ -712,7 +740,9 @@ test.describe('Moving between photos (LBOX-02)', () => {
   // @no-win-webkit: history Back while the open's View Transition commit settles crashes
   // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
   // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
-  test('closing after two steps returns focus to the tile of the photo shown @no-win-webkit', async ({ page }) => {
+  test('closing after two steps returns focus to the tile of the photo shown @no-win-webkit', async ({
+    page,
+  }) => {
     const dialog = await openFirstTile(page);
     const next = dialog.getByRole('button', { name: 'Next photo', exact: true });
     await next.click();
@@ -1095,7 +1125,9 @@ test.describe('Morph and motion (LBOX-06)', () => {
   // @no-win-webkit: history Back while the open's View Transition commit settles crashes
   // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
   // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
-  test('no duplicate view-transition-name across open, three steps and close @no-win-webkit', async ({ page }) => {
+  test('no duplicate view-transition-name across open, three steps and close @no-win-webkit', async ({
+    page,
+  }) => {
     const messages: string[] = [];
     page.on('console', (message) => {
       // The browser's duplicate-name error, and React's dev warning for two
@@ -1223,7 +1255,9 @@ test.describe('Zoom (D-06)', () => {
   // @no-win-webkit: history Back while the open's View Transition commit settles crashes
   // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
   // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
-  test('Escape twice from zoomed closes the lightbox (LBOX-03) @no-win-webkit', async ({ page }) => {
+  test('Escape twice from zoomed closes the lightbox (LBOX-03) @no-win-webkit', async ({
+    page,
+  }) => {
     const dialog = await openZoomPhoto(page);
     await zoomButton(dialog).click();
     await expect(zoomButton(dialog)).toHaveAttribute('aria-pressed', 'true');
@@ -1278,7 +1312,9 @@ test.describe('Zoom (D-06)', () => {
     await expect(dialog.locator('[data-photo-box]')).toBeVisible();
   });
 
-  test('on the photo page, Escape leaves zoom first, then goes to /photos', async ({ page }) => {
+  test("on the photo page, Escape leaves zoom first, then goes to the photo's region page", async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(`/photos/${photo.slug}`);
     const main = page.getByRole('main');
@@ -1295,8 +1331,8 @@ test.describe('Zoom (D-06)', () => {
     await expect(button).toHaveAttribute('aria-pressed', 'false');
     await expect(page).toHaveURL(new RegExp(`/photos/${photo.slug}$`));
     await page.keyboard.press('Escape');
-    // The dev server may compile /photos on this first visit.
-    await expect(page).toHaveURL(/\/photos$/, { timeout: 15000 });
+    // The dev server may compile the region page on this first visit.
+    await expect(page).toHaveURL(new RegExp(`${photoBack(photo.id).href}$`), { timeout: 15000 });
   });
 
   test('native pinch-zoom is never blocked: touch-action keeps pinch-zoom in both states', async ({
@@ -1674,7 +1710,7 @@ test.describe('Hotspots (LBOX-05)', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(`/photos/${series[trail].slug}`);
     await expect(page.locator('[data-strip-legend]')).toHaveText(
-      '← → photos · Z zoom · H labels · Esc all photographs'
+      `← → photos · Z zoom · H labels · Esc back to ${photoBack(series[trail].id).name}`
     );
   });
 });

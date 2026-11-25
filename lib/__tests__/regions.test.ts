@@ -24,6 +24,9 @@
  * - LBOX-09 (18-16, D-12): each region's end-of-series card (regionEndCard)
  *   carries its heading, facts, the next region west to east (wrapping) and the
  *   live-region sentence; a one-region list has no next region (regionEndCardIn).
+ * - D-09 (18-17): every published photo page's way back (photoBack) is its
+ *   region page by the bare region name, the v2.0 four included, read from the
+ *   registry by photo id (T-18-37); an unknown id throws.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -56,6 +59,7 @@ import {
   regionCardFacts,
   regionEndCard,
   regionEndCardIn,
+  photoBack,
 } from '@/lib/regions';
 
 /** Tim's approved copy per region (D-14), verbatim. */
@@ -498,6 +502,33 @@ describe("the viewer set: one region's series (18-15; LBOX-09, D-12)", () => {
   it('throws a RangeError naming an unknown photo id', () => {
     expect(() => regionViewerSet('no-such-photo')).toThrow(
       new RangeError('regionViewerSet: photo no-such-photo has no registry region')
+    );
+  });
+});
+
+describe("a photo page's way back (18-17; D-09, T-18-37)", () => {
+  it.each(publishedViews.map((v) => [v.slug, v.id] as const))(
+    '%s leads back to its own region page, by the bare region name',
+    (_slug, id) => {
+      const regionId = regionOfPhoto(id);
+      if (regionId === undefined) throw new Error(`regions.test: ${id} has no region`);
+      const region = regionById(regionId)!;
+      expect(photoBack(id)).toEqual({ href: `/photos/regions/${region.id}`, name: region.name });
+    }
+  );
+
+  it('the v2.0 four lead back to Zermatt, not to /photos (D-09)', () => {
+    for (const slug of Object.values(SLUGS)) {
+      expect(photoBack(viewBySlug(slug).id)).toEqual({
+        href: '/photos/regions/zermatt',
+        name: 'Zermatt',
+      });
+    }
+  });
+
+  it('throws a RangeError naming an unknown photo id (never a URL-built fallback)', () => {
+    expect(() => photoBack('no-such-photo')).toThrow(
+      new RangeError('photoBack: photo no-such-photo has no registry region')
     );
   });
 });

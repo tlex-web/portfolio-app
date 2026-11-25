@@ -2,17 +2,19 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import LightboxDialog from '../LightboxDialog';
 import PhotoViewer from '../PhotoViewer';
 import { publishedViews, type PhotoView } from '@/lib/photos/view-model';
-import { regionEndCard, regionOfPhoto, regionPhotoViews } from '@/lib/regions';
+import { photoBack, regionEndCard, regionOfPhoto, regionPhotoViews } from '@/lib/regions';
 import { SLUGS } from '../../../e2e/helpers/photo-fixtures';
 
 /**
  * The viewer for a region series, a one-photo set and the server-built back
  * link (LBOX-09, 18 D-12; 17 D-09; PHOTO-05). Both routes pass the photo's
  * region series (regionViewerSet, 18-15); a one-photo set (a one-photo region)
- * still shows no Previous, Next or counter. A photo off the v2.0 four leads back
- * to its region page (the link and the page Escape), built on the server and
- * passed as the serialisable `back` prop; the v2.0 four render with no `back`.
- * The lightbox never shows a back link.
+ * still shows no Previous, Next or counter. Every photo page, the v2.0 four
+ * included (18 D-09), leads back to its region page: both links read 'Back to
+ * {region}', the page Escape goes there and the legend reads 'Esc back to
+ * {region}'. The target is the serialisable `back` prop, which the page builds
+ * on the server with photoBack; a page render without it throws. The lightbox
+ * never shows a back link.
  *
  * The end-of-series card (18-16; LBOX-09, D-12): after the series' last photo
  * the viewer shows one extra step, the card built by regionEndCard. It writes
@@ -22,8 +24,7 @@ import { SLUGS } from '../../../e2e/helpers/photo-fixtures';
  *
  * Views come from the server modules: Zermatt's series (regionPhotoViews) and
  * the first published photo off the v2.0 four, as an explicit one-photo set.
- * The back fixture is the one hand-typed value: the page builds it with
- * regionHref and the region's name.
+ * renderPage passes photoBack(shown photo id), as the page does.
  */
 
 const mockRouter = { back: jest.fn(), push: jest.fn(), replace: jest.fn() };
@@ -32,9 +33,7 @@ jest.mock('next/navigation', () => ({
   usePathname: () => '/photos/test',
 }));
 
-const BACK = { href: '/photos/regions/ortler', label: 'Ortler' };
-
-/** The v2.0 four's slugs (the photos that render with no `back`). */
+/** The v2.0 four's slugs (since 18-17 they too lead back to their region, Zermatt). */
 const V20_SLUGS: readonly string[] = Object.values(SLUGS);
 
 /** The first published photo that is not one of the v2.0 four. */
@@ -68,13 +67,20 @@ function cardFor(photos: readonly PhotoView[], initialSlug: string) {
   return regionEndCard(regionId);
 }
 
-function renderPage(photos: readonly PhotoView[], initialSlug: string, back?: typeof BACK) {
+/** The page's way back for the shown photo, as the page builds it on the server (photoBack, 18 D-09). */
+function backFor(photos: readonly PhotoView[], initialSlug: string) {
+  const view = photos.find((p) => p.slug === initialSlug);
+  if (!view) throw new Error(`photo-viewer.test: no view for ${initialSlug}`);
+  return photoBack(view.id);
+}
+
+function renderPage(photos: readonly PhotoView[], initialSlug: string) {
   return render(
     <PhotoViewer
       variant="page"
       photos={photos}
       initialSlug={initialSlug}
-      back={back}
+      back={backFor(photos, initialSlug)}
       endCard={cardFor(photos, initialSlug)}
     />
   );
@@ -106,7 +112,7 @@ describe('the fixtures', () => {
 
 describe('D-08: no stepping controls for a one-photo set', () => {
   it('the page variant with one photo has no Previous, no Next and no counter', () => {
-    renderPage(onePhotoSet, newPhoto.slug, BACK);
+    renderPage(onePhotoSet, newPhoto.slug);
     expect(screen.queryByRole('button', { name: 'Previous photo' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Next photo' })).toBeNull();
     expect(counter()).toBeNull();
@@ -127,27 +133,62 @@ describe('D-08: no stepping controls for a one-photo set', () => {
   });
 });
 
-describe('D-09: the page back link', () => {
-  it('a new photo page: every back link is named after its region and leads to the region page', () => {
-    renderPage(onePhotoSet, newPhoto.slug, BACK);
-    const links = screen.getAllByRole('link', { name: 'Ortler' });
+describe('D-09: the page back link (18-17: every photo, by region name)', () => {
+  it("a new photo page: both back links read 'Back to {region}' and lead to the region page", () => {
+    renderPage(onePhotoSet, newPhoto.slug);
+    const back = photoBack(newPhoto.id);
+    const links = screen.getAllByRole('link', { name: `Back to ${back.name}` });
     // The scroll-tier row and the chrome link (CSS shows one per tier).
     expect(links).toHaveLength(2);
-    for (const link of links) expect(link).toHaveAttribute('href', '/photos/regions/ortler');
+    for (const link of links) expect(link).toHaveAttribute('href', back.href);
     expect(screen.queryByRole('link', { name: 'All photographs' })).toBeNull();
+    expect(document.querySelector('[data-strip-legend]')).toHaveTextContent(
+      `Esc back to ${back.name}`
+    );
   });
 
-  it("a v2.0 photo in Zermatt's series: both back links read All photographs and lead to /photos", () => {
+  it("a v2.0 photo in Zermatt's series: both back links read 'Back to Zermatt' and lead to its region page, not /photos", () => {
     renderPage(zermatt, zermatt[0].slug);
-    const links = screen.getAllByRole('link', { name: 'All photographs' });
+    const links = screen.getAllByRole('link', { name: 'Back to Zermatt' });
     expect(links).toHaveLength(2);
-    for (const link of links) expect(link).toHaveAttribute('href', '/photos');
+    for (const link of links) expect(link).toHaveAttribute('href', '/photos/regions/zermatt');
+    // The ArrowLeftIcon is decorative: the link's name is its text alone.
+    for (const link of links) {
+      expect(link.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+    }
+    expect(screen.queryByRole('link', { name: 'All photographs' })).toBeNull();
+    expect(document.querySelector('[data-strip-legend]')?.textContent).toBe(
+      '← → photos · Z zoom · H labels · Esc back to Zermatt'
+    );
+  });
+
+  it('the page variant without back throws a RangeError (no gallery-wide fallback remains)', () => {
+    const quiet = jest.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      expect(() =>
+        render(
+          <PhotoViewer
+            variant="page"
+            photos={zermatt}
+            initialSlug={zermatt[0].slug}
+            endCard={regionEndCard('zermatt')}
+          />
+        )
+      ).toThrow(
+        new RangeError(
+          `PhotoViewer: the page variant needs back (18 D-09), none for ${zermatt[0].slug}`
+        )
+      );
+    } finally {
+      quiet.mockRestore();
+    }
   });
 
   it('the lightbox shows no back link', () => {
     renderModal(onePhotoSet, newPhoto.slug);
     expect(screen.queryByRole('link', { name: 'All photographs', hidden: true })).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Ortler', hidden: true })).toBeNull();
+    expect(screen.queryByRole('link', { name: /^Back to /, hidden: true })).toBeNull();
+    expect(document.querySelector('[data-strip-legend]')).toHaveTextContent('Esc close');
     const hrefs = screen
       .queryAllByRole('link', { hidden: true })
       .map((a) => a.getAttribute('href') ?? '');
@@ -156,24 +197,24 @@ describe('D-09: the page back link', () => {
 });
 
 describe('Escape on the page (RESEARCH Open Question 5)', () => {
-  it('with back set, Escape goes to the region page', () => {
-    renderPage(onePhotoSet, newPhoto.slug, BACK);
+  it('on a new photo page, Escape goes to its region page', () => {
+    renderPage(onePhotoSet, newPhoto.slug);
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(mockRouter.push).toHaveBeenCalledTimes(1);
-    expect(mockRouter.push).toHaveBeenCalledWith('/photos/regions/ortler');
+    expect(mockRouter.push).toHaveBeenCalledWith(photoBack(newPhoto.id).href);
   });
 
-  it('without back, Escape goes to /photos', () => {
+  it("on a v2.0 photo page, Escape goes to Zermatt's region page, not /photos (18 D-09)", () => {
     renderPage(zermatt, zermatt[0].slug);
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(mockRouter.push).toHaveBeenCalledTimes(1);
-    expect(mockRouter.push).toHaveBeenCalledWith('/photos');
+    expect(mockRouter.push).toHaveBeenCalledWith('/photos/regions/zermatt');
   });
 });
 
 describe('Edge PHOTO-05/empty: the arrows do nothing on a one-photo set', () => {
   it.each([
-    ['page', () => renderPage(onePhotoSet, newPhoto.slug, BACK)],
+    ['page', () => renderPage(onePhotoSet, newPhoto.slug)],
     ['modal', () => renderModal(onePhotoSet, newPhoto.slug)],
   ] as const)(
     'the %s variant: ArrowLeft then ArrowRight write no URL and announce nothing',
@@ -290,7 +331,7 @@ describe('the end-of-series card (18-16; LBOX-09, D-12)', () => {
   });
 
   it('a one-photo set never reaches a card', () => {
-    renderPage(onePhotoSet, newPhoto.slug, BACK);
+    renderPage(onePhotoSet, newPhoto.slug);
     fireEvent.keyDown(document, { key: 'ArrowRight' });
     expect(screen.queryByRole('heading', { name: /^End of the / })).toBeNull();
     expect(status()).not.toHaveTextContent(/End of the/);

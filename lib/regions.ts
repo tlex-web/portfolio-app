@@ -316,6 +316,24 @@ export function regionOfPhoto(photoId: string): string | undefined {
 }
 
 /**
+ * A photo page's way back (18 D-09; 18-UI-SPEC Contract 3): its region page,
+ * by the bare region name, for every published photo, the v2.0 four included
+ * (they leave their 'All photographs' link and their byte-identical page on
+ * purpose). The photo page builds it here on the server from the registry by
+ * photo id, never from the URL (T-17-14, T-18-37), and passes it to the viewer
+ * as the serialisable `back` prop: both back links ('Back to {name}'), the page
+ * Escape and the legend ('Esc back to {name}') read it.
+ *
+ * @throws RangeError naming the id for an unknown photo id or a photo with no registry region.
+ */
+export function photoBack(photoId: string): { href: string; name: string } {
+  const regionId = regionOfPhoto(photoId);
+  const region = regionId === undefined ? undefined : regionById(regionId);
+  if (!region) throw new RangeError(`photoBack: photo ${photoId} has no registry region`);
+  return { href: regionHref(region.id), name: region.name };
+}
+
+/**
  * The photos a viewer steps through for a photo (LBOX-09, 18 D-12): its
  * region's series, regionPhotoViews(regionOfPhoto(photoId)), in sequence order
  * (DEM height ascending, ties broken by id), each view's prevSlug and nextSlug

@@ -20,8 +20,21 @@ const FILLER = ['—', 'undefined', 'null', 'NaN', 'unknown'];
 const viewOf = (id: string, views: readonly PhotoView[] = photoViews) =>
   views.find((v) => v.id === id)!;
 
+/**
+ * The page strip's back target by name (18 D-09). The strip is props only; the
+ * photo views here are the v2.0 four, all Zermatt photos, and the page passes
+ * photoBack(view.id).name, which photo-viewer.test and regions.test pin.
+ */
+const BACK_NAME = 'Zermatt';
+
 function renderStrip(view: PhotoView, headingLevel: 1 | 2 = 1) {
-  const { container } = render(<ExifStrip view={view} headingLevel={headingLevel} />);
+  const { container } = render(
+    <ExifStrip
+      view={view}
+      headingLevel={headingLevel}
+      backName={headingLevel === 1 ? BACK_NAME : undefined}
+    />
+  );
   return container;
 }
 
@@ -53,7 +66,7 @@ describe('ExifStrip fields for every photo (D-05, D-07)', () => {
     }
   });
 
-  it('row 8: the shortcut legend with every key in a kbd, Esc closing or going to all photographs', () => {
+  it('row 8: the shortcut legend with every key in a kbd, Esc closing or going back to the region (18 D-09)', () => {
     const view = viewOf('img-0605');
     const modal = renderStrip(view, 2).querySelector('[data-strip-legend]')!;
     expect(modal.textContent).toBe('← → photos · Z zoom · H labels · Esc close');
@@ -65,7 +78,8 @@ describe('ExifStrip fields for every photo (D-05, D-07)', () => {
       'Esc',
     ]);
     const page = renderStrip(view, 1).querySelector('[data-strip-legend]')!;
-    expect(page.textContent).toBe('← → photos · Z zoom · H labels · Esc all photographs');
+    expect(page.textContent).toBe('← → photos · Z zoom · H labels · Esc back to Zermatt');
+    expect(page.textContent).not.toContain('all photographs');
     // Hidden by default: only a hover-capable fine pointer from 768 px shows it.
     expect(page).toHaveClass('hidden');
   });
@@ -207,6 +221,19 @@ describe('ExifStrip heading and controls', () => {
     const strip = renderStrip(viewOf('img-0629'), 2);
     expect(strip.querySelector('h2#photo-title')).toHaveTextContent(viewOf('img-0629').title);
     expect(strip.querySelector('h1')).toBeNull();
+  });
+
+  it('the page strip needs its back name; the lightbox strip does not (18 D-09)', () => {
+    const view = viewOf('img-0629');
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      expect(() => render(<ExifStrip view={view} headingLevel={1} />)).toThrow(
+        new RangeError(`ExifStrip: the page strip needs backName (18 D-09), none for ${view.slug}`)
+      );
+    } finally {
+      jest.restoreAllMocks();
+    }
+    expect(() => render(<ExifStrip view={view} headingLevel={2} />)).not.toThrow();
   });
 
   it('holds no link and no download control (LBOX-07)', () => {

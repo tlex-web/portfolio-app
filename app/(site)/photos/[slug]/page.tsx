@@ -2,15 +2,14 @@ import { notFound } from 'next/navigation';
 import PhotoViewer from '@/components/photos/PhotoViewer';
 import { photoImageLd } from '@/lib/json-ld/content';
 import { jsonLdHtml } from '@/lib/json-ld/site';
-import { regionById, regionEndCard, regionOfPhoto, regionViewerSet } from '@/lib/regions';
-import { regionHref } from '@/lib/photos/routes';
-import { photoBySlug, photoMetadata, photoSlugs, publishedSlugs } from '@/lib/photos/view-model';
+import { photoBack, regionEndCard, regionOfPhoto, regionViewerSet } from '@/lib/regions';
+import { photoBySlug, photoMetadata, publishedSlugs } from '@/lib/photos/view-model';
 
 /**
  * The full photo page (LBOX-01 direct load; D-08; 10-UI-SPEC "Photo Viewer",
  * Page surface). A directly loaded /photos/{slug} is the same viewer as the
  * lightbox, inside the site shell: SiteNav above, SiteFooter below, the title
- * as the h1 and an "All photographs" link back to /photos. No dialog.
+ * as the h1 and a 'Back to {region}' link to the photo's region page. No dialog.
  *
  * Only the published slugs exist (17 D-07, PHOTO-05: every photo with
  * editorial copy): generateStaticParams lists them, turning dynamicParams off
@@ -23,11 +22,12 @@ import { photoBySlug, photoMetadata, photoSlugs, publishedSlugs } from '@/lib/ph
  * extra step, the end-of-series card, whose props regionEndCard builds here too
  * (18 D-12).
  *
- * The way back (17 D-09): a photo off the light table gets `back`, its
- * region's name and regionHref(region.id), built here on the server from the
- * registry (regionOfPhoto), never from the URL (T-17-14); the viewer's back
- * links and the page Escape lead there. The v2.0 four get no `back` and keep
- * "All photographs" to /photos, so their markup is unchanged (D-10).
+ * The way back (18 D-09): every photo, the v2.0 four included, gets `back`,
+ * its region's name and regionHref(region.id), built here on the server by
+ * photoBack from the registry, never from the URL (T-17-14, T-18-37); the
+ * viewer's back links ('Back to {name}'), the page Escape and the legend lead
+ * there. The v2.0 four leave their 'All photographs' link and their
+ * byte-identical page on purpose (18 D-09 retires 17 D-10's guarantee).
  *
  * generateMetadata reads photoMetadata(slug), the function the intercepted
  * lightbox route exports too, so both surfaces carry '{title} · Tim Lui'.
@@ -54,24 +54,10 @@ export async function generateMetadata({ params }: PageProps) {
 }
 
 /**
- * The page's way back for a photo off the light table: its region page, by
- * name. The four get undefined.
- *
- * @throws Error when a published photo has no registry region (a data fault the build must not hide).
- */
-function backFor(view: { id: string; slug: string }): { href: string; label: string } | undefined {
-  if (photoSlugs.includes(view.slug)) return undefined;
-  const regionId = regionOfPhoto(view.id);
-  const region = regionId === undefined ? undefined : regionById(regionId);
-  if (!region) throw new Error(`PhotoPage: photo ${view.id} has no registry region`);
-  return { href: regionHref(region.id), label: region.name };
-}
-
-/**
  * The viewer's end-of-series card for the photo's region (LBOX-09, 18 D-12),
  * built here on the server and passed as props.
  *
- * @throws Error when a published photo has no registry region (as backFor).
+ * @throws Error when a published photo has no registry region (a data fault the build must not hide).
  */
 function endCardFor(view: { id: string }) {
   const regionId = regionOfPhoto(view.id);
@@ -83,32 +69,20 @@ export default async function PhotoPage({ params }: PageProps) {
   const { slug } = await params;
   const view = photoBySlug(slug);
   if (!view) notFound();
-  const back = backFor(view);
-  const endCard = endCardFor(view);
 
-  // The four get no back prop at all (not back={undefined}), so their props are unchanged.
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdHtml(photoImageLd(view)) }}
       />
-      {back ? (
-        <PhotoViewer
-          variant="page"
-          photos={regionViewerSet(view.id)}
-          initialSlug={view.slug}
-          back={back}
-          endCard={endCard}
-        />
-      ) : (
-        <PhotoViewer
-          variant="page"
-          photos={regionViewerSet(view.id)}
-          initialSlug={view.slug}
-          endCard={endCard}
-        />
-      )}
+      <PhotoViewer
+        variant="page"
+        photos={regionViewerSet(view.id)}
+        initialSlug={view.slug}
+        back={photoBack(view.id)}
+        endCard={endCardFor(view)}
+      />
     </>
   );
 }

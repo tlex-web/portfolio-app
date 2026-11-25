@@ -39,13 +39,13 @@ import type { PhotoView } from '@/lib/photos/view-model';
 /**
  * The one photo viewer for both surfaces (D-05, D-08; LBOX-01, LBOX-04,
  * LBOX-07; 10-UI-SPEC "Photo Viewer"): `page` is the full photo page inside
- * the shell (title as h1, "All photographs" leading link), `modal` the
+ * the shell (title as h1, 'Back to {region}' leading link), `modal` the
  * lightbox inside the dialog (title as h2#photo-title, used from 10-05).
  *
  * Layout tiers (10-UI-SPEC "Layout tiers"; the lb-* variants in
  * app/globals.css, mirrored in lib/photos/lightbox-tiers.ts):
  * - lb-scroll (below 768 px wide or 640 px tall): the surface scrolls as one
- *   column. On the page the "All photographs" link takes its own row, then the
+ *   column. On the page the 'Back to {region}' link takes its own row, then the
  *   chrome bar, sticky under the nav; the photo at full width and true ratio,
  *   capped at 70svh; the strip in one column.
  * - lb-key (768 to below 1280 px, at least 640 px tall): the page viewer fills
@@ -78,9 +78,9 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * owns the key and runs the layers registered through useLightbox()
  * .registerEscape, closing last. On the page a document keydown listener does
  * the same job: a layer that consumes Escape calls preventDefault, and when
- * none has, Escape navigates to /photos, never a blind browser Back, because
- * a directly loaded page may have no gallery behind it (17 D-09: or to the
- * `back` page, below). On the page every
+ * none has, Escape navigates to the `back` page (the photo's region page, 18
+ * D-09), never a blind browser Back, because a directly loaded page may have
+ * nothing behind it. On the page every
  * viewer key (Escape, ← →, Z, H, the zoomed pan) skips a press that belongs
  * to the site chrome (keyBelongsToChrome: the open mobile menu, or focus in
  * the nav, skip link or footer); the open menu also takes Escape first and
@@ -114,14 +114,15 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * set (a one-photo region) keeps its rule: with fewer than two photos the
  * left group renders no Previous, counter or Next, so the viewer offers no
  * control that does nothing; the arrows and the swipe already do nothing there
- * (stepIndex returns null). The page surface takes an optional `back`
- * ({ href, label }), built on the server from the region registry
- * (regionHref and the region's name) and passed for a photo off the light table: both
- * back links and the page Escape then lead to its region page, the page that
- * lists it. Without `back` they read "All photographs" and go to /photos, so
- * the v2.0 four render as before. The lightbox shows no back link (D-09 is
- * page-only). This file imports no region data; the region reaches the client
- * only through the serialisable prop.
+ * (stepIndex returns null). The page surface requires `back` ({ href, name }),
+ * built on the server by photoBack from the region registry (regionHref and
+ * the bare region name) for every photo, the v2.0 four included (18 D-09):
+ * both back links read 'Back to {name}' and, with the page Escape, lead to the
+ * region page that lists the photo, and the strip's legend reads 'Esc back to
+ * {name}'. A page render without `back` throws a RangeError; no gallery-wide
+ * way back remains in the viewer. The lightbox shows no back link (D-09 is
+ * page-only) and ignores `back`. This file imports no region data; the region
+ * reaches the client only through the serialisable prop.
  *
  * The end-of-series card (LBOX-09, 18 D-12; 18-UI-SPEC Contract 3): after the
  * series' last photo comes one extra step (stepWithEnd), the `endCard` props
@@ -222,15 +223,22 @@ export default function PhotoViewer({
   initialSlug: string;
   /** The region's end-of-series card (18 D-12), built on the server by regionEndCard. */
   endCard: EndCardProps;
-  /** The page surface's way back (17 D-09), built on the server; absent: "All photographs" to /photos. */
-  back?: { href: string; label: string };
+  /**
+   * The page surface's way back (18 D-09): the photo's region page and its bare
+   * name, built on the server by photoBack. Required on the page; the lightbox ignores it.
+   */
+  back?: { href: string; name: string };
 }) {
   if (!photos.some((p) => p.slug === initialSlug)) {
     throw new RangeError(`PhotoViewer: no photo with slug ${initialSlug}`);
   }
   const isPage = variant === 'page';
-  const backHref = back?.href ?? '/photos';
-  const backLabel = back?.label ?? 'All photographs';
+  if (isPage && !back) {
+    throw new RangeError(
+      `PhotoViewer: the page variant needs back (18 D-09), none for ${initialSlug}`
+    );
+  }
+  const backHref = back?.href;
   const lightbox = useLightbox();
   const router = useRouter();
   const pathname = usePathname();
@@ -349,12 +357,12 @@ export default function PhotoViewer({
     return () => observer.disconnect();
   }, [current.title, current.slug]);
 
-  // Page surface only: Escape is the last layer and goes to the gallery (D-08),
-  // or to the `back` page for a photo off the light table (17 D-09).
+  // Page surface only: Escape is the last layer and goes to the `back` page,
+  // the photo's region page (18 D-09; was /photos, D-08).
   // The zoom layer runs first (ZoomStage, capture phase): while zoomed it
   // prevents the press and leaves zoom, and this handler skips it.
   useEffect(() => {
-    if (!isPage) return;
+    if (!isPage || backHref === undefined) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
       if (keyBelongsToChrome(event)) return;
@@ -574,11 +582,11 @@ export default function PhotoViewer({
           : 'flex flex-col bg-gallery text-ink lb-key:h-full lb-gutter:h-full'
       }
     >
-      {isPage && (
+      {isPage && back && (
         <div data-viewer-back="" className="px-4 pt-2 lb-key:hidden lb-gutter:hidden">
-          <Link href={backHref} className={`inline-flex ${BACK_LINK}`}>
+          <Link href={back.href} className={`inline-flex ${BACK_LINK}`}>
             <ArrowLeftIcon size={20} aria-hidden="true" />
-            {backLabel}
+            Back to {back.name}
           </Link>
         </div>
       )}
@@ -591,13 +599,13 @@ export default function PhotoViewer({
         }
       >
         <div data-chrome-left="" className="flex items-center gap-2">
-          {isPage && (
+          {isPage && back && (
             <Link
-              href={backHref}
+              href={back.href}
               className={`hidden lb-key:inline-flex lb-gutter:inline-flex ${BACK_LINK}`}
             >
               <ArrowLeftIcon size={20} aria-hidden="true" />
-              {backLabel}
+              Back to {back.name}
             </Link>
           )}
           {photos.length > 1 && (
@@ -699,6 +707,7 @@ export default function PhotoViewer({
           <ExifStrip
             view={current}
             headingLevel={isPage ? 1 : 2}
+            backName={isPage ? back?.name : undefined}
             hotspotKey={
               <HotspotKey view={current} expandedId={expandedId} onToggle={toggleHotspot} />
             }
