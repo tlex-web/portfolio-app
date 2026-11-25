@@ -378,7 +378,7 @@ Plans:
   3. Each photo in the sequence sits in a map collar whose neatline and coordinate ticks are drawn outside the image, never over it, and an altimeter rail reads the sequence as an ascent and marks the current photo.
   4. The lightbox steps only through the current photo's region and ends on an end-of-series card that links to the next region. A visitor can share a photo or a region with the Web Share API where it exists, or copy its link elsewhere, and the button's label says which. Swiss photos show LV95 rounded to 10 m next to WGS84, and other photos show WGS84 only.
   5. The overview and every local plate show their extent, "last surveyed" date and short source credit in their own sheet margin, and the footer links to a sources page with the full credit and licence text of every data source.
-**Plans**: 9/29 plans executed
+**Plans**: 10/29 plans executed
 Plans:
 **Wave 1**
 - [x] 18-01-PLAN.md — Wave 0: bisect the inherited og pin failure, Tim's og and UI-SPEC P1-P7 decisions, green ci/18-01 with the WebKit B8 row classified
@@ -398,7 +398,7 @@ Plans:
 - [x] 18-08-PLAN.md — Header slot and the uncropped sequence in map collars, figure and slot sizes (13 #34)
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 18-09-PLAN.md — Region plate: sweep-tested badge layout and the server sheet with pins
+- [x] 18-09-PLAN.md — Region plate: sweep-tested badge layout and the server sheet with pins
 
 **Wave 6** *(blocked on Wave 5 completion)*
 - [ ] 18-10-PLAN.md — Plate key list, anchor jumps (D-08, P2) and list-plate sync
@@ -505,5 +505,5 @@ Plans:
 | 15. Region & Plate Data Model | v2.1 | 16/16 | Complete    | 2026-11-15 |
 | 16. New Regions & Alps Overview Data | v2.1 | 18/18 | Complete    | 2026-11-23 |
 | 17. Region Routes, SEO & Structured Data | v2.1 | 16/16 | Complete    | 2026-11-24 |
-| 18. Immersive Survey Layout | v2.1 | 9/29 | In Progress | - |
+| 18. Immersive Survey Layout | v2.1 | 10/29 | In Progress | - |
 | 19. Drone Loops | v2.1 | 0/TBD | Not started | - |
