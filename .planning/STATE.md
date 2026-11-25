@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
-stopped_at: Completed 18-14-PLAN.md
-last_updated: "2026-11-25T18:29:58.211Z"
+stopped_at: Completed 18-15-PLAN.md
+last_updated: "2026-11-25T18:53:31.126Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: 894435985ff4dc496ba12708f0cc6c9ceb4265be
+state_head: 0412238abc757581b44c60af185cc7a1f528b824
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 109
-  completed_plans: 94
+  completed_plans: 95
   percent: 71
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-24)
 ## Current Position
 
 Phase: 18 (Immersive Survey Layout) — EXECUTING
-Plan: 14 of 29
+Plan: 15 of 29
 Status: Ready to execute
 Last activity: 2026-11-24 — Phase 18 execution started
 
@@ -152,6 +152,7 @@ Progress: [███████░░░] 71%
 | Phase 18 P11 | 15min | 2 tasks | 10 files |
 | Phase 18 P12 | 16 min | 2 tasks | 6 files |
 | Phase 18 P14 | 167 min | 3 tasks | 30 files |
+| Phase 18 P15 | 25min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -393,6 +394,8 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-14: D-24 round 3 (region pages) re-baselined: 24 new region PNGs, 52 identical, 0 changed; Tim committed them as 8944359
 - [Phase 18]: 18-14: D-21 amended (Tim, 'Add plate shots now'): a plate position for all three regions (24 region PNGs, not 15) and one extra visual-baselines dispatch in 18-14
 - [Phase 18]: 18-14: WebKit :has() invalidation does not look inside :is(); the plate sync emits one :has() per state (2325d0a, Tim: 'Diagnose locally, then fix'); the overview's same pattern is deferred to the plan that renders overviewCss
+- [Phase 18]: 18-15: Every viewer steps through its photo's region series (regionViewerSet, built in both server routes, props only); viewerPhotos and lightTableSlugs retired (LBOX-09, D-12)
+- [Phase 18]: 18-15: The LBOX-08 focus-return matrix runs on the region pages (Map rows on Zermatt, Grid on Ortler, Carousel on Saalfelden); every row keeps its size, setup, close path and tags, and no setup swap was needed
 
 ### Pending Todos
 
@@ -454,6 +457,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-25T18:29:57.573Z
-Stopped at: Completed 18-14-PLAN.md
+Last session: 2026-11-25T18:53:30.490Z
+Stopped at: Completed 18-15-PLAN.md
 Resume file: None
