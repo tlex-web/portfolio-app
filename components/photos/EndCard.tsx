@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { MapTrifoldIcon } from '@phosphor-icons/react/dist/ssr';
+import { MapTrifoldIcon } from '@/components/icons/inline-phosphor';
 import FactsLine from '@/components/photos/region/FactsLine';
 import TrailSign from '@/components/site/TrailSign';
 

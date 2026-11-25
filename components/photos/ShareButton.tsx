@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { CheckIcon, LinkIcon, ShareNetworkIcon } from '@phosphor-icons/react/dist/ssr';
+import { CheckIcon, LinkIcon, ShareNetworkIcon } from '@/components/icons/inline-phosphor';
 import { COPIED_MS } from '@/lib/copy-feedback';
 import { useShareMode } from '@/lib/photos/share-mode';
 

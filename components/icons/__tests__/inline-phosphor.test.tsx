@@ -62,10 +62,12 @@ describe('inline Phosphor icons', () => {
   it('the module and its client call sites never import the six-weight package', () => {
     const root = path.resolve(__dirname, '..', '..');
     const read = (rel: string) => fs.readFileSync(path.join(root, rel), 'utf8');
-    expect(read('icons/inline-phosphor.tsx')).not.toMatch(/@phosphor-icons/);
+    // An import or require of the package, not a mention in a comment.
+    const PHOSPHOR = /(?:from|import|require\()\s*['"]@phosphor-icons\//;
+    expect(read('icons/inline-phosphor.tsx')).not.toMatch(PHOSPHOR);
     for (const rel of ['photos/ShareButton.tsx', 'photos/EndCard.tsx']) {
       const src = read(rel);
-      expect(src).not.toMatch(/@phosphor-icons/);
+      expect(src).not.toMatch(PHOSPHOR);
       expect(src).toMatch(/from '@\/components\/icons\/inline-phosphor'/);
     }
   });
