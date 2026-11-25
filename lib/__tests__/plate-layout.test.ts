@@ -613,6 +613,50 @@ describe('plateCss guards (T-18-23)', () => {
     expect(() => plateCss(pins, 'plate{}')).toThrow(RangeError);
   });
 
+  it('emits the list-plate :has() sync selectors for every pin (Pattern 3, T-18-60)', () => {
+    for (const r of regions) {
+      const pinsOf = PINS.get(r.id)!;
+      const css = plateCss(pinsOf, `plate-${r.id}`);
+      const lines = css.split('\n');
+      for (const p of pinsOf) {
+        const row = `[data-key-row="${p.slug}"]`;
+        const badge = `[data-plate-badge="${p.slug}"]`;
+        const rowActive = `[data-plate-root]:has(${row}:is(:hover,:focus-visible))`;
+        const badgeActive = `[data-plate-root]:has(${badge}:hover)`;
+        const rule = (target: string) =>
+          lines.find((l) => l.startsWith(`${rowActive} ${target},${badgeActive} ${target}{`));
+        // Row hover or focus-visible, and badge hover: the plate badge turns accent ...
+        expect(rule(badge), `${p.slug} plate badge`).toMatch(
+          /\{background-color:var\(--color-accent\);color:var\(--color-ink-inverse\)\}$/
+        );
+        // ... and the row gets the overlay fill, the 2 px accent bar and an accent badge.
+        expect(rule(row), `${p.slug} row fill`).toMatch(
+          /\{background-color:var\(--color-surface-overlay\)\}$/
+        );
+        expect(rule(`${row}::before`), `${p.slug} row bar`).toMatch(
+          /\{content:"";position:absolute;top:0\.5rem;bottom:0\.5rem;left:0;width:0\.125rem;background-color:var\(--color-accent\)\}$/
+        );
+        expect(rule(`${row} [data-key-badge]`), `${p.slug} row badge`).toMatch(
+          /\{background-color:var\(--color-accent\);color:var\(--color-ink-inverse\)\}$/
+        );
+      }
+      // The sync rules are unconditional (outside every @container block) and come last.
+      const firstSync = lines.findIndex((l) => l.includes(':has('));
+      expect(firstSync).toBeGreaterThan(0);
+      expect(lines.slice(firstSync).every((l) => l.includes(':has('))).toBe(true);
+      expect(lines.slice(0, firstSync).filter((l) => l.startsWith('@')).length).toBe(
+        lines.slice(0, firstSync).filter((l) => l === '}').length
+      );
+    }
+  });
+
+  it('keeps the dashed look of an approximate badge in the accent state (only the fill changes)', () => {
+    const css = plateCss(pins, 'plate-zermatt');
+    const sync = css.split('\n').filter((x) => x.includes(':has('));
+    expect(sync.length).toBe(4 * pins.length);
+    for (const l of sync) expect(l).not.toMatch(/border/);
+  });
+
   it('is built only from numbers, the slugs and fixed selectors', () => {
     let rest = plateCss(pins, 'plate-zermatt');
     for (const p of pins) rest = rest.split(`"${p.slug}"`).join('""');
