@@ -4,7 +4,15 @@
  * `sizes` derives from the layout constants in lib/photos/image-sizes.ts, so a
  * layout change moves the string, and the photo column widths match the
  * UI-SPEC's measured ones (1440: 968 px; 768: 100vw - 168px; 375: 100vw - 32px).
+ *
+ * The header slot (D-05; P3 default: the cover pillarboxed in a 16:9 box)
+ * contains the cover, so its `sizes` is the box width times the contain factor
+ * min(1, 9/16 * ar). A source scan pins the CSS that spells the same values
+ * (the figure's 16rem floor and 12rem chrome, the rail column's 6rem), so CSS
+ * and TypeScript cannot drift (the lightbox-tiers precedent).
  */
+import fs from 'node:fs';
+import path from 'node:path';
 import * as sizes from '@/lib/photos/image-sizes';
 import {
   CONTENT_MAX_PX,
@@ -16,6 +24,7 @@ import {
   RAIL_COLUMN_PX,
   RAIL_GAP_PX,
   figureSizes,
+  headerSlotSizes,
 } from '@/lib/photos/image-sizes';
 
 describe('layout constants (18-UI-SPEC Contract 2 "Sequence")', () => {
@@ -82,5 +91,83 @@ describe('figureSizes(ar)', () => {
     for (const bad of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
       expect(() => figureSizes(bad)).toThrow(RangeError);
     }
+  });
+});
+
+describe('headerSlotSizes(ar) (D-05, P3 default: 16:9 box, object-contain)', () => {
+  it('applies the contain factor to every box width for a 3:2 cover', () => {
+    // min(1, 0.5625 * 1.5) = 0.84375; 1088 * 0.84375 = 918.
+    expect(headerSlotSizes(1.5)).toBe(
+      '(min-width: 1216px) 918px, ' +
+        '(min-width: 1024px) calc((100vw - 64px) * 0.8438), ' +
+        '(min-width: 640px) calc((100vw - 48px) * 0.8438), ' +
+        'calc(100vw * 0.8438)'
+    );
+  });
+
+  it('uses factor 1 for a 16:9 cover (it fills the box)', () => {
+    expect(headerSlotSizes(1.7778)).toBe(
+      '(min-width: 1216px) 1088px, ' +
+        '(min-width: 1024px) calc(100vw - 64px), ' +
+        '(min-width: 640px) calc(100vw - 48px), ' +
+        '100vw'
+    );
+  });
+
+  it('uses factor 1 for a cover wider than 16:9 (letterboxed, full width)', () => {
+    expect(headerSlotSizes(2.4)).toBe(headerSlotSizes(16 / 9));
+  });
+
+  it('pillarboxes a 3:4 portrait cover (factor 0.4219, 459 px at full width)', () => {
+    expect(headerSlotSizes(0.75)).toBe(
+      '(min-width: 1216px) 459px, ' +
+        '(min-width: 1024px) calc((100vw - 64px) * 0.4219), ' +
+        '(min-width: 640px) calc((100vw - 48px) * 0.4219), ' +
+        'calc(100vw * 0.4219)'
+    );
+  });
+
+  it('derives the box widths from the constants', () => {
+    const s = headerSlotSizes(16 / 9);
+    expect(s).toContain(`(min-width: ${WIDE_FROM_PX}px) ${CONTENT_MAX_PX}px`);
+    expect(s).toContain(`calc(100vw - ${2 * GUTTER_PX.lg}px)`);
+    expect(s).toContain(`calc(100vw - ${2 * GUTTER_PX.sm}px)`);
+  });
+
+  it('rejects a ratio that is not a positive finite number', () => {
+    for (const bad of [0, -2, Number.NaN]) {
+      expect(() => headerSlotSizes(bad)).toThrow(RangeError);
+    }
+  });
+});
+
+describe('CSS parity with the layout constants (source scan)', () => {
+  const read = (file: string) => fs.readFileSync(path.join(process.cwd(), file), 'utf8');
+  const REM = 16;
+
+  it("SequenceFigure's width class spells the 16rem floor and the 12rem chrome", () => {
+    const src = read('components/photos/region/SequenceFigure.tsx');
+    const width =
+      /w-\[min\(100%,max\((\d+)rem,calc\(\(100svh-var\(--nav-h\)-(\d+)rem\)\*var\(--ar\)\)\)\)\]/.exec(
+        src
+      );
+    expect(width).not.toBeNull();
+    expect(Number(width![1])).toBe(FIGURE_MIN_PX / REM);
+    expect(Number(width![2])).toBe(FIGURE_CHROME_PX / REM);
+    expect(src).toContain('sizes={figureSizes(ar)}');
+  });
+
+  it("RegionSequence's rail column equals RAIL_COLUMN_PX and its gap RAIL_GAP_PX", () => {
+    const src = read('components/photos/region/RegionSequence.tsx');
+    const grid = /md:grid-cols-\[minmax\(0,1fr\)_(\d+)rem\]/.exec(src);
+    expect(grid).not.toBeNull();
+    expect(Number(grid![1])).toBe(RAIL_COLUMN_PX / REM);
+    // gap-6 is 24 px on Tailwind's 4 px base.
+    expect(src).toContain(` md:gap-${RAIL_GAP_PX / 4}"`);
+  });
+
+  it("HeaderSlot's image takes headerSlotSizes", () => {
+    const src = read('components/photos/region/HeaderSlot.tsx');
+    expect(src).toContain('sizes={headerSlotSizes(ar)}');
   });
 });

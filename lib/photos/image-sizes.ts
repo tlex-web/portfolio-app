@@ -73,3 +73,12 @@ export function figureSizes(ar: number): string {
     `min(calc(100vw - ${2 * GUTTER_PX.base}px), ${cap})`,
   ].join(', ');
 }
+
+/**
+ * The `sizes` of the region header slot's cover (D-05). Stub: the UI-SPEC's
+ * starting point, before the contain factor (18-08 Task 2 RED).
+ */
+export function headerSlotSizes(ar: number): string {
+  void ar;
+  return '(min-width: 1216px) 1088px, (min-width: 640px) calc(100vw - 48px), 100vw';
+}
