@@ -164,3 +164,58 @@ None. The share and clipboard surface is T-18-18/19/20 in the plan's register: t
 ## Self-Check: PASSED
 
 All 4 created files exist; commits d55ab6b, ce6151b and ea08e7d are ancestors of HEAD.
+
+## Post-plan fix (Tim-approved, 2026-11-25)
+
+Scope-added after 18-04, before 18-14. Tim's answer (AskUserQuestion, 2026-11-25, after 18-07): "Fix before 18-14 (Recommended)". It closes Open UX notes 1-3 above. 18-07 stays complete; this section is the record (no new SUMMARY, no STATE/ROADMAP plan-progress change).
+
+**What changed**
+
+- `ShareButton` takes `failurePlacement?: 'below' | 'row'`. `'below'` (the default) is unchanged: the note sits under the button, as wide as the button, for a standalone use such as 18-18's viewer strip. In `'row'` mode the component renders two flex items for a flex-wrap parent: the button group (`shrink-0`, button + polite status) and, after a failure, the note with `basis-full`, which takes its own full-width row at the end of the parent.
+- `RegionHeader` mounts ShareButton straight into the band with `failurePlacement="row"` (its own `shrink-0` wrapper is gone). The band only grows downward; the note is its last row, `gap-y-4` under the title/button line, above the band's `pb-6` and border.
+- `min-w-40` → `min-w-42` (168 px), so `Share region` (160.08 px in Chromium/Windows) has about 8 px of room.
+- Text, Range selection, the polite status, "stays until the next press", share mode, AbortError and the pending guard are unchanged. All 18-07 Jest and e2e rows stay green. The one edited Jest assertion is `min-w-40` → `min-w-42`.
+- 18-UI-SPEC.md amended: lines 78, 433, 434, 439, 660, 661, 727 and the Contract 2 Share row, plus an "Amended 2026-11-25 (Tim, after 18-07)" note under the Contract 4 Share table.
+
+**Commits**
+
+| Commit | Subject |
+|--------|---------|
+| 5c2934f | test(18-07): pin the Copy failed row under the band and min-w-42 (post-plan fix, failing) |
+| 33bd377 | test(18-07): measure the band's last-row gap as its padding plus border (post-plan fix) |
+| af38a74 | fix(18-07): Copy failed note takes a full-width row under the band, Share is min-w-42 (post-plan fix) |
+| (this commit) | docs(18-07): amend the UI-SPEC and record the Share failure-row post-plan fix |
+
+RED: on 965eaf7 all 6 new e2e rows failed (1440/768: the breadcrumb dropped 28 px in Chromium and 29.5 px in Firefox; 375: the note was 160 px wide, 173/183 px short of the band), and the 2 new-behaviour Jest rows failed. 33bd377 only repairs a RED bound: the gap under the note is `pb-6` + `border-b` = 25 px, not < 25, so the row now reads both from the computed style.
+
+**Measured positions** (Chromium, prod build, page-relative `[x, y, w, h]` in px, writeText rejecting; Firefox passes the same < 1 px assertions)
+
+| Width | State | Breadcrumb | h1 | Facts line | Button | Band | Note row |
+|-------|-------|------------|----|------------|--------|------|----------|
+| 1440 | before fix, after the failure | 171,96 → 171,124 | 148 → 176 | 200 → 228 | 1099,176 → 1099,96 (160 w) | h 181 → 209 | x 1099, w 160, h 100, URL 3 lines |
+| 1440 | after fix, after the failure | 171,96 → 171,96 | 148 → 148 | 200 → 200 | 1091,176 → 1091,176 (168 w) | top 64 → 64, h 181 → 217 | x 171, w 1088 (= band), h 20, URL 1 line |
+| 768 | before fix | 24,96 → 24,124 | 148 → 176 | 200 → 228 | 574,176 → 574,96 | h 181 → 209 | w 160, URL 3 lines |
+| 768 | after fix | 24,96 → 24,96 | 148 → 148 | 200 → 200 | 566,176 → 566,176 | top 64 → 64, h 181 → 217 | x 24, w 710 (= band), h 20, URL 1 line |
+| 375 | before fix | 16,96 (holds) | 148 (holds) | 244 (holds) | 16,300 (holds) | h 305 → 413 | w 160, h 100, URL 3 lines |
+| 375 | after fix | 16,96 → 16,96 | 148 → 148 | 244 → 244 | 16,300 → 16,300 | top 64 → 64, h 305 → 381 | x 16, w 333 (= band), h 60, URL **2 lines** (`wrap-anywhere` fallback) |
+
+The button's x moved left by 8 px at 1440/768 (1099 → 1091, 574 → 566) only because it is now 168 px wide and right-aligned; that is the min-w-42 change, not a failure-state shift. URL line counts (Chromium and Firefox alike): 1440: 1, 768: 1, 375: 2. Screenshots: scratchpad `share-fix-{before,after}-{1440,375}.png`.
+
+**ui-ux-pro-max** (`--domain ux` "content jumping layout shift", "error message near action recovery", "long url token wrapping"; `--stack html-tailwind` "flex wrap full width row")
+
+- Content Jumping (High): "keep async states in a stable content-driven container"; "Badge insertion pushes toolbar actions" is the bad example. The note is in a row of its own, so nothing that was already on screen moves; the band grows downward only.
+- Error Placement / Error Recovery: keep the message near its control, with a recovery path. The note sits 16 px (`gap-y-4`) under the title/button line; the recovery is the pre-selected URL (Ctrl/Cmd+C), and the polite status announces it.
+- Long Token Wrapping (High): `overflow-wrap: anywhere` on a shrinkable child, not `break-all`, so `wrap-anywhere` stays as the 375 fallback.
+- Container Width (65-75ch): the full-width note is one short sentence plus a 42-character URL (~640 px at 1440), so no max-width was added.
+- Stack (Tailwind 4.3): flex-wrap with `shrink-0` controls; the `basis-full` item is the standard way to force a full-width flex line.
+
+**Design choice the brief left open:** the note sits inside the band, above its bottom border (not below it), because it belongs to the band's Share control and "grows the band downward" keeps the border as the band's edge.
+
+**Client JS** (`rm -rf .next/static && npm run build`, byte sum of `.next/static/chunks/**/*.js`): HEAD 965eaf7 reproduced 1,861,272 B. After the fix: **1,861,419 B (+147 B)**, the `failurePlacement` branch and its class strings. That is 5,578 B over the 1,855,841 cap; HEAD was already 5,431 B over (Tim tracks it to 18-25). A first draft that duplicated the button JSX cost +168 B; it was folded into one group element to get to +147. No new icon imports.
+
+**Verification**
+
+- Jest: 124 suites, 2,486 tests passed (+2 rows). `npm run type-check` 0. `npm run lint` 0. GUARD-03: jest 2,486 + e2e 664 = 3,150, baseline 3,024, OK.
+- `PW_PROD=1` photos-region: 58/58 on Chromium and Firefox (52 + the 6 new rows). contact-form + a11y-contact: 39/39 on both. No flaky tests.
+- `node scripts/ci/check-snapshot-commit.mjs --sha <sha> --none` passed on each new commit. No PNG staged; region pages are not baselined, so nothing is re-baselined.
+- `public/service-worker.js` restored after every build; no `next start` left on :3000 or :3017.
