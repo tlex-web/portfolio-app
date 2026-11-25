@@ -15,7 +15,7 @@ const SHEET =
 
 /** The 24 px badge: the overview marker look, a 44 px hit area through `before:` (UI-SPEC "Touch targets"). */
 const BADGE =
-  "relative flex size-6 cursor-pointer items-center justify-center rounded-full font-mono text-sm leading-none font-semibold tabular-nums before:absolute before:-inset-2.5 before:content-['']";
+  "relative flex size-6 cursor-pointer items-center justify-center rounded-full font-mono text-sm leading-none font-semibold tabular-nums transition-colors duration-(--duration-fast) ease-erosion before:absolute before:-inset-2.5 before:content-['']";
 
 /** Solid for an exact position; hollow and dashed for an approximate one, by shape, not colour (08 D-02, Contract 5). */
 const BADGE_EXACT = 'bg-ink text-ink-inverse';

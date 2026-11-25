@@ -898,6 +898,18 @@ async function expectLanded(page: Page, slug: string) {
 
 const KEY_LIST = 'ol[aria-label="Photographs on the map, lowest first"]';
 
+/** A colour token as the browser computes it (rgb()), through a probe element. */
+async function colourOf(page: Page, token: string) {
+  return page.evaluate((t) => {
+    const probe = document.createElement('span');
+    probe.style.color = `var(${t})`;
+    document.body.append(probe);
+    const c = getComputedStyle(probe).color;
+    probe.remove();
+    return c;
+  }, token);
+}
+
 test.describe('Region plate key and jumps (18-10; REGION-02, D-08)', () => {
   for (const r of regions) {
     test(`/photos/regions/${r.id}: the key list has one anchor row per pin, in sequence order`, async ({
@@ -908,9 +920,9 @@ test.describe('Region plate key and jumps (18-10; REGION-02, D-08)', () => {
       const pinned = pinnedViews(r.id);
       const rows = page.locator(`${KEY_LIST} [data-key-row]`);
       await expect(rows).toHaveCount(pinned.length);
-      expect(await rows.evaluateAll((els) => els.map((e) => e.getAttribute('data-key-row')))).toEqual(
-        pinned.map((v) => v.slug)
-      );
+      expect(
+        await rows.evaluateAll((els) => els.map((e) => e.getAttribute('data-key-row')))
+      ).toEqual(pinned.map((v) => v.slug));
       for (const [i, v] of pinned.entries()) {
         const row = rows.nth(i);
         await expect(row).toHaveAttribute('href', `#photo-${v.slug}`);
@@ -957,7 +969,8 @@ test.describe('Region plate key and jumps (18-10; REGION-02, D-08)', () => {
         document.querySelector(list)!,
       ];
       return nodes.every(
-        (n, i) => i === 0 || !!(nodes[i - 1].compareDocumentPosition(n) & Node.DOCUMENT_POSITION_FOLLOWING)
+        (n, i) =>
+          i === 0 || !!(nodes[i - 1].compareDocumentPosition(n) & Node.DOCUMENT_POSITION_FOLLOWING)
       );
     }, KEY_LIST);
     expect(order, 'Facts, plate, key list in DOM order').toBe(true);
@@ -969,6 +982,133 @@ test.describe('Region plate key and jumps (18-10; REGION-02, D-08)', () => {
     const sheet = await rectOf(page.locator('[data-plate-sheet="zermatt"]'));
     expect(sheet.right - sheet.left).toBeCloseTo(633.6, 0);
     expect(sheet.bottom - sheet.top).toBeCloseTo(633.6, 0);
+  });
+
+  test('at 1440 a badge click lands like a key row: under the nav, no dialog, an ink neatline', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/photos/regions/zermatt');
+    const third = pinnedViews('zermatt')[2];
+    await page.locator(`[data-plate-badge="${third.slug}"]`).click();
+    // Off the photo, so its hover ring does not stand in for the arrival cue.
+    await page.mouse.move(2, 2);
+    await expectLanded(page, third.slug);
+    // The arrival cue (:target): the neatline ring reads ink.
+    const ink = await colourOf(page, '--color-ink');
+    await expect
+      .poll(() =>
+        page
+          .locator(`li#photo-${third.slug} [data-neatline]`)
+          .evaluate((el) => getComputedStyle(el).boxShadow)
+      )
+      .toContain(ink);
+  });
+
+  test('hovering key row 2 marks its badge accent; hovering a badge marks its row', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/photos/regions/zermatt');
+    const accent = await colourOf(page, '--color-accent');
+    const overlay = await colourOf(page, '--color-surface-overlay');
+    const [, second, third] = pinnedViews('zermatt');
+    const row = page.locator(`${KEY_LIST} [data-key-row="${second.slug}"]`);
+    const badge = page.locator(`[data-plate-badge="${second.slug}"]`);
+    const bg = (target: Locator) => target.evaluate((el) => getComputedStyle(el).backgroundColor);
+    const bar = (target: Locator) =>
+      target.evaluate((el) => {
+        const s = getComputedStyle(el, '::before');
+        return `${s.content} ${s.width} ${s.backgroundColor}`;
+      });
+
+    await row.hover();
+    await expect.poll(() => bg(badge)).toBe(accent);
+    await expect.poll(() => bg(row.locator('[data-key-badge]'))).toBe(accent);
+    await expect.poll(() => bar(row)).toBe(`"" 2px ${accent}`);
+    // Only the hovered pair: the next photo's badge keeps its own look.
+    expect(await bg(page.locator(`[data-plate-badge="${third.slug}"]`))).not.toBe(accent);
+
+    await page.mouse.move(2, 2);
+    await expect.poll(() => bg(badge)).not.toBe(accent);
+    await badge.hover();
+    await expect.poll(() => bg(row)).toBe(overlay);
+    await expect.poll(() => bar(row)).toBe(`"" 2px ${accent}`);
+    await expect.poll(() => bg(row.locator('[data-key-badge]'))).toBe(accent);
+    await expect.poll(() => bg(badge)).toBe(accent);
+  });
+
+  test('a focus-visible key row marks its plate badge accent', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/photos/regions/zermatt');
+    const accent = await colourOf(page, '--color-accent');
+    const first = pinnedViews('zermatt')[0];
+    const row = page.locator(`${KEY_LIST} [data-key-row="${first.slug}"]`);
+    await row.focus();
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Tab');
+    await expect(row).toBeFocused();
+    await expect
+      .poll(() =>
+        page
+          .locator(`[data-plate-badge="${first.slug}"]`)
+          .evaluate((el) => getComputedStyle(el).backgroundColor)
+      )
+      .toBe(accent);
+  });
+
+  // @needs-tab-to-links: WebKit off Linux skips links on Tab (Safari's default).
+  test('the Tab path never stops on a badge and reaches the key rows in order @needs-tab-to-links', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/photos/regions/zermatt');
+    const pinned = pinnedViews('zermatt');
+    const seen: string[] = [];
+    for (let i = 0; i < 200 && seen.length < pinned.length; i++) {
+      await page.keyboard.press('Tab');
+      const at = await page.evaluate(() => {
+        const a = document.activeElement;
+        if (!a) return null;
+        if (a.hasAttribute('data-plate-badge')) return 'badge';
+        return a.getAttribute('data-key-row');
+      });
+      expect(at, 'Tab stopped on a plate badge').not.toBe('badge');
+      if (at) seen.push(at);
+    }
+    expect(seen).toEqual(pinned.map((v) => v.slug));
+  });
+
+  test('under reduced motion a key-row jump is instant (scrollY settled at the first read)', async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/photos/regions/zermatt');
+    const last = pinnedViews('zermatt').at(-1)!;
+    await page.locator(`${KEY_LIST} [data-key-row="${last.slug}"]`).click();
+    const first = await page.evaluate(() => window.scrollY);
+    const later = await page.evaluate(
+      () =>
+        new Promise<number>((done) =>
+          setTimeout(() => requestAnimationFrame(() => done(window.scrollY)), 300)
+        )
+    );
+    expect(first).toBeGreaterThan(0);
+    expect(later).toBe(first);
+    await expectLanded(page, last.slug);
+  });
+});
+
+test.describe('Region plate jumps without JavaScript (18-10; UI E4 no-JS)', () => {
+  test.use({ javaScriptEnabled: false });
+
+  test('a key row jump works with JavaScript off', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/photos/regions/zermatt');
+    const third = pinnedViews('zermatt')[2];
+    await page.locator(`${KEY_LIST} [data-key-row="${third.slug}"]`).click();
+    await expectLanded(page, third.slug);
   });
 });
 

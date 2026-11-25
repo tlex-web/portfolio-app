@@ -512,11 +512,39 @@ function segmentRules(groups: readonly PlateSegmentGroup[]): string[] {
 }
 
 /**
+ * The list-plate sync (18-RESEARCH Pattern 3; UI-SPEC "Sync between list and
+ * map", Interaction States "Plate badge" and "Plate key row"), in CSS with no
+ * client JS: under the region page's [data-plate-root], a hovered or
+ * focus-visible key row ([data-key-row=slug], PlateKey) or a hovered plate
+ * badge ([data-plate-badge=slug]) marks the plate badge accent and gives the
+ * row the overlay fill, the 2 px accent bar and an accent badge. Only fills
+ * change, so an approximate badge keeps its dashed border. Without :has() the
+ * rows and badges keep their own hover states and every anchor still works.
+ */
+function syncRules(slug: string): string[] {
+  const q = `"${cssEscape(slug)}"`;
+  const row = `[data-key-row=${q}]`;
+  const badge = `[data-plate-badge=${q}]`;
+  const rowActive = `[data-plate-root]:has(${row}:is(:hover,:focus-visible))`;
+  const badgeActive = `[data-plate-root]:has(${badge}:hover)`;
+  const both = (target: string) => `${rowActive} ${target},${badgeActive} ${target}`;
+  const accent = '{background-color:var(--color-accent);color:var(--color-ink-inverse)}';
+  return [
+    `${both(badge)}${accent}`,
+    `${both(row)}{background-color:var(--color-surface-overlay)}`,
+    `${both(`${row}::before`)}{content:"";position:absolute;top:0.5rem;bottom:0.5rem;left:0;width:0.125rem;background-color:var(--color-accent)}`,
+    `${both(`${row} [data-key-badge]`)}${accent}`,
+  ];
+}
+
+/**
  * The server-rendered CSS for a region plate's pins (T-18-23: built only from
  * numbers, the slugs and fixed selectors; every selector value goes through
  * cssEscape). The first segment is unconditional; every later one is an
  * `@container <name> (min-width: …)` rule repeating only the rules that
- * change, so the CSS covers every sheet side, fractional ones included.
+ * change, so the CSS covers every sheet side, fractional ones included. The
+ * per-pin list-plate sync rules (syncRules; T-18-60: the same slug guard and
+ * cssEscape) follow, unconditional.
  *
  * @throws RangeError for a slug or container name outside the slug pattern
  *   (the mapMarkCss precedent), a duplicate slug or a uv outside [0, 1].
@@ -529,18 +557,18 @@ export function plateCss(pins: readonly PlatePin[], containerName: string): stri
     if (!SLUG.test(p.slug)) throw new RangeError(`plateCss: unsafe slug ${JSON.stringify(p.slug)}`);
   }
   const current = new Map<string, string>();
-  return plateSegments(pins)
-    .map((seg) => {
-      const rules = segmentRules(seg.groups).filter((rule) => {
-        const selector = rule.slice(0, rule.indexOf('{'));
-        if (current.get(selector) === rule) return false;
-        current.set(selector, rule);
-        return true;
-      });
-      const body = rules.join('\n');
-      return seg.minS === null
-        ? body
-        : `@container ${containerName} (min-width: ${seg.minS}px){\n${body}\n}`;
-    })
-    .join('\n');
+  const blocks = plateSegments(pins).map((seg) => {
+    const rules = segmentRules(seg.groups).filter((rule) => {
+      const selector = rule.slice(0, rule.indexOf('{'));
+      if (current.get(selector) === rule) return false;
+      current.set(selector, rule);
+      return true;
+    });
+    const body = rules.join('\n');
+    return seg.minS === null
+      ? body
+      : `@container ${containerName} (min-width: ${seg.minS}px){\n${body}\n}`;
+  });
+  for (const p of pins) blocks.push(syncRules(p.slug).join('\n'));
+  return blocks.join('\n');
 }

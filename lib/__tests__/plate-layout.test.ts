@@ -626,17 +626,15 @@ describe('plateCss guards (T-18-23)', () => {
         const rule = (target: string) =>
           lines.find((l) => l.startsWith(`${rowActive} ${target},${badgeActive} ${target}{`));
         // Row hover or focus-visible, and badge hover: the plate badge turns accent ...
-        expect(rule(badge), `${p.slug} plate badge`).toMatch(
+        expect(rule(badge)).toMatch(
           /\{background-color:var\(--color-accent\);color:var\(--color-ink-inverse\)\}$/
         );
         // ... and the row gets the overlay fill, the 2 px accent bar and an accent badge.
-        expect(rule(row), `${p.slug} row fill`).toMatch(
-          /\{background-color:var\(--color-surface-overlay\)\}$/
-        );
-        expect(rule(`${row}::before`), `${p.slug} row bar`).toMatch(
+        expect(rule(row)).toMatch(/\{background-color:var\(--color-surface-overlay\)\}$/);
+        expect(rule(`${row}::before`)).toMatch(
           /\{content:"";position:absolute;top:0\.5rem;bottom:0\.5rem;left:0;width:0\.125rem;background-color:var\(--color-accent\)\}$/
         );
-        expect(rule(`${row} [data-key-badge]`), `${p.slug} row badge`).toMatch(
+        expect(rule(`${row} [data-key-badge]`)).toMatch(
           /\{background-color:var\(--color-accent\);color:var\(--color-ink-inverse\)\}$/
         );
       }
