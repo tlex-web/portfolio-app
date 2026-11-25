@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
-stopped_at: Completed 18-18-PLAN.md
-last_updated: "2026-11-25T19:59:23.426Z"
+stopped_at: Completed 18-19-PLAN.md
+last_updated: "2026-11-25T20:39:13.564Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: 4f02ab6fd790724997561c5ea39d4adeaf01dc74
+state_head: 45e90b4c6a1c4fd0bb5faf4bcca4cf4e672aa9c1
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 109
-  completed_plans: 98
+  completed_plans: 99
   percent: 71
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-24)
 ## Current Position
 
 Phase: 18 (Immersive Survey Layout) — EXECUTING
-Plan: 18 of 29
+Plan: 19 of 29
 Status: Ready to execute
 Last activity: 2026-11-24 — Phase 18 execution started
 
@@ -156,6 +156,7 @@ Progress: [███████░░░] 71%
 | Phase 18 P16 | 21 min | 2 tasks | 14 files |
 | Phase 18 P17 | 17min | 2 tasks | 12 files |
 | Phase 18 P18 | 20min | 2 tasks tasks | 12 files files |
+| Phase 18 P19 | 30min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -411,6 +412,10 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-18: the strip data column reads rights line, legend, then Share (mt-4, failurePlacement 'below'); no Share on the end card (no photo; the region page has Share region)
 - [Phase 18]: 18-18: ShareButton resets copied/failure state when its url prop changes instead of being keyed per photo, so focus survives an arrow-key step
 - [Phase 18]: 18-18: mounting ShareButton in the viewer duplicates it and its three Phosphor icons into the photo routes' shared chunk (+11,005 B, ~6.4 KB of six-weight path data); client JS 1,882,651 B (+11,477 vs 1,871,174; 26,810 over the cap), input for 18-25's icon decision
+- [Phase 18]: 18-19: stageSizes(ar, variant) from the lightbox tiers replaces STAGE_SIZES; it ignores the variable-height strip on purpose (an upper bound, never under-fetching); the scroll tier's 70vh cap is STAGE_SCROLL_VH with a parity scan of PhotoViewer's 70svh box
+- [Phase 18]: 18-19 (Tim, 2026-11-25, 'A: keep sizes, relax check'): the stage currentSrc gate keeps under-fetch strict (descriptor >= painted width x DPR) and judges over-fetch against the declared sizes slot x DPR; page 1440x900 at WebKit DPR 2 keeps taking 2560w, as before 18-19; no layout or baseline change
+- [Phase 18]: 18-19: the neighbour preload picks AVIF or WebP from the stage's loaded img currentSrc (StagePhoto onLargeLoad passes the img) and gives each neighbour its own stageSizes (13 #33)
+- [Phase 18]: 18-19: every lightbox test in photos-lightbox and design-system opens from the Zermatt figure links (clickFigure/openFigure), same photo per test (grid index n = series[n]); LBOX-09 and PHOTO-06 stay Pending for their later carriers (18-20/18-29, 18-21..18-29)
 
 ### Pending Todos
 
@@ -472,6 +477,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-25T19:59:22.770Z
-Stopped at: Completed 18-18-PLAN.md
+Last session: 2026-11-25T20:39:12.897Z
+Stopped at: Completed 18-19-PLAN.md
 Resume file: None
