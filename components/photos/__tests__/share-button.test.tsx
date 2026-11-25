@@ -448,3 +448,52 @@ describe('ShareButton copy mode', () => {
     errors.mockRestore();
   });
 });
+
+/**
+ * The viewer strip's button follows each step (18-18; PHOTO-07, D-13): the same
+ * mounted button gets the next photo's url. Its state belongs to the url it was
+ * pressed for, so a new url clears 'Link copied' and the failure line, and the
+ * button element (and with it keyboard focus) stays.
+ */
+describe('ShareButton across a url change (18-18, the viewer strip)', () => {
+  const NEXT_URL = 'https://www.tlui.de/photos/next-example-photo';
+  const withUrl = (url: string) => (
+    <ShareButton url={url} title={TITLE} subject="photo" surface="gallery" />
+  );
+
+  it('a new url clears Link copied and its status; the button element stays mounted', async () => {
+    const writeText = jest.fn<Clipboard['writeText']>().mockResolvedValue(undefined);
+    stub('clipboard', { writeText });
+    const { rerender } = render(withUrl(URL_));
+    await press();
+    expect(button()).toHaveTextContent('Link copied');
+    const before = button();
+    act(() => before.focus());
+
+    rerender(withUrl(NEXT_URL));
+
+    expect(button()).toBe(before);
+    expect(button()).toHaveFocus();
+    expect(button()).toHaveTextContent('Copy link');
+    expect(status()).toHaveTextContent('');
+  });
+
+  it('a new url drops the old failure line; the next press copies the new url', async () => {
+    stub('clipboard', {
+      writeText: jest.fn<Clipboard['writeText']>().mockRejectedValue(new Error('denied')),
+    });
+    const { rerender } = render(withUrl(URL_));
+    await press();
+    expect(failureLine()).toHaveTextContent(URL_);
+
+    rerender(withUrl(NEXT_URL));
+    expect(failureLine()).toBeNull();
+    expect(status()).toHaveTextContent('');
+
+    const writeText = jest.fn<Clipboard['writeText']>().mockResolvedValue(undefined);
+    stub('clipboard', { writeText });
+    await press();
+    expect(writeText).toHaveBeenCalledWith(NEXT_URL);
+    expect(button()).toHaveTextContent('Link copied');
+  });
+});

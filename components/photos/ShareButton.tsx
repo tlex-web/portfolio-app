@@ -90,6 +90,18 @@ export default function ShareButton({
   const pending = useRef(false);
   const urlRef = useRef<HTMLSpanElement>(null);
 
+  // A new url starts clean (18-18): in the viewer strip the url follows each step, and
+  // the last photo's 'Link copied' or failure line must not stand beside the next one.
+  // Reset during render (React's "adjusting state on a prop change"), not by a key: the
+  // button stays mounted, so focus on it survives an arrow-key step.
+  const [shownUrl, setShownUrl] = useState(url);
+  if (shownUrl !== url) {
+    setShownUrl(url);
+    setCopied(false);
+    setFailure(0);
+    setAnnouncement('');
+  }
+
   useEffect(() => {
     mounted.current = true;
     return () => {

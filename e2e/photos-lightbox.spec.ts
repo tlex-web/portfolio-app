@@ -1,4 +1,5 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
+import { site } from '@/data/site';
 import { photoBack, regionPhotoViews } from '@/lib/regions';
 import { publishedViews } from '@/lib/photos/view-model';
 import { HOTSPOT_PREF_KEY } from '@/lib/photos/hotspot-pref';
@@ -183,6 +184,141 @@ test.describe('LV95 line on the photo page (18-18; PHOTO-08)', () => {
     await expect(sequence).toContainText(/\d+\.\d{2,4} N/);
     await expect(sequence).not.toContainText('LV95');
     await expect(page.locator('[data-strip-lv95]')).toHaveCount(0);
+  });
+});
+
+/**
+ * The strip's Share / Copy link (18-18; PHOTO-07, D-13): it shares the photo on
+ * screen, so after a step it hands over the stepped photo's canonical URL,
+ * site.url + photoHref, never the window address (T-18-39). Opened from the
+ * Zermatt sequence, the stepping set's own surface. The real clipboard is a
+ * Chromium row (only Chromium grants clipboard permissions in Playwright);
+ * the navigator.share stub runs in every engine (Pitfall 7).
+ */
+test.describe('Share in the viewer strip (18-18; PHOTO-07)', () => {
+  const second = series[1];
+  const secondUrl = `${site.url}/photos/${second.slug}`;
+
+  /** Open a Zermatt photo in the lightbox from its figure link on the region page. */
+  async function openFromSequence(page: Page, slug: string) {
+    await page.goto('/photos/regions/zermatt');
+    const link = page.locator(`[data-photo-id="${slug}"]`);
+    await expect(link).toHaveCount(1);
+    await waitForHydration(link);
+    await link.click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible({ timeout: 20000 });
+    await expect(page).toHaveURL(new RegExp(`/photos/${slug}$`));
+    return dialog;
+  }
+
+  /** Press Next once and wait for the second photo (its title is the h2 in the lightbox, the h1 on the page). */
+  async function stepOnce(scope: Locator, browserName: string, level: 1 | 2 = 2) {
+    const next = scope.getByRole('button', { name: 'Next photo', exact: true });
+    await waitForHydration(next);
+    await pressButton(next, browserName);
+    await expect(scope.locator('[data-photo-counter]')).toHaveText(`2 / ${series.length}`);
+    await expect(scope.getByRole('heading', { level })).toHaveText(second.title);
+  }
+
+  /** A navigator.share stub that records what it receives. */
+  async function stubShare(page: Page) {
+    await page.addInitScript(() => {
+      const w = window as unknown as { __shared: ShareData[] };
+      w.__shared = [];
+      Object.defineProperty(Navigator.prototype, 'share', {
+        configurable: true,
+        value: (data: ShareData) => {
+          w.__shared.push(data);
+          return Promise.resolve();
+        },
+      });
+    });
+  }
+
+  const shared = (page: Page) =>
+    page.evaluate(() => (window as unknown as { __shared: ShareData[] }).__shared);
+
+  test('lightbox: after Next, Copy link puts the second photo canonical URL on the clipboard @chromium-only', async ({
+    page,
+    context,
+    baseURL,
+    browserName,
+  }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: baseURL });
+    // Copy mode whatever the browser build ships (Pitfall 7).
+    await page.addInitScript(() => {
+      delete (Navigator.prototype as Partial<Navigator>).share;
+      delete (Navigator.prototype as Partial<Navigator>).canShare;
+    });
+    const dialog = await openFromSequence(page, series[0].slug);
+    await stepOnce(dialog, browserName);
+
+    const button = dialog.getByRole('button', { name: 'Copy link to this photo' });
+    await expect(button).toHaveText('Copy link');
+    await button.click();
+
+    await expect(button).toHaveText('Link copied');
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(secondUrl);
+  });
+
+  test('lightbox: after Next, Share photo hands navigator.share the second photo canonical URL', async ({
+    page,
+    browserName,
+  }) => {
+    await stubShare(page);
+    const dialog = await openFromSequence(page, series[0].slug);
+    await stepOnce(dialog, browserName);
+
+    const button = dialog.getByRole('button', { name: 'Share photo' });
+    await expect(button).toHaveText('Share photo');
+    await button.click();
+
+    await expect
+      .poll(() => shared(page))
+      .toEqual([{ title: `${second.title} · ${site.name}`, url: secondUrl }]);
+    await expect(dialog.locator('[data-share-failure]')).toHaveCount(0);
+  });
+
+  test('photo page with a query and hash: after Next, Share photo still hands over the bare canonical URL', async ({
+    page,
+    browserName,
+  }) => {
+    await stubShare(page);
+    await page.goto(`/photos/${series[0].slug}?x=1#y`);
+    const viewer = page.locator('[data-photo-viewer]');
+    await stepOnce(viewer, browserName, 1);
+    await expect(page).toHaveURL(new RegExp(`/photos/${second.slug}$`));
+
+    const button = viewer.getByRole('button', { name: 'Share photo' });
+    await button.click();
+
+    await expect
+      .poll(() => shared(page))
+      .toEqual([{ title: `${second.title} · ${site.name}`, url: secondUrl }]);
+  });
+
+  test('the end card has no Share button; the strip and its button return with Previous', async ({
+    page,
+    browserName,
+  }) => {
+    const last = series[series.length - 1];
+    const dialog = await openFromSequence(page, last.slug);
+    const share = dialog.locator('[data-strip-share] button');
+    await expect(share).toHaveCount(1);
+    const next = dialog.getByRole('button', { name: 'Next photo', exact: true });
+    await waitForHydration(next);
+    await pressButton(next, browserName);
+    await expect(dialog.locator('[data-photo-counter]')).toHaveText('End');
+    await expect(share).toHaveCount(0);
+    await pressButton(
+      dialog.getByRole('button', { name: 'Previous photo', exact: true }),
+      browserName
+    );
+    await expect(dialog.locator('[data-photo-counter]')).toHaveText(
+      `${series.length} / ${series.length}`
+    );
+    await expect(share).toHaveCount(1);
   });
 });
 

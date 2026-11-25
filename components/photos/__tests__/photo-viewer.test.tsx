@@ -1,6 +1,8 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import LightboxDialog from '../LightboxDialog';
 import PhotoViewer from '../PhotoViewer';
+import { site } from '@/data/site';
+import { photoHref } from '@/lib/photos/routes';
 import { publishedViews, type PhotoView } from '@/lib/photos/view-model';
 import {
   photoBack,
@@ -115,7 +117,15 @@ function renderModal(photos: readonly PhotoView[], initialSlug: string) {
 }
 
 const counter = () => document.querySelector('[data-photo-counter]');
-const status = () => screen.getByRole('status', { hidden: true });
+/**
+ * The viewer's own polite status line (a p). Since 18-18 the strip's Share button
+ * carries a second status (a span), so the role alone no longer names one element.
+ */
+const status = () => {
+  const el = document.querySelector<HTMLElement>('[data-photo-viewer] p[role="status"]');
+  if (!el) throw new Error('photo-viewer.test: no viewer status line');
+  return el;
+};
 
 describe('the fixtures', () => {
   it("an explicit one-photo set off the v2.0 four, and Zermatt's seven", () => {
@@ -398,5 +408,56 @@ describe('the end-of-series card (18-16; LBOX-09, D-12)', () => {
     fireEvent.keyDown(document, { key: 'ArrowRight' });
     expect(screen.queryByRole('heading', { name: /^End of the / })).toBeNull();
     expect(status()).not.toHaveTextContent(/End of the/);
+  });
+});
+
+/**
+ * The strip's Share / Copy link (18-18; PHOTO-07, D-13): on both surfaces the
+ * strip ends with ShareButton for the shown photo, site.url + photoHref, so a
+ * step changes what it copies; the end card has no strip and no Share button.
+ */
+describe('the strip Share button follows the shown photo (18-18; PHOTO-07)', () => {
+  const shareButton = () =>
+    screen.queryByRole('button', { name: 'Copy link to this photo', hidden: true });
+
+  afterEach(() => {
+    delete (navigator as unknown as Record<string, unknown>).clipboard;
+  });
+
+  it.each(['page', 'modal'] as const)(
+    'the %s variant: Next, then Copy link writes the second photo’s canonical URL',
+    async (variant) => {
+      const writeText = jest.fn<Clipboard['writeText']>().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText },
+        configurable: true,
+        writable: true,
+      });
+      if (variant === 'page') renderPage(zermatt, zermatt[0].slug);
+      else renderModal(zermatt, zermatt[0].slug);
+      expect(shareButton()).not.toBeNull();
+      expect(shareButton()!.closest('[data-strip-share]')).not.toBeNull();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Next photo', hidden: true }));
+      expect(counter()).toHaveTextContent(`2 / ${zermatt.length}`);
+      await act(async () => {
+        fireEvent.click(shareButton()!);
+      });
+
+      expect(writeText).toHaveBeenCalledTimes(1);
+      expect(writeText).toHaveBeenCalledWith(`${site.url}${photoHref(zermatt[1].slug)}`);
+    }
+  );
+
+  it('the end card shows no Share button; Previous brings it back for the last photo', () => {
+    const last = zermatt[zermatt.length - 1];
+    renderPage(zermatt, last.slug);
+    expect(shareButton()).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Next photo', hidden: true }));
+    expect(counter()).toHaveTextContent('End');
+    expect(shareButton()).toBeNull();
+    expect(document.querySelector('[data-strip-share]')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Previous photo', hidden: true }));
+    expect(shareButton()).not.toBeNull();
   });
 });

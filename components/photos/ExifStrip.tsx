@@ -13,13 +13,16 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * in the lightbox), place · date, the story, then the data column: the EXIF
  * list (or 'Film scan · 2019'), the altitude and position list (for a Swiss
  * photo its last line is the LV95 line, 'LV95 E … N …' under the sr-only term
- * 'Swiss grid', 18 D-14), and the rights line last. Row 4 is the hotspot key (the `hotspotKey` slot, filled by
+ * 'Swiss grid', 18 D-14), and the rights line. Row 4 is the hotspot key (the `hotspotKey` slot, filled by
  * PhotoViewer with HotspotKey, which shows only on the key and scroll tiers).
  * Row 8 is the shortcut legend, '← → photos · Z zoom · H labels · Esc close'
  * ('Esc back to {region}' on the page, h1 surface, 18 D-09), each key in a kbd, shown
  * only from 768 px on a device that hovers with a fine pointer: the keys mean
  * nothing on touch (10-UI-SPEC Strip row 8, in place of a '?' overlay). Each
  * key and its word are one nowrap unit, so the line wraps only at ' · '.
+ * The data column ends with the `share` slot (18 D-13: PhotoViewer's
+ * Share / Copy link button for the shown photo), mt-4 below the rights line
+ * and the legend, so a pointer visitor reads the keys before the one action.
  * On the scroll tier the two blocks stack in one column; on the key and
  * gutter tiers (lb-key, lb-gutter) they sit side by side in a 3fr / 2fr grid
  * with a 32 px gap: identity and story left, data right. At 1440 the 420 px
@@ -34,7 +37,8 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * aria-hidden ' ·' separator sits at the end of the unit before it, followed
  * by a plain space inside the same dd (valid dl content), so a line wraps only
  * after a separator, never inside a value or before a '·'.
- * The strip holds no link but the page trail's crumbs, and no download control (LBOX-07).
+ * The strip holds no link but the page trail's crumbs, and no download control (LBOX-07);
+ * its one control is the share slot's button.
  */
 
 export type ListRow = { key: string; term?: string; value: string };
@@ -83,6 +87,7 @@ export default function ExifStrip({
   backName,
   breadcrumb,
   hotspotKey,
+  share,
 }: {
   view: PhotoView;
   /** 1 on the photo page (the h1 surface, Escape goes back to the region), 2 in the lightbox. */
@@ -93,6 +98,12 @@ export default function ExifStrip({
   breadcrumb?: readonly BreadcrumbItem[];
   /** Row 4, the hotspot key (HotspotKey), after the story. */
   hotspotKey?: ReactNode;
+  /**
+   * The Share / Copy link control (18 D-13, PHOTO-07; ShareButton, filled by
+   * PhotoViewer with the shown photo's URL), the data column's last row, mt-4.
+   * A slot, so the strip itself stays presentational and server-safe.
+   */
+  share?: ReactNode;
 }) {
   const { title, story, rights, strip } = view;
   if (headingLevel === 1 && !backName) {
@@ -178,6 +189,11 @@ export default function ExifStrip({
               <kbd>Esc</kbd> {headingLevel === 1 ? `back to ${backName}` : 'close'}
             </span>
           </p>
+          {share && (
+            <div data-strip-share="" className="mt-4">
+              {share}
+            </div>
+          )}
         </div>
       </div>
     </div>

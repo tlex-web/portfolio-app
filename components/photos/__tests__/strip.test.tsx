@@ -6,13 +6,17 @@
  * buildPhotoViews, so it passes the same order and validation.
  */
 import { render } from '@testing-library/react';
+import { renderToString } from 'react-dom/server';
 import ExifStrip from '../ExifStrip';
+import ShareButton from '../ShareButton';
 import { imageManifest } from '@/data/generated/image-manifest';
 import { photos } from '@/data/generated/photos';
 import { editorial } from '@/data/photos/editorial';
+import { site } from '@/data/site';
 import { lv95ToWgs84 } from '@/lib/geo';
 import { formatCaptureLabel } from '@/lib/photo-format';
 import { lv95Line } from '@/lib/photos/lv95-line';
+import { photoHref } from '@/lib/photos/routes';
 import { buildPhotoViews, photoViews, type PhotoView } from '@/lib/photos/view-model';
 
 const NBSP = ' ';
@@ -388,5 +392,68 @@ describe('capture label (rewritten from the ImageDetailModal tests, D-03)', () =
       expect(text.split(' · ')).toHaveLength(2);
       expect(text).toBe(`${view.strip.placeDate.place} · ${view.strip.placeDate.date}`);
     }
+  });
+});
+
+/**
+ * The strip's Share / Copy link slot (18-18; PHOTO-07, D-13; UI-SPEC Contract
+ * 4): PhotoViewer fills it with ShareButton for the shown photo (subject
+ * photo, gallery surface). The slot is the data column's last row, mt-4 after
+ * the rights line and the legend; the server HTML is copy mode.
+ */
+describe('ExifStrip share slot (18-18; PHOTO-07)', () => {
+  const view = viewOf('img-0605');
+  const share = (
+    <ShareButton
+      url={`${site.url}${photoHref(view.slug)}`}
+      title={`${view.title} · ${site.name}`}
+      subject="photo"
+      surface="gallery"
+    />
+  );
+
+  it.each([1, 2] as const)(
+    'heading level %i: the button ends the data column, after the rights line, mt-4',
+    (level) => {
+      const { container } = render(
+        <ExifStrip
+          view={view}
+          headingLevel={level}
+          backName={level === 1 ? BACK_NAME : undefined}
+          share={share}
+        />
+      );
+      const data = container.querySelector('[data-strip-data]')!;
+      const slot = data.querySelector('[data-strip-share]')!;
+      expect(slot).not.toBeNull();
+      expect(data.lastElementChild).toBe(slot);
+      expect(slot).toHaveClass('mt-4');
+      // Rights, then the legend, then the one action.
+      expect(slot.previousElementSibling).toHaveAttribute('data-strip-legend');
+      expect(slot.previousElementSibling!.previousElementSibling).toHaveAttribute(
+        'data-strip-rights'
+      );
+      const button = slot.querySelector('button')!;
+      expect(button).toHaveAccessibleName('Copy link to this photo');
+      expect(button).toHaveClass('hover:border-ink-muted');
+    }
+  );
+
+  it("the server HTML holds the copy-mode button named 'Copy link to this photo'", () => {
+    const html = renderToString(
+      <ExifStrip view={view} headingLevel={1} backName={BACK_NAME} share={share} />
+    );
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const button = doc.querySelector('[data-strip-share] button')!;
+    expect(button).not.toBeNull();
+    expect(button.getAttribute('aria-label')).toBe('Copy link to this photo');
+    expect(button.getAttribute('data-share-mode')).toBe('copy');
+    expect(button.textContent).toBe('Copy link');
+  });
+
+  it('without the slot the strip renders no share row and no button', () => {
+    const strip = renderStrip(view);
+    expect(strip.querySelector('[data-strip-share]')).toBeNull();
+    expect(strip.querySelectorAll('button')).toHaveLength(0);
   });
 });

@@ -26,6 +26,7 @@ import type { BreadcrumbItem } from '@/components/photos/Breadcrumb';
 import ExifStrip from '@/components/photos/ExifStrip';
 import { HotspotKey, HotspotMarks, HotspotOverlay } from '@/components/photos/Hotspots';
 import { useLightbox } from '@/components/photos/LightboxDialog';
+import ShareButton from '@/components/photos/ShareButton';
 import StagePhoto from '@/components/photos/StagePhoto';
 import ZoomStage from '@/components/photos/ZoomStage';
 import { keyBelongsToChrome } from '@/components/site/SiteNav';
@@ -63,7 +64,11 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * and the slow-load and load-error states with Retry (10-UI-SPEC E5). The server
  * HTML already holds the layout, the title and the strip before the photo
  * decodes. Below the stage, ExifStrip carries the title, place and date,
- * story, EXIF, position and the rights line (D-05). Only the content-hashed
+ * story, EXIF, position (with the LV95 line for a Swiss photo, 18 D-14) and
+ * the rights line (D-05), and ends with ShareButton for the shown photo (18
+ * D-13, PHOTO-07): site.url + photoHref(current.slug), so every step shares
+ * the photo on screen. The end card has no strip and so no Share button: it
+ * shows no photo, and the region page carries its own Share. Only the content-hashed
  * manifest derivatives (AVIF and WebP at 1024, 1600 and 2560 px) are
  * referenced: no original, no download control and no right-click or drag
  * blocking (LBOX-07, T-10-03).
@@ -729,6 +734,17 @@ export default function PhotoViewer({
             }
             hotspotKey={
               <HotspotKey view={current} expandedId={expandedId} onToggle={toggleHotspot} />
+            }
+            share={
+              // The shown photo's canonical URL, never the window address (T-18-39). Not
+              // keyed per photo: the arrows step while it has focus, and a remount would
+              // drop that focus; ShareButton resets its state when the url changes.
+              <ShareButton
+                url={`${site.url}${photoHref(current.slug)}`}
+                title={`${current.title} · ${site.name}`}
+                subject="photo"
+                surface="gallery"
+              />
             }
           />
         </>
