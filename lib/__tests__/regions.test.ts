@@ -15,6 +15,9 @@
  *
  * - D-03 (17-16): region ids, photo slugs and the reserved segments under
  *   /photos never collide; see the describe at the end of the file.
+ * - D-11 (18-06): nextRegion chains the regions west to east and wraps from
+ *   the last to the first; regionNumber is the 1-based place in that order; a
+ *   one-region list has no next region (nextRegionIn, pure).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -38,6 +41,9 @@ import {
   regions,
   regionsWestToEast,
   regionsWestToEastIn,
+  nextRegion,
+  nextRegionIn,
+  regionNumber,
 } from '@/lib/regions';
 
 /** Tim's approved copy per region (D-14), verbatim. */
@@ -385,5 +391,49 @@ describe('regions west to east (D-01; REGION-01 ordering and empty)', () => {
 
   it('returns an empty list for an empty input', () => {
     expect(regionsWestToEastIn([])).toEqual([]);
+  });
+});
+
+describe('the next-region chain (18-06; D-01, D-11; REGION-02 ordering and empty)', () => {
+  it('follows west to east and wraps from the last region to the first', () => {
+    expect(nextRegion('zermatt')?.id).toBe('ortler');
+    expect(nextRegion('ortler')?.id).toBe('saalfelden');
+    expect(nextRegion('saalfelden')?.id).toBe('zermatt');
+  });
+
+  it('visits every region once before returning to the start', () => {
+    const seen: string[] = [];
+    let id = regionsWestToEast()[0].id;
+    for (let i = 0; i < regionIds.length; i++) {
+      seen.push(id);
+      id = nextRegion(id)!.id;
+    }
+    expect(id).toBe(seen[0]);
+    expect([...seen].sort()).toEqual([...regionIds].sort());
+  });
+
+  it('throws a RangeError for an unknown or wrong-case id', () => {
+    expect(() => nextRegion('nowhere')).toThrow(
+      new RangeError('nextRegion: nowhere is not a registry region')
+    );
+    expect(() => nextRegion('Zermatt')).toThrow(RangeError);
+  });
+
+  it('nextRegionIn: a one-region list has no next region; two regions point at each other', () => {
+    expect(nextRegionIn([{ id: 'solo' }], 'solo')).toBeUndefined();
+    const pair = [{ id: 'w' }, { id: 'e' }];
+    expect(nextRegionIn(pair, 'w')?.id).toBe('e');
+    expect(nextRegionIn(pair, 'e')?.id).toBe('w');
+    expect(() => nextRegionIn(pair, 'x')).toThrow(RangeError);
+    expect(() => nextRegionIn([], 'x')).toThrow(RangeError);
+  });
+
+  it('regionNumber is the 1-based place west to east', () => {
+    expect(regionNumber('zermatt')).toBe(1);
+    expect(regionNumber('ortler')).toBe(2);
+    expect(regionNumber('saalfelden')).toBe(3);
+    expect(() => regionNumber('nowhere')).toThrow(
+      new RangeError('regionNumber: nowhere is not a registry region')
+    );
   });
 });
