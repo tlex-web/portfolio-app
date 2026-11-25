@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ArrowSquareOutIcon } from '@phosphor-icons/react/dist/ssr';
 import type { RegionFact } from '@/data/schemas/region';
+import HeaderSlot from '@/components/photos/region/HeaderSlot';
 import NextRegion from '@/components/photos/region/NextRegion';
 import RegionHeader from '@/components/photos/region/RegionHeader';
 import RegionSequence from '@/components/photos/region/RegionSequence';
@@ -45,7 +46,9 @@ import { factSource } from '@/lib/photos/view-model';
  * 18-08 (REGION-03, REGION-04, D-07): RegionSequence replaces the stand-in's
  * text photo list: a full-bleed gallery band, after the container, holding
  * each photo uncropped in its map collar with its caption, and the rights line
- * after the list. Each photo link still carries data-photo-id.
+ * after the list. Each photo link still carries data-photo-id. HeaderSlot,
+ * between the header band and the facts, holds the region's cover in Phase
+ * 19's 16:9 box (D-05), the page's LCP image.
  * NextRegion closes the page after the sequence (D-01, D-11): the trail
  * sign to the next region west to east, wrapping to the first, and 'All
  * regions'; its own py-12 md:py-16 replaces the container's bottom padding.
@@ -99,6 +102,7 @@ export default async function RegionPage({ params }: PageProps) {
       />
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
         <RegionHeader id={region.id} />
+        <HeaderSlot id={region.id} />
 
         <section aria-labelledby="region-facts" className="mt-8 max-w-prose">
           <h2 id="region-facts">Facts</h2>

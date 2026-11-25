@@ -74,11 +74,36 @@ export function figureSizes(ar: number): string {
   ].join(', ');
 }
 
+/** The header slot's box ratio (aspect-video). */
+const SLOT_RATIO = 16 / 9;
+
+/** The sm and lg breakpoints, where the container's gutters widen. */
+const SM_PX = 640;
+const LG_PX = 1024;
+
 /**
- * The `sizes` of the region header slot's cover (D-05). Stub: the UI-SPEC's
- * starting point, before the contain factor (18-08 Task 2 RED).
+ * The `sizes` of the region header slot's cover (D-05; 18-UI-SPEC Contract 2
+ * "Header slot"; P3 default). The slot is a 16:9 box, full-bleed below 640 px
+ * (100vw), the container's content width above (100vw - 48px from 640 px,
+ * 100vw - 64px from 1024 px, 1088 px from 1216 px). The cover is contained in
+ * it, never cropped, so its rendered width is the box width times
+ * min(1, 9/16 * ar): a 16:9 or wider cover spans the box, a 3:2 one
+ * pillarboxes slightly, a portrait one pillarboxes a lot. The px term is
+ * rounded up and the factor printed to four decimals.
+ *
+ * @throws RangeError for a ratio that is not a positive finite number.
  */
 export function headerSlotSizes(ar: number): string {
-  void ar;
-  return '(min-width: 1216px) 1088px, (min-width: 640px) calc(100vw - 48px), 100vw';
+  ratio(ar);
+  const factor = Math.min(1, ar / SLOT_RATIO);
+  const full = factor >= 0.99995;
+  const f = factor.toFixed(4);
+  const box = (inset: number) =>
+    full ? `calc(100vw - ${inset}px)` : `calc((100vw - ${inset}px) * ${f})`;
+  return [
+    `(min-width: ${WIDE_FROM_PX}px) ${full ? CONTENT_MAX_PX : Math.ceil(CONTENT_MAX_PX * factor)}px`,
+    `(min-width: ${LG_PX}px) ${box(2 * GUTTER_PX.lg)}`,
+    `(min-width: ${SM_PX}px) ${box(2 * GUTTER_PX.sm)}`,
+    full ? '100vw' : `calc(100vw * ${f})`,
+  ].join(', ');
 }

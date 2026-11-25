@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { ListLine, exifLineRows } from '@/components/photos/ExifStrip';
+import FigureTransition from '@/components/photos/region/FigureTransition';
 import { figureSizes } from '@/lib/photos/image-sizes';
 import { photoHref } from '@/lib/photos/routes';
 import type { PhotoView } from '@/lib/photos/view-model';
@@ -23,10 +24,15 @@ import type { PhotoView } from '@/lib/photos/view-model';
  *   continue the neatline outward from its outer corners, so they sit in the
  *   gutter or the rail gap and never over the image.
  * - The photo is a link to the photo page (the lightbox over this page) with
- *   `data-photo-id`, where the lightbox's restoreFocus returns focus. Its image
+ *   `data-photo-id`, where the lightbox's restoreFocus returns focus. Its name
+ *   is the alt plus ', open in the photo viewer', as an aria-label: an sr-only
+ *   suffix after the img gives engines room to insert a space before the comma. Its image
  *   box reserves the ratio over surface-overlay (CLS 0); the image is the stage
  *   derivatives, lazy, uncropped (object-contain in a box of its own ratio),
- *   with `sizes` from figureSizes, derived from the layout.
+ *   with `sizes` from figureSizes, derived from the layout. FigureTransition
+ *   names the image box photo-{slug} while no photo is open (P4 default), so
+ *   opening the photo morphs it into the lightbox stage; instant under
+ *   reduced motion.
  * - The caption: the title; the mono data line of nowrap parts joined at
  *   ' · ', starting with 'n / N' below 768 px only (aria-hidden: the list gives
  *   the position); then the EXIF lines as the viewer strip prints them, or the
@@ -103,26 +109,28 @@ export default function SequenceFigure({ view, n, N }: { view: PhotoView; n: num
             href={photoHref(slug)}
             scroll={false}
             data-photo-id={slug}
+            aria-label={`${alt}, open in the photo viewer`}
             className="relative block cursor-zoom-in"
           >
-            <div data-figure-box="" className="aspect-[var(--ar)] w-full bg-surface-overlay">
-              <picture className="block h-full w-full">
-                <source type="image/avif" srcSet={stage.srcSetAvif} sizes={figureSizes(ar)} />
-                <source type="image/webp" srcSet={stage.srcSetWebp} sizes={figureSizes(ar)} />
-                {/* A raw img inside picture (exempt from @next/next/no-img-element): content-hashed manifest derivative; picture type switching. */}
-                <img
-                  src={stage.src}
-                  width={stage.width}
-                  height={stage.height}
-                  alt={alt}
-                  loading="lazy"
-                  decoding="async"
-                  sizes={figureSizes(ar)}
-                  className="block h-full w-full object-contain"
-                />
-              </picture>
-            </div>
-            <span className="sr-only">, open in the photo viewer</span>
+            <FigureTransition slug={slug}>
+              <div data-figure-box="" className="aspect-[var(--ar)] w-full bg-surface-overlay">
+                <picture className="block h-full w-full">
+                  <source type="image/avif" srcSet={stage.srcSetAvif} sizes={figureSizes(ar)} />
+                  <source type="image/webp" srcSet={stage.srcSetWebp} sizes={figureSizes(ar)} />
+                  {/* A raw img inside picture (exempt from @next/next/no-img-element): content-hashed manifest derivative; picture type switching. */}
+                  <img
+                    src={stage.src}
+                    width={stage.width}
+                    height={stage.height}
+                    alt={alt}
+                    loading="lazy"
+                    decoding="async"
+                    sizes={figureSizes(ar)}
+                    className="block h-full w-full object-contain"
+                  />
+                </picture>
+              </div>
+            </FigureTransition>
           </Link>
         </div>
         <figcaption className="mt-4">

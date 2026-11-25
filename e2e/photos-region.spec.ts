@@ -4,12 +4,19 @@ import {
   regionBreadcrumb,
   regionById,
   regionCardFacts,
+  regionCover,
   regionHeading,
   regionOfPhoto,
+  regionPhotoViews,
   regions,
   regionTitle,
 } from '@/lib/regions';
 import { photoSlugs, publishedViews } from '@/lib/photos/view-model';
+import {
+  readViewTransitions,
+  recordViewTransitions,
+  waitForViewTransitionsSettled,
+} from './helpers/view-transitions';
 
 /**
  * The region pages in a browser (REGION-07; D-01, D-02, D-11): the 17-01
@@ -60,9 +67,17 @@ import { photoSlugs, publishedViews } from '@/lib/photos/view-model';
  * URL and '{heading} · Tim Lui'; a cancelled sheet changes nothing; a rejected
  * clipboard write shows the URL under the button, selected.
  *
- * The sequence (18-08; REGION-03, REGION-04, D-07): on Zermatt at 1440 the
- * first figure's image keeps its natural ratio (within 1 %) and none of its
- * eight corner ticks intersects the image.
+ * The sequence (18-08; REGION-03, REGION-04, D-07, D-05, D-06; 13 #34): on
+ * every region page at 375, 768 and 1440 nothing overflows sideways; every
+ * figure's image keeps its natural ratio (within 1 %), none of its eight corner
+ * ticks intersects the image and all stay on the page; the caption's 'n / N'
+ * shows below 768 only; every image's chosen srcset candidate covers its
+ * rendered width times the device pixel ratio, the next smaller one would not,
+ * and the decoded file is that wide too. The header slot holds the cover
+ * eager, fetchpriority high, alt '' and unnamed for view transitions, and its
+ * caption row fits two lines at 375. The nav stays at the top after a long
+ * scroll (D-06). Opening a figure morphs it into the lightbox (Chromium), and
+ * under reduced motion no view-transition pseudo-element runs.
  */
 
 /*
@@ -490,6 +505,267 @@ test.describe('Region sequence (18-08; REGION-03, REGION-04)', () => {
     expect(Math.abs(g.rendered / g.natural - 1), 'rendered vs natural ratio').toBeLessThan(0.01);
     expect(g.ticks).toHaveLength(8);
     for (const tick of g.ticks) expect(intersects(tick, g.image), JSON.stringify(tick)).toBe(false);
+  });
+});
+
+const WIDTHS = [
+  [375, 812],
+  [768, 1024],
+  [1440, 900],
+] as const;
+
+/**
+ * An image's srcset check (13 #34): the chosen candidate's width descriptor and
+ * the next smaller one in the same set, the rendered CSS width, the device
+ * pixel ratio, and the decoded file's own pixel width.
+ */
+async function srcsetFit(img: Locator) {
+  return img.evaluate(async (el: HTMLImageElement) => {
+    const current = el.currentSrc;
+    const sources = [...(el.closest('picture')?.querySelectorAll('source') ?? [])];
+    const sets = sources.map((source) =>
+      source.srcset.split(',').map((entry) => {
+        const [url, w] = entry.trim().split(/\s+/);
+        return { href: new URL(url, location.href).href, w: parseInt(w, 10) };
+      })
+    );
+    const set = sets.find((s) => s.some((c) => c.href === current)) ?? [];
+    const chosen = set.find((c) => c.href === current);
+    const smaller = set.filter((c) => chosen && c.w < chosen.w).map((c) => c.w);
+    /** The painted width: under object-fit contain, the image inside its box. */
+    function contained(img: HTMLImageElement) {
+      const r = img.getBoundingClientRect();
+      if (getComputedStyle(img).objectFit !== 'contain') return r.width;
+      return Math.min(r.width, (r.height * img.naturalWidth) / img.naturalHeight);
+    }
+    const probe = new Image();
+    probe.src = current;
+    await probe.decode();
+    return {
+      current,
+      descriptor: chosen?.w ?? 0,
+      nextSmaller: smaller.length > 0 ? Math.max(...smaller) : 0,
+      rendered: contained(el),
+      dpr: window.devicePixelRatio,
+      filePx: probe.naturalWidth,
+    };
+  });
+}
+
+/** The srcset assertions for one image: descriptor, next smaller candidate, decoded width. */
+function expectFit(fit: Awaited<ReturnType<typeof srcsetFit>>, what: string) {
+  const need = fit.rendered * fit.dpr;
+  expect(fit.descriptor, `${what}: ${fit.current} is a srcset candidate`).toBeGreaterThan(0);
+  expect(fit.descriptor, `${what}: the descriptor covers ${need} px`).toBeGreaterThanOrEqual(need);
+  expect(fit.nextSmaller, `${what}: the next smaller candidate would not`).toBeLessThan(need);
+  expect(fit.filePx, `${what}: the file is at least ${need} px wide`).toBeGreaterThanOrEqual(
+    Math.floor(need)
+  );
+}
+
+test.describe('Region sequence at 375, 768 and 1440 (18-08; REGION-03, REGION-04, D-07, 13 #34)', () => {
+  for (const r of regions) {
+    for (const [width, height] of WIDTHS) {
+      test(`/photos/regions/${r.id} at ${width}: no overflow; every figure uncropped, ticks off the image, sized right`, async ({
+        page,
+      }) => {
+        await page.setViewportSize({ width, height });
+        await page.goto(`/photos/regions/${r.id}`);
+        const views = regionPhotoViews(r.id);
+        const items = page.locator('section[data-region-sequence] li[data-sequence-item]');
+        await expect(items).toHaveCount(views.length);
+        expect(
+          await items.evaluateAll((els) => els.map((e) => e.getAttribute('data-sequence-item')))
+        ).toEqual(views.map((v) => v.slug));
+        await expect(page.locator('[data-sequence-count]')).toHaveText(
+          `${views.length} ${views.length === 1 ? 'photograph' : 'photographs'}, lowest first`
+        );
+
+        for (let i = 0; i < views.length; i++) {
+          const item = items.nth(i);
+          await loadFigure(item);
+          const g = await figureGeometry(item);
+          const name = `${views[i].slug} at ${width}`;
+          expect(Math.abs(g.rendered / g.natural - 1), `${name}: ratio`).toBeLessThan(0.01);
+          expect(g.ticks, name).toHaveLength(8);
+          // The page's own width: the full-bleed band (a stable scrollbar gutter is not page).
+          const pageRight = await page
+            .locator('section[data-region-sequence]')
+            .evaluate((el) => el.getBoundingClientRect().right);
+          for (const tick of g.ticks) {
+            expect(intersects(tick, g.image), `${name}: tick ${JSON.stringify(tick)}`).toBe(false);
+            expect(tick.left, `${name}: tick inside the page`).toBeGreaterThanOrEqual(0);
+            expect(tick.right, `${name}: tick inside the page`).toBeLessThanOrEqual(pageRight);
+          }
+          // The caption is visible without hover; 'n / N' shows only below 768 px (D-07).
+          const title = item.locator('figcaption p').first();
+          await expect(title).toBeVisible();
+          await expect(title).toHaveText(views[i].title);
+          const counter = item.locator('[data-figure-counter]');
+          if (width < 768) await expect(counter).toBeVisible();
+          else await expect(counter).toBeHidden();
+          expectFit(await srcsetFit(item.locator('img')), name);
+        }
+
+        const overflow = await page.evaluate(() => ({
+          scroll: document.documentElement.scrollWidth,
+          client: document.documentElement.clientWidth,
+        }));
+        expect(overflow.scroll, 'no sideways overflow').toBeLessThanOrEqual(overflow.client);
+        // The rail column sits beside the photo column from 768 px (18-12 fills it).
+        const rail = page.locator('[data-region-rail-column]');
+        if (width < 768) await expect(rail).toBeHidden();
+        else expect((await rail.boundingBox())?.width).toBe(96);
+      });
+    }
+  }
+});
+
+test.describe('Region header slot (18-08; D-05, UI E3)', () => {
+  for (const r of regions) {
+    for (const [width, height] of WIDTHS) {
+      test(`/photos/regions/${r.id} at ${width}: the cover, eager and uncropped, over a fixed caption row`, async ({
+        page,
+      }) => {
+        await page.setViewportSize({ width, height });
+        await page.goto(`/photos/regions/${r.id}`);
+        const cover = regionCover(r.id);
+        const slot = page.locator('[data-region-header-slot]');
+        await expect(slot).toHaveCount(1);
+        const img = slot.locator('img');
+        await expect(img).toHaveAttribute('alt', '');
+        await expect(img).toHaveAttribute('loading', 'eager');
+        await expect(img).toHaveAttribute('fetchpriority', 'high');
+        await expect
+          .poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0))
+          .toBe(true);
+
+        const box = await slot.evaluate((el) => {
+          const b = el.getBoundingClientRect();
+          const names = [el, ...el.querySelectorAll('*')].map(
+            (n) => getComputedStyle(n).getPropertyValue('view-transition-name') || 'none'
+          );
+          return {
+            left: b.left,
+            width: b.width,
+            ratio: b.width / b.height,
+            // The page's own width: the full-bleed sequence band (Chromium's stable
+            // scrollbar gutter is in documentElement.clientWidth but not in the page).
+            client: document.querySelector('section[data-region-sequence]')!.getBoundingClientRect()
+              .width,
+            names: [...new Set(names)],
+            fit: getComputedStyle(el.querySelector('img')!).objectFit,
+          };
+        });
+        expect(Math.abs(box.ratio / (16 / 9) - 1), '16:9 box').toBeLessThan(0.01);
+        expect(box.fit).toBe('contain');
+        expect(box.names, 'the cover never carries a view-transition name').toEqual(['none']);
+        if (width < 640) {
+          expect(Math.abs(box.left), 'full-bleed on phones').toBeLessThan(1);
+          expect(Math.abs(box.width - box.client), 'full-bleed on phones').toBeLessThan(1);
+        }
+        expectFit(await srcsetFit(img), `${r.id} cover at ${width}`);
+
+        // The caption row: '{cover title} · {altitude}', h-11, at most two lines, an empty 44 px slot.
+        const row = page.locator('[data-header-caption]');
+        await expect(row.locator('p')).toHaveText(`${cover.title} · ${cover.altitudeLabel}`);
+        const fit = await row.evaluate((el) => {
+          const p = el.querySelector('p')!;
+          const lineHeight = parseFloat(getComputedStyle(p).lineHeight);
+          return {
+            height: el.getBoundingClientRect().height,
+            scroll: el.scrollHeight,
+            client: el.clientHeight,
+            lines: Math.round(p.getBoundingClientRect().height / lineHeight),
+          };
+        });
+        expect(fit.height).toBe(44);
+        expect(fit.scroll, 'the caption row does not overflow').toBeLessThanOrEqual(fit.client);
+        expect(fit.lines, 'the caption row holds at most two lines').toBeLessThanOrEqual(2);
+        const control = row.locator('[data-header-control]');
+        await expect(control).toHaveAttribute('aria-hidden', 'true');
+        expect(await control.evaluate((el) => el.childElementCount)).toBe(0);
+        const size = await control.boundingBox();
+        expect([size?.width, size?.height]).toEqual([44, 44]);
+      });
+    }
+  }
+});
+
+test.describe('Region page scroll and morph (18-08; D-06, LBOX-06, P4)', () => {
+  for (const [width, height] of [
+    [375, 812],
+    [1440, 900],
+  ] as const) {
+    test(`D-06: after scrolling 2,000 px on Zermatt at ${width} the nav is still at the top`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height });
+      await page.goto('/photos/regions/zermatt');
+      const nav = page.getByRole('banner');
+      await page.evaluate(() => window.scrollTo(0, 2000));
+      await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(2000);
+      // A hide-on-scroll nav would react to the scroll event; give it two frames.
+      await page.evaluate(
+        () =>
+          new Promise<void>((done) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => done()))
+          )
+      );
+      await expect(nav).toBeVisible();
+      expect(Math.abs((await nav.boundingBox())!.y), 'the nav top is at 0').toBeLessThan(1);
+    });
+  }
+
+  const first = regionPhotoViews('zermatt')[0];
+  const morphPseudos = [
+    `::view-transition-group(photo-${first.slug})`,
+    `::view-transition-old(photo-${first.slug})`,
+    `::view-transition-new(photo-${first.slug})`,
+  ];
+
+  test('opening the first figure morphs it into the lightbox photo @prod-only @chromium-only', async ({
+    page,
+  }) => {
+    const messages: string[] = [];
+    page.on('console', (message) => {
+      // The browser's duplicate-name error, and React's warning for two mounted names.
+      if (/view-transition-name|ViewTransition name=/.test(message.text())) {
+        messages.push(message.text());
+      }
+    });
+    await recordViewTransitions(page);
+    await page.goto('/photos/regions/zermatt');
+    const link = page.locator(`[data-sequence-item="${first.slug}"] [data-photo-id]`);
+    await waitForHydration(link);
+    const before = await readViewTransitions(page);
+    await link.click();
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 20000 });
+    await expect
+      .poll(async () => (await readViewTransitions(page)).count)
+      .toBeGreaterThan(before.count);
+    const after = await waitForViewTransitionsSettled(page);
+    expect(after.pseudos).toEqual(expect.arrayContaining(morphPseudos));
+    expect(messages).toEqual([]);
+  });
+
+  test('under reduced motion opening a figure runs no view-transition animation @prod-only', async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await recordViewTransitions(page);
+    await page.goto('/photos/regions/zermatt');
+    const link = page.locator(`[data-sequence-item="${first.slug}"] [data-photo-id]`);
+    await waitForHydration(link);
+    const before = await readViewTransitions(page);
+    await link.click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible({ timeout: 20000 });
+    await expect(dialog.getByRole('button', { name: 'Close photo', exact: true })).toBeFocused();
+    // Settled first (10-REVIEW IN-09): every transition the open started has finished.
+    const after = await waitForViewTransitionsSettled(page);
+    const opened = after.transitions.slice(before.transitions.length).flat();
+    expect(opened.filter((pseudo) => pseudo.startsWith('::view-transition'))).toEqual([]);
   });
 });
 
