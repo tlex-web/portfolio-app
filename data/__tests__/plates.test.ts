@@ -225,6 +225,36 @@ describe('plates.ts (the generated 2D sheets)', () => {
     expect(entry('ortler').strip.centreN).toBe((box.south + box.north) / 2);
   });
 
+  // 18-11 (D-19): an EPSG:3035 sheet carries its WGS84 SW and NE corners, projected
+  // at build time with proj4 (a scripts-only dependency), so the margin prints them
+  // without a projection in app code. LV95 sheets convert through lib/geo.ts instead.
+  test('every EPSG:3035 sheet has extent.wgs84 with sw south-west of ne; EPSG:2056 sheets have none', () => {
+    const sheets: readonly PlateSheet[] = Object.values(plates);
+    expect(sheets.some((s) => s.crs === 'EPSG:3035')).toBe(true);
+    for (const s of sheets) {
+      if (s.crs === 'EPSG:2056') {
+        expect(Object.hasOwn(s.extent, 'wgs84')).toBe(false);
+        continue;
+      }
+      const w = s.extent.wgs84;
+      expect(w).toBeDefined();
+      if (!w) continue;
+      expect(w.sw.lat).toBeLessThan(w.ne.lat);
+      expect(w.sw.lon).toBeLessThan(w.ne.lon);
+      // Rounded to 6 decimals (~0.1 m): sheet corners, never a photo position.
+      for (const v of [w.sw.lat, w.sw.lon, w.ne.lat, w.ne.lon])
+        expect(Math.round(v * 1e6) / 1e6).toBe(v);
+    }
+  });
+
+  test("saalfelden's WGS84 corners are its LAEA SW and NE corners (proj4, 6 decimals)", () => {
+    const s: PlateSheet = plates.saalfelden;
+    expect(s.crs === 'EPSG:3035' && s.extent.wgs84).toEqual({
+      sw: { lat: 47.387799, lon: 12.753559 },
+      ne: { lat: 47.491582, lon: 12.918347 },
+    });
+  });
+
   test('plates.ts has no import and no path data', () => {
     const text = readText('data/generated/plates.ts');
     expect(text).not.toMatch(/^\s*import /m);
