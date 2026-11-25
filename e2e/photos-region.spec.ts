@@ -1848,3 +1848,24 @@ test.describe('New photo pages (D-08, D-09, PHOTO-05)', () => {
     await expect(viewerStatus(page)).toHaveText(new RegExp(`^Photo 2 of ${photoSlugs.length}:`));
   });
 });
+
+test.describe('Region stepping on the photo page (18-15; LBOX-09, D-12)', () => {
+  const ortler = regionPhotoViews('ortler');
+
+  test('LBOX-09: the first Ortler photo page steps to its second photo', async ({ page }) => {
+    expect(ortler).toHaveLength(2);
+    const [first, second] = ortler;
+    await page.goto(`/photos/${first.slug}`);
+    const main = page.getByRole('main');
+    const counter = main.locator('[data-photo-counter]');
+    await expect(h1(page)).toHaveText(first.title);
+    await expect(counter).toHaveText('1 / 2');
+
+    const next = main.getByRole('button', { name: 'Next photo', exact: true });
+    await waitForHydration(next);
+    await next.click();
+    await expect(page).toHaveURL(new RegExp(`/photos/${second.slug}$`));
+    await expect(h1(page)).toHaveText(second.title);
+    await expect(counter).toHaveText('2 / 2');
+  });
+});

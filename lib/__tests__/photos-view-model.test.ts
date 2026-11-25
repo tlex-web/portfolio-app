@@ -23,7 +23,6 @@ import {
   publishedViews,
   seriesInput,
   stripFields,
-  viewerPhotos,
   type PhotoViewInput,
 } from '@/lib/photos/view-model';
 import { SLUGS, viewBySlug } from '../../e2e/helpers/photo-fixtures';
@@ -187,7 +186,11 @@ describe('lookup and metadata (LBOX-01)', () => {
   });
 });
 
-describe('the published set and the viewer set (17 D-07, D-08, PHOTO-05)', () => {
+/*
+ * The viewer set rows (17 D-08) moved to lib/__tests__/regions.test.ts in 18-15: every
+ * photo's viewer steps through its region's series (regionViewerSet; LBOX-09, D-12).
+ */
+describe('the published set (17 D-07, PHOTO-05)', () => {
   it('publishes every generated photo: unique slugs, one per photo, every light-table slug among them', () => {
     expect(publishedSlugs).toHaveLength(photos.length);
     expect(publishedSlugs).toHaveLength(11);
@@ -205,20 +208,6 @@ describe('the published set and the viewer set (17 D-07, D-08, PHOTO-05)', () =>
 
   it('looks up each light-table photo as its light-table view', () => {
     for (const view of photoViews) expect(photoBySlug(view.slug)).toEqual(view);
-  });
-
-  it('gives a light-table photo the four light-table views to step through', () => {
-    for (const view of photoViews) expect(viewerPhotos(view)).toBe(photoViews);
-  });
-
-  it('gives every other published photo a one-photo set with no neighbours', () => {
-    const others = publishedViews.filter((v) => !photoSlugs.includes(v.slug));
-    expect(others).toHaveLength(7);
-    for (const view of others) {
-      const set = viewerPhotos(view);
-      expect(set).toHaveLength(1);
-      expect(set[0]).toEqual({ ...view, prevSlug: null, nextSlug: null });
-    }
   });
 });
 

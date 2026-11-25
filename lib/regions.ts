@@ -312,6 +312,25 @@ export function regionOfPhoto(photoId: string): string | undefined {
   return photos.find((p) => p.id === photoId)?.region;
 }
 
+/**
+ * The photos a viewer steps through for a photo (LBOX-09, 18 D-12): its
+ * region's series, regionPhotoViews(regionOfPhoto(photoId)), in sequence order
+ * (DEM height ascending, ties broken by id), each view's prevSlug and nextSlug
+ * among that series. Both photo routes, the full page and the intercepted
+ * lightbox, build it here on the server and hand it to PhotoViewer as props, so
+ * the registry never reaches the client viewer (T-18-62). It supersedes 17
+ * D-08's per-photo set (the light-table four, or the photo alone).
+ *
+ * @throws RangeError naming the id for an unknown photo id or a photo with no region.
+ */
+export function regionViewerSet(photoId: string): readonly PhotoView[] {
+  const regionId = regionOfPhoto(photoId);
+  if (regionId === undefined || !VIEWS.has(regionId)) {
+    throw new RangeError(`regionViewerSet: photo ${photoId} has no registry region`);
+  }
+  return regionPhotoViews(regionId);
+}
+
 /** The capture years of a region's photos, in view order. */
 export function regionYears(id: string): readonly number[] {
   return regionPhotoViews(id).map((v) => v.years);

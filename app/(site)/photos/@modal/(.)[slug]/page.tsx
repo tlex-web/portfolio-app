@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation';
 import LightboxDialog from '@/components/photos/LightboxDialog';
 import PhotoViewer from '@/components/photos/PhotoViewer';
-import { photoBySlug, photoMetadata, viewerPhotos } from '@/lib/photos/view-model';
+import { photoBySlug, photoMetadata } from '@/lib/photos/view-model';
+import { regionViewerSet } from '@/lib/regions';
 
 /**
  * The intercepted photo route (LBOX-01; 10-RESEARCH Spike Results). A soft
@@ -15,8 +16,8 @@ import { photoBySlug, photoMetadata, viewerPhotos } from '@/lib/photos/view-mode
  * the document title is '{title} · Tim Lui' in the lightbox too (the probe
  * showed the intercepted page otherwise keeps the gallery's title). Only the
  * published slugs render (17 D-07); any other slug is a 404 (T-10-12). The
- * viewer steps through viewerPhotos(view), as on the full page (17 D-08). No loading.tsx
- * in this slot: a suspended destination would paint a fallback first and the
+ * viewer steps through regionViewerSet(view.id), the photo's region series built
+ * on the server, as on the full page (LBOX-09, 18 D-12). No loading.tsx in this slot: a suspended destination would paint a fallback first and the
  * open morph (10-06) would meet an empty box (10-RESEARCH Pitfall 4).
  */
 
@@ -34,7 +35,7 @@ export default async function InterceptedPhotoPage({ params }: PageProps) {
 
   return (
     <LightboxDialog labelledBy="photo-title">
-      <PhotoViewer variant="modal" photos={viewerPhotos(view)} initialSlug={view.slug} />
+      <PhotoViewer variant="modal" photos={regionViewerSet(view.id)} initialSlug={view.slug} />
     </LightboxDialog>
   );
 }

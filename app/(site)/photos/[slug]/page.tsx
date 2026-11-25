@@ -2,15 +2,9 @@ import { notFound } from 'next/navigation';
 import PhotoViewer from '@/components/photos/PhotoViewer';
 import { photoImageLd } from '@/lib/json-ld/content';
 import { jsonLdHtml } from '@/lib/json-ld/site';
-import { regionById, regionOfPhoto } from '@/lib/regions';
+import { regionById, regionOfPhoto, regionViewerSet } from '@/lib/regions';
 import { regionHref } from '@/lib/photos/routes';
-import {
-  photoBySlug,
-  photoMetadata,
-  photoSlugs,
-  publishedSlugs,
-  viewerPhotos,
-} from '@/lib/photos/view-model';
+import { photoBySlug, photoMetadata, photoSlugs, publishedSlugs } from '@/lib/photos/view-model';
 
 /**
  * The full photo page (LBOX-01 direct load; D-08; 10-UI-SPEC "Photo Viewer",
@@ -22,9 +16,10 @@ import {
  * editorial copy): generateStaticParams lists them, turning dynamicParams off
  * makes every other slug a 404, and notFound() guards the exact,
  * case-sensitive match (T-10-01). The slug is never echoed into the page
- * before it matches a known view. The viewer steps through viewerPhotos(view):
- * the four light-table photos for a v2.0 photo, the photo alone otherwise
- * (17 D-08).
+ * before it matches a known view. The viewer steps through
+ * regionViewerSet(view.id), the photo's region series in sequence order, built
+ * here on the server and passed as props (LBOX-09, 18 D-12; it supersedes 17
+ * D-08's per-photo set).
  *
  * The way back (17 D-09): a photo off the light table gets `back`, its
  * region's name and regionHref(region.id), built here on the server from the
@@ -86,12 +81,12 @@ export default async function PhotoPage({ params }: PageProps) {
       {back ? (
         <PhotoViewer
           variant="page"
-          photos={viewerPhotos(view)}
+          photos={regionViewerSet(view.id)}
           initialSlug={view.slug}
           back={back}
         />
       ) : (
-        <PhotoViewer variant="page" photos={viewerPhotos(view)} initialSlug={view.slug} />
+        <PhotoViewer variant="page" photos={regionViewerSet(view.id)} initialSlug={view.slug} />
       )}
     </>
   );

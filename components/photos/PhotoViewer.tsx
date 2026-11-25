@@ -86,7 +86,7 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * prevents it (10-REVIEW CR-01).
  *
  * Moving between photos (LBOX-02; 10-UI-SPEC "Moving between photos"): the
- * chrome's left group holds 'Previous photo', the counter 'n / 4' (mono,
+ * chrome's left group holds 'Previous photo', the counter 'n / N' (mono,
  * aria-hidden; the status line says it in words) and 'Next photo'. The
  * buttons, the ← and → keys and a horizontal swipe on the fitted photo move
  * through the canonical order without wrapping (UI-SPEC OQ4): at either end
@@ -103,18 +103,19 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * reads the last slug it wrote from a ref, not from the rendered props: while
  * a view transition runs (the open morph) React holds commits back, and a
  * second click in that window would otherwise replay the first step. Each step updates
- * a polite status line inside the viewer ('Photo 2 of 4: {title}') and the
+ * a polite status line inside the viewer ('Photo 2 of 7: {title}') and the
  * document title. Once the current photo's large derivative loads, the
  * neighbours' stage derivatives are fetched at low priority, once per slug.
  *
- * One-photo sets and the way back (17 D-08, D-09; PHOTO-05): until Phase 18
- * brings per-region stepping, a photo off the light table steps through itself
- * only (viewerPhotos gives a one-photo set). With fewer than two photos the
+ * The stepping set and the way back (LBOX-09, 18 D-12; 17 D-09; PHOTO-05):
+ * `photos` is the shown photo's region series in sequence order, built on the
+ * server (regionViewerSet in lib/regions.ts) and passed as props. A one-photo
+ * set (a one-photo region) keeps its rule: with fewer than two photos the
  * left group renders no Previous, counter or Next, so the viewer offers no
  * control that does nothing; the arrows and the swipe already do nothing there
  * (stepIndex returns null). The page surface takes an optional `back`
  * ({ href, label }), built on the server from the region registry
- * (regionHref and the region's name) and passed only for such a photo: both
+ * (regionHref and the region's name) and passed for a photo off the light table: both
  * back links and the page Escape then lead to its region page, the page that
  * lists it. Without `back` they read "All photographs" and go to /photos, so
  * the v2.0 four render as before. The lightbox shows no back link (D-09 is

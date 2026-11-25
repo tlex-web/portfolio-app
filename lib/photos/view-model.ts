@@ -444,9 +444,10 @@ export function buildPhotoViews(input: PhotoViewInput = lightTableInput()): read
 
 /**
  * The light table (lightTableIds, D-15) as views, built once per module load.
- * It drives only the /photos light table and the four v2.0 photos' stepping
- * set (16 D-15, 17 D-07); the route set is publishedViews. Phase 18 retires
- * the light table and renames this.
+ * It drives only the /photos light table and the four v2.0 photos' page
+ * views (16 D-15, 17 D-07); the route set is publishedViews, and every
+ * viewer's stepping set is regionViewerSet in lib/regions.ts (LBOX-09, 18
+ * D-12). Phase 18 retires the light table and renames this.
  */
 export const photoViews: readonly PhotoView[] = buildPhotoViews();
 
@@ -459,8 +460,9 @@ export const photoSlugs: readonly string[] = photoViews.map((v) => v.slug);
  * load in buildWaypoints' order (DEM height ascending, ties broken by id).
  * This is the route set: the photo pages' static params, the proxy's known
  * slugs (photoRouteSlugs in lib/photos/routes.ts holds the same set) and the
- * per-photo OG card. Never feed it to the four's viewer: prevSlug and nextSlug
- * here cross regions and would break their 'n / 4' (17-RESEARCH Anti-Patterns).
+ * per-photo OG card. Never feed it to a viewer: prevSlug and nextSlug here
+ * cross regions (17-RESEARCH Anti-Patterns); a viewer steps through its
+ * photo's region series (regionViewerSet in lib/regions.ts, LBOX-09).
  */
 export const publishedViews: readonly PhotoView[] = buildPhotoViews({
   photos,
@@ -471,9 +473,6 @@ export const publishedViews: readonly PhotoView[] = buildPhotoViews({
 /** The published slugs in canonical order; generateStaticParams reads these. */
 export const publishedSlugs: readonly string[] = publishedViews.map((v) => v.slug);
 
-/** The light-table slugs as a set, for viewerPhotos. */
-const lightTableSlugs: ReadonlySet<string> = new Set(photoSlugs);
-
 /**
  * The view for an exact, case-sensitive slug, or undefined (the routes then
  * call notFound()). A light-table photo gets its light-table view, whose k, n,
@@ -482,16 +481,6 @@ const lightTableSlugs: ReadonlySet<string> = new Set(photoSlugs);
  */
 export function photoBySlug(slug: string): PhotoView | undefined {
   return photoViews.find((v) => v.slug === slug) ?? publishedViews.find((v) => v.slug === slug);
-}
-
-/**
- * The photos a viewer steps through for `view` (17 D-08): the four light-table
- * views for a v2.0 photo, otherwise the photo alone with no neighbours. The
- * full page and the intercepted lightbox both pass this to PhotoViewer.
- */
-export function viewerPhotos(view: PhotoView): readonly PhotoView[] {
-  if (lightTableSlugs.has(view.slug)) return photoViews;
-  return [{ ...view, prevSlug: null, nextSlug: null }];
 }
 
 /**

@@ -18,6 +18,9 @@
  * - D-11 (18-06): nextRegion chains the regions west to east and wraps from
  *   the last to the first; regionNumber is the 1-based place in that order; a
  *   one-region list has no next region (nextRegionIn, pure).
+ * - LBOX-09 (18-15, D-12): every published photo's viewer steps through its
+ *   region's series (regionViewerSet): the v2.0 four within Zermatt's seven,
+ *   each Ortler and Saalfelden photo within its region; an unknown id throws.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -25,7 +28,8 @@ import { NEUTRAL_SLUG } from '../../proxy';
 import { plates } from '@/data/generated/plates';
 import { editorial } from '@/data/photos/editorial';
 import { formatYearRange } from '@/lib/home-format';
-import { seriesInput } from '@/lib/photos/view-model';
+import { publishedViews, seriesInput } from '@/lib/photos/view-model';
+import { SLUGS, viewBySlug } from '../../e2e/helpers/photo-fixtures';
 import {
   regionById,
   regionContourSrc,
@@ -33,8 +37,10 @@ import {
   regionDescription,
   regionIds,
   regionMetadata,
+  regionOfPhoto,
   regionOgAlt,
   regionPhotoViews,
+  regionViewerSet,
   regionRights,
   regionTitle,
   regionYears,
@@ -434,6 +440,58 @@ describe('the next-region chain (18-06; D-01, D-11; REGION-02 ordering and empty
     expect(regionNumber('saalfelden')).toBe(3);
     expect(() => regionNumber('nowhere')).toThrow(
       new RangeError('regionNumber: nowhere is not a registry region')
+    );
+  });
+});
+
+describe("the viewer set: one region's series (18-15; LBOX-09, D-12)", () => {
+  /** The series' slugs and its neighbour chain: each view's prevSlug and nextSlug stay inside it. */
+  function expectChain(
+    set: readonly { slug: string; prevSlug: string | null; nextSlug: string | null }[]
+  ) {
+    set.forEach((v, i) => {
+      expect(v.prevSlug).toBe(i > 0 ? set[i - 1].slug : null);
+      expect(v.nextSlug).toBe(i < set.length - 1 ? set[i + 1].slug : null);
+    });
+  }
+
+  it.each(Object.values(SLUGS).map((slug) => [slug]))(
+    "%s (a v2.0 photo) steps within Zermatt's seven, in sequence order",
+    (slug) => {
+      const view = viewBySlug(slug);
+      const set = regionViewerSet(view.id);
+      expect(set).toBe(regionPhotoViews('zermatt'));
+      expect(set).toHaveLength(7);
+      expect(set.map((v) => v.slug)).toContain(slug);
+      expectChain(set);
+    }
+  );
+
+  it.each(
+    publishedViews
+      .filter((v) => regionOfPhoto(v.id) === 'ortler' || regionOfPhoto(v.id) === 'saalfelden')
+      .map((v) => [v.slug, v.id, regionOfPhoto(v.id) ?? ''])
+  )("%s steps within its own region's series", (_slug, id, region) => {
+    const set = regionViewerSet(id);
+    expect(set).toBe(regionPhotoViews(region));
+    expect(set.length).toBeGreaterThan(1);
+    expectChain(set);
+  });
+
+  it('puts every published photo in its own set exactly once, and the sets cover them all', () => {
+    expect(publishedViews).toHaveLength(11);
+    const covered = new Set<string>();
+    for (const view of publishedViews) {
+      const set = regionViewerSet(view.id);
+      expect(set.filter((v) => v.slug === view.slug)).toHaveLength(1);
+      for (const v of set) covered.add(v.slug);
+    }
+    expect([...covered].sort()).toEqual(publishedViews.map((v) => v.slug).sort());
+  });
+
+  it('throws a RangeError naming an unknown photo id', () => {
+    expect(() => regionViewerSet('no-such-photo')).toThrow(
+      new RangeError('regionViewerSet: photo no-such-photo has no registry region')
     );
   });
 });
