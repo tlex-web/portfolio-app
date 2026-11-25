@@ -99,6 +99,7 @@ Requirements: REGION-01, REGION-02, REGION-03, REGION-04, REGION-05, REGION-06, 
   - **Settings:** 375 / 768 / 1440 px wide, 900 px high, reduced motion. That is 15 PNGs, captured as new routes with `update_mode=missing`.
   - **Why:** a full-page Zermatt shot would be about 9,000 px tall at 1440 (estimated ~5 MB per PNG; the one-photo page is already 1.06 MB at 1440×1650), and every new photo would force its re-baseline. With fixed positions, adding a photo moves only Zermatt's end shot.
   - Other routes keep their full-page shots.
+  - **Amended 2026-11-25 (Tim, at 18-14):** the cover now fills the top 900 px, so the top shot shows the header and the cover, not the plate. A `plate` position (the plate's figure centred: the sheet, its pins and its margin; from 1024 px the whole facts and plate block) was added for all three regions. That is 24 PNGs: Zermatt top, plate, mid and end; Ortler and Saalfelden top and plate. Tim also allowed a second visual-baselines dispatch in 18-14 for it.
 - **D-22: The `photos-grid` and `photos-carousel` visual entries are rewritten as the new region-page shots, not dropped.**
   - Their `?view=` URLs now redirect (D-03), so an e2e test asserts where each `?view=` value lands.
   - No visual entry disappears without a replacement (PHOTO-06: view tests rewritten, never deleted).

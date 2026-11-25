@@ -79,7 +79,18 @@ const ASCENT_SHOTS = [
  * Region page viewport shots (18 D-21; 18-UI-SPEC "Visual Baselines"), 900 px
  * high under reduced motion, never full page: a full-page Zermatt shot would be
  * about 9,000 px and re-baseline with every new photo. Zermatt is shot at the
- * top, mid sequence and end; Ortler and Saalfelden at the top only.
+ * top, the plate, mid sequence and end; Ortler and Saalfelden at the top and
+ * the plate.
+ *
+ * The `plate` position was added on Tim's answer at the 18-14 checkpoint (D-21
+ * amended 2026-11-25): the cover fills the top 900 px, so no top shot showed
+ * the plate D-21 names. It centres the plate's figure (the sheet and its
+ * margin). From 1024 px that figure spans both rows of the facts and plate
+ * grid, so the whole block is in frame (710 px: facts, key list, plate,
+ * margin); below 1024 px the block is one column and taller than 900 px, so
+ * the frame holds the sheet with its pins and the margin, and the key list
+ * starts below it. Before the shot it waits for the plate's lazy relief to be
+ * loaded and decoded (settle already waits for its hero contours).
  *
  * D-22: these shots are the rewrite of the `photos-grid` and `photos-carousel`
  * route entries. Those two entries stay until their pages retire and are
@@ -89,12 +100,12 @@ const ASCENT_SHOTS = [
  * centres the figure at index floor((N - 1) / 2) of regionPhotoViews('zermatt'),
  * and the end shot centres #next-region. From 768 px each shot waits for the
  * altimeter rail's positive settle signal, `data-rail-current` (18-12): 1 at
- * the top, index + 1 mid sequence, N at the end (every figure is above the
- * centre line there). Below 768 px the rail is hidden.
+ * the top and the plate, index + 1 mid sequence, N at the end (every figure is
+ * above the centre line there). Below 768 px the rail is hidden.
  */
 type RegionShot = {
   id: string;
-  pos: 'top' | 'mid' | 'end';
+  pos: 'top' | 'plate' | 'mid' | 'end';
   /** The element to centre, or null for the top of the page. */
   selector: string | null;
   /** The rail's expected 1-based current figure, read from 768 px. */
@@ -104,8 +115,12 @@ type RegionShot = {
 const zermattViews = regionPhotoViews('zermatt');
 const zermattMid = Math.floor((zermattViews.length - 1) / 2);
 
+/** The plate's figure: the sheet and its margin (PlateSheet). */
+const PLATE_FIGURE = 'figure:has(> [data-plate-sheet])';
+
 const REGION_SHOTS: readonly RegionShot[] = [
   { id: 'zermatt', pos: 'top', selector: null, railCurrent: 1 },
+  { id: 'zermatt', pos: 'plate', selector: PLATE_FIGURE, railCurrent: 1 },
   {
     id: 'zermatt',
     pos: 'mid',
@@ -114,7 +129,9 @@ const REGION_SHOTS: readonly RegionShot[] = [
   },
   { id: 'zermatt', pos: 'end', selector: '#next-region', railCurrent: zermattViews.length },
   { id: 'ortler', pos: 'top', selector: null, railCurrent: 1 },
+  { id: 'ortler', pos: 'plate', selector: PLATE_FIGURE, railCurrent: 1 },
   { id: 'saalfelden', pos: 'top', selector: null, railCurrent: 1 },
+  { id: 'saalfelden', pos: 'plate', selector: PLATE_FIGURE, railCurrent: 1 },
 ];
 
 /** The width from which the region rail renders (md). */
@@ -309,6 +326,15 @@ for (const { id, pos, selector, railCurrent } of REGION_SHOTS) {
         await nextFrames(page);
       } else {
         await scrollBlockToCentre(page, selector);
+      }
+      if (pos === 'plate') {
+        // The relief is lazy (the cover is the LCP image): a positive signal that
+        // it has loaded and decoded, so the sheet never shows bare bg-surface.
+        const relief = page.locator('[data-plate-sheet] img');
+        await expect
+          .poll(() => relief.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0))
+          .toBe(true);
+        await relief.evaluate((img: HTMLImageElement) => img.decode());
       }
       if (w >= RAIL_MIN_WIDTH) {
         await expect(page.locator('[data-region-rail]')).toHaveAttribute(

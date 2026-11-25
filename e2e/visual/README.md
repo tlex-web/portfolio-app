@@ -6,16 +6,22 @@ page), plus Home with motion enabled at three fixed ascent positions on the
 static poster path: the top (p = 0), waypoint 2's block centred and the summit
 centred (`home/<width>-ascent-{start,waypoint-2,summit}.png`), plus the
 region page viewport shots (`region/<id>-<position>-<width>.png`, 900 px
-high, reduced motion, since 18-14: Zermatt `top`, `mid` and `end`, Ortler and
-Saalfelden `top`), plus the lightbox opened from the Matterhorn-from-Zermatt
-figure in the Zermatt sequence (`lightbox/<width>.png`, viewport only), plus
-the menu shot at 375 (`menu/375-current-focus.png`): 67 tests per scheme.
+high, reduced motion, since 18-14: Zermatt `top`, `plate`, `mid` and `end`,
+Ortler and Saalfelden `top` and `plate`; 24 PNGs), plus the lightbox opened
+from the Matterhorn-from-Zermatt figure in the Zermatt sequence
+(`lightbox/<width>.png`, viewport only), plus the menu shot at 375
+(`menu/375-current-focus.png`): 76 tests per scheme.
 Every later plan is judged against these files.
 
 The region positions come from the data: `mid` centres the figure at index
 floor((N - 1) / 2) of `regionPhotoViews('zermatt')` and `end` centres
-`#next-region`. From 768 px each region shot waits for the altimeter rail's
-`data-rail-current` (1 at the top, index + 1 mid, N at the end). Every test
+`#next-region`. `plate` (added on Tim's answer at the 18-14 checkpoint, D-21
+amended, since the cover fills the top 900 px) centres the plate's figure, the
+sheet and its margin: from 1024 px the whole facts and plate block is in
+frame, below 1024 px the sheet, its pins and the margin; it waits for the lazy
+relief to load and decode. From 768 px each region shot waits for the altimeter
+rail's `data-rail-current` (1 at the top and the plate, index + 1 mid, N at
+the end). Every test
 deletes `navigator.share` and `navigator.canShare` first, so the Share button
 is always in copy mode. The region shots are the rewrite of `photos-grid` and
 `photos-carousel` (18 D-22); those entries go with their pages.
