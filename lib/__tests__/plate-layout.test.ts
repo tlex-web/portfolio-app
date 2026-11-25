@@ -621,10 +621,14 @@ describe('plateCss guards (T-18-23)', () => {
       for (const p of pinsOf) {
         const row = `[data-key-row="${p.slug}"]`;
         const badge = `[data-plate-badge="${p.slug}"]`;
-        const rowActive = `[data-plate-root]:has(${row}:is(:hover,:focus-visible))`;
+        // One :has() per state: WebKit does not restyle on a :hover nested in :is() inside :has().
+        const rowHover = `[data-plate-root]:has(${row}:hover)`;
+        const rowFocus = `[data-plate-root]:has(${row}:focus-visible)`;
         const badgeActive = `[data-plate-root]:has(${badge}:hover)`;
         const rule = (target: string) =>
-          lines.find((l) => l.startsWith(`${rowActive} ${target},${badgeActive} ${target}{`));
+          lines.find((l) =>
+            l.startsWith(`${rowHover} ${target},${rowFocus} ${target},${badgeActive} ${target}{`)
+          );
         // Row hover or focus-visible, and badge hover: the plate badge turns accent ...
         expect(rule(badge)).toMatch(
           /\{background-color:var\(--color-accent\);color:var\(--color-ink-inverse\)\}$/
@@ -642,6 +646,10 @@ describe('plateCss guards (T-18-23)', () => {
       const firstSync = lines.findIndex((l) => l.includes(':has('));
       expect(firstSync).toBeGreaterThan(0);
       expect(lines.slice(firstSync).every((l) => l.includes(':has('))).toBe(true);
+      // WebKit (Safari and Playwright's WebKit) matches :has(x:is(:hover, …)) but never
+      // restyles the elements it selects when the hover changes, so no :has() argument
+      // may nest a state pseudo-class in :is() or :where().
+      expect(css).not.toMatch(/:has\([^)]*:(?:is|where)\(/);
       expect(lines.slice(0, firstSync).filter((l) => l.startsWith('@')).length).toBe(
         lines.slice(0, firstSync).filter((l) => l === '}').length
       );

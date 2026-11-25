@@ -520,14 +520,23 @@ function segmentRules(groups: readonly PlateSegmentGroup[]): string[] {
  * row the overlay fill, the 2 px accent bar and an accent badge. Only fills
  * change, so an approximate badge keeps its dashed border. Without :has() the
  * rows and badges keep their own hover states and every anchor still works.
+ *
+ * Each state gets its own :has(): WebKit (Safari, and Playwright's WebKit on
+ * Linux and Windows) matches `:has(row:is(:hover,:focus-visible))` but does not
+ * restyle the badges it selects when the row's hover changes, so they stayed ink
+ * on hover and accent after the pointer left. A plain `:has(row:hover)` is
+ * invalidated correctly.
  */
 function syncRules(slug: string): string[] {
   const q = `"${cssEscape(slug)}"`;
   const row = `[data-key-row=${q}]`;
   const badge = `[data-plate-badge=${q}]`;
-  const rowActive = `[data-plate-root]:has(${row}:is(:hover,:focus-visible))`;
-  const badgeActive = `[data-plate-root]:has(${badge}:hover)`;
-  const both = (target: string) => `${rowActive} ${target},${badgeActive} ${target}`;
+  const anchors = [
+    `[data-plate-root]:has(${row}:hover)`,
+    `[data-plate-root]:has(${row}:focus-visible)`,
+    `[data-plate-root]:has(${badge}:hover)`,
+  ];
+  const both = (target: string) => anchors.map((a) => `${a} ${target}`).join(',');
   const accent = '{background-color:var(--color-accent);color:var(--color-ink-inverse)}';
   return [
     `${both(badge)}${accent}`,
