@@ -1674,7 +1674,12 @@ test.describe('Hotspots (LBOX-05)', () => {
 
   // Rewritten in place for D-22 (it expected the hidden callout to take the first Escape): a
   // callout hidden by zoom no longer takes it, so zoom does, and the callout is dropped with it.
-  test('from zoomed with a callout open, one Escape leaves zoom and drops the hidden callout, the next closes (D-22)', async ({
+  // @no-win-webkit: the second Escape closes the lightbox through a history traversal, which
+  // crashes Playwright's Windows WebKit (WinCairo, not a Safari engine; 'Target page, context or
+  // browser has been closed' at the dialog's toHaveCount(0), pre-existing since before Phase 18,
+  // 18-15 deferred-items). Linux WebKit still runs it in CI, so only the Windows webkit project
+  // drops it (Tim, 2026-11-25).
+  test('from zoomed with a callout open, one Escape leaves zoom and drops the hidden callout, the next closes (D-22) @no-win-webkit', async ({
     page,
   }) => {
     const dialog = await openTrail(page);
