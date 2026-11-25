@@ -2,7 +2,13 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import LightboxDialog from '../LightboxDialog';
 import PhotoViewer from '../PhotoViewer';
 import { publishedViews, type PhotoView } from '@/lib/photos/view-model';
-import { photoBack, regionEndCard, regionOfPhoto, regionPhotoViews } from '@/lib/regions';
+import {
+  photoBack,
+  photoBreadcrumb,
+  regionEndCard,
+  regionOfPhoto,
+  regionPhotoViews,
+} from '@/lib/regions';
 import { SLUGS } from '../../../e2e/helpers/photo-fixtures';
 
 /**
@@ -74,6 +80,14 @@ function backFor(photos: readonly PhotoView[], initialSlug: string) {
   return photoBack(view.id);
 }
 
+/** The page's trail as the page passes it: photoBreadcrumb's crumbs, the last without href (18-17, D-10). */
+function crumbsFor(slug: string) {
+  const crumbs = photoBreadcrumb(slug);
+  return crumbs.map((c, i) =>
+    i === crumbs.length - 1 ? { name: c.name } : { name: c.name, href: c.path }
+  );
+}
+
 function renderPage(photos: readonly PhotoView[], initialSlug: string) {
   return render(
     <PhotoViewer
@@ -81,6 +95,7 @@ function renderPage(photos: readonly PhotoView[], initialSlug: string) {
       photos={photos}
       initialSlug={initialSlug}
       back={backFor(photos, initialSlug)}
+      breadcrumb={crumbsFor(initialSlug)}
       endCard={cardFor(photos, initialSlug)}
     />
   );
@@ -193,6 +208,54 @@ describe('D-09: the page back link (18-17: every photo, by region name)', () => 
       .queryAllByRole('link', { hidden: true })
       .map((a) => a.getAttribute('href') ?? '');
     expect(hrefs.filter((h) => h === '/photos' || h.startsWith('/photos/regions/'))).toEqual([]);
+  });
+});
+
+describe('D-10: the page breadcrumb follows the shown photo (18-17)', () => {
+  const trail = () => screen.queryByRole('navigation', { name: 'Breadcrumb', hidden: true });
+  const currentCrumb = () => trail()?.querySelector('[aria-current="page"]');
+
+  it("reads 'Photographs / Zermatt / {title}' at load, the current crumb the h1's title", () => {
+    renderPage(zermatt, zermatt[0].slug);
+    expect(trail()).not.toBeNull();
+    expect(
+      [...trail()!.querySelectorAll('li > a, li > [aria-current="page"]')].map((e) => e.textContent)
+    ).toEqual(['Photographs', 'Zermatt', zermatt[0].title]);
+    expect(currentCrumb()).toHaveTextContent(zermatt[0].title);
+  });
+
+  it('after a step the current crumb names the new photo; the other crumbs stay', () => {
+    renderPage(zermatt, zermatt[0].slug);
+    fireEvent.click(screen.getByRole('button', { name: 'Next photo' }));
+    expect(currentCrumb()).toHaveTextContent(zermatt[1].title);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(zermatt[1].title);
+    const links = [...trail()!.querySelectorAll('a')];
+    expect(links.map((a) => a.getAttribute('href'))).toEqual([
+      '/photos',
+      '/photos/regions/zermatt',
+    ]);
+  });
+
+  it('the end card shows no crumb (it replaces the strip)', () => {
+    const last = zermatt[zermatt.length - 1];
+    renderPage(zermatt, last.slug);
+    fireEvent.click(screen.getByRole('button', { name: 'Next photo' }));
+    expect(trail()).toBeNull();
+  });
+
+  it('the lightbox shows no breadcrumb even when one is passed', () => {
+    render(
+      <LightboxDialog labelledBy="photo-title">
+        <PhotoViewer
+          variant="modal"
+          photos={zermatt}
+          initialSlug={zermatt[0].slug}
+          breadcrumb={crumbsFor(zermatt[0].slug)}
+          endCard={regionEndCard('zermatt')}
+        />
+      </LightboxDialog>
+    );
+    expect(trail()).toBeNull();
   });
 });
 

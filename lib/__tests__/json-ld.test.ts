@@ -51,6 +51,11 @@
  *   page's block lists ['Photographs', region name] in the visible order with
  *   absolute item URLs, the last the page's canonical, and a name holding '<'
  *   reaches the page escaped by jsonLdHtml (T-18-16).
+ * - 18-17 (D-10): every published photo page carries a second block,
+ *   breadcrumbLd(photoBreadcrumb(slug)): ['Photographs', region name, photo
+ *   title] in the visible order, items absolute, the last the photo page's
+ *   canonical; a title holding '<' stays inside its block (T-18-36). The
+ *   ImageObject itself still holds no BreadcrumbList.
  *
  * keysDeep and blocksOf are the helpers 17-13 and 17-14 reuse in this file.
  */
@@ -81,6 +86,7 @@ import { photoHref, regionHref } from '@/lib/photos/routes';
 import { siteRights as footerRights } from '@/lib/site-rights';
 import { publishedViews, type PhotoView } from '@/lib/photos/view-model';
 import {
+  photoBreadcrumb,
   regionBreadcrumb,
   regionById,
   regionDescription,
@@ -656,6 +662,15 @@ describe('photo page source rules (D-16, anti-pattern 9)', () => {
     const modal = read('app', '(site)', 'photos', '@modal', '(.)[slug]', 'page.tsx');
     expect(modal).not.toContain('ld+json');
     expect(modal).not.toContain('photoImageLd');
+    expect(modal).not.toContain('photoBreadcrumb');
+  });
+
+  it('renders the BreadcrumbList from photoBreadcrumb, the list its nav shows, as a second data block (18-17; D-10)', () => {
+    const page = read('app', '(site)', 'photos', '[slug]', 'page.tsx');
+    expect(page).toContain('jsonLdHtml(breadcrumbLd(photoBreadcrumb(view.slug)))');
+    expect(page.match(/type="application\/ld\+json"/g)).toHaveLength(2);
+    // No hand-built breadcrumb object: only breadcrumbLd builds one.
+    expect(page).not.toMatch(/['"]@type['"]\s*:\s*['"]BreadcrumbList['"]/);
   });
 });
 
@@ -946,5 +961,61 @@ describe('breadcrumbLd: the BreadcrumbList on every region page (18-06; D-10, T-
       new RangeError('regionBreadcrumb: nowhere is not a registry region')
     );
     expect(() => regionBreadcrumb('Zermatt')).toThrow(RangeError);
+  });
+});
+
+describe('photoBreadcrumb: the BreadcrumbList on every photo page (18-17; D-10, T-18-36)', () => {
+  type Item = { '@type': string; position: number; name: string; item: string };
+  const itemsOf = (block: Node) => block.itemListElement as Item[];
+  const photoRows = publishedViews.map((v) => [v.slug, v] as const);
+
+  it('runs over every published photo', () => {
+    expect(photoRows).toHaveLength(11);
+  });
+
+  it.each(photoRows)(
+    '%s: Photographs, its bare region name, then its title, each at its site path',
+    (slug, view) => {
+      const regionId = photos.find((p) => p.id === view.id)?.region;
+      if (!regionId) throw new Error(`json-ld.test: ${view.id} has no region`);
+      expect(photoBreadcrumb(slug)).toEqual([
+        { name: 'Photographs', path: '/photos' },
+        { name: regionById(regionId)!.name, path: regionHref(regionId) },
+        { name: view.title, path: photoHref(slug) },
+      ]);
+    }
+  );
+
+  it.each(photoRows)(
+    '%s: the block names the visible crumbs in order with absolute items, the last the page canonical',
+    (slug, view) => {
+      const block = parsed(breadcrumbLd(photoBreadcrumb(slug)));
+      expect(block['@type']).toBe('BreadcrumbList');
+      const items = itemsOf(block);
+      expect(items.map((i) => i.position)).toEqual([1, 2, 3]);
+      expect(items.map((i) => i.name)).toEqual(photoBreadcrumb(slug).map((c) => c.name));
+      expect(items[2].name).toBe(view.title);
+      for (const i of items) expect(i.item).toMatch(/^https:\/\//);
+      // The current crumb's item is the photo page's canonical: the ImageObject @id without '#image'.
+      expect(`${items[2].item}#image`).toBe(photoImageId(slug));
+      expect(Object.keys(block).sort()).toEqual(['@context', '@type', 'itemListElement']);
+    }
+  );
+
+  it('a title holding </script> stays inside its one block, escaped (T-18-36)', () => {
+    const slug = publishedViews[0].slug;
+    const crumbs = photoBreadcrumb(slug).map((c, i) => (i === 2 ? { ...c, name: BREAKOUT } : c));
+    const html = jsonLdHtml(breadcrumbLd(crumbs));
+    expect(html).not.toContain('<');
+    const blocks = blocksOf(`<script type="application/ld+json">${html}</script><p>after</p>`);
+    expect(blocks).toHaveLength(1);
+    expect(itemsOf(blocks[0] as Node)[2].name).toBe(BREAKOUT);
+  });
+
+  it('throws RangeError for an unknown or wrong-case slug', () => {
+    expect(() => photoBreadcrumb('no-such-photo')).toThrow(
+      new RangeError('photoBreadcrumb: no-such-photo is not a published photo')
+    );
+    expect(() => photoBreadcrumb(publishedViews[0].slug.toUpperCase())).toThrow(RangeError);
   });
 });

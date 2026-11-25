@@ -236,7 +236,54 @@ describe('ExifStrip heading and controls', () => {
     expect(() => render(<ExifStrip view={view} headingLevel={2} />)).not.toThrow();
   });
 
-  it('holds no link and no download control (LBOX-07)', () => {
+  /** The page's trail for a v2.0 photo, as the page passes it (photoBreadcrumb, last without href). */
+  const crumbsFor = (view: PhotoView) => [
+    { name: 'Photographs', href: '/photos' },
+    { name: BACK_NAME, href: '/photos/regions/zermatt' },
+    { name: view.title },
+  ];
+
+  it('the page breadcrumb sits above the h1 in the identity column (18-17; D-10, UI E10)', () => {
+    const view = viewOf('img-0629');
+    const { container } = render(
+      <ExifStrip view={view} headingLevel={1} backName={BACK_NAME} breadcrumb={crumbsFor(view)} />
+    );
+    const identity = container.querySelector('[data-strip-identity]')!;
+    const nav = identity.querySelector('nav[aria-label="Breadcrumb"]')!;
+    expect(nav).not.toBeNull();
+    expect(nav).toHaveClass('mb-2');
+    // First child of the identity column, directly before the h1.
+    expect(identity.firstElementChild).toBe(nav);
+    expect(nav.nextElementSibling?.tagName).toBe('H1');
+    // Two links, then the current title as plain text; separators aria-hidden.
+    const links = [...nav.querySelectorAll('a')];
+    expect(links.map((a) => [a.textContent, a.getAttribute('href')])).toEqual([
+      ['Photographs', '/photos'],
+      [BACK_NAME, '/photos/regions/zermatt'],
+    ]);
+    for (const a of links) expect(a).toHaveClass('min-h-11');
+    const current = nav.querySelector('[aria-current="page"]')!;
+    expect(current.tagName).toBe('SPAN');
+    expect(current).toHaveTextContent(view.title);
+    expect([...nav.querySelectorAll('[aria-hidden="true"]')].map((s) => s.textContent)).toEqual([
+      '/',
+      '/',
+    ]);
+    // Long titles wrap: the row is flex-wrap and nothing truncates.
+    expect(nav.querySelector('ol')).toHaveClass('flex-wrap');
+    expect(nav.innerHTML).not.toMatch(/truncate|text-ellipsis|line-clamp/);
+  });
+
+  it('the lightbox strip renders no breadcrumb even when one is passed (D-10: page only)', () => {
+    const view = viewOf('img-0629');
+    const { container } = render(
+      <ExifStrip view={view} headingLevel={2} breadcrumb={crumbsFor(view)} />
+    );
+    expect(container.querySelector('nav')).toBeNull();
+    expect(container.querySelectorAll('a')).toHaveLength(0);
+  });
+
+  it('holds no link and no download control without a breadcrumb (LBOX-07)', () => {
     for (const view of photoViews) {
       const strip = renderStrip(view);
       expect(strip.querySelectorAll('a')).toHaveLength(0);
