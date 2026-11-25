@@ -17,7 +17,15 @@
  */
 import { formatMetres } from '@/lib/photo-format';
 import { RAIL_MAX_PHOTOS, railCurrent, railHead, railTicks } from '@/lib/photos/region-rail';
-import { regionPhotoViews } from '@/lib/regions';
+import { regionIds, regionPhotoViews } from '@/lib/regions';
+
+/** A placeholder view at `m` metres. */
+const view = (m: number, over: Partial<{ approximate: boolean; aerial: boolean }> = {}) => ({
+  altitudeM: m,
+  approximate: false,
+  aerial: false,
+  ...over,
+});
 
 describe('railTicks (P1: metres only, dashed when approximate)', () => {
   it('gives Zermatt one tick per photo in sequence order, labelled formatMetres(altitudeM)', () => {
@@ -26,7 +34,32 @@ describe('railTicks (P1: metres only, dashed when approximate)', () => {
     expect(ticks).toHaveLength(views.length);
     expect(ticks.map((t) => t.label)).toEqual(views.map((v) => formatMetres(v.altitudeM)));
     // Metres only: never the caption's 'approx.' or 'ground'.
-    for (const tick of ticks) expect(tick.label).toMatch(/^[\d,]+ m$/);
+    for (const tick of ticks) expect(tick.label).toMatch(/^[\d,]+\u00a0m$/);
+  });
+
+  it('gives a one-photo input one tick (UI E6 zero-one-many)', () => {
+    expect(railTicks([view(1617)])).toEqual([{ label: '1,617\u00a0m', approximate: false }]);
+  });
+
+  it('marks approximate views approximate (the dashed tick) and keeps the label to metres', () => {
+    expect(railTicks([view(2760.4, { approximate: true }), view(2410, { aerial: true })])).toEqual([
+      { label: '2,760\u00a0m', approximate: true },
+      { label: '2,410\u00a0m', approximate: false },
+    ]);
+  });
+
+  it("carries every real region's approximate flags in sequence order", () => {
+    for (const id of regionIds) {
+      const views = regionPhotoViews(id);
+      expect(railTicks(views).map((t) => t.approximate)).toEqual(views.map((v) => v.approximate));
+    }
+  });
+
+  it('throws a RangeError naming the count for 17 photos', () => {
+    const seventeen = Array.from({ length: 17 }, (_, i) => view(1000 + i));
+    expect(() => railTicks(seventeen)).toThrow(RangeError);
+    expect(() => railTicks(seventeen)).toThrow(/\b17 photos\b/);
+    expect(railTicks(seventeen.slice(0, RAIL_MAX_PHOTOS))).toHaveLength(RAIL_MAX_PHOTOS);
   });
 });
 
@@ -39,6 +72,13 @@ describe('railHead (the 17 aerial rule)', () => {
 
   it("reads 'Altitude' for Zermatt, whose photos are taken on the ground", () => {
     expect(railHead(regionPhotoViews('zermatt'))).toBe('Altitude');
+  });
+
+  it("reads 'Ground altitude' for an all-aerial input and 'Altitude' for a mixed one", () => {
+    expect(railHead([view(820, { aerial: true }), view(880, { aerial: true })])).toBe(
+      'Ground altitude'
+    );
+    expect(railHead([view(820, { aerial: true }), view(1617)])).toBe('Altitude');
   });
 });
 
@@ -86,4 +126,12 @@ describe('RAIL_MAX_PHOTOS', () => {
   it('is 16: above it the ticks would crowd under 24 px on a 640 px viewport', () => {
     expect(RAIL_MAX_PHOTOS).toBe(16);
   });
+
+  it.each(regionIds.map((id) => [id] as const))(
+    '%s has at most RAIL_MAX_PHOTOS photos, so its rail builds',
+    (id) => {
+      expect(regionPhotoViews(id).length).toBeLessThanOrEqual(RAIL_MAX_PHOTOS);
+      expect(() => railTicks(regionPhotoViews(id))).not.toThrow();
+    }
+  );
 });

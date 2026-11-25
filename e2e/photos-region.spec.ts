@@ -12,6 +12,7 @@ import {
   regionTitle,
 } from '@/lib/regions';
 import { photoSlugs, publishedViews } from '@/lib/photos/view-model';
+import { railTicks } from '@/lib/photos/region-rail';
 import {
   readViewTransitions,
   recordViewTransitions,
@@ -103,6 +104,19 @@ import {
  * Saalfelden's print 'Extent' with WGS84 corners at 4 decimals, their own
  * editions and credits; at 375 every margin sits inside the 16 px gutters with
  * no sideways scroll and no corner wraps inside itself.
+ *
+ * The altimeter rail (18-12; REGION-05, D-07; UI E6): from 768 px every region
+ * page has one rail tick per photo, labelled with the metres only, dashed when
+ * the photo's position is approximate, under 'Altitude' ('Ground altitude' for
+ * an all-aerial region). Its root's data-rail-current is the settle signal (no
+ * fixed waits): '1' in the server HTML and above the first figure, the index of
+ * each figure scrolled to the viewport centre, N past the last figure, and the
+ * same after a jump straight from the top to #next-region and back. In the gap
+ * between Zermatt's figures 3 and 4 it stays on the figure come from (3 coming
+ * down, 4 coming up), recorded through a MutationObserver: it never flickers to
+ * 1 or N. Only the current label is semibold; the marker moves over
+ * --duration-panel, instantly under reduced motion. At 375 the rail has no box
+ * and every caption starts with 'n / N'.
  */
 
 /*
@@ -1343,6 +1357,233 @@ test.describe('Region altimeter rail (18-12; REGION-05, D-07)', () => {
     await expect(rail).toHaveAttribute('aria-hidden', 'true');
     await centreFigure(page, 4);
     await expect(rail).toHaveAttribute('data-rail-current', '4');
+  });
+});
+
+/** Wait three animation frames (never a fixed sleep): the observers deliver, React commits. */
+async function threeFrames(page: Page) {
+  await page.evaluate(
+    () =>
+      new Promise<void>((done) =>
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => requestAnimationFrame(() => done()))
+        )
+      )
+  );
+}
+
+/** Jump instantly to a document y (a Home, End or anchor jump: no smooth scroll). */
+async function jumpTo(page: Page, top: number) {
+  await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), top);
+}
+
+/** Record every value data-rail-current takes from now on (a MutationObserver on the rail). */
+async function recordRail(page: Page) {
+  await page.locator(RAIL).evaluate((rail) => {
+    const w = window as unknown as { __railValues: string[]; __railObserver?: MutationObserver };
+    w.__railObserver?.disconnect();
+    w.__railValues = [];
+    w.__railObserver = new MutationObserver(() =>
+      w.__railValues.push(rail.getAttribute('data-rail-current') ?? '')
+    );
+    w.__railObserver.observe(rail, { attributes: true, attributeFilter: ['data-rail-current'] });
+  });
+}
+
+async function railValues(page: Page) {
+  return page.evaluate(() => (window as unknown as { __railValues: string[] }).__railValues);
+}
+
+/**
+ * Put the viewport's centre line at the midpoint of the gap between the k-th
+ * and (k + 1)-th figures, instantly, and return where the line and the gap's
+ * edges lie (viewport px) after the scroll.
+ */
+async function lineIntoGap(page: Page, k: number) {
+  return page.evaluate((k) => {
+    const items = [
+      ...document.querySelectorAll('section[data-region-sequence] li[data-sequence-item]'),
+    ];
+    const above = items[k - 1].getBoundingClientRect();
+    const below = items[k].getBoundingClientRect();
+    const mid = window.scrollY + (above.bottom + below.top) / 2;
+    window.scrollTo({ top: mid - window.innerHeight / 2, behavior: 'instant' });
+    return {
+      line: window.innerHeight / 2,
+      aboveBottom: items[k - 1].getBoundingClientRect().bottom,
+      belowTop: items[k].getBoundingClientRect().top,
+    };
+  }, k);
+}
+
+test.describe('Region altimeter rail at every index (18-12; REGION-05, D-07, UI E6)', () => {
+  for (const r of regions) {
+    for (const [width, height] of [
+      [768, 1024],
+      [1440, 900],
+    ] as const) {
+      test(`/photos/regions/${r.id} at ${width}: every centred figure, both ends and both jumps`, async ({
+        page,
+      }) => {
+        const views = regionPhotoViews(r.id);
+        const N = views.length;
+        await page.setViewportSize({ width, height });
+        await page.goto(`/photos/regions/${r.id}`);
+        const rail = page.locator(RAIL);
+        // Above the first figure: photo 1.
+        await expect(rail).toHaveAttribute('data-rail-current', '1');
+        await expect(rail.locator('[data-rail-tick]')).toHaveCount(N);
+        for (let n = 1; n <= N; n++) {
+          await centreFigure(page, n);
+          await expect(rail, `figure ${n} centred`).toHaveAttribute('data-rail-current', String(n));
+        }
+        // Past the last figure (the next-region block): photo N.
+        await page
+          .locator('#next-region')
+          .evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
+        await expect(rail).toHaveAttribute('data-rail-current', String(N));
+        // Jumps: the top, then straight to #next-region (no figure contains the
+        // line before or after), then straight back to the top.
+        await jumpTo(page, 0);
+        await expect(rail).toHaveAttribute('data-rail-current', '1');
+        await page
+          .locator('#next-region')
+          .evaluate((el) => el.scrollIntoView({ block: 'start', behavior: 'instant' }));
+        await expect(rail).toHaveAttribute('data-rail-current', String(N));
+        await jumpTo(page, 0);
+        await expect(rail).toHaveAttribute('data-rail-current', '1');
+      });
+    }
+  }
+
+  for (const width of [768, 1440] as const) {
+    test(`Zermatt at ${width}: in the gap between figures 3 and 4 the mark stays on the side come from`, async ({
+      page,
+    }) => {
+      const N = regionPhotoViews('zermatt').length;
+      expect(N).toBeGreaterThan(4);
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/photos/regions/zermatt');
+      const rail = page.locator(RAIL);
+
+      // Coming down: figure 3, then the gap, then figure 4.
+      await centreFigure(page, 3);
+      await expect(rail).toHaveAttribute('data-rail-current', '3');
+      await recordRail(page);
+      const down = await lineIntoGap(page, 3);
+      expect(down.aboveBottom, 'figure 3 ends above the line').toBeLessThan(down.line);
+      expect(down.belowTop, 'figure 4 starts below the line').toBeGreaterThan(down.line);
+      await threeFrames(page);
+      await expect(rail).toHaveAttribute('data-rail-current', '3');
+      expect(await railValues(page), 'nothing changed in the gap').toEqual([]);
+      await centreFigure(page, 4);
+      await expect(rail).toHaveAttribute('data-rail-current', '4');
+      expect(await railValues(page), 'coming down: 3, then straight to 4').toEqual(['4']);
+
+      // Coming up: figure 4, then the same gap, then figure 3.
+      await recordRail(page);
+      const up = await lineIntoGap(page, 3);
+      expect(up.aboveBottom).toBeLessThan(up.line);
+      expect(up.belowTop).toBeGreaterThan(up.line);
+      await threeFrames(page);
+      await expect(rail).toHaveAttribute('data-rail-current', '4');
+      expect(await railValues(page), 'nothing changed in the gap').toEqual([]);
+      await centreFigure(page, 3);
+      await expect(rail).toHaveAttribute('data-rail-current', '3');
+      expect(await railValues(page), 'coming up: 4, then straight to 3').toEqual(['3']);
+    });
+  }
+
+  for (const r of regions) {
+    test(`/photos/regions/${r.id} at 1440: one tick per photo, the current label semibold, dashed approximate ticks, the head label`, async ({
+      page,
+    }) => {
+      const views = regionPhotoViews(r.id);
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.goto(`/photos/regions/${r.id}`);
+      const rail = page.locator(RAIL);
+      await expect(rail).toHaveAttribute('aria-hidden', 'true');
+      expect(await rail.evaluate((el) => getComputedStyle(el).pointerEvents)).toBe('none');
+      expect(await rail.evaluate((el) => getComputedStyle(el).position)).toBe('sticky');
+      const ticks = rail.locator('[data-rail-tick]');
+      await expect(ticks).toHaveCount(views.length);
+      await expect(rail.locator('[data-rail-head]')).toHaveText(
+        views.every((v) => v.aerial) ? 'Ground altitude' : 'Altitude'
+      );
+      for (let i = 0; i < views.length; i++) {
+        const tick = ticks.nth(i);
+        const style = await tick.evaluate((li) => {
+          const label = li.querySelector('[data-tick-label]') as HTMLElement;
+          const mark = li.querySelector('[data-tick-mark]') as HTMLElement;
+          return {
+            label: label.textContent,
+            weight: getComputedStyle(label).fontWeight,
+            border: getComputedStyle(mark).borderTopStyle,
+          };
+        });
+        const name = `${r.id} tick ${i + 1}`;
+        expect(style.label, name).toBe(railTicks(views)[i].label);
+        expect(style.weight, `${name}: only the current label is semibold`).toBe(
+          i === 0 ? '600' : '400'
+        );
+        // Preflight gives every element a 0 px solid border, so a solid tick reads 'solid'.
+        expect(style.border === 'dashed', `${name}: dashed exactly when approximate`).toBe(
+          views[i].approximate
+        );
+      }
+    });
+  }
+
+  test('some region has an approximate photo, so the dashed-tick rows are not vacuous', () => {
+    expect(regions.some((r) => regionPhotoViews(r.id).some((v) => v.approximate))).toBe(true);
+    expect(regions.some((r) => regionPhotoViews(r.id).some((v) => !v.approximate))).toBe(true);
+  });
+
+  test('Saalfelden (all aerial) heads its rail Ground altitude', async ({ page }) => {
+    expect(regionPhotoViews('saalfelden').every((v) => v.aerial)).toBe(true);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/photos/regions/saalfelden');
+    await expect(page.locator(`${RAIL} [data-rail-head]`)).toHaveText('Ground altitude');
+  });
+
+  test('the server HTML marks photo 1 before any script runs (UI E6 loading)', async ({ page }) => {
+    const html = await (await page.request.get('/photos/regions/zermatt')).text();
+    expect(html).toMatch(/data-region-rail=""[^>]*data-rail-current="1"/);
+  });
+
+  for (const r of regions) {
+    test(`/photos/regions/${r.id} at 375: no rail box, and each caption starts with n / N (D-07)`, async ({
+      page,
+    }) => {
+      const views = regionPhotoViews(r.id);
+      await page.setViewportSize({ width: 375, height: 812 });
+      await page.goto(`/photos/regions/${r.id}`);
+      expect(await page.locator(RAIL).boundingBox()).toBeNull();
+      const counters = page.locator('section[data-region-sequence] [data-figure-counter]');
+      await expect(counters).toHaveCount(views.length);
+      for (let i = 0; i < views.length; i++) {
+        await expect(counters.nth(i)).toBeVisible();
+        await expect(counters.nth(i)).toHaveText(`${i + 1} / ${views.length} · `);
+      }
+    });
+  }
+
+  test('the marker moves over --duration-panel, and instantly under reduced motion', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/photos/regions/zermatt');
+    const marker = page.locator(`${RAIL} [data-rail-marker]`);
+    expect(await marker.evaluate((el) => getComputedStyle(el).transitionDuration)).toBe('0.25s');
+    // Tailwind 4's transition-transform lists the individual transform properties too.
+    expect(
+      (await marker.evaluate((el) => getComputedStyle(el).transitionProperty)).split(', ')
+    ).toContain('transform');
+
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    expect(await marker.evaluate((el) => getComputedStyle(el).transitionDuration)).toBe('0s');
+    await centreFigure(page, 2);
+    await expect(page.locator(RAIL)).toHaveAttribute('data-rail-current', '2');
   });
 });
 
