@@ -114,8 +114,7 @@ export default async function RegionPage({ params }: PageProps) {
   const region = regionById(id);
   if (!region) notFound();
   const sheet = regionPlateSheet(region.id);
-  // 18-11 Task 1: the LV95 sheets' margins; Task 2 emits Saalfelden's WGS84 corners.
-  const margin = region.plate === 'saalfelden' ? undefined : sheetMargin(region.plate);
+  const margin = sheetMargin(region.plate);
   const views = new Map(regionPhotoViews(region.id).map((v) => [v.slug, v]));
   const keyRows = sheet.pins.map((pin) => {
     const view = views.get(pin.slug);

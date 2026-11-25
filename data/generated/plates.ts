@@ -134,7 +134,17 @@ export const plates = {
         "north": 2713000
       },
       "widthM": 12000,
-      "heightM": 12000
+      "heightM": 12000,
+      "wgs84": {
+        "sw": {
+          "lat": 47.387799,
+          "lon": 12.753559
+        },
+        "ne": {
+          "lat": 47.491582,
+          "lon": 12.918347
+        }
+      }
     },
     "dem": {
       "product": "BEV ALS DTM",

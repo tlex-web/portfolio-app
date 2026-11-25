@@ -448,7 +448,8 @@ function overviewContours(metres, W, H, c) {
   for (const mp of contours().size([W, H]).thresholds(thresholds)(grid)) {
     let d = '';
     for (const poly of mp.coordinates)
-      for (const ring of poly) if (!smallRing(ring, c.ringFilterPx)) d += ringPaths(ring, W, H, c.simplifyPx);
+      for (const ring of poly)
+        if (!smallRing(ring, c.ringFilterPx)) d += ringPaths(ring, W, H, c.simplifyPx);
     if (!d) continue;
     paths.push({ d, index: isIndexLevel(mp.value, c.intervalM, c.indexEvery) });
     levels.push(mp.value);
@@ -487,6 +488,21 @@ function loadRegions(plates) {
  * v = (north − lat) / (north − south) over the source's window, rounded to 4
  * decimals. The cos 46.5° x scale is the grid's aspect, not a step here.
  */
+/**
+ * A sheet's SW and NE corners in WGS84 at 6 decimals (18-11, D-19), through the
+ * same fromGrid transform the overview outlines use (proj4 for EPSG:3035). The
+ * sheet margin prints them at 4 decimals; app code never projects (proj4 is a
+ * scripts-only dependency, 16-09). They are the sheet's corners, never a
+ * photo's position (D-25).
+ */
+function wgs84Corners(crs, { west, south, east, north }) {
+  const at = (e, n) => {
+    const { lat, lon } = fromGrid(crs, { e, n });
+    return { lat: Math.round(lat * 1e6) / 1e6, lon: Math.round(lon * 1e6) / 1e6 };
+  };
+  return { sw: at(west, south), ne: at(east, north) };
+}
+
 function overviewUv(source, { lat, lon }) {
   const [west, east] = source.lon;
   const [south, north] = source.lat;
@@ -581,9 +597,13 @@ function overviewBudgetProblems(ov) {
   const fix = '(OVERVIEW_BUDGET in data/schemas/overview.ts); change data/terrain/overview.json';
   const out = [];
   if (raw > OVERVIEW_BUDGET.contoursRawMax)
-    out.push(`overview contours are ${raw} B raw, over the ${OVERVIEW_BUDGET.contoursRawMax} B budget ${fix}`);
+    out.push(
+      `overview contours are ${raw} B raw, over the ${OVERVIEW_BUDGET.contoursRawMax} B budget ${fix}`
+    );
   if (brotli > OVERVIEW_BUDGET.contoursBrotliMax)
-    out.push(`overview contours are ${brotli} B brotli, over the ${OVERVIEW_BUDGET.contoursBrotliMax} B budget ${fix}`);
+    out.push(
+      `overview contours are ${brotli} B brotli, over the ${OVERVIEW_BUDGET.contoursBrotliMax} B budget ${fix}`
+    );
   if (raw > OVERVIEW_BUDGET.servedMax)
     out.push(`overview serves ${raw} B, over the ${OVERVIEW_BUDGET.servedMax} B budget ${fix}`);
   return out;
@@ -889,10 +909,13 @@ async function buildPlate(plate, source, metres, { encode }) {
     threeD: plate.threeD,
     crs: source.crs,
     // The sheet branch of the source's crs: extent.lv95 / extent.laea (16 D-09).
+    // An EPSG:3035 sheet also carries its WGS84 corners for the sheet margin (18-11,
+    // D-19); an LV95 sheet converts through lib/geo.ts, so Matterhorn's is unchanged.
     extent: {
       [box]: extent,
       widthM: extent.east - extent.west,
       heightM: extent.north - extent.south,
+      ...(source.crs === 'EPSG:3035' ? { wgs84: wgs84Corners(source.crs, extent) } : {}),
     },
     dem: { product: source.product, edition: source.edition, cellM: source.cellM },
     contours: {

@@ -1,9 +1,11 @@
+import { overview } from '@/data/generated/overview';
 import { plates } from '@/data/generated/plates';
 import { sheet } from '@/data/sheet';
 import { SHORT_CREDIT, type SourceId, sourceHref } from '@/data/source-credits';
 import { formatEquidistance, formatExtentLines, formatMonthYear } from '@/lib/footer-format';
 import { type Wgs84, lv95ToWgs84 } from '@/lib/geo';
 import { formatCoordinates } from '@/lib/home-format';
+import { formatMetres } from '@/lib/photo-format';
 import { regions } from '@/lib/regions';
 
 /**
@@ -12,8 +14,9 @@ import { regions } from '@/lib/regions';
  * printed under the map as its figcaption, one click from the full credit on
  * /sources.
  *
- * SERVER-ONLY: this module reads the plate registry (data/generated/plates.ts),
- * which no client component may reach (lib/__tests__/client-graph.test.ts).
+ * SERVER-ONLY: this module reads the plate registry (data/generated/plates.ts)
+ * and the Alps overview (data/generated/overview.ts), which no client
+ * component may reach (lib/__tests__/client-graph.test.ts).
  * Pages build the model on the server and pass it to the SheetMargin component
  * as plain props, so no plate data reaches a client chunk.
  *
@@ -26,8 +29,16 @@ import { regions } from '@/lib/regions';
  *
  * Extent (D-19): the Swiss sheet keeps the footer's 'Extent (LV95)' corners;
  * any other LV95 sheet (Ortler, in Italy) prints its SW and NE corners in WGS84
- * at 4 decimals through lv95ToWgs84. The corners are the sheet's, not a
- * photo's, so the 4 decimals disclose nothing (D-25).
+ * at 4 decimals through lv95ToWgs84, and an EPSG:3035 sheet (Saalfelden) the
+ * WGS84 corners the terrain build projected (extent.wgs84; the projection
+ * library stays in scripts/, so app code never projects LAEA). The corners are the sheet's, not a photo's, so the
+ * 4 decimals disclose nothing (D-25). The overview prints its projection
+ * window in whole degrees.
+ *
+ * Last surveyed (D-18) is the terrain edition, short month and year for a
+ * plate ('Sep 2025'), the release year alone for the overview. The overview's GLO-90 credit is a
+ * link too (Tim's G1), and its Summits row lists the reference summits west to
+ * east with their stored heights, Triglav's printed plainly (18-01 P6).
  */
 
 /** A sheet's margin: plain strings only, so it crosses to any component as props. */
@@ -64,13 +75,18 @@ export const SHEET_TITLES = {
 const SOURCE_OF_PRODUCT: Readonly<Record<string, SourceId>> = {
   swissALTIRegio: 'swissaltiregio',
   'BEV ALS DTM': 'bev-als-dtm',
+  'Copernicus DEM GLO-90': 'copernicus-glo-90',
 };
 
 /** The sheet fields a margin reads, for either crs branch. */
 type MarginSheet = {
   id: string;
   crs: string;
-  extent: { lv95?: { west: number; south: number; east: number; north: number }; widthM: number };
+  extent: {
+    lv95?: { west: number; south: number; east: number; north: number };
+    wgs84?: { sw: Wgs84; ne: Wgs84 };
+    widthM: number;
+  };
   dem: { product: string; edition: string };
   contours: { hero: { intervalM: number } };
 };
@@ -116,23 +132,69 @@ function extent(s: MarginSheet): SheetMarginModel['extent'] {
       ],
     };
   }
-  throw new RangeError(`sheetMargin: plate ${s.id} (${s.crs}) has no WGS84 corners`);
+  const corners = s.extent.wgs84;
+  if (s.crs === 'EPSG:3035' && corners)
+    return { label: 'Extent', parts: [corner('SW', corners.sw), corner('NE', corners.ne)] };
+  throw new RangeError(
+    `sheetMargin: plate ${s.id} (${s.crs}) has no WGS84 corners (npm run terrain:build)`
+  );
 }
 
 /**
- * The margin of a plate's sheet, by plate id.
+ * A `YYYY-MM` edition as the margin prints it, 'Sep 2025' (D-18; the region
+ * captions' short month): formatMonthYear validates it and names the month,
+ * whose first three letters are its English abbreviation.
+ */
+function editionMonth(edition: string): string {
+  const [month, year] = formatMonthYear(edition).split(' ');
+  return `${month.slice(0, 3)} ${year}`;
+}
+
+/** A whole number of degrees, or a RangeError: the overview window is whole degrees. */
+function degrees(v: number): string {
+  if (!Number.isInteger(v)) throw new RangeError(`sheetMargin: overview edge ${v}° is not whole`);
+  return `${v}°`;
+}
+
+/** The Alps overview's margin (18-23 renders it under the overview sheet). */
+function overviewMargin(): SheetMarginModel {
+  const { lon, lat } = overview.projection;
+  const year = /\b(\d{4})\b/.exec(overview.source.release)?.[1];
+  if (!year) throw new RangeError('sheetMargin: the overview release names no year');
+  return {
+    title: title('overview'),
+    interval: formatMetres(overview.contours.intervalM),
+    extent: {
+      label: 'Extent',
+      parts: [
+        `SW ${degrees(lat[0])} N ${degrees(lon[0])} E`,
+        `NE ${degrees(lat[1])} N ${degrees(lon[1])} E`,
+      ],
+    },
+    lastSurveyed: year,
+    source: source(overview.source.product),
+    summits: [...overview.summits]
+      .sort((a, b) => a.uv.u - b.uv.u)
+      .map((s) => `${s.name} ${formatMetres(s.officialM)}`),
+  };
+}
+
+/**
+ * The margin of a plate's sheet by plate id, or of the Alps overview for
+ * 'overview'.
  *
- * @throws RangeError for an id that is not a plate, or a plate with no approved
+ * @throws RangeError for an id that is neither, or a sheet with no approved
  *   title, no credited source or no printable extent.
  */
 export function sheetMargin(id: string): SheetMarginModel {
+  if (id === 'overview') return overviewMargin();
   const s = own(PLATES, id);
   if (!s) throw new RangeError(`sheetMargin: ${id} is not a plate`);
   return {
     title: title(id),
     interval: formatEquidistance(s.contours.hero.intervalM),
     extent: extent(s),
-    lastSurveyed: formatMonthYear(s.dem.edition),
+    lastSurveyed: editionMonth(s.dem.edition),
     source: source(s.dem.product),
   };
 }

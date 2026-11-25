@@ -481,6 +481,21 @@ const Lv95Sheet = z
     sheetRules(s, (message, path) => ctx.addIssue({ code: 'custom', message, path }))
   );
 
+/** A WGS84 point in degrees at 6 decimals (~0.1 m): a sheet corner, never a photo position. */
+const SheetCorner = z.strictObject({
+  lat: z.number().min(-90).max(90),
+  lon: z.number().min(-180).max(180),
+});
+
+/**
+ * A sheet's SW and NE corners in WGS84 (18-11, D-19), projected at build time
+ * from its own grid (proj4 stays in scripts/), so the sheet margin prints them
+ * without a projection in app code.
+ */
+const Wgs84Corners = z
+  .strictObject({ sw: SheetCorner, ne: SheetCorner })
+  .refine((c) => c.sw.lat < c.ne.lat && c.sw.lon < c.ne.lon, 'sw lies south-west of ne');
+
 /**
  * A LAEA Europe (EPSG:3035) sheet: a BEV ALS DTM plate (16 D-09). The extent and
  * strip keys name the grid (RESEARCH Pattern 3), so an LV95 reader never takes a
@@ -494,6 +509,8 @@ const LaeaSheet = z
       laea: GridBbox,
       widthM: z.number().int().positive(),
       heightM: z.number().int().positive(),
+      // The SW and NE corners in WGS84 for the sheet margin (18-11, D-19).
+      wgs84: Wgs84Corners.optional(),
     }),
     dem: z.strictObject({
       product: z.literal('BEV ALS DTM'),

@@ -99,7 +99,10 @@ import {
  * figcaption is its sheet margin. Zermatt's reads 'Zermatt – Matterhorn ·
  * contours every 100 m', keeps the footer's 'Extent (LV95)' corners, gives
  * 'May 2026' and links 'swissALTIRegio, swisstopo' to /sources#swissaltiregio;
- * following it lands with the swissALTIRegio entry in view.
+ * following it lands with the swissALTIRegio entry in view. Ortler's and
+ * Saalfelden's print 'Extent' with WGS84 corners at 4 decimals, their own
+ * editions and credits; at 375 every margin sits inside the 16 px gutters with
+ * no sideways scroll and no corner wraps inside itself.
  */
 
 /*
@@ -1146,6 +1149,87 @@ test.describe('Region plate margin (18-11; REGION-06, D-16..D-19)', () => {
       page.getByRole('heading', { level: 2, name: 'swissALTIRegio', exact: true })
     ).toBeInViewport();
   });
+
+  // D-19: the sheets outside Switzerland print WGS84 corners at 4 decimals (Ortler via
+  // lv95ToWgs84, Saalfelden from the build's corners); D-17, D-18: their own edition
+  // and credit.
+  const WGS84_MARGINS = [
+    {
+      id: 'ortler',
+      title: 'Ortler',
+      edition: 'May 2026',
+      credit: 'swissALTIRegio, swisstopo',
+      href: '/sources#swissaltiregio',
+    },
+    {
+      id: 'saalfelden',
+      title: 'Saalfelden',
+      edition: 'Sep 2025',
+      credit: 'ALS DTM, BEV, CC BY 4.0',
+      href: '/sources#bev-als-dtm',
+    },
+  ] as const;
+  for (const w of WGS84_MARGINS) {
+    test(`${w.id}: the plate margin prints Extent in WGS84, ${w.edition} and links ${w.href}`, async ({
+      page,
+    }) => {
+      await page.goto(`/photos/regions/${w.id}`);
+      const margin = plateMargin(page, w.id);
+      await expect(margin.locator('p').first()).toHaveText(`${w.title} · contours every 100 m`);
+      expect(await margin.locator('dt').allTextContents()).toEqual([
+        'Extent',
+        'Last surveyed',
+        'Source',
+      ]);
+      const corners = margin.locator('dd').nth(0).locator('span');
+      await expect(corners).toHaveCount(2);
+      const parts = (await corners.allTextContents()).map((t) => t.replace(/\s+/g, ' '));
+      expect(parts[0]).toMatch(/^SW \d{2}\.\d{4} N \d{2}\.\d{4} E$/);
+      expect(parts[1]).toMatch(/^NE \d{2}\.\d{4} N \d{2}\.\d{4} E$/);
+      await expect(margin.locator('dd').nth(1)).toHaveText(w.edition);
+      const credit = margin.locator('dd').nth(2).getByRole('link');
+      await expect(credit).toHaveText(w.credit);
+      await expect(credit).toHaveAttribute('href', w.href);
+    });
+  }
+
+  // UI E9/overflow, Edge REGION-06/adjacency: at 375 the margin causes no sideways
+  // scroll and a line breaks only between the nowrap units.
+  for (const r of regions) {
+    test(`/photos/regions/${r.id} at 375: the margin fits and every unit stays on one line`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 375, height: 812 });
+      await page.goto(`/photos/regions/${r.id}`);
+      const margin = plateMargin(page, r.id);
+      await expect(margin).toBeVisible();
+      const fit = await margin.evaluate((el) => {
+        // The text box: the figcaption itself spans the full-bleed figure, its padding the gutters.
+        const box = el.querySelector('dl')!.getBoundingClientRect();
+        const units = [...el.querySelectorAll('dd span')].map((u) => {
+          const rects = u.getClientRects();
+          const b = u.getBoundingClientRect();
+          return { lines: rects.length, right: b.right, left: b.left };
+        });
+        return {
+          left: box.left,
+          right: box.right,
+          scroll: document.documentElement.scrollWidth,
+          width: document.documentElement.clientWidth,
+          units,
+        };
+      });
+      expect(fit.scroll, 'no horizontal scroll').toBeLessThanOrEqual(fit.width);
+      // The container's 16 px gutters under the full-bleed sheet.
+      expect(fit.left).toBeGreaterThanOrEqual(16);
+      expect(fit.right).toBeLessThanOrEqual(375 - 16);
+      expect(fit.units.length).toBe(2);
+      for (const u of fit.units) {
+        expect(u.lines, 'a corner never wraps inside').toBe(1);
+        expect(u.right).toBeLessThanOrEqual(375 - 16);
+      }
+    });
+  }
 });
 
 test.describe('Region plate jumps without JavaScript (18-10; UI E4 no-JS)', () => {

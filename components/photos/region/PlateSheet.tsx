@@ -66,7 +66,7 @@ export default function PlateSheet({
   margin,
 }: {
   sheet: RegionPlateSheet;
-  margin?: SheetMarginModel;
+  margin: SheetMarginModel;
 }) {
   const name = `plate-${sheet.id}`;
   const css = plateCss(sheet.pins, name);
@@ -136,7 +136,7 @@ export default function PlateSheet({
           </div>
         ))}
       </div>
-      {margin && <SheetMargin margin={margin} className="px-4 sm:px-0" />}
+      <SheetMargin margin={margin} className="px-4 sm:px-0" />
     </figure>
   );
 }
