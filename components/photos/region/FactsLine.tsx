@@ -3,7 +3,7 @@
  * Contract 2: the header band's data line and the next-region block's facts).
  * Props only: the caller passes regionCardFacts' parts in order. Each part is
  * nowrap, so a line wraps only between parts, at a ' · ' separator, as on
- * PhotosHeader's kicker; the range keeps its U+00A0 after 'ground'.
+ * the overview's kicker (OverviewHeader); the range keeps its U+00A0 after 'ground'.
  */
 export default function FactsLine({
   parts,

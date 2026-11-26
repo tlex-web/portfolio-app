@@ -234,7 +234,7 @@ const LEGACY_VIEWS: ReadonlySet<string> = new Set(['grid', 'carousel']);
  * The 308 target of a retired view URL, or null for any other request (18
  * D-03, PHOTO-06; T-18-44, T-18-45). Only the path `/photos` with exactly one
  * `view` parameter whose value is in LEGACY_VIEWS, compared exactly and
- * case-sensitively as parseView did: `?view=map`, an unknown value, `GRID`, a
+ * case-sensitively as the retired view parameter did: `?view=map`, an unknown value, `GRID`, a
  * repeated parameter or no parameter render the overview. The target is built
  * fresh from the constant LEGACY_VIEW_REGION through regionHref, never from the
  * request, so it carries no query and no hash and cannot be steered off-site.

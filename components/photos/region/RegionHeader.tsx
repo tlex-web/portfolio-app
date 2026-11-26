@@ -8,7 +8,7 @@ import { regionBreadcrumb, regionById, regionCardFacts, regionHeading } from '@/
 /**
  * The region page's header band (REGION-02; D-10; 18-UI-SPEC Contract 2
  * "Header band"). A Server Component inside the page's container, in the
- * 10 band shape PhotosHeader uses (pt-8 pb-6, border-b, flex-wrap, items-end),
+ * 10 band shape the Phase 10 /photos header used (pt-8 pb-6, border-b, flex-wrap, items-end),
  * so /photos and the region pages share a rhythm.
  *
  * Left: the breadcrumb in the kicker's slot ('Photographs' / '{region name}',
