@@ -54,7 +54,7 @@ recorded: 2026-11-14T14:36:28.002Z
 | IN-01 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only); fixed in Phase 15: 15-14 `66eb7f2` |
 | IN-02 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only); fixed in Phase 15: 15-14 `66eb7f2` |
 | IN-03 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only); fixed in Phase 15: 15-14 `c24b622` |
-| IN-04 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only); deferred to Phase 18 (D-29): CarouselControls.tsx retires with the Carousel there, leaving DemoTerminal's STEP string the only copy |
+| IN-04 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only); deferred to Phase 18 (D-29): CarouselControls.tsx retires with the Carousel there, leaving DemoTerminal's STEP string the only copy; fixed in Phase 18: 18-25 `d4a0837` (CarouselControls retired in `05e5f3b`; DemoTerminal's STEP is the only copy) |
 | IN-05 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only); fixed in Phase 15: 15-14 `065d628` |
 | IN-06 | info | deferred | Phase 15: Tim chose "Fix all 3 now (Recommended)" on 2026-11-14 (warnings only); fixed in Phase 15: 15-14 `065d628` |
 

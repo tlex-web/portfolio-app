@@ -65,12 +65,12 @@ recorded: 2026-10-26T18:58:22.182Z
 | IN-01 | info | deferred | handed to Phase 14 (ROADMAP.md scope note); fixed in Phase 14: 14-04 d6873c8, 945d235 (13-LEDGER-TRIAGE.md #30) |
 | IN-02 | info | fixed | 13-09: f03c424 (RED), 0aac3d3 (fix) (13-LEDGER-TRIAGE.md #31) |
 | IN-03 | info | deferred | handed to Phase 17 (ROADMAP.md scope note) (13-LEDGER-TRIAGE.md #32) |
-| IN-04 | info | deferred | handed to Phase 18, LBOX-09 stepping rework (ROADMAP.md scope note) (13-LEDGER-TRIAGE.md #33) |
-| IN-05 | info | deferred | handed to Phase 18, immersive layout (ROADMAP.md scope note) (13-LEDGER-TRIAGE.md #34) |
+| IN-04 | info | deferred | handed to Phase 18, LBOX-09 stepping rework (ROADMAP.md scope note); fixed in Phase 18: 18-19 036a412 (the neighbour preload asks for the format the stage loaded, AVIF or WebP) (13-LEDGER-TRIAGE.md #33) |
+| IN-05 | info | deferred | handed to Phase 18, immersive layout (ROADMAP.md scope note); fixed in Phase 18: 18-08 8d30564, df4f8e8 (figure and slot sizes), 18-19 4f684b9 (stage sizes; STAGE_SIZES removed) (13-LEDGER-TRIAGE.md #34) |
 | IN-06 | info | fixed | 13-09: 69160aa (refactor; type-check is the proof) (13-LEDGER-TRIAGE.md #35) |
 | IN-07 | info | fixed | 13-09: 7670c17 (RED), ecd59d2 (fix) (13-LEDGER-TRIAGE.md #36) |
-| IN-08 | info | deferred | handed to Phase 18, PHOTO-06 view-test rewrite (ROADMAP.md scope note) (13-LEDGER-TRIAGE.md #37) |
-| IN-09 | info | fixed | 13-09: 86b34dc (the three surviving lightbox tests); the photos-sweep switchTo 600 ms wait goes with the view switch, Phase 18 scope note (13-LEDGER-TRIAGE.md #38) |
+| IN-08 | info | deferred | handed to Phase 18, PHOTO-06 view-test rewrite (ROADMAP.md scope note); fixed in Phase 18: 18-24 e5884ff (guard retired with the grid; no breakpoint row heights remain) (13-LEDGER-TRIAGE.md #37) |
+| IN-09 | info | fixed | 13-09: 86b34dc (the three surviving lightbox tests); the photos-sweep switchTo 600 ms wait goes with the view switch, Phase 18 scope note; the photos-sweep switchTo wait: 18-22 e1907cf (removed; the successor sweeps of 18-21 and 18-22 wait on positive signals) (13-LEDGER-TRIAGE.md #38) |
 | IN-10 | info | fixed | 13-09: 86b2456 (RED), 722517b (fix) (13-LEDGER-TRIAGE.md #39) |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
