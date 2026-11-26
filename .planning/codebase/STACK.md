@@ -37,7 +37,6 @@
 **3D & Graphics:**
 - Three.js 0.182.0 - WebGL-based 3D library
 - @react-three/fiber 9.5.0 - React renderer for Three.js
-- @react-three/drei 10.7.7 - Useful helpers for react-three-fiber
 - @react-spring/three 10.0.3 - Spring physics-based animations for 3D
 
 **Validation:**

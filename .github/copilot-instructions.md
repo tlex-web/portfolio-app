@@ -118,7 +118,6 @@ When adding email service (e.g., Resend, SendGrid):
 
 ### Three.js Stack
 - **react-three-fiber**: React renderer for Three.js (import from `@react-three/fiber`)
-- **@react-three/drei**: Helper components (`OrbitControls`, `PerspectiveCamera`, etc.)
 - **@react-spring/three**: Spring animations for 3D objects
 
 ### Performance Considerations

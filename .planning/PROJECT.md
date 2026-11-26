@@ -128,7 +128,7 @@ v2.1 Survey Expansion. The REQ-IDs are in `.planning/REQUIREMENTS.md`.
 
 Shipped v1.0 with 12,484 LOC TypeScript/CSS across 165 files.
 Shipped v2.0 with about 56,100 lines of TypeScript, CSS and scripts (generated data excluded) and 2,243 tests (Jest 1,694, Playwright 549). CI E2E runs Chromium, Firefox and WebKit with `--fail-on-flaky-tests`.
-Tech stack: Next 16.4, React 19.3, Tailwind v4 (CSS-first `@theme`), `motion` 14.1, Three.js with R3F 9.8 and drei 10.7, zod 4, Playwright 1.64, Node 24 with `npm ci` locally, in CI and on Vercel.
+Tech stack: Next 16.4, React 19.3, Tailwind v4 (CSS-first `@theme`), `motion` 14.1, Three.js with R3F 9.8, zod 4, Playwright 1.64, Node 24 with `npm ci` locally, in CI and on Vercel.
 Deployed on Vercel, with Upstash Redis for rate limiting and Resend for email. The canonical host is `https://www.tlui.de`; tlui.de and the vercel.app host redirect to it at Vercel.
 Home performance at close (HOME-08, on-demand gate, local run): mobile LCP 3,216 ms against 4,692 ms, 439,840 B of JS against 468,770 B.
 
