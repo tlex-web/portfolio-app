@@ -1,6 +1,7 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
 import { site } from '@/data/site';
 import { buildPhotoViews } from '@/lib/photos/view-model';
+import { regionPhotoViews } from '@/lib/regions';
 import { ROUTES } from './routes';
 import { tabReachesLinks } from './helpers/engine';
 
@@ -241,23 +242,44 @@ test.describe('Photo map and lightbox by keyboard (1440)', () => {
     await walk(page, browserName, [...mapStops(page), ...(await footerStops(page))]);
     await expectEndOfPage(page);
   });
+});
 
-  test('Enter on a map target opens the lightbox on Close photo; Tab stays inside; arrows step; Escape returns focus', async ({
+/**
+ * The lightbox from a region page by keyboard (18-21; PHOTO-06 successor of the
+ * map-target walk, which opened the lightbox from /photos). The region page is
+ * where a photo opens from now: Tab reaches the sequence head ('Skip to next
+ * region'), the next Tab the first figure's link, and Enter opens the lightbox
+ * over the region page. Positions come from regionPhotoViews('zermatt').
+ */
+test.describe('Region page and lightbox by keyboard (1440)', () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  const series = regionPhotoViews('zermatt');
+  const REGION_PATH = route('/photos/regions/zermatt');
+  const figureLink = (page: Page, slug: string) =>
+    page.locator(`li[data-sequence-item="${slug}"] [data-photo-id="${slug}"]`);
+  const sequenceHead = (page: Page) =>
+    page
+      .locator('section[data-region-sequence]')
+      .getByRole('link', { name: 'Skip to next region', exact: true });
+
+  test('Enter on a figure link opens the lightbox on Close photo; Tab stays inside; arrows step; Escape returns focus', async ({
     page,
     browserName,
   }) => {
-    expect(PHOTO_PATH, 'the shared list has the photo page').toBe(`/photos/${views[0].slug}`);
-    await page.goto(route('/photos'));
-    const opener = mapLinks(page).nth(0);
+    expect(series.length, 'the arrows need two photos').toBeGreaterThanOrEqual(2);
+    expect(PHOTO_PATH, 'the shared list has the first Zermatt photo page').toBe(
+      `/photos/${series[0].slug}`
+    );
+    await page.goto(REGION_PATH);
+    const opener = figureLink(page, series[0].slug);
     await waitForHydration(opener);
     await expect(opener).toHaveAttribute('href', PHOTO_PATH!);
 
-    await walk(page, browserName, mapStops(page).slice(0, -(views.length - 1)));
     if (!tabReachesLinks(browserName)) {
-      // No Tab reaches the map target (a link) in WebKit with Safari's
-      // conventions (Windows, macOS; helpers/engine.ts), so the lightbox cannot
-      // be opened from the keyboard there; the walk above checked the controls
-      // up to the Carousel segment. Linux WebKit (CI) runs every step (12-23).
+      // The sequence head and the figure are links, which no Tab reaches in WebKit with
+      // Safari's conventions (Windows, macOS; helpers/engine.ts), so the lightbox cannot be
+      // opened from the keyboard there. Linux WebKit (CI) runs every step (12-23).
       test.info().annotations.push({
         type: 'webkit',
         description: 'Tab never focuses a link in WebKit off Linux; dialog steps run in Chromium, Firefox and Linux WebKit',
@@ -265,12 +287,22 @@ test.describe('Photo map and lightbox by keyboard (1440)', () => {
       return;
     }
 
-    await expect(opener).toBeFocused();
+    // Tab through the chrome, the header band and the plate key to the sequence head,
+    // then one more Tab to the first figure (nothing focusable sits between them).
+    const head = sequenceHead(page);
+    for (let i = 0; i < 80; i++) {
+      await page.keyboard.press('Tab');
+      if (await head.evaluate((el) => el === document.activeElement)) break;
+    }
+    await expect(head, 'Tab reaches the sequence head').toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(opener, 'the next Tab reaches the first figure link').toBeFocused();
+
     await page.keyboard.press('Enter');
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible({ timeout: 20000 });
     await expect(page).toHaveURL(new RegExp(`${PHOTO_PATH}$`));
-    await expect(dialog).toHaveAccessibleName(views[0].title);
+    await expect(dialog).toHaveAccessibleName(series[0].title);
     await expect(dialog.getByRole('button', { name: 'Close photo', exact: true })).toBeFocused();
 
     // Modal: 12 Tab and 12 Shift+Tab presses keep focus inside, and it moves.
@@ -293,19 +325,19 @@ test.describe('Photo map and lightbox by keyboard (1440)', () => {
       expect(seen.size, `${key} moves focus between the dialog's controls`).toBeGreaterThan(1);
     }
 
-    // The arrow keys step between photos, inside the same dialog.
+    // The arrow keys step through the region's series, inside the same dialog.
     await page.keyboard.press('ArrowRight');
-    await expect(page).toHaveURL(new RegExp(`/photos/${views[1].slug}$`));
-    await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(views[1].title);
+    await expect(page).toHaveURL(new RegExp(`/photos/${series[1].slug}$`));
+    await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(series[1].title);
     await page.keyboard.press('ArrowLeft');
-    await expect(page).toHaveURL(new RegExp(`/photos/${views[0].slug}$`));
-    await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(views[0].title);
+    await expect(page).toHaveURL(new RegExp(`/photos/${series[0].slug}$`));
+    await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(series[0].title);
     expect(await focusInDialog()).toBe(true);
 
-    // Escape closes it, and focus is back on the target that opened it.
+    // Escape closes it, and focus is back on the figure link of the photo shown.
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page).toHaveURL(/\/photos$/);
+    await expect(page).toHaveURL(new RegExp(`${REGION_PATH}$`));
     await expect(opener).toBeFocused();
   });
 });

@@ -1,5 +1,6 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
 import { buildPhotoViews } from '@/lib/photos/view-model';
+import { regionPhotoViews, regions } from '@/lib/regions';
 import { SLUGS, viewBySlug } from './helpers/photo-fixtures';
 
 /**
@@ -8,18 +9,25 @@ import { SLUGS, viewBySlug } from './helpers/photo-fixtures';
  * "375 overflow", "Served images" and "removeChild", and UI Considerations
  * E5 populated as one composite backstop).
  *
- * - No surface scrolls sideways at 375 px: the map, the grid, the carousel
- *   stepper, every /photos/{slug} page and the lightbox (the dialog too).
+ * - No surface scrolls sideways at 375 px: the map, the three region pages,
+ *   every published /photos/{slug} page and the lightbox over the Zermatt
+ *   region page (the dialog too). 18-21 (PHOTO-06) moved the grid, carousel
+ *   stepper and grid-lightbox surfaces onto the region pages; a region surface
+ *   settles on the altimeter rail's data-rail-current from 768 px and on its
+ *   sequence images complete below (positive signals, 13 #38).
  * - Every loaded image is a content-hashed terrain asset or photo derivative,
  *   and no element offers a download (LBOX-07; privacy prohibition).
  * - STATE carry-overs: switching Map -> Grid -> Carousel -> Grid -> Map and
  *   opening and closing a photo logs no React `removeChild` / "not a child"
  *   error (07-19, and the 09 deferred 3D carousel flake that logged it) and no
  *   duplicate view-transition-name (10-RESEARCH Pitfalls 6 and 8).
- * - "Return on close" from the carousel after two steps in the lightbox.
- * - The whole lightbox path from a direct load to the three Escape layers.
+ * - "Return on close" on the region page after two steps in the lightbox.
+ * - The whole lightbox path from a direct load to the three Escape layers,
+ *   opened from the Zermatt region page.
  *
- * Every expected value comes from buildPhotoViews(), never hand-typed.
+ * Every expected value comes from the data, never hand-typed: positions in a
+ * series from regionPhotoViews (18 Pitfall 8); the view-switch console row,
+ * which 18-22 retires with the views, still reads buildPhotoViews().
  */
 
 // Index lookups into views here are positions in the series order (DEM ascending, ties
@@ -28,6 +36,14 @@ import { SLUGS, viewBySlug } from './helpers/photo-fixtures';
 const views = buildPhotoViews();
 const GRID_LIST = 'Photographs, lowest first';
 const GRID_URL = /\/photos\?view=grid$/;
+
+/** The Zermatt series: the lightbox surfaces open from its region page (18-21; PHOTO-06). */
+const ZERMATT = regionPhotoViews('zermatt');
+const ZERMATT_URL = /\/photos\/regions\/zermatt$/;
+/** Every published photo, region by region (the photo-page surfaces). */
+const PUBLISHED = regions.flatMap((r) => regionPhotoViews(r.id));
+/** The region altimeter rail's root: data-rail-current is its settle signal (18-12). */
+const RAIL = 'section[data-region-sequence] [data-region-rail]';
 
 /** A loaded image's URL: a hashed /terrain/ asset or a hashed /images/photos/ derivative. */
 const HASHED_IMAGE =
@@ -50,7 +66,20 @@ async function waitForHydration(target: Locator) {
     .toBe(true);
 }
 
-/** Click a grid tile (on the grid already) and wait for the dialog. */
+/** Click a region page's figure link (on the region page already) and wait for the dialog. */
+async function openFigure(page: Page, slug: string) {
+  const link = page.locator(`li[data-sequence-item="${slug}"] [data-photo-id="${slug}"]`);
+  await expect(link).toHaveCount(1);
+  await waitForHydration(link);
+  await link.click();
+  const dialog = page.getByRole('dialog');
+  // The dev server compiles the intercepted route on its first request.
+  await expect(dialog).toBeVisible({ timeout: 20000 });
+  await expect(page).toHaveURL(new RegExp(`/photos/${slug}$`));
+  return dialog;
+}
+
+/** Click a grid tile (on the grid already) and wait for the dialog (the console row, 18-22's). */
 async function openTile(page: Page, index = 0) {
   const tile = page.getByRole('list', { name: GRID_LIST }).getByRole('link').nth(index);
   await waitForHydration(tile);
@@ -95,47 +124,58 @@ async function scrollThrough(page: Page) {
 type Surface = {
   name: string;
   url: string;
-  /** The carousel shows its stepper under reduced motion (D-13). */
-  reducedMotion?: boolean;
-  /** Open the first grid tile in the lightbox after loading the url. */
+  /** A region page: settled on the rail's data-rail-current from 768 px, on its images below. */
+  region?: boolean;
+  /** Open the first Zermatt figure in the lightbox after loading the region page. */
   lightbox?: boolean;
 };
 
 const SURFACES: Surface[] = [
   { name: 'the map (/photos)', url: '/photos' },
-  { name: 'the grid (?view=grid)', url: '/photos?view=grid' },
-  {
-    name: 'the carousel stepper (?view=carousel)',
-    url: '/photos?view=carousel',
-    reducedMotion: true,
-  },
-  ...views.map((view) => ({
+  ...regions.map((r) => ({
+    name: `the region page /photos/regions/${r.id}`,
+    url: `/photos/regions/${r.id}`,
+    region: true,
+  })),
+  ...PUBLISHED.map((view) => ({
     name: `the photo page /photos/${view.slug}`,
     url: `/photos/${view.slug}`,
   })),
-  { name: 'the lightbox over the grid', url: '/photos?view=grid', lightbox: true },
+  {
+    name: 'the lightbox over the Zermatt region page',
+    url: '/photos/regions/zermatt',
+    region: true,
+    lightbox: true,
+  },
 ];
 
 /**
+ * A region page settled after scrollThrough left it at the top: from 768 px the
+ * rail marks photo 1 again (data-rail-current, 18-12); below 768 the rail has no
+ * box, so the sequence's images complete is the signal.
+ */
+async function regionSettled(page: Page) {
+  if ((page.viewportSize()?.width ?? 0) >= 768) {
+    await expect(page.locator(RAIL)).toHaveAttribute('data-rail-current', '1');
+  } else {
+    await renderedImagesDone(page.locator('section[data-region-sequence]'));
+  }
+}
+
+/**
  * Load a surface with its images done. Returns the dialog for the lightbox
- * (whose images are awaited inside it; the inert grid behind keeps whatever it
- * had loaded), else null.
+ * (whose images are awaited inside it; the inert region page behind keeps
+ * whatever it had loaded), else null.
  */
 async function visit(page: Page, surface: Surface): Promise<Locator | null> {
-  if (surface.reducedMotion) await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto(surface.url);
-  if (surface.reducedMotion) {
-    await expect(page.getByRole('region', { name: 'Photographs', exact: true })).toHaveAttribute(
-      'data-carousel-mode',
-      'stepper'
-    );
-  }
   await scrollThrough(page);
+  if (surface.region) await regionSettled(page);
   if (!surface.lightbox) {
     await renderedImagesDone(page.locator('body'));
     return null;
   }
-  const dialog = await openTile(page, 0);
+  const dialog = await openFigure(page, ZERMATT[0].slug);
   await renderedImagesDone(dialog);
   return dialog;
 }
@@ -248,41 +288,47 @@ test.describe('Console (STATE removeChild carry-over; 10-RESEARCH Pitfalls 6, 8)
   });
 });
 
-test.describe('Focus return from the carousel (10-UI-SPEC Focus "Return on close")', () => {
-  test('the carousel takes focus back on the photo shown at close', async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/photos?view=carousel');
-    const region = page.getByRole('region', { name: 'Photographs', exact: true });
-    await expect(region).toHaveAttribute('data-carousel-mode', 'stepper');
-    const openPhoto = region.getByRole('link', { name: 'Open photo', exact: true });
-    await waitForHydration(openPhoto);
-    await openPhoto.click();
-    const dialog = page.getByRole('dialog');
-    await expect(dialog).toBeVisible({ timeout: 20000 });
-    await expect(dialog).toHaveAccessibleName(views[0].title);
+test.describe('Focus return on the region page (10-UI-SPEC Focus "Return on close"; LBOX-08)', () => {
+  // Rewritten in 18-21 (PHOTO-06) from 'the carousel takes focus back on the photo shown at
+  // close': the region page is where a photo opens from, so its figure link takes focus back.
+  // @no-win-webkit: on Windows WebKit (WinCairo) a soft navigation out of the lightbox after a
+  // step closes the page (18-16 deferred-items.md; probed again here: 'Target page, context or
+  // browser has been closed' at the Escape); Chromium, Firefox and CI's Linux WebKit run the row.
+  test('the region page takes focus back on the photo shown at close @no-win-webkit', async ({
+    page,
+  }) => {
+    expect(ZERMATT.length, 'two steps need three photos').toBeGreaterThanOrEqual(3);
+    await page.goto('/photos/regions/zermatt');
+    const dialog = await openFigure(page, ZERMATT[0].slug);
+    await expect(dialog).toHaveAccessibleName(ZERMATT[0].title);
 
     const next = dialog.getByRole('button', { name: 'Next photo', exact: true });
     await next.click();
-    await expect(page).toHaveURL(new RegExp(`/photos/${views[1].slug}$`));
+    await expect(page).toHaveURL(new RegExp(`/photos/${ZERMATT[1].slug}$`));
     await next.click();
-    await expect(page).toHaveURL(new RegExp(`/photos/${views[2].slug}$`));
+    await expect(page).toHaveURL(new RegExp(`/photos/${ZERMATT[2].slug}$`));
 
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page).toHaveURL(/\/photos\?view=carousel$/);
-    await expect(openPhoto).toBeFocused();
-    await expect(openPhoto).toHaveAttribute('data-photo-id', views[2].slug);
-    await expect(region.locator('[data-carousel-counter]')).toHaveText(`3 / ${views.length}`);
+    await expect(page).toHaveURL(ZERMATT_URL);
+    const third = page.locator(`li[data-sequence-item="${ZERMATT[2].slug}"] [data-photo-id]`);
+    await expect(third).toBeFocused();
+    await expect(third).toHaveAttribute('data-photo-id', ZERMATT[2].slug);
+    await expect(third).toBeInViewport();
   });
 });
 
 test.describe('The lightbox path end to end (10-UI-SPEC E5 populated)', () => {
-  /** The photo with the most hotspots (the gutter callouts need at least one). */
-  const calloutIndex = views.reduce(
-    (best, view, i) => (view.hotspots.length > views[best].hotspots.length ? i : best),
+  /**
+   * The photo with the most hotspots among the first four of the Zermatt series (the gutter
+   * callouts need at least one, and step 5 steps back to it from the fourth).
+   */
+  const steps = ZERMATT.slice(0, 4);
+  const calloutIndex = steps.reduce(
+    (best, view, i) => (view.hotspots.length > steps[best].hotspots.length ? i : best),
     0
   );
-  const callout = views[calloutIndex];
+  const callout = steps[calloutIndex];
 
   const labels = (scope: Locator) => scope.locator('[data-hotspot-label]');
   const zoomButton = (scope: Locator) =>
@@ -296,7 +342,7 @@ test.describe('The lightbox path end to end (10-UI-SPEC E5 populated)', () => {
   test('the lightbox path end to end (UI-SPEC E5) @no-win-webkit', async ({ page }) => {
     test.slow();
     expect(callout.hotspots.length, 'a photo with hotspots').toBeGreaterThan(0);
-    expect(views.length, 'three steps need four photos').toBeGreaterThanOrEqual(4);
+    expect(ZERMATT.length, 'three steps need four photos').toBeGreaterThanOrEqual(4);
     // 1440 x 900 is the gutter tier, where the callouts are labels beside the photo.
     await page.setViewportSize({ width: 1440, height: 900 });
 
@@ -311,22 +357,22 @@ test.describe('The lightbox path end to end (10-UI-SPEC E5 populated)', () => {
     );
     await expect(page.getByRole('dialog')).toHaveCount(0);
 
-    // 2. A grid click opens the dialog at /photos/<slug>; Back closes it.
-    await page.goto('/photos?view=grid');
-    let dialog = await openTile(page, 0);
-    await expect(page).toHaveURL(new RegExp(`/photos/${views[0].slug}$`));
-    await expect(dialog).toHaveAccessibleName(views[0].title);
+    // 2. A figure click on the region page opens the dialog at /photos/<slug>; Back closes it
+    // (18-21: the region page replaced the grid as the opener, PHOTO-06).
+    await page.goto('/photos/regions/zermatt');
+    let dialog = await openFigure(page, ZERMATT[0].slug);
+    await expect(dialog).toHaveAccessibleName(ZERMATT[0].title);
     await page.goBack();
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page).toHaveURL(GRID_URL);
+    await expect(page).toHaveURL(ZERMATT_URL);
 
     // 3. Three steps keep history.length constant and focus on Next (LBOX-02).
-    dialog = await openTile(page, 0);
+    dialog = await openFigure(page, ZERMATT[0].slug);
     const length = await page.evaluate(() => window.history.length);
     const next = dialog.getByRole('button', { name: 'Next photo', exact: true });
     for (let i = 1; i <= 3; i++) {
       await next.click();
-      await expect(page).toHaveURL(new RegExp(`/photos/${views[i].slug}$`));
+      await expect(page).toHaveURL(new RegExp(`/photos/${ZERMATT[i].slug}$`));
     }
     await expect(next).toBeFocused();
     expect(await page.evaluate(() => window.history.length)).toBe(length);
@@ -345,7 +391,7 @@ test.describe('The lightbox path end to end (10-UI-SPEC E5 populated)', () => {
     const prev = dialog.getByRole('button', { name: 'Previous photo', exact: true });
     for (let i = 3; i > calloutIndex; i--) {
       await prev.click();
-      await expect(page).toHaveURL(new RegExp(`/photos/${views[i - 1].slug}$`));
+      await expect(page).toHaveURL(new RegExp(`/photos/${ZERMATT[i - 1].slug}$`));
     }
     const label = labels(dialog).first();
     await expect(labels(dialog)).toHaveCount(callout.hotspots.length);
@@ -364,9 +410,9 @@ test.describe('The lightbox path end to end (10-UI-SPEC E5 populated)', () => {
     await expect(page.getByRole('dialog')).toHaveCount(1);
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page).toHaveURL(GRID_URL);
+    await expect(page).toHaveURL(ZERMATT_URL);
 
-    // 7. Focus returns to the tile of the photo shown at close (UI-SPEC OQ2).
+    // 7. Focus returns to the figure link of the photo shown at close (UI-SPEC OQ2).
     await expect
       .poll(() => page.evaluate(() => document.activeElement?.getAttribute('data-photo-id')))
       .toBe(callout.slug);
