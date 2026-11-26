@@ -484,11 +484,6 @@ function loadRegions(plates) {
 }
 
 /**
- * WGS84 -> overview UV (16-02 Decisions): u = (lon − west) / (east − west),
- * v = (north − lat) / (north − south) over the source's window, rounded to 4
- * decimals. The cos 46.5° x scale is the grid's aspect, not a step here.
- */
-/**
  * A sheet's SW and NE corners in WGS84 at 6 decimals (18-11, D-19), through the
  * same fromGrid transform the overview outlines use (proj4 for EPSG:3035). The
  * sheet margin prints them at 4 decimals; app code never projects (proj4 is a
@@ -503,6 +498,11 @@ function wgs84Corners(crs, { west, south, east, north }) {
   return { sw: at(west, south), ne: at(east, north) };
 }
 
+/**
+ * WGS84 -> overview UV (16-02 Decisions): u = (lon − west) / (east − west),
+ * v = (north − lat) / (north − south) over the source's window, rounded to 4
+ * decimals. The cos 46.5° x scale is the grid's aspect, not a step here.
+ */
 function overviewUv(source, { lat, lon }) {
   const [west, east] = source.lon;
   const [south, north] = source.lat;
