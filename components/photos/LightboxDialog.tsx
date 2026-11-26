@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useLayoutEffect, useMemo, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { flushSync } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
 import { cssEscape } from '@/lib/photos/css-escape';
 import { slugFromPath } from '@/lib/photos/stepping';
@@ -39,10 +38,9 @@ import { slugFromPath } from '@/lib/photos/stepping';
  *   to the opener if it is still in the document, else to the main h1. The
  *   mark and its ring are then scrolled fully into view below the nav, again
  *   after the browser's scroll restoration (restoreFocus, LBOX-08).
- *   Before going back, close() dispatches LIGHTBOX_CLOSE_EVENT on `document`
- *   with the slug shown, so a view whose front photo follows the lightbox
- *   (the carousel, 10-07) can show that photo before focus returns, even
- *   when usePathname has not caught up with the last replaceState step.
+ *   Before going back, close() records the URL's slug as the one shown, so
+ *   focus finds that photo's mark even when usePathname has not caught up
+ *   with the last replaceState step.
  * - Photo paths are read with slugFromPath (lib/photos/stepping.ts), the one
  *   photo-path parser (17 D-24): a region path or a malformed escape is not a
  *   photo, so on /photos/regions/<id> the dialog never treats the URL as one.
@@ -50,8 +48,7 @@ import { slugFromPath } from '@/lib/photos/stepping';
  *   through setShown() on every step, never usePathname, which can lag a
  *   replaceState step. A close that does not go through close() (browser
  *   Back: the toolbar, Alt+←, a mouse back button, the Android back gesture)
- *   dispatches LIGHTBOX_CLOSE_EVENT after unmount, flushed before focus
- *   returns, so the carousel follows that close too (10-REVIEW WR-01).
+ *   returns focus to that slug's mark too (10-REVIEW WR-01).
  * - Context: useLightbox() returns `{ close, registerEscape, setShown }`
  *   inside the dialog and null outside, so PhotoViewer knows its surface
  *   (10-10 zoom and 10-11 callouts register their Escape layers here).
@@ -69,13 +66,6 @@ export type LightboxApi = {
 };
 
 const LightboxContext = createContext<LightboxApi | null>(null);
-
-/**
- * Dispatched on `document` with the slug shown at close as `detail` (a
- * CustomEvent<string>): by close(), before router.back(), and after unmount
- * for a close by browser Back.
- */
-export const LIGHTBOX_CLOSE_EVENT = 'photos:lightbox-close';
 
 /** The lightbox API inside the dialog; null on the full photo page. */
 export function useLightbox(): LightboxApi | null {
@@ -223,10 +213,7 @@ export default function LightboxDialog({
         // The URL is the latest truth: usePathname can lag a replaceState step
         // that ran while a view transition held React's commits back.
         const slug = slugFromPath(window.location.pathname);
-        if (slug) {
-          shownSlug.current = slug;
-          document.dispatchEvent(new CustomEvent<string>(LIGHTBOX_CLOSE_EVENT, { detail: slug }));
-        }
+        if (slug) shownSlug.current = slug;
         router.back();
       },
       registerEscape: (handler) => {
@@ -290,15 +277,7 @@ export default function LightboxDialog({
       queueMicrotask(() => {
         // StrictMode's simulated unmount keeps the dialog in the document.
         if (dialog.isConnected) return;
-        const slug = shownSlug.current ?? '';
-        // Closed without close() (browser Back): tell the view now, and let it
-        // render the photo shown before focus looks for its mark.
-        if (!closing.current && slug) {
-          flushSync(() => {
-            document.dispatchEvent(new CustomEvent<string>(LIGHTBOX_CLOSE_EVENT, { detail: slug }));
-          });
-        }
-        restoreFocus(slug, opener.current);
+        restoreFocus(shownSlug.current ?? '', opener.current);
       });
     };
   }, [api]);

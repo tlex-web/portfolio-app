@@ -1,11 +1,6 @@
 import { Activity } from 'react';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
-import LightboxDialog, {
-  LIGHTBOX_CLOSE_EVENT,
-  restoreFocus,
-  revealTrigger,
-  useLightbox,
-} from '../LightboxDialog';
+import LightboxDialog, { restoreFocus, revealTrigger, useLightbox } from '../LightboxDialog';
 import PhotoViewer from '../PhotoViewer';
 import { HOTSPOT_PREF_KEY } from '@/lib/photos/hotspot-pref';
 import { regionEndCard, regionPhotoViews } from '@/lib/regions';
@@ -75,7 +70,7 @@ describe('LightboxDialog', () => {
     expect(screen.getByTestId('lightbox-api')).toHaveTextContent('function,function,function');
   });
 
-  it('a close by browser Back right after a step tells the view and returns focus to the photo shown (10-REVIEW WR-01)', async () => {
+  it('a close by browser Back right after a step returns focus to the photo shown (10-REVIEW WR-01)', async () => {
     /** The viewer's part: a step reports the photo now shown. */
     function Step() {
       const api = useLightbox();
@@ -107,9 +102,6 @@ describe('LightboxDialog', () => {
     // jsdom does not implement window scrolling; the reveal (LBOX-08) scrolls the window only.
     const scrollBy = window.scrollBy;
     window.scrollBy = jest.fn();
-    const closed: string[] = [];
-    const onClose = (event: Event) => closed.push((event as CustomEvent<string>).detail);
-    document.addEventListener(LIGHTBOX_CLOSE_EVENT, onClose);
     try {
       const { rerender } = render(<Gallery open />);
       fireEvent.click(screen.getByRole('button', { name: 'Next photo' }));
@@ -119,14 +111,12 @@ describe('LightboxDialog', () => {
       await act(async () => {
         await Promise.resolve();
       });
-      expect(closed).toEqual(['second']);
       expect(screen.getByRole('button', { name: 'Second tile' })).toHaveFocus();
       // The re-reveal runs in the next frame; let it run while scrollBy is still stubbed.
       await act(async () => {
         await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
       });
     } finally {
-      document.removeEventListener(LIGHTBOX_CLOSE_EVENT, onClose);
       window.scrollBy = scrollBy;
     }
   });
