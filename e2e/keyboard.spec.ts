@@ -208,10 +208,11 @@ test.describe('Navigation by keyboard (mobile menu, 375)', () => {
 /**
  * The Alps overview by keyboard (18-22; REGION-01, PHOTO-06 successor of the
  * map walk, which Tabbed the view switcher and the map targets). /photos has
- * no controls of its own now: after the chrome, Tab reaches the region rows
+ * no controls of its own now: after the chrome, Tab reaches the overview
+ * sheet margin's one link (its Source credit, 18-23), then the region rows
  * west to east (the overview's keyboard path; the sheet's markers, 18-23, take
- * no focus), then the footer, then the end of the page. Enter on the Zermatt
- * row opens its region page.
+ * no focus, so the walk never stops on one), then the footer, then the end of
+ * the page. Enter on the Zermatt row opens its region page.
  */
 test.describe('Overview by keyboard (1440)', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
@@ -229,10 +230,19 @@ test.describe('Overview by keyboard (1440)', () => {
     const rowStops = regions.map((r, i) =>
       link(rows(page).nth(i), `the region row ${regionHeading(r)}`)
     );
+    // The overview sheet's margin (18-23): its Source credit is the sheet's only tab stop.
+    const marginSource = link(
+      page.locator('figcaption[data-sheet-margin]').getByRole('link', {
+        name: 'Copernicus DEM GLO-90',
+        exact: true,
+      }),
+      'the overview margin Source link'
+    );
     // WebKit: the rows are links, so the walk drops them and the next Tab after the
     // chrome's last control ends the page (no non-link control hides among them).
     await walk(page, browserName, [
       ...chromeStops(page),
+      marginSource,
       ...rowStops,
       ...(await footerStops(page)),
     ]);

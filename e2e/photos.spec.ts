@@ -13,7 +13,18 @@ import {
   regionNumber,
   regionPhotoViews,
   regionsWestToEast,
+  overviewSheetInput,
 } from '@/lib/regions';
+import {
+  MARKER,
+  OVERVIEW_COMPACT_MAX_S,
+  OVERVIEW_GAP,
+  OVERVIEW_INSET,
+  REGION_PLATE,
+  SUMMIT_TRIANGLE,
+  summitKey,
+  summitPlateSize,
+} from '@/lib/photos/overview-layout';
 
 // /photos is the Alps overview (18-22): region rows west to east, no view switch. Photos are
 // selected explicitly per region (regionPhotoViews(id)), never through a no-argument series
@@ -332,6 +343,99 @@ const SHEET = '[data-overview-sheet]';
 const markers = (page: Page) => page.locator(`${SHEET} a[data-region-marker]`);
 const NBSP = '\u00a0';
 
+/** One rendered box in the overview sheet, in px from the sheet's top-left corner. */
+type SheetBox = { kind: string; id: string; x: number; y: number; w: number; h: number };
+
+/**
+ * Every rendered marker, region plate, summit triangle and summit label in the
+ * sheet (plates hidden on the compact tier are left out), the sheet's size, and
+ * any plate line that wraps or runs past its plate's px-2 text box.
+ */
+async function sheetBoxes(page: Page) {
+  return page.locator(SHEET).evaluate((sheet) => {
+    const s = sheet.getBoundingClientRect();
+    const boxes: { kind: string; id: string; x: number; y: number; w: number; h: number }[] = [];
+    const overflow: string[] = [];
+    const add = (el: Element, kind: string, id: string) => {
+      if (getComputedStyle(el).display === 'none') return;
+      const b = el.getBoundingClientRect();
+      boxes.push({ kind, id, x: b.left - s.left, y: b.top - s.top, w: b.width, h: b.height });
+      if (kind !== 'plate' && kind !== 'summit') return;
+      for (const line of el.querySelectorAll(':scope > span')) {
+        const range = document.createRange();
+        range.selectNodeContents(line);
+        const rects = [...range.getClientRects()];
+        const lines = new Set(rects.map((r) => Math.round(r.top))).size;
+        const right = Math.max(...rects.map((r) => r.right));
+        if (lines !== 1 || right > b.right - 8 + 0.5) {
+          overflow.push(`${kind} ${id}: ${line.textContent}`);
+        }
+      }
+    };
+    for (const el of sheet.querySelectorAll('a[data-region-marker]')) {
+      const id = el.getAttribute('data-region-marker')!;
+      add(el, 'marker', id);
+      add(el.querySelector('[data-region-plate]')!, 'plate', id);
+    }
+    for (const el of sheet.querySelectorAll('[data-summit-mark]')) {
+      add(el, 'triangle', el.getAttribute('data-summit-mark')!);
+    }
+    for (const el of sheet.querySelectorAll('[data-summit-plate]')) {
+      add(el, 'summit', el.getAttribute('data-summit-plate')!);
+    }
+    const box = sheet as HTMLElement;
+    return { S: box.clientWidth, H: box.clientHeight, boxes, overflow };
+  });
+}
+
+/** A token colour as this browser serialises a computed colour. */
+function probeColor(page: Page, value: string) {
+  return page.evaluate((v) => {
+    const el = document.createElement('div');
+    el.style.color = v;
+    document.body.append(el);
+    const c = getComputedStyle(el).color;
+    el.remove();
+    return c;
+  }, value);
+}
+
+/** A region marker's dot fill, its rectangle's stroke, and whether its plate ring is ink-muted. */
+function markState(page: Page, id: string) {
+  return page.evaluate(
+    ({ sheet, id }) => {
+      const probe = document.createElement('div');
+      probe.style.color = 'var(--color-ink-muted)';
+      document.body.append(probe);
+      const inkMuted = getComputedStyle(probe).color;
+      probe.remove();
+      const marker = document.querySelector(`${sheet} [data-region-marker="${id}"]`)!;
+      const rect = document.querySelector(`${sheet} [data-region-rect="${id}"]`)!;
+      const plate = marker.querySelector('[data-region-plate]')!;
+      return {
+        dot: getComputedStyle(marker.querySelector('[data-region-dot]')!).backgroundColor,
+        stroke: getComputedStyle(rect).stroke,
+        ring: getComputedStyle(plate).boxShadow.includes(inkMuted),
+      };
+    },
+    { sheet: SHEET, id }
+  );
+}
+
+/** A region row's fill, its 2 px bar's opacity and colour, and its badge fill. */
+function rowState(page: Page, id: string) {
+  return page.evaluate((id) => {
+    const row = document.querySelector(`a[data-region-row="${id}"]`)!;
+    const bar = getComputedStyle(row, '::before');
+    return {
+      fill: getComputedStyle(row).backgroundColor,
+      bar: bar.opacity,
+      barColor: bar.backgroundColor,
+      badge: getComputedStyle(row.querySelector('[data-region-badge]')!).backgroundColor,
+    };
+  }, id);
+}
+
 /**
  * The Alps overview sheet beside the region list (REGION-01, REGION-06; D-01,
  * D-04; 18-UI-SPEC Contract 1 "Sheet", "Markers are pointer-only", "Overview
@@ -426,6 +530,210 @@ test.describe('Overview sheet (REGION-01, REGION-06)', () => {
     await source.click();
     await expect(page).toHaveURL(/\/sources#copernicus-glo-90$/);
     await expect(page.locator('#copernicus-glo-90')).toHaveCount(1);
+  });
+
+  /*
+   * Geometry at the four layout widths (18-UI-SPEC "Label layout"; UI E1/populated and
+   * overflow): the successors of the retired Map view plate rows 'at {W} x 900 the plates
+   * keep their boxes, gaps and dots' and '… every plate's title and altitude fit inside the
+   * plate' (18-22 mapping). The Jest sweep (lib/__tests__/overview-layout.test.ts) proves
+   * the layout at every S from 312 to 1100; these read the rendered boxes, so a cascade,
+   * container or font-metric drift the sweep cannot see fails here. TOL is the browser's
+   * sub-pixel layout unit plus the CSS's rounding (f to 6 decimals, px to 2), far under 1 px.
+   */
+  for (const width of [375, 768, 1024, 1440]) {
+    test(`at ${width} x 900 no marker, plate, summit label or triangle overlaps another or comes within 8 px, and every box is 8 px inside the sheet`, async ({
+      page,
+    }) => {
+      const TOL = 0.1;
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/photos');
+      await page.evaluate(() => document.fonts.ready);
+      const m = await sheetBoxes(page);
+      const wide = m.S > OVERVIEW_COMPACT_MAX_S;
+      expect([width, wide]).toEqual([width, width >= 768]);
+      const input = overviewSheetInput();
+      const kinds = (k: string) => m.boxes.filter((b) => b.kind === k);
+      // Tiers: markers and triangles always; plates and summit labels only on the wide tier.
+      expect(kinds('marker').map((b) => b.id)).toEqual(input.regions.map((r) => r.id));
+      expect(kinds('triangle')).toHaveLength(input.summits.length);
+      expect(kinds('plate').map((b) => b.id)).toEqual(wide ? input.regions.map((r) => r.id) : []);
+      expect(kinds('summit').map((b) => b.id)).toEqual(
+        wide ? input.summits.map((s) => summitKey(s.name)) : []
+      );
+      // Declared sizes, within 1 px.
+      const size = (b: SheetBox, w: number, h: number) =>
+        expect([b.kind, b.id, Math.abs(b.w - w) <= 1, Math.abs(b.h - h) <= 1]).toEqual([
+          b.kind,
+          b.id,
+          true,
+          true,
+        ]);
+      for (const b of kinds('marker')) size(b, MARKER, MARKER);
+      for (const b of kinds('triangle')) size(b, SUMMIT_TRIANGLE, SUMMIT_TRIANGLE);
+      for (const b of kinds('plate')) size(b, REGION_PLATE.w, REGION_PLATE.h);
+      for (const b of kinds('summit')) {
+        const s = input.summits.find((x) => summitKey(x.name) === b.id)!;
+        const want = summitPlateSize(s.name, s.height);
+        size(b, want.w, want.h);
+      }
+      // Every box 8 px inside the sheet (nothing clipped by its overflow-hidden).
+      for (const b of m.boxes) {
+        const inside =
+          b.x >= OVERVIEW_INSET - TOL &&
+          b.y >= OVERVIEW_INSET - TOL &&
+          b.x + b.w <= m.S - OVERVIEW_INSET + TOL &&
+          b.y + b.h <= m.H - OVERVIEW_INSET + TOL;
+        expect([b.kind, b.id, inside]).toEqual([b.kind, b.id, true]);
+      }
+      // No pair overlaps or comes within 8 px (the largest axis gap, as the sweep measures).
+      const close: string[] = [];
+      for (let i = 0; i < m.boxes.length; i++) {
+        for (let j = i + 1; j < m.boxes.length; j++) {
+          const a = m.boxes[i];
+          const b = m.boxes[j];
+          const gap = Math.max(
+            b.x - (a.x + a.w),
+            a.x - (b.x + b.w),
+            b.y - (a.y + a.h),
+            a.y - (b.y + b.h)
+          );
+          if (gap < OVERVIEW_GAP - TOL) {
+            close.push(`${a.kind} ${a.id} / ${b.kind} ${b.id}: ${gap.toFixed(2)} px`);
+          }
+        }
+      }
+      expect(close).toEqual([]);
+      // Every plate line fits its plate's text box on one line (font-metric drift).
+      expect(m.overflow).toEqual([]);
+    });
+  }
+
+  test('hovering the Ortler row marks its marker, rectangle and plate; leaving clears them; other regions stay at rest', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/photos');
+    const accent = await probeColor(page, 'var(--color-accent)');
+    const inkMuted = await probeColor(page, 'var(--color-ink-muted)');
+    expect(inkMuted).not.toBe(accent);
+    await page.locator('a[data-region-row="ortler"]').hover();
+    await expect
+      .poll(() => markState(page, 'ortler'))
+      .toEqual({ dot: accent, stroke: accent, ring: true });
+    const zermatt = await markState(page, 'zermatt');
+    expect([zermatt.dot === accent, zermatt.stroke, zermatt.ring]).toEqual([
+      false,
+      inkMuted,
+      false,
+    ]);
+    // Leaving the row restores the rest state (WebKit left a :has(:is(:hover)) target lit).
+    await page.mouse.move(2, 2);
+    await expect
+      .poll(async () => {
+        const s = await markState(page, 'ortler');
+        return [s.dot === accent, s.stroke, s.ring];
+      })
+      .toEqual([false, inkMuted, false]);
+  });
+
+  test('hovering the Ortler marker gives its row the active fill, accent bar and accent badge', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/photos');
+    const accent = await probeColor(page, 'var(--color-accent)');
+    const overlay = await probeColor(page, 'var(--color-surface-overlay)');
+    await page.locator(`${SHEET} a[data-region-marker="ortler"] [data-region-dot]`).hover();
+    await expect
+      .poll(() => rowState(page, 'ortler'))
+      .toEqual({ fill: overlay, bar: '1', barColor: accent, badge: accent });
+    const zermatt = await rowState(page, 'zermatt');
+    expect([zermatt.fill === overlay, zermatt.bar, zermatt.badge === accent]).toEqual([
+      false,
+      '0',
+      false,
+    ]);
+    await page.mouse.move(2, 2);
+    await expect
+      .poll(async () => {
+        const s = await rowState(page, 'ortler');
+        return [s.fill === overlay, s.bar, s.badge === accent];
+      })
+      .toEqual([false, '0', false]);
+  });
+
+  // @needs-tab-to-links: the rows are links, and WebKit off Linux never Tabs to a link.
+  test('keyboard focus on the Ortler row marks its marker and rectangle, and moving on clears them @needs-tab-to-links', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/photos');
+    const accent = await probeColor(page, 'var(--color-accent)');
+    const row = page.locator('a[data-region-row="ortler"]');
+    for (let i = 0; i < 40 && !(await row.evaluate((el) => el === document.activeElement)); i++) {
+      await page.keyboard.press('Tab');
+    }
+    await expect(row).toBeFocused();
+    await expect
+      .poll(() => markState(page, 'ortler'))
+      .toEqual({ dot: accent, stroke: accent, ring: true });
+    await page.keyboard.press('Tab');
+    await expect.poll(async () => (await markState(page, 'ortler')).dot === accent).toBe(false);
+  });
+
+  // @needs-tab-to-links: the rows must be reached by Tab, which WebKit off Linux never does.
+  test('Tab from the top of /photos reaches the region rows and never focuses a marker or anything in the sheet @needs-tab-to-links', async ({
+    page,
+  }) => {
+    await page.goto('/photos');
+    await expect(markers(page)).toHaveCount(overviewRegions.length);
+    const reached: string[] = [];
+    for (let i = 0; i < 60; i++) {
+      await page.keyboard.press('Tab');
+      const focus = await page.evaluate((sheet) => {
+        const el = document.activeElement as HTMLElement | null;
+        return {
+          inSheet: !!el?.closest(sheet),
+          marker: el?.hasAttribute('data-region-marker') ?? false,
+          row: el?.getAttribute('data-region-row') ?? null,
+          footer: !!el?.closest('footer'),
+        };
+      }, SHEET);
+      expect([i, focus.inSheet, focus.marker]).toEqual([i, false, false]);
+      if (focus.row) reached.push(focus.row);
+      if (focus.footer) break;
+    }
+    expect(reached).toEqual(overviewRegions.map((r) => r.id));
+  });
+});
+
+/**
+ * Without JavaScript (UI E1 no-JS; 18-UI-SPEC "Sync": only the cross-highlight
+ * needs :has()): the sheet is server HTML, so every marker, every region row and
+ * the margin's Source link are plain links that navigate.
+ */
+test.describe('Overview sheet without JavaScript (REGION-01)', () => {
+  test.use({ javaScriptEnabled: false });
+
+  test('every marker, every region row and the Source link navigate', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    for (const r of overviewRegions) {
+      for (const sel of [
+        `${SHEET} a[data-region-marker="${r.id}"]`,
+        `a[data-region-row="${r.id}"]`,
+      ]) {
+        await page.goto('/photos');
+        await page.locator(sel).click();
+        await expect(page).toHaveURL(new RegExp(`${regionHref(r.id)}$`));
+        await expect(page.getByRole('heading', { level: 1 })).toHaveText(r.heading);
+      }
+    }
+    await page.goto('/photos');
+    await page
+      .locator('figcaption[data-sheet-margin] a[href="/sources#copernicus-glo-90"]')
+      .click();
+    await expect(page).toHaveURL(/\/sources#copernicus-glo-90$/);
   });
 });
 

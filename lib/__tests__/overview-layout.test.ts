@@ -679,6 +679,8 @@ describe('overviewCss', () => {
         lines.find((l) =>
           l.startsWith(`${rowHover} ${target},${rowFocus} ${target},${markerActive} ${target}{`)
         );
+      const markerRule = (target: string) =>
+        lines.find((l) => l.startsWith(`${markerActive} ${target}{`));
       // Row hover or focus-visible, and marker hover: the marker dot, rectangle and plate.
       expect(rule(`${marker} [data-region-dot]`)).toMatch(
         /\{background-color:var\(--color-accent\);color:var\(--color-ink-inverse\)\}$/
@@ -689,7 +691,10 @@ describe('overviewCss', () => {
       );
       // Marker hover mirrors onto the row: fill, accent bar and badge.
       expect(css).toContain(`${markerActive} ${row}{`);
-      expect(css).toContain(`${markerActive} ${row}::before{`);
+      // The row draws its bar at rest with before:opacity-0 (RegionList), so the rule shows it.
+      expect(markerRule(`${row}::before`)).toMatch(
+        /background-color:var\(--color-accent\);opacity:1\}$/
+      );
       expect(css).toContain(`${markerActive} ${row} [data-region-badge]{`);
     }
     expect(css).toContain('var(--color-accent)');

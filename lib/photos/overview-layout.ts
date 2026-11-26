@@ -915,7 +915,9 @@ function segmentRules(p: OverviewSegmentPlacements): string[] {
  * map"): a hovered or focus-visible row marks its marker dot accent, its
  * rectangle's stroke accent and its plate's ring ink-muted; a hovered marker
  * does the same and gives its row the active fill, the 2 px accent bar and an
- * accent badge.
+ * accent badge. The bar sets opacity 1 because the row draws it at rest with
+ * `before:opacity-0` (RegionList): without it a marker hover coloured an
+ * invisible bar (18-23).
  *
  * Each state gets its own :has() (18-23, the plate sync's 2325d0a fix): WebKit
  * (Safari, and Playwright's WebKit on Linux and Windows) matches
@@ -940,7 +942,7 @@ function syncRules(id: string): string[] {
     `${both(`[data-region-rect=${q}]`)}{stroke:var(--color-accent)}`,
     `${both(`${marker} [data-region-plate]`)}{--tw-ring-color:var(--color-ink-muted)}`,
     `${markerActive} ${row}{background-color:var(--color-surface-overlay)}`,
-    `${markerActive} ${row}::before{content:"";position:absolute;top:0.5rem;bottom:0.5rem;left:0;width:0.125rem;background-color:var(--color-accent)}`,
+    `${markerActive} ${row}::before{content:"";position:absolute;top:0.5rem;bottom:0.5rem;left:0;width:0.125rem;background-color:var(--color-accent);opacity:1}`,
     `${markerActive} ${row} [data-region-badge]{background-color:var(--color-accent)}`,
   ];
 }
