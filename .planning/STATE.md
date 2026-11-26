@@ -6,10 +6,10 @@ current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
 stopped_at: Completed 18-28-PLAN.md
-last_updated: "2026-11-26T18:15:26.031Z"
+last_updated: "2026-11-26T18:30:02.710Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: 2283ffceccdfaa2fa39272574f9fcae4e0e46d6c
+state_head: 5356f9c03c3de637b6a273da6bbdf6d145746506
 progress:
   total_phases: 7
   completed_phases: 5
@@ -452,6 +452,7 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-23 post-plan fix (Tim 2026-11-26, before 18-28): region plates sit E or W of their own marker (joint marker+plate search, complete backjumping); association invariant: other markers >= 16 px farther from a plate than its own; fallback corner/above-below plates only where no legal layout allows a side, pinned in DIAGONAL_REGION_PLATES (zermatt 560-719, ortler 560-587; viewports 768 and 1024 fall in Zermatt's range); compact badges keep 16 px from triangles; UNPLACED_SUMMIT_LABELS empty
 - [Phase 18]: 18-28: photos-grid retires onto region zermatt-mid and photos-carousel onto region zermatt-top at the same widths (18-14 D-22 comment); Tim's fc16583 deleted the six PNGs
 - [Phase 18]: 18-28: settle() waits for the overview contour SVG only when [data-overview-sheet] is present; D-24 rounds 1-5 complete
+- [Phase 18]: 18-25 post-plan cleanup (Tim 2026-11-26, before 18-29): LIGHTBOX_CLOSE_EVENT and both dispatches removed (5356f9c), flushSync after a Back unmount went with it (it wrapped only the dispatch); focus return unchanged; WR-01 Jest row kept with its focus assertion, dispatch assertion retired (Jest 2802); drei removal paused: it also removes @types/three 0.183.1 (via stats-gl), which the Home terrain's tsc needs, so a direct @types/three devDependency is Tim's call
 
 ### Pending Todos
 
