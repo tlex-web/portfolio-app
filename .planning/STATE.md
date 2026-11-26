@@ -6,10 +6,10 @@ current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
 stopped_at: Completed 18-27-PLAN.md
-last_updated: "2026-11-26T16:28:35.207Z"
+last_updated: "2026-11-26T16:56:02.293Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: d0bf727301afbcb601c63ab89bf5dc922adaac5a
+state_head: 3ad297b4e1a281dea606836221eccf865f89871c
 progress:
   total_phases: 7
   completed_phases: 5
@@ -448,6 +448,7 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-26: per-photo Jest rows over the light table keep the four v2.0 photos as subject (Object.values(SLUGS).map(viewBySlug)), not all 11 published
 - [Phase 18]: 18-27: plate-sheet.test runs each map.test successor row for every registry region (11 rows x 3 regions = 33), none merged; the 23 declared label-layout rows retire onto 18-09/18-10/18-13 successors
 - [Phase 18]: 18-27: label-layout is stack1D only (Math.max/Math.min, no branch trace); buildPhotoViews(input) has no default; data/light-table.ts and every light-table export deleted (D-27)
+- [Phase 18]: 18-23 post-plan fix (Tim 2026-11-26, before 18-28): region plates sit E or W of their own marker (joint marker+plate search, complete backjumping); association invariant: other markers >= 16 px farther from a plate than its own; fallback corner/above-below plates only where no legal layout allows a side, pinned in DIAGONAL_REGION_PLATES (zermatt 560-719, ortler 560-587; viewports 768 and 1024 fall in Zermatt's range); compact badges keep 16 px from triangles; UNPLACED_SUMMIT_LABELS empty
 
 ### Pending Todos
 

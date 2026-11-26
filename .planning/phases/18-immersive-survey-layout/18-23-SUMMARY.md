@@ -276,3 +276,56 @@ None beyond the plan's register:
 - FOUND: components/photos/overview/OverviewSheet.tsx, components/photos/overview/__tests__/overview-sheet.test.tsx, lib/regions.ts, e2e/photos.spec.ts
 - FOUND: f2fc609, 80b1e1d (ancestors of HEAD)
 - Deferred item (18-14, overview :has()) marked Resolved in deferred-items.md
+
+## Post-plan fix (Tim-approved, 2026-11-26)
+
+Tim chose "Fix before 18-28 (Recommended)" while 18-27 ran. The fix ran after 18-27 and before 18-28. It is a fix, not a plan: the plan counter and ROADMAP progress are unchanged.
+
+**What Tim saw:** at 1440 (S = 736), Zermatt's plate sat diagonally above-right of marker 1 and read as Ortler's label. At 375, marker 1 crowded the Dufourspitze triangle. The cause was 18-13's solver. It placed all markers first and the plates afterwards, so where right or left of a marker was illegal, the plate fell back to a diagonal. On c33c022 Ortler's plate was SE at S 589-889 and Saalfelden's was NE at 589-766. At S = 682, Zermatt's plate was 8.07 px from Ortler's marker and 11.31 px from its own.
+
+**The rule now** (`lib/photos/overview-layout.ts`):
+- **Joint choice:** on the wide tier a region is one search item. Its marker and plate are chosen together: plate right of the marker, then left, vertically centred, 8 px away. Markers (direction, leader step) and summit labels give way. Triangles never move, and no plate is shrunk.
+- **Association invariant:** every other marker is at least `OVERVIEW_ASSOCIATION` = 16 px farther from a plate than its own marker (Euclidean box distance). This is a solver rule and a sweep row.
+- **Complete search:** conflict-directed backjumping in priority order (regions west to east, then summit labels west to east). It finds the first legal layout, so a summit label goes unplaced only if no layout can place it. The 18-13 greedy pass (one-level backtracking, pending labels) remains as the fallback when no layout exists or the 200,000-check budget runs out. That never happens with the real data.
+- **Fallback plates:** where no layout has every plate beside its marker, the search allows one fallback plate, then two (corner places, then centred above or below). The fewest plates leave their marker's side.
+- **Compact tier:** a marker prefers a place whose 28 px badge keeps `COMPACT_SUMMIT_CLEARANCE` = 16 px from every summit triangle as drawn. This holds at every S from 312 to 559, so nothing is pinned. Marker 1 is N24 at 375 (it was N16), and Saalfelden's marker moved to NE8 at S 312-385.
+
+**Sweep results (S 312-1100):** E or W everywhere except these widths, pinned in `DIAGONAL_REGION_PLATES`:
+- **zermatt [560, 719]:** right of marker 1, the 144 px plate reaches Ortler's rectangle until S = 720. Left of it leaves the sheet. Lifting the plate above Ortler's rectangle needs a leader over 40 px. Every place below marker 1's rectangle takes the only free place of Mont Blanc's label (its E side is Zermatt's rectangle, W leaves the sheet until S = 740, and N/NE meet Dufourspitze's triangle). The exhaustive search proves that no layout with all five summit labels placed exists there. Without the association rule it still fails, so the side rule alone causes it.
+- **ortler [560, 587]:** Ortler's plate has no side either.
+
+Every fallback plate keeps the association invariant and sits on its marker's 8 px ring. `UNPLACED_SUMMIT_LABELS` stays empty. Every 18-13 row still passes: 8 px gaps, 8 px inset, rectangle outlines, leader versus triangle shape, leaders crossing no box.
+
+**Viewports:** 375 → S 365 (compact), 768 → S 710 (Zermatt fallback), 1024 → S 598 (Zermatt fallback), 1440 → S 736 (all three beside their markers: Zermatt E, Ortler W, Saalfelden E).
+
+**Alternative measured (not applied, a decision for Tim):** an extra leader step of 56 px (or 56 and 72) makes E/W feasible from S = 611. That covers the 768 viewport but not 1024 (S 598), and 560-610 still need the fallback.
+
+**Segments:** 18 → 29. Each region item now changes with its marker and plate together, and the compact clearance moved some markers. No Jest or e2e row pins the count (only "more than one").
+
+**Cost:** one sweep takes about 1.7 s locally (1.2 s on c33c022). Most of it is the side-only pass proving infeasibility at 588-719. `overviewCss` stays memoized once per server process (18-23). The OverviewSheet comment now gives the new figure.
+
+**Tests:**
+- **Jest:** 2798 → 2802. Four rows: plates E/W outside the pins, the exact `DIAGONAL_REGION_PLATES` pin, the association invariant, compact badge clearance. Plus constant pins and a `placed` check on every region.
+- **e2e:** 855 → 857 (photos.spec "at 1024 / 1440 x 900 each region plate sits beside its own marker, nearer to it than to any other marker").
+- **GUARD-03:** 2802 + 857 = 3659 against the 3024 floor.
+- **Gates:** full Jest 129 suites green. `npm run lint` and `npm run type-check` exit 0. Prettier is clean on the touched files.
+- **e2e runs:** prod build, 28/28 Overview sheet rows on Chromium and Firefox, 12/12 on local WebKit (the two `@needs-tab-to-links` rows skip as usual).
+- **Snapshot guard:** `check-snapshot-commit --none` passes on every commit (0 PNGs).
+- **Speed:** the compact-clearance row measures exact point-to-edge distance, which keeps the suite at about 18 s.
+
+**Client JS:** 1,827,607 B, unchanged (21 files; the module is server-only).
+
+**Screenshots (prod build, contour mask decoded):** scratchpad `ov-fix-375.png`, `ov-fix-768.png`, `ov-fix-1024.png`, `ov-fix-1440.png`.
+
+**UI/UX searches (ui-ux-pro-max):**
+- `"label proximity grouping" --domain ux` and the narrower retry `"whitespace group related items" --domain ux` returned no verified match.
+- `"direct labeling map" --domain chart` returned "Geographic Data: label regions directly".
+- `"touch spacing small screen" --domain ux` returned "Minimum 8px gap between touch targets".
+- The guidance applied is the Quick Reference `whitespace-balance` (group related items by spacing) plus the UI-SPEC's own rule.
+
+**Commits:**
+- `da5bb29`: test(18-23), RED. Three rows failed on c33c022.
+- `3ad297b`: fix(18-23).
+- The docs commit follows.
+
+**Baselines (18-28):** photos/* only. /photos now shows the fixed placement at every width, and no other page changed.
