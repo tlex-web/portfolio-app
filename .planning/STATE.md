@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
-stopped_at: Completed 18-20-PLAN.md
-last_updated: "2026-11-26T14:16:01.266Z"
+stopped_at: Completed 18-21-PLAN.md
+last_updated: "2026-11-26T14:35:08.098Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: 731e83052d3bea5965c07662a89c1ab1aa7e6d51
+state_head: b6f9c75297121a70223a511ef406c1ff4c076e50
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 109
-  completed_plans: 100
+  completed_plans: 101
   percent: 71
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-24)
 ## Current Position
 
 Phase: 18 (Immersive Survey Layout) — EXECUTING
-Plan: 20 of 29
+Plan: 21 of 29
 Status: Ready to execute
 Last activity: 2026-11-24 — Phase 18 execution started
 
@@ -158,6 +158,7 @@ Progress: [███████░░░] 71%
 | Phase 18 P18 | 20min | 2 tasks tasks | 12 files files |
 | Phase 18 P19 | 30min | 3 tasks | 8 files |
 | Phase 18 P20 | 17h33m | 3 tasks | 15 files |
+| Phase 18 P21 | 16min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -420,6 +421,9 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-20: D-24 round 4 (photo page and lightbox) re-baselined: 6 changed, 70 identical in both dispatches; Tim committed the six PNGs as e0c8e3a; CI OK success on it (run 45832741899)
 - [Phase 18]: 18-20 (Tim, 'Compact the strip first'): Share moves into the viewer's top control bar from the key tier (icon-only below 1024, labelled from 1024, failure as an overlay panel); the scroll tier keeps the strip's Share row
 - [Phase 18]: 18-20: B8 poster rows get test.setTimeout(60000) for CI WebKit, whose whole leg runs about 1.43x slower per test since 18-14 with no app cause
+- [Phase 18]: 18-21: The keyboard row reaches the first figure by Tab alone (a bounded Tab loop to 'Skip to next region', then one Tab), keeping keyboard.spec's no-click, no-focus() contract
+- [Phase 18]: 18-21: Sweep surfaces: grid -> Zermatt region page, carousel stepper -> Ortler and Saalfelden region pages, 4 photo pages -> every published photo page, lightbox over the grid -> lightbox over the Zermatt region page
+- [Phase 18]: 18-21: 'the region page takes focus back on the photo shown at close' carries @no-win-webkit (WinCairo crash at Escape after steps, as in 18-16); the new audit states are untagged and FIREFOX_43967_VIEWS is {'Map'}
 
 ### Pending Todos
 
@@ -481,6 +485,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-26T14:16:00.619Z
-Stopped at: Completed 18-20-PLAN.md
+Last session: 2026-11-26T14:35:07.465Z
+Stopped at: Completed 18-21-PLAN.md
 Resume file: None
