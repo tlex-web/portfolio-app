@@ -499,7 +499,7 @@ describe('ShareButton across a url change (18-18, the viewer strip)', () => {
 
   it("a copy for the old url that settles after the url changes shows no 'Link copied' for the new one", async () => {
     let resolveWrite: () => void = () => {};
-    const writeText = jest.fn(
+    const writeText = jest.fn<Clipboard['writeText']>(
       () =>
         new Promise<void>((resolve) => {
           resolveWrite = resolve;
