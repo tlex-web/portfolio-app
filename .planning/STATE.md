@@ -453,6 +453,7 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-28: photos-grid retires onto region zermatt-mid and photos-carousel onto region zermatt-top at the same widths (18-14 D-22 comment); Tim's fc16583 deleted the six PNGs
 - [Phase 18]: 18-28: settle() waits for the overview contour SVG only when [data-overview-sheet] is present; D-24 rounds 1-5 complete
 - [Phase 18]: 18-25 post-plan cleanup (Tim 2026-11-26, before 18-29): LIGHTBOX_CLOSE_EVENT and both dispatches removed (5356f9c), flushSync after a Back unmount went with it (it wrapped only the dispatch); focus return unchanged; WR-01 Jest row kept with its focus assertion, dispatch assertion retired (Jest 2802); drei removal paused: it also removes @types/three 0.183.1 (via stats-gl), which the Home terrain's tsc needs, so a direct @types/three devDependency is Tim's call
+- [Phase 18]: 18-25 post-plan cleanup, part A (Tim 2026-11-26 "Pin @types/three 0.183.1 (Recommended)"): @react-three/drei removed and @types/three 0.183.1 pinned as an exact devDependency (ff477ab); 36 lockfile entries gone, 12 now dev-only, drei version floor dropped; client JS unchanged at 1,827,405 B; the fflate 0.6 override and floor now match nothing (left for Tim)
 
 ### Pending Todos
 
