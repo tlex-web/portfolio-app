@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
-stopped_at: Completed 18-22-PLAN.md
-last_updated: "2026-11-26T14:58:32.059Z"
+stopped_at: Completed 18-23-PLAN.md
+last_updated: "2026-11-26T15:30:12.825Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: e1907cfda955d92b65d551075a4f17a2fc59fb0c
+state_head: 80b1e1d4d8fe667857b01d377fea1b5b91466ed3
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 109
-  completed_plans: 102
+  completed_plans: 103
   percent: 71
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-24)
 ## Current Position
 
 Phase: 18 (Immersive Survey Layout) — EXECUTING
-Plan: 22 of 29
+Plan: 23 of 29
 Status: Ready to execute
 Last activity: 2026-11-24 — Phase 18 execution started
 
@@ -160,6 +160,7 @@ Progress: [███████░░░] 71%
 | Phase 18 P20 | 17h33m | 3 tasks | 15 files |
 | Phase 18 P21 | 16min | 2 tasks | 7 files |
 | Phase 18 P22 | 25min | 2 tasks | 14 files |
+| Phase 18 P23 | 28 min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -428,6 +429,9 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-22: region rows are next/link Links (soft navigation, no morph, D-04); thumbnails eager + fetchPriority low at every width (UI-SPEC deviation)
 - [Phase 18]: 18-22: proxy legacyViewRedirect 308s only /photos?view=grid|carousel (exact single value) to regionHref(LEGACY_VIEW_REGION); map/unknown/case/repeat render the overview
 - [Phase 18]: 18-22: FIREFOX_43967_VIEWS removed; 'Alps overview' audit state runs on Firefox
+- [Phase 18]: 18-23: overviewCss is computed once per server process in OverviewSheet (module memo); per request it cost ~0.6 s on every /photos render and timed out parallel e2e navigations
+- [Phase 18]: 18-23: overview list-map sync uses one :has() per state (row hover, row focus-visible, marker hover), the 2325d0a WebKit pattern; 18-14 deferred item closed; CI Linux WebKit is the first real check
+- [Phase 18]: 18-23: overview sheet edge is an inset outline (not border) so the size container is exactly S x S*872/1200; markers are next/link Links (tabIndex -1, aria-hidden), no new client JS (1,827,848 B)
 
 ### Pending Todos
 
@@ -489,6 +493,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-26T14:58:31.173Z
-Stopped at: Completed 18-22-PLAN.md
+Last session: 2026-11-26T15:30:12.091Z
+Stopped at: Completed 18-23-PLAN.md
 Resume file: None
