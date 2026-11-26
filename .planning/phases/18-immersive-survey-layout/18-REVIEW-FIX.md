@@ -40,7 +40,7 @@ status: all_fixed
 - No class or markup change. 364abd7 types the deferred stub as `jest.fn<Clipboard['writeText']>`. That was needed for `tsconfig.jest.json` and was found after the RED commit.
 - share-button: 29 rows pass. The strip, photo-viewer and inline-phosphor rows stay green.
 
-### WR-03: Impossible-state guard, a null-uv pin skip in `platePins` (necessity)
+### WR-03: Impossible-state guard, a null-uv pin skip in `platePins`
 
 **Status:** fixed: requires human verification (necessity: code removed)
 **Files modified:** `lib/photos/plate-layout.ts`, `lib/regions.ts`, `components/photos/region/PlateSheet.tsx`, `lib/__tests__/plate-layout.test.ts`
@@ -61,19 +61,19 @@ status: all_fixed
 - The PhotoViewer doc now names `step`'s `n < 2` early return and stepWithEnd. The stepping.ts header's "Ends" bullet now names stepWithEnd.
 - No production behaviour change.
 
-### IN-02: A misplaced JSDoc in build-terrain
+### IN-02: A misplaced JSDoc in build-terrain: `overviewUv`'s doc now sits above `wgs84Corners`
 
 **Files modified:** `scripts/terrain/build-terrain.mjs`
 **Commit:** e4a0638
 **Applied fix:** The "WGS84 -> overview UV" block moved from above `wgs84Corners` to just above `function overviewUv`. The change is comment-only: `node --check` and `terrain:build --check` both report OK.
 
-### IN-03: `RegionSequence` exports a `countLabel` that shadows the shared helper
+### IN-03: `RegionSequence` exports a `countLabel` that shadows the shared helper with another signature
 
 **Files modified:** `components/photos/region/RegionSequence.tsx`, `components/photos/region/__tests__/SequenceFigure.test.tsx`
 **Commit:** ef8e5b2
 **Applied fix:** Renamed it to `sequenceCountLabel` and built it on `lib/home-format`'s `countLabel(n, 'photograph', 'photographs')`, so it now inherits the shared validation. The text is unchanged for every reachable n ≥ 1, and the existing 1/2/7 rows pass.
 
-### IN-04: The BEV edition date on /sources is hard-coded
+### IN-04: The BEV edition date on /sources is hard-coded, not read from its source
 
 **Files modified:** `data/sources.ts`, `data/__tests__/sources.test.ts`
 **Commit:** 9408545
@@ -84,7 +84,7 @@ status: all_fixed
   - its day equals the `Stichtag 15.09.2025` in `editionSource`, and that Stichtag's year-month equals `edition`.
 - A rebuilt edition now fails the test instead of drifting. A comment beside the sentence says so.
 
-### IN-05: Phantom requirement, the `fflate@^0.6.0` override and its 0.6.11 floor (necessity)
+### IN-05: Phantom requirement, the `fflate@^0.6.0` override and its 0.6.11 floor
 
 **Status:** fixed: requires human verification (necessity: config removed)
 **Files modified:** `package.json`, `scripts/guards/version-floors.json`
