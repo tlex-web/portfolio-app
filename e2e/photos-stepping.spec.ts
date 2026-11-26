@@ -1,4 +1,4 @@
-import { test, expect, type Locator, type Page } from '@playwright/test';
+import { test, expect, type Locator, type Page, type Request } from '@playwright/test';
 import { nextRegion, regionById, regionHeading, regionPhotoViews } from '@/lib/regions';
 import { pressButton } from './helpers/engine';
 
@@ -467,6 +467,9 @@ test.describe('Region stepping (18-16 rewrite of the carousel tests; LBOX-09, PH
     const dialog = await openFromRegion(page, ZERMATT.id, LAST.slug);
     // The viewer and the card are loaded too: step onto the card.
     await pressNext(dialog, browserName, N, 1);
+    // A deliberate fixed window, not a settle wait (18-REVIEW IN-06): the claim is
+    // that no three.js chunk loads later either, a negative over time with no event
+    // to wait for (like the six idle seconds of the PHOTO-04 row above).
     await page.waitForTimeout(2000);
 
     await expect(page.locator('canvas')).toHaveCount(0);
@@ -478,13 +481,30 @@ test.describe('Region stepping (18-16 rewrite of the carousel tests; LBOX-09, PH
 
   test('stepping requests only hashed manifest derivatives', async ({ page, browserName }) => {
     const requested = new Set<string>();
+    const inFlight = new Set<Request>();
+    const isPhoto = (request: Request) =>
+      new URL(request.url()).pathname.startsWith('/images/photos/');
     page.on('request', (request) => {
-      const { pathname } = new URL(request.url());
-      if (pathname.startsWith('/images/photos/')) requested.add(pathname);
+      if (!isPhoto(request)) return;
+      requested.add(new URL(request.url()).pathname);
+      inFlight.add(request);
     });
+    page.on('requestfinished', (request) => inFlight.delete(request));
+    page.on('requestfailed', (request) => inFlight.delete(request));
     const dialog = await openFromRegion(page, ZERMATT.id, FIRST.slug);
     await pressNext(dialog, browserName, 1, N);
-    await page.waitForTimeout(1000);
+    // Poll, not a fixed wait (18-REVIEW IN-06): until every series photo's derivative
+    // has been requested and no /images/photos/ request is still in flight.
+    await expect
+      .poll(
+        () =>
+          inFlight.size === 0 &&
+          ZERMATT_SERIES.every((view) =>
+            [...requested].some((p) => p.startsWith(`/images/photos/${view.id}-`))
+          ),
+        { message: 'every series derivative requested and settled' }
+      )
+      .toBe(true);
 
     const paths = [...requested];
     expect(paths.length, '/images/photos/ requests').toBeGreaterThan(0);
