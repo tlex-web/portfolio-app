@@ -41,7 +41,7 @@ const DOT_APPROX = 'border-2 border-dashed border-ink bg-surface';
  * key list (18-10) is the keyboard and screen-reader path. They work without
  * JavaScript. Pins at one spot share one dot with their badges side by
  * side. An approximate position draws a hollow dashed dot and badge (08 D-02,
- * Contract 5); a photo without a position has no pin (regionPlateSheet).
+ * Contract 5); every photo has a pin, since buildWaypoints guarantees a uv.
  *
  * The positions come from lib/photos/plate-layout.ts as one server-rendered
  * style element (container queries on this sheet's own container name with

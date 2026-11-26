@@ -313,7 +313,7 @@ export type RegionPlateSheet = {
   hillshade: Hillshade;
   /** The sheet ContourField reads: only the plate's hero contour URL. */
   contours: { assets: { contours: { hero: string } } };
-  /** One pin per photo with a position, numbered by its place in the sequence (1 = lowest). */
+  /** One pin per photo (buildWaypoints guarantees a uv), numbered by its place in the sequence (1 = lowest). */
   pins: readonly PlatePin[];
 };
 

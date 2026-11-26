@@ -115,11 +115,11 @@ export type PlateSegment = {
   groups: PlateSegmentGroup[];
 };
 
-/** What platePins reads from a photo view. */
+/** What platePins reads from a photo view (a Waypoint: buildWaypoints guarantees its uv). */
 export type PlatePinSource = {
   slug: string;
   approximate: boolean;
-  uv?: { u: number; v: number } | null;
+  uv: { u: number; v: number };
 };
 
 /** One dot and the pins that share it, in ascent order; the dot is the first pin's stored uv. */
@@ -133,23 +133,19 @@ export type PlateGroup = {
 };
 
 /**
- * The pins of a region's photos in sequence order: n is the photo's 1-based
- * place in the list (1 = lowest), and a photo without a position gets no pin
- * (never a placeholder), so the others keep their sequence numbers.
+ * The pins of a region's photos in sequence order, one per photo: n is the
+ * photo's 1-based place in the list (1 = lowest). Every view has a uv
+ * (buildWaypoints throws on a photo without one), so pin k is always number k
+ * and PlateKey's list position matches each badge's number.
  */
 export function platePins(views: readonly PlatePinSource[]): PlatePin[] {
-  const pins: PlatePin[] = [];
-  views.forEach((view, i) => {
-    if (!view.uv) return;
-    pins.push({
-      slug: view.slug,
-      n: i + 1,
-      u: view.uv.u,
-      v: view.uv.v,
-      approximate: view.approximate,
-    });
-  });
-  return pins;
+  return views.map((view, i) => ({
+    slug: view.slug,
+    n: i + 1,
+    u: view.uv.u,
+    v: view.uv.v,
+    approximate: view.approximate,
+  }));
 }
 
 /**

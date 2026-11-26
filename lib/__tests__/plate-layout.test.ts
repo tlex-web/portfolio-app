@@ -144,14 +144,15 @@ describe('platePins', () => {
     }
   });
 
-  it('gives a photo without a position no pin and keeps the others numbered by sequence place (UI E4/partial)', () => {
+  it('gives every view exactly one pin, so pin k is number k (the key list position matches the badge)', () => {
     const pins = platePins([
       { slug: 'a', approximate: false, uv: { u: 0.25, v: 0.25 } },
-      { slug: 'b', approximate: false, uv: null },
+      { slug: 'b', approximate: false, uv: { u: 0.5, v: 0.5 } },
       { slug: 'c', approximate: true, uv: { u: 0.75, v: 0.75 } },
     ]);
     expect(pins).toEqual([
       { slug: 'a', n: 1, u: 0.25, v: 0.25, approximate: false },
+      { slug: 'b', n: 2, u: 0.5, v: 0.5, approximate: false },
       { slug: 'c', n: 3, u: 0.75, v: 0.75, approximate: true },
     ]);
   });
