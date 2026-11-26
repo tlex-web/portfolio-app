@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
-stopped_at: Completed 18-25-PLAN.md
-last_updated: "2026-11-26T15:52:45.672Z"
+stopped_at: Completed 18-26-PLAN.md
+last_updated: "2026-11-26T16:04:30.052Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: d4a0837cf8c6652d5140c2c0dd8683aca010c7dc
+state_head: 2da958150d674298fcbeaf4e8dd5536f7d4d52f8
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 109
-  completed_plans: 105
+  completed_plans: 106
   percent: 71
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-24)
 ## Current Position
 
 Phase: 18 (Immersive Survey Layout) — EXECUTING
-Plan: 25 of 29
+Plan: 26 of 29
 Status: Ready to execute
 Last activity: 2026-11-24 — Phase 18 execution started
 
@@ -163,6 +163,7 @@ Progress: [███████░░░] 71%
 | Phase 18 P23 | 28 min | 2 tasks | 9 files |
 | Phase 18 P24 | 15min | 2 tasks | 19 files |
 | Phase 18 P25 | 5min | 2 tasks | 8 files |
+| Phase 18 P26 | 9min | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -442,6 +443,8 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-25: 14 IN-04 resolved with no shared module; DemoTerminal's STEP is the only copy (PhotoViewer's STEP_BUTTON is a different string)
 - [Phase 18]: 18-25: Phase 18 client-JS cap holds: 1,827,784 B, 28,057 B under 1,855,841 B
 - [Phase 18]: 18-25: no dependency removed; three and @react-three/fiber keep Home importers; @react-three/drei has no code importer (predates 18-25)
+- [Phase 18]: 18-26: photoBySlug returns the published view for every slug (D-27); the v2.0 four's k/n/prevSlug/nextSlug now span the 11 published photos, read by no page, OG card or test
+- [Phase 18]: 18-26: per-photo Jest rows over the light table keep the four v2.0 photos as subject (Object.values(SLUGS).map(viewBySlug)), not all 11 published
 
 ### Pending Todos
 
@@ -503,6 +506,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-26T15:52:44.846Z
-Stopped at: Completed 18-25-PLAN.md
+Last session: 2026-11-26T16:04:29.266Z
+Stopped at: Completed 18-26-PLAN.md
 Resume file: None
