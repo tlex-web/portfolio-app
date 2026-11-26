@@ -1,6 +1,7 @@
 import { test, expect, type APIRequestContext, type Locator, type Page } from '@playwright/test';
-import { buildPhotoViews } from '@/lib/photos/view-model';
+import { regionPhotoViews } from '@/lib/regions';
 import { AUDIT_SWEEP, ROUTES } from './routes';
+import { SLUGS } from './helpers/photo-fixtures';
 import {
   checkLinks,
   clearFailures,
@@ -51,17 +52,23 @@ const NOT_FOUND = '/__no-such-page__';
 /** The offline page's empty saved list in a fresh context (12-15, e2e/offline.spec.ts). */
 const OFFLINE_EMPTY = 'No pages are saved on this device yet.';
 
-const views = buildPhotoViews();
+/** The Zermatt series: the photo states open from its region page (18-21; PHOTO-06). */
+const ZERMATT = regionPhotoViews('zermatt');
+
+/** The end-of-series card's heading after Zermatt's last photo (18-16; EndCard). */
+const END_CARD_HEADING = 'End of the Zermatt series';
 
 /**
  * @firefox-43967: Firefox 159 crashes the page on these states under
  * Playwright 1.65 (a named role lookup followed by a main-world
  * aria-labelledby read): https://github.com/microsoft/playwright/issues/43967
  * The tag keeps them out of the Firefox project only (playwright.config.ts
- * FIREFOX_INVERT); Chromium and WebKit run them. These are the /photos views
- * that carry it; Grid runs on Firefox too.
+ * FIREFOX_INVERT); Chromium and WebKit run them. Of the photo states only the
+ * Map view carries it (until 18-22 retires the view); the Zermatt sequence and
+ * the lightbox end card, which replaced the Grid and Carousel views in 18-21,
+ * run on Firefox too.
  */
-const FIREFOX_43967_VIEWS: ReadonlySet<string> = new Set(['Map', 'Carousel']);
+const FIREFOX_43967_VIEWS: ReadonlySet<string> = new Set(['Map']);
 
 /**
  * Runs every check on the page as it stands and returns one line per finding,
@@ -227,17 +234,16 @@ test.describe('Audit: interactive states (D-21)', () => {
     );
   });
 
-  /** Opens the Glacier Trail photo (two hotspots) from the grid in the lightbox. */
+  /**
+   * Opens the Glacier Trail photo (two hotspots) in the lightbox from its figure on the
+   * Zermatt region page (18-21: the region page replaced the grid as the opener, PHOTO-06).
+   */
   async function openTrailLightbox(page: Page) {
-    const trail = views.findIndex((view) => view.id === 'img-0662');
-    expect(trail).toBeGreaterThanOrEqual(0);
-    await openSettled(page, '/photos?view=grid', 1440);
-    const tile = page
-      .getByRole('list', { name: 'Photographs, lowest first' })
-      .getByRole('link')
-      .nth(trail);
-    await waitForHydration(tile);
-    await tile.click();
+    await openSettled(page, '/photos/regions/zermatt', 1440);
+    const figure = page.locator(`[data-photo-id="${SLUGS.matterhornGlacierTrail}"]`);
+    await expect(figure).toHaveCount(1);
+    await waitForHydration(figure);
+    await figure.click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible({ timeout: 20000 });
     await expect(dialog.locator('[data-hotspot-label]').first()).toBeVisible();
@@ -245,7 +251,7 @@ test.describe('Audit: interactive states (D-21)', () => {
     return dialog;
   }
 
-  test('state "lightbox, hotspots on" /photos?view=grid @1440', async ({
+  test('state "lightbox, hotspots on" /photos/regions/zermatt @1440', async ({
     page,
     request,
     browserName,
@@ -260,12 +266,12 @@ test.describe('Audit: interactive states (D-21)', () => {
         request,
         failures,
         browserName,
-        'state "lightbox, hotspots on" /photos?view=grid @1440'
+        'state "lightbox, hotspots on" /photos/regions/zermatt @1440'
       )
     );
   });
 
-  test('state "lightbox, hotspots off" /photos?view=grid @1440', async ({
+  test('state "lightbox, hotspots off" /photos/regions/zermatt @1440', async ({
     page,
     request,
     browserName,
@@ -287,30 +293,96 @@ test.describe('Audit: interactive states (D-21)', () => {
         request,
         failures,
         browserName,
-        'state "lightbox, hotspots off" /photos?view=grid @1440'
+        'state "lightbox, hotspots off" /photos/regions/zermatt @1440'
       )
     );
   });
 
-  /** Each /photos view, its URL and the landmark that proves it rendered (e2e/photos.spec.ts). */
-  const PHOTO_VIEWS: ReadonlyArray<[name: string, path: string, shown: (page: Page) => Locator]> = [
-    ['Map', '/photos', (page) => page.getByRole('region', { name: 'Map of the photo locations' })],
-    [
-      'Grid',
-      '/photos?view=grid',
-      (page) => page.getByRole('list', { name: 'Photographs, lowest first' }),
-    ],
-    [
-      'Carousel',
-      '/photos?view=carousel',
-      (page) => page.getByRole('region', { name: 'Photographs' }),
-    ],
+  /**
+   * The photo states, each audited at 375, 768 and 1440 after its optional open step, with the
+   * element that proves it rendered. The Map view stays until 18-22 retires it. The Grid and
+   * Carousel views were rewritten in 18-21 (PHOTO-06) as the region page states that replace
+   * them: 'Zermatt sequence' (the region page with its middle figure centred) and 'lightbox
+   * end card' (the card after Zermatt's last photo).
+   */
+  type PhotoState = {
+    /** The FIREFOX_43967_VIEWS key. */
+    key: string;
+    /** The state's name in the test title and every finding. */
+    label: string;
+    path: string;
+    open?: (page: Page, width: number) => Promise<void>;
+    shown: (page: Page) => Locator;
+  };
+
+  /** Centre the middle figure of the series; settled on the rail from 768, its image below. */
+  async function centreMiddleFigure(page: Page, width: number) {
+    const middle = Math.floor(ZERMATT.length / 2);
+    const item = page.locator(`li[data-sequence-item="${ZERMATT[middle].slug}"]`);
+    await item.evaluate((el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
+    await expect
+      .poll(() =>
+        item.evaluate((li) => {
+          const img = li.querySelector('img');
+          return !!img && img.complete && img.naturalWidth > 0;
+        })
+      )
+      .toBe(true);
+    if (width >= 768) {
+      await expect(
+        page.locator('section[data-region-sequence] [data-region-rail]')
+      ).toHaveAttribute('data-rail-current', String(middle + 1));
+    }
+    await waitForAnimations(page);
+  }
+
+  /** Open Zermatt's last photo in the lightbox and press Next until the counter reads End. */
+  async function openEndCard(page: Page) {
+    const last = ZERMATT[ZERMATT.length - 1];
+    const figure = page.locator(`[data-photo-id="${last.slug}"]`);
+    await expect(figure).toHaveCount(1);
+    await waitForHydration(figure);
+    await figure.click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible({ timeout: 20000 });
+    const counter = dialog.locator('[data-photo-counter]');
+    await expect(counter).toHaveText(`${ZERMATT.length} / ${ZERMATT.length}`);
+    const next = dialog.getByRole('button', { name: 'Next photo', exact: true });
+    await waitForHydration(next);
+    await next.click();
+    await expect(counter).toHaveText('End');
+    await waitForAnimations(page);
+  }
+
+  const PHOTO_STATES: ReadonlyArray<PhotoState> = [
+    {
+      key: 'Map',
+      label: 'photos Map view',
+      path: '/photos',
+      shown: (page) => page.getByRole('region', { name: 'Map of the photo locations' }),
+    },
+    {
+      key: 'Zermatt sequence',
+      label: 'Zermatt sequence',
+      path: '/photos/regions/zermatt',
+      open: centreMiddleFigure,
+      shown: (page) =>
+        page.getByRole('list', { name: 'Zermatt photographs, lowest first', exact: true }),
+    },
+    {
+      key: 'lightbox end card',
+      label: 'lightbox end card',
+      path: '/photos/regions/zermatt',
+      open: openEndCard,
+      shown: (page) =>
+        page.getByRole('dialog').getByRole('heading', { level: 2, name: END_CARD_HEADING }),
+    },
   ];
 
-  for (const [name, path, shown] of PHOTO_VIEWS) {
-    // Map and Carousel carry @firefox-43967 (Playwright #43967, see FIREFOX_43967_VIEWS).
-    const firefox43967 = FIREFOX_43967_VIEWS.has(name) ? ' @firefox-43967' : '';
-    test(`state "photos ${name} view" ${path} @375/768/1440${firefox43967}`, async ({
+  for (const { key, label, path, open, shown } of PHOTO_STATES) {
+    // The Map view carries @firefox-43967 (Playwright #43967, see FIREFOX_43967_VIEWS).
+    const firefox43967 = FIREFOX_43967_VIEWS.has(key) ? ' @firefox-43967' : '';
+    test(`state "${label}" ${path} @375/768/1440${firefox43967}`, async ({
       page,
       request,
       browserName,
@@ -322,6 +394,7 @@ test.describe('Audit: interactive states (D-21)', () => {
 
       for (const width of WIDTHS) {
         await openSettled(page, path, width);
+        if (open) await open(page, width);
         await expect(shown(page)).toBeVisible();
         findings.push(
           ...(await audit(
@@ -329,7 +402,7 @@ test.describe('Audit: interactive states (D-21)', () => {
             request,
             failures,
             browserName,
-            `state "photos ${name} view" ${path} @${width}`
+            `state "${label}" ${path} @${width}`
           ))
         );
       }

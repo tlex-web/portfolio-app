@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { projects } from '@/data/projects';
+import { regionPhotoViews } from '@/lib/regions';
 import { disableWebGL, expectNoErrorPage, nextFrames } from './helpers/webgl';
 
 /** The demo terminal's region is named after its project (11-03), read from the data. */
@@ -49,16 +50,34 @@ test.describe('Without WebGL', () => {
     await expect(page.getByLabel(/Name/i)).toBeVisible();
   });
 
-  // The carousel reads the same capability gate as Home (D-13): without
-  // WebGL2 it is the flat stepper, so no canvas mounts and no WebGL failure
-  // is logged. It must still be the complete view, never the error page.
-  test('photos carousel falls back to the stepper', async ({ page }) => {
-    await page.goto('/photos?view=carousel');
+  // Rewritten in 18-21 (PHOTO-06) from 'photos carousel falls back to the stepper', before
+  // 18-22 retires the carousel: a photo is seen on its region page and in the photo viewer,
+  // neither of which mounts a canvas, so without WebGL both must still be the complete page,
+  // never the error page.
+  test('the region page and the photo viewer need no WebGL', async ({ page }) => {
+    const series = regionPhotoViews('zermatt');
+    expect(series.length, 'Next needs two photos').toBeGreaterThanOrEqual(2);
+    await page.goto('/photos/regions/zermatt');
 
-    const carousel = page.getByRole('region', { name: 'Photographs', exact: true });
-    await expect(carousel).toHaveAttribute('data-carousel-mode', 'stepper');
-    await expect(carousel.getByRole('link', { name: 'Open photo', exact: true })).toBeVisible();
-    await expect(carousel.locator('[data-carousel-stepper] img')).toBeVisible();
+    await expect(
+      page.getByRole('list', { name: 'Zermatt photographs, lowest first', exact: true })
+    ).toBeVisible();
+    await expect(page.locator('[data-plate-sheet="zermatt"]')).toBeVisible();
+
+    const link = page.locator(`li[data-sequence-item="${series[0].slug}"] [data-photo-id]`);
+    await expect
+      .poll(
+        () => link.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))),
+        { timeout: 15000 }
+      )
+      .toBe(true);
+    await link.click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible({ timeout: 20000 });
+    await expect(dialog.locator('[data-photo-counter]')).toHaveText(`1 / ${series.length}`);
+    await dialog.getByRole('button', { name: 'Next photo', exact: true }).click();
+    await expect(dialog.locator('[data-photo-counter]')).toHaveText(`2 / ${series.length}`);
+    await expect(page).toHaveURL(new RegExp(`/photos/${series[1].slug}$`));
     await nextFrames(page);
 
     await expect(page.locator('canvas')).toHaveCount(0);

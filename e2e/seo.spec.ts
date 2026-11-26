@@ -373,18 +373,17 @@ test.describe('JSON-LD on every page (SEO-04; D-16, SC4)', () => {
 
   /**
    * The lightbox is the intercepted @modal page, which carries no JSON-LD: a
-   * tile click over the grid (a soft navigation: the window marker survives)
-   * opens the dialog and leaves the block count as it was, with no ImageObject.
+   * click on the Zermatt region page's first figure (a soft navigation: the
+   * window marker survives) opens the dialog and leaves the block count as it
+   * was, with no ImageObject. Opened from the grid until 18-21 (PHOTO-06).
    */
   test('the lightbox adds no JSON-LD @chromium-only', async ({ page }) => {
-    await page.goto('/photos?view=grid');
+    await page.goto('/photos/regions/zermatt');
     const before = await ldBlocks(page);
     expect(before.length).toBeGreaterThan(0);
 
-    const tile = page
-      .getByRole('list', { name: 'Photographs, lowest first' })
-      .getByRole('link')
-      .first();
+    const first = regionPhotoViews('zermatt')[0];
+    const tile = page.locator(`li[data-sequence-item="${first.slug}"] [data-photo-id]`);
     await waitForHydration(tile);
     await page.evaluate(() => {
       (window as unknown as Record<string, unknown>).__seoSoftMark = 'kept';
@@ -393,8 +392,9 @@ test.describe('JSON-LD on every page (SEO-04; D-16, SC4)', () => {
     await expect(page.getByRole('dialog')).toBeVisible({ timeout: 20000 });
     expect(
       await page.evaluate(() => (window as unknown as Record<string, unknown>).__seoSoftMark),
-      'the tile click is a soft navigation'
+      'the figure click is a soft navigation'
     ).toBe('kept');
+    await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
 
     const after = await ldNodes(page);
     expect(await ldBlocks(page)).toHaveLength(before.length);

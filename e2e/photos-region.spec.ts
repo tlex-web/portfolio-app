@@ -95,6 +95,16 @@ import {
  * scroll (D-06). Opening a figure morphs it into the lightbox (Chromium), and
  * under reduced motion no view-transition pseudo-element runs.
  *
+ * Grid view rewritten (18-21; PHOTO-06): photos.spec's Grid view rows live on as
+ * Zermatt sequence rows. The list 'Zermatt photographs, lowest first' holds the
+ * series in regionPhotoViews order, each figure link with its photo href,
+ * data-photo-id and the name '{alt}, open in the photo viewer'; at 375 x 800 it
+ * is one column with no sideways scroll; every image, scrolled into view and
+ * complete, has its editorial alt and a content-hashed derivative as its
+ * currentSrc; and a click on the first figure opens the lightbox at its photo
+ * URL with its title. The grid's two per-size true-ratio rows retire onto the
+ * ratio check of 'Region sequence at 375, 768 and 1440' above.
+ *
  * The plate (18-09; REGION-02, D-08): on every region page the plate has one
  * badge per photo with a position, reading its place in the ascent and
  * linking to #photo-{slug}; an approximate photo's badge and dot are hollow and
@@ -673,6 +683,88 @@ test.describe('Region sequence at 375, 768 and 1440 (18-08; REGION-03, REGION-04
       });
     }
   }
+});
+
+/**
+ * photos.spec's Grid view describe, rewritten onto the Zermatt region page (18-21;
+ * PHOTO-06), one row per old row. The grid's per-size true-ratio rows (768 x 900 and
+ * 1440 x 900) have no row here: their property is the ratio check of 'Region sequence at
+ * 375, 768 and 1440' above, at the same widths, on every Zermatt figure.
+ */
+test.describe('Grid view rewritten: the Zermatt sequence (PHOTO-06)', () => {
+  const series = regionPhotoViews('zermatt');
+  const LIST = `${region('zermatt').name} photographs, lowest first`;
+  const DERIVATIVE = /^\/images\/photos\/[a-z0-9-]+\.[0-9a-f]{10}\.(avif|webp)$/;
+  const list = (page: Page) => page.getByRole('list', { name: LIST, exact: true });
+
+  test('the Zermatt sequence lists its photos in regionPhotoViews order with their photo hrefs', async ({
+    page,
+  }) => {
+    await page.goto('/photos/regions/zermatt');
+    const links = list(page).getByRole('link');
+    await expect(links).toHaveCount(series.length);
+    for (const [i, view] of series.entries()) {
+      // The link's name is the alt plus the action, so the image's text is in the name.
+      await expect(links.nth(i)).toHaveAccessibleName(`${view.alt}, open in the photo viewer`);
+      await expect(links.nth(i)).toHaveAttribute('href', `/photos/${view.slug}`);
+      await expect(links.nth(i)).toHaveAttribute('data-photo-id', view.slug);
+      await expect(list(page).getByRole('listitem').nth(i)).toHaveAttribute(
+        'data-sequence-item',
+        view.slug
+      );
+    }
+  });
+
+  test('at 375 x 800 the Zermatt sequence is one column with no horizontal overflow', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 800 });
+    await page.goto('/photos/regions/zermatt');
+    const items = list(page).getByRole('listitem');
+    await expect(items).toHaveCount(series.length);
+    const xs = await items.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().left));
+    for (const x of xs) expect(Math.abs(x - xs[0])).toBeLessThanOrEqual(1);
+    const overflow = await page.evaluate(() => {
+      const root = document.documentElement;
+      return root.scrollWidth - root.clientWidth;
+    });
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+
+  test('every Zermatt sequence image is a content-hashed manifest derivative', async ({ page }) => {
+    await page.goto('/photos/regions/zermatt');
+    const imgs = list(page).locator('img');
+    await expect(imgs).toHaveCount(series.length);
+    for (const [i, view] of series.entries()) {
+      const img = imgs.nth(i);
+      await img.scrollIntoViewIfNeeded();
+      await expect(img).toHaveAttribute('alt', view.alt);
+      await expect
+        .poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0))
+        .toBe(true);
+      const currentSrc = await img.evaluate(
+        (el: HTMLImageElement) => new URL(el.currentSrc).pathname
+      );
+      expect(currentSrc, view.slug).toMatch(DERIVATIVE);
+    }
+  });
+
+  test('clicking the first Zermatt figure opens its photo in the lightbox (LBOX-01)', async ({
+    page,
+  }) => {
+    await page.goto('/photos/regions/zermatt');
+    const first = series[0];
+    const link = list(page).getByRole('link').first();
+    await expect(link).toHaveAttribute('data-photo-id', first.slug);
+    // Before hydration a click is a document navigation, which is never intercepted.
+    await waitForHydration(link);
+    await link.click();
+    const dialog = page.getByRole('dialog');
+    // The dev server compiles the intercepted route on its first request.
+    await expect(dialog).toBeVisible({ timeout: 20000 });
+    await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
+    await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(first.title);
+  });
 });
 
 test.describe('Region header slot (18-08; D-05, UI E3)', () => {
