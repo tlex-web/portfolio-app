@@ -175,8 +175,9 @@ test.describe('Production service worker (EDGE-02, D-12)', () => {
     const requested: string[] = [];
     page.on('request', (request) => requested.push(new URL(request.url()).pathname));
 
-    // /roadmap draws no hero-LOD ContourField (only PosterSheet, MapSheet and
-    // EdgeArt do), so its own requests never touch the hero URL.
+    // /roadmap draws no hero-LOD ContourField (only PosterSheet, EdgeArt and
+    // the region pages' PlateSheet do), so its own requests never touch the
+    // hero URL.
     await openControlled(page, '/roadmap');
 
     // Control: the page never asked for the hero contour, so a cache entry for
