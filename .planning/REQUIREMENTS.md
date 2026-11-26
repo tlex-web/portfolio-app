@@ -42,21 +42,21 @@ Requirements for milestone v2.1 Survey Expansion. Each maps to exactly one roadm
 
 ### Region Series
 
-- [ ] **REGION-01**: `/photos` shows the Alps overview map with one pin per region and a synced region list; the list is the keyboard, screen-reader and narrow-screen path, and pins are numbered on phones
-- [ ] **REGION-02**: Each region has its own page, on a path that never collides with `/photos/<slug>`, with a header, region facts, its local terrain plate with photo pins, and a next-region block
-- [ ] **REGION-03**: A region page shows its photos as an uncropped, full-width sequence on gallery-black, in ascending-altitude order, with always-visible data captions (place, altitude, date, camera facts)
-- [ ] **REGION-04**: Each photo in the sequence sits in a map collar, a neatline with coordinate ticks drawn outside the image and never over it
-- [ ] **REGION-05**: The region sequence has an altimeter rail that reads it as an ascent and marks the current photo
-- [ ] **REGION-06**: Every map (the overview and each local plate) shows its extent, "last surveyed" date and short source credit in its own sheet margin, and the footer links to a sources page with the full credit and licence text of every data source
+- [x] **REGION-01**: `/photos` shows the Alps overview map with one pin per region and a synced region list; the list is the keyboard, screen-reader and narrow-screen path, and pins are numbered on phones
+- [x] **REGION-02**: Each region has its own page, on a path that never collides with `/photos/<slug>`, with a header, region facts, its local terrain plate with photo pins, and a next-region block
+- [x] **REGION-03**: A region page shows its photos as an uncropped, full-width sequence on gallery-black, in ascending-altitude order, with always-visible data captions (place, altitude, date, camera facts)
+- [x] **REGION-04**: Each photo in the sequence sits in a map collar, a neatline with coordinate ticks drawn outside the image and never over it
+- [x] **REGION-05**: The region sequence has an altimeter rail that reads it as an ascent and marks the current photo
+- [x] **REGION-06**: Every map (the overview and each local plate) shows its extent, "last surveyed" date and short source credit in its own sheet margin, and the footer links to a sources page with the full credit and licence text of every data source
 - [x] **REGION-07**: Each region page has its own title, description, canonical URL, Open Graph card and sitemap entry
 
 ### Photos & Lightbox
 
 - [x] **PHOTO-05**: Existing `/photos/<slug>` URLs and their Open Graph cards keep working unchanged, and every new photo gets the same deep-linkable page
-- [ ] **PHOTO-06**: The v2.0 view switch (Map, Grid, Carousel) is replaced by the overview and the region pages: old `?view=` URLs land on the matching new page, and the view tests are rewritten, never deleted
-- [ ] **PHOTO-07**: Visitors can share a photo or a region with the Web Share API where it exists, or copy its link elsewhere; the button's label says which it does (PHOTO-F2)
-- [ ] **PHOTO-08**: Swiss photos show LV95 coordinates, rounded to 10 m, next to WGS84; photos outside Switzerland show WGS84 only (PHOTO-F4)
-- [ ] **LBOX-09**: The lightbox steps only through the current photo's region and ends on an end-of-series card that links to the next region
+- [x] **PHOTO-06**: The v2.0 view switch (Map, Grid, Carousel) is replaced by the overview and the region pages: old `?view=` URLs land on the matching new page, and the view tests are rewritten, never deleted
+- [x] **PHOTO-07**: Visitors can share a photo or a region with the Web Share API where it exists, or copy its link elsewhere; the button's label says which it does (PHOTO-F2)
+- [x] **PHOTO-08**: Swiss photos show LV95 coordinates, rounded to 10 m, next to WGS84; photos outside Switzerland show WGS84 only (PHOTO-F4)
+- [x] **LBOX-09**: The lightbox steps only through the current photo's region and ends on an end-of-series card that links to the next region
 
 ### Drone Video
 
@@ -139,18 +139,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DATA-13 | Phase 16 | Complete |
 | DATA-14 | Phase 16 | Complete |
 | DATA-15 | Phase 15 | Complete |
-| REGION-01 | Phase 18 | Pending |
-| REGION-02 | Phase 18 | Pending |
-| REGION-03 | Phase 18 | Pending |
-| REGION-04 | Phase 18 | Pending |
-| REGION-05 | Phase 18 | Pending |
-| REGION-06 | Phase 18 | Pending |
+| REGION-01 | Phase 18 | Complete |
+| REGION-02 | Phase 18 | Complete |
+| REGION-03 | Phase 18 | Complete |
+| REGION-04 | Phase 18 | Complete |
+| REGION-05 | Phase 18 | Complete |
+| REGION-06 | Phase 18 | Complete |
 | REGION-07 | Phase 17 | Complete |
 | PHOTO-05 | Phase 17 | Complete |
-| PHOTO-06 | Phase 18 | Pending |
-| PHOTO-07 | Phase 18 | Pending |
-| PHOTO-08 | Phase 18 | Pending |
-| LBOX-09 | Phase 18 | Pending |
+| PHOTO-06 | Phase 18 | Complete |
+| PHOTO-07 | Phase 18 | Complete |
+| PHOTO-08 | Phase 18 | Complete |
+| LBOX-09 | Phase 18 | Complete |
 | VIDEO-01 | Phase 19 | Pending |
 | VIDEO-02 | Phase 19 | Pending |
 | VIDEO-03 | Phase 19 | Pending |

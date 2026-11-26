@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
-stopped_at: Completed 18-28-PLAN.md
-last_updated: "2026-11-26T18:30:02.710Z"
+stopped_at: Completed 18-29-PLAN.md
+last_updated: "2026-11-26T19:20:31.622Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: 5356f9c03c3de637b6a273da6bbdf6d145746506
+state_head: b6939ea8ecd2f095f82f703a893b80bd0150e4af
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 109
-  completed_plans: 108
+  completed_plans: 109
   percent: 71
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-24)
 ## Current Position
 
 Phase: 18 (Immersive Survey Layout) — EXECUTING
-Plan: 28 of 29
+Plan: 29 of 29
 Status: Ready to execute
 Last activity: 2026-11-24 — Phase 18 execution started
 
@@ -166,6 +166,7 @@ Progress: [███████░░░] 71%
 | Phase 18 P26 | 9min | 2 tasks | 12 files |
 | Phase 18 P27 | 21min | 2 tasks | 11 files |
 | Phase 18 P28 | 40min | 3 tasks | 11 files |
+| Phase 18 P29 | 36min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -454,6 +455,9 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-28: settle() waits for the overview contour SVG only when [data-overview-sheet] is present; D-24 rounds 1-5 complete
 - [Phase 18]: 18-25 post-plan cleanup (Tim 2026-11-26, before 18-29): LIGHTBOX_CLOSE_EVENT and both dispatches removed (5356f9c), flushSync after a Back unmount went with it (it wrapped only the dispatch); focus return unchanged; WR-01 Jest row kept with its focus assertion, dispatch assertion retired (Jest 2802); drei removal paused: it also removes @types/three 0.183.1 (via stats-gl), which the Home terrain's tsc needs, so a direct @types/three devDependency is Tim's call
 - [Phase 18]: 18-25 post-plan cleanup, part A (Tim 2026-11-26 "Pin @types/three 0.183.1 (Recommended)"): @react-three/drei removed and @types/three 0.183.1 pinned as an exact devDependency (ff477ab); 36 lockfile entries gone, 12 now dev-only, drei version floor dropped; client JS unchanged at 1,827,405 B; the fflate 0.6 override and floor now match nothing (left for Tim)
+- [Phase 18]: 18-29: og pin unchanged under option A (photo card file untouched since 90d8dad), no re-pin
+- [Phase 18]: 18-29: 14 IN-04 keeps the deferred enum and appends 'fixed in Phase 18: 18-25 d4a0837', matching its sibling rows (14-07 precedent)
+- [Phase 18]: 18-29: all ten Phase 18 requirement IDs marked complete at the phase close (CI 45879391203 green, HOME-08 holds in 45882211560)
 
 ### Pending Todos
 
@@ -515,6 +519,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-26T18:15:25.013Z
-Stopped at: Completed 18-28-PLAN.md
+Last session: 2026-11-26T19:20:30.537Z
+Stopped at: Completed 18-29-PLAN.md
 Resume file: None

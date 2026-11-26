@@ -378,7 +378,7 @@ Plans:
   3. Each photo in the sequence sits in a map collar whose neatline and coordinate ticks are drawn outside the image, never over it, and an altimeter rail reads the sequence as an ascent and marks the current photo.
   4. The lightbox steps only through the current photo's region and ends on an end-of-series card that links to the next region. A visitor can share a photo or a region with the Web Share API where it exists, or copy its link elsewhere, and the button's label says which. Swiss photos show LV95 rounded to 10 m next to WGS84, and other photos show WGS84 only.
   5. The overview and every local plate show their extent, "last surveyed" date and short source credit in their own sheet margin, and the footer links to a sources page with the full credit and licence text of every data source.
-**Plans**: 28/29 plans executed
+**Plans**: 29/29 plans executed
 Plans:
 **Wave 1**
 - [x] 18-01-PLAN.md — Wave 0: bisect the inherited og pin failure, Tim's og and UI-SPEC P1-P7 decisions, green ci/18-01 with the WebKit B8 row classified
@@ -455,7 +455,7 @@ Plans:
 - [x] 18-28-PLAN.md — Re-baseline round 5: overview, retired view baselines deleted, Tim commits
 
 **Wave 24** *(blocked on Wave 23 completion)*
-- [ ] 18-29-PLAN.md — Phase close: full gate, client JS, og pin, D-25 write-backs, green ci/18-29, HOME-08 perf dispatch
+- [x] 18-29-PLAN.md — Phase close: full gate, client JS, og pin, D-25 write-backs, green ci/18-29, HOME-08 perf dispatch
 **UI hint**: yes
 **UI-SPEC**: Required. Run `/gsd-ui-phase` with the ui-ux-pro-max skill before planning. It covers the overview (sheet-index rectangles, reference summits, label placement at 375 px, HTML pin overlays), the region page and its sequence (images contained, never cropped, under the 2,560 px cap), the map collar, the altimeter rail, the end-of-series card, the Share button states, the LV95 line, the coarse-location flag if it needs a new treatment, the sheet margins and the sources page, and it reserves the header slot Phase 19 fills (poster aspect ratio, pause control).
 **Research**: Needed: overview label collision at 375 px; per-breakpoint `sizes` and the photo-page LCP (no photo-page LCP gate exists yet); the JS-budget margin (HOME-08 has about 6.2%); Web Share support and the copy fallback; region order (west to east or by date) and whether the nav hides on scroll.
@@ -505,5 +505,5 @@ Plans:
 | 15. Region & Plate Data Model | v2.1 | 16/16 | Complete    | 2026-11-15 |
 | 16. New Regions & Alps Overview Data | v2.1 | 18/18 | Complete    | 2026-11-23 |
 | 17. Region Routes, SEO & Structured Data | v2.1 | 16/16 | Complete    | 2026-11-24 |
-| 18. Immersive Survey Layout | v2.1 | 28/29 | In Progress | - |
+| 18. Immersive Survey Layout | v2.1 | 29/29 | In Progress | - |
 | 19. Drone Loops | v2.1 | 0/TBD | Not started | - |
