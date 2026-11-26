@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import OverviewHeader from '@/components/photos/overview/OverviewHeader';
+import OverviewSheet from '@/components/photos/overview/OverviewSheet';
 import RegionList, { type RegionListRow } from '@/components/photos/overview/RegionList';
 import { pageMetadata } from '@/lib/metadata';
 import { publishedViews } from '@/lib/photos/view-model';
@@ -35,10 +36,17 @@ export const metadata: Metadata = pageMetadata({
  * 2016–2026' and the h1) sits above the region list, one row per region west
  * to east (regionsWestToEast, D-01), each built here from plain server data:
  * regionNumber for the badge, regionHeading, regionCardFacts' count, range and
- * years, and regionCover's tile derivatives (D-02). The list sits in the
- * right-hand 20rem column from 1024 px, the place UI-SPEC Contract 1 gives it
- * beside the overview sheet, which 18-23 adds in the left column; below
- * 1024 px it is one column.
+ * years, and regionCover's tile derivatives (D-02).
+ *
+ * Below the band, the Alps overview sheet (OverviewSheet, 18-23: rectangles,
+ * summits, numbered markers and the sheet margin) comes first, then the list:
+ * one column below 1024 px (the sheet full-bleed below 640 px), and from
+ * 1024 px the sheet in the left column and the list in the right-hand 20rem
+ * column (UI-SPEC Contract 1 "Layout", P7). The DOM order is the heading
+ * order, h2 'Map' (sr-only) then h2 'Regions'; the markers are not focusable,
+ * so the tab order is the list's. The content container is the
+ * `[data-overview]` element the list-map :has() sync is anchored on: it holds
+ * both the sheet and the rows.
  */
 export default function PhotosPage() {
   const rows: RegionListRow[] = regionsWestToEast().map((region) => {
@@ -57,8 +65,14 @@ export default function PhotosPage() {
   return (
     <>
       <OverviewHeader regionCount={rows.length} photoYears={publishedViews.map((v) => v.years)} />
-      <div className="mx-auto w-full max-w-6xl px-4 pt-6 pb-12 sm:px-6 md:pb-16 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-8 lg:px-8">
-        <div className="lg:col-start-2">
+      <div
+        data-overview
+        className="mx-auto w-full max-w-6xl px-4 pt-6 pb-12 sm:px-6 md:pb-16 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-8 lg:px-8"
+      >
+        <div className="lg:col-start-1 lg:row-start-1">
+          <OverviewSheet />
+        </div>
+        <div className="mt-12 md:mt-16 lg:col-start-2 lg:row-start-1 lg:mt-0">
           <RegionList rows={rows} />
         </div>
       </div>

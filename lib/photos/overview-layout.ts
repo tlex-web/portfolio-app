@@ -916,14 +916,25 @@ function segmentRules(p: OverviewSegmentPlacements): string[] {
  * rectangle's stroke accent and its plate's ring ink-muted; a hovered marker
  * does the same and gives its row the active fill, the 2 px accent bar and an
  * accent badge.
+ *
+ * Each state gets its own :has() (18-23, the plate sync's 2325d0a fix): WebKit
+ * (Safari, and Playwright's WebKit on Linux and Windows) matches
+ * `:has(row:is(:hover,:focus-visible))` but does not restyle the elements it
+ * selects when the row's hover changes, because its :has() invalidation does
+ * not look inside :is(). A plain `:has(row:hover)` and `:has(row:focus-visible)`
+ * are invalidated correctly.
  */
 function syncRules(id: string): string[] {
   const q = `"${cssEscape(id)}"`;
   const row = `[data-region-row=${q}]`;
   const marker = `[data-region-marker=${q}]`;
-  const rowActive = `[data-overview]:has(${row}:is(:hover,:focus-visible))`;
+  const anchors = [
+    `[data-overview]:has(${row}:hover)`,
+    `[data-overview]:has(${row}:focus-visible)`,
+    `[data-overview]:has(${marker}:hover)`,
+  ];
   const markerActive = `[data-overview]:has(${marker}:hover)`;
-  const both = (target: string) => `${rowActive} ${target},${markerActive} ${target}`;
+  const both = (target: string) => anchors.map((a) => `${a} ${target}`).join(',');
   return [
     `${both(`${marker} [data-region-dot]`)}{background-color:var(--color-accent);color:var(--color-ink-inverse)}`,
     `${both(`[data-region-rect=${q}]`)}{stroke:var(--color-accent)}`,

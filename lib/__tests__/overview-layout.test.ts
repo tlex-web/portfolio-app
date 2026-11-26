@@ -666,23 +666,37 @@ describe('overviewCss', () => {
   });
 
   it('emits the list-map :has() sync selectors for every region (Pattern 3)', () => {
+    const lines = css.split('\n');
     for (const r of input.regions) {
       const row = `[data-region-row="${r.id}"]`;
       const marker = `[data-region-marker="${r.id}"]`;
-      const rowActive = `[data-overview]:has(${row}:is(:hover,:focus-visible))`;
+      // One :has() per state (18-23; the plate sync's 2325d0a fix): WebKit does not
+      // restyle on a :hover nested in :is() inside :has().
+      const rowHover = `[data-overview]:has(${row}:hover)`;
+      const rowFocus = `[data-overview]:has(${row}:focus-visible)`;
       const markerActive = `[data-overview]:has(${marker}:hover)`;
+      const rule = (target: string) =>
+        lines.find((l) =>
+          l.startsWith(`${rowHover} ${target},${rowFocus} ${target},${markerActive} ${target}{`)
+        );
       // Row hover or focus-visible, and marker hover: the marker dot, rectangle and plate.
-      expect(css).toContain(`${rowActive} ${marker} [data-region-dot]`);
-      expect(css).toContain(`${markerActive} ${marker} [data-region-dot]`);
-      expect(css).toContain(`${rowActive} [data-region-rect="${r.id}"]`);
-      expect(css).toContain(`${markerActive} [data-region-rect="${r.id}"]`);
-      expect(css).toContain(`${rowActive} ${marker} [data-region-plate]`);
+      expect(rule(`${marker} [data-region-dot]`)).toMatch(
+        /\{background-color:var\(--color-accent\);color:var\(--color-ink-inverse\)\}$/
+      );
+      expect(rule(`[data-region-rect="${r.id}"]`)).toMatch(/\{stroke:var\(--color-accent\)\}$/);
+      expect(rule(`${marker} [data-region-plate]`)).toMatch(
+        /\{--tw-ring-color:var\(--color-ink-muted\)\}$/
+      );
       // Marker hover mirrors onto the row: fill, accent bar and badge.
       expect(css).toContain(`${markerActive} ${row}{`);
       expect(css).toContain(`${markerActive} ${row}::before{`);
       expect(css).toContain(`${markerActive} ${row} [data-region-badge]{`);
     }
     expect(css).toContain('var(--color-accent)');
+    // WebKit (Safari and Playwright's WebKit) matches :has(x:is(:hover, …)) but never
+    // restyles the elements it selects when the hover changes, so no :has() argument
+    // may nest a state pseudo-class in :is() or :where() (18-14 deferred item, closed in 18-23).
+    expect(css).not.toMatch(/:has\([^)]*:(?:is|where)\(/);
   });
 
   it('is built only from numbers, the region ids, the summit keys and fixed selectors (T-18-30)', () => {

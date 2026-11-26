@@ -27,12 +27,16 @@
  * - D-09 (18-17): every published photo page's way back (photoBack) is its
  *   region page by the bare region name, the v2.0 four included, read from the
  *   registry by photo id (T-18-37); an unknown id throws.
+ * - REGION-01 (18-23, UI E1/partial): the overview sheet's input
+ *   (overviewSheetInput) has every region west to east with a four-corner
+ *   outline and its number; a region missing either fails here and the build.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { NEUTRAL_SLUG } from '../../proxy';
 import { plates } from '@/data/generated/plates';
 import { editorial } from '@/data/photos/editorial';
+import { overview } from '@/data/generated/overview';
 import { formatYearRange } from '@/lib/home-format';
 import { publishedViews, seriesInput } from '@/lib/photos/view-model';
 import { SLUGS, viewBySlug } from '../../e2e/helpers/photo-fixtures';
@@ -60,6 +64,7 @@ import {
   regionEndCard,
   regionEndCardIn,
   photoBack,
+  overviewSheetInput,
 } from '@/lib/regions';
 
 /** Tim's approved copy per region (D-14), verbatim. */
@@ -582,5 +587,106 @@ describe("each region's end-of-series card (18-16; LBOX-09, D-12, D-11)", () => 
     expect(() => regionEndCard('nowhere')).toThrow(
       new RangeError('regionEndCard: nowhere is not a registry region')
     );
+  });
+});
+
+/**
+ * The Alps overview sheet's input (18-23; REGION-01, UI E1/partial and empty).
+ * Every region, in regionsWestToEast order, reaches the sheet with its overview
+ * outline (four uv corners, the sheet-index rectangle) and its marker number
+ * (the list badge's number). A region missing either would render without its
+ * rectangle or marker, so it throws instead, naming the region.
+ */
+describe("the overview sheet's input (18-23; REGION-01, UI E1/partial)", () => {
+  const input = overviewSheetInput();
+
+  it('has every region west to east, numbered 1..N like regionNumber, with its four outline corners', () => {
+    expect(input.regions.map((r) => r.id)).toEqual(regionsWestToEast().map((r) => r.id));
+    expect(input.regions.map((r) => r.id)).toEqual(['zermatt', 'ortler', 'saalfelden']);
+    for (const r of input.regions) {
+      expect(r.number).toBe(regionNumber(r.id));
+      const outline = overview.outlines.find((o) => o.region === r.id);
+      expect(outline).toBeDefined();
+      expect(r.corners).toHaveLength(4);
+      expect(r.corners).toEqual(outline!.corners);
+      for (const c of r.corners) {
+        expect(c.u).toBeGreaterThanOrEqual(0);
+        expect(c.u).toBeLessThanOrEqual(1);
+        expect(c.v).toBeGreaterThanOrEqual(0);
+        expect(c.v).toBeLessThanOrEqual(1);
+      }
+    }
+  });
+
+  it("gives each plate the region's short name and its photo count", () => {
+    expect(input.regions.map((r) => [r.name, r.count])).toEqual([
+      ['Zermatt', '7 photographs'],
+      ['Ortler', '2 photographs'],
+      ['Saalfelden', '2 photographs'],
+    ]);
+    for (const r of input.regions) expect(r.count).toBe(regionCardFacts(r.id).count);
+  });
+
+  it("prints every reference summit's stored height plainly, Triglav's included (18-01 P6)", () => {
+    expect(input.summits.map((s) => `${s.name} ${s.height}`)).toEqual([
+      'Dufourspitze 4,634 m',
+      'Mont Blanc 4,806 m',
+      'Grossglockner 3,798 m',
+      'Zugspitze 2,962 m',
+      'Triglav 2,864 m',
+    ]);
+    expect(input.summits.map((s) => [s.u, s.v])).toEqual(
+      overview.summits.map((s) => [s.uv.u, s.uv.v])
+    );
+    expect(input.summits.find((s) => s.name === 'Triglav')?.height).toBe('2,864 m');
+    expect(input.summits.every((s) => !s.height.includes('approx'))).toBe(true);
+  });
+
+  it('throws a RangeError naming a region whose outline does not have four corners', async () => {
+    await jest.isolateModulesAsync(async () => {
+      jest.doMock('@/data/generated/overview', () => {
+        const actual = jest.requireActual<{ overview: typeof overview }>(
+          '@/data/generated/overview'
+        );
+        return {
+          overview: {
+            ...actual.overview,
+            outlines: actual.overview.outlines.map((o) =>
+              o.region === 'ortler' ? { ...o, corners: o.corners.slice(0, 3) } : o
+            ),
+          },
+        };
+      });
+      try {
+        const mod = await import('@/lib/regions');
+        expect(() => mod.overviewSheetInput()).toThrow(RangeError);
+        expect(() => mod.overviewSheetInput()).toThrow(/ortler/);
+      } finally {
+        jest.dontMock('@/data/generated/overview');
+      }
+    });
+  });
+
+  it('throws a RangeError naming a region with no overview outline at all', async () => {
+    await jest.isolateModulesAsync(async () => {
+      jest.doMock('@/data/generated/overview', () => {
+        const actual = jest.requireActual<{ overview: typeof overview }>(
+          '@/data/generated/overview'
+        );
+        return {
+          overview: {
+            ...actual.overview,
+            outlines: actual.overview.outlines.filter((o) => o.region !== 'saalfelden'),
+          },
+        };
+      });
+      try {
+        const mod = await import('@/lib/regions');
+        expect(() => mod.overviewSheetInput()).toThrow(RangeError);
+        expect(() => mod.overviewSheetInput()).toThrow(/saalfelden/);
+      } finally {
+        jest.dontMock('@/data/generated/overview');
+      }
+    });
   });
 });

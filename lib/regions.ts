@@ -5,8 +5,10 @@ import { plates } from '@/data/generated/plates';
 import registry from '@/data/regions/regions.json';
 import { Regions, type Region } from '@/data/schemas/region';
 import { site } from '@/data/site';
-import { formatMetreRange, formatYearRange } from '@/lib/home-format';
+import { countLabel, formatMetreRange, formatYearRange } from '@/lib/home-format';
 import { pageMetadata } from '@/lib/metadata';
+import { formatMetres } from '@/lib/photo-format';
+import type { OverviewInput } from '@/lib/photos/overview-layout';
 import { platePins, type PlatePin } from '@/lib/photos/plate-layout';
 import { photoHref, regionHref } from '@/lib/photos/routes';
 import {
@@ -565,4 +567,51 @@ export function regionEndCard(id: string): EndCardProps {
 function factsParts(id: string): readonly string[] {
   const { count, range, years } = regionCardFacts(id);
   return [count, range, years];
+}
+
+/**
+ * The Alps overview sheet's layout input (REGION-01; 18-UI-SPEC Contract 1
+ * "Sheet"): the plain OverviewInput that overviewCss and overviewLayout
+ * (lib/photos/overview-layout.ts, 18-13) take, built on the server from the
+ * registry and the server-only overview (data/generated/overview.ts), so the
+ * OverviewSheet server component passes on plain numbers and strings only.
+ *
+ * Regions west to east (regionsWestToEast, D-01), numbered 1..N in that order
+ * (regionNumber: the list badges show the same numbers), each with its short
+ * name for the plate's first line, its photo count ('7 photographs') for the
+ * second, and its overview outline's four corners. Summits in the overview's
+ * order with their stored height printed plainly, Triglav's included (18-01
+ * P6, the default Tim confirmed).
+ *
+ * @throws RangeError naming a region with no overview outline or an outline
+ *   that does not have exactly four corners (UI E1/partial: no region renders
+ *   without its rectangle and marker), or for zero regions (UI E1/empty: the
+ *   overview never renders an empty sheet, so the build fails).
+ */
+export function overviewSheetInput(): OverviewInput {
+  const ordered = regionsWestToEast();
+  if (ordered.length === 0) throw new RangeError('overviewSheetInput: there are no regions');
+  return {
+    regions: ordered.map((region, i) => {
+      const outline = overview.outlines.find((o) => o.region === region.id);
+      if (!outline || outline.corners.length !== 4) {
+        throw new RangeError(
+          `overviewSheetInput: ${region.id} has no four-corner overview outline (npm run terrain:build)`
+        );
+      }
+      return {
+        id: region.id,
+        number: i + 1,
+        name: region.name,
+        count: countLabel(regionPhotoViews(region.id).length, 'photograph', 'photographs'),
+        corners: outline.corners.map(({ u, v }) => ({ u, v })),
+      };
+    }),
+    summits: overview.summits.map((s) => ({
+      name: s.name,
+      u: s.uv.u,
+      v: s.uv.v,
+      height: formatMetres(s.officialM),
+    })),
+  };
 }

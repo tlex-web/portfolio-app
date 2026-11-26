@@ -327,6 +327,108 @@ test.describe('Regions list (REGION-01, D-02)', () => {
   }
 });
 
+/** The overview sheet (18-23) and its pointer-only region markers, in DOM order. */
+const SHEET = '[data-overview-sheet]';
+const markers = (page: Page) => page.locator(`${SHEET} a[data-region-marker]`);
+const NBSP = '\u00a0';
+
+/**
+ * The Alps overview sheet beside the region list (REGION-01, REGION-06; D-01,
+ * D-04; 18-UI-SPEC Contract 1 "Sheet", "Markers are pointer-only", "Overview
+ * sheet margin"). One numbered marker per region, 1..N west to east like the
+ * list badges, each a pointer-only link (tabindex -1, aria-hidden) to its
+ * region page; the figure's caption is the overview's own sheet margin with
+ * Tim's approved strings (18-03 D-20, G1) and the Summits row west to east.
+ */
+test.describe('Overview sheet (REGION-01, REGION-06)', () => {
+  test('the sheet has one pointer-only marker per region, numbered 1..3 west to east, each linking to its region page', async ({
+    page,
+  }) => {
+    await page.goto('/photos');
+    // Heading outline: h1, then the sr-only h2 'Map' before h2 'Regions'.
+    const h2s = await page.getByRole('heading', { level: 2 }).allTextContents();
+    expect(h2s.slice(0, 2)).toEqual(['Map', 'Regions']);
+    await expect(page.locator('section[aria-labelledby="overview-map"] figure')).toHaveCount(1);
+    const list = markers(page);
+    await expect(list).toHaveCount(overviewRegions.length);
+    for (const [i, r] of overviewRegions.entries()) {
+      const m = list.nth(i);
+      await expect(m).toHaveAttribute('data-region-marker', r.id);
+      await expect(m).toHaveAttribute('href', regionHref(r.id));
+      await expect(m).toHaveAttribute('tabindex', '-1');
+      await expect(m).toHaveAttribute('aria-hidden', 'true');
+      await expect(m.locator('[data-region-dot]')).toHaveText(String(r.number));
+      await expect(m.locator('[data-region-dot]')).toHaveText(String(i + 1));
+    }
+    // West to east: each region's sheet-index rectangle lies east of the one before.
+    const centres = await page.locator(`${SHEET} polygon[data-region-rect]`).evaluateAll((els) =>
+      els.map((el) => {
+        const b = el.getBoundingClientRect();
+        return { id: el.getAttribute('data-region-rect'), x: b.left + b.width / 2 };
+      })
+    );
+    expect(centres.map((c) => c.id)).toEqual(overviewRegions.map((r) => r.id));
+    for (let i = 1; i < centres.length; i++) {
+      expect(centres[i].x).toBeGreaterThan(centres[i - 1].x);
+    }
+    // The sheet holds no focusable element a keyboard could reach.
+    const tabbable = await page
+      .locator(`${SHEET} a, ${SHEET} button, ${SHEET} [tabindex]`)
+      .evaluateAll((els) => els.filter((el) => (el as HTMLElement).tabIndex >= 0).length);
+    expect(tabbable).toBe(0);
+  });
+
+  test('a marker opens its region page', async ({ page }) => {
+    await page.goto('/photos');
+    const r = overviewRegions[1];
+    const marker = page.locator(`${SHEET} a[data-region-marker="${r.id}"]`);
+    await waitForHydration(marker);
+    await marker.click();
+    await expect(page).toHaveURL(new RegExp(`${regionHref(r.id)}$`));
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(r.heading);
+  });
+
+  test("the sheet margin prints the overview's title, extent, edition, linked GLO-90 credit and summits west to east", async ({
+    page,
+  }) => {
+    await page.goto('/photos');
+    const margin = page.locator(
+      `section[aria-labelledby="overview-map"] figure > figcaption[data-sheet-margin]`
+    );
+    await expect(margin).toHaveCount(1);
+    await expect(margin.locator('p').first()).toHaveText(`The Alps · contours every 1,000${NBSP}m`);
+    const rows = await margin
+      .locator('dl > div')
+      .evaluateAll((els) =>
+        els.map((el) => [
+          el.querySelector('dt')?.textContent ?? '',
+          el.querySelector('dd')?.textContent ?? '',
+        ])
+      );
+    expect(rows).toEqual([
+      ['Extent', 'SW 43° N 5° E · NE 49° N 17° E'],
+      ['Last surveyed', '2021'],
+      ['Source', 'Copernicus DEM GLO-90'],
+      [
+        'Summits',
+        [
+          `Mont Blanc 4,806${NBSP}m`,
+          `Dufourspitze 4,634${NBSP}m`,
+          `Zugspitze 2,962${NBSP}m`,
+          `Grossglockner 3,798${NBSP}m`,
+          `Triglav 2,864${NBSP}m`,
+        ].join(' · '),
+      ],
+    ]);
+    const source = margin.getByRole('link', { name: 'Copernicus DEM GLO-90', exact: true });
+    await expect(source).toHaveAttribute('href', '/sources#copernicus-glo-90');
+    await waitForHydration(source);
+    await source.click();
+    await expect(page).toHaveURL(/\/sources#copernicus-glo-90$/);
+    await expect(page.locator('#copernicus-glo-90')).toHaveCount(1);
+  });
+});
+
 /*
  * The Grid view describe (PHOTO-02, PHOTO-03, D-15) moved to e2e/photos-region.spec.ts in
  * 18-21 (PHOTO-06), before 18-22 retires the views: 'Grid view rewritten: the Zermatt
