@@ -1,7 +1,7 @@
 {
-  "jest": 2385,
-  "e2e": 639,
-  "total": 3024,
-  "recordedAt": "2026-11-24",
-  "commit": "a0f86f8dd6a875f7f047c6f164d5bb57614816b3"
+  "jest": 2805,
+  "e2e": 851,
+  "total": 3656,
+  "recordedAt": "2026-11-26",
+  "commit": "7850ac7f65852d53cbc9708bf0c90504b510e826"
 }
