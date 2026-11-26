@@ -40,9 +40,11 @@ const DOT =
   'group inline-flex size-11 shrink-0 cursor-pointer touch-manipulation items-center justify-center rounded-sm';
 
 /**
- * Previous and Next command (14-UI-SPEC Contract 1): the CarouselControls
- * STEP_BUTTON string verbatim, one look for every ‹ › on the site; at an end
- * aria-disabled, dimmed, hover off.
+ * Previous and Next command (14-UI-SPEC Contract 1): 44 px secondary icon
+ * buttons; at an end aria-disabled, dimmed, hover off. The photo carousel's
+ * step controls carried a verbatim copy of this string until the carousel
+ * retired in Phase 18 (PHOTO-06); this is now the only copy, so 14 IN-04 is
+ * resolved with no shared module needed.
  */
 const STEP =
   'inline-flex size-11 shrink-0 cursor-pointer touch-manipulation items-center justify-center rounded-sm border border-line-strong text-ink transition-colors duration-(--duration-fast) ease-erosion hover:bg-surface-overlay aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:bg-transparent';

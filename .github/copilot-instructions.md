@@ -10,7 +10,7 @@ This is a **Next.js 16 App Router** portfolio showcasing landscape photography a
 ### Key Design Decisions
 - **All interactive components are client components** (`'use client'`) - this includes anything using Three.js, Framer Motion, or browser APIs like `matchMedia`
 - **Centralized data model**: All content lives in `data/` (photos, projects, roadmap, site) with strict zod contracts in `data/schemas/` and generated data in `data/generated/`
-- **Component isolation**: Each 3D feature (the Home terrain canvas in `components/home/terrain/`, the photo carousel in `components/photos/PhotoCarousel3D.tsx`) is a separate, lazily loaded component
+- **Component isolation**: The one 3D feature, the Home terrain canvas in `components/home/terrain/`, is a separate, lazily loaded component
 - **Path aliases**: Use `@/` for all imports (configured in `tsconfig.json`)
 
 ## Development Workflow
