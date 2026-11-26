@@ -179,6 +179,56 @@ function boxOverlapsPolygon(box: OverviewBox, pts: readonly Pt[]): boolean {
   });
 }
 
+/** The Euclidean distance between two boxes, 0 when they meet (independent of the module's). */
+function distanceOf(a: OverviewBox, b: OverviewBox): number {
+  const dx = Math.max(0, b.x - right(a), a.x - right(b));
+  const dy = Math.max(0, b.y - bottom(a), a.y - bottom(b));
+  return Math.hypot(dx, dy);
+}
+
+/** A plate's side of its marker: 'E' or 'W' when vertically centred on it and 8 px away, else null. */
+function sideOf(plate: OverviewBox, marker: OverviewBox): 'E' | 'W' | null {
+  const centred = Math.abs(plate.y + plate.height / 2 - (marker.y + marker.height / 2)) < 1e-6;
+  if (!centred) return null;
+  if (Math.abs(plate.x - right(marker) - OVERVIEW_GAP) < 1e-6) return 'E';
+  if (Math.abs(marker.x - right(plate) - OVERVIEW_GAP) < 1e-6) return 'W';
+  return null;
+}
+
+/** The distance from a point to a triangle as drawn, 0 inside it (sampled edges, independent). */
+function pointToTriangle(p: Pt, pts: readonly Pt[]): number {
+  const sign = (a: Pt, b: Pt) => (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
+  const s = pts.map((a, i) => sign(a, pts[(i + 1) % pts.length]));
+  if (s.every((v) => v >= 0) || s.every((v) => v <= 0)) return 0;
+  let best = Infinity;
+  pts.forEach((a, i) => {
+    const b = pts[(i + 1) % pts.length];
+    for (let j = 0; j <= 1000; j++) {
+      const t = j / 1000;
+      best = Math.min(
+        best,
+        Math.hypot(p.x - (a.x + t * (b.x - a.x)), p.y - (a.y + t * (b.y - a.y)))
+      );
+    }
+  });
+  return best;
+}
+
+/** (key, S) pairs collected into inclusive S ranges per key, in first-seen order. */
+function rangesOf(
+  pairs: readonly [string, number][]
+): { key: string; ranges: [number, number][] }[] {
+  const found = new Map<string, [number, number][]>();
+  for (const [key, S] of pairs) {
+    const ranges = found.get(key) ?? [];
+    const last = ranges[ranges.length - 1];
+    if (last && last[1] === S - 1) last[1] = S;
+    else ranges.push([S, S]);
+    found.set(key, ranges);
+  }
+  return [...found].map(([key, ranges]) => ({ key, ranges }));
+}
+
 /** Whether a summit's label is pinned as unplaceable at S (excluded from the rule rows). */
 function pending(summit: string, S: number): boolean {
   return UNPLACED_SUMMIT_LABELS.some(
@@ -466,6 +516,62 @@ describe('overviewLayout sweep, sheet widths 312-1100 px (UI E1 populated)', () 
       });
     }
     expect(bad).toEqual([]);
+  });
+
+  /*
+   * Association (Tim, 2026-11-26, before 18-28): at 1440 Zermatt's plate sat
+   * diagonally above-right of marker 1, about as near marker 2, and read as
+   * Ortler's label. The UI-SPEC rule is a plate right of its marker, flipping
+   * left; markers and summit labels give way, triangles never move.
+   */
+  it('puts every region plate right or left of its own marker, vertically centred, 8 px apart', () => {
+    const off: [string, number][] = [];
+    for (const S of SIDES) {
+      const p = layouts.get(S)!;
+      if (p.tier === 'compact') continue;
+      for (const r of p.regions) if (!sideOf(r.plate!, r.marker)) off.push([r.id, S]);
+    }
+    expect(rangesOf(off)).toEqual([]);
+  });
+
+  it('keeps every other marker at least 16 px farther from a plate than its own marker (the association invariant)', () => {
+    const bad: string[] = [];
+    for (const S of SIDES) {
+      const p = layouts.get(S)!;
+      if (p.tier === 'compact') continue;
+      for (const r of p.regions) {
+        const own = distanceOf(r.plate!, r.marker);
+        for (const o of p.regions) {
+          if (o.id === r.id) continue;
+          const d = distanceOf(r.plate!, o.marker);
+          if (d < own + 16 - 1e-6) {
+            bad.push(
+              `S=${S} plate ${r.id}: own ${own.toFixed(2)} px, marker ${o.id} ${d.toFixed(2)} px`
+            );
+          }
+        }
+      }
+    }
+    expect(bad).toEqual([]);
+  });
+
+  it('keeps every marker badge 16 px clear of every summit triangle as drawn on the compact tier', () => {
+    // The badge is the marker's 28 px circle (24 px dot plus its 2 px casing).
+    // At 375 marker 1 and its leader crowded Dufourspitze's triangle (Tim, 2026-11-26).
+    const close: [string, number][] = [];
+    for (const S of SIDES) {
+      const p = layouts.get(S)!;
+      if (p.tier !== 'compact') continue;
+      for (const r of p.regions) {
+        const centre = { x: r.marker.x + MARKER / 2, y: r.marker.y + MARKER / 2 };
+        for (const s of p.summits) {
+          if (pointToTriangle(centre, triangleOf(s.triangle)) - MARKER / 2 < 16 - 1e-6) {
+            close.push([`${r.id} / ${s.name}`, S]);
+          }
+        }
+      }
+    }
+    expect(rangesOf(close)).toEqual([]);
   });
 
   it('pins the summit labels with no legal place exactly in UNPLACED_SUMMIT_LABELS (A6)', () => {
