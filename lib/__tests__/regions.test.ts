@@ -27,6 +27,10 @@
  * - D-09 (18-17): every published photo page's way back (photoBack) is its
  *   region page by the bare region name, the v2.0 four included, read from the
  *   registry by photo id (T-18-37); an unknown id throws.
+ * - D-27 (18-26, assumption delta): the region series are the only photo
+ *   series. Every published photo is in exactly one region's series, and every
+ *   v2.0 slug resolves through photoBySlug to its published view, so nothing
+ *   reads a second, hand-listed series beside them.
  * - REGION-01 (18-23, UI E1/partial): the overview sheet's input
  *   (overviewSheetInput) has every region west to east with a four-corner
  *   outline and its number; a region missing either fails here and the build.
@@ -38,7 +42,7 @@ import { plates } from '@/data/generated/plates';
 import { editorial } from '@/data/photos/editorial';
 import { overview } from '@/data/generated/overview';
 import { formatYearRange } from '@/lib/home-format';
-import { publishedViews, seriesInput } from '@/lib/photos/view-model';
+import { photoBySlug, publishedViews, seriesInput } from '@/lib/photos/view-model';
 import { SLUGS, viewBySlug } from '../../e2e/helpers/photo-fixtures';
 import {
   regionById,
@@ -323,7 +327,7 @@ describe('D-03: region ids never collide with a photo slug or a reserved segment
     .map((entry) => entry.name);
 
   const reserved = [...new Set(['regions', NEUTRAL_SLUG, 'opengraph-image', ...staticSegments])];
-  const photoSlugs = Object.values(editorial).map((e) => e.slug);
+  const editorialSlugs = Object.values(editorial).map((e) => e.slug);
 
   /**
    * Every value that appears in more than one of the named lists, with the
@@ -349,24 +353,24 @@ describe('D-03: region ids never collide with a photo slug or a reserved segment
 
   it('has no duplicate region id and no duplicate photo slug', () => {
     expect(new Set(regionIds).size).toBe(regionIds.length);
-    expect(new Set(photoSlugs).size).toBe(photoSlugs.length);
+    expect(new Set(editorialSlugs).size).toBe(editorialSlugs.length);
   });
 
   it('keeps region ids, photo slugs and reserved segments pairwise disjoint', () => {
-    expect(collisions({ 'region ids': regionIds, 'photo slugs': photoSlugs, reserved })).toEqual(
-      []
-    );
+    expect(
+      collisions({ 'region ids': regionIds, 'photo slugs': editorialSlugs, reserved })
+    ).toEqual([]);
   });
 
   it('reports a region id equal to a photo slug (the check can fail)', () => {
-    const slug = photoSlugs[0];
-    expect(collisions({ 'region ids': [...regionIds, slug], 'photo slugs': photoSlugs })).toEqual([
-      { value: slug, in: ['region ids', 'photo slugs'] },
-    ]);
+    const slug = editorialSlugs[0];
+    expect(
+      collisions({ 'region ids': [...regionIds, slug], 'photo slugs': editorialSlugs })
+    ).toEqual([{ value: slug, in: ['region ids', 'photo slugs'] }]);
   });
 
   it('reports a photo slug equal to a reserved segment', () => {
-    expect(collisions({ 'photo slugs': [...photoSlugs, NEUTRAL_SLUG], reserved })).toEqual([
+    expect(collisions({ 'photo slugs': [...editorialSlugs, NEUTRAL_SLUG], reserved })).toEqual([
       { value: NEUTRAL_SLUG, in: ['photo slugs', 'reserved'] },
     ]);
   });
@@ -509,6 +513,30 @@ describe("the viewer set: one region's series (18-15; LBOX-09, D-12)", () => {
       new RangeError('regionViewerSet: photo no-such-photo has no registry region')
     );
   });
+});
+
+describe('one photo model: the region series and the published views (18-26; D-27)', () => {
+  it('puts every published photo in exactly one region series', () => {
+    expect(publishedViews).toHaveLength(11);
+    for (const view of publishedViews) {
+      const holders = regionIds.filter((id) =>
+        regionPhotoViews(id).some((v) => v.slug === view.slug)
+      );
+      expect({ slug: view.slug, regions: holders }).toEqual({
+        slug: view.slug,
+        regions: [regionOfPhoto(view.id)],
+      });
+    }
+  });
+
+  it.each(Object.values(SLUGS).map((slug) => [slug]))(
+    '%s (a v2.0 photo) resolves through photoBySlug to its published view',
+    (slug) => {
+      const published = publishedViews.find((v) => v.slug === slug);
+      expect(published).toBeDefined();
+      expect(photoBySlug(slug)).toBe(published);
+    }
+  );
 });
 
 describe("a photo page's way back (18-17; D-09, T-18-37)", () => {

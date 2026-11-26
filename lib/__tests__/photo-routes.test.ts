@@ -11,8 +11,8 @@
  * - The proxy admits exactly the slugs that have a static photo page (F5,
  *   T-15-14, T-17-11): a slug the proxy lets through without a page renders
  *   Next's empty error shell (12-RESEARCH Pitfall 1). Since 17-05 (D-07,
- *   PHOTO-05) both are the published set, every photo with editorial copy;
- *   the light table (photoSlugs) is one curated view inside it, so a return
+ *   PHOTO-05) both are the published set, every photo with editorial copy,
+ *   and the four v2.0 slugs (SLUGS) keep their pages inside it, so a return
  *   to the four-photo route set fails here at once.
  * - The sitemap lists every published photo page at its absolute
  *   /photos/<slug> URL and every region page at /photos/regions/<id> (D-15,
@@ -38,13 +38,11 @@ import { editorial } from '@/data/photos/editorial';
 import { site } from '@/data/site';
 import { regionIds } from '@/lib/regions';
 import { photoHref, photoRouteSlugs } from '@/lib/photos/routes';
-import {
-  photoBySlug,
-  photoSlugs,
-  photoViews,
-  publishedSlugs,
-  publishedViews,
-} from '@/lib/photos/view-model';
+import { photoBySlug, publishedSlugs, publishedViews } from '@/lib/photos/view-model';
+import { SLUGS } from '../../e2e/helpers/photo-fixtures';
+
+/** The four v2.0 photo slugs, named (Pitfall 8): their URLs predate the published set. */
+const V20_SLUGS: readonly string[] = Object.values(SLUGS);
 
 describe('photoHref (D-17)', () => {
   it('has at least one photo slug to pin', () => {
@@ -77,9 +75,9 @@ describe('proxy slugs and static photo pages (F5)', () => {
     expect(photoRouteSlugs).toHaveLength(11);
   });
 
-  it('holds every light-table slug, so the four v2.0 URLs keep their pages (D-07)', () => {
-    expect(photoSlugs).toHaveLength(4);
-    for (const slug of photoSlugs) expect(photoRouteSlugs).toContain(slug);
+  it('holds every v2.0 slug, so the four v2.0 URLs keep their pages (D-07)', () => {
+    expect(V20_SLUGS).toHaveLength(4);
+    for (const slug of V20_SLUGS) expect(photoRouteSlugs).toContain(slug);
   });
 
   it("names no reserved path segment (the proxy's neutral slug '_', the 'regions' segment)", () => {
@@ -97,27 +95,23 @@ describe('proxy slugs and static photo pages (F5)', () => {
   });
 });
 
-describe('photoBySlug: light table first, then the published set (D-07)', () => {
-  it("returns each light-table photo's light-table view (k, n, prevSlug, nextSlug among the four)", () => {
-    for (const view of photoViews) {
-      const found = photoBySlug(view.slug);
-      expect(found).toBe(view);
-      expect(found?.n).toBe(4);
-      for (const neighbour of [found?.prevSlug, found?.nextSlug]) {
-        if (neighbour !== null) expect(photoSlugs).toContain(neighbour);
-      }
+describe('photoBySlug: the published set (D-27)', () => {
+  it("returns each v2.0 photo's published view (n is the whole published set, not the four)", () => {
+    for (const slug of V20_SLUGS) {
+      const found = photoBySlug(slug);
+      expect(found).toBe(publishedViews.find((v) => v.slug === slug));
+      expect(found?.n).toBe(publishedViews.length);
     }
   });
 
-  it("returns every other published photo's published view", () => {
-    const others = publishedViews.filter((v) => !photoSlugs.includes(v.slug));
-    expect(others).toHaveLength(7);
-    for (const view of others) expect(photoBySlug(view.slug)).toBe(view);
+  it("returns every published photo's published view", () => {
+    expect(publishedViews).toHaveLength(11);
+    for (const view of publishedViews) expect(photoBySlug(view.slug)).toBe(view);
   });
 
   it('returns undefined for an unknown or wrong-case slug (the routes then 404)', () => {
     expect(photoBySlug('no-such-photo')).toBeUndefined();
-    expect(photoBySlug(photoSlugs[0].toUpperCase())).toBeUndefined();
+    expect(photoBySlug(SLUGS.matterhornFromZermatt.toUpperCase())).toBeUndefined();
   });
 });
 

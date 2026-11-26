@@ -501,13 +501,16 @@ export const publishedViews: readonly PhotoView[] = buildPhotoViews({
 export const publishedSlugs: readonly string[] = publishedViews.map((v) => v.slug);
 
 /**
- * The view for an exact, case-sensitive slug, or undefined (the routes then
- * call notFound()). A light-table photo gets its light-table view, whose k, n,
- * prevSlug and nextSlug are among the four, so the v2.0 pages and OG cards stay
- * as they were (17 D-07); every other photo gets its published view.
+ * The published view for an exact, case-sensitive slug, or undefined (the
+ * routes then call notFound()). Every photo, the four v2.0 photos included,
+ * gets its published view (18 D-27): the page, its metadata and its OG card
+ * read only the title, place, altitude label, id and years, which are the same
+ * in every view of a photo. Its k, n, prevSlug and nextSlug run across the
+ * whole published set, so no viewer steps with them; a viewer steps through
+ * its photo's region series (regionViewerSet in lib/regions.ts, LBOX-09).
  */
 export function photoBySlug(slug: string): PhotoView | undefined {
-  return photoViews.find((v) => v.slug === slug) ?? publishedViews.find((v) => v.slug === slug);
+  return publishedViews.find((v) => v.slug === slug);
 }
 
 /**

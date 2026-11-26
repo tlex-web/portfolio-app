@@ -208,8 +208,10 @@ describe('the published set (17 D-07, PHOTO-05)', () => {
     expect(heights).toEqual([...heights].sort((a, b) => a - b));
   });
 
-  it('looks up each light-table photo as its light-table view', () => {
-    for (const view of photoViews) expect(photoBySlug(view.slug)).toEqual(view);
+  it('looks up each v2.0 photo as its published view (18 D-27)', () => {
+    for (const slug of Object.values(SLUGS)) {
+      expect(photoBySlug(slug)).toBe(publishedViews.find((v) => v.slug === slug));
+    }
   });
 });
 
