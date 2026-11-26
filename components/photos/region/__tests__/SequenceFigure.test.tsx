@@ -6,7 +6,7 @@
  * use placeholder values.
  */
 import { render, within } from '@testing-library/react';
-import RegionSequence, { countLabel } from '../RegionSequence';
+import RegionSequence, { sequenceCountLabel } from '../RegionSequence';
 import SequenceFigure, { collarParts } from '../SequenceFigure';
 import { figureSizes } from '@/lib/photos/image-sizes';
 import type { PhotoView } from '@/lib/photos/view-model';
@@ -67,13 +67,13 @@ describe('collarParts (Contract 2 "Top collar", Contract 5)', () => {
   });
 });
 
-describe('countLabel (UI E5/zero-one-many)', () => {
+describe('sequenceCountLabel (UI E5/zero-one-many)', () => {
   it.each([
     [1, '1 photograph, lowest first'],
     [2, '2 photographs, lowest first'],
     [7, '7 photographs, lowest first'],
   ])('%i -> %s', (n, label) => {
-    expect(countLabel(n)).toBe(label);
+    expect(sequenceCountLabel(n)).toBe(label);
   });
 });
 
@@ -165,7 +165,7 @@ describe('RegionSequence', () => {
       expect(band.className).toContain('bg-gallery');
       expect(within(band).getByRole('heading', { level: 2, name: 'Photographs' })).toBeVisible();
       expect(band.querySelector('[data-sequence-count]')?.textContent).toBe(
-        countLabel(views.length)
+        sequenceCountLabel(views.length)
       );
       expect(within(band).getByRole('link', { name: 'Skip to next region' })).toHaveAttribute(
         'href',

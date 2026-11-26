@@ -1,5 +1,6 @@
 import RegionRail from '@/components/photos/region/RegionRail';
 import SequenceFigure from '@/components/photos/region/SequenceFigure';
+import { countLabel } from '@/lib/home-format';
 import { railHead, railTicks } from '@/lib/photos/region-rail';
 import { regionById, regionPhotoViews, regionRights } from '@/lib/regions';
 
@@ -26,9 +27,13 @@ import { regionById, regionPhotoViews, regionRights } from '@/lib/regions';
  * @throws RangeError for an id that is not a registry region.
  */
 
-/** '7 photographs, lowest first'; '1 photograph, lowest first' for one. */
-export function countLabel(n: number): string {
-  return `${n} ${n === 1 ? 'photograph' : 'photographs'}, lowest first`;
+/**
+ * '7 photographs, lowest first'; '1 photograph, lowest first' for one. Built on
+ * the shared countLabel (lib/home-format.ts), which rejects a negative or
+ * non-integer count; a region always has at least one photo here.
+ */
+export function sequenceCountLabel(n: number): string {
+  return `${countLabel(n, 'photograph', 'photographs')}, lowest first`;
 }
 
 export default function RegionSequence({ id }: { id: string }) {
@@ -47,7 +52,7 @@ export default function RegionSequence({ id }: { id: string }) {
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
             <h2 id="region-photos">Photographs</h2>
             <p data-sequence-count="" className="font-mono text-sm text-ink-muted">
-              {countLabel(views.length)}
+              {sequenceCountLabel(views.length)}
             </p>
           </div>
           <a
