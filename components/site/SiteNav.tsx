@@ -124,7 +124,7 @@ function DefaultNav() {
   // on a photo page is current but navigates, so trigger 1 closes it). Modified or
   // non-primary activations keep the browser's behaviour (new tab, download). With
   // no query string the tap is default-prevented: Next skips its navigation and its
-  // scroll-to-top (no scroll jump). With one (/photos?view=grid, /roadmap?project=box)
+  // scroll-to-top (no scroll jump). With one (/photos?view=map, /roadmap?project=box)
   // Next still navigates to the plain page, but usePathname drops the query, so the
   // pathname does not change and trigger 1 never fires: this handler closes the panel
   // at tap in both cases. Escape's order: focus Menu before the link hides, so focus

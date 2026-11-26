@@ -1,14 +1,23 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
-import { terrain } from '@/data/generated/terrain';
-import { buildPhotoViews } from '@/lib/photos/view-model';
-import { readViewTransitions, recordViewTransitions } from './helpers/view-transitions';
-import { clickFocusesButtons } from './helpers/engine';
+import {
+  readViewTransitions,
+  recordViewTransitions,
+  waitForViewTransitionsSettled,
+} from './helpers/view-transitions';
 import { regionHref } from '@/lib/photos/routes';
 import { LEGACY_VIEW_REGION } from '@/lib/photos/region-ids';
-import { regionCardFacts, regionHeading, regionNumber, regionsWestToEast } from '@/lib/regions';
+import {
+  regionCardFacts,
+  regionCover,
+  regionHeading,
+  regionNumber,
+  regionPhotoViews,
+  regionsWestToEast,
+} from '@/lib/regions';
 
-// Index lookups into views here are positions in the series order (DEM ascending, ties
-// by id), not photo identities; a specific photo is named through viewBySlug.
+// /photos is the Alps overview (18-22): region rows west to east, no view switch. Photos are
+// selected explicitly per region (regionPhotoViews(id)), never through a no-argument series
+// build (18-RESEARCH Pitfall 8); index lookups are positions in a region's series.
 
 /** The overview's region list (REGION-01, D-01, D-02; 18-UI-SPEC Contract 1 "Region list"). */
 const REGION_LIST = 'Regions, west to east';
@@ -66,12 +75,62 @@ test.describe('Legacy ?view= redirect (D-03, PHOTO-06)', () => {
   });
 });
 
+/** Wait until React has hydrated an element (a click before that is a document navigation). */
+async function waitForHydration(el: Locator) {
+  await expect
+    .poll(
+      () => el.evaluate((node) => Object.keys(node).some((k) => k.startsWith('__reactProps'))),
+      { timeout: 15000 }
+    )
+    .toBe(true);
+}
+
+/** Every region row's thumbnail has loaded (img complete with a decoded width). */
+async function thumbnailsLoaded(page: Page) {
+  await expect
+    .poll(() =>
+      regionRows(page).evaluateAll((rows) =>
+        rows.every((row) => {
+          const img = row.querySelector('img');
+          return !!img && img.complete && img.naturalWidth > 0;
+        })
+      )
+    )
+    .toBe(true);
+}
+
+/** A region page's figure link (18-08: li[data-sequence-item] holds [data-photo-id]). */
+const figureLink = (page: Page, slug: string) =>
+  page.locator(`li[data-sequence-item="${slug}"] [data-photo-id="${slug}"]`);
+
+/** Hydrate and click a region row, then wait for its region page's h1. */
+async function openRegion(page: Page, index: number) {
+  const r = overviewRegions[index];
+  const row = regionRows(page).nth(index);
+  await waitForHydration(row);
+  await row.click();
+  await expect(page).toHaveURL(new RegExp(`${regionHref(r.id)}$`));
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(r.heading);
+  return r;
+}
+
+const SIX_WIDTHS = [360, 375, 412, 768, 1024, 1440];
+
 /**
- * /photos is the Alps overview (REGION-01, D-01, D-02; 18-UI-SPEC Contract 1):
- * the header band, then the h2 'Regions' over one link row per region, west to
- * east, each to its region page. The rows are the keyboard and screen-reader
- * path (the overview sheet's markers, 18-23, are pointer-only). Successors of
- * the Map view rows (PHOTO-06, 18-22 retirement map).
+ * /photos is the Alps overview (REGION-01, D-01, D-02, D-04; 18-UI-SPEC
+ * Contract 1): the header band, then the h2 'Regions' over one link row per
+ * region, west to east, each to its region page. The rows are the keyboard and
+ * screen-reader path (the overview sheet's markers, 18-23, are pointer-only).
+ *
+ * These are the successors of the Map view rows (PHOTO-01, PHOTO-03, 10-08),
+ * which tested the survey sheet's waypoint plates on /photos (PHOTO-06, 18-22
+ * retirement map). A photo now opens from its region page, so the open and
+ * close rows run overview → region row → figure. The Map view's Escape row
+ * retired onto 18-21's keyboard row ('Enter on a figure link opens the
+ * lightbox on Close photo; …; Escape returns focus'), the one declared
+ * allowance; its two ?view= rows became the redirect rows above. Expected
+ * values come from the registry (regionsWestToEast, regionCardFacts,
+ * regionCover, regionPhotoViews), never hand-typed.
  */
 test.describe('Regions list (REGION-01, D-02)', () => {
   test('opens on the overview with the three region rows west to east: names, counts and hrefs', async ({
@@ -94,218 +153,116 @@ test.describe('Regions list (REGION-01, D-02)', () => {
       await expect(row).toHaveAccessibleName(new RegExp(`^${r.heading}`));
     }
   });
-});
 
-/**
- * The Map view in a browser (PHOTO-01, PHOTO-03; D-01 to D-04; 10-UI-SPEC
- * "Map View" and UI Considerations E2). /photos opens on the full survey sheet
- * with one link per photo, lowest first; each link's box is its label plate,
- * and it opens the photo in the lightbox with a plain enter. The six legacy
- * gallery tests (hero, hotspot buttons, the old modal and the 3D toggle) were
- * rewritten in 10-08 to map cases, none dropped. Expected values come from
- * buildPhotoViews(), never hand-typed.
- */
-test.describe('Map view (PHOTO-01, PHOTO-03, D-01..D-04)', () => {
-  const views = buildPhotoViews();
-  const MAP = 'Map of the photo locations';
-  const LIST = 'Photo locations, lowest first';
-  const names = views.map((v) => `${v.title}, ${v.altitudeLabel}`);
+  // @needs-tab-to-links: the rows are links, and WebKit on Windows and macOS never Tabs to a
+  // link (Safari's default, helpers/engine.ts); Linux WebKit (CI) runs it.
+  test('Tab reaches the three region rows in west-to-east order @needs-tab-to-links', async ({
+    page,
+  }) => {
+    await page.goto('/photos');
+    const rows = regionRows(page);
+    await expect(rows).toHaveCount(overviewRegions.length);
+    const first = rows.first();
+    for (let i = 0; i < 40 && !(await first.evaluate((el) => el === document.activeElement)); i++) {
+      await page.keyboard.press('Tab');
+    }
+    await expect(first).toBeFocused();
+    for (let i = 1; i < overviewRegions.length; i++) {
+      await page.keyboard.press('Tab');
+      await expect(rows.nth(i)).toBeFocused();
+      await expect(rows.nth(i)).toHaveAttribute('data-region-row', overviewRegions[i].id);
+    }
+  });
 
-  const mapLinks = (page: Page) =>
-    page.getByRole('region', { name: MAP }).getByRole('list', { name: LIST }).getByRole('link');
+  test('a region row opens its region page', async ({ page }) => {
+    await page.goto('/photos');
+    await openRegion(page, 1);
+    await expect(page.getByRole('list', { name: REGION_LIST })).toHaveCount(0);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
 
-  /** Wait until React has hydrated a link (a click before that is a document navigation). */
-  async function waitForHydration(link: Locator) {
-    await expect
-      .poll(
-        () => link.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))),
-        { timeout: 15000 }
-      )
-      .toBe(true);
-  }
-
-  /** Click a map plate (hydrated) and wait for the dialog. */
-  async function openFromMap(page: Page, index: number) {
-    const link = mapLinks(page).nth(index);
+  test('from the overview, a region row and then its first figure open the lightbox, and Close photo closes it on the region page', async ({
+    page,
+  }) => {
+    await page.goto('/photos');
+    const r = await openRegion(page, 0);
+    const first = regionPhotoViews(r.id)[0];
+    const link = figureLink(page, first.slug);
     await waitForHydration(link);
     await link.click();
     const dialog = page.getByRole('dialog');
-    // The dev server compiles the intercepted route on its first request.
     await expect(dialog).toBeVisible({ timeout: 20000 });
-    return { dialog, link };
-  }
-
-  test('opens on the map with four waypoint links in altitude order (PHOTO-01)', async ({
-    page,
-  }) => {
-    await page.goto('/photos');
-    await expect(page.getByRole('region', { name: MAP })).toBeVisible();
-    const links = mapLinks(page);
-    await expect(links).toHaveCount(views.length);
-    for (const [i, view] of views.entries()) {
-      await expect(links.nth(i)).toHaveAccessibleName(names[i]);
-      await expect(links.nth(i)).toHaveAttribute('href', `/photos/${view.slug}`);
-      await expect(links.nth(i)).toHaveAttribute('data-photo-id', view.slug);
-    }
-  });
-
-  // @needs-tab-to-links: the waypoints are links, and WebKit on Windows and macOS never Tabs
-  // to a link (Safari's default, helpers/engine.ts); no step is left without Tab, so only that
-  // webkit project drops it. Linux WebKit (CI) runs it (12-23 triage, run 41565046890).
-  test('Tab reaches the four waypoint links in altitude order @needs-tab-to-links', async ({
-    page,
-  }) => {
-    await page.goto('/photos');
-    const links = mapLinks(page);
-    await expect(links).toHaveCount(views.length);
-    const focusedName = () =>
-      page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? '');
-    // Tab through the shell until the first waypoint has focus.
-    for (let i = 0; i < 40 && (await focusedName()) !== names[0]; i++) {
-      await page.keyboard.press('Tab');
-    }
-    await expect(links.nth(0)).toBeFocused();
-    for (let i = 1; i < views.length; i++) {
-      await page.keyboard.press('Tab');
-      await expect(links.nth(i)).toBeFocused();
-    }
-  });
-
-  test('a map plate opens the lightbox', async ({ page }) => {
-    await page.goto('/photos');
-    const { dialog } = await openFromMap(page, 1);
-    await expect(page).toHaveURL(new RegExp(`/photos/${views[1].slug}$`));
-    await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(views[1].title);
-  });
-
-  test('Close photo closes the lightbox opened from the map', async ({ page }) => {
-    await page.goto('/photos');
-    const { dialog } = await openFromMap(page, 1);
+    await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
+    await expect(dialog.getByRole('heading', { level: 2 })).toHaveText(first.title);
     await dialog.getByRole('button', { name: 'Close photo', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page).toHaveURL(/\/photos$/);
+    await expect(page).toHaveURL(new RegExp(`${regionHref(r.id)}$`));
   });
 
-  test('Escape closes it and focus returns to the plate', async ({ page }) => {
-    await page.goto('/photos');
-    const { link } = await openFromMap(page, 1);
-    await page.keyboard.press('Escape');
-    await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(link).toBeFocused();
-  });
-
-  test('opening from the map is a plain enter: no photo-* pseudo-element @chromium-only', async ({
+  test('opening a region from the overview is a plain navigation: no photo-* pseudo-element @chromium-only', async ({
     page,
   }) => {
     await recordViewTransitions(page);
     await page.goto('/photos');
     const before = (await readViewTransitions(page)).transitions.length;
-    await openFromMap(page, 1);
-    await page.waitForTimeout(800);
-    const after = (await readViewTransitions(page)).transitions.slice(before).flat();
+    await openRegion(page, 0);
+    // Settled first (10-REVIEW IN-09): every transition the navigation started has finished.
+    const after = (await waitForViewTransitionsSettled(page)).transitions.slice(before).flat();
     expect(after.filter((pseudo) => pseudo.includes('photo-'))).toEqual([]);
   });
 
-  test('?view=carousel shows the carousel region', async ({ page }) => {
-    await page.goto('/photos?view=carousel');
-    await expect(page.getByRole('region', { name: 'Photographs' })).toBeVisible();
-    await expect(page.getByRole('region', { name: MAP })).toHaveCount(0);
-  });
-
-  test('?view=grid and ?view=xyz render the grid and the map', async ({ page }) => {
-    await page.goto('/photos?view=grid');
-    await expect(page.getByRole('list', { name: 'Photographs, lowest first' })).toBeVisible();
-    await expect(page.getByRole('region', { name: MAP })).toHaveCount(0);
-
-    await page.goto('/photos?view=xyz');
-    await expect(page.getByRole('region', { name: MAP })).toBeVisible();
-    await expect(mapLinks(page)).toHaveCount(views.length);
-  });
-
-  test('the Riffelsee dot is dashed and the summit is not a link', async ({ page }) => {
+  test("the approximate photo's badge on the Zermatt plate is dashed", async ({ page }) => {
     await page.goto('/photos');
-    const links = mapLinks(page);
-    await expect(links).toHaveCount(views.length);
-    for (const [i, view] of views.entries()) {
-      const border = await links
-        .nth(i)
-        .locator('[data-map-dot]')
-        .evaluate((el) => {
-          const cs = getComputedStyle(el);
-          return `${cs.borderTopWidth} ${cs.borderTopStyle}`;
-        });
-      // Preflight gives every element a solid 0 px border; only the film scan draws one.
+    const r = await openRegion(page, 0);
+    expect(r.id).toBe('zermatt');
+    const pinned = regionPhotoViews(r.id).filter((v) => v.uv);
+    expect(
+      pinned.some((v) => v.approximate),
+      'Zermatt has an approximate photo'
+    ).toBe(true);
+    for (const view of pinned) {
+      const border = await page.locator(`[data-plate-badge="${view.slug}"]`).evaluate((el) => {
+        const cs = getComputedStyle(el);
+        return `${cs.borderTopWidth} ${cs.borderTopStyle}`;
+      });
+      // Preflight gives every element a solid 0 px border; only an approximate badge draws one.
       expect([view.slug, border]).toEqual([
         view.slug,
         view.approximate ? '2px dashed' : '0px solid',
       ]);
     }
-    const summit = page.locator('[data-summit-plate]');
-    await expect(summit).toHaveText(/Matterhorn/);
-    expect(await summit.evaluate((el) => el.closest('a') === null)).toBe(true);
-    expect(await summit.evaluate((el) => el.closest('[aria-hidden="true"]') !== null)).toBe(true);
   });
 
-  for (const width of [360, 375, 412, 768, 1024, 1440]) {
-    test(`at ${width} x 900 the plates keep their boxes, gaps and dots`, async ({ page }) => {
+  for (const width of SIX_WIDTHS) {
+    test(`at ${width} x 900 each region row's thumbnail keeps its true ratio and the list has no horizontal overflow`, async ({
+      page,
+    }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto('/photos');
-      await expect(mapLinks(page)).toHaveCount(views.length);
-      const geometry = await page.locator('[data-map-sheet]').evaluate((sheet) => {
-        const box = sheet.getBoundingClientRect();
-        const origin = { x: box.x + sheet.clientLeft, y: box.y + sheet.clientTop };
-        const rel = (r: DOMRect) => ({
-          x: r.x - origin.x,
-          y: r.y - origin.y,
-          width: r.width,
-          height: r.height,
-        });
-        const marks = [...sheet.querySelectorAll<HTMLElement>('[data-map-mark]')].map((el) => {
-          const dot = el.querySelector('[data-map-dot]')!.getBoundingClientRect();
+      await expect(regionRows(page)).toHaveCount(overviewRegions.length);
+      await thumbnailsLoaded(page);
+      const boxes = await regionRows(page).evaluateAll((rows) =>
+        rows.map((row) => {
+          const thumb = row.querySelector('[data-region-thumb]')!.getBoundingClientRect();
+          const img = row.querySelector('img')!;
           return {
-            plate: rel(el.getBoundingClientRect()),
-            dot: { x: dot.x + dot.width / 2 - origin.x, y: dot.y + dot.height / 2 - origin.y },
+            id: (row as HTMLElement).dataset.regionRow!,
+            width: thumb.width,
+            height: thumb.height,
+            natural: img.naturalWidth / img.naturalHeight,
+            rowHeight: row.getBoundingClientRect().height,
           };
-        });
-        const summit = rel(sheet.querySelector('[data-summit-plate]')!.getBoundingClientRect());
-        return { S: sheet.clientWidth, H: sheet.clientHeight, marks, summit };
-      });
-      const { S, marks, summit } = geometry;
-      expect(Math.abs(geometry.H - S)).toBeLessThanOrEqual(1);
-      const plates = marks.map((m) => m.plate);
-      for (const p of plates) {
-        expect([48, 68]).toContain(Math.round(p.height));
-        expect(p.x).toBeGreaterThanOrEqual(7.5);
-        expect(p.y).toBeGreaterThanOrEqual(7.5);
-        expect(p.x + p.width).toBeLessThanOrEqual(S - 7.5);
-        expect(p.y + p.height).toBeLessThanOrEqual(S - 7.5);
-      }
-      // 8 px (to 0.5 px) between waypoint plates; no overlap with the summit plate.
-      const all = [...plates, summit];
-      for (let i = 0; i < all.length; i++) {
-        for (let j = i + 1; j < all.length; j++) {
-          const a = all[i];
-          const b = all[j];
-          const gap = Math.max(
-            b.x - (a.x + a.width),
-            a.x - (b.x + b.width),
-            b.y - (a.y + a.height),
-            a.y - (b.y + b.height)
-          );
-          const min = j === all.length - 1 ? 0 : 7.5;
-          expect([i, j, gap >= min]).toEqual([i, j, true]);
-        }
-      }
-      marks.forEach((m, i) => {
-        expect(Math.abs(m.dot.x - views[i].uv.u * S)).toBeLessThanOrEqual(1);
-        expect(Math.abs(m.dot.y - views[i].uv.v * S)).toBeLessThanOrEqual(1);
-      });
-      expect(Math.abs(summit.x - (terrain.summit.uv.u * S + 14))).toBeLessThanOrEqual(1);
-      // Visual order (top to bottom, then left to right) is altitude order.
-      const order = [...plates.keys()].sort(
-        (a, b) => plates[a].y - plates[b].y || plates[a].x - plates[b].x
+        })
       );
-      expect(order).toEqual([...views.keys()]);
+      for (const b of boxes) {
+        const cover = regionCover(b.id).tile;
+        const ratio = cover.width / cover.height;
+        expect([b.id, Math.round(b.width)]).toEqual([b.id, 96]);
+        expect([b.id, Math.abs(b.width / b.height / ratio - 1) <= 0.01]).toEqual([b.id, true]);
+        expect([b.id, Math.abs(b.natural / ratio - 1) <= 0.01]).toEqual([b.id, true]);
+        // 44 px target: the 96 px thumbnail and p-2 keep every row far above it.
+        expect([b.id, b.rowHeight >= 44]).toEqual([b.id, true]);
+      }
       const overflow = await page.evaluate(() => {
         const root = document.documentElement;
         return root.scrollWidth - root.clientWidth;
@@ -314,72 +271,55 @@ test.describe('Map view (PHOTO-01, PHOTO-03, D-01..D-04)', () => {
     });
   }
 
-  // The plate boxes are fixed sizes (lib/photos/label-layout.ts), so the text
-  // has to fit them on every renderer: in the Linux CI render the longest
-  // titles came out about 6 % wider than on Windows, wrapped inside the former
-  // 224 px content box and pushed the altitude out of the plate (10-13). Each
-  // line's client rects must sit inside the plate's padding box, the wide
-  // tier keeps the title on one line and the compact tier on at most two.
-  for (const width of [360, 375, 412, 768, 1024, 1440]) {
-    test(`at ${width} x 900 every plate's title and altitude fit inside the plate`, async ({
-      page,
-    }) => {
+  // UI E2/overflow: the row text wraps (line 3 at most once, at ' · ') and never truncates,
+  // at every width from the 360 phone to the 320 px lg column.
+  for (const width of SIX_WIDTHS) {
+    test(`at ${width} x 900 no region row's text truncates`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto('/photos');
-      await expect(mapLinks(page)).toHaveCount(views.length);
+      await expect(regionRows(page)).toHaveCount(overviewRegions.length);
       await page.evaluate(() => document.fonts.ready);
-      const plates = await page.locator('[data-map-mark]').evaluateAll((els) =>
-        els.map((el) => {
-          const box = el.getBoundingClientRect();
-          const lines = (sel: string) => {
-            const span = el.querySelector(sel)!;
+      const rows = await regionRows(page).evaluateAll((els) =>
+        els.map((row) => {
+          const box = row.getBoundingClientRect();
+          const part = (sel: string) => {
+            const el = row.querySelector(sel)!;
             const range = document.createRange();
-            range.selectNodeContents(span);
+            range.selectNodeContents(el);
+            const rects = [...range.getClientRects()];
             return {
-              rects: [...range.getClientRects()].map((r) => ({
-                left: r.left,
-                right: r.right,
-                top: r.top,
-                bottom: r.bottom,
-              })),
-              overflowX: span.scrollWidth - span.clientWidth,
+              text: el.textContent ?? '',
+              overflowX: el.scrollWidth - el.clientWidth,
+              ellipsis: getComputedStyle(el).textOverflow === 'ellipsis',
+              lines: new Set(rects.map((r) => Math.round(r.top))).size,
+              rects: rects.map((r) => ({ left: r.left, right: r.right })),
             };
           };
           return {
-            slug: (el as HTMLElement).dataset.mapMark!,
-            box: { left: box.left, right: box.right, top: box.top, bottom: box.bottom },
-            title: lines('[data-map-title]'),
-            altitude: lines('[data-map-altitude]'),
+            id: (row as HTMLElement).dataset.regionRow!,
+            box: { left: box.left, right: box.right },
+            name: part('[data-region-name]'),
+            count: part('[data-region-count]'),
+            facts: part('[data-region-facts]'),
           };
         })
       );
-      const wide = plates[0].box.right - plates[0].box.left > 200;
-      expect(wide).toBe(width >= 768);
-      for (const p of plates) {
-        // px-2 py-1: the text box is 8 px in from the sides and 4 px from the top and bottom.
-        const inner = {
-          left: p.box.left + 8 - 0.5,
-          right: p.box.right - 8 + 0.5,
-          top: p.box.top + 4 - 0.5,
-          bottom: p.box.bottom - 4 + 0.5,
-        };
-        expect([p.slug, p.title.rects.length]).toEqual([
-          p.slug,
-          wide ? 1 : Math.min(p.title.rects.length, 2),
-        ]);
-        expect([p.slug, p.altitude.rects.length]).toEqual([p.slug, 1]);
-        for (const [part, text] of [
-          ['title', p.title],
-          ['altitude', p.altitude],
+      for (const [i, r] of overviewRegions.entries()) {
+        const row = rows[i];
+        expect(row.id).toBe(r.id);
+        expect(row.name.text).toBe(r.heading);
+        expect(row.count.text).toBe(r.count);
+        expect(row.facts.text).toBe(`${r.range} · ${r.years}`);
+        expect([r.id, row.count.lines, row.facts.lines <= 2]).toEqual([r.id, 1, true]);
+        for (const [label, p] of [
+          ['name', row.name],
+          ['count', row.count],
+          ['facts', row.facts],
         ] as const) {
-          expect([p.slug, part, text.overflowX <= 0]).toEqual([p.slug, part, true]);
-          for (const r of text.rects) {
-            const inside =
-              r.left >= inner.left &&
-              r.right <= inner.right &&
-              r.top >= inner.top &&
-              r.bottom <= inner.bottom;
-            expect([p.slug, part, inside]).toEqual([p.slug, part, true]);
+          expect([r.id, label, p.overflowX <= 0, p.ellipsis]).toEqual([r.id, label, true, false]);
+          for (const rect of p.rects) {
+            const inside = rect.left >= row.box.left - 0.5 && rect.right <= row.box.right + 0.5;
+            expect([r.id, label, inside]).toEqual([r.id, label, true]);
           }
         }
       }
@@ -398,166 +338,120 @@ test.describe('Map view (PHOTO-01, PHOTO-03, D-01..D-04)', () => {
  */
 
 /**
- * The view switcher in a browser (PHOTO-02, D-14; 10-UI-SPEC "Header Band
- * (D-14)", View switcher table). A toggle group 'View' in the header band:
- * pressing a segment replaces the URL (`/photos`, `?view=grid`,
- * `?view=carousel`) with no new history entry and no scroll jump, focus stays
- * on the pressed segment, exactly one view section is mounted, and the chosen
- * view survives a reload and the Back button from a photo. The URL is the
- * only source of view state (locked).
+ * /photos without the view switch (PHOTO-06, D-03, D-27): the successors of
+ * the View switcher rows (PHOTO-02, D-14, 10-09). The page has no toggle group
+ * and reads no ?view=; navigation history belongs to the region rows (a push,
+ * so Back returns to the list); ?view=map is the overview itself, and the
+ * retired ?view=grid keeps landing on the Zermatt region page.
  */
-test.describe('View switcher (PHOTO-02, D-14)', () => {
-  const views = buildPhotoViews();
-  const LIST = 'Photographs, lowest first';
-  const group = (page: Page) => page.getByRole('group', { name: 'View' });
-  const segment = (page: Page, name: 'Map' | 'Grid' | 'Carousel') =>
-    group(page).getByRole('button', { name });
-  const viewSections = (page: Page) => page.locator('section[aria-labelledby="view-title"]');
-
-  /** Wait until React has hydrated an element (a click before that does nothing). */
-  async function waitForHydration(el: Locator) {
-    await expect
-      .poll(
-        () => el.evaluate((node) => Object.keys(node).some((k) => k.startsWith('__reactProps'))),
-        { timeout: 15000 }
-      )
-      .toBe(true);
-  }
-
-  async function expectPressed(page: Page, pressed: 'Map' | 'Grid' | 'Carousel') {
-    for (const name of ['Map', 'Grid', 'Carousel'] as const) {
-      await expect(segment(page, name)).toHaveAttribute(
-        'aria-pressed',
-        name === pressed ? 'true' : 'false'
-      );
-    }
-  }
-
-  test('opens on Map with the three segments in order', async ({ page }) => {
+test.describe('No view switcher (PHOTO-06, D-27)', () => {
+  test('opens on the overview with no view switcher: no radiogroup, no View group, no segment links', async ({
+    page,
+  }) => {
     await page.goto('/photos');
-    await expect(group(page).getByRole('button')).toHaveText(['Map', 'Grid', 'Carousel']);
-    await expectPressed(page, 'Map');
-    await expect(viewSections(page)).toHaveCount(1);
+    await expect(regionRows(page)).toHaveCount(overviewRegions.length);
+    await expect(page.getByRole('radiogroup')).toHaveCount(0);
+    await expect(page.getByRole('group', { name: 'View' })).toHaveCount(0);
+    const segmentName = /^(Map|Grid|Carousel)$/;
+    await expect(page.getByRole('main').getByRole('link', { name: segmentName })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: segmentName })).toHaveCount(0);
+    await expect(page.locator('a[href*="?view="]')).toHaveCount(0);
+    await expect(page.locator('section[aria-labelledby="view-title"]')).toHaveCount(0);
   });
 
-  test('at 375 x 600 switching replaces the URL with no history entry, no scroll jump and focus kept', async ({
+  test('at 375 x 600 a region row adds one history entry, and Back returns to /photos with the region list in view', async ({
     page,
-    browserName,
   }) => {
     await page.setViewportSize({ width: 375, height: 600 });
     await page.goto('/photos');
-    const grid = segment(page, 'Grid');
-    await waitForHydration(grid);
-    // 100 px, not more: at 375 the switcher's top is 184 px down the page and the sticky
-    // site header is 64 px tall, so a deeper scroll hides the switcher under the header and
-    // the click itself would scroll it back into view (measured in 10-09).
-    await page.evaluate(() => window.scrollTo(0, 100));
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(100);
-    const headerBottom = await page
-      .locator('body > header, header')
-      .first()
-      .evaluate((el) => el.getBoundingClientRect().bottom);
-    const switcherTop = await group(page).evaluate((el) => el.getBoundingClientRect().top);
-    expect(switcherTop).toBeGreaterThanOrEqual(headerBottom);
+    await waitForHydration(regionRows(page).first());
     const historyLength = await page.evaluate(() => window.history.length);
+    await openRegion(page, 0);
+    expect(await page.evaluate(() => window.history.length)).toBe(historyLength + 1);
 
-    await grid.click();
-    await expect(page).toHaveURL(/\/photos\?view=grid$/);
-    await expectPressed(page, 'Grid');
-    await expect(page.getByRole('list', { name: LIST })).toBeVisible();
-    await expect(viewSections(page)).toHaveCount(1);
-    expect(await page.evaluate(() => window.history.length)).toBe(historyLength);
-    expect(await page.evaluate(() => window.scrollY)).toBe(100);
-    // A click focuses the segment except in WebKit (helpers/engine.ts), so focus is kept only where it was given.
-    if (clickFocusesButtons(browserName)) await expect(grid).toBeFocused();
-
-    await segment(page, 'Carousel').click();
-    await expect(page).toHaveURL(/\/photos\?view=carousel$/);
-    await expectPressed(page, 'Carousel');
-    await segment(page, 'Map').click();
+    await page.goBack();
     await expect(page).toHaveURL(/\/photos$/);
-    await expectPressed(page, 'Map');
-    await expect(viewSections(page)).toHaveCount(1);
-    expect(await page.evaluate(() => window.history.length)).toBe(historyLength);
+    await expect(regionRows(page)).toHaveCount(overviewRegions.length);
+    await expect(regionRows(page).first()).toBeInViewport();
   });
 
-  test('pressing the pressed segment changes nothing', async ({ page }) => {
-    await page.goto('/photos?view=grid');
-    const grid = segment(page, 'Grid');
-    await waitForHydration(grid);
-    const historyLength = await page.evaluate(() => window.history.length);
-    await grid.click();
-    await page.waitForTimeout(300);
-    await expect(page).toHaveURL(/\/photos\?view=grid$/);
-    await expectPressed(page, 'Grid');
-    expect(await page.evaluate(() => window.history.length)).toBe(historyLength);
+  test('/photos?view=map is the overview unchanged: 200, no Location, the same region rows as /photos', async ({
+    page,
+    request,
+  }) => {
+    const response = await request.get('/photos?view=map', { maxRedirects: 0 });
+    expect(response.status()).toBe(200);
+    expect(response.headers()['location']).toBeUndefined();
+
+    const ids = () =>
+      regionRows(page).evaluateAll((rows) =>
+        rows.map((row) => (row as HTMLElement).dataset.regionRow)
+      );
+    await page.goto('/photos');
+    await expect(regionRows(page)).toHaveCount(overviewRegions.length);
+    const plain = await ids();
+    await page.goto('/photos?view=map');
+    await expect(page).toHaveURL(/\/photos\?view=map$/);
+    await expect(regionRows(page)).toHaveCount(overviewRegions.length);
+    expect(await ids()).toEqual(plain);
+    expect(plain).toEqual(overviewRegions.map((r) => r.id));
   });
 
   // @no-win-webkit: history Back while the open's View Transition commit settles crashes
-  // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this test
-  // in CI (12-23 triage, run 41565046890), so only the Windows webkit project drops it.
-  test('a reload keeps Grid, and Back from a photo returns to the grid with Grid pressed @no-win-webkit', async ({
+  // Playwright's Windows WebKit (WinCairo, not a Safari engine); Linux WebKit passes this
+  // kind of row in CI (12-23 triage, run 41565046890), so only the Windows webkit project
+  // drops it.
+  test('a reload of /photos?view=grid lands on the Zermatt region page again, and Back from a photo returns to it @no-win-webkit', async ({
     page,
   }) => {
+    const zermatt = new RegExp(`${LEGACY_TARGET}$`);
     await page.goto('/photos?view=grid');
-    await expectPressed(page, 'Grid');
-    await page.reload();
-    await expect(page).toHaveURL(/\/photos\?view=grid$/);
-    await expectPressed(page, 'Grid');
+    await expect(page).toHaveURL(zermatt);
+    // A second visit to the old URL (a reload of the bookmark) lands there again.
+    await page.goto('/photos?view=grid');
+    await expect(page).toHaveURL(zermatt);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Zermatt, Switzerland');
 
-    const tile = page.getByRole('list', { name: LIST }).getByRole('link').first();
-    await waitForHydration(tile);
-    await tile.click();
-    // The dev server compiles the intercepted route on its first request.
+    const first = regionPhotoViews(LEGACY_VIEW_REGION)[0];
+    const link = figureLink(page, first.slug);
+    await waitForHydration(link);
+    await link.click();
     await expect(page.getByRole('dialog')).toBeVisible({ timeout: 20000 });
-    await expect(page).toHaveURL(new RegExp(`/photos/${views[0].slug}$`));
+    await expect(page).toHaveURL(new RegExp(`/photos/${first.slug}$`));
 
     await page.goBack();
-    await expect(page).toHaveURL(/\/photos\?view=grid$/);
+    await expect(page).toHaveURL(zermatt);
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expectPressed(page, 'Grid');
-    await expect(page.getByRole('list', { name: LIST })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Zermatt, Switzerland');
   });
 
-  test('Tab reaches the three segments in order and Space presses one', async ({ page }) => {
+  // @needs-tab-to-links: as the Tab row above (WebKit off Linux never Tabs to a link).
+  test('Enter on a focused region row opens its region page @needs-tab-to-links', async ({
+    page,
+  }) => {
     await page.goto('/photos');
-    const map = segment(page, 'Map');
-    await waitForHydration(map);
-    const focusedText = () => page.evaluate(() => document.activeElement?.textContent ?? '');
-    // Tab through the shell until the Map segment has focus.
-    for (let i = 0; i < 40 && !(await map.evaluate((el) => el === document.activeElement)); i++) {
+    const rows = regionRows(page);
+    await waitForHydration(rows.first());
+    const first = rows.first();
+    for (let i = 0; i < 40 && !(await first.evaluate((el) => el === document.activeElement)); i++) {
       await page.keyboard.press('Tab');
     }
-    await expect(map).toBeFocused();
     await page.keyboard.press('Tab');
-    await expect(segment(page, 'Grid')).toBeFocused();
-    await page.keyboard.press('Tab');
-    await expect(segment(page, 'Carousel')).toBeFocused();
-    expect(await focusedText()).toBe('Carousel');
-
-    await page.keyboard.press('Space');
-    await expect(page).toHaveURL(/\/photos\?view=carousel$/);
-    await expectPressed(page, 'Carousel');
-    await expect(segment(page, 'Carousel')).toBeFocused();
+    await expect(rows.nth(1)).toBeFocused();
+    await page.keyboard.press('Enter');
+    const r = overviewRegions[1];
+    await expect(page).toHaveURL(new RegExp(`${regionHref(r.id)}$`));
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(r.heading);
   });
 
-  test('a switch crossfades the view region as photos-view @chromium-only', async ({ page }) => {
+  test('a region row navigation shows no photos-view pseudo-element @chromium-only', async ({
+    page,
+  }) => {
     await recordViewTransitions(page);
     await page.goto('/photos');
-    const grid = segment(page, 'Grid');
-    await waitForHydration(grid);
-    const before = await readViewTransitions(page);
-    await grid.click();
-    await expect
-      .poll(async () => (await readViewTransitions(page)).count)
-      .toBeGreaterThan(before.count);
-    await expect
-      .poll(async () => (await readViewTransitions(page)).pseudos)
-      .toEqual(
-        expect.arrayContaining([
-          '::view-transition-old(photos-view)',
-          '::view-transition-new(photos-view)',
-        ])
-      );
+    const before = (await readViewTransitions(page)).transitions.length;
+    await openRegion(page, 1);
+    const after = (await waitForViewTransitionsSettled(page)).transitions.slice(before).flat();
+    expect(after.filter((pseudo) => pseudo.includes('photos-view'))).toEqual([]);
   });
 });

@@ -410,12 +410,15 @@ test.describe('Shell mobile menu', () => {
     ).toBe(1);
   });
 
+  // 18-22 (D-03): ?view=map is the view URL that still renders /photos (grid and carousel
+  // answer a 308 to a region page), so it carries the query this row needs.
   test('on a view URL, Photographs still navigates to the plain page (D-23)', async ({ page }) => {
-    await page.goto('/photos?view=grid');
+    await page.goto('/photos?view=map');
+    await expect(page).toHaveURL(/\/photos\?view=map$/);
 
     const button = page.getByRole('button', { name: 'Menu' });
     const panel = page.locator('#site-menu');
-    // A press before hydration does nothing, and the grid page hydrates late:
+    // A press before hydration does nothing, and the page can hydrate late:
     // wait for React's props on the button, as the D-16 row above does.
     await expect
       .poll(() => button.evaluate((el) => Object.keys(el).some((k) => k.startsWith('__reactProps'))))

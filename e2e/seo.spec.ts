@@ -2,6 +2,8 @@ import { test, expect, type APIRequestContext, type Locator, type Page } from '@
 import { projects } from '@/data/projects';
 import { site } from '@/data/site';
 import { SITE_DESCRIPTION } from '@/lib/metadata';
+import { LEGACY_VIEW_REGION } from '@/lib/photos/region-ids';
+import { regionHref } from '@/lib/photos/routes';
 import { regionPhotoViews, regionRights, regions } from '@/lib/regions';
 import { ROUTES, SITEMAP_PATHS } from './routes';
 
@@ -145,10 +147,23 @@ test.describe('Own head per content route (SEO-01, SEO-02)', () => {
     expect(new Set(descriptions).size, descriptions.join(' | ')).toBe(SEO_ROUTES.length);
   });
 
-  test('/photos?view=grid canonicalises to /photos', async ({ page }) => {
-    await page.goto('/photos?view=grid');
+  // 18-22 (D-03, PHOTO-06): ?view=map renders the overview, so it canonicalises to /photos; the
+  // retired ?view=grid answers a 308 to the Zermatt region page, which names its own canonical.
+  test('/photos?view=map canonicalises to /photos, and /photos?view=grid lands on the Zermatt region page with its own canonical', async ({
+    page,
+  }) => {
+    await page.goto('/photos?view=map');
+    await expect(page).toHaveURL(/\/photos\?view=map$/);
     await expect(canonical(page)).toHaveCount(1);
     await expect(canonical(page)).toHaveAttribute('href', `${site.url}/photos`);
+
+    await page.goto('/photos?view=grid');
+    await expect(page).toHaveURL(new RegExp(`${regionHref(LEGACY_VIEW_REGION)}$`));
+    await expect(canonical(page)).toHaveCount(1);
+    await expect(canonical(page)).toHaveAttribute(
+      'href',
+      `${site.url}${regionHref(LEGACY_VIEW_REGION)}`
+    );
   });
 });
 

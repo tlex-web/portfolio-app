@@ -1,12 +1,13 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
 import { site } from '@/data/site';
-import { buildPhotoViews } from '@/lib/photos/view-model';
-import { regionPhotoViews } from '@/lib/regions';
+import { regionHref } from '@/lib/photos/routes';
+import { regionHeading, regionPhotoViews, regionsWestToEast } from '@/lib/regions';
 import { ROUTES } from './routes';
 import { tabReachesLinks } from './helpers/engine';
 
-// Index lookups into views here are positions in the series order (DEM ascending, ties
-// by id), not photo identities; a specific photo is named through viewBySlug.
+// Photos are selected explicitly per region (regionPhotoViews(id)), never through a
+// no-argument series build (18-RESEARCH Pitfall 8); index lookups are positions in that
+// region's series (DEM ascending, ties by id), not photo identities.
 
 /**
  * Keyboard-only flows (VERIFY-02, D-22; 12-UI-SPEC "Keyboard paths the D-22
@@ -42,7 +43,6 @@ function route(path: string): string {
   return entry[0];
 }
 
-const views = buildPhotoViews();
 /** The full photo page in the shared list: the first photo, the lightbox's opener. */
 const PHOTO_PATH = ROUTES.find(([p]) => p.startsWith('/photos/'))?.[0];
 
@@ -205,42 +205,60 @@ test.describe('Navigation by keyboard (mobile menu, 375)', () => {
   });
 });
 
-test.describe('Photo map and lightbox by keyboard (1440)', () => {
+/**
+ * The Alps overview by keyboard (18-22; REGION-01, PHOTO-06 successor of the
+ * map walk, which Tabbed the view switcher and the map targets). /photos has
+ * no controls of its own now: after the chrome, Tab reaches the region rows
+ * west to east (the overview's keyboard path; the sheet's markers, 18-23, take
+ * no focus), then the footer, then the end of the page. Enter on the Zermatt
+ * row opens its region page.
+ */
+test.describe('Overview by keyboard (1440)', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  const MAP = 'Map of the photo locations';
-  const LIST = 'Photo locations, lowest first';
-  const mapLinks = (page: Page) =>
-    page.getByRole('region', { name: MAP }).getByRole('list', { name: LIST }).getByRole('link');
-  const segment = (page: Page, name: 'Map' | 'Grid' | 'Carousel') =>
-    page.getByRole('group', { name: 'View' }).getByRole('button', { name, exact: true });
+  const regions = regionsWestToEast();
+  const rows = (page: Page) =>
+    page.getByRole('list', { name: 'Regions, west to east' }).locator('a[data-region-row]');
 
-  /** Chrome, the view switcher, then the map's photo targets in altitude order. */
-  function mapStops(page: Page): Stop[] {
-    return [
-      ...chromeStops(page),
-      control(segment(page, 'Map'), 'the Map segment'),
-      control(segment(page, 'Grid'), 'the Grid segment'),
-      control(segment(page, 'Carousel'), 'the Carousel segment'),
-      ...views.map((v, i) =>
-        link(mapLinks(page).nth(i), `the map target ${v.title}, ${v.altitudeLabel}`)
-      ),
-    ];
-  }
-
-  test('Tab reaches the view switcher, then the map targets in altitude order, then the footer', async ({
+  test('Tab from the top of /photos reaches the region rows in order, then the footer; Enter on the Zermatt row opens its region page', async ({
     page,
     browserName,
   }) => {
     await page.goto(route('/photos'));
-    await expect(mapLinks(page)).toHaveCount(views.length);
-    for (const [i, v] of views.entries()) {
-      await expect(mapLinks(page).nth(i)).toHaveAccessibleName(`${v.title}, ${v.altitudeLabel}`);
-    }
-    // WebKit: the targets are links, so the walk stops at the Carousel segment
-    // and the next Tab ends the page (no non-link control hides among them).
-    await walk(page, browserName, [...mapStops(page), ...(await footerStops(page))]);
+    await expect(rows(page)).toHaveCount(regions.length);
+    const rowStops = regions.map((r, i) =>
+      link(rows(page).nth(i), `the region row ${regionHeading(r)}`)
+    );
+    // WebKit: the rows are links, so the walk drops them and the next Tab after the
+    // chrome's last control ends the page (no non-link control hides among them).
+    await walk(page, browserName, [
+      ...chromeStops(page),
+      ...rowStops,
+      ...(await footerStops(page)),
+    ]);
     await expectEndOfPage(page);
+
+    if (!tabReachesLinks(browserName)) {
+      test.info().annotations.push({
+        type: 'webkit',
+        description: 'Tab never focuses a link in WebKit off Linux; Enter on a row runs in Chromium, Firefox and Linux WebKit',
+      });
+      return;
+    }
+
+    // Enter on the first row (Zermatt, the westernmost) by keys alone, from a fresh load.
+    expect(regions[0].id).toBe('zermatt');
+    await page.goto(route('/photos'));
+    const zermatt = rows(page).first();
+    await waitForHydration(zermatt);
+    for (let i = 0; i < 40; i++) {
+      await page.keyboard.press('Tab');
+      if (await zermatt.evaluate((el) => el === document.activeElement)) break;
+    }
+    await expect(zermatt, 'Tab reaches the Zermatt row').toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(new RegExp(`${regionHref('zermatt')}$`));
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(regionHeading(regions[0]));
   });
 });
 

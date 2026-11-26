@@ -59,18 +59,6 @@ const ZERMATT = regionPhotoViews('zermatt');
 const END_CARD_HEADING = 'End of the Zermatt series';
 
 /**
- * @firefox-43967: Firefox 159 crashes the page on these states under
- * Playwright 1.65 (a named role lookup followed by a main-world
- * aria-labelledby read): https://github.com/microsoft/playwright/issues/43967
- * The tag keeps them out of the Firefox project only (playwright.config.ts
- * FIREFOX_INVERT); Chromium and WebKit run them. Of the photo states only the
- * Map view carries it (until 18-22 retires the view); the Zermatt sequence and
- * the lightbox end card, which replaced the Grid and Carousel views in 18-21,
- * run on Firefox too.
- */
-const FIREFOX_43967_VIEWS: ReadonlySet<string> = new Set(['Map']);
-
-/**
  * Runs every check on the page as it stands and returns one line per finding,
  * each prefixed with `label` (route, width and state).
  */
@@ -300,14 +288,13 @@ test.describe('Audit: interactive states (D-21)', () => {
 
   /**
    * The photo states, each audited at 375, 768 and 1440 after its optional open step, with the
-   * element that proves it rendered. The Map view stays until 18-22 retires it. The Grid and
-   * Carousel views were rewritten in 18-21 (PHOTO-06) as the region page states that replace
-   * them: 'Zermatt sequence' (the region page with its middle figure centred) and 'lightbox
-   * end card' (the card after Zermatt's last photo).
+   * element that proves it rendered. The three view states were rewritten for PHOTO-06 as the
+   * states that replace them: the Map view in 18-22 as 'Alps overview' (/photos, shown by its
+   * region list), the Grid and Carousel views in 18-21 as 'Zermatt sequence' (the region page
+   * with its middle figure centred) and 'lightbox end card' (the card after Zermatt's last
+   * photo).
    */
   type PhotoState = {
-    /** The FIREFOX_43967_VIEWS key. */
-    key: string;
     /** The state's name in the test title and every finding. */
     label: string;
     path: string;
@@ -356,13 +343,11 @@ test.describe('Audit: interactive states (D-21)', () => {
 
   const PHOTO_STATES: ReadonlyArray<PhotoState> = [
     {
-      key: 'Map',
-      label: 'photos Map view',
+      label: 'Alps overview',
       path: '/photos',
-      shown: (page) => page.getByRole('region', { name: 'Map of the photo locations' }),
+      shown: (page) => page.getByRole('list', { name: 'Regions, west to east', exact: true }),
     },
     {
-      key: 'Zermatt sequence',
       label: 'Zermatt sequence',
       path: '/photos/regions/zermatt',
       open: centreMiddleFigure,
@@ -370,7 +355,6 @@ test.describe('Audit: interactive states (D-21)', () => {
         page.getByRole('list', { name: 'Zermatt photographs, lowest first', exact: true }),
     },
     {
-      key: 'lightbox end card',
       label: 'lightbox end card',
       path: '/photos/regions/zermatt',
       open: openEndCard,
@@ -379,14 +363,11 @@ test.describe('Audit: interactive states (D-21)', () => {
     },
   ];
 
-  for (const { key, label, path, open, shown } of PHOTO_STATES) {
-    // The Map view carries @firefox-43967 (Playwright #43967, see FIREFOX_43967_VIEWS).
-    const firefox43967 = FIREFOX_43967_VIEWS.has(key) ? ' @firefox-43967' : '';
-    test(`state "${label}" ${path} @375/768/1440${firefox43967}`, async ({
-      page,
-      request,
-      browserName,
-    }) => {
+  for (const { label, path, open, shown } of PHOTO_STATES) {
+    // No photo state carries @firefox-43967 since 18-22: the Map view was the only one, and its
+    // successor 'Alps overview' (no named role lookup on an aria-labelledby region) runs on
+    // Firefox too (18-22-SUMMARY.md).
+    test(`state "${label}" ${path} @375/768/1440`, async ({ page, request, browserName }) => {
       test.setTimeout(120000);
       await installAuditProbes(page);
       const failures = collectFailures(page);

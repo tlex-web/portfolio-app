@@ -1,7 +1,7 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
-import { buildPhotoViews } from '@/lib/photos/view-model';
 import { regionPhotoViews, regions } from '@/lib/regions';
 import { SLUGS, viewBySlug } from './helpers/photo-fixtures';
+import { recordViewTransitions, waitForViewTransitionsSettled } from './helpers/view-transitions';
 
 /**
  * Cross-view sweep of the photography surface (PHOTO-02, LBOX-01, LBOX-02,
@@ -9,33 +9,31 @@ import { SLUGS, viewBySlug } from './helpers/photo-fixtures';
  * "375 overflow", "Served images" and "removeChild", and UI Considerations
  * E5 populated as one composite backstop).
  *
- * - No surface scrolls sideways at 375 px: the map, the three region pages,
+ * - No surface scrolls sideways at 375 px: the overview, the three region pages,
  *   every published /photos/{slug} page and the lightbox over the Zermatt
  *   region page (the dialog too). 18-21 (PHOTO-06) moved the grid, carousel
- *   stepper and grid-lightbox surfaces onto the region pages; a region surface
- *   settles on the altimeter rail's data-rail-current from 768 px and on its
- *   sequence images complete below (positive signals, 13 #38).
+ *   stepper and grid-lightbox surfaces onto the region pages and 18-22 the map
+ *   surface onto the overview; a region surface settles on the altimeter rail's
+ *   data-rail-current from 768 px and on its sequence images complete below,
+ *   the overview on its region list's thumbnails complete (positive signals,
+ *   13 #38).
  * - Every loaded image is a content-hashed terrain asset or photo derivative,
  *   and no element offers a download (LBOX-07; privacy prohibition).
- * - STATE carry-overs: switching Map -> Grid -> Carousel -> Grid -> Map and
- *   opening and closing a photo logs no React `removeChild` / "not a child"
- *   error (07-19, and the 09 deferred 3D carousel flake that logged it) and no
- *   duplicate view-transition-name (10-RESEARCH Pitfalls 6 and 8).
+ * - STATE carry-overs: overview -> region page -> photo -> step -> close ->
+ *   'All regions' logs no React `removeChild` / "not a child" error (07-19,
+ *   and the 09 deferred 3D carousel flake that logged it) and no duplicate
+ *   view-transition-name (10-RESEARCH Pitfalls 6 and 8). 18-22 replaced the
+ *   view switches with this navigation; every wait is a positive signal (13 #38).
  * - "Return on close" on the region page after two steps in the lightbox.
  * - The whole lightbox path from a direct load to the three Escape layers,
  *   opened from the Zermatt region page.
  *
  * Every expected value comes from the data, never hand-typed: positions in a
- * series from regionPhotoViews (18 Pitfall 8); the view-switch console row,
- * which 18-22 retires with the views, still reads buildPhotoViews().
+ * series from regionPhotoViews (18 Pitfall 8), never a no-argument series build.
  */
 
-// Index lookups into views here are positions in the series order (DEM ascending, ties
+// Index lookups into a series here are positions in the region's order (DEM ascending, ties
 // by id), not photo identities; a specific photo is named through viewBySlug.
-
-const views = buildPhotoViews();
-const GRID_LIST = 'Photographs, lowest first';
-const GRID_URL = /\/photos\?view=grid$/;
 
 /** The Zermatt series: the lightbox surfaces open from its region page (18-21; PHOTO-06). */
 const ZERMATT = regionPhotoViews('zermatt');
@@ -79,21 +77,15 @@ async function openFigure(page: Page, slug: string) {
   return dialog;
 }
 
-/** Click a grid tile (on the grid already) and wait for the dialog (the console row, 18-22's). */
-async function openTile(page: Page, index = 0) {
-  const tile = page.getByRole('list', { name: GRID_LIST }).getByRole('link').nth(index);
-  await waitForHydration(tile);
-  await tile.click();
-  const dialog = page.getByRole('dialog');
-  // The dev server compiles the intercepted route on its first request.
-  await expect(dialog).toBeVisible({ timeout: 20000 });
-  return dialog;
-}
+/** The overview's region rows (18-22; REGION-01): one link per region, west to east. */
+const REGION_LIST = 'Regions, west to east';
+const regionRows = (page: Page) =>
+  page.getByRole('list', { name: REGION_LIST }).locator('a[data-region-row]');
 
 /**
  * Wait until every rendered image in the scope has finished (loaded or
- * failed). Images without a layout box (the map's hidden hover previews) are
- * never fetched while lazy, so they are left out.
+ * failed). Images without a layout box are never fetched while lazy, so they
+ * are left out.
  */
 async function renderedImagesDone(scope: Locator) {
   await expect
@@ -126,12 +118,14 @@ type Surface = {
   url: string;
   /** A region page: settled on the rail's data-rail-current from 768 px, on its images below. */
   region?: boolean;
+  /** The overview: settled when the region list and its thumbnails are complete. */
+  overview?: boolean;
   /** Open the first Zermatt figure in the lightbox after loading the region page. */
   lightbox?: boolean;
 };
 
 const SURFACES: Surface[] = [
-  { name: 'the map (/photos)', url: '/photos' },
+  { name: 'the overview (/photos)', url: '/photos', overview: true },
   ...regions.map((r) => ({
     name: `the region page /photos/regions/${r.id}`,
     url: `/photos/regions/${r.id}`,
@@ -171,6 +165,10 @@ async function visit(page: Page, surface: Surface): Promise<Locator | null> {
   await page.goto(surface.url);
   await scrollThrough(page);
   if (surface.region) await regionSettled(page);
+  if (surface.overview) {
+    await expect(regionRows(page)).toHaveCount(regions.length);
+    await renderedImagesDone(page.getByRole('list', { name: REGION_LIST }));
+  }
   if (!surface.lightbox) {
     await renderedImagesDone(page.locator('body'));
     return null;
@@ -230,35 +228,11 @@ test.describe('Served images (LBOX-07, 10-UI-SPEC guardrail "Served images")', (
 });
 
 test.describe('Console (STATE removeChild carry-over; 10-RESEARCH Pitfalls 6, 8)', () => {
-  const group = (page: Page) => page.getByRole('group', { name: 'View' });
-  const segment = (page: Page, name: 'Map' | 'Grid' | 'Carousel') =>
-    group(page).getByRole('button', { name, exact: true });
-
-  /** Press a segment and wait for its view: URL, pressed state and the view's own landmark. */
-  async function switchTo(page: Page, name: 'Map' | 'Grid' | 'Carousel') {
-    await segment(page, name).click();
-    // The pressed state arrives with the server render of the new URL, which a
-    // loaded dev server ("Rendering...") can take several seconds to answer.
-    await expect(segment(page, name)).toHaveAttribute('aria-pressed', 'true', { timeout: 15000 });
-    if (name === 'Map') {
-      await expect(page).toHaveURL(/\/photos$/);
-      await expect(page.getByRole('region', { name: 'Map of the photo locations' })).toBeVisible();
-    } else if (name === 'Grid') {
-      await expect(page).toHaveURL(GRID_URL);
-      await expect(page.getByRole('list', { name: GRID_LIST })).toBeVisible();
-    } else {
-      await expect(page).toHaveURL(/\/photos\?view=carousel$/);
-      // Settled on either the 3D carousel (SwiftShader passes the gate) or the stepper.
-      await expect(page.getByRole('region', { name: 'Photographs', exact: true })).toHaveAttribute(
-        'data-carousel-mode',
-        /^(3d|stepper)$/
-      );
-    }
-    // Let the photos-view crossfade (and a 3D mount) finish before the next press.
-    await page.waitForTimeout(600);
-  }
-
-  test('view switches and photo open/close log no removeChild or duplicate-name errors @chromium-only', async ({
+  // Rewritten in 18-22 (PHOTO-06) from 'view switches and photo open/close …': the view
+  // switch is gone, so the row walks the navigation that replaced it, overview -> region
+  // page -> photo -> step -> close -> 'All regions', waiting on the URL, the dialog count,
+  // the rail's data-rail-current and the settled view transitions, never a fixed sleep (13 #38).
+  test('overview, region and photo navigation log no removeChild or duplicate-name errors @chromium-only', async ({
     page,
   }) => {
     test.slow();
@@ -270,19 +244,40 @@ test.describe('Console (STATE removeChild carry-over; 10-RESEARCH Pitfalls 6, 8)
       if (CONSOLE_FAULT.test(`${error.name} ${error.message}`))
         faults.push(`pageerror: ${error.message}`);
     });
+    expect(ZERMATT.length, 'one step needs two photos').toBeGreaterThanOrEqual(2);
+    await recordViewTransitions(page);
 
+    // The overview, then the Zermatt row: a soft navigation to the region page.
     await page.goto('/photos');
-    await waitForHydration(segment(page, 'Grid'));
-    for (const name of ['Grid', 'Carousel', 'Grid', 'Map'] as const) await switchTo(page, name);
+    const row = regionRows(page).first();
+    await expect(row).toHaveAttribute('data-region-row', 'zermatt');
+    await waitForHydration(row);
+    await row.click();
+    await expect(page).toHaveURL(ZERMATT_URL);
+    await expect(page.locator(RAIL)).toHaveAttribute('data-rail-current', '1');
+    await waitForViewTransitionsSettled(page);
 
-    // Open and close a photo from the grid, then go back to the map.
-    await switchTo(page, 'Grid');
-    await openTile(page, 0);
-    await expect(page).toHaveURL(new RegExp(`/photos/${views[0].slug}$`));
+    // Open the first figure, step once, close with Escape.
+    const dialog = await openFigure(page, ZERMATT[0].slug);
+    await expect(page.getByRole('dialog')).toHaveCount(1);
+    await waitForViewTransitionsSettled(page);
+    await dialog.getByRole('button', { name: 'Next photo', exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/photos/${ZERMATT[1].slug}$`));
+    await expect(dialog).toHaveAccessibleName(ZERMATT[1].title);
+    await waitForViewTransitionsSettled(page);
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page).toHaveURL(GRID_URL);
-    await switchTo(page, 'Map');
+    await expect(page).toHaveURL(ZERMATT_URL);
+    await expect(page.locator(RAIL)).toHaveAttribute('data-rail-current', /^[1-9][0-9]*$/);
+    await waitForViewTransitionsSettled(page);
+
+    // 'All regions' back to the overview.
+    const allRegions = page.getByRole('link', { name: 'All regions', exact: true });
+    await waitForHydration(allRegions);
+    await allRegions.click();
+    await expect(page).toHaveURL(/\/photos$/);
+    await expect(regionRows(page)).toHaveCount(regions.length);
+    await waitForViewTransitionsSettled(page);
 
     expect(faults).toEqual([]);
   });

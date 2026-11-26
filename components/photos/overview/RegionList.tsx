@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { PhotoImage } from '@/lib/photos/view-model';
 import { regionHref } from '@/lib/photos/routes';
 
@@ -48,7 +49,10 @@ const BADGE = [
  * path into every region; the overview sheet's markers (18-23) are
  * pointer-only.
  *
- * Each row is one link to the region page, `data-region-row={id}`, holding:
+ * Each row is one Link to the region page, `data-region-row={id}`: a soft
+ * navigation with no morph (D-04; nothing on the overview carries a photo-*
+ * view-transition name), as the region page's breadcrumb and 'All regions'
+ * link back. Each row holds:
  * the cover thumbnail, a `<picture>` of the tile derivatives 96 px wide in a
  * box of its true ratio (never cropped; Ortler's portrait cover is 96 x 128),
  * `bg-surface-overlay` behind it, width and height set so nothing shifts while
@@ -76,7 +80,7 @@ export default function RegionList({ rows }: { rows: readonly RegionListRow[] })
       <ol aria-label="Regions, west to east" className="mt-4 flex flex-col gap-2">
         {rows.map((r) => (
           <li key={r.id}>
-            <a href={regionHref(r.id)} data-region-row={r.id} className={ROW}>
+            <Link href={regionHref(r.id)} data-region-row={r.id} className={ROW}>
               <span
                 data-region-thumb
                 className="block w-24 shrink-0 self-start overflow-hidden rounded-sm bg-surface-overlay"
@@ -123,7 +127,7 @@ export default function RegionList({ rows }: { rows: readonly RegionListRow[] })
                   <span className="whitespace-nowrap">{r.years}</span>
                 </span>
               </span>
-            </a>
+            </Link>
           </li>
         ))}
       </ol>

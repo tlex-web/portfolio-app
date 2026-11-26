@@ -24,8 +24,9 @@ export const metadata: Metadata = pageMetadata({
 
 /**
  * /photos, the Alps overview (REGION-01, PHOTO-06; D-01..D-04, D-27;
- * 18-UI-SPEC Contract 1). A static Server Component that reads no
- * searchParams: the view switch is retired, and the retired `?view=grid` and
+ * 18-UI-SPEC Contract 1). A Server Component that reads no searchParams
+ * (rendered per request like every page, for the CSP nonce): the view switch
+ * is retired, and the retired `?view=grid` and
  * `?view=carousel` URLs never reach it, because proxy.ts answers them with a
  * 308 to the Zermatt region page before render (D-03); `?view=map` and any
  * other value render this overview unchanged.
