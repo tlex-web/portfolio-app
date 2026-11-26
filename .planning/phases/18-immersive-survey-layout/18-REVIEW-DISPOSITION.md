@@ -13,7 +13,7 @@ findings:
     title: "The test-count ratchet was not raised at phase close"
   - id: WR-03
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Impossible-state guard, a null-uv pin skip in `platePins`"
   - id: IN-01
     severity: info
@@ -21,27 +21,27 @@ findings:
     title: "`stepIndex` has no production caller, and a PhotoViewer comment still refers to it"
   - id: IN-02
     severity: info
-    disposition: open
+    disposition: fixed
     title: "A misplaced JSDoc in build-terrain: `overviewUv`'s doc now sits above `wgs84Corners`"
   - id: IN-03
     severity: info
-    disposition: open
+    disposition: fixed
     title: "`RegionSequence` exports a `countLabel` that shadows the shared helper with another signature"
   - id: IN-04
     severity: info
-    disposition: open
+    disposition: fixed
     title: "The BEV edition date on /sources is hard-coded, not read from its source"
   - id: IN-05
     severity: info
-    disposition: open
+    disposition: fixed
     title: "Phantom requirement, the `fflate@^0.6.0` override and its 0.6.11 floor"
   - id: IN-06
     severity: info
     disposition: fixed
     title: "Fixed waits before assertions in photos-stepping"
-open: 5
+open: 0
 total: 9
-recorded: 2026-11-26T20:21:17.525Z
+recorded: 2026-11-26T20:21:33.033Z
 ---
 
 # Phase 18: Code Review Disposition
@@ -50,12 +50,12 @@ recorded: 2026-11-26T20:21:17.525Z
 |---------|----------|-------------|--------|
 | WR-01 | warning | fixed | 18-REVIEW-FIX.md |
 | WR-02 | warning | fixed | 18-REVIEW-FIX.md |
-| WR-03 | warning | open | - |
+| WR-03 | warning | fixed | 18-REVIEW-FIX.md |
 | IN-01 | info | fixed | 18-REVIEW-FIX.md |
-| IN-02 | info | open | - |
-| IN-03 | info | open | - |
-| IN-04 | info | open | - |
-| IN-05 | info | open | - |
+| IN-02 | info | fixed | 18-REVIEW-FIX.md |
+| IN-03 | info | fixed | 18-REVIEW-FIX.md |
+| IN-04 | info | fixed | 18-REVIEW-FIX.md |
+| IN-05 | info | fixed | 18-REVIEW-FIX.md |
 | IN-06 | info | fixed | 18-REVIEW-FIX.md |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
