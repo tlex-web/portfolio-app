@@ -5,11 +5,11 @@ titles: json
 findings:
   - id: WR-01
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "ShareButton's url-change reset keeps the previous URL's timer and pending copy"
   - id: WR-02
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "The test-count ratchet was not raised at phase close"
   - id: WR-03
     severity: warning
@@ -17,7 +17,7 @@ findings:
     title: "Impossible-state guard, a null-uv pin skip in `platePins`"
   - id: IN-01
     severity: info
-    disposition: open
+    disposition: fixed
     title: "`stepIndex` has no production caller, and a PhotoViewer comment still refers to it"
   - id: IN-02
     severity: info
@@ -37,26 +37,26 @@ findings:
     title: "Phantom requirement, the `fflate@^0.6.0` override and its 0.6.11 floor"
   - id: IN-06
     severity: info
-    disposition: open
+    disposition: fixed
     title: "Fixed waits before assertions in photos-stepping"
-open: 9
+open: 5
 total: 9
-recorded: 2026-11-26T20:01:43.879Z
+recorded: 2026-11-26T20:21:17.525Z
 ---
 
 # Phase 18: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | open | - |
-| WR-02 | warning | open | - |
+| WR-01 | warning | fixed | 18-REVIEW-FIX.md |
+| WR-02 | warning | fixed | 18-REVIEW-FIX.md |
 | WR-03 | warning | open | - |
-| IN-01 | info | open | - |
+| IN-01 | info | fixed | 18-REVIEW-FIX.md |
 | IN-02 | info | open | - |
 | IN-03 | info | open | - |
 | IN-04 | info | open | - |
 | IN-05 | info | open | - |
-| IN-06 | info | open | - |
+| IN-06 | info | fixed | 18-REVIEW-FIX.md |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
