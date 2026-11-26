@@ -496,6 +496,84 @@ describe('ShareButton across a url change (18-18, the viewer strip)', () => {
     expect(writeText).toHaveBeenCalledWith(NEXT_URL);
     expect(button()).toHaveTextContent('Link copied');
   });
+
+  it("a copy for the old url that settles after the url changes shows no 'Link copied' for the new one", async () => {
+    let resolveWrite: () => void = () => {};
+    const writeText = jest.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveWrite = resolve;
+        })
+    );
+    stub('clipboard', { writeText });
+    const { rerender } = render(withUrl(URL_));
+    await press();
+    expect(writeText).toHaveBeenCalledWith(URL_);
+
+    rerender(withUrl(NEXT_URL));
+    await act(async () => resolveWrite());
+    flushScheduler();
+
+    expect(button()).toHaveTextContent('Copy link');
+    expect(status()).toHaveTextContent('');
+    expect(jest.getTimerCount()).toBe(0);
+  });
+
+  it('a share for the old url that rejects after the url changes copies nothing', async () => {
+    const { share, control } = pendingShare();
+    stub('share', share);
+    const writeText = jest.fn<Clipboard['writeText']>().mockResolvedValue(undefined);
+    stub('clipboard', { writeText });
+    const { rerender } = render(withUrl(URL_));
+    await press();
+    expect(share).toHaveBeenCalledWith({ title: TITLE, url: URL_ });
+
+    rerender(withUrl(NEXT_URL));
+    await act(async () => control.reject(new DOMException('No activation', 'NotAllowedError')));
+    flushScheduler();
+
+    expect(writeText).not.toHaveBeenCalled();
+    expect(button()).toHaveTextContent('Share photo');
+    expect(status()).toHaveTextContent('');
+  });
+
+  it('the copied-label timer is cleared when the url changes', async () => {
+    stub('clipboard', {
+      writeText: jest.fn<Clipboard['writeText']>().mockResolvedValue(undefined),
+    });
+    const { rerender } = render(withUrl(URL_));
+    await press();
+    expect(jest.getTimerCount()).toBe(1);
+
+    rerender(withUrl(NEXT_URL));
+    flushScheduler();
+    expect(jest.getTimerCount()).toBe(0);
+  });
+
+  it("the old url's timer cannot empty a failure announced for the new url", async () => {
+    stub('clipboard', {
+      writeText: jest.fn<Clipboard['writeText']>().mockResolvedValue(undefined),
+    });
+    const { rerender } = render(withUrl(URL_));
+    await press();
+    expect(button()).toHaveTextContent('Link copied');
+
+    act(() => {
+      jest.advanceTimersByTime(500);
+    });
+    rerender(withUrl(NEXT_URL));
+    stub('clipboard', {
+      writeText: jest.fn<Clipboard['writeText']>().mockRejectedValue(new Error('denied')),
+    });
+    await press();
+    expect(status()).toHaveTextContent(FAILED_STATUS);
+
+    act(() => {
+      jest.advanceTimersByTime(COPIED_MS);
+    });
+    expect(status()).toHaveTextContent(FAILED_STATUS);
+    expect(failureLine()).toHaveTextContent(NEXT_URL);
+  });
 });
 
 /**
