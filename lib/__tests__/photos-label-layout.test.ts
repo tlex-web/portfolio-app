@@ -515,3 +515,10 @@ describe('stack1D', () => {
     expect(stack1D([{ anchor: 10, size: 48 }], 8, 400, 8)).toEqual([8]);
   });
 });
+
+describe('module surface (18-27; D-27)', () => {
+  it('exports only stack1D: the v2.0 map sheet half (layoutMapMarks, mapMarkSegments, mapMarkCss) is retired', async () => {
+    const mod = await import('@/lib/photos/label-layout');
+    expect(Object.keys(mod).sort()).toEqual(['stack1D']);
+  });
+});
