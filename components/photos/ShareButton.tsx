@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { CheckIcon, LinkIcon, ShareNetworkIcon } from '@/components/icons/inline-phosphor';
 import { COPIED_MS } from '@/lib/copy-feedback';
 import { useShareMode } from '@/lib/photos/share-mode';
@@ -93,7 +93,10 @@ export type ShareButtonProps = {
  * viewer bar with 'overlay'), selected through a
  * Range so Ctrl/Cmd+C copies it, and the status says so; the line stays until
  * the next press. Unmounting clears the timer, and a
- * write or share that settles after unmount starts none.
+ * write or share that settles after unmount starts none. A new url does the
+ * same for the old one: its timer is cleared, and a write or share started for
+ * it that settles later is dropped, so the next photo never reads 'Link copied'
+ * for the last photo's link.
  */
 export default function ShareButton({
   url,
@@ -111,6 +114,8 @@ export default function ShareButton({
   const mounted = useRef(true);
   const failures = useRef(0);
   const pending = useRef(false);
+  /** Bumped on each url change; a write or share whose generation is stale is dropped. */
+  const generation = useRef(0);
   const urlRef = useRef<HTMLSpanElement>(null);
 
   // A new url starts clean (18-18): in the viewer strip the url follows each step, and
@@ -124,6 +129,17 @@ export default function ShareButton({
     setFailure(0);
     setAnnouncement('');
   }
+  // The reset above clears the state; this drops what is still bound to the old url
+  // (WR-01): its copied-label timer, and any write or share in flight for it. A layout
+  // effect, so it commits with the reset, before a settling promise can run.
+  useLayoutEffect(
+    () => () => {
+      generation.current += 1;
+      if (timer.current !== null) clearTimeout(timer.current);
+      timer.current = null;
+    },
+    [url]
+  );
 
   useEffect(() => {
     mounted.current = true;
@@ -146,17 +162,23 @@ export default function ShareButton({
   }, [failure]);
 
   async function copy() {
+    const gen = generation.current;
+    const stale = () => !mounted.current || gen !== generation.current;
     try {
       if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable');
       await navigator.clipboard.writeText(url);
     } catch {
-      if (!mounted.current) return;
+      if (stale()) return;
+      // A running copied window must not empty the failure announcement.
+      if (timer.current !== null) clearTimeout(timer.current);
+      timer.current = null;
+      setCopied(false);
       failures.current += 1;
       setFailure(failures.current);
       setAnnouncement(FAILED_STATUS);
       return;
     }
-    if (!mounted.current) return;
+    if (stale()) return;
     if (timer.current !== null) clearTimeout(timer.current);
     setCopied(true);
     setAnnouncement('Link copied');
@@ -175,6 +197,7 @@ export default function ShareButton({
       void copy();
       return;
     }
+    const gen = generation.current;
     let shared: Promise<void>;
     try {
       shared = navigator.share({ title, url });
@@ -188,7 +211,7 @@ export default function ShareButton({
       },
       (err: unknown) => {
         pending.current = false;
-        if (!mounted.current || isAbort(err)) return;
+        if (!mounted.current || gen !== generation.current || isAbort(err)) return;
         void copy();
       }
     );
