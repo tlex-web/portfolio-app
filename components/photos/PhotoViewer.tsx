@@ -166,10 +166,10 @@ import type { PhotoView } from '@/lib/photos/view-model';
  *
  * Open morph (LBOX-06; UI-SPEC "Open and close motion"): the photo box is
  * the lightbox half of the photo-{slug} pair (the morph share class, default none;
- * TileTransition is the grid half, named only while no photo is open). The
- * name follows the shown photo (the boundary is keyed by slug), so after
- * steps the box carries the current slug; a step forms no pair, because the
- * grid has no names then. The name is dropped as soon as the pathname stops
+ * FigureTransition is the region sequence's half, named only while no photo is
+ * open). The name follows the shown photo (the boundary is keyed by slug), so
+ * after steps the box carries the current slug; a step forms no pair, because
+ * the sequence figures have no names then. The name is dropped as soon as the pathname stops
  * naming a photo, so it is never mounted twice (Pitfall 6).
  * Close is instant (popstate starts no view transition).
  *
@@ -580,9 +580,9 @@ export default function PhotoViewer({
   }
 
   // The lightbox half of the open morph. Named only while the pathname names a
-  // photo (the complement of TileTransition's condition, read from the same
+  // photo (the complement of FigureTransition's condition, read from the same
   // pathname in the same commit), so on close the viewer drops its name before
-  // the grid tiles take theirs, and the copy Next keeps in a hidden Activity
+  // the sequence figures take theirs, and the copy Next keeps in a hidden Activity
   // for Forward carries none. Keyed by slug: a step unmounts the old name and
   // mounts the new one, because React tracks names per boundary at mount and
   // a renamed boundary would leave the old name registered.

@@ -108,7 +108,7 @@ describe('/photos in place of the view switcher (successors of view-switcher.tes
     }
   });
 
-  it("holds no view state in client code: the page, OverviewHeader and RegionList are server modules that never import next/navigation", () => {
+  it('holds no view state in client code: the page, OverviewHeader and RegionList are server modules that never import next/navigation', () => {
     for (const file of [
       'app/(site)/photos/page.tsx',
       'components/photos/overview/OverviewHeader.tsx',
@@ -142,7 +142,7 @@ describe('/photos in place of the view switcher (successors of view-switcher.tes
   });
 });
 
-describe('/photos header band in place of PhotosHeader (successors of header.test.tsx)', () => {
+describe('/photos header band in place of the Phase 10 header (successors of header.test.tsx)', () => {
   it("keeps 'Zermatt – Matterhorn' as the sheet title (footer, map margin) while the overview kicker names no single place", () => {
     const { container } = renderPage();
     expect(sheet.title).toBe(`Zermatt ${EN_DASH} Matterhorn`);
@@ -162,7 +162,9 @@ describe('/photos header band in place of PhotosHeader (successors of header.tes
   });
 
   it('takes the count and the year range from the years it is given, in any order', () => {
-    const { container } = render(<OverviewHeader regionCount={2} photoYears={[2024, 2019, 2021, 2019]} />);
+    const { container } = render(
+      <OverviewHeader regionCount={2} photoYears={[2024, 2019, 2021, 2019]} />
+    );
     expect(container.querySelector('[data-overview-kicker]')?.textContent).toBe(
       `2 regions · 4 photographs · 2019${EN_DASH}2024`
     );
