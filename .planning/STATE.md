@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
-stopped_at: Completed 18-19-PLAN.md
-last_updated: "2026-11-25T20:39:13.564Z"
+stopped_at: Completed 18-20-PLAN.md
+last_updated: "2026-11-26T14:16:01.266Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: 45e90b4c6a1c4fd0bb5faf4bcca4cf4e672aa9c1
+state_head: 731e83052d3bea5965c07662a89c1ab1aa7e6d51
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 109
-  completed_plans: 99
+  completed_plans: 100
   percent: 71
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-24)
 ## Current Position
 
 Phase: 18 (Immersive Survey Layout) — EXECUTING
-Plan: 19 of 29
+Plan: 20 of 29
 Status: Ready to execute
 Last activity: 2026-11-24 — Phase 18 execution started
 
@@ -157,6 +157,7 @@ Progress: [███████░░░] 71%
 | Phase 18 P17 | 17min | 2 tasks | 12 files |
 | Phase 18 P18 | 20min | 2 tasks tasks | 12 files files |
 | Phase 18 P19 | 30min | 3 tasks | 8 files |
+| Phase 18 P20 | 17h33m | 3 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -416,6 +417,9 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-19 (Tim, 2026-11-25, 'A: keep sizes, relax check'): the stage currentSrc gate keeps under-fetch strict (descriptor >= painted width x DPR) and judges over-fetch against the declared sizes slot x DPR; page 1440x900 at WebKit DPR 2 keeps taking 2560w, as before 18-19; no layout or baseline change
 - [Phase 18]: 18-19: the neighbour preload picks AVIF or WebP from the stage's loaded img currentSrc (StagePhoto onLargeLoad passes the img) and gives each neighbour its own stageSizes (13 #33)
 - [Phase 18]: 18-19: every lightbox test in photos-lightbox and design-system opens from the Zermatt figure links (clickFigure/openFigure), same photo per test (grid index n = series[n]); LBOX-09 and PHOTO-06 stay Pending for their later carriers (18-20/18-29, 18-21..18-29)
+- [Phase 18]: 18-20: D-24 round 4 (photo page and lightbox) re-baselined: 6 changed, 70 identical in both dispatches; Tim committed the six PNGs as e0c8e3a; CI OK success on it (run 45832741899)
+- [Phase 18]: 18-20 (Tim, 'Compact the strip first'): Share moves into the viewer's top control bar from the key tier (icon-only below 1024, labelled from 1024, failure as an overlay panel); the scroll tier keeps the strip's Share row
+- [Phase 18]: 18-20: B8 poster rows get test.setTimeout(60000) for CI WebKit, whose whole leg runs about 1.43x slower per test since 18-14 with no app cause
 
 ### Pending Todos
 
@@ -477,6 +481,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-25T20:39:12.897Z
-Stopped at: Completed 18-19-PLAN.md
+Last session: 2026-11-26T14:16:00.619Z
+Stopped at: Completed 18-20-PLAN.md
 Resume file: None
