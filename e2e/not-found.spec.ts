@@ -1,5 +1,5 @@
 import { test, expect, type APIResponse, type Page } from '@playwright/test';
-import { photoSlugs } from '@/lib/photos/view-model';
+import { SLUGS } from './helpers/photo-fixtures';
 
 /**
  * Server-rendered 404 for unknown photo and project slugs (EDGE-01, D-11; the
@@ -150,7 +150,7 @@ test.describe('Unknown detail slugs: server-rendered 404 (EDGE-01)', () => {
   });
 
   test('a known photo slug passes through the proxy with HTTP 200', async ({ request }) => {
-    const response = await request.get(`/photos/${photoSlugs[0]}`);
+    const response = await request.get(`/photos/${SLUGS.matterhornFromZermatt}`);
     expect(response.status()).toBe(200);
     // The not-found boundary is serialized into every page's flight payload, so read the markup.
     const markup = withoutScripts(await response.text());

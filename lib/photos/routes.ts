@@ -34,7 +34,7 @@ export const regionHref = (id: string): `/photos/regions/${string}` => `/photos/
  * order, not canonical order; the proxy only needs the set). The photo-routes
  * test pins this set to generateStaticParams' slugs (publishedSlugs), so the
  * proxy never admits a slug that has no static photo page (T-17-11), and to
- * every light-table slug, so the four v2.0 URLs stay admitted.
+ * every v2.0 slug, so the four v2.0 URLs stay admitted.
  *
  * The pure annotation is load-bearing: client components import photoHref
  * from this module, and without it the bundler keeps this top-level call and

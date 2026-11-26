@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { imageManifest } from '@/data/generated/image-manifest';
 import { photos } from '@/data/generated/photos';
 import { terrain } from '@/data/generated/terrain';
-import { lightTableIds } from '@/data/light-table';
 import { editorial } from '@/data/photos/editorial';
 import type { EditorialAnnotation, ElevationRef, Fact } from '@/data/schemas/editorial';
 import type { Country } from '@/data/schemas/photo';
@@ -371,15 +370,6 @@ export function hotspotViews(
 }
 
 /**
- * The region every v2.0 light-table photo is in (Zermatt). From Phase 16 on
- * this is a documented check, not the filter: the membership is the explicit
- * lightTableIds list (D-15, lightTableInput below), and region-series.test.ts
- * asserts every listed photo is in this region. Phase 18 replaces the light
- * table with region plates.
- */
-export const LIGHT_TABLE_REGION = 'zermatt';
-
-/**
  * One region's series as a buildPhotoViews input: the generated photos whose
  * `region` equals `region`, in generated order, with the committed editorial
  * copy and image manifest. buildWaypoints still owns the order.
@@ -395,39 +385,18 @@ export function seriesInput(region: string): PhotoViewInput {
 }
 
 /**
- * The v2.0 light table as a buildPhotoViews input (D-15): the generated photos
- * whose id is in `ids`, in generated order, with the committed editorial copy
- * and image manifest. buildWaypoints still owns the order. Any other photo,
- * in Zermatt or elsewhere, stays off the light table and the four's stepping
- * set; since 17-05 it has its own photo page through publishedViews (D-07,
- * PHOTO-05). Phase 18 replaces the light table with region plates.
- *
- * @param ids the light-table photo ids; defaults to lightTableIds (the
- *   parameter exists for tests).
- * @throws RangeError naming the id when a listed id has no generated photo.
- */
-export function lightTableInput(ids: readonly string[] = lightTableIds): PhotoViewInput {
-  for (const id of ids) {
-    if (!photos.some((p) => p.id === id)) {
-      throw new RangeError(
-        `lightTableInput: light-table photo ${id} has no photo in data/generated/photos.ts; fix lightTableIds in data/light-table.ts`
-      );
-    }
-  }
-  return { photos: photos.filter((p) => ids.includes(p.id)), editorial, imageManifest };
-}
-
-/**
  * Every photo view in the canonical order (buildWaypoints' order, unchanged).
  *
- * @param input the photo facts, editorial copy and image manifest; defaults to
- *   the light table, lightTableInput() (the explicit lightTableIds list, D-15;
- *   the parameter exists for unit tests).
+ * @param input the photo facts, editorial copy and image manifest, always
+ *   explicit (18 D-27: no light-table default, so no surface can read a hidden
+ *   second series): seriesInput(region) for a region's series
+ *   (regionPhotoViews in lib/regions.ts), every generated photo for
+ *   publishedViews, or a test's own fixture.
  * @throws RangeError for everything buildWaypoints rejects (an empty photo
  *   set, an orphan photo, a null position, uv or elevation), and for a photo
  *   without its 640, 1024, 1600 or 2560 px variant.
  */
-export function buildPhotoViews(input: PhotoViewInput = lightTableInput()): readonly PhotoView[] {
+export function buildPhotoViews(input: PhotoViewInput): readonly PhotoView[] {
   const waypoints = buildWaypoints(input);
 
   return waypoints.map((w, i) => {
@@ -468,18 +437,6 @@ export function buildPhotoViews(input: PhotoViewInput = lightTableInput()): read
     };
   });
 }
-
-/**
- * The light table (lightTableIds, D-15) as views, built once per module load.
- * It drives only the /photos light table and the four v2.0 photos' page
- * views (16 D-15, 17 D-07); the route set is publishedViews, and every
- * viewer's stepping set is regionViewerSet in lib/regions.ts (LBOX-09, 18
- * D-12). Phase 18 retires the light table and renames this.
- */
-export const photoViews: readonly PhotoView[] = buildPhotoViews();
-
-/** The four light-table slugs in canonical order (08 D-07); the /photos light table reads these. */
-export const photoSlugs: readonly string[] = photoViews.map((v) => v.slug);
 
 /**
  * Every published photo as a view (D-07, PHOTO-05): every generated photo,

@@ -182,13 +182,14 @@ async function settle(page: Page) {
       .getEntriesByType('resource')
       .some((entry) => /\/terrain\/contours-strip\.[0-9a-f]{10}\.svg$/.test(entry.name))
   );
-  // Home's poster and the /photos map sheet draw their contour lines from the
-  // hashed hero SVG, which does not hold up the load event either: wait for it
-  // wherever either surface renders, so a baseline can never show an empty
-  // contour layer (09-RESEARCH Pitfall 3).
+  // Home's poster draws its contour lines from the hashed hero SVG, which does
+  // not hold up the load event either: wait for it wherever the poster renders,
+  // so a baseline can never show an empty contour layer (09-RESEARCH Pitfall 3).
+  // The v2.0 /photos map sheet ([data-map-mark]) that shared this wait was
+  // retired in 18-27 (D-27).
   await page.waitForFunction(
     () =>
-      !document.querySelector('[data-map-mark], [data-ascent-stage]') ||
+      !document.querySelector('[data-ascent-stage]') ||
       performance
         .getEntriesByType('resource')
         .some((entry) => /\/terrain\/contours-hero\.[0-9a-f]{10}\.svg$/.test(entry.name))
