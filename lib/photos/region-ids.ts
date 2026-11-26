@@ -13,3 +13,12 @@ import registry from '@/data/regions/regions.json';
 
 /** The registry ids in registry order (ortler, saalfelden, zermatt). */
 export const regionRouteIds: readonly string[] = registry.regions.map((r) => r.id);
+
+/**
+ * The region the retired `?view=grid` and `?view=carousel` URLs land on (18
+ * D-03, PHOTO-06): the v2.0 grid and carousel showed the Zermatt photos, so
+ * proxy.ts answers those two URLs with a 308 to this region's page. A constant,
+ * never read from the request (T-18-44), and for proxy.ts only, like the id
+ * list above. lib/__tests__/proxy.test.ts pins it to a registry id.
+ */
+export const LEGACY_VIEW_REGION = 'zermatt';

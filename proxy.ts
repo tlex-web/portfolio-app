@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { projects } from '@/data/projects';
 import { site } from '@/data/site';
 import { EDGE_SECTION_HEADER, type EdgeSection } from '@/lib/edge-section';
-import { regionRouteIds } from '@/lib/photos/region-ids';
-import { photoRouteSlugs } from '@/lib/photos/routes';
+import { LEGACY_VIEW_REGION, regionRouteIds } from '@/lib/photos/region-ids';
+import { photoRouteSlugs, regionHref } from '@/lib/photos/routes';
 
 /**
  * Known detail slugs per section (EDGE-01). A miss is decided here, before
@@ -222,7 +222,36 @@ function missedSection(pathname: string): { section: EdgeSection; neutral: boole
   return KNOWN[section].has(match[2]) ? undefined : { section, neutral: match[2] !== NEUTRAL_SLUG };
 }
 
+/**
+ * The retired gallery views that have a new home (18 D-03, PHOTO-06): the v2.0
+ * grid and carousel showed the Zermatt photos, so `/photos?view=grid` and
+ * `/photos?view=carousel` land on that region's page. `map` is absent on
+ * purpose: the Map was `/photos` itself, so `?view=map` stays on the overview.
+ */
+const LEGACY_VIEWS: ReadonlySet<string> = new Set(['grid', 'carousel']);
+
+/**
+ * The 308 target of a retired view URL, or null for any other request (18
+ * D-03, PHOTO-06; T-18-44, T-18-45). Only the path `/photos` with exactly one
+ * `view` parameter whose value is in LEGACY_VIEWS, compared exactly and
+ * case-sensitively as parseView did: `?view=map`, an unknown value, `GRID`, a
+ * repeated parameter or no parameter render the overview. The target is built
+ * fresh from the constant LEGACY_VIEW_REGION through regionHref, never from the
+ * request, so it carries no query and no hash and cannot be steered off-site.
+ */
+export function legacyViewRedirect(url: URL): URL | null {
+  if (url.pathname !== '/photos') return null;
+  const views = url.searchParams.getAll('view');
+  if (views.length !== 1 || !LEGACY_VIEWS.has(views[0])) return null;
+  return new URL(regionHref(LEGACY_VIEW_REGION), url);
+}
+
 export async function proxy(request: NextRequest): Promise<Response> {
+  // D-03: a permanent redirect, decided before anything else; a redirect
+  // renders no document, so it needs no CSP header or nonce.
+  const legacy = legacyViewRedirect(new URL(request.url));
+  if (legacy) return NextResponse.redirect(legacy, 308);
+
   const missed = missedSection(request.nextUrl.pathname);
 
   if (missed?.neutral && canFetchNeutral(new URL(request.url).hostname)) {

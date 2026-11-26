@@ -29,13 +29,14 @@ import {
   buildCsp,
   canFetchNeutral,
   config,
+  legacyViewRedirect,
   NEUTRAL_SLUG,
   NEUTRAL_TIMEOUT_MS,
   proxy,
 } from '../../proxy';
 import { projects } from '@/data/projects';
 import { site } from '@/data/site';
-import { regionRouteIds } from '@/lib/photos/region-ids';
+import { LEGACY_VIEW_REGION, regionRouteIds } from '@/lib/photos/region-ids';
 import { photoSlugs } from '@/lib/photos/view-model';
 
 const NONCE = 'bm9uY2U=';
@@ -587,4 +588,71 @@ describe('proxy(): region pages (D-04, D-05)', () => {
     expect(response.headers.get('x-middleware-rewrite')).toMatch(/\/__missing$/);
     expect(forwarded(response).get('x-edge-section')).toBe('photos');
   });
+});
+
+describe('proxy(): legacy ?view= redirect (18 D-03, PHOTO-06; T-18-44, T-18-45)', () => {
+  // The retired grid and carousel URLs answer 308 to the Zermatt region page,
+  // built from the constant, with no query and no hash. Every other value
+  // (map, unknown, a wrong case, a repeated parameter, none) renders /photos.
+  const TARGET = `https://${PROD_HOST}/photos/regions/zermatt`;
+
+  it('the legacy region is a registry region', () => {
+    expect(LEGACY_VIEW_REGION).toBe('zermatt');
+    expect(regionRouteIds).toContain(LEGACY_VIEW_REGION);
+  });
+
+  it.each(['grid', 'carousel'])(
+    '/photos?view=%s answers 308 with Location /photos/regions/zermatt and no query',
+    async (view) => {
+      const response = await run(`https://${PROD_HOST}/photos?view=${view}`);
+
+      expect(response.status).toBe(308);
+      const location = response.headers.get('location') ?? '';
+      expect(location).toBe(TARGET);
+      expect(location).toMatch(/\/photos\/regions\/zermatt$/);
+      expect(location).not.toContain('?');
+      expect(response.headers.get('x-middleware-next')).toBeNull();
+      expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+      expect(fetchMock).not.toHaveBeenCalled();
+    }
+  );
+
+  it('drops every other parameter and the hash: /photos?view=grid&x=1#top', async () => {
+    const response = await run(`https://${PROD_HOST}/photos?view=grid&x=1#top`);
+
+    expect(response.status).toBe(308);
+    expect(response.headers.get('location')).toBe(TARGET);
+  });
+
+  it('keeps the request origin (a relative target, never an input host)', () => {
+    expect(String(legacyViewRedirect(new URL('http://localhost:3000/photos?view=carousel')))).toBe(
+      'http://localhost:3000/photos/regions/zermatt'
+    );
+  });
+
+  it.each([
+    ['?view=map', 'the Map was /photos itself'],
+    ['?view=xyz', 'an unknown value'],
+    ['?view=GRID', 'a wrong case'],
+    ['?view=Carousel', 'a wrong case'],
+    ['?view=grid&view=grid', 'a repeated parameter'],
+    ['?view=grid&view=carousel', 'a repeated parameter'],
+    ['?view=', 'an empty value'],
+    ['?view=%20grid', 'a padded value'],
+    ['', 'no parameter'],
+  ])('/photos%s passes to the overview with no Location (%s)', async (query) => {
+    const response = await run(`https://${PROD_HOST}/photos${query}`);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(response.headers.get('content-security-policy')).toContain("default-src 'self'");
+  });
+
+  it.each(['/photos/', '/photos/regions/zermatt', '/photos/riffelsee', '/projects', '/'])(
+    'a view parameter on %s is not a legacy view URL',
+    (path) => {
+      expect(legacyViewRedirect(new URL(`https://${PROD_HOST}${path}?view=grid`))).toBeNull();
+    }
+  );
 });

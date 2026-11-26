@@ -3,9 +3,98 @@ import { terrain } from '@/data/generated/terrain';
 import { buildPhotoViews } from '@/lib/photos/view-model';
 import { readViewTransitions, recordViewTransitions } from './helpers/view-transitions';
 import { clickFocusesButtons } from './helpers/engine';
+import { regionHref } from '@/lib/photos/routes';
+import { LEGACY_VIEW_REGION } from '@/lib/photos/region-ids';
+import { regionCardFacts, regionHeading, regionNumber, regionsWestToEast } from '@/lib/regions';
 
 // Index lookups into views here are positions in the series order (DEM ascending, ties
 // by id), not photo identities; a specific photo is named through viewBySlug.
+
+/** The overview's region list (REGION-01, D-01, D-02; 18-UI-SPEC Contract 1 "Region list"). */
+const REGION_LIST = 'Regions, west to east';
+const regionRows = (page: Page) =>
+  page.getByRole('list', { name: REGION_LIST }).locator('a[data-region-row]');
+/** The registry regions west to east, with the text each row prints; never hand-typed. */
+const overviewRegions = regionsWestToEast().map((r) => ({
+  id: r.id,
+  number: regionNumber(r.id),
+  heading: regionHeading(r),
+  ...regionCardFacts(r.id),
+}));
+const LEGACY_TARGET = regionHref(LEGACY_VIEW_REGION);
+
+/**
+ * The retired view URLs (18 D-03, PHOTO-06; T-18-44, T-18-45). proxy.ts answers
+ * /photos?view=grid and ?view=carousel with a 308 to the Zermatt region page,
+ * built from a constant, with no query; any other value renders the overview.
+ * The request rows read the raw answer (maxRedirects 0); the browser row follows it.
+ */
+test.describe('Legacy ?view= redirect (D-03, PHOTO-06)', () => {
+  test('?view=carousel answers 308 with Location /photos/regions/zermatt and no query', async ({
+    request,
+  }) => {
+    expect(LEGACY_TARGET).toBe('/photos/regions/zermatt');
+    const response = await request.get('/photos?view=carousel', { maxRedirects: 0 });
+    expect(response.status()).toBe(308);
+    const location = response.headers()['location'] ?? '';
+    expect(location.endsWith(LEGACY_TARGET), location).toBe(true);
+    expect(location).not.toContain('?');
+  });
+
+  test('?view=grid answers 308 to /photos/regions/zermatt, and ?view=xyz renders the overview with 200', async ({
+    request,
+  }) => {
+    const grid = await request.get('/photos?view=grid', { maxRedirects: 0 });
+    expect(grid.status()).toBe(308);
+    const location = grid.headers()['location'] ?? '';
+    expect(location.endsWith(LEGACY_TARGET), location).toBe(true);
+    expect(location).not.toContain('?');
+
+    const unknown = await request.get('/photos?view=xyz', { maxRedirects: 0 });
+    expect(unknown.status()).toBe(200);
+    expect(unknown.headers()['location']).toBeUndefined();
+    const html = await unknown.text();
+    expect(html).toContain(`aria-label="${REGION_LIST}"`);
+    for (const r of overviewRegions) expect(html).toContain(`data-region-row="${r.id}"`);
+  });
+
+  test('a browser on /photos?view=grid ends on the Zermatt region page', async ({ page }) => {
+    await page.goto('/photos?view=grid');
+    await expect(page).toHaveURL(new RegExp(`${LEGACY_TARGET}$`));
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Zermatt, Switzerland');
+    await expect(page.getByRole('list', { name: REGION_LIST })).toHaveCount(0);
+  });
+});
+
+/**
+ * /photos is the Alps overview (REGION-01, D-01, D-02; 18-UI-SPEC Contract 1):
+ * the header band, then the h2 'Regions' over one link row per region, west to
+ * east, each to its region page. The rows are the keyboard and screen-reader
+ * path (the overview sheet's markers, 18-23, are pointer-only). Successors of
+ * the Map view rows (PHOTO-06, 18-22 retirement map).
+ */
+test.describe('Regions list (REGION-01, D-02)', () => {
+  test('opens on the overview with the three region rows west to east: names, counts and hrefs', async ({
+    page,
+  }) => {
+    await page.goto('/photos');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Photographs');
+    await expect(page.getByRole('heading', { level: 2, name: 'Regions' })).toBeVisible();
+    const rows = regionRows(page);
+    await expect(rows).toHaveCount(overviewRegions.length);
+    expect(overviewRegions.map((r) => r.id)).toEqual(['zermatt', 'ortler', 'saalfelden']);
+    for (const [i, r] of overviewRegions.entries()) {
+      const row = rows.nth(i);
+      await expect(row).toHaveAttribute('data-region-row', r.id);
+      await expect(row).toHaveAttribute('href', regionHref(r.id));
+      await expect(row.locator('[data-region-badge]')).toHaveText(String(r.number));
+      await expect(row.locator('[data-region-name]')).toHaveText(r.heading);
+      await expect(row.locator('[data-region-count]')).toHaveText(r.count);
+      await expect(row.locator('[data-region-facts]')).toHaveText(`${r.range} · ${r.years}`);
+      await expect(row).toHaveAccessibleName(new RegExp(`^${r.heading}`));
+    }
+  });
+});
 
 /**
  * The Map view in a browser (PHOTO-01, PHOTO-03; D-01 to D-04; 10-UI-SPEC
@@ -63,7 +152,9 @@ test.describe('Map view (PHOTO-01, PHOTO-03, D-01..D-04)', () => {
   // @needs-tab-to-links: the waypoints are links, and WebKit on Windows and macOS never Tabs
   // to a link (Safari's default, helpers/engine.ts); no step is left without Tab, so only that
   // webkit project drops it. Linux WebKit (CI) runs it (12-23 triage, run 41565046890).
-  test('Tab reaches the four waypoint links in altitude order @needs-tab-to-links', async ({ page }) => {
+  test('Tab reaches the four waypoint links in altitude order @needs-tab-to-links', async ({
+    page,
+  }) => {
     await page.goto('/photos');
     const links = mapLinks(page);
     await expect(links).toHaveCount(views.length);
