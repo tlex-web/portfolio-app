@@ -44,10 +44,8 @@ const filmScan = filmScans[0];
 
 const ROUTES = [
   ['home', '/'],
+  // The Alps overview (18-22, 18-23): header, sheet with its margin, region list.
   ['photos', '/photos'],
-  ['photos-grid', '/photos?view=grid'],
-  // Reduced motion (every shot in the route loop) puts the carousel on its stepper.
-  ['photos-carousel', '/photos?view=carousel'],
   ['photo', `/photos/${filmScan.slug}`],
   ['projects', '/projects'],
   ['box', '/projects/box'],
@@ -92,9 +90,12 @@ const ASCENT_SHOTS = [
  * starts below it. Before the shot it waits for the plate's lazy relief to be
  * loaded and decoded (settle already waits for its hero contours).
  *
- * D-22: these shots are the rewrite of the `photos-grid` and `photos-carousel`
- * route entries. Those two entries stay until their pages retire and are
- * removed there with their PNGs (18-22 / 18-28).
+ * D-22: these shots are the rewrite of the retired `photos-grid` and
+ * `photos-carousel` route entries (their `/photos` view URLs now redirect to
+ * the Zermatt region page): the grid's successor is the Zermatt sequence
+ * shot `region/zermatt-mid-<w>`, the carousel's the single-photo head
+ * `region/zermatt-top-<w>`. Both entries and their six PNGs were removed in
+ * 18-28.
  *
  * Positions come from the data, never from a literal slug: the mid shot
  * centres the figure at index floor((N - 1) / 2) of regionPhotoViews('zermatt'),
@@ -210,6 +211,19 @@ async function settle(page: Page) {
       .getEntriesByType('resource')
       .some((entry) => pattern.test(entry.name) && entry.name.endsWith(url));
   });
+  // The /photos overview sheet (18-23) draws its 1,000 m contours as a CSS mask
+  // of its own hashed SVG (overview-contours-alps.<hash>.svg), which holds up
+  // neither the load event nor document.images: wait for it wherever the sheet
+  // renders, so an overview shot can never capture an empty contour layer.
+  await page.waitForFunction(
+    () =>
+      !document.querySelector('[data-overview-sheet]') ||
+      performance
+        .getEntriesByType('resource')
+        .some((entry) =>
+          /\/terrain\/overview-contours-[a-z0-9-]+\.[0-9a-f]{10}\.svg$/.test(entry.name)
+        )
+  );
   await page.evaluate(
     () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
   );

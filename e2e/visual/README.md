@@ -23,13 +23,15 @@ relief to load and decode. From 768 px each region shot waits for the altimeter
 rail's `data-rail-current` (1 at the top and the plate, index + 1 mid, N at
 the end). Every test
 deletes `navigator.share` and `navigator.canShare` first, so the Share button
-is always in copy mode. The region shots are the rewrite of `photos-grid` and
-`photos-carousel` (18 D-22); those entries go with their pages.
+is always in copy mode. The region shots are the rewrite of the retired
+`photos-grid` and `photos-carousel` entries (18 D-22): their pages now redirect
+to the Zermatt region page, the grid's successor is `region/zermatt-mid-<w>`
+and the carousel's `region/zermatt-top-<w>`. Both entries and their six PNGs
+were removed in 18-28.
 
-Route slugs (one snapshot folder each): `home`, `photos` (the map, the default
-view), `photos-grid` (`/photos?view=grid`), `photos-carousel`
-(`/photos?view=carousel`, the stepper, since every route shot runs under
-reduced motion), `photo` (the film scan's `/photos/{slug}` page, the photo
+Route slugs (one snapshot folder each): `home`, `photos` (the Alps overview:
+header, the sheet with its margin and the region list; settle waits for the
+sheet's hashed `overview-contours-*.svg` mask), `photo` (the film scan's `/photos/{slug}` page, the photo
 with the partial strip; the slug comes from the data: the one view in
 `regionPhotoViews('zermatt')` whose strip has a film line, and the spec throws
 unless exactly one matches), `projects`, `box`, `coin-flip`, `roadmap`,
@@ -44,7 +46,8 @@ cannot move them. Canvases stay hidden either way; the 3D path is covered by
 the SwiftShader checks in `e2e/home-canvas.spec.ts`, not by baselines.
 
 Since 07-14 only visual-dark PNGs exist (36 files until 10-13 adds the 12
-`photos-grid`, `photos-carousel`, `photo` and `lightbox` files); visual-light asserts
+`photos-grid`, `photos-carousel`, `photo` and `lightbox` files; 18-28 retires
+the six `photos-grid` and `photos-carousel` ones); visual-light asserts
 against them through `expect.toHaveScreenshot.pathTemplate: DARK_PATH`, so a
 light-OS visitor must see exactly the dark site (DSGN-05). Update with
 visual-dark only: the baseline workflow runs `--project=visual-dark`, and an
@@ -120,8 +123,8 @@ For a plan that is meant to change some screenshots:
    regeneration).
 4. Tim downloads the `visual-baselines` artifact and unzips it into
    `e2e/visual/routes.spec.ts-snapshots/`, overwriting existing files. The
-   zip's contents (the route folders `home/`, `photos/`, `photos-grid/`,
-   `photos-carousel/`, `photo/`, `lightbox/`, ...) go directly into
+   zip's contents (the route folders `home/`, `photos/`, `photo/`,
+   `region/`, `lightbox/`, ...) go directly into
    that folder. Windows "Extract all" adds a wrapper folder named after the
    zip (`visual-baselines/`); do not keep it.
 5. Tim reviews `git status --short e2e/visual` against the plan's expected
@@ -131,9 +134,10 @@ For a plan that is meant to change some screenshots:
    then force-pushes to `ci/07-NN` again.
 7. The executor verifies the changed set, for example
    `node scripts/ci/check-snapshot-commit.mjs --sha HEAD --some --allow photos`
-   (repeat `--allow` per folder; the Phase 10 photo re-baseline is
-   `--allow photos --allow photos-grid --allow photos-carousel --allow photo --allow lightbox`;
-   add `--allow-deletions` only when the plan deletes PNGs), and the green CI
+   (repeat `--allow` per folder; the 18-20 viewer re-baseline is
+   `--allow photo --allow lightbox`; add `--allow-deletions` only when the plan
+   deletes PNGs, as 18-28 does for the retired `photos-grid` and
+   `photos-carousel` folders with `--allow photos --allow-deletions`), and the green CI
    run with `node scripts/ci/check-visual-run.mjs --sha <HEAD> --wait 30`.
 
 ### With the GitHub CLI (optional, replaces steps 3-4)
