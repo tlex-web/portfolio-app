@@ -16,49 +16,58 @@ import { lv95Line } from '@/lib/photos/lv95-line';
 import {
   buildPhotoViews,
   elevationMetres,
-  lightTableInput,
   photoBySlug,
   photoMetadata,
-  photoSlugs,
-  photoViews,
   publishedSlugs,
   publishedViews,
   seriesInput,
   stripFields,
   type PhotoViewInput,
 } from '@/lib/photos/view-model';
+import { regionIds, regionPhotoViews } from '@/lib/regions';
 import { SLUGS, viewBySlug } from '../../e2e/helpers/photo-fixtures';
 
-// Index lookups into photoViews here are positions in the series order (DEM ascending,
+// Index lookups into a region series here are positions in the series order (DEM ascending,
 // ties by id), not photo identities; a specific photo is named through viewBySlug.
 
 /** A content-hashed manifest derivative: /images/photos/<name>.<10 hex>.<avif|webp>. */
 const DERIVATIVE = /^\/images\/photos\/[a-z0-9-]+\.[0-9a-f]{10}\.(avif|webp)$/;
 
+/** The four v2.0 Zermatt photos' slugs, each named (18-26, Pitfall 8). */
+const V20_SLUGS: readonly string[] = Object.values(SLUGS);
+
+/** The four v2.0 photos as their published views, in SLUGS order (altitude ascending). */
+const v20Views = V20_SLUGS.map(viewBySlug);
+
 /**
- * The v2.0 light table's photos (lightTableIds, D-15) with the committed copy and
- * manifest. 16-14 rewrite in place (GUARD-03): the order and patch cases below are
- * about the light table, so they read its four photos, not every generated photo
- * (new region photos are data only until Phase 18).
+ * The four v2.0 photos, named by slug, with the committed copy and manifest
+ * (18-26 successor of the light-table input, Pitfall 8). The order and patch
+ * cases below are about these four photos, so they read exactly them, not every
+ * generated photo.
  */
-const committed: PhotoViewInput = lightTableInput();
+const committed: PhotoViewInput = {
+  photos: photos.filter((p) => v20Views.some((v) => v.id === p.id)),
+  editorial,
+  imageManifest,
+};
 
 describe('buildPhotoViews order (PHOTO-03)', () => {
   it('returns the Zermatt series in DEM order, ties by id (PHOTO-03)', () => {
-    // The light table is the Zermatt series' light-table photos, in the series order.
-    expect(photoViews.map((v) => v.slug)).toEqual(
+    // The four v2.0 photos keep the Zermatt series order among themselves.
+    const v20 = buildPhotoViews(committed).map((v) => v.slug);
+    expect(v20).toEqual(
       buildWaypoints(seriesInput('zermatt'))
         .map((w) => w.slug)
-        .filter((slug) => photoSlugs.includes(slug))
+        .filter((slug) => V20_SLUGS.includes(slug))
     );
-    expect(photoSlugs).toEqual([
+    expect(v20).toEqual([
       'matterhorn-from-zermatt',
       'gornerschlucht-waterfall',
       'matterhorn-glacier-trail',
       'riffelsee-reflection',
     ]);
-    // With today's data the Zermatt series is the Home ascent, in the same order.
-    expect(photoSlugs).toEqual(buildWaypoints().map((w) => w.slug));
+    // With today's data the v2.0 four are the Home ascent, in the same order.
+    expect(v20).toEqual(buildWaypoints().map((w) => w.slug));
   });
 
   it('breaks a tie in DEM height by id', () => {
@@ -86,12 +95,13 @@ describe('buildPhotoViews order (PHOTO-03)', () => {
     );
   });
 
-  it('links each view to its neighbours, null at both ends (no wrap)', () => {
-    expect(photoViews[0].prevSlug).toBeNull();
-    expect(photoViews[photoViews.length - 1].nextSlug).toBeNull();
-    photoViews.forEach((v, i) => {
-      if (i > 0) expect(v.prevSlug).toBe(photoViews[i - 1].slug);
-      if (i < photoViews.length - 1) expect(v.nextSlug).toBe(photoViews[i + 1].slug);
+  it("links each view of Zermatt's series to its neighbours, null at both ends (no wrap)", () => {
+    const series = regionPhotoViews('zermatt');
+    expect(series[0].prevSlug).toBeNull();
+    expect(series[series.length - 1].nextSlug).toBeNull();
+    series.forEach((v, i) => {
+      if (i > 0) expect(v.prevSlug).toBe(series[i - 1].slug);
+      if (i < series.length - 1) expect(v.nextSlug).toBe(series[i + 1].slug);
     });
   });
 });
@@ -100,7 +110,7 @@ describe('photo images (D-05, T-10-03)', () => {
   const urls = (srcSet: string) => srcSet.split(', ').map((part) => part.split(' '));
 
   it('builds the stage from the 1024, 1600 and 2560 px hashed derivatives', () => {
-    for (const v of photoViews) {
+    for (const v of v20Views) {
       for (const srcSet of [v.stage.srcSetAvif, v.stage.srcSetWebp]) {
         const parts = urls(srcSet);
         expect(parts.map(([, w]) => w)).toEqual(['1024w', '1600w', '2560w']);
@@ -138,7 +148,7 @@ describe('photo images (D-05, T-10-03)', () => {
   });
 
   it('builds the tile from the 640, 1024 and 1600 px hashed derivatives', () => {
-    for (const v of photoViews) {
+    for (const v of v20Views) {
       expect(urls(v.tile.srcSetWebp).map(([, w]) => w)).toEqual(['640w', '1024w', '1600w']);
       for (const [url] of urls(v.tile.srcSetAvif)) expect(url).toMatch(DERIVATIVE);
       expect(v.tile.src).toContain('-640.');
@@ -148,7 +158,7 @@ describe('photo images (D-05, T-10-03)', () => {
 
 describe('rights line (LBOX-07)', () => {
   it('carries the capture year and Tim Lui for every photo, never empty', () => {
-    expect(photoViews.map((v) => [v.id, v.rights])).toEqual([
+    expect(v20Views.map((v) => [v.id, v.rights])).toEqual([
       ['img-0605', '© 2021 Tim Lui, all rights reserved'],
       ['img-0629', '© 2021 Tim Lui, all rights reserved'],
       ['img-0662', '© 2021 Tim Lui, all rights reserved'],
@@ -193,11 +203,11 @@ describe('lookup and metadata (LBOX-01)', () => {
  * photo's viewer steps through its region's series (regionViewerSet; LBOX-09, D-12).
  */
 describe('the published set (17 D-07, PHOTO-05)', () => {
-  it('publishes every generated photo: unique slugs, one per photo, every light-table slug among them', () => {
+  it('publishes every generated photo: unique slugs, one per photo, every v2.0 slug among them', () => {
     expect(publishedSlugs).toHaveLength(photos.length);
     expect(publishedSlugs).toHaveLength(11);
     expect(new Set(publishedSlugs).size).toBe(publishedSlugs.length);
-    for (const slug of photoSlugs) expect(publishedSlugs).toContain(slug);
+    for (const slug of V20_SLUGS) expect(publishedSlugs).toContain(slug);
   });
 
   it("keeps buildWaypoints' order: DEM height ascending, ties by id", () => {
@@ -278,7 +288,7 @@ const withPhoto = (id: string, patch: Record<string, unknown>) =>
 
 describe('strip fields (D-07, LBOX-04)', () => {
   it('img-0605: place and date, six EXIF units on two lines, altitude and exact position', () => {
-    const { strip } = viewOf(photoViews, 'img-0605');
+    const { strip } = viewBySlug(SLUGS.matterhornFromZermatt);
     expect(strip).toEqual({
       placeDate: { place: 'Zermatt, Switzerland', date: '6 September 2021, 10:48' },
       exifRows: [
@@ -306,7 +316,7 @@ describe('strip fields (D-07, LBOX-04)', () => {
   });
 
   it('r004-011: the film line instead of EXIF, and the position marked approximate with its radius', () => {
-    const { strip } = viewOf(photoViews, 'r004-011');
+    const { strip } = viewBySlug(SLUGS.riffelseeReflection);
     expect(strip).toEqual({
       placeDate: { place: 'Riffelsee, Zermatt', date: '2019' },
       exifRows: [],
@@ -372,7 +382,7 @@ describe('strip fields (D-07, LBOX-04)', () => {
   });
 
   it('never prints filler in any strip field', () => {
-    for (const v of photoViews) {
+    for (const v of v20Views) {
       expect(v.strip).toBeDefined();
       const json = JSON.stringify(v.strip);
       for (const filler of ['—', 'undefined', 'NaN', 'unknown']) expect(json).not.toContain(filler);
@@ -402,11 +412,13 @@ describe('LV95 line (18-18; PHOTO-08, D-14, D-15)', () => {
     }
   );
 
-  it('the light-table views carry the same country and line as their published views', () => {
-    for (const view of photoViews) {
-      const published = publishedViews.find((v) => v.id === view.id)!;
-      expect(view.country).toBe(published.country);
-      expect(view.strip.lv95).toBe(published.strip.lv95);
+  it('the region series views carry the same country and line as their published views', () => {
+    for (const region of regionIds) {
+      for (const view of regionPhotoViews(region)) {
+        const published = publishedViews.find((v) => v.id === view.id)!;
+        expect(view.country).toBe(published.country);
+        expect(view.strip.lv95).toBe(published.strip.lv95);
+      }
     }
   });
 
@@ -472,7 +484,7 @@ describe('aerial and coarse heights (16 D-04, D-03)', () => {
     expect(altitudeRow(view.strip)).toBe(view.altitudeLabel);
     // The position row of a 4dp photo is untouched.
     expect(view.strip.positionRows[1].value).toBe(
-      viewOf(photoViews, 'img-0605').strip.positionRows[1].value
+      viewBySlug(SLUGS.matterhornFromZermatt).strip.positionRows[1].value
     );
   });
 
@@ -500,13 +512,13 @@ describe('aerial and coarse heights (16 D-04, D-03)', () => {
   });
 
   it("keeps every current photo's altitude label and Altitude row text (D-25)", () => {
-    expect(photoViews.map((v) => [v.id, v.altitudeLabel, altitudeRow(v.strip)])).toEqual([
+    expect(v20Views.map((v) => [v.id, v.altitudeLabel, altitudeRow(v.strip)])).toEqual([
       ['img-0605', `1,617${NBSP}m`, `1,617${NBSP}m`],
       ['img-0629', `1,668${NBSP}m`, `1,668${NBSP}m`],
       ['img-0662', `2,585${NBSP}m`, `2,585${NBSP}m`],
       ['r004-011', `2,760${NBSP}m approx.`, `2,760${NBSP}m`],
     ]);
-    expect(photoViews.every((v) => v.aerial === false)).toBe(true);
+    expect(v20Views.every((v) => v.aerial === false)).toBe(true);
   });
 });
 

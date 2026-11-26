@@ -1,17 +1,17 @@
 /**
- * The v2.0 light table is the explicit lightTableIds list (D-15; DATA-13,
- * T-16-07; it replaced the Zermatt-series filter of DATA-10, T-15-16): a photo
- * that is not on the list never reaches buildPhotoViews() or photoSlugs, even
- * in region zermatt. Since 17-05 (D-07, PHOTO-05) the route set is the
- * published set, so the same photo, once it has editorial copy, does get a
- * slug in photoRouteSlugs and publishedSlugs. The generated photo module is
- * extended with a copy of img-0605 as img-9001 in region `zermatt`, with a
- * copy of img-0605's editorial entry (its own slug) and image-manifest entry,
- * in a fresh module registry (the home-waypoints.test.tsx pattern).
+ * A region's series is every generated photo in that region (seriesInput,
+ * regionPhotoViews; 18 D-27 retired the hand-listed v2.0 light table beside
+ * it, 18-26): a new photo in region zermatt joins Zermatt's series, and once it
+ * has editorial copy it gets a slug in photoRouteSlugs and publishedSlugs and a
+ * published view through photoBySlug (17 D-07, PHOTO-05). The generated photo
+ * module is extended with a copy of img-0605 as img-9001 in region `zermatt`,
+ * with a copy of img-0605's editorial entry (its own slug) and image-manifest
+ * entry, in a fresh module registry (the home-waypoints.test.tsx pattern).
  */
 import { photos } from '@/data/generated/photos';
-import { lightTableIds } from '@/data/light-table';
-import { LIGHT_TABLE_REGION, lightTableInput, seriesInput } from '@/lib/photos/view-model';
+import { regionPhotoViews } from '@/lib/regions';
+import { seriesInput } from '@/lib/photos/view-model';
+import { SLUGS } from '../../e2e/helpers/photo-fixtures';
 
 type PhotosModule = typeof import('@/data/generated/photos');
 type EditorialModule = typeof import('@/data/photos/editorial');
@@ -20,15 +20,11 @@ type ManifestModule = typeof import('@/data/generated/image-manifest');
 /** The injected photo's slug; no real photo uses it. */
 const INJECTED_SLUG = 'injected-zermatt-photo';
 
-const REAL_SLUGS = [
-  'matterhorn-from-zermatt',
-  'gornerschlucht-waterfall',
-  'matterhorn-glacier-trail',
-  'riffelsee-reflection',
-];
+/** The four v2.0 Zermatt photos, named (18-26, Pitfall 8). */
+const V20_SLUGS: readonly string[] = Object.values(SLUGS);
 
-describe('light-table membership (D-15, T-16-07)', () => {
-  it('keeps a Zermatt photo that is not in lightTableIds off the light table, and publishes it', async () => {
+describe('region series membership (18 D-27; 16 D-15, T-16-07)', () => {
+  it("puts a new Zermatt photo in Zermatt's series beside the v2.0 four, and publishes it", async () => {
     await jest.isolateModulesAsync(async () => {
       jest.doMock('@/data/generated/photos', () => {
         const actual = jest.requireActual<PhotosModule>('@/data/generated/photos');
@@ -67,15 +63,16 @@ describe('light-table membership (D-15, T-16-07)', () => {
 
       const viewModel = await import('@/lib/photos/view-model');
       const routes = await import('@/lib/photos/routes');
-      expect(viewModel.LIGHT_TABLE_REGION).toBe('zermatt');
-      // The light table: the four, never the injected photo.
-      expect(viewModel.buildPhotoViews().map((v) => v.slug)).toEqual(REAL_SLUGS);
-      expect(viewModel.photoSlugs).toEqual(REAL_SLUGS);
+      const regionModel = await import('@/lib/regions');
+      // Zermatt's series: the injected photo joins it, and the v2.0 four stay in it.
+      expect(viewModel.seriesInput('zermatt').photos.map((p) => p.id)).toContain('img-9001');
+      const series = regionModel.regionPhotoViews('zermatt').map((v) => v.slug);
+      expect(series).toContain(INJECTED_SLUG);
+      expect(series).toEqual(expect.arrayContaining([...V20_SLUGS]));
       // The published route set: the injected photo has a page and the proxy admits it.
       expect(routes.photoRouteSlugs).toContain(INJECTED_SLUG);
       expect(viewModel.publishedSlugs).toContain(INJECTED_SLUG);
-      // The region series still sees it (Phases 17 and 18 build on seriesInput).
-      expect(viewModel.seriesInput('zermatt').photos.map((p) => p.id)).toContain('img-9001');
+      expect(viewModel.photoBySlug(INJECTED_SLUG)?.id).toBe('img-9001');
     });
   });
 
@@ -84,18 +81,18 @@ describe('light-table membership (D-15, T-16-07)', () => {
     expect(() => seriesInput('nowhere')).toThrow(/nowhere/);
   });
 
-  it('throws a RangeError naming data/light-table.ts for a light-table id with no generated photo', () => {
-    expect(() => lightTableInput(['img-0605', 'img-9999'])).toThrow(RangeError);
-    expect(() => lightTableInput(['img-0605', 'img-9999'])).toThrow(
-      /img-9999.*data\/light-table\.ts/
+  it('throws a RangeError naming a region id with no series (regionPhotoViews)', () => {
+    expect(() => regionPhotoViews('nowhere')).toThrow(
+      new RangeError('regionPhotoViews: nowhere is not a registry region')
     );
   });
 
-  it('has every light-table photo in LIGHT_TABLE_REGION', () => {
-    const listed = photos.filter((p) => (lightTableIds as readonly string[]).includes(p.id));
-    expect(listed).toHaveLength(lightTableIds.length);
-    for (const photo of listed) {
-      expect(photo.region).toBe(LIGHT_TABLE_REGION);
+  it("has the four v2.0 slugs in Zermatt's series, each a region zermatt photo", () => {
+    const series = regionPhotoViews('zermatt');
+    for (const slug of V20_SLUGS) {
+      const view = series.find((v) => v.slug === slug);
+      expect(view).toBeDefined();
+      expect(photos.find((p) => p.id === view?.id)?.region).toBe('zermatt');
     }
   });
 });

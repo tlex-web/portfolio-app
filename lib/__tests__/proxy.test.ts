@@ -37,7 +37,8 @@ import {
 import { projects } from '@/data/projects';
 import { site } from '@/data/site';
 import { LEGACY_VIEW_REGION, regionRouteIds } from '@/lib/photos/region-ids';
-import { photoSlugs } from '@/lib/photos/view-model';
+import { publishedSlugs } from '@/lib/photos/view-model';
+import { SLUGS } from '../../e2e/helpers/photo-fixtures';
 
 const NONCE = 'bm9uY2U=';
 const UPGRADE = 'upgrade-insecure-requests';
@@ -241,7 +242,7 @@ describe('proxy(): unknown-slug rewrite (EDGE-01)', () => {
   });
 
   it.each([
-    `/photos/${photoSlugs[0]}`,
+    `/photos/${SLUGS.matterhornFromZermatt}`,
     '/projects/box',
     '/photos/no-such-slug/opengraph-image',
     '/photos',
@@ -276,7 +277,7 @@ describe('proxy(): neutral 404 for a miss (T-12-03)', () => {
     });
 
   it('the neutral slug is no known slug in either section', () => {
-    expect(photoSlugs).not.toContain(NEUTRAL_SLUG);
+    expect(publishedSlugs).not.toContain(NEUTRAL_SLUG);
     expect(projects.map((p) => p.slug)).not.toContain(NEUTRAL_SLUG);
   });
 

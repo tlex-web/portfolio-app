@@ -17,13 +17,18 @@ import { lv95ToWgs84 } from '@/lib/geo';
 import { formatCaptureLabel } from '@/lib/photo-format';
 import { lv95Line } from '@/lib/photos/lv95-line';
 import { photoHref } from '@/lib/photos/routes';
-import { buildPhotoViews, photoViews, type PhotoView } from '@/lib/photos/view-model';
+import { buildPhotoViews, publishedViews, type PhotoView } from '@/lib/photos/view-model';
+import { SLUGS, viewBySlug } from '../../../e2e/helpers/photo-fixtures';
 
 const NBSP = ' ';
 const FILLER = ['—', 'undefined', 'null', 'NaN', 'unknown'];
 
-const viewOf = (id: string, views: readonly PhotoView[] = photoViews) =>
+/** A photo's published view, named by its id (18-26, Pitfall 8). */
+const viewOf = (id: string, views: readonly PhotoView[] = publishedViews) =>
   views.find((v) => v.id === id)!;
+
+/** The four v2.0 Zermatt photos, each named, as their published views. */
+const v20Views: readonly PhotoView[] = Object.values(SLUGS).map(viewBySlug);
 
 /**
  * The page strip's back target by name (18 D-09). The strip is props only; the
@@ -59,7 +64,7 @@ function visibleText(el: Element): string {
 }
 
 describe('ExifStrip fields for every photo (D-05, D-07)', () => {
-  it.each(photoViews.map((v) => [v.slug, v] as const))(
+  it.each(v20Views.map((v) => [v.slug, v] as const))(
     '%s: title, place, story and rights, no filler',
     (_slug, view) => {
       const text = renderStrip(view).textContent ?? '';
@@ -70,7 +75,7 @@ describe('ExifStrip fields for every photo (D-05, D-07)', () => {
   );
 
   it('puts the rights line last among the data rows, followed only by the shortcut legend (LBOX-07)', () => {
-    for (const view of photoViews) {
+    for (const view of v20Views) {
       const rights = renderStrip(view).querySelector('[data-strip-rights]')!;
       expect(rights).toHaveTextContent(view.rights);
       const legend = rights.nextElementSibling!;
@@ -237,7 +242,7 @@ describe('ExifStrip for a coarse position (16 D-01)', () => {
  * the sr-only term 'Swiss grid' and the list's mono style. Swiss photos only.
  */
 describe('ExifStrip LV95 line (18-18; PHOTO-08)', () => {
-  it.each(photoViews.map((v) => [v.slug, v] as const))(
+  it.each(v20Views.map((v) => [v.slug, v] as const))(
     '%s: the LV95 line renders after the position line with an sr-only Swiss grid term',
     (_slug, view) => {
       const strip = renderStrip(view);
@@ -347,7 +352,7 @@ describe('ExifStrip heading and controls', () => {
   });
 
   it('holds no link and no download control without a breadcrumb (LBOX-07)', () => {
-    for (const view of photoViews) {
+    for (const view of v20Views) {
       const strip = renderStrip(view);
       expect(strip.querySelectorAll('a')).toHaveLength(0);
       expect(strip.querySelectorAll('[download]')).toHaveLength(0);
@@ -379,14 +384,14 @@ describe('capture label (rewritten from the ImageDetailModal tests, D-03)', () =
   });
 
   it('shows a digital capture exactly as formatCaptureLabel stored it (wall time, no conversion)', () => {
-    for (const view of photoViews.filter((v) => v.id !== 'r004-011')) {
+    for (const view of v20Views.filter((v) => v.id !== 'r004-011')) {
       const capture = photos.find((p) => p.id === view.id)!.capture;
       expect(dateOf(renderStrip(view))).toBe(formatCaptureLabel(capture));
     }
   });
 
   it("joins place and date with exactly one ' · ' for every photo", () => {
-    for (const view of photoViews) {
+    for (const view of v20Views) {
       const line = renderStrip(view).querySelector('[data-strip-date]')!.parentElement!;
       const text = line.textContent ?? '';
       expect(text.split(' · ')).toHaveLength(2);

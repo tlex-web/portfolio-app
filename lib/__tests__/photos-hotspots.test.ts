@@ -10,13 +10,17 @@ import { imageManifest } from '@/data/generated/image-manifest';
 import { photos } from '@/data/generated/photos';
 import { editorial } from '@/data/photos/editorial';
 import { gutterStack } from '@/lib/photos/hotspot-layout';
-import { buildPhotoViews, photoViews, type PhotoViewInput } from '@/lib/photos/view-model';
+import { buildPhotoViews, publishedViews, type PhotoViewInput } from '@/lib/photos/view-model';
+import { SLUGS, viewBySlug } from '../../e2e/helpers/photo-fixtures';
 
 /** formatMetres keeps the unit on its number with U+00A0. */
 const NBSP = ' ';
 
-const viewOf = (id: string, views = photoViews) => views.find((v) => v.id === id)!;
+/** A photo's published view, named by its id (18-26, Pitfall 8). */
+const viewOf = (id: string, views = publishedViews) => views.find((v) => v.id === id)!;
 const committed: PhotoViewInput = { photos, editorial, imageManifest };
+/** The four v2.0 Zermatt photos, named, as their published views. */
+const v20Views = Object.values(SLUGS).map(viewBySlug);
 
 describe('hotspot view-model (D-09, IN-02)', () => {
   it('img-0662: the summit first, then the trail, numbered, with glyphs, sides and heights', () => {
@@ -63,7 +67,7 @@ describe('hotspot view-model (D-09, IN-02)', () => {
       kind: 'text',
       label: 'Source: Tim',
     });
-    const sources = photoViews.flatMap((v) =>
+    const sources = v20Views.flatMap((v) =>
       v.hotspots.flatMap((h) => h.facts.map((f) => f.source))
     );
     const wiki = sources.filter((s) => s.kind === 'link' && s.href.includes('wikipedia.org'));
@@ -72,7 +76,7 @@ describe('hotspot view-model (D-09, IN-02)', () => {
   });
 
   it('carries every committed annotation exactly once, in its own photo', () => {
-    for (const v of photoViews) {
+    for (const v of v20Views) {
       const ids = editorial[v.id as keyof typeof editorial].annotations.map((a) => a.id);
       expect(v.hotspots.map((h) => h.id).sort()).toEqual([...ids].sort());
       expect(v.hotspots.map((h) => h.n)).toEqual(v.hotspots.map((_, i) => i + 1));
@@ -133,7 +137,9 @@ describe('hotspot view-model (D-09, IN-02)', () => {
   });
 
   it('never re-sorts the photos themselves', () => {
-    expect(photoViews.map((v) => v.slug)).toEqual(buildPhotoViews().map((v) => v.slug));
+    expect(publishedViews.map((v) => v.slug)).toEqual(
+      buildPhotoViews(committed).map((v) => v.slug)
+    );
   });
 });
 

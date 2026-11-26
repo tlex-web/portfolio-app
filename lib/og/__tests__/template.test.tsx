@@ -31,8 +31,11 @@ import { lv95ToWgs84 } from '@/lib/geo';
 import { formatLatLon } from '@/lib/home-format';
 import { OG_SIZE, OgFrame, ogPhotoFit } from '@/lib/og/template';
 import { formatMetres } from '@/lib/photo-format';
-import { photoViews, type PhotoView } from '@/lib/photos/view-model';
+import type { PhotoView } from '@/lib/photos/view-model';
 import { SLUGS, viewBySlug } from '../../../e2e/helpers/photo-fixtures';
+
+/** The four v2.0 photos' cards are the photo cases, each named (18-26, Pitfall 8). */
+const v20Views: readonly PhotoView[] = Object.values(SLUGS).map(viewBySlug);
 
 const CONTOUR = 'data:image/svg+xml;base64,PHN2Zy8+';
 const JPEG = 'data:image/jpeg;base64,/9j/';
@@ -172,7 +175,7 @@ describe('ogPhotoFit (UI-SPEC E12 overflow: contain, never crop)', () => {
     expect(ogPhotoFit(1200, 818).height).toBe(524);
   });
 
-  it.each(photoViews.map((v) => [v.slug, v] as const))(
+  it.each(v20Views.map((v) => [v.slug, v] as const))(
     '%s: its manifest JPEG fills the slot on one axis, keeps its ratio and is centred',
     (_slug, view) => {
       const { width, height } = photoProps(view);
@@ -188,7 +191,7 @@ describe('ogPhotoFit (UI-SPEC E12 overflow: contain, never crop)', () => {
 });
 
 describe('photo variant (D-14)', () => {
-  it.each(photoViews.map((v) => [v.slug, v] as const))(
+  it.each(v20Views.map((v) => [v.slug, v] as const))(
     '%s: title, place, altitude and the year line, over the contain-fitted JPEG',
     (_slug, view) => {
       const card = photoCard(view);
@@ -207,7 +210,7 @@ describe('photo variant (D-14)', () => {
   );
 
   it("the film scan reads its scan year in the © line (the strip's 'Film scan · {year}')", () => {
-    const scans = photoViews.filter((v) => v.strip.filmLine !== null);
+    const scans = v20Views.filter((v) => v.strip.filmLine !== null);
     expect(scans.length).toBeGreaterThan(0);
     for (const view of scans) {
       const year = view.strip.filmLine!.split(' · ')[1];
@@ -275,7 +278,7 @@ describe('default variant (D-16)', () => {
 
 const everyCard = (): [string, Collected][] => [
   ['default', defaultCard()],
-  ...photoViews.map((v): [string, Collected] => [`photo ${v.slug}`, photoCard(v)]),
+  ...v20Views.map((v): [string, Collected] => [`photo ${v.slug}`, photoCard(v)]),
   ...projects.map((p): [string, Collected] => [`project ${p.slug}`, projectCard(p)]),
 ];
 
@@ -301,7 +304,7 @@ describe('every card (SEO-02 empty, prohibition: no third-party font fetch)', ()
 });
 
 describe('long text fits its box (UI-SPEC E12 long text, backstop)', () => {
-  it.each(photoViews.map((v) => [v.slug, v.title] as const))(
+  it.each(v20Views.map((v) => [v.slug, v.title] as const))(
     '%s: the title takes at most 3 lines of 336 px at 32 px Schibsted',
     (_slug, title) => {
       expect(lineCount(FONTS['Schibsted Grotesk'], title, 32, 336)).toBeLessThanOrEqual(3);

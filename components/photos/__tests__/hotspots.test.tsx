@@ -14,9 +14,10 @@ import { HotspotKey, HotspotMarks, HotspotOverlay } from '../Hotspots';
 import { imageManifest } from '@/data/generated/image-manifest';
 import { photos } from '@/data/generated/photos';
 import { editorial } from '@/data/photos/editorial';
-import { buildPhotoViews, photoViews, type PhotoView } from '@/lib/photos/view-model';
+import { buildPhotoViews, publishedViews, type PhotoView } from '@/lib/photos/view-model';
 
-const viewOf = (id: string, views: readonly PhotoView[] = photoViews) =>
+/** A photo's published view, named by its id (18-26, Pitfall 8). */
+const viewOf = (id: string, views: readonly PhotoView[] = publishedViews) =>
   views.find((v) => v.id === id)!;
 
 /** A photo whose editorial has no annotations, built through buildPhotoViews. */

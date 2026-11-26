@@ -7,9 +7,9 @@ import LightboxDialog, {
   useLightbox,
 } from '../LightboxDialog';
 import PhotoViewer from '../PhotoViewer';
-import { photoViews } from '@/lib/photos/view-model';
 import { HOTSPOT_PREF_KEY } from '@/lib/photos/hotspot-pref';
-import { regionEndCard } from '@/lib/regions';
+import { regionEndCard, regionPhotoViews } from '@/lib/regions';
+import { SLUGS, viewBySlug } from '../../../e2e/helpers/photo-fixtures';
 
 /**
  * The lightbox shell in jsdom (LBOX-01; 10-RESEARCH Pitfall 11). jsdom has no
@@ -172,12 +172,12 @@ describe('LightboxDialog', () => {
     // @ts-expect-error -- simulating an environment without CSS.escape
     delete CSS.escape;
     try {
-      const view = photoViews.find((v) => v.id === 'img-0662')!;
+      const view = viewBySlug(SLUGS.matterhornGlacierTrail);
       render(
         <LightboxDialog labelledBy="photo-title">
           <PhotoViewer
             variant="modal"
-            photos={photoViews}
+            photos={regionPhotoViews('zermatt')}
             initialSlug={view.slug}
             endCard={regionEndCard('zermatt')}
           />
@@ -201,12 +201,12 @@ describe('LightboxDialog', () => {
   });
 
   it('a hidden callout is cleared without taking Escape, so the lightbox closes (D-22)', () => {
-    const view = photoViews.find((v) => v.id === 'img-0662')!;
+    const view = viewBySlug(SLUGS.matterhornGlacierTrail);
     render(
       <LightboxDialog labelledBy="photo-title">
         <PhotoViewer
           variant="modal"
-          photos={photoViews}
+          photos={regionPhotoViews('zermatt')}
           initialSlug={view.slug}
           endCard={regionEndCard('zermatt')}
         />
@@ -223,13 +223,13 @@ describe('LightboxDialog', () => {
   });
 
   it('hiding labels collapses the open callout; showing them again starts collapsed (D-12)', () => {
-    const view = photoViews.find((v) => v.id === 'img-0662')!;
+    const view = viewBySlug(SLUGS.matterhornGlacierTrail);
     try {
       render(
         <LightboxDialog labelledBy="photo-title">
           <PhotoViewer
             variant="modal"
-            photos={photoViews}
+            photos={regionPhotoViews('zermatt')}
             initialSlug={view.slug}
             endCard={regionEndCard('zermatt')}
           />

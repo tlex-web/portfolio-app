@@ -18,11 +18,14 @@ import { terrain } from '@/data/generated/terrain';
 import { editorial } from '@/data/photos/editorial';
 import { EditorialMap, Fact } from '@/data/schemas/editorial';
 import { formatCaptureLabel } from '@/lib/photo-format';
-import { buildPhotoViews, elevationMetres } from '@/lib/photos/view-model';
+import { regionPhotoViews } from '@/lib/regions';
+import { elevationMetres, publishedViews } from '@/lib/photos/view-model';
+import { SLUGS, viewBySlug } from '../../e2e/helpers/photo-fixtures';
 
 const read = (rel: string) => fs.readFileSync(path.join(process.cwd(), rel), 'utf8');
 const ids = photos.map((p) => p.id);
-const views = buildPhotoViews();
+/** The four v2.0 Zermatt photos, named (18-26, Pitfall 8), as their published views. */
+const views = Object.values(SLUGS).map(viewBySlug);
 const viewOf = (id: string) => views.find((v) => v.id === id)!;
 const photoOf = (id: string) => photos.find((p) => p.id === id)!;
 const NBSP = String.fromCharCode(0xa0);
@@ -113,7 +116,7 @@ describe('editorial copy (DATA-03, D-05, D-07)', () => {
 
   it('never repeats the cut trivia or the wrong gorge, in the copy or in the view-model output', () => {
     expect(JSON.stringify(editorial)).not.toMatch(FORBIDDEN);
-    expect(JSON.stringify(buildPhotoViews())).not.toMatch(FORBIDDEN);
+    expect(JSON.stringify(publishedViews)).not.toMatch(FORBIDDEN);
     expect(read('data/photos/editorial.ts')).not.toMatch(FORBIDDEN);
     expect(read('lib/photos/view-model.ts')).not.toMatch(FORBIDDEN);
   });
@@ -140,8 +143,13 @@ describe('photo view-model (replaces the legacy bridge, DATA-08)', () => {
   const DERIVATIVE = /^\/images\/photos\/[a-z0-9-]+\.[0-9a-f]{10}\.(avif|webp)$/;
   const urls = (srcSet: string) => srcSet.split(', ').map((part) => part.split(' ')[0]);
 
-  it('has four views in altitude order', () => {
-    expect(views.map((v) => v.id)).toEqual(['img-0605', 'img-0629', 'img-0662', 'r004-011']);
+  it("has the four v2.0 photos in Zermatt's series, in altitude order", () => {
+    const v20 = views.map((v) => v.id);
+    expect(
+      regionPhotoViews('zermatt')
+        .map((v) => v.id)
+        .filter((id) => v20.includes(id))
+    ).toEqual(['img-0605', 'img-0629', 'img-0662', 'r004-011']);
   });
 
   it('builds stage and tile only from hashed /images/photos/ derivatives; the manifest has no legacy paths', () => {
