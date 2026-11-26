@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
-stopped_at: Completed 18-26-PLAN.md
-last_updated: "2026-11-26T16:04:30.052Z"
+stopped_at: Completed 18-27-PLAN.md
+last_updated: "2026-11-26T16:28:35.207Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: 2da958150d674298fcbeaf4e8dd5536f7d4d52f8
+state_head: d0bf727301afbcb601c63ab89bf5dc922adaac5a
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 109
-  completed_plans: 106
+  completed_plans: 107
   percent: 71
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-24)
 ## Current Position
 
 Phase: 18 (Immersive Survey Layout) — EXECUTING
-Plan: 26 of 29
+Plan: 27 of 29
 Status: Ready to execute
 Last activity: 2026-11-24 — Phase 18 execution started
 
@@ -164,6 +164,7 @@ Progress: [███████░░░] 71%
 | Phase 18 P24 | 15min | 2 tasks | 19 files |
 | Phase 18 P25 | 5min | 2 tasks | 8 files |
 | Phase 18 P26 | 9min | 2 tasks | 12 files |
+| Phase 18 P27 | 21min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -445,6 +446,8 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-25: no dependency removed; three and @react-three/fiber keep Home importers; @react-three/drei has no code importer (predates 18-25)
 - [Phase 18]: 18-26: photoBySlug returns the published view for every slug (D-27); the v2.0 four's k/n/prevSlug/nextSlug now span the 11 published photos, read by no page, OG card or test
 - [Phase 18]: 18-26: per-photo Jest rows over the light table keep the four v2.0 photos as subject (Object.values(SLUGS).map(viewBySlug)), not all 11 published
+- [Phase 18]: 18-27: plate-sheet.test runs each map.test successor row for every registry region (11 rows x 3 regions = 33), none merged; the 23 declared label-layout rows retire onto 18-09/18-10/18-13 successors
+- [Phase 18]: 18-27: label-layout is stack1D only (Math.max/Math.min, no branch trace); buildPhotoViews(input) has no default; data/light-table.ts and every light-table export deleted (D-27)
 
 ### Pending Todos
 
@@ -506,6 +509,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-26T16:04:29.266Z
-Stopped at: Completed 18-26-PLAN.md
+Last session: 2026-11-26T16:28:34.318Z
+Stopped at: Completed 18-27-PLAN.md
 Resume file: None
