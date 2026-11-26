@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
-stopped_at: Completed 18-23-PLAN.md
-last_updated: "2026-11-26T15:30:12.825Z"
+stopped_at: Completed 18-24-PLAN.md
+last_updated: "2026-11-26T15:44:52.724Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: 80b1e1d4d8fe667857b01d377fea1b5b91466ed3
+state_head: e5884ffd27b9a7ad9f9715956ab4e8d3d70460a5
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 109
-  completed_plans: 103
+  completed_plans: 104
   percent: 71
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-24)
 ## Current Position
 
 Phase: 18 (Immersive Survey Layout) — EXECUTING
-Plan: 23 of 29
+Plan: 24 of 29
 Status: Ready to execute
 Last activity: 2026-11-24 — Phase 18 execution started
 
@@ -161,6 +161,7 @@ Progress: [███████░░░] 71%
 | Phase 18 P21 | 16min | 2 tasks | 7 files |
 | Phase 18 P22 | 25min | 2 tasks | 14 files |
 | Phase 18 P23 | 28 min | 2 tasks | 9 files |
+| Phase 18 P24 | 15min | 2 tasks | 19 files |
 
 ## Accumulated Context
 
@@ -432,6 +433,10 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-23: overviewCss is computed once per server process in OverviewSheet (module memo); per request it cost ~0.6 s on every /photos render and timed out parallel e2e navigations
 - [Phase 18]: 18-23: overview list-map sync uses one :has() per state (row hover, row focus-visible, marker hover), the 2325d0a WebKit pattern; 18-14 deferred item closed; CI Linux WebKit is the first real check
 - [Phase 18]: 18-23: overview sheet edge is an inset outline (not border) so the size container is exactly S x S*872/1200; markers are next/link Links (tabIndex -1, aria-hidden), no new client JS (1,827,848 B)
+- [Phase 18]: 18-24: switcher/header successors at components/photos/__tests__/overview.test.tsx (14 rows) beside 18-22's overview/__tests__/overview.test.tsx; no assertion repeated
+- [Phase 18]: 18-24: grid/justify successors at components/photos/__tests__/sequence-figure.test.tsx (34 + 1 rows); justify row-height rows became figure width and sizes-at-viewport rows
+- [Phase 18]: 18-24: sheetPlace removed from data/sheet.ts with PhotosHeader; sheet.title stays
+- [Phase 18]: 18-24: 13 #37 row-height drift guard retired with the grid
 
 ### Pending Todos
 
@@ -493,6 +498,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-26T15:30:12.091Z
-Stopped at: Completed 18-23-PLAN.md
+Last session: 2026-11-26T15:44:51.967Z
+Stopped at: Completed 18-24-PLAN.md
 Resume file: None
