@@ -11,8 +11,9 @@
  *   on every step (Pitfall 2). Next keeps usePathname in sync with
  *   replaceState, so the viewer reads its slug with slugFromPath(usePathname())
  *   and never from the segment params, which keep the stale slug.
- * - Ends: no wrap (UI-SPEC OQ4). stepIndex returns null past either end and
- *   the control at that end is aria-disabled.
+ * - Ends: no wrap (UI-SPEC OQ4). stepWithEnd returns null before the first
+ *   photo and after the end-of-series card, and the control at that end is
+ *   aria-disabled.
  * - Swipe: a released horizontal drag steps when it is at least SWIPE_MIN_PX
  *   long and SWIPE_RATIO times its vertical travel. A drag to the left
  *   (negative dx) shows the next photo.
@@ -54,12 +55,6 @@ export function slugFromPath(pathname: string | null): string | null {
     return null;
   }
   return RESERVED_PHOTO_SEGMENTS.has(slug) ? null : slug;
-}
-
-/** The neighbouring index in a list of n photos, or null past either end (no wrap). */
-export function stepIndex(index: number, dir: -1 | 1, n: number): number | null {
-  const next = index + dir;
-  return next >= 0 && next < n ? next : null;
 }
 
 /**

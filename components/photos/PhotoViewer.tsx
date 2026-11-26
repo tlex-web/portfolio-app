@@ -133,8 +133,9 @@ import type { PhotoView } from '@/lib/photos/view-model';
  * server (regionViewerSet in lib/regions.ts) and passed as props. A one-photo
  * set (a one-photo region) keeps its rule: with fewer than two photos the
  * left group renders no Previous, counter or Next, so the viewer offers no
- * control that does nothing; the arrows and the swipe already do nothing there
- * (stepIndex returns null). The page surface requires `back` ({ href, name }),
+ * control that does nothing; the arrows and the swipe do nothing there either,
+ * since `step` returns early when n < 2 before it asks stepWithEnd for a
+ * position, so a one-photo set never reaches the end card. The page surface requires `back` ({ href, name }),
  * built on the server by photoBack from the region registry (regionHref and
  * the bare region name) for every photo, the v2.0 four included (18 D-09):
  * both back links read 'Back to {name}' and, with the page Escape, lead to the

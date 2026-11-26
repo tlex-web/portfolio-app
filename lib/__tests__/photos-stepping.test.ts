@@ -21,7 +21,6 @@ import {
   SWIPE_MIN_PX,
   SWIPE_RATIO,
   slugFromPath,
-  stepIndex,
   stepWithEnd,
   swipeStep,
 } from '@/lib/photos/stepping';
@@ -121,19 +120,6 @@ describe('one photo-path parser (17 D-24)', () => {
   });
 });
 
-describe('stepIndex (no wrap, UI-SPEC OQ4)', () => {
-  it('returns null before the first photo and after the last', () => {
-    expect(stepIndex(0, -1, 4)).toBeNull();
-    expect(stepIndex(3, 1, 4)).toBeNull();
-  });
-
-  it('moves one place inside the range', () => {
-    expect(stepIndex(1, 1, 4)).toBe(2);
-    expect(stepIndex(1, -1, 4)).toBe(0);
-    expect(stepIndex(2, 1, 4)).toBe(3);
-  });
-});
-
 describe('stepWithEnd: the end-of-series card is one extra step (18-16; LBOX-09, D-12)', () => {
   it.each([2, 7])('with %i photos, Next from the last photo lands on the card (index n)', (n) => {
     expect(stepWithEnd(n - 1, 1, n)).toBe(n);
@@ -148,11 +134,10 @@ describe('stepWithEnd: the end-of-series card is one extra step (18-16; LBOX-09,
     expect(stepWithEnd(n, -1, n)).toBe(n - 1);
   });
 
-  it('moves one place among the photos like stepIndex', () => {
-    expect(stepWithEnd(1, 1, 7)).toBe(stepIndex(1, 1, 7));
-    expect(stepWithEnd(1, -1, 7)).toBe(stepIndex(1, -1, 7));
-    // stepIndex itself still stops at the last photo: the card is stepWithEnd's alone.
-    expect(stepIndex(6, 1, 7)).toBeNull();
+  it('moves one place among the photos', () => {
+    expect(stepWithEnd(1, 1, 7)).toBe(2);
+    expect(stepWithEnd(1, -1, 7)).toBe(0);
+    expect(stepWithEnd(5, 1, 7)).toBe(6);
   });
 });
 
