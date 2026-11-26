@@ -5,16 +5,16 @@ milestone_name: Survey Expansion
 current_phase: 18
 current_phase_name: Immersive Survey Layout
 status: executing
-stopped_at: Completed 18-21-PLAN.md
-last_updated: "2026-11-26T14:35:08.098Z"
+stopped_at: Completed 18-22-PLAN.md
+last_updated: "2026-11-26T14:58:32.059Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 18 execution started
-state_head: b6f9c75297121a70223a511ef406c1ff4c076e50
+state_head: e1907cfda955d92b65d551075a4f17a2fc59fb0c
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 109
-  completed_plans: 101
+  completed_plans: 102
   percent: 71
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-24)
 ## Current Position
 
 Phase: 18 (Immersive Survey Layout) — EXECUTING
-Plan: 21 of 29
+Plan: 22 of 29
 Status: Ready to execute
 Last activity: 2026-11-24 — Phase 18 execution started
 
@@ -159,6 +159,7 @@ Progress: [███████░░░] 71%
 | Phase 18 P19 | 30min | 3 tasks | 8 files |
 | Phase 18 P20 | 17h33m | 3 tasks | 15 files |
 | Phase 18 P21 | 16min | 2 tasks | 7 files |
+| Phase 18 P22 | 25min | 2 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -424,6 +425,9 @@ Recent decisions affecting current work:
 - [Phase 18]: 18-21: The keyboard row reaches the first figure by Tab alone (a bounded Tab loop to 'Skip to next region', then one Tab), keeping keyboard.spec's no-click, no-focus() contract
 - [Phase 18]: 18-21: Sweep surfaces: grid -> Zermatt region page, carousel stepper -> Ortler and Saalfelden region pages, 4 photo pages -> every published photo page, lightbox over the grid -> lightbox over the Zermatt region page
 - [Phase 18]: 18-21: 'the region page takes focus back on the photo shown at close' carries @no-win-webkit (WinCairo crash at Escape after steps, as in 18-16); the new audit states are untagged and FIREFOX_43967_VIEWS is {'Map'}
+- [Phase 18]: 18-22: region rows are next/link Links (soft navigation, no morph, D-04); thumbnails eager + fetchPriority low at every width (UI-SPEC deviation)
+- [Phase 18]: 18-22: proxy legacyViewRedirect 308s only /photos?view=grid|carousel (exact single value) to regionHref(LEGACY_VIEW_REGION); map/unknown/case/repeat render the overview
+- [Phase 18]: 18-22: FIREFOX_43967_VIEWS removed; 'Alps overview' audit state runs on Firefox
 
 ### Pending Todos
 
@@ -485,6 +489,6 @@ Acknowledging records the item; it doesn't fix it. Still open from this table: t
 
 ## Session Continuity
 
-Last session: 2026-11-26T14:35:07.465Z
-Stopped at: Completed 18-21-PLAN.md
+Last session: 2026-11-26T14:58:31.173Z
+Stopped at: Completed 18-22-PLAN.md
 Resume file: None
