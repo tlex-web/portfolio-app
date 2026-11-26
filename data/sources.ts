@@ -105,6 +105,10 @@ export const SOURCES: readonly SourceEntry[] = [
     changes: [
       'Resampled to a 10 m grid; contours every 100 m and a hillshade derived; modified.',
       // 16-RESEARCH BEV: the record's Stichtag is a creation date, never a survey date.
+      // Approved copy (D-20), so typed literally; source.json's edition ('2025-09') has
+      // no day. data/__tests__/sources.test.ts checks this date against source.json's
+      // edition and its editionSource Stichtag, so a rebuilt edition fails until the
+      // sentence is updated with it.
       'Edition 15 September 2025, the date BEV created the dataset, not a survey date.',
     ],
     usedOn: regionPagesOn(bev.product),

@@ -21,6 +21,7 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { GLO90_LIABILITY, GLO90_NOTICE } from '@/data/schemas/overview';
+import { formatMonthYear } from '@/lib/footer-format';
 import { SHORT_CREDIT, SOURCE_IDS, SOURCES_PAGE, sourceHref } from '@/data/source-credits';
 import { SOURCES, SOURCES_INTRO, SWISSALTIREGIO_CREDIT, type SourceEntry } from '@/data/sources';
 import { regionHref } from '@/lib/photos/routes';
@@ -125,6 +126,20 @@ describe('licences and uses', () => {
     expect(entry('bev-als-dtm').changes).toContain(
       'Edition 15 September 2025, the date BEV created the dataset, not a survey date.'
     );
+  });
+
+  it("dates the BEV edition sentence from the plate's source.json (edition and its Stichtag)", () => {
+    // The sentence is approved copy, typed literally; this row ties its date to the
+    // data, so a rebuilt plate with a new edition fails here instead of drifting.
+    const sentence = entry('bev-als-dtm').changes.find((c) => c.startsWith('Edition '));
+    const date = /^Edition (\d{1,2}) ([A-Z][a-z]+ \d{4}),/.exec(sentence ?? '');
+    expect(date).not.toBeNull();
+    const [, day, monthYear] = date!;
+    expect(monthYear).toBe(formatMonthYear(String(BEV.edition)));
+    const stichtag = /Stichtag (\d{2})\.(\d{2})\.(\d{4})/.exec(String(BEV.editionSource));
+    expect(stichtag).not.toBeNull();
+    expect(`${stichtag![3]}-${stichtag![2]}`).toBe(BEV.edition);
+    expect(Number(day)).toBe(Number(stichtag![1]));
   });
 });
 
