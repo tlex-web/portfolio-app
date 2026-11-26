@@ -50,7 +50,8 @@ const SUMMIT_PLATE = 'absolute rounded-sm bg-surface-raised px-2 py-1 whitespace
 
 /**
  * The sheet's CSS, computed once per server process. overviewCss solves the
- * layout at every width from 312 to 1100 px (about 0.6 s), and /photos renders
+ * layout at every width from 312 to 1100 px (about 1.7 s locally since the
+ * complete search of the 18-23 post-plan fix, 1.2 s before), and /photos renders
  * per request (the CSP nonce), so recomputing it each time made every request
  * that slow; its input is static generated data, so the result never changes
  * while the process runs.

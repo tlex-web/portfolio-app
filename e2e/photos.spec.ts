@@ -16,7 +16,9 @@ import {
   overviewSheetInput,
 } from '@/lib/regions';
 import {
+  DIAGONAL_REGION_PLATES,
   MARKER,
+  OVERVIEW_ASSOCIATION,
   OVERVIEW_COMPACT_MAX_S,
   OVERVIEW_GAP,
   OVERVIEW_INSET,
@@ -606,6 +608,63 @@ test.describe('Overview sheet (REGION-01, REGION-06)', () => {
       expect(close).toEqual([]);
       // Every plate line fits its plate's text box on one line (font-metric drift).
       expect(m.overflow).toEqual([]);
+    });
+  }
+
+  /*
+   * Association (the 18-23 post-plan fix, Tim 2026-11-26): at 1440 Zermatt's plate sat
+   * diagonally above-right of marker 1, about as near marker 2, and read as Ortler's label.
+   * Each plate sits right or left of its own marker, vertically centred, 8 px apart, and
+   * every other marker is at least OVERVIEW_ASSOCIATION px farther from it (box distance).
+   * A width pinned in DIAGONAL_REGION_PLATES (no legal layout has that plate beside its
+   * marker) keeps the plate on its marker's 8 px ring and the same invariant. The Jest sweep
+   * proves both at every S; these read the rendered boxes.
+   */
+  for (const width of [1024, 1440]) {
+    test(`at ${width} x 900 each region plate sits beside its own marker, nearer to it than to any other marker`, async ({
+      page,
+    }) => {
+      const TOL = 0.1;
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/photos');
+      await page.evaluate(() => document.fonts.ready);
+      const m = await sheetBoxes(page);
+      expect(m.S).toBeGreaterThan(OVERVIEW_COMPACT_MAX_S);
+      const box = (kind: string, id: string) =>
+        m.boxes.find((b) => b.kind === kind && b.id === id)!;
+      const distance = (a: SheetBox, b: SheetBox) =>
+        Math.hypot(
+          Math.max(0, b.x - (a.x + a.w), a.x - (b.x + b.w)),
+          Math.max(0, b.y - (a.y + a.h), a.y - (b.y + b.h))
+        );
+      const ids = overviewSheetInput().regions.map((r) => r.id);
+      for (const id of ids) {
+        const plate = box('plate', id);
+        const marker = box('marker', id);
+        const fallback = DIAGONAL_REGION_PLATES.some(
+          (d) => d.region === id && d.ranges.some(([lo, hi]) => m.S >= lo && m.S <= hi)
+        );
+        const gap = Math.max(
+          plate.x - (marker.x + marker.w),
+          marker.x - (plate.x + plate.w),
+          plate.y - (marker.y + marker.h),
+          marker.y - (plate.y + plate.h)
+        );
+        const sideGap = Math.max(plate.x - (marker.x + marker.w), marker.x - (plate.x + plate.w));
+        const centred = Math.abs(plate.y + plate.h / 2 - (marker.y + marker.h / 2)) <= 1;
+        if (fallback) {
+          // On its marker's 8 px ring: a corner, or centred above or below.
+          expect([id, Math.abs(gap - OVERVIEW_GAP) <= TOL]).toEqual([id, true]);
+        } else {
+          expect([id, centred, Math.abs(sideGap - OVERVIEW_GAP) <= TOL]).toEqual([id, true, true]);
+        }
+        const own = distance(plate, marker);
+        for (const other of ids) {
+          if (other === id) continue;
+          const d = distance(plate, box('marker', other));
+          expect([id, other, d >= own + OVERVIEW_ASSOCIATION - TOL]).toEqual([id, other, true]);
+        }
+      }
     });
   }
 

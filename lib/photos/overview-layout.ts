@@ -18,8 +18,12 @@
  * - a marker: 8 directions around its rectangle (N first) at the leader steps
  *   8, 16, 24 and 40 px, shortest first; its leader runs from the marker centre
  *   to the rectangle's edge point in that direction (top-centre for N);
- * - a region plate: 8 directions around its marker at 8 px (right, then left,
- *   then the diagonals, then above and below);
+ * - a region plate, chosen with its marker (a marker place is taken only with
+ *   a legal plate): right of the marker, then left, vertically centred, 8 px
+ *   away (the UI-SPEC rule; Tim, 2026-11-26). Only at a width where no layout
+ *   has every plate beside its marker may the fewest plates possible take a
+ *   fallback place (the diagonals, then above and below), pinned in
+ *   DIAGONAL_REGION_PLATES;
  * - a summit label: right, left, below, above, then the diagonals of its
  *   triangle at 8 px.
  *
@@ -27,14 +31,21 @@
  * (inclusive) from every other box and every triangle box, covers no
  * rectangle's drawn outline, crosses no leader and, for a marker, its leader
  * crosses no box (a triangle as the shape it draws: at small widths
- * Dufourspitze's triangle box overlaps the Zermatt rectangle). The search
- * runs in a fixed priority (markers west to east, then region plates, then
- * summit labels west to east) and backtracks one level: when an item has no
- * legal candidate, an earlier item (nearest first) is moved to its next legal
- * candidate if that frees the item. A summit label that still has no legal
- * place keeps its least-conflicting candidate and is reported as not placed;
- * its widths are pinned in UNPLACED_SUMMIT_LABELS for Tim (18-13 Task 2), and
- * no label is ever dropped here.
+ * Dufourspitze's triangle box overlaps the Zermatt rectangle), its own plate
+ * included. A plate also keeps the association invariant: every other marker
+ * is at least OVERVIEW_ASSOCIATION px farther from it than its own marker. On
+ * the compact tier a marker prefers a place whose badge keeps
+ * COMPACT_SUMMIT_CLEARANCE px from every triangle as drawn.
+ *
+ * The search runs in a fixed priority (regions west to east, then summit
+ * labels west to east) and is complete: it finds the first legal layout in
+ * that order (conflict-directed backjumping), so markers and summit labels
+ * give way before a plate leaves its marker's side, and a summit label is
+ * left without a legal place only when no layout has one. Then (or if the
+ * search budget runs out) a greedy pass with one level of backtracking places
+ * what it can; a summit label it cannot place keeps its least-conflicting
+ * candidate and is reported as not placed; its widths are pinned in
+ * UNPLACED_SUMMIT_LABELS for Tim (18-13 Task 2), and no label is ever dropped.
  *
  * Every coordinate is exactly f x S + px (x) or f x H + px (y) for a fixed set
  * of choices, so the integer widths with the same choices form one segment and
@@ -77,6 +88,31 @@ export const OVERVIEW_SWEEP_MAX_S = 1100;
 export const OVERVIEW_RATIO = 872 / 1200;
 /** The marker leader lengths the search tries, shortest first. */
 export const LEADER_STEPS = [8, 16, 24, 40] as const;
+/**
+ * A region plate sits right or left of its own marker (8 px), and every other
+ * marker is at least this much farther from it, as a box distance (Tim,
+ * 2026-11-26: at 1440 Zermatt's diagonal plate read as Ortler's).
+ */
+export const OVERVIEW_ASSOCIATION = 16;
+/** On the compact tier a marker's badge prefers this clearance from every summit triangle, as drawn. */
+export const COMPACT_SUMMIT_CLEARANCE = 16;
+
+/**
+ * Region plates that cannot sit right or left of their marker, as inclusive S
+ * ranges: no legal layout with every summit label placed has them there. Below
+ * S = 720 Zermatt's plate, right of marker 1, reaches Ortler's rectangle
+ * (left of it leaves the sheet); above it needs a leader over 40 px and below
+ * it takes the only free place of Mont Blanc's label. Below S = 588 Ortler's
+ * plate has no side either. At these widths the plate takes a fallback place
+ * that still keeps the association invariant (listed for Tim, 2026-11-26).
+ */
+export const DIAGONAL_REGION_PLATES: readonly {
+  region: string;
+  ranges: readonly [number, number][];
+}[] = [
+  { region: 'zermatt', ranges: [[560, 719]] },
+  { region: 'ortler', ranges: [[560, 587]] },
+];
 
 /**
  * Summit labels with no legal place after backtracking, as inclusive S ranges.
@@ -148,8 +184,10 @@ export type OverviewPlacement = {
     plate: OverviewBox | null;
     /** The marker's candidate, direction and leader step: 'N8', 'SE24'. */
     markerChoice: string;
-    /** The plate's direction, or null on the compact tier. */
+    /** The plate's side, 'E' or 'W', or null on the compact tier. */
     plateChoice: string | null;
+    /** False when no candidate was legal (never, for the real data: the sweep pins it). */
+    placed: boolean;
   }[];
   summits: {
     name: string;
@@ -343,6 +381,34 @@ function overlapsConvex(box: OverviewBox, pts: readonly Pt[]): boolean {
   return true;
 }
 
+/** The Euclidean distance between two boxes (0 when they meet). */
+function boxDistance(a: OverviewBox, b: OverviewBox): number {
+  const dx = Math.max(0, b.x - (a.x + a.width), a.x - (b.x + b.width));
+  const dy = Math.max(0, b.y - (a.y + a.height), a.y - (b.y + b.height));
+  return Math.hypot(dx, dy);
+}
+
+/** The distance from a point to a convex polygon (0 inside it). */
+function pointToConvexDistance(p: Pt, pts: readonly Pt[]): number {
+  let inside = true;
+  let best = Infinity;
+  const cx = pts.reduce((sum, q) => sum + q.x, 0) / pts.length;
+  const cy = pts.reduce((sum, q) => sum + q.y, 0) / pts.length;
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i];
+    const b = pts[(i + 1) % pts.length];
+    const ex = b.x - a.x;
+    const ey = b.y - a.y;
+    const side = (px: number, py: number) => ex * (py - a.y) - ey * (px - a.x);
+    if (Math.sign(side(p.x, p.y)) !== Math.sign(side(cx, cy))) inside = false;
+    const len2 = ex * ex + ey * ey;
+    const t =
+      len2 === 0 ? 0 : Math.min(1, Math.max(0, ((p.x - a.x) * ex + (p.y - a.y) * ey) / len2));
+    best = Math.min(best, Math.hypot(p.x - (a.x + t * ex), p.y - (a.y + t * ey)));
+  }
+  return inside ? 0 : best;
+}
+
 /** Whether a segment passes through a box's interior (Liang-Barsky clip, 0.01 px tolerance). */
 function crosses(s: OverviewLeader, r: OverviewBox): boolean {
   const e = 0.01;
@@ -467,14 +533,37 @@ const D = {
 
 /** Marker directions around its rectangle: above first (the UI-SPEC rule). */
 const MARKER_DIRS: readonly Dir[] = [D.N, D.NE, D.NW, D.E, D.W, D.S, D.SE, D.SW];
-/** Region plate directions around its marker: right, then flipped left (the UI-SPEC rule). */
+/**
+ * Region plate directions around its marker: right, then flipped left (the
+ * UI-SPEC rule; the first PLATE_SIDES), then the fallback places, tried only
+ * at a width where no layout has every plate beside its marker
+ * (DIAGONAL_REGION_PLATES). A plate above or diagonal to its marker read as
+ * its neighbour's label at 1440 (Tim, 2026-11-26).
+ */
 const PLATE_DIRS: readonly Dir[] = [D.E, D.W, D.NE, D.SE, D.NW, D.SW, D.N, D.S];
+const PLATE_SIDES = 2;
 /** Summit label directions: right, the other side, below, above (the UI-SPEC rule), diagonals. */
 const SUMMIT_DIRS: readonly Dir[] = [D.E, D.W, D.S, D.N, D.NE, D.SE, D.NW, D.SW];
 
 const MARKER_CANDIDATES = LEADER_STEPS.flatMap((step) =>
   MARKER_DIRS.map((dir) => ({ dir, step, name: `${dir.name}${step}` }))
 );
+
+/**
+ * A region's joint candidates on the wide tier, a marker candidate and its
+ * plate's direction: every marker with its plate right then left first (in
+ * the marker's order), then every marker with a fallback place. Only the
+ * first REGION_SIDE_CANDIDATES are tried unless the fallback pass runs.
+ */
+const REGION_CANDIDATES = [
+  ...MARKER_CANDIDATES.flatMap((_, m) =>
+    PLATE_DIRS.slice(0, PLATE_SIDES).map((__, p) => ({ m, p }))
+  ),
+  ...MARKER_CANDIDATES.flatMap((_, m) =>
+    PLATE_DIRS.slice(PLATE_SIDES).map((__, p) => ({ m, p: p + PLATE_SIDES }))
+  ),
+];
+const REGION_SIDE_CANDIDATES = MARKER_CANDIDATES.length * PLATE_SIDES;
 
 /** A box of size w x h placed in `dir` around `around`, `gap` px away. */
 function beside(
@@ -564,62 +653,87 @@ function markerAt(
   };
 }
 
+/**
+ * A search item: on the compact tier a region is its marker alone; on the wide
+ * tier a region is its marker and plate chosen together (a marker place is
+ * only taken when its plate fits right or left of it), then the summit labels.
+ */
 type Item =
   | { kind: 'marker'; region: number }
-  | { kind: 'plate'; region: number }
+  | { kind: 'region'; region: number }
   | { kind: 'summit'; summit: number };
 
 function itemsFor(input: OverviewInput, geo: Geometry, tier: OverviewTier): Item[] {
-  const items: Item[] = input.regions.map((_, region) => ({ kind: 'marker', region }));
-  if (tier === 'wide') {
-    input.regions.forEach((_, region) => items.push({ kind: 'plate', region }));
-    geo.summitOrder.forEach((summit) => items.push({ kind: 'summit', summit }));
-  }
+  if (tier === 'compact') return input.regions.map((_, region) => ({ kind: 'marker', region }));
+  const items: Item[] = input.regions.map((_, region) => ({ kind: 'region', region }));
+  geo.summitOrder.forEach((summit) => items.push({ kind: 'summit', summit }));
   return items;
 }
 
-const candidateCount = (item: Item) =>
-  item.kind === 'marker'
-    ? MARKER_CANDIDATES.length
-    : item.kind === 'plate'
-      ? PLATE_DIRS.length
-      : SUMMIT_DIRS.length;
+/** How many candidates item k has in this pass (region plates beside their marker unless the fallback runs). */
+function candidateCount(s: Search, k: number): number {
+  const item = s.items[k];
+  if (item.kind === 'marker') return MARKER_CANDIDATES.length;
+  if (item.kind === 'summit') return SUMMIT_DIRS.length;
+  return s.fallbacks > 0 ? REGION_CANDIDATES.length : REGION_SIDE_CANDIDATES;
+}
 
 /** Item positions in the priority list, by region and summit. */
-type Index = { marker: number[]; plate: number[]; summit: number[] };
+type Index = { region: number[]; summit: number[] };
 
 function indexOf(items: readonly Item[]): Index {
-  const index: Index = { marker: [], plate: [], summit: [] };
+  const index: Index = { region: [], summit: [] };
   items.forEach((item, k) => {
     if (item.kind === 'summit') index.summit[item.summit] = k;
-    else index[item.kind][item.region] = k;
+    else index.region[item.region] = k;
   });
   return index;
 }
 
-/** The linear box (and leader, for a marker) of item k at candidate c, given its marker's choice. */
-function linearOf(
-  item: Item,
-  c: number,
-  choices: readonly number[],
-  geo: Geometry,
-  index: Index
-): { box: OverviewLinearBox; leader?: OverviewLinearLeader } {
-  if (item.kind === 'marker') return markerAt(geo.rects[item.region], MARKER_CANDIDATES[c]);
-  if (item.kind === 'plate') {
-    const marker = markerAt(
-      geo.rects[item.region],
-      MARKER_CANDIDATES[choices[index.marker[item.region]]]
-    );
-    return { box: beside(marker.box, PLATE_DIRS[c], OVERVIEW_GAP, REGION_PLATE.w, REGION_PLATE.h) };
+/** A region item's marker candidate and plate side (null on the compact tier). */
+function regionChoice(item: Item, c: number): { marker: number; plate: number | null } {
+  return item.kind === 'region'
+    ? { marker: REGION_CANDIDATES[c].m, plate: REGION_CANDIDATES[c].p }
+    : { marker: c, plate: null };
+}
+
+type LinearItem = {
+  /** The item's boxes: a marker then its plate, or a summit label. */
+  boxes: OverviewLinearBox[];
+  leader?: OverviewLinearLeader;
+};
+
+/** The linear boxes (and leader, for a region) of an item at candidate c. */
+function linearOf(item: Item, c: number, geo: Geometry): LinearItem {
+  if (item.kind === 'summit') {
+    const size = geo.summitSizes[item.summit];
+    return {
+      boxes: [beside(geo.triangles[item.summit], SUMMIT_DIRS[c], OVERVIEW_GAP, size.w, size.h)],
+    };
   }
-  const size = geo.summitSizes[item.summit];
-  return {
-    box: beside(geo.triangles[item.summit], SUMMIT_DIRS[c], OVERVIEW_GAP, size.w, size.h),
-  };
+  const { marker, plate } = regionChoice(item, c);
+  const m = markerAt(geo.rects[item.region], MARKER_CANDIDATES[marker]);
+  const boxes = [m.box];
+  if (plate !== null) {
+    boxes.push(beside(m.box, PLATE_DIRS[plate], OVERVIEW_GAP, REGION_PLATE.w, REGION_PLATE.h));
+  }
+  return { boxes, leader: m.leader };
 }
 
 // ---------------------------------------------------------------- search
+
+type ConcreteItem = {
+  /** The item's boxes: a marker then (wide tier) its plate, or a summit label. */
+  boxes: OverviewBox[];
+  leader?: OverviewLeader;
+  /** A region item's marker and (wide tier) plate. */
+  marker?: OverviewBox;
+  plate?: OverviewBox;
+  /** The rules it breaks against the fixed marks alone (inset, triangles, rectangles). */
+  fixed: number;
+  /** On the compact tier, the triangles its badge crowds (see crowding). */
+  crowds: number;
+};
 
 type Search = {
   S: number;
@@ -628,21 +742,87 @@ type Search = {
   index: Index;
   geo: Geometry;
   triangles: OverviewBox[];
+  /** Each summit triangle as drawn, in sheet px. */
+  trianglePts: Pt[][];
   /** Each region outline's corners in sheet px. */
   outlines: Pt[][];
+  /** Each item's candidates, evaluated once at this S. */
+  cache: Map<number, ConcreteItem>[];
+  /** How many region plates may take a fallback place in this pass (0: all beside their marker). */
+  fallbacks: number;
 };
 
-/** The concrete box and leader of item k at its current choice. */
-function concrete(
-  s: Search,
-  k: number,
-  choices: readonly number[]
-): { box: OverviewBox; leader?: OverviewLeader } {
-  const lin = linearOf(s.items[k], choices[k], choices, s.geo, s.index);
-  return {
-    box: evalBox(lin.box, s.S),
-    leader: lin.leader ? evalLeader(lin.leader, s.S) : undefined,
+/**
+ * The association rule (Tim, 2026-11-26): every other marker is at least
+ * OVERVIEW_ASSOCIATION px farther from a plate than its own marker is.
+ */
+function associated(plate: OverviewBox, own: OverviewBox, other: OverviewBox): boolean {
+  return boxDistance(plate, other) >= boxDistance(plate, own) + OVERVIEW_ASSOCIATION - EPS;
+}
+
+/**
+ * On the compact tier, how many summit triangles a marker's badge (its 28 px
+ * circle) comes within COMPACT_SUMMIT_CLEARANCE px of, as drawn. A preference,
+ * not a rule: the search takes the first legal candidate that keeps clear and
+ * falls back to the first legal one.
+ */
+function crowding(s: Search, marker: OverviewBox): number {
+  const centre = { x: marker.x + MARKER / 2, y: marker.y + MARKER / 2 };
+  return s.trianglePts.filter(
+    (t) => pointToConvexDistance(centre, t) - MARKER / 2 < COMPACT_SUMMIT_CLEARANCE - EPS
+  ).length;
+}
+
+/** Item k at candidate c, with the rules it breaks against the fixed marks (cached per S). */
+function concrete(s: Search, k: number, c: number): ConcreteItem {
+  const hit = s.cache[k].get(c);
+  if (hit) return hit;
+  const item = s.items[k];
+  const lin = linearOf(item, c, s.geo);
+  const boxes = lin.boxes.map((b) => evalBox(b, s.S));
+  const leader = lin.leader ? evalLeader(lin.leader, s.S) : undefined;
+  const plate = item.kind === 'region' ? boxes[1] : undefined;
+  let fixed = 0;
+  for (const box of boxes) {
+    if (
+      box.x < OVERVIEW_INSET - EPS ||
+      box.y < OVERVIEW_INSET - EPS ||
+      box.x + box.width > s.S - OVERVIEW_INSET + EPS ||
+      box.y + box.height > s.H - OVERVIEW_INSET + EPS
+    ) {
+      fixed++;
+    }
+    for (const t of s.triangles) if (boxesMeet(box, t, OVERVIEW_GAP)) fixed++;
+    for (const o of s.outlines) if (overlapsConvex(box, o)) fixed++;
+  }
+  if (leader) {
+    for (const t of s.trianglePts) if (crossesConvex(leader, t)) fixed++;
+    // A marker's leader never runs under its own plate.
+    if (plate && crosses(leader, plate)) fixed++;
+  }
+  const out: ConcreteItem = {
+    boxes,
+    leader,
+    marker: item.kind === 'summit' ? undefined : boxes[0],
+    plate,
+    fixed,
+    crowds: item.kind === 'marker' ? crowding(s, boxes[0]) : 0,
   };
+  s.cache[k].set(c, out);
+  return out;
+}
+
+/** How many rules two placed items break between them (gaps, leaders, association). */
+function between(a: ConcreteItem, b: ConcreteItem): number {
+  let n = 0;
+  for (const box of a.boxes) {
+    for (const ob of b.boxes) if (boxesMeet(box, ob, OVERVIEW_GAP)) n++;
+    if (b.leader && crosses(b.leader, box)) n++;
+  }
+  if (a.leader) for (const ob of b.boxes) if (crosses(a.leader, ob)) n++;
+  if (a.plate && a.marker && b.marker && !associated(a.plate, a.marker, b.marker)) n++;
+  if (b.plate && b.marker && a.marker && !associated(b.plate, b.marker, a.marker)) n++;
+  return n;
 }
 
 /**
@@ -650,44 +830,106 @@ function concrete(
  * (sheet inset, triangles, rectangles) and the items before it in priority.
  */
 function conflicts(s: Search, k: number, choices: readonly number[]): number {
-  const { box, leader } = concrete(s, k, choices);
-  let n = 0;
-  if (
-    box.x < OVERVIEW_INSET - EPS ||
-    box.y < OVERVIEW_INSET - EPS ||
-    box.x + box.width > s.S - OVERVIEW_INSET + EPS ||
-    box.y + box.height > s.H - OVERVIEW_INSET + EPS
-  ) {
-    n++;
-  }
-  for (const t of s.triangles) {
-    if (boxesMeet(box, t, OVERVIEW_GAP)) n++;
-    if (leader && crossesConvex(leader, trianglePoints(t))) n++;
-  }
-  for (const o of s.outlines) if (overlapsConvex(box, o)) n++;
-  for (let i = 0; i < k; i++) {
-    const other = concrete(s, i, choices);
-    if (boxesMeet(box, other.box, OVERVIEW_GAP)) n++;
-    if (other.leader && crosses(other.leader, box)) n++;
-    if (leader && crosses(leader, other.box)) n++;
-  }
+  const self = concrete(s, k, choices[k]);
+  let n = self.fixed;
+  for (let i = 0; i < k; i++) n += between(self, concrete(s, i, choices[i]));
   return n;
 }
 
+/**
+ * Item k's first legal candidate, set in choices; a compact marker prefers
+ * the first one that keeps its badge clear of the triangles. Null if none.
+ */
 function firstLegal(s: Search, k: number, choices: number[]): number | null {
-  for (let c = 0; c < candidateCount(s.items[k]); c++) {
+  let fallback: number | null = null;
+  for (let c = 0; c < candidateCount(s, k); c++) {
     choices[k] = c;
-    if (conflicts(s, k, choices) === 0) return c;
+    if (conflicts(s, k, choices) !== 0) continue;
+    if (concrete(s, k, c).crowds === 0) return c;
+    fallback ??= c;
   }
-  return null;
+  if (fallback !== null) choices[k] = fallback;
+  return fallback;
 }
 
-/** Whether every placed item before k is still legal (a pending summit label keeps its conflicts). */
-function prefixLegal(s: Search, k: number, choices: number[], pending: ReadonlySet<number>) {
-  for (let i = 0; i < k; i++) {
-    if (!pending.has(i) && conflicts(s, i, choices) > 0) return false;
+/** Sets item k to its least-conflicting candidate (when no legal one exists). */
+function leastConflicting(s: Search, k: number, choices: number[]): void {
+  let best = 0;
+  let fewest = Infinity;
+  for (let c = 0; c < candidateCount(s, k); c++) {
+    choices[k] = c;
+    const n = conflicts(s, k, choices);
+    if (n < fewest) {
+      fewest = n;
+      best = c;
+    }
   }
-  return true;
+  choices[k] = best;
+}
+
+/** The candidate checks one width may spend on the complete search before falling back. */
+const SEARCH_BUDGET = 200_000;
+const OUT_OF_BUDGET = 'budget';
+
+/** Whether item k's candidate c puts a region plate in a fallback place. */
+function isFallback(s: Search, k: number, c: number): boolean {
+  return s.items[k].kind === 'region' && c >= REGION_SIDE_CANDIDATES;
+}
+
+/** Item k's candidates in search order: a compact marker tries its uncrowded ones first. */
+function searchOrder(s: Search, k: number): number[] {
+  const all = Array.from({ length: candidateCount(s, k) }, (_, c) => c);
+  if (s.items[k].kind !== 'marker') return all;
+  return [
+    ...all.filter((c) => concrete(s, k, c).crowds === 0),
+    ...all.filter((c) => concrete(s, k, c).crowds !== 0),
+  ];
+}
+
+/**
+ * The complete search (conflict-directed backjumping, Prosser 1993): the first
+ * legal layout in priority order, items k onward, given choices before k. It
+ * returns null when every item is placed, or the earlier items to blame when
+ * none of k's candidates leads to a layout; it then jumps straight back to the
+ * latest of them, skipping only subtrees that hold no layout, so it finds the
+ * same layout as plain backtracking, much faster.
+ */
+function backjump(
+  s: Search,
+  choices: number[],
+  k: number,
+  budget: { left: number }
+): Set<number> | null | typeof OUT_OF_BUDGET {
+  if (k === s.items.length) return null;
+  const blame = new Set<number>();
+  for (const c of searchOrder(s, k)) {
+    if (--budget.left < 0) return OUT_OF_BUDGET;
+    const self = concrete(s, k, c);
+    if (self.fixed !== 0) continue;
+    if (isFallback(s, k, c)) {
+      // Over this pass's fallback count: the earlier fallback plates are to blame.
+      const earlier = choices.slice(0, k).flatMap((ci, i) => (isFallback(s, i, ci) ? [i] : []));
+      if (earlier.length >= s.fallbacks) {
+        for (const i of earlier) blame.add(i);
+        continue;
+      }
+    }
+    let culprit = -1;
+    for (let i = 0; i < k && culprit < 0; i++) {
+      if (between(self, concrete(s, i, choices[i])) !== 0) culprit = i;
+    }
+    if (culprit >= 0) {
+      blame.add(culprit);
+      continue;
+    }
+    choices[k] = c;
+    const rest = backjump(s, choices, k + 1, budget);
+    if (rest === null || rest === OUT_OF_BUDGET) return rest;
+    if (!rest.has(k)) return rest;
+    for (const i of rest) if (i !== k) blame.add(i);
+  }
+  choices.length = k;
+  return blame;
 }
 
 type Solved = {
@@ -705,48 +947,77 @@ function solve(input: OverviewInput, S: number): Solved {
   const geo = geometryOf(input);
   const items = itemsFor(input, geo, tier);
   const index = indexOf(items);
+  const triangles = geo.triangles.map((t) => evalBox(t, S));
   const s: Search = {
     S,
     H: S * OVERVIEW_RATIO,
     items,
     index,
     geo,
-    triangles: geo.triangles.map((t) => evalBox(t, S)),
+    triangles,
+    trianglePts: triangles.map(trianglePoints),
     outlines: input.regions.map((r) =>
       r.corners.map((c) => ({ x: c.u * S, y: c.v * S * OVERVIEW_RATIO }))
     ),
+    cache: items.map(() => new Map()),
+    fallbacks: 0,
   };
   const choices: number[] = [];
-  const pending = new Set<number>();
+  let pending = new Set<number>();
 
+  // Every plate beside its marker first; only if no layout allows that, one
+  // plate may take a fallback place, then two, and so on
+  // (DIAGONAL_REGION_PLATES pins those widths).
+  const regions = items.filter((item) => item.kind === 'region').length;
+  for (let fallbacks = 0; fallbacks <= regions; fallbacks++) {
+    s.fallbacks = fallbacks;
+    choices.length = 0;
+    if (backjump(s, choices, 0, { left: SEARCH_BUDGET }) === null) {
+      const trace = [tier, ...choices].join(',');
+      return { tier, items, index, geo, choices, pending, trace };
+    }
+  }
+  // No complete legal layout (or the budget ran out): place greedily, report
+  // the summit labels left without a legal place, drop nothing.
+  choices.length = 0;
   for (let k = 0; k < items.length; k++) {
     if (firstLegal(s, k, choices) !== null) continue;
-    // One level of backtracking: move one earlier item (nearest first) to
-    // another legal candidate if that frees item k.
+    // Backtracking: move one earlier item (nearest first) to another legal
+    // candidate and re-place every item after it in priority order; the first
+    // move that places them all, item k included, wins. A summit label that
+    // was already pending may stay pending; every other item must be placed.
+    const saved = choices.slice(0, k);
+    const savedPending = pending;
     let freed = false;
     for (let j = k - 1; j >= 0 && !freed; j--) {
-      if (pending.has(j)) continue;
-      const original = choices[j];
-      for (let alt = 0; alt < candidateCount(items[j]) && !freed; alt++) {
-        if (alt === original) continue;
+      if (savedPending.has(j)) continue;
+      for (let alt = 0; alt < candidateCount(s, j) && !freed; alt++) {
+        if (alt === saved[j]) continue;
+        choices.length = 0;
+        choices.push(...saved);
         choices[j] = alt;
-        if (prefixLegal(s, k, choices, pending) && firstLegal(s, k, choices) !== null) freed = true;
+        if (conflicts(s, j, choices) !== 0) continue;
+        const trial = new Set([...savedPending].filter((i) => i < j));
+        let ok = true;
+        for (let i = j + 1; i <= k && ok; i++) {
+          if (firstLegal(s, i, choices) !== null) continue;
+          if (i < k && savedPending.has(i)) {
+            leastConflicting(s, i, choices);
+            trial.add(i);
+          } else ok = false;
+        }
+        if (ok) {
+          freed = true;
+          pending = trial;
+        }
       }
-      if (!freed) choices[j] = original;
     }
     if (freed) continue;
+    choices.length = 0;
+    choices.push(...saved);
+    pending = savedPending;
     // No legal place: keep the least-conflicting candidate, report it, drop nothing.
-    let best = 0;
-    let fewest = Infinity;
-    for (let c = 0; c < candidateCount(items[k]); c++) {
-      choices[k] = c;
-      const n = conflicts(s, k, choices);
-      if (n < fewest) {
-        fewest = n;
-        best = c;
-      }
-    }
-    choices[k] = best;
+    leastConflicting(s, k, choices);
     pending.add(k);
   }
 
@@ -759,20 +1030,14 @@ function linearPlacements(input: OverviewInput, solved: Solved): OverviewSegment
   return {
     tier,
     regions: input.regions.map((r, i) => {
-      const marker = linearOf(
-        items[index.marker[i]],
-        choices[index.marker[i]],
-        choices,
-        geo,
-        index
-      );
-      const k = index.plate[i];
+      const k = index.region[i];
+      const lin = linearOf(items[k], choices[k], geo);
       return {
         id: r.id,
         rect: geo.rects[i].box,
-        marker: marker.box,
-        leader: marker.leader as OverviewLinearLeader,
-        plate: k === undefined ? null : linearOf(items[k], choices[k], choices, geo, index).box,
+        marker: lin.boxes[0],
+        leader: lin.leader as OverviewLinearLeader,
+        plate: lin.boxes[1] ?? null,
       };
     }),
     summits: input.summits.map((sm, i) => {
@@ -781,7 +1046,7 @@ function linearPlacements(input: OverviewInput, solved: Solved): OverviewSegment
         name: sm.name,
         key: summitKey(sm.name),
         triangle: geo.triangles[i],
-        plate: k === undefined ? null : linearOf(items[k], choices[k], choices, geo, index).box,
+        plate: k === undefined ? null : linearOf(items[k], choices[k], geo).boxes[0],
       };
     }),
   };
@@ -804,7 +1069,8 @@ export function overviewLayout(input: OverviewInput, S: number): OverviewPlaceme
     H: S * OVERVIEW_RATIO,
     tier: solved.tier,
     regions: lin.regions.map((r, i) => {
-      const k = index.plate[i];
+      const k = index.region[i];
+      const choice = regionChoice(solved.items[k], choices[k]);
       return {
         id: r.id,
         number: input.regions[i].number,
@@ -812,8 +1078,9 @@ export function overviewLayout(input: OverviewInput, S: number): OverviewPlaceme
         marker: evalBox(r.marker, S),
         leader: evalLeader(r.leader, S),
         plate: r.plate ? evalBox(r.plate, S) : null,
-        markerChoice: MARKER_CANDIDATES[choices[index.marker[i]]].name,
-        plateChoice: k === undefined ? null : PLATE_DIRS[choices[k]].name,
+        markerChoice: MARKER_CANDIDATES[choice.marker].name,
+        plateChoice: choice.plate === null ? null : PLATE_DIRS[choice.plate].name,
+        placed: !pending.has(k),
       };
     }),
     summits: lin.summits.map((sm, i) => {

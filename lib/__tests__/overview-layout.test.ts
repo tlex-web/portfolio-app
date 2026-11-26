@@ -32,6 +32,9 @@ import {
   OVERVIEW_SWEEP_MIN_S,
   REGION_PLATE,
   SUMMIT_TRIANGLE,
+  DIAGONAL_REGION_PLATES,
+  OVERVIEW_ASSOCIATION,
+  COMPACT_SUMMIT_CLEARANCE,
   UNPLACED_SUMMIT_LABELS,
   boxesMeet,
   overviewCss,
@@ -195,23 +198,26 @@ function sideOf(plate: OverviewBox, marker: OverviewBox): 'E' | 'W' | null {
   return null;
 }
 
-/** The distance from a point to a triangle as drawn, 0 inside it (sampled edges, independent). */
+/**
+ * The distance from a point to a triangle as drawn, 0 inside it: the nearest
+ * of its three edges by projection (independent of the module's helper).
+ */
 function pointToTriangle(p: Pt, pts: readonly Pt[]): number {
   const sign = (a: Pt, b: Pt) => (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
   const s = pts.map((a, i) => sign(a, pts[(i + 1) % pts.length]));
   if (s.every((v) => v >= 0) || s.every((v) => v <= 0)) return 0;
-  let best = Infinity;
-  pts.forEach((a, i) => {
-    const b = pts[(i + 1) % pts.length];
-    for (let j = 0; j <= 1000; j++) {
-      const t = j / 1000;
-      best = Math.min(
-        best,
-        Math.hypot(p.x - (a.x + t * (b.x - a.x)), p.y - (a.y + t * (b.y - a.y)))
+  return Math.min(
+    ...pts.map((a, i) => {
+      const b = pts[(i + 1) % pts.length];
+      const ex = b.x - a.x;
+      const ey = b.y - a.y;
+      const t = Math.min(
+        1,
+        Math.max(0, ((p.x - a.x) * ex + (p.y - a.y) * ey) / (ex * ex + ey * ey))
       );
-    }
-  });
-  return best;
+      return Math.hypot(p.x - (a.x + t * ex), p.y - (a.y + t * ey));
+    })
+  );
 }
 
 /** (key, S) pairs collected into inclusive S ranges per key, in first-seen order. */
@@ -227,6 +233,13 @@ function rangesOf(
     found.set(key, ranges);
   }
   return [...found].map(([key, ranges]) => ({ key, ranges }));
+}
+
+/** Whether a region's plate is pinned to a fallback place at S (DIAGONAL_REGION_PLATES). */
+function diagonal(region: string, S: number): boolean {
+  return DIAGONAL_REGION_PLATES.some(
+    (d) => d.region === region && d.ranges.some(([lo, hi]) => S >= lo && S <= hi)
+  );
 }
 
 /** Whether a summit's label is pinned as unplaceable at S (excluded from the rule rows). */
@@ -277,6 +290,9 @@ describe('constants', () => {
     expect(OVERVIEW_RATIO).toBe(872 / 1200);
     expect(OVERVIEW_RATIO).toBe(overview.grid.height / overview.grid.width);
     expect(LEADER_STEPS).toEqual([8, 16, 24, 40]);
+    // Tim, 2026-11-26: the association margin and the compact badge clearance.
+    expect(OVERVIEW_ASSOCIATION).toBe(16);
+    expect(COMPACT_SUMMIT_CLEARANCE).toBe(16);
   });
 
   it('sizes a summit plate from the declared per-character widths plus px-2 py-1', () => {
@@ -524,14 +540,48 @@ describe('overviewLayout sweep, sheet widths 312-1100 px (UI E1 populated)', () 
    * Ortler's label. The UI-SPEC rule is a plate right of its marker, flipping
    * left; markers and summit labels give way, triangles never move.
    */
-  it('puts every region plate right or left of its own marker, vertically centred, 8 px apart', () => {
+  it('puts every region plate right or left of its own marker, vertically centred, 8 px apart, outside DIAGONAL_REGION_PLATES', () => {
+    const off: [string, number][] = [];
+    for (const S of SIDES) {
+      const p = layouts.get(S)!;
+      if (p.tier === 'compact') continue;
+      for (const r of p.regions) {
+        if (diagonal(r.id, S)) continue;
+        if (!sideOf(r.plate!, r.marker)) off.push([r.id, S]);
+        expect(r.plateChoice).toBe(sideOf(r.plate!, r.marker));
+      }
+    }
+    expect(rangesOf(off)).toEqual([]);
+  });
+
+  it('pins the plates with no place beside their marker exactly in DIAGONAL_REGION_PLATES', () => {
+    // Every (region, S) whose plate is not right or left of its marker, as
+    // inclusive S ranges. The search is complete, so each is a width where no
+    // legal layout (every summit label placed) has that plate beside its marker.
     const off: [string, number][] = [];
     for (const S of SIDES) {
       const p = layouts.get(S)!;
       if (p.tier === 'compact') continue;
       for (const r of p.regions) if (!sideOf(r.plate!, r.marker)) off.push([r.id, S]);
     }
-    expect(rangesOf(off)).toEqual([]);
+    expect(rangesOf(off).map(({ key, ranges }) => ({ region: key, ranges }))).toEqual(
+      DIAGONAL_REGION_PLATES.map((d) => ({ ...d, ranges: [...d.ranges] }))
+    );
+    // Wide tier only, and never Saalfelden (east of every conflict).
+    for (const d of DIAGONAL_REGION_PLATES) {
+      for (const [lo, hi] of d.ranges) {
+        expect(lo).toBeGreaterThan(OVERVIEW_COMPACT_MAX_S);
+        expect(hi).toBeLessThanOrEqual(OVERVIEW_SWEEP_MAX_S);
+      }
+    }
+    // A fallback plate still touches its marker's 8 px ring: a corner or centred above or below.
+    for (const S of SIDES) {
+      for (const r of layouts.get(S)!.regions) {
+        if (!diagonal(r.id, S)) continue;
+        expect(['NE', 'SE', 'NW', 'SW', 'N', 'S']).toContain(r.plateChoice);
+        expect(gapOf(r.plate!, r.marker)).toBeCloseTo(OVERVIEW_GAP, 6);
+      }
+    }
   });
 
   it('keeps every other marker at least 16 px farther from a plate than its own marker (the association invariant)', () => {
@@ -544,7 +594,7 @@ describe('overviewLayout sweep, sheet widths 312-1100 px (UI E1 populated)', () 
         for (const o of p.regions) {
           if (o.id === r.id) continue;
           const d = distanceOf(r.plate!, o.marker);
-          if (d < own + 16 - 1e-6) {
+          if (d < own + OVERVIEW_ASSOCIATION - 1e-6) {
             bad.push(
               `S=${S} plate ${r.id}: own ${own.toFixed(2)} px, marker ${o.id} ${d.toFixed(2)} px`
             );
@@ -565,7 +615,10 @@ describe('overviewLayout sweep, sheet widths 312-1100 px (UI E1 populated)', () 
       for (const r of p.regions) {
         const centre = { x: r.marker.x + MARKER / 2, y: r.marker.y + MARKER / 2 };
         for (const s of p.summits) {
-          if (pointToTriangle(centre, triangleOf(s.triangle)) - MARKER / 2 < 16 - 1e-6) {
+          if (
+            pointToTriangle(centre, triangleOf(s.triangle)) - MARKER / 2 <
+            COMPACT_SUMMIT_CLEARANCE - 1e-6
+          ) {
             close.push([`${r.id} / ${s.name}`, S]);
           }
         }
@@ -596,6 +649,7 @@ describe('overviewLayout sweep, sheet widths 312-1100 px (UI E1 populated)', () 
       for (const s of layouts.get(S)!.summits) {
         if (layouts.get(S)!.tier === 'compact') expect(s.placed).toBe(true);
       }
+      for (const r of layouts.get(S)!.regions) expect([S, r.id, r.placed]).toEqual([S, r.id, true]);
     }
   });
 });
